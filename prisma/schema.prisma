@@ -1,0 +1,449 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                  String                @id @default(cuid())
+  email               String                @unique
+  password            String // Thêm trường mật khẩu đã mã hóa (hashed)
+  name                String?
+  avatar              String? // Đường dẫn ảnh đại diện
+  role                String                @default("USER") // ADMIN or USER
+  permissions         String                @default("[]") // JSON string of granted permissions
+  twoFactorSecret     String? // Khóa bí mật 2FA
+  twoFactorEnabled    Boolean               @default(false) // Trạng thái 2FA
+  createdTasks        Task[]                @relation("TaskCreator")
+  completedTasks      Task[]                @relation("TaskCompleter")
+  assignedTasks       TaskAssignee[]
+  observedTasks       TaskObserver[]
+  completedChecklists TaskChecklist[]       @relation("ChecklistCompleter")
+  taskActivityLogs    TaskActivityLog[]
+  taskComments        TaskComment[]
+  uploadedAttachments TaskAttachment[]
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  TaskCommentReaction TaskCommentReaction[]
+  notifications       Notification[]
+  inventoryTransactions InventoryTransaction[]
+}
+
+model SystemSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique // vd: COMPANY_NAME, COMPANY_LOGO
+  value       String // Giá trị cấu hình
+  description String?
+  updatedAt   DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  message   String
+  link      String?  // Optional path to redirect to (e.g. /tasks/123)
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Customer {
+  id              String           @id @default(cuid())
+  name            String
+  email           String?
+  phone           String?
+  address         String?
+  taxCode         String?
+  contracts       Contract[]
+  quotes          Quote[]
+  handovers       Handover[]
+  paymentRequests PaymentRequest[]
+  dispatches      Dispatch[]
+  tasks           Task[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model ContractTemplate {
+  id          String     @id @default(cuid())
+  name        String // e.g. Hợp đồng nguyên tắc, Hợp đồng đại lý
+  description String?
+  content     String // The format string with placeholders
+  contracts   Contract[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Contract {
+  id         String             @id @default(cuid())
+  title      String
+  content    String // The final generated content
+  variables  String // JSON string storing the exact variables used
+  status     String             @default("DRAFT") // DRAFT, SIGNED, CANCELLED
+  customerId String
+  templateId String
+  customer   Customer           @relation(fields: [customerId], references: [id])
+  template   ContractTemplate   @relation(fields: [templateId], references: [id])
+  appendices ContractAppendix[]
+  tasks      Task[]
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+}
+
+model ContractAppendixTemplate {
+  id          String             @id @default(cuid())
+  name        String // e.g. Phụ lục thiết bị, Phụ lục gia hạn
+  description String?
+  content     String // The format string with placeholders
+  appendices  ContractAppendix[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+}
+
+model ContractAppendix {
+  id         String                   @id @default(cuid())
+  title      String
+  content    String // The final generated content
+  variables  String // JSON string storing the exact variables used
+  status     String                   @default("DRAFT") // DRAFT, SIGNED, CANCELLED
+  contractId String
+  templateId String
+  contract   Contract                 @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  template   ContractAppendixTemplate @relation(fields: [templateId], references: [id])
+  tasks      Task[]
+  createdAt  DateTime                 @default(now())
+  updatedAt  DateTime                 @updatedAt
+}
+
+model QuoteTemplate {
+  id          String   @id @default(cuid())
+  name        String // e.g. Báo giá lắp đặt Camera, Báo giá dịch vụ
+  description String?
+  content     String // The format string with placeholders and Mini-Excel tables
+  quotes      Quote[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Quote {
+  id         String        @id @default(cuid())
+  title      String
+  content    String // The final generated content
+  variables  String // JSON string storing the exact variables used
+  status     String        @default("DRAFT") // DRAFT, SENT, ACCEPTED, REJECTED
+  customerId String
+  templateId String
+  customer   Customer      @relation(fields: [customerId], references: [id])
+  template   QuoteTemplate @relation(fields: [templateId], references: [id])
+  tasks      Task[]
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+}
+
+model HandoverTemplate {
+  id          String     @id @default(cuid())
+  name        String // e.g. Biên bản bàn giao thiết bị
+  description String?
+  content     String
+  handovers   Handover[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Handover {
+  id         String           @id @default(cuid())
+  title      String
+  content    String
+  variables  String
+  status     String           @default("DRAFT")
+  customerId String
+  templateId String
+  customer   Customer         @relation(fields: [customerId], references: [id])
+  template   HandoverTemplate @relation(fields: [templateId], references: [id])
+  tasks      Task[]
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+}
+
+model PaymentRequestTemplate {
+  id              String           @id @default(cuid())
+  name            String // e.g. Đề nghị thanh toán lần 1
+  description     String?
+  content         String
+  paymentRequests PaymentRequest[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model PaymentRequest {
+  id         String                 @id @default(cuid())
+  title      String
+  content    String
+  variables  String
+  status     String                 @default("DRAFT")
+  customerId String
+  templateId String
+  customer   Customer               @relation(fields: [customerId], references: [id])
+  template   PaymentRequestTemplate @relation(fields: [templateId], references: [id])
+  tasks      Task[]
+  createdAt  DateTime               @default(now())
+  updatedAt  DateTime               @updatedAt
+}
+
+model DispatchTemplate {
+  id          String     @id @default(cuid())
+  name        String // e.g. Công văn nhắc nợ, Thông báo nghỉ lễ
+  description String?
+  content     String // The format string with placeholders
+  dispatches  Dispatch[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Dispatch {
+  id         String           @id @default(cuid())
+  title      String
+  content    String // The final generated content
+  variables  String // JSON string storing the exact variables used
+  status     String           @default("DRAFT") // DRAFT, SENT, CANCELLED
+  customerId String
+  templateId String
+  customer   Customer         @relation(fields: [customerId], references: [id])
+  template   DispatchTemplate @relation(fields: [templateId], references: [id])
+  tasks      Task[]
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+}
+
+// --- TASKS MODULE ---
+model Task {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  status      String    @default("TODO") // TODO, IN_PROGRESS, REVIEW, DONE, CANCELLED
+  priority    String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  dueDate     DateTime?
+
+  isRecurring    Boolean @default(false)
+  recurrenceRule String? // vd: "DAILY", "WEEKLY", "MONTHLY"
+
+  parentTaskId   String?
+  parentTask     Task?   @relation("TaskRecurrence", fields: [parentTaskId], references: [id])
+  childTasks     Task[]  @relation("TaskRecurrence")
+
+  assignees TaskAssignee[]
+
+  creatorId String
+  creator   User   @relation("TaskCreator", fields: [creatorId], references: [id])
+
+  observers TaskObserver[]
+
+  completedById String?
+  completedBy   User?     @relation("TaskCompleter", fields: [completedById], references: [id])
+  completedAt   DateTime?
+
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+
+  contractId String?
+  contract   Contract? @relation(fields: [contractId], references: [id], onDelete: SetNull)
+
+  quoteId String?
+  quote   Quote?  @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+
+  appendixId String?
+  appendix   ContractAppendix? @relation(fields: [appendixId], references: [id], onDelete: SetNull)
+
+  handoverId String?
+  handover   Handover? @relation(fields: [handoverId], references: [id], onDelete: SetNull)
+
+  paymentReqId String?
+  paymentReq   PaymentRequest? @relation(fields: [paymentReqId], references: [id], onDelete: SetNull)
+
+  dispatchId String?
+  dispatch   Dispatch? @relation(fields: [dispatchId], references: [id], onDelete: SetNull)
+
+  checklists   TaskChecklist[]
+  comments     TaskComment[]
+  attachments  TaskAttachment[]
+  activityLogs TaskActivityLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TaskAssignee {
+  taskId String
+  userId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, userId])
+}
+
+model TaskObserver {
+  taskId String
+  userId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, userId])
+}
+
+model TaskChecklist {
+  id          String  @id @default(cuid())
+  title       String
+  isCompleted Boolean @default(false)
+
+  completedById String?
+  completedBy   User?     @relation("ChecklistCompleter", fields: [completedById], references: [id])
+  completedAt   DateTime?
+
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TaskActivityLog {
+  id        String   @id @default(cuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
+}
+
+model TaskComment {
+  id      String @id @default(cuid())
+  content String
+  taskId  String
+  userId  String
+  task    Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Nested Replies Support
+  parentId String?
+  parent   TaskComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  TaskComment[] @relation("CommentReplies")
+
+  images String?
+  files  String?
+
+  reactions TaskCommentReaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TaskCommentReaction {
+  id        String      @id @default(cuid())
+  commentId String
+  userId    String
+  emoji     String // e.g., 'like', 'heart', 'haha'
+  comment   TaskComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+
+  @@unique([commentId, userId, emoji])
+}
+
+model TaskAttachment {
+  id           String   @id @default(cuid())
+  fileName     String
+  fileUrl      String
+  fileType     String
+  taskId       String
+  task         Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  uploadedById String
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now())
+}
+
+// --- INVENTORY MANAGEMENT MODULE ---
+
+model Warehouse {
+  id           String                 @id @default(cuid())
+  name         String
+  location     String?
+  isDefault    Boolean                @default(false)
+  inventories  Inventory[]
+  transactionsOut InventoryTransaction[] @relation("WarehouseOut")
+  transactionsIn  InventoryTransaction[] @relation("WarehouseIn")
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+}
+
+// Enums mapped to String for SQLite compatibility
+
+model Product {
+  id              String                     @id @default(cuid())
+  sku             String                     @unique
+  name            String
+  type            String                     @default("PRODUCT") // "PRODUCT" | "SERVICE"
+  unit            String                     @default("Cái")
+  taxRate         Float                      @default(0) // Default VAT (%)
+  importPrice     Float                      @default(0)
+  salePrice       Float                      @default(0)
+  description     String?
+  notes           String?
+  minStockLevel   Int                        @default(10)
+  isActive        Boolean                    @default(true)
+  inventories     Inventory[]
+  transactionItems InventoryTransactionItem[]
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+}
+
+model Inventory {
+  id            String    @id @default(cuid())
+  productId     String
+  warehouseId   String
+  quantity      Int       @default(0)
+  product       Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  warehouse     Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([productId, warehouseId])
+}
+
+// Enums mapped to String for SQLite compatibility
+
+model InventoryTransaction {
+  id              String                     @id @default(cuid())
+  code            String                     @unique
+  type            String     // "IN" | "OUT" | "TRANSFER" | "ADJUSTMENT"
+  status          String     @default("DRAFT") // "DRAFT" | "COMPLETED" | "CANCELLED"
+  date            DateTime                   @default(now())
+  notes           String?
+  fromWarehouseId String?
+  toWarehouseId   String?
+  
+  fromWarehouse   Warehouse?                 @relation("WarehouseOut", fields: [fromWarehouseId], references: [id])
+  toWarehouse     Warehouse?                 @relation("WarehouseIn", fields: [toWarehouseId], references: [id])
+
+  items           InventoryTransactionItem[]
+  
+  creatorId       String
+  creator         User                       @relation(fields: [creatorId], references: [id])
+
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+}
+
+model InventoryTransactionItem {
+  id            String               @id @default(cuid())
+  transactionId String
+  productId     String
+  quantity      Int
+  price         Float                @default(0)
+
+  transaction   InventoryTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  product       Product              @relation(fields: [productId], references: [id])
+}

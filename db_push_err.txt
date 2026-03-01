@@ -1,0 +1,102 @@
+﻿Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+Datasource "db": SQLite database "dev.db" at "file:./dev.db"
+node.exe : Error: P1012
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (Error: P1012:   
+ String) [], Remote    
+Exception
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+
+error: Error 
+validating: You 
+defined the enum 
+`ProductType`. But the 
+current connector does 
+not support enums.
+  -->  prisma\schema.pr
+isma:382
+   | 
+381 | 
+382 | enum ProductType 
+{
+383 |   PRODUCT
+384 |   SERVICE
+385 | }
+   | 
+error: Error 
+validating: You 
+defined the enum 
+`TransactionType`. But 
+the current connector 
+does not support enums.
+  -->  prisma\schema.pr
+isma:416
+   | 
+415 | 
+416 | enum 
+TransactionType {
+417 |   IN
+418 |   OUT
+419 |   TRANSFER
+420 |   ADJUSTMENT
+421 | }
+   | 
+error: Error 
+validating: You 
+defined the enum 
+`TransactionStatus`. 
+But the current 
+connector does not 
+support enums.
+  -->  prisma\schema.pr
+isma:423
+   | 
+422 | 
+423 | enum 
+TransactionStatus {
+424 |   DRAFT
+425 |   COMPLETED
+426 |   CANCELLED
+427 | }
+   | 
+error: Error 
+validating field 
+`creator` in model `Inv
+entoryTransaction`: 
+The relation field 
+`creator` on model 
+`InventoryTransaction` 
+is missing an opposite 
+relation field on the 
+model `User`. Either 
+run `prisma format` or 
+add it manually.
+  -->  prisma\schema.pr
+isma:445
+   | 
+444 |   creatorId      
+ String
+445 |   creator        
+ User                  
+     @relation(fields: 
+[creatorId], 
+references: [id])
+446 | 
+   | 
+
+

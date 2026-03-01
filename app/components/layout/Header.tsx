@@ -1,0 +1,72 @@
+'use client';
+
+import React from 'react';
+import { useSession, signOut } from 'next-auth/react';
+import { LogOut } from 'lucide-react';
+import Link from 'next/link';
+import { NotificationBell } from '../ui/NotificationBell';
+
+export function Header() {
+    const { data: session } = useSession();
+
+    return (
+        <header style={{
+            height: '64px',
+            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            borderBottom: '1px solid var(--border)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0 2rem',
+            position: 'sticky',
+            top: 0,
+            zIndex: 10
+        }}>
+            <div style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '1.0625rem' }}>
+                Chào mừng trở lại, <span style={{ color: 'var(--primary)' }}>{session?.user?.name || "Người dùng"}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <NotificationBell />
+                <Link href="/profile" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', cursor: 'pointer', padding: '0.5rem', borderRadius: '8px', transition: 'background 0.2s' }} className="hover:bg-slate-100">
+                    {session?.user?.avatar ? (
+                        <img src={session.user.avatar} alt="Avatar" style={{
+                            width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover',
+                            border: '1px solid rgba(79, 70, 229, 0.2)', boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                        }} />
+                    ) : (
+                        <div style={{
+                            width: '40px', height: '40px', borderRadius: '50%',
+                            backgroundColor: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontWeight: '700', fontSize: '1rem',
+                            border: '1px solid rgba(79, 70, 229, 0.2)',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                        }}>
+                            {session?.user?.name ? session.user.name[0].toUpperCase() : "U"}
+                        </div>
+                    )}
+                </Link>
+
+                <div
+                    onClick={() => signOut({ callbackUrl: '/login' })}
+                    style={{
+                        cursor: 'pointer',
+                        color: 'var(--danger)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '8px',
+                        background: '#fee2e2'
+                    }}
+                    title="Đăng xuất"
+                >
+                    <LogOut size={18} />
+                </div>
+            </div>
+        </header>
+    );
+}

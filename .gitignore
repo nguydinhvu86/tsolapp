@@ -1,0 +1,7 @@
+﻿.env
+node_modules/
+.next/
+build_log*
+*.log
+prisma/*.db
+ts_err*

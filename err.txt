@@ -1,0 +1,15 @@
+
+[1m[31mError: [39m[22m[31m[1mPrisma schema validation[22m[39m - (validate wasm)
+Error code: P1012
+[31m[1m[1;91merror[0m: [1mError validating field `user` in model `TaskCommentReaction`: The relation field `user` on model `TaskCommentReaction` is missing an opposite relation field on the model `User`. Either run `prisma format` or add it manually.[0m
+  [1;94m-->[0m  [4mprisma\schema.prisma:329[0m
+[1;94m   | [0m
+[1;94m328 | [0m  comment         TaskComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+[1;94m329 | [0m  [1;91muser            User        @relation(fields: [userId], references: [id], onDelete: Cascade)[0m
+[1;94m330 | [0m  createdAt       DateTime  @default(now())
+[1;94m   | [0m
+
+Validation Error Count: 1[22m[39m
+[Context: validate]
+
+Prisma CLI Version : 5.22.0
