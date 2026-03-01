@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { LayoutDashboard, Users, FileText, Settings, FileSpreadsheet, FileCode, ChevronDown, ChevronRight, FileOutput, FilePlus2, FileStack, Mail, CheckSquare, Package } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Settings, FileSpreadsheet, FileCode, ChevronDown, ChevronRight, FileOutput, FilePlus2, FileStack, Mail, CheckSquare, Package, ShoppingCart } from 'lucide-react';
 const mainNavItems: any[] = [
     { name: 'Bảng Điều Khiển', href: '/dashboard', icon: LayoutDashboard, permission: 'VIEW_DASHBOARD' },
     { name: 'Công Việc (Tasks)', href: '/tasks', icon: CheckSquare, permission: 'TASKS_VIEW' },
@@ -43,10 +43,21 @@ const mainNavItems: any[] = [
             { name: 'Báo Cáo Tồn Kho', href: '/inventory/reports', permission: 'INVENTORY_VIEW' }
         ]
     },
+    {
+        name: 'Mua Hàng',
+        icon: ShoppingCart,
+        children: [
+            { name: 'Nhà Cung Cấp', href: '/suppliers', permission: 'INVENTORY_VIEW' }, // Fallback to inventory access if missing specific permission
+            { name: 'Đơn Đặt Hàng', href: '/purchasing/orders', permission: 'INVENTORY_VIEW' },
+            { name: 'Hóa Đơn Mua', href: '/purchasing/bills', permission: 'INVENTORY_VIEW' },
+            { name: 'Thanh Toán', href: '/purchasing/payments', permission: 'INVENTORY_VIEW' },
+            { name: 'Báo Cáo Mua Hàng', href: '/purchasing/reports', permission: 'INVENTORY_VIEW' }
+        ]
+    },
     { name: 'Khách Hàng', href: '/customers', icon: Users, permission: 'CUSTOMERS_VIEW' },
 ];
 
-export function Sidebar({ brandName = 'ContractMgr' }: { brandName?: string }) {
+export function Sidebar({ brandName = 'ContractMgr', isOpen = false, onClose }: { brandName?: string, isOpen?: boolean, onClose?: () => void }) {
     const pathname = usePathname();
     const { data: session } = useSession();
     const [templatesOpen, setTemplatesOpen] = useState(false);
@@ -58,21 +69,24 @@ export function Sidebar({ brandName = 'ContractMgr' }: { brandName?: string }) {
     const isAdmin = session?.user?.role === 'ADMIN';
 
     return (
-        <aside style={{
-            width: '260px',
-            backgroundColor: 'var(--background)',
-            borderRight: '1px solid var(--border)',
-            height: '100vh',
-            position: 'fixed',
-            top: 0, left: 0,
-            display: 'flex',
-            flexDirection: 'column'
-        }}>
-            <div style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: 800, fontSize: '1.25rem', color: 'var(--text-main)', borderBottom: '1px solid var(--border)' }}>
-                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'linear-gradient(135deg, var(--primary) 0%, #818cf8 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 2px 4px rgba(79,70,229,0.3)' }}>
-                    <FileText size={18} strokeWidth={2.5} />
+        <aside className={`sidebar-container ${isOpen ? 'open' : ''}`}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.5rem', borderBottom: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: 800, fontSize: '1.25rem', color: 'var(--text-main)' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'linear-gradient(135deg, var(--primary) 0%, #818cf8 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 2px 4px rgba(79,70,229,0.3)' }}>
+                        <FileText size={18} strokeWidth={2.5} />
+                    </div>
+                    {brandName}
                 </div>
-                {brandName}
+                {onClose && (
+                    <button
+                        onClick={onClose}
+                        className="show-on-mobile"
+                        style={{ padding: '0.5rem', borderRadius: 'var(--radius)', color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                        aria-label="Close menu"
+                    >
+                        <ChevronRight size={20} className="rotate-180" />
+                    </button>
+                )}
             </div>
             <nav style={{ padding: '1.25rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1, overflowY: 'auto' }}>
                 {mainNavItems.map((item) => {
@@ -138,13 +152,22 @@ export function Sidebar({ brandName = 'ContractMgr' }: { brandName?: string }) {
                                                                 {child.children.map((gChild: any) => {
                                                                     const isActive = pathname?.startsWith(gChild.href) || pathname === gChild.href;
                                                                     return (
-                                                                        <Link key={gChild.name} href={gChild.href} style={{
-                                                                            padding: '0.4rem 0.75rem', borderRadius: 'var(--radius)',
-                                                                            backgroundColor: isActive ? 'rgba(79, 70, 229, 0.05)' : 'transparent',
-                                                                            color: isActive ? 'var(--primary)' : 'var(--text-muted)',
-                                                                            fontSize: '0.85rem', fontWeight: isActive ? 600 : 400, textDecoration: 'none',
-                                                                            transition: 'all 0.2s', display: 'block'
-                                                                        }}>
+                                                                        <Link
+                                                                            key={gChild.name}
+                                                                            href={gChild.href}
+                                                                            onClick={() => {
+                                                                                if (onClose && window.innerWidth < 768) {
+                                                                                    onClose();
+                                                                                }
+                                                                            }}
+                                                                            style={{
+                                                                                padding: '0.4rem 0.75rem', borderRadius: 'var(--radius)',
+                                                                                backgroundColor: isActive ? 'rgba(79, 70, 229, 0.05)' : 'transparent',
+                                                                                color: isActive ? 'var(--primary)' : 'var(--text-muted)',
+                                                                                fontSize: '0.85rem', fontWeight: isActive ? 600 : 400, textDecoration: 'none',
+                                                                                transition: 'all 0.2s', display: 'block'
+                                                                            }}
+                                                                        >
                                                                             {gChild.name}
                                                                         </Link>
                                                                     )
@@ -157,13 +180,22 @@ export function Sidebar({ brandName = 'ContractMgr' }: { brandName?: string }) {
 
                                             const isChildMenuActive = pathname?.startsWith(child.href) || pathname === child.href;
                                             return (
-                                                <Link key={child.name} href={child.href} style={{
-                                                    padding: '0.5rem 0.75rem', borderRadius: 'var(--radius)',
-                                                    backgroundColor: isChildMenuActive ? 'rgba(79, 70, 229, 0.05)' : 'transparent',
-                                                    color: isChildMenuActive ? 'var(--primary)' : 'var(--text-muted)',
-                                                    fontSize: '0.875rem', fontWeight: isChildMenuActive ? 600 : 500, textDecoration: 'none',
-                                                    transition: 'all 0.2s', display: 'block'
-                                                }}>
+                                                <Link
+                                                    key={child.name}
+                                                    href={child.href}
+                                                    onClick={() => {
+                                                        if (onClose && window.innerWidth < 768) {
+                                                            onClose();
+                                                        }
+                                                    }}
+                                                    style={{
+                                                        padding: '0.5rem 0.75rem', borderRadius: 'var(--radius)',
+                                                        backgroundColor: isChildMenuActive ? 'rgba(79, 70, 229, 0.05)' : 'transparent',
+                                                        color: isChildMenuActive ? 'var(--primary)' : 'var(--text-muted)',
+                                                        fontSize: '0.875rem', fontWeight: isChildMenuActive ? 600 : 500, textDecoration: 'none',
+                                                        transition: 'all 0.2s', display: 'block'
+                                                    }}
+                                                >
                                                     {child.name}
                                                 </Link>
                                             )
@@ -176,13 +208,22 @@ export function Sidebar({ brandName = 'ContractMgr' }: { brandName?: string }) {
 
                     const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href));
                     return (
-                        <Link key={item.name} href={item.href} style={{
-                            display: 'flex', alignItems: 'center', gap: '0.75rem',
-                            padding: '0.75rem 1rem', borderRadius: 'var(--radius)',
-                            backgroundColor: isActive ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
-                            color: isActive ? 'var(--primary)' : 'var(--text-main)',
-                            fontWeight: isActive ? 600 : 500, transition: 'all 0.2s ease', textDecoration: 'none'
-                        }}>
+                        <Link
+                            key={item.name}
+                            href={item.href}
+                            onClick={() => {
+                                if (onClose && window.innerWidth < 768) {
+                                    onClose();
+                                }
+                            }}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '0.75rem',
+                                padding: '0.75rem 1rem', borderRadius: 'var(--radius)',
+                                backgroundColor: isActive ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
+                                color: isActive ? 'var(--primary)' : 'var(--text-main)',
+                                fontWeight: isActive ? 600 : 500, transition: 'all 0.2s ease', textDecoration: 'none'
+                            }}
+                        >
                             <item.icon size={20} />
                             {item.name}
                         </Link>
@@ -193,24 +234,60 @@ export function Sidebar({ brandName = 'ContractMgr' }: { brandName?: string }) {
 
                 {(isAdmin || userPermissions.includes('USERS_VIEW')) && (
                     <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                        <Link href="/users" style={{
-                            display: 'flex', alignItems: 'center', gap: '0.75rem',
-                            padding: '0.75rem 1rem', borderRadius: 'var(--radius)',
-                            backgroundColor: pathname?.startsWith('/users') ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
-                            color: pathname?.startsWith('/users') ? 'var(--primary)' : 'var(--text-main)',
-                            fontWeight: pathname?.startsWith('/users') ? 600 : 500, transition: 'all 0.2s', textDecoration: 'none'
-                        }}>
+                        <Link
+                            href="/users"
+                            onClick={() => {
+                                if (onClose && window.innerWidth < 768) {
+                                    onClose();
+                                }
+                            }}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '0.75rem',
+                                padding: '0.75rem 1rem', borderRadius: 'var(--radius)',
+                                backgroundColor: pathname === '/users' ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
+                                color: pathname === '/users' ? 'var(--primary)' : 'var(--text-main)',
+                                fontWeight: pathname === '/users' ? 600 : 500, transition: 'all 0.2s', textDecoration: 'none'
+                            }}
+                        >
                             <Users size={20} />
                             Quản lý Người dùng
                         </Link>
                         {isAdmin && (
-                            <Link href="/settings" style={{
-                                display: 'flex', alignItems: 'center', gap: '0.75rem',
-                                padding: '0.75rem 1rem', borderRadius: 'var(--radius)',
-                                backgroundColor: pathname?.startsWith('/settings') ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
-                                color: pathname?.startsWith('/settings') ? 'var(--primary)' : 'var(--text-main)',
-                                fontWeight: pathname?.startsWith('/settings') ? 600 : 500, transition: 'all 0.2s', textDecoration: 'none'
-                            }}>
+                            <Link
+                                href="/users/roles"
+                                onClick={() => {
+                                    if (onClose && window.innerWidth < 768) {
+                                        onClose();
+                                    }
+                                }}
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: '0.75rem',
+                                    padding: '0.75rem 1rem', borderRadius: 'var(--radius)',
+                                    backgroundColor: pathname === '/users/roles' ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
+                                    color: pathname === '/users/roles' ? 'var(--primary)' : 'var(--text-main)',
+                                    fontWeight: pathname === '/users/roles' ? 600 : 500, transition: 'all 0.2s', textDecoration: 'none'
+                                }}
+                            >
+                                <CheckSquare size={20} />
+                                Nhóm Quyền
+                            </Link>
+                        )}
+                        {isAdmin && (
+                            <Link
+                                href="/settings"
+                                onClick={() => {
+                                    if (onClose && window.innerWidth < 768) {
+                                        onClose();
+                                    }
+                                }}
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: '0.75rem',
+                                    padding: '0.75rem 1rem', borderRadius: 'var(--radius)',
+                                    backgroundColor: pathname?.startsWith('/settings') ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
+                                    color: pathname?.startsWith('/settings') ? 'var(--primary)' : 'var(--text-main)',
+                                    fontWeight: pathname?.startsWith('/settings') ? 600 : 500, transition: 'all 0.2s', textDecoration: 'none'
+                                }}
+                            >
                                 <Settings size={20} />
                                 Cài đặt
                             </Link>
@@ -218,6 +295,6 @@ export function Sidebar({ brandName = 'ContractMgr' }: { brandName?: string }) {
                     </div>
                 )}
             </nav>
-        </aside>
+        </aside >
     );
 }

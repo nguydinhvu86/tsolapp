@@ -3,12 +3,12 @@
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 
-export async function createDispatchTemplate(data: { name: string, description?: string, content: string }) {
+export async function createDispatchTemplate(data: { name: string, description?: string, content: string, editorType?: string }) {
     await prisma.dispatchTemplate.create({ data });
     revalidatePath('/dispatch-templates');
 }
 
-export async function updateDispatchTemplate(id: string, data: { name: string, description?: string, content: string }) {
+export async function updateDispatchTemplate(id: string, data: { name: string, description?: string, content: string, editorType?: string }) {
     await prisma.dispatchTemplate.update({
         where: { id },
         data

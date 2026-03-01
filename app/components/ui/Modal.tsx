@@ -5,17 +5,24 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = '500px' }: 
     if (!isOpen) return null;
 
     return (
-        <div style={{
-            position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-            backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 50, padding: '2rem'
-        }}>
-            <div className="card" style={{ width: '100%', maxWidth, maxHeight: '90vh', overflowY: 'auto' }}>
-                <div className="flex justify-between items-center" style={{ marginBottom: '1rem' }}>
-                    <h3>{title}</h3>
-                    <button onClick={onClose} style={{ fontSize: '1.5rem', lineHeight: 1 }}>&times;</button>
+        <div className="modal-backdrop">
+            <div
+                className="modal-container"
+                style={{ maxWidth, maxHeight: '90vh' }}
+            >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}>
+                    <h3 style={{ fontSize: '1.125rem', fontWeight: 600, margin: 0, color: 'var(--text-main)' }}>{title}</h3>
+                    <button
+                        onClick={onClose}
+                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                        aria-label="Close"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
                 </div>
-                {children}
+                <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1, background: 'var(--surface)' }}>
+                    {children}
+                </div>
             </div>
         </div>
     );

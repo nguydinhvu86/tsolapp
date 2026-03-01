@@ -13,7 +13,7 @@ import Link from 'next/link';
 interface TaskPanelProps {
     initialTasks: any[];
     users: any[];
-    entityType: 'CONTRACT' | 'QUOTE' | 'HANDOVER' | 'PAYMENT_REQUEST' | 'DISPATCH' | 'CUSTOMER' | 'APPENDIX';
+    entityType: 'CONTRACT' | 'QUOTE' | 'HANDOVER' | 'PAYMENT_REQUEST' | 'DISPATCH' | 'CUSTOMER' | 'APPENDIX' | 'SUPPLIER' | 'PURCHASE_ORDER' | 'PURCHASE_BILL' | 'PURCHASE_PAYMENT';
     entityId: string;
 }
 
@@ -48,6 +48,10 @@ export function TaskPanel({ initialTasks, users, entityType, entityId }: TaskPan
         if (entityType === 'DISPATCH') contextLinks.dispatchId = entityId;
         if (entityType === 'CUSTOMER') contextLinks.customerId = entityId;
         if (entityType === 'APPENDIX') contextLinks.appendixId = entityId;
+        if (entityType === 'SUPPLIER') contextLinks.supplierId = entityId;
+        if (entityType === 'PURCHASE_ORDER') contextLinks.purchaseOrderId = entityId;
+        if (entityType === 'PURCHASE_BILL') contextLinks.purchaseBillId = entityId;
+        if (entityType === 'PURCHASE_PAYMENT') contextLinks.purchasePaymentId = entityId;
 
         try {
             await createTask({

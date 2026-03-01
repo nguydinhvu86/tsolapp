@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { redirect } from 'next/navigation';
-import { getUsers } from './actions';
+import { getUsers, getPermissionGroups } from './actions';
 import { UserListClient } from './UserListClient';
 
 export default async function UsersPage() {
@@ -12,11 +12,18 @@ export default async function UsersPage() {
     }
 
     const unformattedUsers = await getUsers();
+    const permissionGroups = await getPermissionGroups();
 
     // Convert Dates to ISO string or formatted string to avoid passing Date objects to Client Components
     const users = unformattedUsers.map(u => ({
         ...u,
         createdAt: u.createdAt.toISOString()
+    }));
+
+    const formattedGroups = permissionGroups.map(g => ({
+        ...g,
+        createdAt: g.createdAt.toISOString(),
+        updatedAt: g.updatedAt.toISOString()
     }));
 
     return (
@@ -30,7 +37,7 @@ export default async function UsersPage() {
                 </div>
             </div>
 
-            <UserListClient initialUsers={users} />
+            <UserListClient initialUsers={users} permissionGroups={formattedGroups} />
         </div>
     );
 }

@@ -7,36 +7,53 @@ generator client {
   provider = "prisma-client-js"
 }
 
+model PermissionGroup {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?  @db.Text
+  permissions String   @default("[]") @db.Text // JSON string of granted permissions for the group
+  isSystem    Boolean  @default(false) // True for default groups (User, Manager, Admin)
+  users       User[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model User {
-  id                  String                @id @default(cuid())
-  email               String                @unique
-  password            String // Thêm trường mật khẩu đã mã hóa (hashed)
-  name                String?
-  avatar              String? // Đường dẫn ảnh đại diện
-  role                String                @default("USER") // ADMIN or USER
-  permissions         String                @default("[]") // JSON string of granted permissions
-  twoFactorSecret     String? // Khóa bí mật 2FA
-  twoFactorEnabled    Boolean               @default(false) // Trạng thái 2FA
-  createdTasks        Task[]                @relation("TaskCreator")
-  completedTasks      Task[]                @relation("TaskCompleter")
-  assignedTasks       TaskAssignee[]
-  observedTasks       TaskObserver[]
-  completedChecklists TaskChecklist[]       @relation("ChecklistCompleter")
-  taskActivityLogs    TaskActivityLog[]
-  taskComments        TaskComment[]
-  uploadedAttachments TaskAttachment[]
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
-  TaskCommentReaction TaskCommentReaction[]
-  notifications       Notification[]
+  id                    String                 @id @default(cuid())
+  email                 String                 @unique
+  password              String // Thêm trường mật khẩu đã mã hóa (hashed)
+  name                  String?
+  avatar                String? // Đường dẫn ảnh đại diện
+  role                  String                 @default("USER") // ADMIN or USER
+  permissions           String                 @default("[]") @db.Text // JSON string of granted permissions (legacy, to be deprecated or kept as overrides)
+  permissionGroupId     String?
+  permissionGroup       PermissionGroup?       @relation(fields: [permissionGroupId], references: [id])
+  twoFactorSecret       String? // Khóa bí mật 2FA
+  twoFactorEnabled      Boolean                @default(false) // Trạng thái 2FA
+  createdTasks          Task[]                 @relation("TaskCreator")
+  completedTasks        Task[]                 @relation("TaskCompleter")
+  assignedTasks         TaskAssignee[]
+  observedTasks         TaskObserver[]
+  completedChecklists   TaskChecklist[]        @relation("ChecklistCompleter")
+  taskActivityLogs      TaskActivityLog[]
+  taskComments          TaskComment[]
+  uploadedAttachments   TaskAttachment[]
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  TaskCommentReaction   TaskCommentReaction[]
+  notifications         Notification[]
   inventoryTransactions InventoryTransaction[]
+  purchaseRequisitions  PurchaseRequisition[]
+  purchaseOrders        PurchaseOrder[] @relation("POCreator")
+  purchaseBills         PurchaseBill[] @relation("BillCreator")
+  purchasePayments      PurchasePayment[] @relation("PaymentCreator")
 }
 
 model SystemSetting {
   id          String   @id @default(cuid())
   key         String   @unique // vd: COMPANY_NAME, COMPANY_LOGO
-  value       String // Giá trị cấu hình
-  description String?
+  value       String   @db.Text // Giá trị cấu hình
+  description String?  @db.Text
   updatedAt   DateTime @updatedAt
 }
 
@@ -44,11 +61,11 @@ model Notification {
   id        String   @id @default(cuid())
   userId    String
   message   String
-  link      String?  // Optional path to redirect to (e.g. /tasks/123)
+  link      String? // Optional path to redirect to (e.g. /tasks/123)
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Customer {
@@ -71,8 +88,9 @@ model Customer {
 model ContractTemplate {
   id          String     @id @default(cuid())
   name        String // e.g. Hợp đồng nguyên tắc, Hợp đồng đại lý
-  description String?
-  content     String // The format string with placeholders
+  description String?    @db.Text
+  content     String     @db.LongText // The format string with placeholders
+  editorType  String     @default("RICH_TEXT") // "RICH_TEXT" | "DRAG_DROP"
   contracts   Contract[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
@@ -81,8 +99,8 @@ model ContractTemplate {
 model Contract {
   id         String             @id @default(cuid())
   title      String
-  content    String // The final generated content
-  variables  String // JSON string storing the exact variables used
+  content    String             @db.LongText // The final generated content
+  variables  String             @db.Text // JSON string storing the exact variables used
   status     String             @default("DRAFT") // DRAFT, SIGNED, CANCELLED
   customerId String
   templateId String
@@ -97,8 +115,9 @@ model Contract {
 model ContractAppendixTemplate {
   id          String             @id @default(cuid())
   name        String // e.g. Phụ lục thiết bị, Phụ lục gia hạn
-  description String?
-  content     String // The format string with placeholders
+  description String?            @db.Text
+  content     String             @db.LongText // The format string with placeholders
+  editorType  String             @default("RICH_TEXT") // "RICH_TEXT" | "DRAG_DROP"
   appendices  ContractAppendix[]
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
@@ -107,8 +126,8 @@ model ContractAppendixTemplate {
 model ContractAppendix {
   id         String                   @id @default(cuid())
   title      String
-  content    String // The final generated content
-  variables  String // JSON string storing the exact variables used
+  content    String                   @db.LongText // The final generated content
+  variables  String                   @db.Text // JSON string storing the exact variables used
   status     String                   @default("DRAFT") // DRAFT, SIGNED, CANCELLED
   contractId String
   templateId String
@@ -122,8 +141,9 @@ model ContractAppendix {
 model QuoteTemplate {
   id          String   @id @default(cuid())
   name        String // e.g. Báo giá lắp đặt Camera, Báo giá dịch vụ
-  description String?
-  content     String // The format string with placeholders and Mini-Excel tables
+  description String?  @db.Text
+  content     String   @db.LongText // The format string with placeholders and Mini-Excel tables
+  editorType  String   @default("RICH_TEXT") // "RICH_TEXT" | "DRAG_DROP"
   quotes      Quote[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -132,8 +152,8 @@ model QuoteTemplate {
 model Quote {
   id         String        @id @default(cuid())
   title      String
-  content    String // The final generated content
-  variables  String // JSON string storing the exact variables used
+  content    String        @db.LongText // The final generated content
+  variables  String        @db.Text // JSON string storing the exact variables used
   status     String        @default("DRAFT") // DRAFT, SENT, ACCEPTED, REJECTED
   customerId String
   templateId String
@@ -147,8 +167,9 @@ model Quote {
 model HandoverTemplate {
   id          String     @id @default(cuid())
   name        String // e.g. Biên bản bàn giao thiết bị
-  description String?
-  content     String
+  description String?    @db.Text
+  content     String     @db.LongText
+  editorType  String     @default("RICH_TEXT") // "RICH_TEXT" | "DRAG_DROP"
   handovers   Handover[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
@@ -157,8 +178,8 @@ model HandoverTemplate {
 model Handover {
   id         String           @id @default(cuid())
   title      String
-  content    String
-  variables  String
+  content    String           @db.LongText
+  variables  String           @db.Text
   status     String           @default("DRAFT")
   customerId String
   templateId String
@@ -172,8 +193,9 @@ model Handover {
 model PaymentRequestTemplate {
   id              String           @id @default(cuid())
   name            String // e.g. Đề nghị thanh toán lần 1
-  description     String?
-  content         String
+  description     String?          @db.Text
+  content         String           @db.LongText
+  editorType      String           @default("RICH_TEXT") // "RICH_TEXT" | "DRAG_DROP"
   paymentRequests PaymentRequest[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
@@ -182,8 +204,8 @@ model PaymentRequestTemplate {
 model PaymentRequest {
   id         String                 @id @default(cuid())
   title      String
-  content    String
-  variables  String
+  content    String                 @db.LongText
+  variables  String                 @db.Text
   status     String                 @default("DRAFT")
   customerId String
   templateId String
@@ -197,8 +219,9 @@ model PaymentRequest {
 model DispatchTemplate {
   id          String     @id @default(cuid())
   name        String // e.g. Công văn nhắc nợ, Thông báo nghỉ lễ
-  description String?
-  content     String // The format string with placeholders
+  description String?    @db.Text
+  content     String     @db.LongText // The format string with placeholders
+  editorType  String     @default("RICH_TEXT") // "RICH_TEXT" | "DRAG_DROP"
   dispatches  Dispatch[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
@@ -207,8 +230,8 @@ model DispatchTemplate {
 model Dispatch {
   id         String           @id @default(cuid())
   title      String
-  content    String // The final generated content
-  variables  String // JSON string storing the exact variables used
+  content    String           @db.LongText // The final generated content
+  variables  String           @db.Text // JSON string storing the exact variables used
   status     String           @default("DRAFT") // DRAFT, SENT, CANCELLED
   customerId String
   templateId String
@@ -223,7 +246,7 @@ model Dispatch {
 model Task {
   id          String    @id @default(cuid())
   title       String
-  description String?
+  description String?   @db.Text
   status      String    @default("TODO") // TODO, IN_PROGRESS, REVIEW, DONE, CANCELLED
   priority    String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
   dueDate     DateTime?
@@ -231,9 +254,9 @@ model Task {
   isRecurring    Boolean @default(false)
   recurrenceRule String? // vd: "DAILY", "WEEKLY", "MONTHLY"
 
-  parentTaskId   String?
-  parentTask     Task?   @relation("TaskRecurrence", fields: [parentTaskId], references: [id])
-  childTasks     Task[]  @relation("TaskRecurrence")
+  parentTaskId String?
+  parentTask   Task?   @relation("TaskRecurrence", fields: [parentTaskId], references: [id])
+  childTasks   Task[]  @relation("TaskRecurrence")
 
   assignees TaskAssignee[]
 
@@ -266,6 +289,18 @@ model Task {
 
   dispatchId String?
   dispatch   Dispatch? @relation(fields: [dispatchId], references: [id], onDelete: SetNull)
+
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  purchaseOrderId String?
+  purchaseOrder   PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id], onDelete: SetNull)
+
+  purchaseBillId String?
+  purchaseBill   PurchaseBill? @relation(fields: [purchaseBillId], references: [id], onDelete: SetNull)
+
+  purchasePaymentId String?
+  purchasePayment   PurchasePayment? @relation(fields: [purchasePaymentId], references: [id], onDelete: SetNull)
 
   checklists   TaskChecklist[]
   comments     TaskComment[]
@@ -316,13 +351,13 @@ model TaskActivityLog {
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   action    String
-  details   String?
+  details   String?  @db.Text
   createdAt DateTime @default(now())
 }
 
 model TaskComment {
   id      String @id @default(cuid())
-  content String
+  content String @db.Text
   taskId  String
   userId  String
   task    Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
@@ -333,8 +368,8 @@ model TaskComment {
   parent   TaskComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies  TaskComment[] @relation("CommentReplies")
 
-  images String?
-  files  String?
+  images String? @db.Text
+  files  String? @db.Text
 
   reactions TaskCommentReaction[]
 
@@ -369,46 +404,63 @@ model TaskAttachment {
 // --- INVENTORY MANAGEMENT MODULE ---
 
 model Warehouse {
-  id           String                 @id @default(cuid())
-  name         String
-  location     String?
-  isDefault    Boolean                @default(false)
-  inventories  Inventory[]
+  id              String                 @id @default(cuid())
+  name            String
+  location        String?
+  isDefault       Boolean                @default(false)
+  inventories     Inventory[]
   transactionsOut InventoryTransaction[] @relation("WarehouseOut")
   transactionsIn  InventoryTransaction[] @relation("WarehouseIn")
-  createdAt    DateTime               @default(now())
-  updatedAt    DateTime               @updatedAt
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
 }
 
 // Enums mapped to String for SQLite compatibility
 
+model ProductGroup {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?   @db.Text
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
 model Product {
-  id              String                     @id @default(cuid())
-  sku             String                     @unique
-  name            String
-  type            String                     @default("PRODUCT") // "PRODUCT" | "SERVICE"
-  unit            String                     @default("Cái")
-  taxRate         Float                      @default(0) // Default VAT (%)
-  importPrice     Float                      @default(0)
-  salePrice       Float                      @default(0)
-  description     String?
-  notes           String?
-  minStockLevel   Int                        @default(10)
-  isActive        Boolean                    @default(true)
-  inventories     Inventory[]
+  id               String                     @id @default(cuid())
+  sku              String                     @unique
+  name             String
+  type             String                     @default("PRODUCT") // "PRODUCT" | "SERVICE"
+  unit             String                     @default("Cái")
+  taxRate          Float                      @default(0) // Default VAT (%)
+  importPrice      Float                      @default(0)
+  salePrice        Float                      @default(0)
+  description      String?                    @db.Text
+  notes            String?                    @db.Text
+  minStockLevel    Int                        @default(10)
+  isActive         Boolean                    @default(true)
+  groupId          String?
+  group            ProductGroup?              @relation(fields: [groupId], references: [id])
+  inventories      Inventory[]
   transactionItems InventoryTransactionItem[]
-  createdAt       DateTime                   @default(now())
-  updatedAt       DateTime                   @updatedAt
+  
+  supplierProducts          SupplierProduct[]
+  purchaseRequisitionItems  PurchaseRequisitionItem[]
+  purchaseOrderItems        PurchaseOrderItem[]
+  purchaseBillItems         PurchaseBillItem[]
+
+  createdAt        DateTime                   @default(now())
+  updatedAt        DateTime                   @updatedAt
 }
 
 model Inventory {
-  id            String    @id @default(cuid())
-  productId     String
-  warehouseId   String
-  quantity      Int       @default(0)
-  product       Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
-  warehouse     Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
-  updatedAt     DateTime  @updatedAt
+  id          String    @id @default(cuid())
+  productId   String
+  warehouseId String
+  quantity    Int       @default(0)
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  updatedAt   DateTime  @updatedAt
 
   @@unique([productId, warehouseId])
 }
@@ -416,34 +468,222 @@ model Inventory {
 // Enums mapped to String for SQLite compatibility
 
 model InventoryTransaction {
-  id              String                     @id @default(cuid())
-  code            String                     @unique
-  type            String     // "IN" | "OUT" | "TRANSFER" | "ADJUSTMENT"
-  status          String     @default("DRAFT") // "DRAFT" | "COMPLETED" | "CANCELLED"
-  date            DateTime                   @default(now())
-  notes           String?
+  id              String   @id @default(cuid())
+  code            String   @unique
+  type            String // "IN" | "OUT" | "TRANSFER" | "ADJUSTMENT"
+  status          String   @default("DRAFT") // "DRAFT" | "COMPLETED" | "CANCELLED"
+  date            DateTime @default(now())
+  notes           String?  @db.Text
   fromWarehouseId String?
   toWarehouseId   String?
-  
-  fromWarehouse   Warehouse?                 @relation("WarehouseOut", fields: [fromWarehouseId], references: [id])
-  toWarehouse     Warehouse?                 @relation("WarehouseIn", fields: [toWarehouseId], references: [id])
+  supplierId      String?
 
-  items           InventoryTransactionItem[]
-  
-  creatorId       String
-  creator         User                       @relation(fields: [creatorId], references: [id])
+  fromWarehouse Warehouse? @relation("WarehouseOut", fields: [fromWarehouseId], references: [id])
+  toWarehouse   Warehouse? @relation("WarehouseIn", fields: [toWarehouseId], references: [id])
+  supplier      Supplier?  @relation(fields: [supplierId], references: [id])
 
-  createdAt       DateTime                   @default(now())
-  updatedAt       DateTime                   @updatedAt
+  items InventoryTransactionItem[]
+
+  creatorId String
+  creator   User   @relation(fields: [creatorId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model InventoryTransactionItem {
-  id            String               @id @default(cuid())
+  id            String @id @default(cuid())
   transactionId String
   productId     String
   quantity      Int
-  price         Float                @default(0)
+  price         Float  @default(0)
 
-  transaction   InventoryTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-  product       Product              @relation(fields: [productId], references: [id])
+  transaction InventoryTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  product     Product              @relation(fields: [productId], references: [id])
+}
+
+// --- PROCUREMENT & SUPPLIER MANAGEMENT MODULE ---
+
+model Supplier {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  contactName String?
+  email       String?
+  phone       String?
+  address     String?
+  taxCode     String?
+  website     String?
+  businessType String?
+  bankAccount String?
+  bankName    String?
+  notes       String?  @db.Text
+  
+  // Financials
+  totalDebt   Float    @default(0) // Positive means we owe them money
+  
+  // Relations
+  products    SupplierProduct[]
+  orders      PurchaseOrder[]
+  bills       PurchaseBill[]
+  payments    PurchasePayment[]
+  inventoryTx InventoryTransaction[] // IN transactions from this supplier
+  tasks       Task[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SupplierProduct {
+  id          String   @id @default(cuid())
+  supplierId  String
+  productId   String
+  supplierSku String?
+  price       Float    @default(0)
+  
+  supplier    Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([supplierId, productId])
+}
+
+model PurchaseRequisition {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  date        DateTime @default(now())
+  status      String   @default("DRAFT") // DRAFT, PENDING_APPROVAL, APPROVED, REJECTED
+  notes       String?  @db.Text
+  
+  creatorId   String
+  creator     User     @relation(fields: [creatorId], references: [id])
+  
+  items       PurchaseRequisitionItem[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PurchaseRequisitionItem {
+  id            String   @id @default(cuid())
+  requisitionId String
+  productId     String
+  quantity      Int
+  notes         String?  @db.Text
+  
+  requisition   PurchaseRequisition @relation(fields: [requisitionId], references: [id], onDelete: Cascade)
+  product       Product             @relation(fields: [productId], references: [id])
+}
+
+model PurchaseOrder {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  date        DateTime @default(now())
+  status      String   @default("DRAFT") // DRAFT, SENT, PARTIAL_RECEIVED, COMPLETED, CANCELLED
+  notes       String?  @db.Text
+  
+  totalAmount Float    @default(0)
+  
+  supplierId  String
+  supplier    Supplier @relation(fields: [supplierId], references: [id])
+  
+  creatorId   String
+  creator     User     @relation("POCreator", fields: [creatorId], references: [id])
+  
+  items       PurchaseOrderItem[]
+  bills       PurchaseBill[] // Bills linked to this PO
+  tasks       Task[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PurchaseOrderItem {
+  id            String   @id @default(cuid())
+  orderId       String
+  productId     String
+  quantity      Int
+  unitPrice     Float    @default(0)
+  totalPrice    Float    @default(0)
+  
+  order         PurchaseOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product       Product       @relation(fields: [productId], references: [id])
+}
+
+model PurchaseBill {
+  id          String   @id @default(cuid())
+  code        String   @unique // Internal Bill Code
+  supplierInvoice String? // Supplier's physical invoice number
+  date        DateTime @default(now())
+  status      String   @default("DRAFT") // DRAFT, APPROVED (creates IN Tx & Debt), PARTIAL_PAID, PAID
+  notes       String?  @db.Text
+  
+  totalAmount Float    @default(0)
+  paidAmount  Float    @default(0)
+  
+  supplierId  String
+  supplier    Supplier @relation(fields: [supplierId], references: [id])
+  
+  orderId     String?
+  order       PurchaseOrder? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  
+  creatorId   String
+  creator     User     @relation("BillCreator", fields: [creatorId], references: [id])
+  
+  items       PurchaseBillItem[]
+  allocations PurchasePaymentAllocation[] // Payments allocated to this bill
+  tasks       Task[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PurchaseBillItem {
+  id            String   @id @default(cuid())
+  billId        String
+  productId     String
+  quantity      Int
+  unitPrice     Float    @default(0)
+  totalPrice    Float    @default(0)
+  
+  bill          PurchaseBill  @relation(fields: [billId], references: [id], onDelete: Cascade)
+  product       Product       @relation(fields: [productId], references: [id])
+}
+
+model PurchasePayment {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  date        DateTime @default(now())
+  amount      Float
+  paymentMethod String @default("CASH") // CASH, BANK_TRANSFER
+  reference   String?  // Transaction ID
+  notes       String?  @db.Text
+  
+  supplierId  String
+  supplier    Supplier @relation(fields: [supplierId], references: [id])
+  
+  creatorId   String
+  creator     User     @relation("PaymentCreator", fields: [creatorId], references: [id])
+  
+  allocations PurchasePaymentAllocation[]
+  tasks       Task[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PurchasePaymentAllocation {
+  id          String   @id @default(cuid())
+  paymentId   String
+  billId      String
+  amount      Float
+  
+  payment     PurchasePayment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  bill        PurchaseBill    @relation(fields: [billId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  
+  @@unique([paymentId, billId])
 }

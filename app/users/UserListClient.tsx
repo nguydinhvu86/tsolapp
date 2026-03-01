@@ -9,7 +9,7 @@ import { createUser, updateUser, deleteUser } from './actions';
 import { useRouter } from 'next/navigation';
 import { RESOURCES, ACTIONS, PermissionHelper } from '@/lib/permissions';
 
-export function UserListClient({ initialUsers }: { initialUsers: any[] }) {
+export function UserListClient({ initialUsers, permissionGroups = [] }: { initialUsers: any[], permissionGroups?: any[] }) {
     const router = useRouter();
     const [users, setUsers] = useState(initialUsers);
 
@@ -17,19 +17,19 @@ export function UserListClient({ initialUsers }: { initialUsers: any[] }) {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     const [editingUser, setEditingUser] = useState<any>(null);
-    const [formData, setFormData] = useState({ name: '', email: '', role: 'USER', password: '', permissions: [] as string[] });
+    const [formData, setFormData] = useState({ name: '', email: '', role: 'USER', password: '', permissionGroupId: '', permissions: [] as string[] });
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
     const openAddModal = () => {
-        setFormData({ name: '', email: '', role: 'USER', password: '', permissions: [] });
+        setFormData({ name: '', email: '', role: 'USER', password: '', permissionGroupId: permissionGroups.find(g => g.name === 'Người dùng')?.id || '', permissions: [] });
         setError('');
         setIsAddModalOpen(true);
     };
 
     const openEditModal = (user: any) => {
         setEditingUser(user);
-        setFormData({ name: user.name || '', email: user.email, role: user.role, password: '', permissions: user.permissions || [] });
+        setFormData({ name: user.name || '', email: user.email, role: user.role, password: '', permissionGroupId: user.permissionGroupId || '', permissions: user.permissions || [] });
         setError('');
         setIsEditModalOpen(true);
     };
@@ -39,7 +39,10 @@ export function UserListClient({ initialUsers }: { initialUsers: any[] }) {
         setIsLoading(true);
         setError('');
         try {
-            await createUser(formData);
+            const newUser = await createUser(formData) as any;
+            // Local state update for immediate UI feedback without F5
+            const groupName = permissionGroups.find(g => g.id === newUser.permissionGroupId)?.name;
+            setUsers([{ ...newUser, permissionGroup: { name: groupName } }, ...users]);
             setIsAddModalOpen(false);
             router.refresh();
         } catch (err: any) {
@@ -54,9 +57,12 @@ export function UserListClient({ initialUsers }: { initialUsers: any[] }) {
         setIsLoading(true);
         setError('');
         try {
-            await updateUser(editingUser.id, formData);
+            const updatedUser = await updateUser(editingUser.id, formData) as any;
+            // Local state update for immediate UI feedback without F5
+            const groupName = permissionGroups.find(g => g.id === updatedUser.permissionGroupId)?.name;
+            setUsers(users.map(u => u.id === editingUser.id ? { ...updatedUser, permissionGroup: { name: groupName } } : u));
             setIsEditModalOpen(false);
-            router.refresh(); // Tải lại danh sách từ server (hoặc update state nội bộ, ở đây ưu tiên reload để chắc ăn)
+            router.refresh();
         } catch (err: any) {
             setError(err.message || 'Có lỗi xảy ra khi cập nhật');
         } finally {
@@ -78,14 +84,15 @@ export function UserListClient({ initialUsers }: { initialUsers: any[] }) {
 
     return (
         <Card>
-            <div className="flex justify-between items-center" style={{ marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border)' }}>
                 <h2 style={{ fontSize: '1.125rem', fontWeight: 600, margin: 0 }}>Danh sách người dùng</h2>
-                <Button onClick={openAddModal} className="gap-2">
+                <Button onClick={openAddModal} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Plus size={18} /> Thêm nhân sự
                 </Button>
             </div>
 
-            <div style={{ overflowX: 'auto' }}>
+            {/* Desktop View */}
+            <div className="hide-on-mobile table-wrapper">
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                     <thead>
                         <tr style={{ background: 'rgba(0,0,0,0.02)' }}>
@@ -108,9 +115,10 @@ export function UserListClient({ initialUsers }: { initialUsers: any[] }) {
                                     <span style={{
                                         padding: '0.25rem 0.75rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 600,
                                         background: user.role === 'ADMIN' ? 'rgba(99, 102, 241, 0.1)' : 'rgba(100, 116, 139, 0.1)',
-                                        color: user.role === 'ADMIN' ? '#4f46e5' : '#475569'
+                                        color: user.role === 'ADMIN' ? '#4f46e5' : '#475569',
+                                        display: 'inline-block', whiteSpace: 'nowrap'
                                     }}>
-                                        {user.role}
+                                        {user.permissionGroup?.name || user.role}
                                     </span>
                                 </td>
                                 <td style={{ padding: '1rem', textAlign: 'right' }}>
@@ -136,17 +144,55 @@ export function UserListClient({ initialUsers }: { initialUsers: any[] }) {
                 </table>
             </div>
 
+            {/* Mobile View */}
+            <div className="show-on-mobile mobile-card-list">
+                {users.map((user: any) => (
+                    <div key={user.id} className="mobile-card">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                                <button onClick={() => openEditModal(user)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', fontWeight: 600, fontSize: '1rem', color: 'var(--primary)', padding: 0 }}>
+                                    {user.name || '---'}
+                                </button>
+                                <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>{user.email}</div>
+                            </div>
+                            <span style={{
+                                padding: '0.25rem 0.5rem', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 600,
+                                background: user.role === 'ADMIN' ? 'rgba(99, 102, 241, 0.1)' : 'rgba(100, 116, 139, 0.1)',
+                                color: user.role === 'ADMIN' ? '#4f46e5' : '#475569',
+                                display: 'inline-block', whiteSpace: 'nowrap', flexShrink: 0
+                            }}>
+                                {user.permissionGroup?.name || user.role}
+                            </span>
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border)' }}>
+                            <button onClick={() => openEditModal(user)} aria-label="Sửa" style={{ width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', border: 'none', cursor: 'pointer' }}>
+                                <Edit2 size={18} />
+                            </button>
+                            <button onClick={() => handleDelete(user.id, user.email)} aria-label="Xóa" style={{ width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: 'none', cursor: 'pointer' }}>
+                                <Trash2 size={18} />
+                            </button>
+                        </div>
+                    </div>
+                ))}
+                {users.length === 0 && (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+                        Chưa có người dùng nào.
+                    </div>
+                )}
+            </div>
+
             {/* Modal Thêm Mới */}
             {isAddModalOpen && (
                 <UserModal title="Thêm nhân sự mới" isEdit={false} error={error}
-                    formData={formData} setFormData={setFormData}
+                    formData={formData} setFormData={setFormData} permissionGroups={permissionGroups}
                     isLoading={isLoading} onSubmit={handleCreate} onClose={() => setIsAddModalOpen(false)} />
             )}
 
             {/* Modal Sửa */}
             {isEditModalOpen && (
                 <UserModal title="Sửa thông tin" isEdit={true} error={error}
-                    formData={formData} setFormData={setFormData}
+                    formData={formData} setFormData={setFormData} permissionGroups={permissionGroups}
                     isLoading={isLoading} onSubmit={handleUpdate} onClose={() => setIsEditModalOpen(false)} />
             )}
         </Card>
@@ -154,106 +200,70 @@ export function UserListClient({ initialUsers }: { initialUsers: any[] }) {
 }
 
 // Sub-Component UI tái sử dụng
-function UserModal({ title, isEdit, error, formData, setFormData, isLoading, onSubmit, onClose }: any) {
+function UserModal({ title, isEdit, error, formData, setFormData, isLoading, onSubmit, onClose, permissionGroups }: any) {
     return (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
-            <Card style={{ width: '100%', maxWidth: '500px', animation: 'fadeIn 0.2s ease-out' }}>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.5rem' }}>{title}</h3>
-                {error && <div style={{ padding: '0.75rem 1rem', background: '#fee2e2', color: '#b91c1c', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.875rem' }}>{error}</div>}
+        <div className="modal-backdrop">
+            <div className="modal-container" style={{ maxWidth: '42rem' }}>
+                <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}>
+                    <h3 style={{ fontSize: '1.125rem', fontWeight: 600, margin: 0 }}>{title}</h3>
+                </div>
 
-                <form onSubmit={onSubmit} className="flex flex-col gap-4">
-                    <Input label="Họ và tên" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required />
-                    <Input label="Email đăng nhập" type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} required />
+                <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1, background: 'var(--surface)' }}>
+                    {error && <div style={{ padding: '0.75rem', background: '#fee2e2', color: '#b91c1c', borderRadius: 'var(--radius)', marginBottom: '1rem', fontSize: '0.875rem' }}>{error}</div>}
 
-                    <div className="flex flex-col gap-1">
-                        <label style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-main)' }}>Quyền hạn</label>
-                        <select
-                            value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })}
-                            style={{ padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid var(--border)', outline: 'none', background: 'white' }}
-                        >
-                            <option value="USER">Nhân viên (USER)</option>
-                            <option value="ADMIN">Quản trị viên (ADMIN)</option>
-                        </select>
-                    </div>
+                    <form id="user-form" onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <Input label="Họ và tên" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required />
+                        <Input label="Email đăng nhập" type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} required />
 
-                    {formData.role === 'USER' && (
-                        <div style={{ background: 'rgba(0,0,0,0.02)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                            <div style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem', color: 'var(--text-main)' }}>Phân quyền chi tiết (Ma trận)</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                            <label style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-main)' }}>Quyền truy cập</label>
+                            <select
+                                value={formData.role} onChange={e => {
+                                    const newRole = e.target.value;
+                                    setFormData({ ...formData, role: newRole });
+                                }}
+                                style={{ padding: '0.625rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', outline: 'none', background: 'var(--surface)', width: '100%', fontFamily: 'inherit' }}
+                            >
+                                <option value="USER">Người dùng bình thường (USER)</option>
+                                <option value="ADMIN">Quản trị viên toàn hệ thống (ADMIN)</option>
+                            </select>
+                        </div>
 
-                            <div style={{ marginBottom: '1rem' }}>
-                                <label className="flex items-center gap-2 cursor-pointer" style={{ fontSize: '0.875rem', color: 'var(--text-main)' }}>
-                                    <input
-                                        type="checkbox"
-                                        checked={formData.permissions.includes(PermissionHelper.VIEW_DASHBOARD)}
-                                        onChange={(e) => {
-                                            if (e.target.checked) setFormData({ ...formData, permissions: [...formData.permissions, PermissionHelper.VIEW_DASHBOARD] });
-                                            else setFormData({ ...formData, permissions: formData.permissions.filter((p: string) => p !== PermissionHelper.VIEW_DASHBOARD) });
-                                        }}
-                                        style={{ cursor: 'pointer' }}
-                                    />
-                                    <strong>Truy cập Bảng điều khiển (Dashboard)</strong>
-                                </label>
-                            </div>
-
-                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', textAlign: 'left' }}>
-                                <thead>
-                                    <tr>
-                                        <th style={{ padding: '0.5rem', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>Chức năng</th>
-                                        {ACTIONS.map(action => (
-                                            <th key={action.id} style={{ padding: '0.5rem', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', textAlign: 'center' }}>
-                                                {action.name}
-                                            </th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {RESOURCES.map(res => (
-                                        <tr key={res.id}>
-                                            <td style={{ padding: '0.5rem', borderBottom: '1px solid var(--border)', fontWeight: 500 }}>{res.name}</td>
-                                            {ACTIONS.map(action => {
-                                                const permCode = PermissionHelper.generateCode(res.id, action.id);
-                                                const isChecked = formData.permissions.includes(permCode);
-                                                return (
-                                                    <td key={action.id} style={{ padding: '0.5rem', borderBottom: '1px solid var(--border)', textAlign: 'center' }}>
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={isChecked}
-                                                            onChange={(e) => {
-                                                                if (e.target.checked) {
-                                                                    setFormData({ ...formData, permissions: [...formData.permissions, permCode] });
-                                                                } else {
-                                                                    setFormData({ ...formData, permissions: formData.permissions.filter((p: string) => p !== permCode) });
-                                                                }
-                                                            }}
-                                                            style={{ cursor: 'pointer', width: '16px', height: '16px' }}
-                                                        />
-                                                    </td>
-                                                )
-                                            })}
-                                        </tr>
+                        {formData.role === 'USER' && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                                <label style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-main)' }}>Nhóm quyền (Vai trò)</label>
+                                <select
+                                    value={formData.permissionGroupId || ''}
+                                    onChange={e => setFormData({ ...formData, permissionGroupId: e.target.value })}
+                                    style={{ padding: '0.625rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', outline: 'none', background: 'var(--surface)', width: '100%', fontFamily: 'inherit' }}
+                                    required={formData.role === 'USER'}
+                                >
+                                    <option value="" disabled>-- Chọn nhóm quyền --</option>
+                                    {permissionGroups?.map((g: any) => (
+                                        <option key={g.id} value={g.id}>{g.name} - {g.description}</option>
                                     ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-
-                    <div style={{ background: 'rgba(0,0,0,0.02)', padding: '1rem', borderRadius: '8px', marginTop: '0.5rem', border: '1px solid var(--border)' }}>
-                        <div className="flex items-center gap-2 mb-2" style={{ color: 'var(--text-muted)', fontSize: '0.875rem', fontWeight: 600 }}>
-                            <KeyRound size={16} /> Mật khẩu
-                        </div>
-                        {isEdit ? (
-                            <Input placeholder="Bỏ trống nếu không muốn đổi mk" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} type="password" />
-                        ) : (
-                            <Input placeholder="Mặc định: 123456" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} type="password" />
+                                </select>
+                            </div>
                         )}
-                    </div>
 
-                    <div className="flex justify-end gap-3" style={{ marginTop: '1rem' }}>
-                        <Button type="button" variant="secondary" onClick={onClose}>Hủy</Button>
-                        <Button type="submit" disabled={isLoading}>{isLoading ? 'Đang lưu...' : 'Lưu lại'}</Button>
-                    </div>
-                </form>
-            </Card>
+                        <div style={{ background: 'var(--background)', padding: '1rem', borderRadius: 'var(--radius)', marginTop: '0.5rem', border: '1px solid var(--border)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', color: 'var(--text-muted)', fontSize: '0.875rem', fontWeight: 600 }}>
+                                <KeyRound size={16} /> Mật khẩu
+                            </div>
+                            {isEdit ? (
+                                <Input placeholder="Bỏ trống nếu không muốn đổi mk" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} type="password" />
+                            ) : (
+                                <Input placeholder="Mặc định: 123456" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} type="password" />
+                            )}
+                        </div>
+                    </form>
+                </div>
+
+                <div style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid var(--border)', background: 'var(--background)', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                    <Button type="button" variant="secondary" onClick={onClose} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Hủy</Button>
+                    <Button type="submit" form="user-form" disabled={isLoading} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{isLoading ? 'Đang lưu...' : 'Lưu lại'}</Button>
+                </div>
+            </div>
         </div>
     );
 }

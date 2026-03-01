@@ -41,6 +41,55 @@ export async function updateWarehouse(id: string, data: { name?: string, locatio
     return warehouse;
 }
 
+// --- PRODUCT GROUP ACTIONS ---
+
+export async function getProductGroups() {
+    return prisma.productGroup.findMany({
+        orderBy: { name: 'asc' }
+    });
+}
+
+export async function createProductGroup(data: { name: string; description?: string }) {
+    const existing = await prisma.productGroup.findUnique({ where: { name: data.name } });
+    if (existing) {
+        throw new Error(`Nhóm sản phẩm "${data.name}" đã tồn tại!`);
+    }
+
+    const group = await prisma.productGroup.create({ data });
+    revalidatePath('/inventory/products');
+    revalidatePath('/inventory/reports');
+    return group;
+}
+
+export async function updateProductGroup(id: string, data: { name?: string; description?: string }) {
+    if (data.name) {
+        const existing = await prisma.productGroup.findUnique({ where: { name: data.name } });
+        if (existing && existing.id !== id) {
+            throw new Error(`Nhóm sản phẩm "${data.name}" đã tồn tại!`);
+        }
+    }
+
+    const group = await prisma.productGroup.update({
+        where: { id },
+        data
+    });
+    revalidatePath('/inventory/products');
+    revalidatePath('/inventory/reports');
+    return group;
+}
+
+export async function deleteProductGroup(id: string) {
+    // Check if there are products in this group before deleting
+    const productCount = await prisma.product.count({ where: { groupId: id } });
+    if (productCount > 0) {
+        throw new Error(`Không thể xóa! Có ${productCount} sản phẩm đang thuộc nhóm này.`);
+    }
+
+    await prisma.productGroup.delete({ where: { id } });
+    revalidatePath('/inventory/products');
+    revalidatePath('/inventory/reports');
+}
+
 // --- PRODUCT ACTIONS ---
 
 export async function getProducts(type?: 'PRODUCT' | 'SERVICE') {
@@ -49,7 +98,8 @@ export async function getProducts(type?: 'PRODUCT' | 'SERVICE') {
         include: {
             inventories: {
                 include: { warehouse: true }
-            }
+            },
+            group: true
         },
         orderBy: { name: 'asc' }
     });
@@ -67,6 +117,7 @@ export async function createProduct(data: {
     notes?: string;
     minStockLevel?: number;
     isActive?: boolean;
+    groupId?: string | null;
 }) {
     const existing = await prisma.product.findUnique({ where: { sku: data.sku } });
     if (existing) {
@@ -90,6 +141,7 @@ export async function updateProduct(id: string, data: Partial<{
     notes: string;
     minStockLevel: number;
     isActive: boolean;
+    groupId: string | null;
 }>) {
     if (data.sku) {
         const existing = await prisma.product.findUnique({ where: { sku: data.sku } });

@@ -19,7 +19,8 @@ export const authOptions: NextAuthOptions = {
                 }
 
                 const user = await prisma.user.findUnique({
-                    where: { email: credentials.email }
+                    where: { email: credentials.email },
+                    include: { permissionGroup: true }
                 });
 
                 if (!user || !user.password) {
@@ -47,6 +48,10 @@ export const authOptions: NextAuthOptions = {
                     }
                 }
 
+                const userPerms = JSON.parse(user.permissions || "[]");
+                const groupPerms = user.permissionGroup ? JSON.parse(user.permissionGroup.permissions || "[]") : [];
+                const mergedPerms = Array.from(new Set([...userPerms, ...groupPerms]));
+
                 return {
                     id: user.id,
                     email: user.email,
@@ -54,7 +59,7 @@ export const authOptions: NextAuthOptions = {
                     role: user.role,
                     avatar: user.avatar,
                     twoFactorEnabled: user.twoFactorEnabled,
-                    permissions: JSON.parse(user.permissions || "[]"),
+                    permissions: mergedPerms,
                 };
             }
         })
@@ -82,11 +87,16 @@ export const authOptions: NextAuthOptions = {
                 try {
                     const dbUser = await prisma.user.findUnique({
                         where: { id: token.id as string },
-                        select: { role: true, permissions: true }
+                        include: { permissionGroup: true }
                     });
                     if (dbUser) {
                         token.role = dbUser.role;
-                        token.permissions = JSON.parse(dbUser.permissions || "[]");
+                        const userPerms = JSON.parse(dbUser.permissions || "[]");
+                        const groupPerms = dbUser.permissionGroup ? JSON.parse(dbUser.permissionGroup.permissions || "[]") : [];
+                        token.permissions = Array.from(new Set([...userPerms, ...groupPerms]));
+                    } else {
+                        // User was deleted or database reset, invalidate session ID
+                        token.id = "";
                     }
                 } catch (error) {
                     console.error("JWT live DB sync failed", error);

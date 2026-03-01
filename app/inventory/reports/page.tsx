@@ -1,17 +1,20 @@
 import { getStockValuation } from '../report-actions';
 import { getProducts, getWarehouses } from '../actions';
+import { prisma } from '@/lib/prisma';
 import ReportsClient from './ReportsClient';
 
 export default async function ReportsPage(props: { searchParams: Promise<any> }) {
     const searchParams = await props.searchParams;
     const warehouseId = searchParams?.warehouseId || undefined;
+    const groupId = searchParams?.groupId || undefined;
 
     // Server fetch for initial dashboard data
-    const valuationData = await getStockValuation(warehouseId);
+    const valuationData = await getStockValuation(warehouseId, undefined, groupId);
 
     // Dictionaries for the Ledger filter
     const products = await getProducts('PRODUCT');
     const warehouses = await getWarehouses();
+    const productGroups = await (prisma as any).productGroup.findMany({ orderBy: { name: 'asc' } });
 
     return (
         <div style={{ maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
@@ -22,6 +25,7 @@ export default async function ReportsPage(props: { searchParams: Promise<any> })
                 initialValuation={valuationData}
                 products={products}
                 warehouses={warehouses}
+                productGroups={productGroups}
             />
         </div>
     );

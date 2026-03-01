@@ -2,32 +2,47 @@
 
 import React from 'react';
 import { useSession, signOut } from 'next-auth/react';
-import { LogOut } from 'lucide-react';
+import { LogOut, Menu } from 'lucide-react';
 import Link from 'next/link';
 import { NotificationBell } from '../ui/NotificationBell';
 
-export function Header() {
+export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
     const { data: session } = useSession();
 
     return (
-        <header style={{
-            height: '64px',
-            backgroundColor: 'rgba(255, 255, 255, 0.8)',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-            borderBottom: '1px solid var(--border)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '0 2rem',
-            position: 'sticky',
-            top: 0,
-            zIndex: 10
-        }}>
-            <div style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '1.0625rem' }}>
-                Chào mừng trở lại, <span style={{ color: 'var(--primary)' }}>{session?.user?.name || "Người dùng"}</span>
+        <header
+            className="app-header"
+            style={{
+                height: '64px',
+                backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                borderBottom: '1px solid var(--border)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0 2rem',
+                position: 'sticky',
+                top: 0,
+                zIndex: 30
+            }}
+        >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                {onMenuToggle && (
+                    <button
+                        onClick={onMenuToggle}
+                        className="show-on-mobile"
+                        style={{ padding: '0.5rem', borderRadius: 'var(--radius)', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                        aria-label="Open menu"
+                    >
+                        <Menu size={20} />
+                    </button>
+                )}
+                <div className="hide-on-mobile" style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '1.0625rem' }}>
+                    Chào mừng trở lại, <span style={{ color: 'var(--primary)' }}>{session?.user?.name || "Người dùng"}</span>
+                </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <NotificationBell />
                 <Link href="/profile" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', cursor: 'pointer', padding: '0.5rem', borderRadius: '8px', transition: 'background 0.2s' }} className="hover:bg-slate-100">
                     {session?.user?.avatar ? (
@@ -67,6 +82,6 @@ export function Header() {
                     <LogOut size={18} />
                 </div>
             </div>
-        </header>
+        </header >
     );
 }

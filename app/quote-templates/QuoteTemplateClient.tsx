@@ -9,6 +9,7 @@ import { Modal } from '@/app/components/ui/Modal';
 import { Input } from '@/app/components/ui/Input';
 import { RichTextEditor } from '@/app/components/ui/RichTextEditor';
 import { TemplateVariablesGuide } from '@/app/components/ui/TemplateVariablesGuide';
+import { TemplateBuilder } from '@/app/components/ui/TemplateBuilder';
 import { createQuoteTemplate, updateQuoteTemplate, deleteQuoteTemplate } from './actions';
 import { Plus, Edit, Trash2, Copy } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -17,19 +18,21 @@ export function QuoteTemplateClient({ initialData }: { initialData: QuoteTemplat
     const router = useRouter();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
-    const [formData, setFormData] = useState({ name: '', description: '', content: '' });
+    const [formData, setFormData] = useState({ name: '', description: '', content: '', editorType: 'RICH_TEXT' });
 
     const openModal = (template?: QuoteTemplate) => {
         if (template) {
             setEditingId(template.id);
+            const t = template as any;
             setFormData({
                 name: template.name,
                 description: template.description || '',
                 content: template.content,
+                editorType: t.editorType || 'RICH_TEXT'
             });
         } else {
             setEditingId(null);
-            setFormData({ name: '', description: '', content: '' });
+            setFormData({ name: '', description: '', content: '', editorType: 'RICH_TEXT' });
         }
         setIsModalOpen(true);
     };
@@ -58,11 +61,13 @@ export function QuoteTemplateClient({ initialData }: { initialData: QuoteTemplat
     };
 
     const handleCopy = async (template: QuoteTemplate) => {
+        const t = template as any;
         if (confirm(`Bạn có muốn tạo bản sao của mẫu "${template.name}"?`)) {
             await createQuoteTemplate({
                 name: template.name + ' (Copy)',
                 description: template.description || '',
                 content: template.content,
+                editorType: t.editorType || 'RICH_TEXT'
             });
             router.refresh();
         }
@@ -112,7 +117,7 @@ export function QuoteTemplateClient({ initialData }: { initialData: QuoteTemplat
                 </tbody>
             </Table>
 
-            <Modal isOpen={isModalOpen} onClose={closeModal} title={editingId ? 'Sửa mẫu báo giá' : 'Thêm mẫu mới'} maxWidth="1000px">
+            <Modal isOpen={isModalOpen} onClose={closeModal} title={editingId ? 'Sửa mẫu báo giá' : 'Thêm mẫu mới'} maxWidth={formData.editorType === 'DRAG_DROP' ? '1400px' : '1000px'}>
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     <Input
                         label="Tên mẫu báo giá *"
@@ -142,11 +147,53 @@ export function QuoteTemplateClient({ initialData }: { initialData: QuoteTemplat
                             </p>
                         </div>
 
-                        <RichTextEditor
-                            value={formData.content}
-                            onChange={val => setFormData({ ...formData, content: val })}
-                            placeholder="CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM..."
-                        />
+                        <div className="flex gap-4 mb-2">
+                            <button
+                                type="button"
+                                onClick={() => setFormData({ ...formData, editorType: 'RICH_TEXT' })}
+                                style={{
+                                    flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid',
+                                    borderColor: formData.editorType === 'RICH_TEXT' ? 'var(--primary)' : 'var(--border)',
+                                    background: formData.editorType === 'RICH_TEXT' ? 'rgba(79, 70, 229, 0.05)' : '#fff',
+                                    color: formData.editorType === 'RICH_TEXT' ? 'var(--primary)' : 'var(--text-main)',
+                                    fontWeight: formData.editorType === 'RICH_TEXT' ? 600 : 400,
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                Trình soạn thảo cơ bản (Rich Text)
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setFormData({ ...formData, editorType: 'DRAG_DROP' })}
+                                style={{
+                                    flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid',
+                                    borderColor: formData.editorType === 'DRAG_DROP' ? 'var(--primary)' : 'var(--border)',
+                                    background: formData.editorType === 'DRAG_DROP' ? 'rgba(79, 70, 229, 0.05)' : '#fff',
+                                    color: formData.editorType === 'DRAG_DROP' ? 'var(--primary)' : 'var(--text-main)',
+                                    fontWeight: formData.editorType === 'DRAG_DROP' ? 600 : 400,
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                ⚡ Thiết kế mẫu Kéo & Thả (Pro)
+                            </button>
+                        </div>
+
+                        {formData.editorType === 'RICH_TEXT' ? (
+                            <RichTextEditor
+                                value={formData.content}
+                                onChange={val => setFormData({ ...formData, content: val })}
+                                placeholder="CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM..."
+                            />
+                        ) : (
+                            <TemplateBuilder
+                                initialHtml={formData.content}
+                                onChange={(html, css) => {
+                                    // Combine HTML and CSS into one string for storage
+                                    const combined = `<style>${css}</style>${html}`;
+                                    setFormData(prev => ({ ...prev, content: combined }));
+                                }}
+                            />
+                        )}
                     </div>
                     <div className="flex gap-2" style={{ marginTop: '1rem', justifyContent: 'flex-end' }}>
                         <Button type="button" variant="secondary" onClick={closeModal}>Hủy</Button>

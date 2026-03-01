@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
@@ -8,6 +8,7 @@ import { Header } from './Header';
 export function MainLayout({ children, brandName }: { children: React.ReactNode, brandName: string }) {
     const pathname = usePathname();
     const isLoginPage = pathname === '/login';
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     if (isLoginPage) {
         return <>{children}</>;
@@ -15,13 +16,31 @@ export function MainLayout({ children, brandName }: { children: React.ReactNode,
 
     return (
         <>
-            <Sidebar brandName={brandName} />
-            <div className="main-wrapper" style={{ flex: 1, marginLeft: '260px', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                <Header />
+            {/* Sidebar acts as off-canvas on mobile, fixed left on desktop */}
+            <Sidebar
+                brandName={brandName}
+                isOpen={isMobileMenuOpen}
+                onClose={() => setIsMobileMenuOpen(false)}
+            />
+
+            {/* Main content wrapper pushes right on desktop, takes full width on mobile */}
+            <div className="main-wrapper">
+                <Header onMenuToggle={() => setIsMobileMenuOpen(true)} />
                 <main style={{ padding: '2rem', flex: 1, minWidth: 0, overflowX: 'hidden' }}>
                     {children}
                 </main>
             </div>
+
+            {/* Overlay for mobile when sidebar is open */}
+            {isMobileMenuOpen && (
+                <div
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    style={{
+                        position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 40
+                    }}
+                    className="hide-on-desktop show-on-mobile"
+                />
+            )}
         </>
     );
 }
