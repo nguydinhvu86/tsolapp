@@ -4,16 +4,20 @@ import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Table } from '@/app/components/ui/Table';
-import { ArrowLeft, CheckCircle, Trash2, Printer } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Trash2, Printer, Download, FileSpreadsheet } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { processTransaction, deleteTransaction } from '../../transaction-actions';
 import { useSession } from 'next-auth/react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import * as XLSX from 'xlsx';
 
 export default function TransactionDetailClient({ transaction }: { transaction: any }) {
     const router = useRouter();
     const { data: session } = useSession();
     const userId = session?.user?.id;
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isExportingPDF, setIsExportingPDF] = useState(false);
 
     const formatDate = (d: string | Date) => {
         return new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(d));
@@ -72,6 +76,40 @@ export default function TransactionDetailClient({ transaction }: { transaction: 
         window.print();
     };
 
+    const handleExportExcel = () => {
+        const wb = XLSX.utils.book_new();
+        const wsData = transaction.items.map((item: any, idx: number) => ({
+            'STT': idx + 1,
+            'Mã SKU': item.product?.sku,
+            'Tên Sản Phẩm': item.product?.name,
+            'ĐVT': item.product?.unit || 'Cái',
+            'Số Lượng': item.quantity
+        }));
+        const ws = XLSX.utils.json_to_sheet(wsData);
+        XLSX.utils.book_append_sheet(wb, ws, "Chi Tiet");
+        XLSX.writeFile(wb, `Phieu_${transaction.code}.xlsx`);
+    };
+
+    const handleExportPDF = async () => {
+        const element = document.getElementById('print-area');
+        if (!element) return;
+        try {
+            setIsExportingPDF(true);
+            const canvas = await html2canvas(element, { scale: 2 });
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save(`Phieu_${transaction.code}.pdf`);
+        } catch (error) {
+            console.error(error);
+            alert("Lỗi khi tạo PDF");
+        } finally {
+            setIsExportingPDF(false);
+        }
+    };
+
     return (
         <div>
             <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', justifyContent: 'space-between' }}>
@@ -80,6 +118,12 @@ export default function TransactionDetailClient({ transaction }: { transaction: 
                 </Button>
 
                 <div style={{ display: 'flex', gap: '1rem' }} className="no-print">
+                    <Button type="button" variant="secondary" onClick={handleExportExcel} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <FileSpreadsheet size={16} /> Xuất Excel
+                    </Button>
+                    <Button type="button" variant="secondary" onClick={handleExportPDF} disabled={isExportingPDF} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Download size={16} /> {isExportingPDF ? 'Đang tạo PDF...' : 'Tải PDF'}
+                    </Button>
                     <Button type="button" variant="secondary" onClick={handlePrint} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <Printer size={16} /> In Phiếu
                     </Button>
@@ -97,7 +141,7 @@ export default function TransactionDetailClient({ transaction }: { transaction: 
                 </div>
             </div>
 
-            <Card style={{ padding: '2rem' }} className="print-area">
+            <Card id="print-area" style={{ padding: '2rem' }} className="print-area">
                 <div style={{ textAlign: 'center', marginBottom: '2rem', paddingBottom: '2rem', borderBottom: '1px solid var(--border)' }}>
                     <h2 style={{ fontSize: '1.5rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-main)', marginBottom: '0.5rem' }}>
                         PHIẾU {getTypeLabel(transaction.type)}

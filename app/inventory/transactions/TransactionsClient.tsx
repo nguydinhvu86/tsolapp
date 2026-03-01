@@ -5,9 +5,10 @@ import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/Input';
 import { Table } from '@/app/components/ui/Table';
-import { Plus, Search, Eye, Trash2 } from 'lucide-react';
+import { Plus, Search, Eye, Trash2, FileSpreadsheet } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { deleteTransaction } from '../transaction-actions';
+import * as XLSX from 'xlsx';
 
 export default function TransactionsClient({ initialTransactions }: { initialTransactions: any[] }) {
     const router = useRouter();
@@ -55,6 +56,27 @@ export default function TransactionsClient({ initialTransactions }: { initialTra
         }
     };
 
+    const handleExportExcel = () => {
+        if (filtered.length === 0) {
+            alert("Không có dữ liệu để xuất.");
+            return;
+        }
+        const wb = XLSX.utils.book_new();
+        const wsData = filtered.map((t: any) => ({
+            'Mã Phiếu': t.code,
+            'Loại': getTypeColor(t.type).label,
+            'Trạng Thái': getStatusColor(t.status).label,
+            'Từ Kho': t.fromWarehouse?.name || '-',
+            'Đến Kho': t.toWarehouse?.name || '-',
+            'Ngày Tạo': formatDate(t.date),
+            'Người Tạo': t.creator?.name || '-',
+            'Ghi Chú': t.notes || ''
+        }));
+        const ws = XLSX.utils.json_to_sheet(wsData);
+        XLSX.utils.book_append_sheet(wb, ws, "Danh Sach Phieu");
+        XLSX.writeFile(wb, `Danh_Sach_Phieu.xlsx`);
+    };
+
     return (
         <Card style={{ padding: '0', overflow: 'hidden' }}>
             <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fafafa', flexWrap: 'wrap', gap: '1rem' }}>
@@ -100,9 +122,15 @@ export default function TransactionsClient({ initialTransactions }: { initialTra
                     <option value="COMPLETED">Đã duyệt</option>
                 </select>
 
-                <Button onClick={() => router.push('/inventory/transactions/new')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: 'auto' }}>
-                    <Plus size={16} /> Tạo Phiếu Mới
-                </Button>
+
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
+                    <Button variant="secondary" onClick={handleExportExcel} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <FileSpreadsheet size={16} /> Xuất Excel
+                    </Button>
+                    <Button onClick={() => router.push('/inventory/transactions/new')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Plus size={16} /> Tạo Phiếu Mới
+                    </Button>
+                </div>
             </div>
 
             <div style={{ padding: '0' }}>
@@ -169,6 +197,6 @@ export default function TransactionsClient({ initialTransactions }: { initialTra
                     </tbody>
                 </Table>
             </div>
-        </Card>
+        </Card >
     );
 }

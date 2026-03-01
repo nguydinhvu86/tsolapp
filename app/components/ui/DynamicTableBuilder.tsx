@@ -1,12 +1,15 @@
 'use client';
-import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, GripVertical } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Plus, Trash2, GripVertical, Search } from 'lucide-react';
+
+import { Product } from '@prisma/client';
 
 interface DynamicTableBuilderProps {
     value: string; // The generated HTML string
     onChange: (html: string) => void;
     onTotalsChange?: (totals: { baseTotal: number, taxTotal: number, grandTotal: number }) => void;
     type?: 'quote' | 'handover';
+    products?: Product[];
 }
 
 type Cell = string;
@@ -23,7 +26,105 @@ const formatVNNumber = (num: number) => {
     return num.toLocaleString('en-US'); // en-US uses comma for thousand separator
 };
 
-export function DynamicTableBuilder({ value, onChange, onTotalsChange, type = 'quote' }: DynamicTableBuilderProps) {
+function ProductAutocompleteCell({
+    value,
+    onChange,
+    products,
+    onSelect
+}: {
+    value: string;
+    onChange: (val: string) => void;
+    products: Product[];
+    onSelect: (product: Product) => void;
+}) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const wrapperRef = useRef<HTMLDivElement>(null);
+    const searchInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+                setSearchTerm('');
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [wrapperRef]);
+
+    useEffect(() => {
+        if (isOpen && searchInputRef.current) {
+            searchInputRef.current.focus();
+        }
+    }, [isOpen]);
+
+    const filtered = products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    return (
+        <div ref={wrapperRef} style={{ position: 'relative', width: '100%', height: '100%' }}>
+            <input
+                value={value}
+                onChange={(e) => {
+                    onChange(e.target.value);
+                    if (!isOpen) setIsOpen(true);
+                }}
+                onFocus={() => {
+                    if (!isOpen) setIsOpen(true);
+                }}
+                style={{ width: '100%', border: 'none', padding: '0.5rem', outline: 'none', background: 'transparent' }}
+                placeholder="Nhập tên..."
+            />
+            {isOpen && (
+                <div style={{
+                    position: 'absolute', top: 'calc(100% + 1px)', left: -1, minWidth: '350px', background: 'white',
+                    border: '1px solid var(--border)', zIndex: 50, maxHeight: '350px', display: 'flex', flexDirection: 'column',
+                    boxShadow: 'var(--shadow-md)', borderRadius: 'var(--radius)'
+                }}>
+                    <div style={{ padding: '0.5rem', borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, background: '#f8fafc', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Search size={16} color="var(--text-muted)" />
+                        <input
+                            ref={searchInputRef}
+                            type="text"
+                            placeholder="Tìm kiếm sản phẩm trong kho..."
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                            style={{ width: '100%', background: 'transparent', border: 'none', outline: 'none', fontSize: '0.875rem' }}
+                        />
+                    </div>
+                    <div style={{ overflowY: 'auto', flex: 1, padding: '0.25rem' }}>
+                        {filtered.length > 0 ? filtered.map(p => (
+                            <div
+                                key={p.id}
+                                onMouseDown={(e) => {
+                                    e.preventDefault(); // prevent blur
+                                    onSelect(p);
+                                    setIsOpen(false);
+                                    setSearchTerm('');
+                                }}
+                                style={{ padding: '0.5rem 0.75rem', cursor: 'pointer', borderBottom: '1px solid var(--border)', fontSize: '0.875rem' }}
+                                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+                                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                            >
+                                <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>{p.name}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem', display: 'flex', gap: '1rem' }}>
+                                    <span>ĐVT: <strong>{p.unit}</strong></span>
+                                    <span>Giá: <strong>{p.salePrice.toLocaleString('en-US')}₫</strong></span>
+                                </div>
+                            </div>
+                        )) : (
+                            <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                                Không tìm thấy sản phẩm {searchTerm ? `"${searchTerm}"` : ''}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+export function DynamicTableBuilder({ value, onChange, onTotalsChange, type = 'quote', products = [] }: DynamicTableBuilderProps) {
     // Attempt to parse existing HTML back into a matrix if possible
     // For simplicity, we initialize with a default matrix if empty or unparseable
     const initialHeaders = type === 'handover'
@@ -200,7 +301,25 @@ export function DynamicTableBuilder({ value, onChange, onTotalsChange, type = 'q
     }, [headers, rows]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const addRow = () => {
-        setRows([...rows, new Array(headers.length).fill('')]);
+        const getColIndex = (names: string[]) => headers.findIndex(h => names.includes(h.trim().toLowerCase()));
+        const sttIdx = getColIndex(['stt', 'số thứ tự', 'tt', 'no']);
+
+        const newRow = new Array(headers.length).fill('');
+
+        if (sttIdx !== -1) {
+            let nextStt = 1;
+            if (rows.length > 0) {
+                const lastStt = parseInt(rows[rows.length - 1][sttIdx], 10);
+                if (!isNaN(lastStt)) {
+                    nextStt = lastStt + 1;
+                } else {
+                    nextStt = rows.length + 1;
+                }
+            }
+            newRow[sttIdx] = nextStt.toString();
+        }
+
+        setRows([...rows, newRow]);
     };
 
     const removeRow = (index: number) => {
@@ -225,14 +344,11 @@ export function DynamicTableBuilder({ value, onChange, onTotalsChange, type = 'q
         setHeaders(newHeaders);
     };
 
-    const updateCell = (rowIndex: number, colIndex: number, val: string) => {
-        const newRows = [...rows];
-        newRows[rowIndex][colIndex] = val;
-
+    const recalculateRow = (newRows: Row[], rowIndex: number) => {
         const getColIndex = (names: string[]) => headers.findIndex(h => names.includes(h.trim().toLowerCase()));
 
-        const qtyIdx = getColIndex(['số lượng']);
-        const priceIdx = getColIndex(['đơn giá']);
+        const qtyIdx = getColIndex(['số lượng', 'sl']);
+        const priceIdx = getColIndex(['đơn giá', 'giá', 'giá bán', 'đơn giá (vnđ)']);
         const amountIdx = getColIndex(['thành tiền']);
         const taxRateIdx = getColIndex(['thuế', 'vat', 'thuế (%)', 'vat (%)', '% thuế', 'thuế suất', 'mức thuế', 'thuế suất (%)']);
         const taxAmountIdx = getColIndex(['tiền thuế', 'thuế (vnđ)', 'tiền vat', 'thuế vat']);
@@ -278,7 +394,57 @@ export function DynamicTableBuilder({ value, onChange, onTotalsChange, type = 'q
             }
         }
 
+        return newRows;
+    };
+
+    const updateCell = (rowIndex: number, colIndex: number, val: string) => {
+        let newRows = [...rows];
+        newRows[rowIndex][colIndex] = val;
+        newRows = recalculateRow(newRows, rowIndex);
         setRows(newRows);
+    };
+
+    const handleProductSelect = (rowIndex: number, colIndex: number, product: Product) => {
+        let newRows = [...rows];
+        newRows[rowIndex][colIndex] = product.name;
+
+        const getColIndex = (names: string[]) => headers.findIndex(h => names.includes(h.trim().toLowerCase()));
+        const unitIdx = getColIndex(['đvt', 'đơn vị tính', 'đơn vị', 'sl/dvt']);
+        const priceIdx = getColIndex(['đơn giá', 'giá', 'giá bán', 'đơn giá (vnđ)']);
+        const taxRateIdx = getColIndex(['thuế', 'vat', 'thuế (%)', 'vat (%)', '% thuế', 'thuế suất', 'mức thuế', 'thuế suất (%)']);
+        const qtyIdx = getColIndex(['số lượng', 'sl']);
+
+        if (unitIdx !== -1) {
+            if (headers[unitIdx].trim().toLowerCase() === 'sl/dvt') {
+                const currentObj = newRows[rowIndex][unitIdx];
+                const numMatch = currentObj.match(/^\d+/);
+                const num = numMatch ? numMatch[0] : '1';
+                newRows[rowIndex][unitIdx] = `${num} ${product.unit}`;
+            } else {
+                newRows[rowIndex][unitIdx] = product.unit;
+            }
+        }
+
+        if (priceIdx !== -1) {
+            newRows[rowIndex][priceIdx] = formatVNNumber(product.salePrice);
+        }
+
+        if (taxRateIdx !== -1 && product.taxRate !== undefined) {
+            newRows[rowIndex][taxRateIdx] = `${product.taxRate}`;
+        }
+
+        if (qtyIdx !== -1 && (!newRows[rowIndex][qtyIdx] || newRows[rowIndex][qtyIdx].trim() === '')) {
+            newRows[rowIndex][qtyIdx] = '1';
+        }
+
+        newRows = recalculateRow(newRows, rowIndex);
+        setRows(newRows);
+    };
+
+    const isProductCol = (idx: number) => {
+        if (!headers[idx]) return false;
+        const hl = headers[idx].trim().toLowerCase();
+        return ['sản phẩm', 'tên sản phẩm', 'tên sản phẩm/ dịch vụ', 'tên thiết bị', 'hàng hóa', 'tên vật tư'].includes(hl);
     };
 
     return (
@@ -337,12 +503,22 @@ export function DynamicTableBuilder({ value, onChange, onTotalsChange, type = 'q
                                     </button>
                                 </td>
                                 {row.map((cell, colIndex) => (
-                                    <td key={colIndex} style={{ padding: '0', borderRight: '1px solid #e2e8f0' }}>
-                                        <input
-                                            value={cell}
-                                            onChange={(e) => updateCell(rowIndex, colIndex, e.target.value)}
-                                            style={{ width: '100%', border: 'none', padding: '0.5rem', outline: 'none', background: 'transparent' }}
-                                        />
+                                    <td key={colIndex} style={{ padding: '0', borderRight: '1px solid #e2e8f0', position: 'relative' }}>
+                                        {products && products.length > 0 && isProductCol(colIndex) ? (
+                                            <ProductAutocompleteCell
+                                                value={cell}
+                                                onChange={(val) => updateCell(rowIndex, colIndex, val)}
+                                                products={products}
+                                                onSelect={(product) => handleProductSelect(rowIndex, colIndex, product)}
+                                            />
+                                        ) : (
+                                            <input
+                                                value={cell}
+                                                onChange={(e) => updateCell(rowIndex, colIndex, e.target.value)}
+                                                style={{ width: '100%', border: 'none', padding: '0.5rem', outline: 'none', background: 'transparent' }}
+                                                placeholder={isProductCol(colIndex) ? "Nhập tên..." : ""}
+                                            />
+                                        )}
                                     </td>
                                 ))}
                             </tr>

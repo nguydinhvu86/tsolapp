@@ -38,7 +38,9 @@ const mainNavItems: any[] = [
         children: [
             { name: 'Sản Phẩm & Dịch Vụ', href: '/inventory/products', permission: 'INVENTORY_VIEW' },
             { name: 'Danh Sách Kho', href: '/inventory/warehouses', permission: 'INVENTORY_VIEW' },
-            { name: 'Lịch Sử Lệnh Kho', href: '/inventory/transactions', permission: 'INVENTORY_VIEW' }
+            { name: 'Lịch Sử Lệnh Kho', href: '/inventory/transactions', permission: 'INVENTORY_VIEW' },
+            { name: 'Kiểm Kê Kho', href: '/inventory/adjustments', permission: 'INVENTORY_VIEW' },
+            { name: 'Báo Cáo Tồn Kho', href: '/inventory/reports', permission: 'INVENTORY_VIEW' }
         ]
     },
     { name: 'Khách Hàng', href: '/customers', icon: Users, permission: 'CUSTOMERS_VIEW' },

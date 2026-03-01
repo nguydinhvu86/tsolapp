@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { HandoverTemplate, Customer } from '@prisma/client';
+import { HandoverTemplate, Customer, Product } from '@prisma/client';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/Input';
@@ -10,7 +10,7 @@ import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { createHandover } from '../actions';
 import { useRouter } from 'next/navigation';
 
-export function NewHandoverClient({ templates, customers, preselectedCustomerId }: { templates: HandoverTemplate[], customers: Customer[], preselectedCustomerId?: string }) {
+export function NewHandoverClient({ templates, customers, products, preselectedCustomerId }: { templates: HandoverTemplate[], customers: Customer[], products: Product[], preselectedCustomerId?: string }) {
     const router = useRouter();
     const [templateId, setTemplateId] = useState('');
     const [customerId, setCustomerId] = useState(preselectedCustomerId || '');
@@ -167,6 +167,7 @@ export function NewHandoverClient({ templates, customers, preselectedCustomerId 
                                                 onChange={(html) => setVariables({ ...variables, [key]: html })}
                                                 onTotalsChange={handleTotalsChange}
                                                 type="handover"
+                                                products={products}
                                             />
                                         ) : (
                                             <Input

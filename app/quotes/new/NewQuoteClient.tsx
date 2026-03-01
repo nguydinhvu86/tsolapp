@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { QuoteTemplate, Customer } from '@prisma/client';
+import { QuoteTemplate, Customer, Product } from '@prisma/client';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/Input';
@@ -10,7 +10,7 @@ import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { createQuote } from '../actions';
 import { useRouter } from 'next/navigation';
 
-export function NewQuoteClient({ templates, customers, preselectedCustomerId }: { templates: QuoteTemplate[], customers: Customer[], preselectedCustomerId?: string }) {
+export function NewQuoteClient({ templates, customers, products, preselectedCustomerId }: { templates: QuoteTemplate[], customers: Customer[], products: Product[], preselectedCustomerId?: string }) {
     const router = useRouter();
     const [templateId, setTemplateId] = useState('');
     const [customerId, setCustomerId] = useState(preselectedCustomerId || '');
@@ -74,6 +74,12 @@ export function NewQuoteClient({ templates, customers, preselectedCustomerId }: 
             let updated = false;
             const next = { ...prev };
             const formatCurrency = (num: number) => num.toLocaleString('en-US');
+
+            // Force _GRAND_TOTAL so QuoteDashboardClient can accurately sum it
+            if (next['_GRAND_TOTAL'] !== totals.grandTotal.toString()) {
+                next['_GRAND_TOTAL'] = totals.grandTotal.toString();
+                updated = true;
+            }
 
             if (totals.grandTotal > 0 || totals.baseTotal > 0) {
                 Object.keys(next).forEach(k => {
@@ -166,6 +172,7 @@ export function NewQuoteClient({ templates, customers, preselectedCustomerId }: 
                                                 value={variables[key]}
                                                 onChange={(html) => setVariables({ ...variables, [key]: html })}
                                                 onTotalsChange={handleTotalsChange}
+                                                products={products}
                                             />
                                         ) : (
                                             <Input
