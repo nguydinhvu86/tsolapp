@@ -4,13 +4,13 @@ import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Table } from '@/app/components/ui/Table';
 import { Button } from '@/app/components/ui/Button';
-import { ArrowLeft, User, Mail, Phone, MapPin, Building2, FileSpreadsheet, FileText, FileOutput, FilePlus2, Eye, Edit, FileStack, Plus } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, MapPin, Building2, FileSpreadsheet, FileText, FileOutput, FilePlus2, Eye, Edit, FileStack, Plus, ShoppingCart, SearchCode, Ticket, HandCoins } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export function CustomerDetailClient({ customer }: { customer: any }) {
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState<'quotes' | 'contracts' | 'handovers' | 'payments' | 'appendices' | 'dispatches'>('quotes');
+    const [activeTab, setActiveTab] = useState<'quotes' | 'contracts' | 'handovers' | 'payments' | 'appendices' | 'dispatches' | 'salesEstimates' | 'salesOrders' | 'salesInvoices' | 'salesPayments'>('quotes');
 
     const tabs = [
         { id: 'quotes', name: 'Báo Giá', count: customer.quotes.length, icon: FileSpreadsheet },
@@ -19,6 +19,10 @@ export function CustomerDetailClient({ customer }: { customer: any }) {
         { id: 'dispatches', name: 'Công Văn', count: customer.dispatches?.length || 0, icon: Mail },
         { id: 'handovers', name: 'Bàn Giao', count: customer.handovers.length, icon: FileOutput },
         { id: 'payments', name: 'Đề Nghị TT', count: customer.paymentRequests.length, icon: FilePlus2 },
+        { id: 'salesEstimates', name: 'Báo Giá Phụ Tùng', count: customer.salesEstimates?.length || 0, icon: SearchCode },
+        { id: 'salesOrders', name: 'Đơn Hàng Phụ Tùng', count: customer.salesOrders?.length || 0, icon: ShoppingCart },
+        { id: 'salesInvoices', name: 'HĐ Bán & Nợ', count: customer.salesInvoices?.length || 0, icon: Ticket },
+        { id: 'salesPayments', name: 'Thu Tiền', count: customer.salesPayments?.length || 0, icon: HandCoins },
     ];
 
     const getStatusColor = (status: string) => {
@@ -77,6 +81,13 @@ export function CustomerDetailClient({ customer }: { customer: any }) {
                                 <div>
                                     <p style={{ margin: 0, fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Mã Số Thuế</p>
                                     <p style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 500 }}>{customer.taxCode || 'Chưa cập nhật'}</p>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(220, 38, 38, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#dc2626' }}><HandCoins size={16} /></div>
+                                <div>
+                                    <p style={{ margin: 0, fontSize: '0.75rem', fontWeight: 600, color: '#dc2626', textTransform: 'uppercase' }}>Tổng Dư Nợ Hóa Đơn</p>
+                                    <p style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#dc2626' }}>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(customer.totalDebt || 0)}</p>
                                 </div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -178,6 +189,10 @@ export function CustomerDetailClient({ customer }: { customer: any }) {
                             {activeTab === 'dispatches' && customer.dispatches?.map((doc: any) => <DocumentRow key={doc.id} doc={doc} type="dispatches" getStatusColor={getStatusColor} />)}
                             {activeTab === 'handovers' && customer.handovers.map((doc: any) => <DocumentRow key={doc.id} doc={doc} type="handovers" getStatusColor={getStatusColor} />)}
                             {activeTab === 'payments' && customer.paymentRequests.map((doc: any) => <DocumentRow key={doc.id} doc={doc} type="payment-requests" getStatusColor={getStatusColor} />)}
+                            {activeTab === 'salesEstimates' && customer.salesEstimates?.map((doc: any) => <SalesDocumentRow key={doc.id} doc={doc} type="sales/estimates" getStatusColor={getStatusColor} />)}
+                            {activeTab === 'salesOrders' && customer.salesOrders?.map((doc: any) => <SalesDocumentRow key={doc.id} doc={doc} type="sales/orders" getStatusColor={getStatusColor} />)}
+                            {activeTab === 'salesInvoices' && customer.salesInvoices?.map((doc: any) => <SalesDocumentRow key={doc.id} doc={doc} type="sales/invoices" getStatusColor={getStatusColor} />)}
+                            {activeTab === 'salesPayments' && customer.salesPayments?.map((doc: any) => <SalesDocumentRow key={doc.id} doc={doc} type="sales/payments" getStatusColor={getStatusColor} />)}
 
                             {/* Empty state */}
                             {((activeTab === 'quotes' && customer.quotes.length === 0) ||
@@ -185,7 +200,12 @@ export function CustomerDetailClient({ customer }: { customer: any }) {
                                 (activeTab === 'appendices' && customer.contracts.reduce((acc: number, c: any) => acc + (c.appendices?.length || 0), 0) === 0) ||
                                 (activeTab === 'dispatches' && (!customer.dispatches || customer.dispatches.length === 0)) ||
                                 (activeTab === 'handovers' && customer.handovers.length === 0) ||
-                                (activeTab === 'payments' && customer.paymentRequests.length === 0)) && (
+                                (activeTab === 'payments' && customer.paymentRequests.length === 0) ||
+                                (activeTab === 'salesEstimates' && (!customer.salesEstimates || customer.salesEstimates.length === 0)) ||
+                                (activeTab === 'salesOrders' && (!customer.salesOrders || customer.salesOrders.length === 0)) ||
+                                (activeTab === 'salesInvoices' && (!customer.salesInvoices || customer.salesInvoices.length === 0)) ||
+                                (activeTab === 'salesPayments' && (!customer.salesPayments || customer.salesPayments.length === 0))
+                            ) && (
                                     <tr>
                                         <td colSpan={5} style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
                                             Chưa có tài liệu nào trong mục này.
@@ -223,6 +243,37 @@ function DocumentRow({ doc, type, getStatusColor }: { doc: any, type: string, ge
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         background: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)', transition: 'all 0.2s'
                     }} title="Xem chi tiết & In">
+                        <Eye size={16} />
+                    </Link>
+                </div>
+            </td>
+        </tr>
+    );
+}
+
+export function SalesDocumentRow({ doc, type, getStatusColor }: { doc: any, type: string, getStatusColor: (s: string) => { bg: string, color: string, text: string } }) {
+    const statusObj = getStatusColor(doc.status);
+    return (
+        <tr>
+            <td style={{ fontWeight: 600, color: 'var(--text-muted)', fontSize: '0.875rem' }}>#{doc.code}</td>
+            <td style={{ fontWeight: 500, color: 'var(--text-main)' }}>{doc.notes || 'Hồ sơ Bán Hàng'} - Trị giá: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(doc.totalAmount || doc.amount || 0)}</td>
+            <td>
+                <span style={{
+                    backgroundColor: statusObj.bg, color: statusObj.color,
+                    padding: '0.25rem 0.75rem', borderRadius: '999px',
+                    fontSize: '0.75rem', fontWeight: 600, display: 'inline-block'
+                }}>
+                    {statusObj.text}
+                </span>
+            </td>
+            <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{new Date(doc.createdAt).toLocaleDateString('vi-VN')}</td>
+            <td>
+                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                    <Link href={`/${type}`} style={{
+                        width: '32px', height: '32px', borderRadius: '8px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)', transition: 'all 0.2s'
+                    }} title="Tới phân hệ">
                         <Eye size={16} />
                     </Link>
                 </div>

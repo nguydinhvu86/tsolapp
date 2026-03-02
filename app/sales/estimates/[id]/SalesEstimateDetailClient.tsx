@@ -1,0 +1,286 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, FileDown, Plus, ExternalLink, Copy, User, ArrowRightLeft } from 'lucide-react';
+import Link from 'next/link';
+import { updateSalesEstimateStatus, convertEstimateToInvoice } from '../actions';
+import { formatMoney } from '@/lib/utils/formatters';
+import { TaskPanel } from '@/app/components/tasks/TaskPanel';
+
+export default function SalesEstimateDetailClient({ initialData, customers, products, users }: any) {
+    const router = useRouter();
+    const [estimate, setEstimate] = useState(initialData);
+    const [activeTab, setActiveTab] = useState<'items'>('items');
+    const [copied, setCopied] = useState(false);
+
+    useEffect(() => {
+        setEstimate(initialData);
+    }, [initialData]);
+
+    const handleCopyPublicLink = () => {
+        const publicUrl = `${window.location.origin}/public/sales/estimate/${estimate.id}`;
+        navigator.clipboard.writeText(publicUrl);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    const formatDate = (dateString: string | Date | null) => {
+        if (!dateString) return '--';
+        return new Date(dateString).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    };
+
+    const getStatusBadge = (status: string) => {
+        switch (status) {
+            case 'DRAFT': return <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">Bản Nháp</span>;
+            case 'SENT': return <span className="px-2 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">Đã Gửi KH</span>;
+            case 'ACCEPTED': return <span className="px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">Khách Chốt</span>;
+            case 'REJECTED': return <span className="px-2 py-1 rounded-full bg-red-100 text-red-700 text-xs font-semibold">Từ Chối</span>;
+            default: return <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">{status}</span>;
+        }
+    };
+
+    const handleStatusChange = async (newStatus: string) => {
+        if (!confirm(`Xác nhận đổi trạng thái báo giá thành: ${newStatus}?`)) return;
+        const res = await updateSalesEstimateStatus(estimate.id, newStatus);
+        if (res.success) {
+            setEstimate({ ...estimate, status: newStatus });
+            router.refresh();
+        } else {
+            alert(res.error);
+        }
+    };
+
+    const handleConvertToInvoice = async () => {
+        if (!confirm('Tạo Hóa Đơn Trực Tiếp từ Báo Giá này? Báo giá sẽ chuyển thành "Đã Chốt".')) return;
+        const res = await convertEstimateToInvoice(estimate.id, 'system');
+        if (res.success) {
+            alert("Đã tạo Hóa Đơn thành công, đang chuyển hướng...");
+            window.location.href = '/sales/invoices';
+        } else alert(res.error);
+    };
+
+    const tabs = [
+        { id: 'items', label: 'Chi tiết sản phẩm', icon: <ShoppingCart size={18} />, count: estimate.items?.length || 0 }
+    ] as const;
+
+    return (
+        <div style={{ padding: '0', maxWidth: '1400px', margin: '0 auto', fontFamily: 'Inter, sans-serif' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <button
+                        onClick={() => router.back()}
+                        style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            width: '40px', height: '40px', borderRadius: '50%', border: '1px solid #e2e8f0',
+                            backgroundColor: 'white', color: '#64748b', cursor: 'pointer', transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.color = '#0f172a'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'white'; e.currentTarget.style.color = '#64748b'; }}
+                    >
+                        <ArrowLeft size={20} />
+                    </button>
+                    <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.25rem' }}>
+                            <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#0f172a', margin: 0, letterSpacing: '-0.025em' }}>
+                                Báo Giá {estimate.code}
+                            </h1>
+                            {getStatusBadge(estimate.status)}
+                        </div>
+                        <p style={{ color: '#64748b', margin: 0, fontSize: '0.875rem' }}>Quản lý chi tiết báo giá và các công việc liên quan.</p>
+                    </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <button
+                        onClick={handleCopyPublicLink}
+                        className="btn btn-secondary"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: 'white', color: '#475569', border: '1px solid #cbd5e1', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                    >
+                        <Copy size={16} /> {copied ? 'Đã sao chép' : 'Copy Link Gửi KH'}
+                    </button>
+                    <Link
+                        href={`/print/sales/estimate/${estimate.id}`}
+                        target="_blank"
+                        className="btn btn-secondary"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#f1f5f9', color: '#3b82f6', border: '1px solid #bfdbfe', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                    >
+                        <ExternalLink size={16} /> Xem Bản In
+                    </Link>
+                    {(estimate.status === 'DRAFT' || estimate.status === 'SENT' || estimate.status === 'ACCEPTED') && (
+                        <button
+                            onClick={handleConvertToInvoice}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#fffbeb', color: '#d97706', border: '1px solid #fde68a', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                        >
+                            <ArrowRightLeft size={16} /> Lên Hóa Đơn
+                        </button>
+                    )}
+
+                    {estimate.status === 'DRAFT' && (
+                        <button
+                            onClick={() => handleStatusChange('SENT')}
+                            className="btn btn-primary"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.25rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#3b82f6', color: 'white', border: 'none', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                        >
+                            Ghi Nhận Đã Gửi Khách
+                        </button>
+                    )}
+                    {estimate.status === 'SENT' && (
+                        <>
+                            <button
+                                onClick={() => handleStatusChange('ACCEPTED')}
+                                className="btn btn-primary"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.25rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#10b981', color: 'white', border: 'none', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                            >
+                                Khách Chốt
+                            </button>
+                            <button
+                                onClick={() => handleStatusChange('REJECTED')}
+                                className="btn btn-primary"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.25rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#ef4444', color: 'white', border: 'none', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                            >
+                                Từ Chối
+                            </button>
+                        </>
+                    )}
+                </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 5fr) minmax(0, 3fr)', gap: '2rem' }}>
+                {/* Left Column: Details & Tabs */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+
+                    {/* Summary Card */}
+                    <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '1.5rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}>
+                        <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#1e293b', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <FileText size={20} color="#6366f1" /> Thông tin chung
+                        </h2>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                            <div>
+                                <p style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600, color: '#94a3b8', marginBottom: '0.25rem' }}>KHÁCH HÀNG</p>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <Building size={16} color="#64748b" />
+                                    <Link href={`/customers/${estimate.customerId}`} style={{ fontWeight: 600, color: '#4f46e5', textDecoration: 'none', fontSize: '1rem' }} className="hover:underline">
+                                        {estimate.customer?.name}
+                                    </Link>
+                                </div>
+                            </div>
+                            <div>
+                                <p style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600, color: '#94a3b8', marginBottom: '0.25rem' }}>NGÀY BÁO GIÁ</p>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#334155', fontWeight: 500 }}>
+                                    <Calendar size={16} color="#64748b" />
+                                    {formatDate(estimate.date)}
+                                </div>
+                            </div>
+                            <div>
+                                <p style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600, color: '#94a3b8', marginBottom: '0.25rem' }}>NHÂN VIÊN LẬP</p>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#334155', fontWeight: 500 }}>
+                                    <User size={16} color="#64748b" />
+                                    {estimate.creator?.name || '---'}
+                                </div>
+                            </div>
+                            <div>
+                                <p style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600, color: '#94a3b8', marginBottom: '0.25rem' }}>TỔNG GIÁ TRỊ</p>
+                                <p style={{ margin: 0, fontWeight: 700, color: '#10b981', fontSize: '1.125rem' }}>{formatMoney(estimate.totalAmount)}</p>
+                            </div>
+                            {estimate.notes && (
+                                <div style={{ gridColumn: '1 / -1' }}>
+                                    <p style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600, color: '#94a3b8', marginBottom: '0.25rem' }}>GHI CHÚ</p>
+                                    <p style={{ margin: 0, color: '#475569', fontSize: '0.875rem', backgroundColor: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>{estimate.notes}</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Tabs area */}
+                    <div style={{ backgroundColor: 'white', borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }}>
+                        <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0' }}>
+                            {tabs.map((tab) => {
+                                const isActive = activeTab === tab.id;
+                                return (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id as any)}
+                                        style={{
+                                            flex: 1, padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                                            backgroundColor: 'transparent', border: 'none', borderBottom: isActive ? '2px solid #6366f1' : '2px solid transparent',
+                                            color: isActive ? '#4f46e5' : '#64748b', fontWeight: isActive ? 600 : 500, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        {tab.icon} {tab.label}
+                                        <span style={{ backgroundColor: isActive ? '#e0e7ff' : '#f1f5f9', color: isActive ? '#4f46e5' : '#64748b', padding: '0.1rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 600 }}>
+                                            {tab.count}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        <div style={{ padding: '1.5rem' }}>
+                            {activeTab === 'items' && (
+                                <div style={{ overflowX: 'auto' }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+                                        <thead>
+                                            <tr style={{ backgroundColor: '#f8fafc', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>
+                                                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Sản Phẩm</th>
+                                                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Số Lượng</th>
+                                                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Đơn Giá</th>
+                                                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Thuế (%)</th>
+                                                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Thành Tiền</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {estimate.items?.length === 0 ? (
+                                                <tr><td colSpan={4} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Chưa có sản phẩm nào.</td></tr>
+                                            ) : (
+                                                estimate.items?.map((item: any) => (
+                                                    <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                                        <td style={{ padding: '1rem', fontWeight: 500, color: '#1e293b' }}>
+                                                            {item.product?.name || 'Sản phẩm không xác định'}
+                                                            {item.product?.sku && <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>SKU: {item.product.sku}</div>}
+                                                        </td>
+                                                        <td style={{ padding: '1rem', textAlign: 'center', color: '#475569' }}>{item.quantity} {item.product?.unit || ''}</td>
+                                                        <td style={{ padding: '1rem', textAlign: 'right', color: '#475569' }}>{formatMoney(item.unitPrice)}</td>
+                                                        <td style={{ padding: '1rem', textAlign: 'center', color: '#475569' }}>{item.taxRate || 0}%</td>
+                                                        <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>{formatMoney(item.totalPrice)}</td>
+                                                    </tr>
+                                                ))
+                                            )}
+                                            {estimate.items?.length > 0 && (
+                                                <>
+                                                    <tr style={{ backgroundColor: '#f8fafc' }}>
+                                                        <td colSpan={4} style={{ padding: '1rem', textAlign: 'right', color: '#64748b' }}>Tổng tiền trước thuế:</td>
+                                                        <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 500, color: '#1e293b' }}>{formatMoney(estimate.subTotal || 0)}</td>
+                                                    </tr>
+                                                    <tr style={{ backgroundColor: '#f8fafc' }}>
+                                                        <td colSpan={4} style={{ padding: '1rem', textAlign: 'right', color: '#64748b' }}>Tổng tiền thuế:</td>
+                                                        <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 500, color: '#1e293b' }}>{formatMoney(estimate.taxAmount || 0)}</td>
+                                                    </tr>
+                                                    <tr style={{ backgroundColor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+                                                        <td colSpan={4} style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>Tổng Cộng:</td>
+                                                        <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 700, color: '#10b981', fontSize: '1.1rem' }}>{formatMoney(estimate.totalAmount)}</td>
+                                                    </tr>
+                                                </>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right Column: Related Tasks */}
+                <div>
+                    <TaskPanel
+                        initialTasks={estimate.tasks || []}
+                        users={users || []}
+                        entityType="SALES_ESTIMATE"
+                        entityId={estimate.id}
+                    />
+                </div>
+            </div>
+        </div>
+    );
+}

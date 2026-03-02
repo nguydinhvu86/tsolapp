@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 
-export function MainLayout({ children, brandName }: { children: React.ReactNode, brandName: string }) {
+export function MainLayout({ children, brandName, logoUrl }: { children: React.ReactNode, brandName: string, logoUrl?: string | null }) {
     const pathname = usePathname();
     const isLoginPage = pathname === '/login';
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -19,6 +19,7 @@ export function MainLayout({ children, brandName }: { children: React.ReactNode,
             {/* Sidebar acts as off-canvas on mobile, fixed left on desktop */}
             <Sidebar
                 brandName={brandName}
+                logoUrl={logoUrl}
                 isOpen={isMobileMenuOpen}
                 onClose={() => setIsMobileMenuOpen(false)}
             />

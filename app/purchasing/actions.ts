@@ -173,14 +173,22 @@ export async function createPurchaseOrder(data: any) {
             status: data.status || 'DRAFT',
             notes: data.notes,
             totalAmount: data.totalAmount,
+            subTotal: data.subTotal || 0,
+            taxAmount: data.taxAmount || 0,
             creatorId: user.id,
             items: {
-                create: data.items.map((item: any) => ({
-                    productId: item.productId,
-                    quantity: item.quantity,
-                    unitPrice: item.unitPrice,
-                    totalPrice: item.quantity * item.unitPrice
-                }))
+                create: data.items.map((item: any) => {
+                    const lineSubTotal = item.quantity * item.unitPrice;
+                    const lineTaxAmount = lineSubTotal * (item.taxRate || 0) / 100;
+                    return {
+                        productId: item.productId,
+                        quantity: item.quantity,
+                        unitPrice: item.unitPrice,
+                        taxRate: item.taxRate || 0,
+                        taxAmount: lineTaxAmount,
+                        totalPrice: lineSubTotal + lineTaxAmount
+                    };
+                })
             }
         }
     });
@@ -203,14 +211,22 @@ export async function updatePurchaseOrder(id: string, data: any) {
             status: data.status || 'DRAFT',
             notes: data.notes,
             totalAmount: data.totalAmount,
+            subTotal: data.subTotal || 0,
+            taxAmount: data.taxAmount || 0,
             items: {
                 deleteMany: {},
-                create: data.items.map((item: any) => ({
-                    productId: item.productId,
-                    quantity: item.quantity,
-                    unitPrice: item.unitPrice,
-                    totalPrice: item.quantity * item.unitPrice
-                }))
+                create: data.items.map((item: any) => {
+                    const lineSubTotal = item.quantity * item.unitPrice;
+                    const lineTaxAmount = lineSubTotal * (item.taxRate || 0) / 100;
+                    return {
+                        productId: item.productId,
+                        quantity: item.quantity,
+                        unitPrice: item.unitPrice,
+                        taxRate: item.taxRate || 0,
+                        taxAmount: lineTaxAmount,
+                        totalPrice: lineSubTotal + lineTaxAmount
+                    };
+                })
             }
         }
     });
@@ -288,17 +304,27 @@ export async function createPurchaseBill(data: any) {
             supplierId: data.supplierId,
             orderId: data.orderId || null,
             date: data.date ? new Date(data.date) : new Date(),
+            dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
             status: 'DRAFT',
             notes: data.notes,
+            attachment: data.attachment || null,
             totalAmount: data.totalAmount,
+            subTotal: data.subTotal || 0,
+            taxAmount: data.taxAmount || 0,
             creatorId: user.id,
             items: {
-                create: data.items.map((item: any) => ({
-                    productId: item.productId,
-                    quantity: item.quantity,
-                    unitPrice: item.unitPrice,
-                    totalPrice: item.quantity * item.unitPrice
-                }))
+                create: data.items.map((item: any) => {
+                    const lineSubTotal = item.quantity * item.unitPrice;
+                    const lineTaxAmount = lineSubTotal * (item.taxRate || 0) / 100;
+                    return {
+                        productId: item.productId,
+                        quantity: item.quantity,
+                        unitPrice: item.unitPrice,
+                        taxRate: item.taxRate || 0,
+                        taxAmount: lineTaxAmount,
+                        totalPrice: lineSubTotal + lineTaxAmount
+                    };
+                })
             }
         }
     });
@@ -400,16 +426,26 @@ export async function updatePurchaseBill(id: string, data: any) {
             supplierId: data.supplierId,
             orderId: data.orderId || null,
             date: data.date ? new Date(data.date) : new Date(),
+            dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
             notes: data.notes,
+            attachment: data.attachment !== undefined ? data.attachment : existing.attachment,
             totalAmount: data.totalAmount,
+            subTotal: data.subTotal || 0,
+            taxAmount: data.taxAmount || 0,
             items: {
                 deleteMany: {},
-                create: data.items.map((item: any) => ({
-                    productId: item.productId,
-                    quantity: item.quantity,
-                    unitPrice: item.unitPrice,
-                    totalPrice: item.quantity * item.unitPrice
-                }))
+                create: data.items.map((item: any) => {
+                    const lineSubTotal = item.quantity * item.unitPrice;
+                    const lineTaxAmount = lineSubTotal * (item.taxRate || 0) / 100;
+                    return {
+                        productId: item.productId,
+                        quantity: item.quantity,
+                        unitPrice: item.unitPrice,
+                        taxRate: item.taxRate || 0,
+                        taxAmount: lineTaxAmount,
+                        totalPrice: lineSubTotal + lineTaxAmount
+                    };
+                })
             }
         }
     });
@@ -517,6 +553,7 @@ export async function createPurchasePayment(data: any) {
                 paymentMethod: data.paymentMethod || 'BANK_TRANSFER',
                 reference: data.reference,
                 notes: data.notes,
+                attachment: data.attachment,
                 supplierId: data.supplierId,
                 creatorId: user.id,
                 allocations: {
@@ -590,5 +627,106 @@ export async function deletePurchasePayment(id: string) {
 
         revalidatePath('/purchasing/payments');
         return true;
+    });
+}
+
+export async function uploadPurchasePaymentDocument(paymentId: string, url: string, name: string) {
+    const session = await getServerSession(authOptions);
+    if (!session) throw new Error("Unauthorized");
+
+    return prisma.$transaction(async (tx: any) => {
+        const payment = await tx.purchasePayment.findUnique({
+            where: { id: paymentId }
+        });
+
+        if (!payment) throw new Error("Không tìm thấy Phiếu Chi này");
+
+        let existingDocs: any[] = [];
+        if (payment.attachment) {
+            try {
+                existingDocs = JSON.parse(payment.attachment);
+            } catch (e) {
+                existingDocs = [{
+                    url: payment.attachment,
+                    name: "Chứng từ gốc",
+                    uploadedAt: payment.createdAt
+                }];
+            }
+        }
+
+        existingDocs.push({
+            url,
+            name,
+            uploadedAt: new Date().toISOString()
+        });
+
+        const updatedPayment = await tx.purchasePayment.update({
+            where: { id: paymentId },
+            data: {
+                attachment: JSON.stringify(existingDocs)
+            },
+            include: {
+                supplier: true,
+                creator: true,
+                allocations: {
+                    include: { bill: true }
+                }
+            }
+        });
+
+        revalidatePath(`/purchasing/payments/${paymentId}`);
+        return updatedPayment;
+    });
+}
+
+// ---------------------------------------------------------------------------
+// UPLOAD DOCUMENTS FOR BILLS
+// ---------------------------------------------------------------------------
+
+export async function uploadPurchaseBillDocument(billId: string, url: string, name: string) {
+    const session = await getServerSession(authOptions);
+    if (!session) throw new Error("Unauthorized");
+
+    return prisma.$transaction(async (tx: any) => {
+        const bill = await tx.purchaseBill.findUnique({
+            where: { id: billId }
+        });
+
+        if (!bill) throw new Error("Không tìm thấy Hóa đơn này");
+
+        let existingDocs: any[] = [];
+        if (bill.attachment) {
+            try {
+                existingDocs = JSON.parse(bill.attachment);
+            } catch (e) {
+                existingDocs = [{
+                    url: bill.attachment,
+                    name: "Tài liệu",
+                    uploadedAt: bill.createdAt
+                }];
+            }
+        }
+
+        existingDocs.push({
+            url,
+            name,
+            uploadedAt: new Date().toISOString()
+        });
+
+        const updatedBill = await tx.purchaseBill.update({
+            where: { id: billId },
+            data: {
+                attachment: JSON.stringify(existingDocs)
+            },
+            include: {
+                supplier: true,
+                creator: true,
+                items: { include: { product: true } },
+                allocations: { include: { payment: true } }
+            }
+        });
+
+        revalidatePath(`/purchasing/bills/${billId}`);
+        return updatedBill;
     });
 }

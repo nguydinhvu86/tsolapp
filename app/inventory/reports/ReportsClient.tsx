@@ -4,9 +4,10 @@ import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Table } from '@/app/components/ui/Table';
 import { Button } from '@/app/components/ui/Button';
-import { Package, Search, History, FileSpreadsheet } from 'lucide-react';
+import { Package, Search, History, FileSpreadsheet, Printer } from 'lucide-react';
 import { getStockLedger, getTransactionReport, getInOutBalanceReport } from '../report-actions';
 import * as XLSX from 'xlsx';
+import { exportToExcel } from '@/lib/utils/export';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 // Utility for date string formatting "YYYY-MM-DD" for HTML input
@@ -167,20 +168,19 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
     };
 
     const handleExportValuation = () => {
-        const wb = XLSX.utils.book_new();
-        const wsData = filteredValuation.map((v: any) => ({
-            'Mã SKU': v.sku,
-            'Tên Sản Phẩm': v.name,
-            'Nhóm': v.groupName || '-',
-            'ĐVT': v.unit,
-            'Giá Vốn': v.price,
-            'Tổng Tồn': v.qty,
-            'Thành Tiền': v.totalValue,
-            'Trạng Thái': v.qty <= (v.minStockLevel || 0) ? 'CẦN NHẬP' : 'BÌNH THƯỜNG'
-        }));
-        const ws = XLSX.utils.json_to_sheet(wsData);
-        XLSX.utils.book_append_sheet(wb, ws, "Ton Kho");
-        XLSX.writeFile(wb, `Bao_Cao_Ton_Kho.xlsx`);
+        exportToExcel(
+            filteredValuation.map((v: any) => ({
+                'Mã SKU': v.sku,
+                'Tên Sản Phẩm': v.name,
+                'Nhóm': v.groupName || '-',
+                'ĐVT': v.unit,
+                'Giá Vốn': v.price,
+                'Tổng Tồn': v.qty,
+                'Thành Tiền': v.totalValue,
+                'Trạng Thái': v.qty <= (v.minStockLevel || 0) ? 'CẦN NHẬP' : 'BÌNH THƯỜNG'
+            })),
+            `Bao_Cao_Ton_Kho_Hien_Tai`
+        );
     };
 
     const handleExportLedger = () => {
@@ -188,55 +188,52 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
             alert("Không có dữ liệu thẻ kho để xuất.");
             return;
         }
-        const wb = XLSX.utils.book_new();
-        const wsData = ledgerData.map((row: any) => ({
-            'Ngày/Giờ': formatDate(row.date),
-            'Mã Phiếu': row.code,
-            'Diễn Giải Lệnh': row.type,
-            'Ghi Chú': row.notes || '',
-            'Biến Động': row.change,
-            'Tồn Cuối': row.runningBalance
-        }));
-        const ws = XLSX.utils.json_to_sheet(wsData);
-        XLSX.utils.book_append_sheet(wb, ws, "The Kho");
-        XLSX.writeFile(wb, `The_Kho.xlsx`);
+        exportToExcel(
+            ledgerData.map((row: any) => ({
+                'Ngày/Giờ': formatDate(row.date),
+                'Mã Phiếu': row.code,
+                'Diễn Giải Lệnh': row.type,
+                'Ghi Chú': row.notes || '',
+                'Biến Động': row.change,
+                'Tồn Cuối': row.runningBalance
+            })),
+            `The_Kho_${ledgerProduct}_from_${startDate}_to_${endDate}`
+        );
     };
 
     const handleExportTxn = () => {
         if (txnData.length === 0) return alert("Không có dữ liệu.");
-        const wb = XLSX.utils.book_new();
-        const wsData = txnData.map((row: any) => ({
-            'Ngày': formatDate(row.date),
-            'Mã Phiếu': row.code,
-            'Loại': row.type === 'IN' ? 'Nhập' : row.type === 'OUT' ? 'Xuất' : row.type === 'TRANSFER' ? 'Chuyển Kho' : 'Kiểm Kê/Điều Chỉnh',
-            'Sản Phẩm': row.items.map((i: any) => `${i.product.name} (x${i.quantity})`).join(', '),
-            'Nhóm SP': row.items.map((i: any) => i.product.group?.name || '-').join(', '),
-            'Từ Kho': row.fromWarehouse?.name || '',
-            'Đến Kho': row.toWarehouse?.name || '',
-            'Người Tạo': row.creator?.name || '',
-            'Trạng Thái': row.status
-        }));
-        const ws = XLSX.utils.json_to_sheet(wsData);
-        XLSX.utils.book_append_sheet(wb, ws, "Giao Dich");
-        XLSX.writeFile(wb, `Bao_Cao_Giao_Dich.xlsx`);
+        exportToExcel(
+            txnData.map((row: any) => ({
+                'Ngày': formatDate(row.date),
+                'Mã Phiếu': row.code,
+                'Loại': row.type === 'IN' ? 'Nhập' : row.type === 'OUT' ? 'Xuất' : row.type === 'TRANSFER' ? 'Chuyển Kho' : 'Kiểm Kê/Điều Chỉnh',
+                'Sản Phẩm': row.items.map((i: any) => `${i.product.name} (x${i.quantity})`).join(', '),
+                'Nhóm SP': row.items.map((i: any) => i.product.group?.name || '-').join(', '),
+                'Từ Kho': row.fromWarehouse?.name || '',
+                'Đến Kho': row.toWarehouse?.name || '',
+                'Người Tạo': row.creator?.name || '',
+                'Trạng Thái': row.status
+            })),
+            `Bao_Cao_Giao_Dich_${startDate}_to_${endDate}`
+        );
     };
 
     const handleExportIob = () => {
         if (iobData.length === 0) return alert("Không có dữ liệu.");
-        const wb = XLSX.utils.book_new();
-        const wsData = iobData.map((row: any) => ({
-            'Mã SKU': row.sku,
-            'Tên Sản Phẩm': row.name,
-            'Nhóm': row.groupName || '-',
-            'ĐVT': row.unit,
-            'Tồn Đầu Kỳ': row.openingBalance,
-            'Nhập Trong Kỳ': row.totalIn,
-            'Xuất Trong Kỳ': row.totalOut,
-            'Tồn Cuối Kỳ': row.closingBalance
-        }));
-        const ws = XLSX.utils.json_to_sheet(wsData);
-        XLSX.utils.book_append_sheet(wb, ws, "XNT");
-        XLSX.writeFile(wb, `Bao_Cao_Xuat_Nhap_Ton.xlsx`);
+        exportToExcel(
+            iobData.map((row: any) => ({
+                'Mã SKU': row.sku,
+                'Tên Sản Phẩm': row.name,
+                'Nhóm': row.groupName || '-',
+                'ĐVT': row.unit,
+                'Tồn Đầu Kỳ': row.openingBalance,
+                'Nhập Trong Kỳ': row.totalIn,
+                'Xuất Trong Kỳ': row.totalOut,
+                'Tồn Cuối Kỳ': row.closingBalance
+            })),
+            `Bao_Cao_Xuat_Nhap_Ton_${startDate}_to_${endDate}`
+        );
     };
 
     return (
@@ -411,6 +408,9 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
                             <Button onClick={handleExportValuation} variant="secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                 <FileSpreadsheet size={16} /> Xuất Excel
                             </Button>
+                            <Button onClick={() => window.print()} variant="secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <Printer size={16} /> Print
+                            </Button>
                         </div>
 
                         <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
@@ -446,9 +446,23 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
                                         )
                                     })}
                                     {filteredValuation.length === 0 && (
-                                        <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem' }}>Không có dữ liệu</td></tr>
+                                        <tr><td colSpan={8} style={{ textAlign: 'center', padding: '2rem' }}>Không có dữ liệu</td></tr>
                                     )}
                                 </tbody>
+                                {filteredValuation.length > 0 && (
+                                    <tfoot style={{ position: 'sticky', bottom: 0, backgroundColor: 'var(--surface)', borderTop: '2px solid var(--border)' }}>
+                                        <tr>
+                                            <td colSpan={5} className="text-right font-bold text-gray-700">TỔNG CỘNG:</td>
+                                            <td className="text-right font-bold text-primary">
+                                                {filteredValuation.reduce((sum, v) => sum + (v.qty || 0), 0)}
+                                            </td>
+                                            <td className="text-right font-bold text-success">
+                                                {formatMoney(filteredValuation.reduce((sum, v) => sum + (v.totalValue || 0), 0))}
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                )}
                             </Table>
                         </div>
                     </div>
@@ -485,9 +499,14 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
                                     <History size={16} /> Xem Thẻ Kho
                                 </Button>
                                 {ledgerData.length > 0 && (
-                                    <Button onClick={handleExportLedger} variant="secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', height: '42px' }}>
-                                        <FileSpreadsheet size={16} /> Xuất Excel
-                                    </Button>
+                                    <>
+                                        <Button onClick={handleExportLedger} variant="secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', height: '42px' }}>
+                                            <FileSpreadsheet size={16} /> Xuất Excel
+                                        </Button>
+                                        <Button onClick={() => window.print()} variant="secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', height: '42px' }}>
+                                            <Printer size={16} /> Print
+                                        </Button>
+                                    </>
                                 )}
                             </div>
                         </div>
@@ -571,7 +590,12 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
                                 </select>
                             </div>
                             <Button onClick={loadTransactions} disabled={isLoadingTxn} style={{ height: '42px' }}>Tạo Báo Cáo</Button>
-                            {txnData.length > 0 && <Button onClick={handleExportTxn} variant="secondary" style={{ height: '42px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><FileSpreadsheet size={16} /> Xuất Excel</Button>}
+                            {txnData.length > 0 && (
+                                <>
+                                    <Button onClick={handleExportTxn} variant="secondary" style={{ height: '42px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><FileSpreadsheet size={16} /> Xuất Excel</Button>
+                                    <Button onClick={() => window.print()} variant="secondary" style={{ height: '42px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Printer size={16} /> Print</Button>
+                                </>
+                            )}
                         </div>
 
                         {txnChartData.length > 0 && (
@@ -663,7 +687,12 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
                                 </select>
                             </div>
                             <Button onClick={loadInOutBalance} disabled={isLoadingIob} style={{ height: '42px' }}>Tạo Báo Cáo XNT</Button>
-                            {iobData.length > 0 && <Button onClick={handleExportIob} variant="secondary" style={{ height: '42px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><FileSpreadsheet size={16} /> Xuất Excel</Button>}
+                            {iobData.length > 0 && (
+                                <>
+                                    <Button onClick={handleExportIob} variant="secondary" style={{ height: '42px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><FileSpreadsheet size={16} /> Xuất Excel</Button>
+                                    <Button onClick={() => window.print()} variant="secondary" style={{ height: '42px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Printer size={16} /> Print</Button>
+                                </>
+                            )}
                         </div>
 
                         {iobChartData.length > 0 && (
@@ -717,6 +746,25 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
                                             </tr>
                                         ))}
                                     </tbody>
+                                    {iobData.length > 0 && (
+                                        <tfoot style={{ position: 'sticky', bottom: 0, backgroundColor: 'var(--surface)', borderTop: '2px solid var(--border)' }}>
+                                            <tr>
+                                                <td colSpan={4} className="text-right font-bold text-gray-700">TỔNG CỘNG:</td>
+                                                <td className="text-right font-bold text-gray-700">
+                                                    {iobData.reduce((sum, v) => sum + (v.openingBalance || 0), 0)}
+                                                </td>
+                                                <td className="text-right font-bold text-success">
+                                                    {iobData.reduce((sum, v) => sum + (v.totalIn || 0), 0)}
+                                                </td>
+                                                <td className="text-right font-bold text-danger">
+                                                    {iobData.reduce((sum, v) => sum + (v.totalOut || 0), 0)}
+                                                </td>
+                                                <td className="text-right font-bold text-primary">
+                                                    {iobData.reduce((sum, v) => sum + (v.closingBalance || 0), 0)}
+                                                </td>
+                                            </tr>
+                                        </tfoot>
+                                    )}
                                 </Table>
                             </div>
                         )}

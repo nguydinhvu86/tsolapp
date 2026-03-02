@@ -1,0 +1,165 @@
+import React from 'react';
+import { prisma } from '@/lib/prisma';
+import { notFound } from 'next/navigation';
+import { PrintButton } from '@/app/components/ui/PrintButton';
+
+export default async function PublicPurchaseOrderPage({ params }: { params: { id: string } }) {
+    const order = await prisma.purchaseOrder.findUnique({
+        where: { id: params.id },
+        include: {
+            supplier: true,
+            creator: true,
+            items: { include: { product: true } }
+        }
+    });
+
+    if (!order) {
+        notFound();
+    }
+
+    const settings = await prisma.systemSetting.findMany({
+        where: { key: { in: ['COMPANY_FULL_NAME', 'COMPANY_NAME', 'COMPANY_ADDRESS', 'COMPANY_LOGO', 'COMPANY_PHONE', 'COMPANY_EMAIL', 'COMPANY_TAX'] } }
+    });
+    const settingsMap: Record<string, string> = {};
+    settings.forEach(s => settingsMap[s.key] = s.value);
+
+    const compName = settingsMap['COMPANY_FULL_NAME'] || settingsMap['COMPANY_NAME'] || 'CÔNG TY CỔ PHẦN CÔNG NGHỆ DEMO';
+    const compAddress = settingsMap['COMPANY_ADDRESS'] || 'Tầng 12, Tòa nhà Center, TP. Hà Nội';
+    const compLogo = settingsMap['COMPANY_LOGO'] || null;
+
+    const formatMoney = (amount: number) => {
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+    };
+
+    const formatDate = (dateString: string | Date | null) => {
+        if (!dateString) return '--';
+        return new Date(dateString).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    };
+
+    return (
+        <div style={{ minHeight: '100vh', backgroundColor: '#e2e8f0', padding: '2rem 0', display: 'flex', justifyContent: 'center' }}>
+            <PrintButton label="In Đơn Hàng" />
+
+            <div className="a4-document" style={{
+                width: '100%',
+                maxWidth: '210mm',
+                minHeight: '297mm',
+                backgroundColor: 'white',
+                padding: '20mm',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                fontFamily: '"Times New Roman", Times, serif',
+                color: '#000'
+            }}>
+                {/* Header: Company Info */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #1e293b', paddingBottom: '1.5rem', marginBottom: '2rem' }}>
+                    <div style={{ flex: 1 }}>
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 0.5rem 0', textTransform: 'uppercase', color: '#0f172a' }}>
+                            {compName}
+                        </h2>
+                        <div style={{ fontSize: '0.875rem', lineHeight: '1.5', color: '#334155' }}>
+                            {compAddress && <div><strong>Địa chỉ:</strong> {compAddress}</div>}
+                            {settingsMap['COMPANY_PHONE'] && <div><strong>Điện thoại:</strong> {settingsMap['COMPANY_PHONE']}</div>}
+                            {settingsMap['COMPANY_EMAIL'] && <div><strong>Email:</strong> {settingsMap['COMPANY_EMAIL']}</div>}
+                            {settingsMap['COMPANY_TAX'] && <div><strong>Mã số thuế:</strong> {settingsMap['COMPANY_TAX']}</div>}
+                        </div>
+                    </div>
+                    {compLogo && (
+                        <div style={{ marginLeft: '2rem' }}>
+                            <img src={compLogo} alt="Logo" style={{ maxHeight: '90px', maxWidth: '220px', objectFit: 'contain' }} />
+                        </div>
+                    )}
+                </div>
+
+                {/* Title */}
+                <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+                    <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 0.5rem 0', color: '#0f172a' }}>ĐƠN ĐẶT HÀNG (PO)</h1>
+                    <i style={{ fontSize: '0.95rem', color: '#475569' }}>Số: {order.code} | Ngày: {formatDate(order.date)}</i>
+                </div>
+
+                {/* Detail Info */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem', fontSize: '0.95rem', lineHeight: '1.6' }}>
+                    <div style={{ flex: 1, paddingRight: '1rem' }}>
+                        <h3 style={{ fontSize: '1rem', fontWeight: 700, borderBottom: '1px dotted #ccc', display: 'inline-block', paddingBottom: '0.25rem', marginBottom: '0.75rem' }}>THÔNG TIN NHÀ CUNG CẤP</h3>
+                        <div><strong>Tên nhà cung cấp:</strong> {order.supplier?.name}</div>
+                        {order.supplier?.address && <div><strong>Địa chỉ:</strong> {order.supplier?.address}</div>}
+                        {order.supplier?.phone && <div><strong>Điện thoại:</strong> {order.supplier?.phone}</div>}
+                    </div>
+                    <div style={{ flex: 1, paddingLeft: '1rem' }}>
+                        <h3 style={{ fontSize: '1rem', fontWeight: 700, borderBottom: '1px dotted #ccc', display: 'inline-block', paddingBottom: '0.25rem', marginBottom: '0.75rem' }}>THÔNG TIN ĐƠN HÀNG</h3>
+                        <div><strong>Ngày đặt hàng:</strong> {formatDate(order.date)}</div>
+                        <div><strong>Người lập:</strong> {order.creator?.name || '---'}</div>
+                    </div>
+                </div>
+
+                {/* Items Table */}
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2rem', fontSize: '0.95rem' }}>
+                    <thead>
+                        <tr style={{ backgroundColor: '#f1f5f9' }}>
+                            <th style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center', width: '50px' }}>STT</th>
+                            <th style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'left' }}>Sản Phẩm / Dịch Vụ</th>
+                            <th style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center', width: '80px' }}>SL</th>
+                            <th style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', width: '130px' }}>Đơn Giá (VNĐ)</th>
+                            <th style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center', width: '80px' }}>Thuế (%)</th>
+                            <th style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', width: '150px' }}>Thành Tiền (VNĐ)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {order.items?.map((item: any, index: number) => (
+                            <tr key={item.id}>
+                                <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{index + 1}</td>
+                                <td style={{ border: '1px solid #cbd5e1', padding: '8px' }}>
+                                    <strong style={{ display: 'block' }}>{item.product?.name}</strong>
+                                    {item.product?.sku && <span style={{ fontSize: '0.8rem', color: '#64748b' }}>SKU: {item.product.sku}</span>}
+                                </td>
+                                <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{item.quantity} {item.product?.unit || ''}</td>
+                                <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'right' }}>{formatMoney(item.unitPrice)}</td>
+                                <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{item.taxRate || 0}%</td>
+                                <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'right', fontWeight: 600 }}>{formatMoney(item.totalPrice)}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colSpan={5} style={{ border: '1px solid #cbd5e1', padding: '10px 16px', textAlign: 'right', fontWeight: 600 }}>Tổng tiền trước thuế:</td>
+                            <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', fontWeight: 600, color: '#334155' }}>{formatMoney(order.subTotal || 0)}</td>
+                        </tr>
+                        <tr>
+                            <td colSpan={5} style={{ border: '1px solid #cbd5e1', padding: '10px 16px', textAlign: 'right', fontWeight: 600 }}>Tổng tiền thuế:</td>
+                            <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', fontWeight: 600, color: '#334155' }}>{formatMoney(order.taxAmount || 0)}</td>
+                        </tr>
+                        <tr>
+                            <td colSpan={5} style={{ border: '1px solid #cbd5e1', padding: '10px 16px', textAlign: 'right', fontWeight: 700, fontSize: '1.05rem' }}>TỔNG CỘNG:</td>
+                            <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', fontWeight: 800, fontSize: '1.05rem', color: '#0f172a' }}>{formatMoney(order.totalAmount)}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+
+                {/* Notes */}
+                {order.notes && (
+                    <div style={{ marginBottom: '3rem' }}>
+                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '0 0 0.5rem 0' }}>Ghi chú / Điều khoản:</h4>
+                        <div style={{ fontSize: '0.9rem', whiteSpace: 'pre-line', fontStyle: 'italic', padding: '10px 15px', backgroundColor: '#f8fafc', borderLeft: '4px solid #94a3b8' }}>
+                            {order.notes}
+                        </div>
+                    </div>
+                )}
+
+                {/* Signatures */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 2rem', marginTop: '4rem' }}>
+                    <div style={{ textAlign: 'center' }}>
+                        <strong style={{ display: 'block', fontSize: '1rem' }}>ĐẠI DIỆN BÊN BÁN</strong>
+                        <i style={{ fontSize: '0.85rem', color: '#64748b' }}>(Ký và ghi rõ họ tên)</i>
+                        <div style={{ height: '100px' }}></div>
+                        <strong>{order.supplier?.name}</strong>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                        <strong style={{ display: 'block', fontSize: '1rem' }}>ĐẠI DIỆN BÊN MUA</strong>
+                        <i style={{ fontSize: '0.85rem', color: '#64748b' }}>(Ký và ghi rõ họ tên)</i>
+                        <div style={{ height: '100px' }}></div>
+                        <strong>{order.creator?.name}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Plus, Search, Eye, Trash2, Calendar, DollarSign, Wallet, ArrowUpDown } from 'lucide-react';
+import { Plus, Search, Eye, Trash2, Calendar, DollarSign, Wallet, ArrowUpDown, Upload, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { createPurchasePayment, deletePurchasePayment } from '@/app/purchasing/actions';
@@ -26,7 +26,33 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
         paymentMethod: 'BANK_TRANSFER',
         reference: '',
         notes: '',
+        attachment: '',
     });
+
+    const [isUploading, setIsUploading] = useState(false);
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+            setFormData(prev => ({ ...prev, attachment: data.url }));
+        } catch (err: any) {
+            alert(err.message || 'Upload thất bại');
+        } finally {
+            setIsUploading(false);
+        }
+    };
 
     // Allocation state
     const [allocations, setAllocations] = useState<Record<string, number>>({});
@@ -111,7 +137,7 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
     };
 
     const handleOpenCreate = () => {
-        setFormData({ supplierId: '', date: new Date().toISOString().substring(0, 10), amount: 0, paymentMethod: 'BANK_TRANSFER', reference: '', notes: '' });
+        setFormData({ supplierId: '', date: new Date().toISOString().substring(0, 10), amount: 0, paymentMethod: 'BANK_TRANSFER', reference: '', notes: '', attachment: '' });
         setAllocations({});
         setIsCreateModalOpen(true);
     };
@@ -380,6 +406,11 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                                         {viewingPayment.paymentMethod === 'BANK_TRANSFER' ? 'Chuyển Khoản' : 'Tiền Mặt'}
                                     </p>
                                     {viewingPayment.reference && <p className="text-xs text-gray-500">Tham chiếu: {viewingPayment.reference}</p>}
+                                    {viewingPayment.attachment && (
+                                        <a href={viewingPayment.attachment} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline flex items-center justify-end gap-1 mt-1">
+                                            <CheckCircle2 size={12} className="text-green-500" /> Xem chứng từ
+                                        </a>
+                                    )}
                                 </div>
                             </div>
 
@@ -455,9 +486,24 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                                                 <option value="CASH">Tiền Mặt</option>
                                             </select>
                                         </div>
-                                        <div className="sm:col-span-2">
+                                        <div className="sm:col-span-1">
                                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tham Chiếu (UNC/Mã GD)</label>
                                             <input type="text" value={formData.reference} onChange={e => setFormData({ ...formData, reference: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2.5" />
+                                        </div>
+                                        <div className="sm:col-span-1">
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Hình ảnh/Tài liệu</label>
+                                            <div className="flex items-center gap-3 mt-1">
+                                                <label className="cursor-pointer bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2.5 hover:bg-gray-50 flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 transition-colors w-full justify-center">
+                                                    <Upload size={16} />
+                                                    {isUploading ? 'Đang tải lên...' : 'Chọn file'}
+                                                    <input type="file" accept="image/*,.pdf,.doc,.docx" className="hidden" onChange={handleFileUpload} disabled={isUploading} />
+                                                </label>
+                                                {formData.attachment && (
+                                                    <a href={formData.attachment} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline text-sm flex items-center gap-1 min-w-max">
+                                                        <CheckCircle2 size={16} className="text-green-500" /> Đã tải lên
+                                                    </a>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
 
@@ -539,7 +585,8 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                                     type="submit"
                                     form="paymentForm"
                                     disabled={isSubmitting || totalAllocated > formData.amount}
-                                    className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium"
+                                    style={{ backgroundColor: (isSubmitting || totalAllocated > formData.amount) ? '#9ca3af' : '#16a34a', color: 'white' }}
+                                    className="px-6 py-2 rounded-lg font-medium transition-colors"
                                 >
                                     {isSubmitting ? 'Đang xử lý...' : 'Xác Nhận Thanh Toán'}
                                 </button>

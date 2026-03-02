@@ -1,0 +1,891 @@
+'use client';
+
+import React, { useState, useMemo } from 'react';
+import {
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
+    AreaChart, Area, PieChart, Pie, Cell
+} from 'recharts';
+import { Calendar, TrendingUp, DollarSign, Users, Package, FileText, CreditCard, Search, ArrowUpRight, Activity, Download, Printer } from 'lucide-react';
+import Link from 'next/link';
+import { exportToExcel, exportToPDF } from '@/lib/utils/export';
+import { formatMoney } from '@/lib/utils/formatters';
+
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+
+export function SalesReportClient({ invoices, payments, orders, customers }: { invoices: any[], payments: any[], orders: any[], customers: any[] }) {
+    const today = new Date();
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    const [startDate, setStartDate] = useState(firstDayOfMonth.toISOString().split('T')[0]);
+    const [endDate, setEndDate] = useState(today.toISOString().split('T')[0]);
+    const [activeTab, setActiveTab] = useState<'overview' | 'customer' | 'product' | 'invoice' | 'order' | 'payment'>('overview');
+
+    // Filter states
+    const [customerSearch, setCustomerSearch] = useState('');
+    const [productSearch, setProductSearch] = useState('');
+    const [invoiceSearch, setInvoiceSearch] = useState('');
+    const [orderSearch, setOrderSearch] = useState('');
+    const [orderStatus, setOrderStatus] = useState('ALL');
+    const [paymentSearch, setPaymentSearch] = useState('');
+    const [paymentMethod, setPaymentMethod] = useState('ALL');
+
+    const formatDate = (dateString: string) => {
+        if (!dateString) return '';
+        return new Date(dateString).toLocaleDateString('vi-VN');
+    };
+
+    // --- Data Filtering based on Date Range ---
+    const filterByDate = (items: any[], dateField: string = 'date') => {
+        if (!startDate || !endDate) return items;
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+
+        return items.filter(item => {
+            const itemDate = new Date(item[dateField]);
+            return itemDate >= start && itemDate <= end;
+        });
+    };
+
+    const filteredInvoices = useMemo(() => filterByDate(invoices), [invoices, startDate, endDate]);
+    const filteredPayments = useMemo(() => filterByDate(payments), [payments, startDate, endDate]);
+    const filteredOrders = useMemo(() => filterByDate(orders), [orders, startDate, endDate]);
+
+    // --- Tab 1: Overview Data ---
+    const totalSales = filteredInvoices.reduce((sum, b) => sum + b.totalAmount, 0);
+    const totalPayments = filteredPayments.reduce((sum, p) => sum + p.amount, 0);
+    const totalDebt = customers.reduce((sum, c) => sum + c.totalDebt, 0);
+
+    const timelineData = useMemo(() => {
+        const dataMap = new Map();
+
+        filteredInvoices.forEach(b => {
+            const dateStr = new Date(b.date).toISOString().split('T')[0];
+            if (!dataMap.has(dateStr)) dataMap.set(dateStr, { date: dateStr, 'Doanh Thu': 0, 'Thực Thu': 0 });
+            dataMap.get(dateStr)['Doanh Thu'] += b.totalAmount;
+        });
+
+        filteredPayments.forEach(p => {
+            const dateStr = new Date(p.date).toISOString().split('T')[0];
+            if (!dataMap.has(dateStr)) dataMap.set(dateStr, { date: dateStr, 'Doanh Thu': 0, 'Thực Thu': 0 });
+            dataMap.get(dateStr)['Thực Thu'] += p.amount;
+        });
+
+        const sortedData = Array.from(dataMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+
+        return sortedData.map(d => ({
+            ...d,
+            displayDate: new Date(d.date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+        }));
+    }, [filteredInvoices, filteredPayments]);
+
+    // --- Tab 2: Customer Data ---
+    const customerReportData = useMemo(() => {
+        const map = new Map();
+
+        customers.forEach(currentCustomer => {
+            map.set(currentCustomer.id, {
+                id: currentCustomer.id,
+                code: currentCustomer.taxCode || 'N/A',
+                name: currentCustomer.name,
+                totalPurchased: 0,
+                totalPaid: 0,
+                currentDebt: currentCustomer.totalDebt
+            });
+        });
+
+        filteredInvoices.forEach(b => {
+            if (b.customerId && map.has(b.customerId)) {
+                map.get(b.customerId).totalPurchased += b.totalAmount;
+            }
+        });
+
+        filteredPayments.forEach(p => {
+            if (p.customerId && map.has(p.customerId)) {
+                map.get(p.customerId).totalPaid += p.amount;
+            }
+        });
+
+        let result = Array.from(map.values())
+            .filter(c => c.totalPurchased > 0 || c.totalPaid > 0 || c.currentDebt > 0)
+            .sort((a, b) => b.totalPurchased - a.totalPurchased);
+
+        if (customerSearch.trim()) {
+            const query = customerSearch.toLowerCase();
+            result = result.filter(c =>
+                c.name?.toLowerCase().includes(query) ||
+                c.code?.toLowerCase().includes(query)
+            );
+        }
+
+        return result;
+    }, [customers, filteredInvoices, filteredPayments, customerSearch]);
+
+    const topCustomersChartData = useMemo(() => {
+        return customerReportData.slice(0, 5).map(c => ({
+            name: c.name?.length > 15 ? c.name.substring(0, 15) + '...' : c.name,
+            'Doanh Thu': c.totalPurchased,
+            'Thực Thu': c.totalPaid
+        }));
+    }, [customerReportData]);
+
+    // --- Tab 3: Product Data ---
+    const productReportData = useMemo(() => {
+        const map = new Map();
+
+        filteredInvoices.forEach(invoice => {
+            if (invoice.items && Array.isArray(invoice.items)) {
+                invoice.items.forEach((item: any) => {
+                    const prodId = item.productId;
+                    if (!map.has(prodId)) {
+                        map.set(prodId, {
+                            id: prodId,
+                            sku: item.product?.sku || '',
+                            name: item.product?.name || 'Sản phẩm không xác định',
+                            unit: item.product?.unit || '',
+                            totalQuantity: 0,
+                            totalValue: 0,
+                        });
+                    }
+                    const p = map.get(prodId);
+                    p.totalQuantity += item.quantity;
+                    p.totalValue += item.totalPrice;
+                });
+            }
+        });
+
+        let result = Array.from(map.values()).sort((a, b) => b.totalValue - a.totalValue);
+
+        if (productSearch.trim()) {
+            const query = productSearch.toLowerCase();
+            result = result.filter(p =>
+                p.name?.toLowerCase().includes(query) ||
+                p.sku?.toLowerCase().includes(query)
+            );
+        }
+
+        return result.map(p => ({
+            ...p,
+            avgPrice: p.totalQuantity > 0 ? p.totalValue / p.totalQuantity : 0
+        }));
+    }, [filteredInvoices, productSearch]);
+
+    const topProductsChartData = useMemo(() => {
+        const rawData = productReportData;
+        if (rawData.length <= 5) return rawData.map(p => ({ name: p.name, value: p.totalValue }));
+        const top5 = rawData.slice(0, 5).map(p => ({ name: p.name, value: p.totalValue }));
+        const others = rawData.slice(5).reduce((sum, p) => sum + p.totalValue, 0);
+        return [...top5, { name: 'Khác', value: others }];
+    }, [productReportData]);
+
+    // --- Tab 4 & 5 (Filtered Documents) ---
+    const displayInvoices = useMemo(() => {
+        let result = filteredInvoices;
+        if (invoiceSearch.trim()) {
+            const query = invoiceSearch.toLowerCase();
+            result = result.filter(b => b.code?.toLowerCase().includes(query) || b.customer?.name?.toLowerCase().includes(query));
+        }
+        return result;
+    }, [filteredInvoices, invoiceSearch]);
+
+    const displayOrders = useMemo(() => {
+        let result = filteredOrders;
+        if (orderSearch.trim()) {
+            const query = orderSearch.toLowerCase();
+            result = result.filter(o => o.code?.toLowerCase().includes(query) || o.customer?.name?.toLowerCase().includes(query));
+        }
+        if (orderStatus !== 'ALL') {
+            result = result.filter(o => o.status === orderStatus);
+        }
+        return result;
+    }, [filteredOrders, orderSearch, orderStatus]);
+
+    const displayPayments = useMemo(() => {
+        let result = filteredPayments;
+        if (paymentSearch.trim()) {
+            const query = paymentSearch.toLowerCase();
+            result = result.filter(p => p.code?.toLowerCase().includes(query) || p.reference?.toLowerCase().includes(query) || p.customer?.name?.toLowerCase().includes(query));
+        }
+        if (paymentMethod !== 'ALL') {
+            result = result.filter(p => p.paymentMethod === paymentMethod);
+        }
+        return result;
+    }, [filteredPayments, paymentSearch, paymentMethod]);
+
+
+    // Custom Premium Styles
+    const premiumStyles = `
+        .premium-tabs-wrapper {
+            display: inline-flex;
+            background: #fff;
+            padding: 4px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            gap: 4px;
+            overflow-x: auto;
+            max-width: 100%;
+        }
+        .premium-tab {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .premium-tab:hover {
+            color: var(--text-main);
+            background: #f4f4f5;
+        }
+        .premium-tab.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
+        }
+        .custom-tooltip {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: var(--shadow-lg);
+        }
+        .custom-tooltip-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 4px;
+            color: var(--text-main);
+            font-size: 0.875rem;
+        }
+        .custom-tooltip-item {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            font-size: 0.875rem;
+            margin-bottom: 4px;
+        }
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+        }
+        .filter-input {
+            border: none;
+            outline: none;
+            font-size: 0.875rem;
+            font-family: inherit;
+            color: var(--text-main);
+            background: transparent;
+        }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-success { background: #d1fae5; color: #047857; }
+        .badge-warning { background: #fef3c7; color: #b45309; }
+        .badge-neutral { background: #f3f4f6; color: #374151; }
+        .badge-info { background: #dbeafe; color: #1d4ed8; }
+        .badge-danger { background: #fee2e2; color: #dc2626; }
+    `;
+
+    const CustomRechartsTooltip = ({ active, payload, label }: any) => {
+        if (active && payload && payload.length) {
+            return (
+                <div className="custom-tooltip">
+                    <div className="custom-tooltip-title">{label}</div>
+                    {payload.map((entry: any, index: number) => (
+                        <div key={index} className="custom-tooltip-item">
+                            <span style={{ color: entry.color, fontWeight: 500 }}>{entry.name}:</span>
+                            <span style={{ fontWeight: 600 }}>{formatMoney(entry.value)}</span>
+                        </div>
+                    ))}
+                </div>
+            );
+        }
+        return null;
+    };
+
+    return (
+        <div className="p-6 max-w-7xl mx-auto">
+            <style>{premiumStyles}</style>
+
+            {/* Header */}
+            <div className="page-header">
+                <div>
+                    <h1 className="text-xl font-bold mb-1">Báo Cáo Phân Tích Bán Hàng</h1>
+                    <p className="text-gray-500 text-sm">Theo dõi hiệu suất kinh doanh, doanh thu và công nợ</p>
+                </div>
+                <div className="filter-group">
+                    <Calendar size={16} className="text-gray-400" />
+                    <input type="date" className="filter-input" value={startDate} onChange={e => setStartDate(e.target.value)} />
+                    <span className="text-gray-400 font-bold">→</span>
+                    <input type="date" className="filter-input" value={endDate} onChange={e => setEndDate(e.target.value)} />
+                </div>
+            </div>
+
+            {/* Tabs */}
+            <div className="mb-6">
+                <div className="premium-tabs-wrapper">
+                    <button className={`premium-tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
+                        <TrendingUp size={16} /> Tổng Quan
+                    </button>
+                    <button className={`premium-tab ${activeTab === 'customer' ? 'active' : ''}`} onClick={() => setActiveTab('customer')}>
+                        <Users size={16} /> Khách Hàng
+                    </button>
+                    <button className={`premium-tab ${activeTab === 'product' ? 'active' : ''}`} onClick={() => setActiveTab('product')}>
+                        <Package size={16} /> Sản Phẩm
+                    </button>
+                    <button className={`premium-tab ${activeTab === 'order' ? 'active' : ''}`} onClick={() => setActiveTab('order')}>
+                        <FileText size={16} /> Đơn Hàng
+                    </button>
+                    <button className={`premium-tab ${activeTab === 'invoice' ? 'active' : ''}`} onClick={() => setActiveTab('invoice')}>
+                        <FileText size={16} /> Hóa Đơn Xuất
+                    </button>
+                    <button className={`premium-tab ${activeTab === 'payment' ? 'active' : ''}`} onClick={() => setActiveTab('payment')}>
+                        <CreditCard size={16} /> Dòng Tiền Thu
+                    </button>
+                </div>
+            </div>
+
+            {/* TAB CONTENT */}
+
+            {/* 1. OVERVIEW TAB */}
+            {activeTab === 'overview' && (
+                <div>
+                    <div className="grid lg:grid-cols-3 gap-4 mb-6">
+                        <div className="stat-card stat-card-blue">
+                            <div className="stat-header">
+                                <div className="stat-info">
+                                    <div className="stat-title"><TrendingUp size={14} /> TỔNG DOANH THU</div>
+                                    <div className="stat-value">{formatMoney(totalSales)}</div>
+                                </div>
+                                <div className="stat-icon"><Activity size={24} /></div>
+                            </div>
+                            <div className="text-sm font-medium mt-2 opacity-80" style={{ color: '#1d4ed8' }}>
+                                {filteredInvoices.length} hóa đơn trong kỳ
+                            </div>
+                        </div>
+
+                        <div className="stat-card stat-card-green">
+                            <div className="stat-header">
+                                <div className="stat-info">
+                                    <div className="stat-title"><DollarSign size={14} /> THỰC THU TRONG KỲ</div>
+                                    <div className="stat-value">{formatMoney(totalPayments)}</div>
+                                </div>
+                                <div className="stat-icon"><CreditCard size={24} /></div>
+                            </div>
+                            <div className="text-sm font-medium mt-2 opacity-80" style={{ color: '#047857' }}>
+                                {filteredPayments.length} phiếu thu tiền
+                            </div>
+                        </div>
+
+                        <div className="stat-card stat-card-amber">
+                            <div className="stat-header">
+                                <div className="stat-info">
+                                    <div className="stat-title"><Users size={14} /> CÔNG NỢ PHẢI THU</div>
+                                    <div className="stat-value">{formatMoney(totalDebt)}</div>
+                                </div>
+                                <div className="stat-icon"><ArrowUpRight size={24} /></div>
+                            </div>
+                            <div className="text-sm font-medium mt-2 opacity-80" style={{ color: '#b45309' }}>
+                                Dư nợ tồn đọng từ khách hàng
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Chart */}
+                    <div className="card">
+                        <h3 className="font-bold text-lg mb-4">Lưu Chuyển Dòng Tiền (Bán Hàng)</h3>
+                        <div style={{ height: '350px', width: '100%' }}>
+                            {timelineData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={timelineData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                                        <defs>
+                                            <linearGradient id="colorDoanhThu" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.3} />
+                                                <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
+                                            </linearGradient>
+                                            <linearGradient id="colorThucThu" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="var(--success)" stopOpacity={0.3} />
+                                                <stop offset="95%" stopColor="var(--success)" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <XAxis dataKey="displayDate" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} dy={10} />
+                                        <YAxis tickFormatter={(val) => `${val / 1000000}M`} stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} width={60} />
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                                        <RechartsTooltip content={<CustomRechartsTooltip />} />
+                                        <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
+                                        <Area type="monotone" dataKey="Doanh Thu" stroke="var(--primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorDoanhThu)" />
+                                        <Area type="monotone" dataKey="Thực Thu" stroke="var(--success)" strokeWidth={3} fillOpacity={1} fill="url(#colorThucThu)" />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-xl border border-gray-100 h-full">
+                                    <TrendingUp size={48} className="text-gray-300 mb-4" />
+                                    <p className="font-medium text-gray-500">Không có dữ liệu trong khoảng thời gian này.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 2. CUSTOMER TAB */}
+            {activeTab === 'customer' && (
+                <div>
+                    <div className="card mb-6">
+                        <h3 className="font-bold text-lg mb-4">Top 5 Khách Hàng (Theo Doanh Thu)</h3>
+                        <div style={{ height: '300px', width: '100%' }}>
+                            {topCustomersChartData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={topCustomersChartData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }} barGap={6}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                                        <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} dy={10} />
+                                        <YAxis tickFormatter={(val) => `${val / 1000000}M`} stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} width={60} />
+                                        <RechartsTooltip content={<CustomRechartsTooltip />} cursor={{ fill: 'rgba(0,0,0,0.02)' }} />
+                                        <Legend wrapperStyle={{ paddingTop: '10px' }} iconType="circle" />
+                                        <Bar dataKey="Doanh Thu" fill="var(--primary)" radius={[4, 4, 4, 4]} maxBarSize={40} />
+                                        <Bar dataKey="Thực Thu" fill="var(--success)" radius={[4, 4, 4, 4]} maxBarSize={40} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-xl border border-gray-100 h-full">
+                                    <Users size={48} className="text-gray-300 mb-4" />
+                                    <p className="font-medium text-gray-500">Không có dữ liệu khách hàng.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="card" style={{ padding: 0 }}>
+                        <div className="search-card" style={{ padding: '1.25rem', marginBottom: 0, borderBottom: '1px solid var(--border)' }}>
+                            <h3 className="font-bold text-lg">Bảng Phân Tích Khách Hàng</h3>
+                            <div className="flex gap-2 items-center">
+                                <div className="search-input-wrapper">
+                                    <Search size={16} className="search-icon" />
+                                    <input type="text" placeholder="Tìm tên, mã MST..." value={customerSearch} onChange={(e) => setCustomerSearch(e.target.value)} className="input" />
+                                </div>
+                                <button
+                                    onClick={() => exportToExcel(
+                                        customerReportData.map(c => ({ "MST/Mã": c.code, "Khách Hàng": c.name, "Tổng Doanh Thu": c.totalPurchased, "Đã Thu": c.totalPaid, "Nợ Phải Thu": c.currentDebt })),
+                                        `Bao_Cao_Khach_Hang_${startDate}_to_${endDate}`
+                                    )}
+                                    className="btn btn-secondary flex items-center gap-2"
+                                >
+                                    <Download size={16} /> Excel
+                                </button>
+                                <button onClick={() => window.print()} className="btn btn-secondary flex items-center gap-2">
+                                    <Printer size={16} /> Print
+                                </button>
+                            </div>
+                        </div>
+                        <div className="table-wrapper" style={{ border: 'none', borderRadius: '0 0 var(--radius) var(--radius)' }}>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>MST / Mã</th>
+                                        <th>Khách Hàng</th>
+                                        <th className="text-right">Doanh Thu (Kỳ)</th>
+                                        <th className="text-right">Đã Thu (Kỳ)</th>
+                                        <th className="text-right">Nợ Phải Thu</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {customerReportData.map(c => (
+                                        <tr key={c.id}>
+                                            <td className="font-medium text-gray-500">
+                                                <Link href={`/customers/${c.id}`} className="hover:text-primary hover:underline transition-colors block">
+                                                    {c.code}
+                                                </Link>
+                                            </td>
+                                            <td className="font-bold">
+                                                <Link href={`/customers/${c.id}`} className="hover:text-primary hover:underline transition-colors block">
+                                                    {c.name}
+                                                </Link>
+                                            </td>
+                                            <td className="text-right font-medium">{formatMoney(c.totalPurchased)}</td>
+                                            <td className="text-right font-medium text-success">{formatMoney(c.totalPaid)}</td>
+                                            <td className="text-right font-bold text-danger">{formatMoney(c.currentDebt)}</td>
+                                        </tr>
+                                    ))}
+                                    {customerReportData.length === 0 && (
+                                        <tr><td colSpan={5} className="text-center p-8 text-gray-500">Không tìm thấy khách hàng nào.</td></tr>
+                                    )}
+                                </tbody>
+                                {customerReportData.length > 0 && (
+                                    <tfoot style={{ position: 'sticky', bottom: 0, backgroundColor: 'var(--surface)', borderTop: '2px solid var(--border)' }}>
+                                        <tr>
+                                            <td colSpan={2} className="text-right font-bold text-gray-700">TỔNG CỘNG:</td>
+                                            <td className="text-right font-bold text-primary">
+                                                {formatMoney(customerReportData.reduce((sum, c) => sum + (c.totalPurchased || 0), 0))}
+                                            </td>
+                                            <td className="text-right font-bold text-success">
+                                                {formatMoney(customerReportData.reduce((sum, c) => sum + (c.totalPaid || 0), 0))}
+                                            </td>
+                                            <td className="text-right font-bold text-danger">
+                                                {formatMoney(customerReportData.reduce((sum, c) => sum + (c.currentDebt || 0), 0))}
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                )}
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 3. PRODUCT TAB */}
+            {activeTab === 'product' && (
+                <div className="grid lg:grid-cols-3 gap-6">
+                    <div className="card lg:col-span-2" style={{ padding: 0 }}>
+                        <div className="search-card" style={{ padding: '1.25rem', marginBottom: 0, borderBottom: '1px solid var(--border)' }}>
+                            <h3 className="font-bold text-lg">Chi Tiết Sản Phẩm Tiêu Thụ</h3>
+                            <div className="flex gap-2 items-center">
+                                <div className="search-input-wrapper">
+                                    <Search size={16} className="search-icon" />
+                                    <input type="text" placeholder="Tìm tên, mã sản phẩm..." value={productSearch} onChange={(e) => setProductSearch(e.target.value)} className="input" />
+                                </div>
+                                <button
+                                    onClick={() => exportToExcel(
+                                        productReportData.map(p => ({ "Mã SP": p.sku, "Tên Sản Phẩm": p.name, "ĐVT": p.unit, "Số Lượng Xuất": p.totalQuantity, "Giá Bán TB": p.avgPrice, "Thành Tiền": p.totalValue })),
+                                        `Chi_Tiet_San_Pham_Xuat_${startDate}_to_${endDate}`
+                                    )}
+                                    className="btn btn-secondary flex items-center gap-2"
+                                >
+                                    <Download size={16} /> Excel
+                                </button>
+                                <button onClick={() => window.print()} className="btn btn-secondary flex items-center gap-2">
+                                    <Printer size={16} /> Print
+                                </button>
+                            </div>
+                        </div>
+                        <div className="table-wrapper" style={{ border: 'none', borderRadius: '0', maxHeight: '500px' }}>
+                            <table>
+                                <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+                                    <tr>
+                                        <th>Mã SP</th>
+                                        <th>Tên Sản Phẩm</th>
+                                        <th className="text-center">ĐVT</th>
+                                        <th className="text-center">SL Xuất</th>
+                                        <th className="text-right">Giá Bán TB</th>
+                                        <th className="text-right">Doanh Thu</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {productReportData.map(p => (
+                                        <tr key={p.id}>
+                                            <td className="font-medium text-gray-500">
+                                                <Link href={`/products/${p.id}`} className="hover:text-primary hover:underline transition-colors block">
+                                                    {p.sku}
+                                                </Link>
+                                            </td>
+                                            <td className="font-bold">
+                                                <Link href={`/products/${p.id}`} className="hover:text-primary hover:underline transition-colors block">
+                                                    {p.name}
+                                                </Link>
+                                            </td>
+                                            <td className="text-center text-sm">{p.unit}</td>
+                                            <td className="text-center font-bold text-primary">{p.totalQuantity}</td>
+                                            <td className="text-right text-sm">{formatMoney(p.avgPrice)}</td>
+                                            <td className="text-right font-bold">{formatMoney(p.totalValue)}</td>
+                                        </tr>
+                                    ))}
+                                    {productReportData.length === 0 && (
+                                        <tr><td colSpan={6} className="text-center p-8 text-gray-500">Chưa tiêu thụ sản phẩm nào.</td></tr>
+                                    )}
+                                </tbody>
+                                {productReportData.length > 0 && (
+                                    <tfoot style={{ position: 'sticky', bottom: 0, backgroundColor: 'var(--surface)', borderTop: '2px solid var(--border)' }}>
+                                        <tr>
+                                            <td colSpan={3} className="text-right font-bold text-gray-700">TỔNG CỘNG:</td>
+                                            <td className="text-center font-bold text-primary">
+                                                {productReportData.reduce((sum, p) => sum + (p.totalQuantity || 0), 0)}
+                                            </td>
+                                            <td></td>
+                                            <td className="text-right font-bold text-primary">
+                                                {formatMoney(productReportData.reduce((sum, p) => sum + (p.totalValue || 0), 0))}
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                )}
+                            </table>
+                        </div>
+                    </div>
+
+                    <div className="card flex flex-col items-center">
+                        <h3 className="font-bold text-lg mb-6 w-full text-center">Cơ Cấu Doanh Thu</h3>
+                        <div style={{ height: '300px', width: '100%' }}>
+                            {topProductsChartData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie data={topProductsChartData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={2} dataKey="value" stroke="none">
+                                            {topProductsChartData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <RechartsTooltip content={<CustomRechartsTooltip />} />
+                                        <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ fontSize: '12px', paddingTop: '20px' }} iconType="circle" />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-xl border border-gray-100 h-full">
+                                    <Package size={48} className="text-gray-300 mb-4" />
+                                    <p className="font-medium text-gray-500">Chưa có dữ liệu.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 4. ORDERS TAB */}
+            {activeTab === 'order' && (
+                <div className="card" style={{ padding: 0 }}>
+                    <div className="search-card" style={{ padding: '1.25rem', marginBottom: 0, borderBottom: '1px solid var(--border)' }}>
+                        <h3 className="font-bold text-lg"><Package size={18} className="inline mr-2 text-primary" /> Đơn Đặt Hàng Bán</h3>
+                        <div className="flex gap-2">
+                            <select className="input" style={{ width: '130px', padding: '0.4rem' }} value={orderStatus} onChange={e => setOrderStatus(e.target.value)}>
+                                <option value="ALL">Mọi TT</option>
+                                <option value="DRAFT">Nháp</option>
+                                <option value="SENT">Đã Gửi KH</option>
+                                <option value="CONFIRMED">Chốt Đơn</option>
+                                <option value="COMPLETED">Hoàn Thành</option>
+                                <option value="CANCELLED">Hủy</option>
+                            </select>
+                            <div className="search-input-wrapper">
+                                <Search size={16} className="search-icon" />
+                                <input type="text" placeholder="Tìm..." value={orderSearch} onChange={e => setOrderSearch(e.target.value)} className="input" />
+                            </div>
+                            <button
+                                onClick={() => exportToExcel(
+                                    displayOrders.map(o => ({ "Mã SO/Ngày": `${o.code} (${formatDate(o.date)})`, "Khách Hàng": o.customer?.name, "Trạng Thái": o.status, "Tổng Tiền": o.totalAmount })),
+                                    `Don_Ban_Hang_${startDate}_to_${endDate}`
+                                )}
+                                className="btn btn-secondary flex items-center gap-2"
+                            >
+                                <Download size={16} /> Excel
+                            </button>
+                            <button onClick={() => window.print()} className="btn btn-secondary flex items-center gap-2">
+                                <Printer size={16} /> Print
+                            </button>
+                        </div>
+                    </div>
+                    <div className="table-wrapper" style={{ border: 'none', borderRadius: '0 0 var(--radius) var(--radius)', maxHeight: '500px' }}>
+                        <table>
+                            <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+                                <tr>
+                                    <th>Mã / Ngày</th>
+                                    <th>Khách Hàng</th>
+                                    <th className="text-center">Trạng Thái</th>
+                                    <th className="text-right">Tổng Tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {displayOrders.map(o => (
+                                    <tr key={o.id}>
+                                        <td>
+                                            <div className="font-bold">{o.code}</div>
+                                            <div className="text-sm text-gray-500">{formatDate(o.date)}</div>
+                                        </td>
+                                        <td className="font-medium text-sm">{o.customer?.name}</td>
+                                        <td className="text-center">
+                                            {o.status === 'COMPLETED' ? <span className="status-badge badge-success">Hoàn thành</span> :
+                                                o.status === 'CONFIRMED' ? <span className="status-badge badge-info">Chốt Đơn</span> :
+                                                    o.status === 'SENT' ? <span className="status-badge badge-warning">Đã gửi</span> :
+                                                        o.status === 'CANCELLED' ? <span className="status-badge badge-danger">Đã hủy</span> :
+                                                            <span className="status-badge badge-neutral">Nháp</span>}
+                                        </td>
+                                        <td className="text-right font-bold">{formatMoney(o.totalAmount)}</td>
+                                    </tr>
+                                ))}
+                                {displayOrders.length === 0 && <tr><td colSpan={4} className="text-center p-8 text-gray-500">Không có đơn bán hàng.</td></tr>}
+                            </tbody>
+                            {displayOrders.length > 0 && (
+                                <tfoot style={{ position: 'sticky', bottom: 0, backgroundColor: 'var(--surface)', borderTop: '2px solid var(--border)' }}>
+                                    <tr>
+                                        <td colSpan={3} className="text-right font-bold text-gray-700">TỔNG CỘNG ({displayOrders.length}):</td>
+                                        <td className="text-right font-bold text-primary">
+                                            {formatMoney(displayOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0))}
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            )}
+                        </table>
+                    </div>
+                </div>
+            )}
+
+            {/* 5. INVOICES TAB */}
+            {activeTab === 'invoice' && (
+                <div className="card" style={{ padding: 0 }}>
+                    <div className="search-card" style={{ padding: '1.25rem', marginBottom: 0, borderBottom: '1px solid var(--border)' }}>
+                        <h3 className="font-bold text-lg"><FileText size={18} className="inline mr-2 text-primary" /> Hóa Đơn Bán Hàng</h3>
+                        <div className="flex gap-2 items-center">
+                            <div className="search-input-wrapper">
+                                <Search size={16} className="search-icon" />
+                                <input type="text" placeholder="Tìm mã xuất, Khách hàng..." value={invoiceSearch} onChange={e => setInvoiceSearch(e.target.value)} className="input" />
+                            </div>
+                            <button
+                                onClick={() => exportToExcel(
+                                    displayInvoices.map(b => ({ "Mã/Ngày": `${b.code} (${formatDate(b.date)})`, "Khách Hàng": b.customer?.name, "Doanh Thu": b.totalAmount, "Đã Thu": b.paidAmount, "Trạng Thái": b.totalAmount > b.paidAmount ? 'Chưa Thu Đủ' : 'Đã Thanh Toán' })),
+                                    `Hoa_Don_Xuat_${startDate}_to_${endDate}`
+                                )}
+                                className="btn btn-secondary flex items-center gap-2"
+                            >
+                                <Download size={16} /> Excel
+                            </button>
+                            <button onClick={() => window.print()} className="btn btn-secondary flex items-center gap-2">
+                                <Printer size={16} /> Print
+                            </button>
+                        </div>
+                    </div>
+                    <div className="table-wrapper" style={{ border: 'none', borderRadius: '0 0 var(--radius) var(--radius)', maxHeight: '500px' }}>
+                        <table>
+                            <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+                                <tr>
+                                    <th>Mã / Ngày</th>
+                                    <th>Khách Hàng</th>
+                                    <th className="text-right">Doanh Thu</th>
+                                    <th className="text-right">Tình Trạng Thu</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {displayInvoices.map(b => (
+                                    <tr key={b.id}>
+                                        <td>
+                                            <div className="font-bold">{b.code}</div>
+                                            <div className="text-sm text-gray-500">{formatDate(b.date)}</div>
+                                        </td>
+                                        <td className="font-medium text-sm">
+                                            {b.customerId ? (
+                                                <Link href={`/customers/${b.customerId}`} className="hover:text-primary hover:underline transition-colors block">
+                                                    {b.customer?.name}
+                                                </Link>
+                                            ) : (
+                                                <span>{b.customer?.name}</span>
+                                            )}
+                                        </td>
+                                        <td className="text-right font-bold text-primary">{formatMoney(b.totalAmount)}</td>
+                                        <td className="text-right">
+                                            {b.totalAmount > b.paidAmount ? (
+                                                <span className="status-badge badge-warning">Còn Nợ {formatMoney(b.totalAmount - b.paidAmount)}</span>
+                                            ) : (
+                                                <span className="status-badge badge-success">Đã thu đủ</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                                {displayInvoices.length === 0 && <tr><td colSpan={4} className="text-center p-8 text-gray-500">Không có hóa đơn xuất bán.</td></tr>}
+                            </tbody>
+                            {displayInvoices.length > 0 && (
+                                <tfoot style={{ position: 'sticky', bottom: 0, backgroundColor: 'var(--surface)', borderTop: '2px solid var(--border)' }}>
+                                    <tr>
+                                        <td colSpan={2} className="text-right font-bold text-gray-700">TỔNG CỘNG ({displayInvoices.length}):</td>
+                                        <td className="text-right font-bold text-primary">
+                                            {formatMoney(displayInvoices.reduce((sum, b) => sum + (b.totalAmount || 0), 0))}
+                                        </td>
+                                        <td className="text-right font-bold text-danger">
+                                            Lỗ hổng {formatMoney(displayInvoices.reduce((sum, b) => sum + (b.totalAmount - (b.paidAmount || 0)), 0))}
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            )}
+                        </table>
+                    </div>
+                </div>
+            )}
+
+            {/* 6. PAYMENTS TAB */}
+            {activeTab === 'payment' && (
+                <div className="card" style={{ padding: 0 }}>
+                    <div className="search-card" style={{ padding: '1.25rem', marginBottom: 0, borderBottom: '1px solid var(--border)' }}>
+                        <h3 className="font-bold text-lg"><CreditCard size={18} className="inline mr-2 text-primary" /> Phiếu Thu Tiền</h3>
+                        <div className="flex gap-2">
+                            <select className="input" style={{ width: '130px', padding: '0.4rem' }} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
+                                <option value="ALL">Mọi P/T</option>
+                                <option value="CASH">Tiền mặt</option>
+                                <option value="BANK_TRANSFER">Chuyển khoản</option>
+                                <option value="CREDIT">Cấn trừ / Khác</option>
+                            </select>
+                            <div className="search-input-wrapper">
+                                <Search size={16} className="search-icon" />
+                                <input type="text" placeholder="Tìm phiếu, tham chiếu..." value={paymentSearch} onChange={e => setPaymentSearch(e.target.value)} className="input" />
+                            </div>
+                            <button
+                                onClick={() => exportToExcel(
+                                    displayPayments.map(p => ({ "Mã/Ngày": `${p.code} (${formatDate(p.date)})`, "Khách Hàng": p.customer?.name, "Số Tiền": p.amount, "Phương Thức": p.paymentMethod, "Thực Thu Của Khách": p.allocations?.length > 0 ? "Đã phân bổ" : "Chưa phân bổ" })),
+                                    `Thu_Tien_${startDate}_to_${endDate}`
+                                )}
+                                className="btn btn-secondary flex items-center gap-2"
+                            >
+                                <Download size={16} /> Excel
+                            </button>
+                            <button onClick={() => window.print()} className="btn btn-secondary flex items-center gap-2">
+                                <Printer size={16} /> Print
+                            </button>
+                        </div>
+                    </div>
+                    <div className="table-wrapper" style={{ border: 'none', borderRadius: '0 0 var(--radius) var(--radius)', maxHeight: '500px' }}>
+                        <table>
+                            <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+                                <tr>
+                                    <th>Mã PT / Ngày</th>
+                                    <th>Khách Hàng</th>
+                                    <th>Phương Thức</th>
+                                    <th className="text-right">Số Tiền Thu</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {displayPayments.map(p => (
+                                    <tr key={p.id}>
+                                        <td>
+                                            <div className="font-bold">{p.code}</div>
+                                            <div className="text-sm text-gray-500">{formatDate(p.date)} {p.reference && `• Ref: ${p.reference}`}</div>
+                                        </td>
+                                        <td className="font-medium text-sm">{p.customer?.name}</td>
+                                        <td>
+                                            <span className={`status-badge ${p.paymentMethod === 'BANK_TRANSFER' ? 'badge-info' : p.paymentMethod === 'CASH' ? 'badge-success' : 'badge-neutral'}`}>
+                                                {p.paymentMethod === 'BANK_TRANSFER' ? 'Chuyển khoản' : p.paymentMethod === 'CASH' ? 'Tiền mặt' : 'Khác'}
+                                            </span>
+                                        </td>
+                                        <td className="text-right font-bold text-success">{formatMoney(p.amount)}</td>
+                                    </tr>
+                                ))}
+                                {displayPayments.length === 0 && <tr><td colSpan={4} className="text-center p-8 text-gray-500">Không có giao dịch thu.</td></tr>}
+                            </tbody>
+                            {displayPayments.length > 0 && (
+                                <tfoot style={{ position: 'sticky', bottom: 0, backgroundColor: 'var(--surface)', borderTop: '2px solid var(--border)' }}>
+                                    <tr>
+                                        <td colSpan={3} className="text-right font-bold text-gray-700">TỔNG CỘNG ({displayPayments.length}):</td>
+                                        <td className="text-right font-bold text-success">
+                                            {formatMoney(displayPayments.reduce((sum, p) => sum + (p.amount || 0), 0))}
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            )}
+                        </table>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}

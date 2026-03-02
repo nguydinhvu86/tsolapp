@@ -2,13 +2,36 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, CreditCard, Clock } from 'lucide-react';
+import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, CreditCard, Clock, Plus, Trash2, FileDown, ExternalLink, Copy } from 'lucide-react';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import Link from 'next/link';
+import { uploadPurchaseBillDocument } from '@/app/purchasing/actions';
 
 export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, tasks: any[], users: any[] }) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'items' | 'payments' | 'tasks'>('items');
+
+    // Document State
+    const [localBill, setLocalBill] = useState(bill);
+    const [isUploading, setIsUploading] = useState(false);
+    const [copied, setCopied] = useState(false);
+
+    const handleCopyPublicLink = () => {
+        const publicUrl = `${window.location.origin}/public/purchasing/bills/${bill.id}`;
+        navigator.clipboard.writeText(publicUrl);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    const documents = React.useMemo(() => {
+        if (!localBill.attachment) return [];
+        try {
+            return JSON.parse(localBill.attachment);
+        } catch (e) {
+            // Fallback for old single string attachment
+            return [{ url: localBill.attachment, name: 'Tài liệu Gốc', uploadedAt: localBill.createdAt }];
+        }
+    }, [localBill.attachment]);
 
     const formatMoney = (amount: number) => {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
@@ -30,8 +53,8 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
     };
 
     const tabs = [
-        { id: 'items', label: 'Sản phẩm Nhập', icon: <ShoppingCart size={18} />, count: bill.items?.length || 0 },
-        { id: 'payments', label: 'Thanh Toán (Chi)', icon: <CreditCard size={18} />, count: bill.allocations?.length || 0 },
+        { id: 'items', label: 'Sản phẩm Nhập', icon: <ShoppingCart size={18} />, count: localBill.items?.length || 0 },
+        { id: 'payments', label: 'Thanh Toán (Chi)', icon: <CreditCard size={18} />, count: localBill.allocations?.length || 0 },
         { id: 'tasks', label: 'Công việc', icon: <CheckSquare size={18} />, count: tasks.length },
     ] as const;
 
@@ -63,6 +86,21 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <button
+                        onClick={handleCopyPublicLink}
+                        className="btn btn-secondary"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: 'white', color: '#475569', border: '1px solid #cbd5e1', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                    >
+                        <Copy size={16} /> {copied ? 'Đã sao chép' : 'Copy Link Gửi KH'}
+                    </button>
+                    <Link
+                        href={`/public/purchasing/bills/${bill.id}`}
+                        target="_blank"
+                        className="btn btn-secondary"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#f1f5f9', color: '#3b82f6', border: '1px solid #bfdbfe', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                    >
+                        <ExternalLink size={16} /> Xem Bản In
+                    </Link>
                     {bill.totalAmount > bill.paidAmount && (
                         <button
                             className="btn btn-primary"
@@ -170,6 +208,7 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
                                                 <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Sản Phẩm</th>
                                                 <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Số Lượng</th>
                                                 <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Đơn Giá</th>
+                                                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Thuế (%)</th>
                                                 <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Thành Tiền</th>
                                             </tr>
                                         </thead>
@@ -185,15 +224,26 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
                                                         </td>
                                                         <td style={{ padding: '1rem', textAlign: 'center', color: '#475569' }}>{item.quantity} {item.product?.unit || ''}</td>
                                                         <td style={{ padding: '1rem', textAlign: 'right', color: '#475569' }}>{formatMoney(item.unitPrice)}</td>
+                                                        <td style={{ padding: '1rem', textAlign: 'center', color: '#475569' }}>{item.taxRate || 0}%</td>
                                                         <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>{formatMoney(item.totalPrice)}</td>
                                                     </tr>
                                                 ))
                                             )}
                                             {bill.items?.length > 0 && (
-                                                <tr style={{ backgroundColor: '#f8fafc' }}>
-                                                    <td colSpan={3} style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#64748b' }}>Tổng Giá Trị Hóa Đơn:</td>
-                                                    <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 700, color: '#1e293b', fontSize: '1rem' }}>{formatMoney(bill.totalAmount)}</td>
-                                                </tr>
+                                                <>
+                                                    <tr style={{ backgroundColor: '#f8fafc' }}>
+                                                        <td colSpan={4} style={{ padding: '1rem', textAlign: 'right', color: '#64748b' }}>Tổng tiền trước thuế:</td>
+                                                        <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 500, color: '#1e293b' }}>{formatMoney(bill.subTotal || 0)}</td>
+                                                    </tr>
+                                                    <tr style={{ backgroundColor: '#f8fafc' }}>
+                                                        <td colSpan={4} style={{ padding: '1rem', textAlign: 'right', color: '#64748b' }}>Tổng tiền thuế:</td>
+                                                        <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 500, color: '#1e293b' }}>{formatMoney(bill.taxAmount || 0)}</td>
+                                                    </tr>
+                                                    <tr style={{ backgroundColor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+                                                        <td colSpan={4} style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>Tổng Cộng:</td>
+                                                        <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 700, color: '#10b981', fontSize: '1.1rem' }}>{formatMoney(bill.totalAmount)}</td>
+                                                    </tr>
+                                                </>
                                             )}
                                         </tbody>
                                     </table>
@@ -251,15 +301,88 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
                     </div>
                 </div>
 
-                {/* Right Column: Tasks Panel */}
-                <div>
-                    <div style={{ position: 'sticky', top: '2rem' }}>
-                        <TaskPanel
-                            initialTasks={tasks}
-                            users={users}
-                            entityType="PURCHASE_BILL"
-                            entityId={bill.id}
-                        />
+                {/* Right Column: Tasks Panel and Documents */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    <div style={{ position: 'sticky', top: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        <div style={{ backgroundColor: 'white', borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }}>
+                            <TaskPanel
+                                initialTasks={tasks}
+                                users={users}
+                                entityType="PURCHASE_BILL"
+                                entityId={bill.id}
+                            />
+                        </div>
+
+                        <div style={{ backgroundColor: 'white', borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)', overflow: 'hidden' }}>
+                            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <FileDown size={20} color="#6366f1" /> Tài liệu đính kèm
+                                </h2>
+                                <div style={{ position: 'relative' }}>
+                                    <input
+                                        type="file"
+                                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
+                                        disabled={isUploading}
+                                        onChange={async (e) => {
+                                            const file = e.target.files?.[0];
+                                            if (!file) return;
+                                            setIsUploading(true);
+                                            try {
+                                                const uploadData = new FormData();
+                                                uploadData.append('file', file);
+                                                const res = await fetch('/api/upload', { method: 'POST', body: uploadData });
+                                                const data = await res.json();
+                                                if (!res.ok) throw new Error(data.error);
+
+                                                const updatedBill = await uploadPurchaseBillDocument(localBill.id, data.url, file.name);
+                                                setLocalBill(updatedBill);
+
+                                            } catch (err: any) {
+                                                alert(err.message || 'Lỗi tải tệp tin');
+                                            } finally {
+                                                setIsUploading(false);
+                                                e.target.value = '';
+                                            }
+                                        }}
+                                    />
+                                    <button
+                                        disabled={isUploading}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.75rem', borderRadius: '0.5rem', backgroundColor: '#e0e7ff', color: '#4f46e5', border: 'none', fontSize: '0.875rem', fontWeight: 600, cursor: isUploading ? 'not-allowed' : 'pointer' }}
+                                    >
+                                        {isUploading ? 'Đang tải...' : <><Plus size={16} /> Thêm</>}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div style={{ padding: '1.5rem' }}>
+                                {documents.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: '2rem 1rem', backgroundColor: '#f8fafc', borderRadius: '0.5rem', border: '1px dashed #cbd5e1' }}>
+                                        <FileText size={32} color="#cbd5e1" style={{ margin: '0 auto 0.5rem' }} />
+                                        <p style={{ color: '#64748b', margin: 0, fontSize: '0.875rem' }}>Chưa có tài liệu đính kèm.</p>
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                        {documents.map((doc: any, idx: number) => (
+                                            <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', backgroundColor: '#f8fafc', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', overflow: 'hidden' }}>
+                                                    <div style={{ width: '36px', height: '36px', flexShrink: 0, borderRadius: '0.5rem', backgroundColor: '#e0e7ff', color: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                        <FileText size={18} />
+                                                    </div>
+                                                    <div style={{ overflow: 'hidden' }}>
+                                                        <a href={doc.url} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600, color: '#0f172a', textDecoration: 'none', display: 'block', marginBottom: '0.1rem', fontSize: '0.875rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} className="hover:text-blue-600" title={doc.name}>
+                                                            {doc.name}
+                                                        </a>
+                                                        <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                                            {new Date(doc.uploadedAt).toLocaleDateString('vi-VN')}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

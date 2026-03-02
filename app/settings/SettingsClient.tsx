@@ -12,11 +12,16 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
     const router = useRouter();
     const [formData, setFormData] = useState({
         COMPANY_NAME: initialSettings.COMPANY_NAME || '',
+        COMPANY_DISPLAY_NAME: initialSettings.COMPANY_DISPLAY_NAME || '',
+        COMPANY_FULL_NAME: initialSettings.COMPANY_FULL_NAME || '',
+        COMPANY_LOGO: initialSettings.COMPANY_LOGO || '',
         COMPANY_PHONE: initialSettings.COMPANY_PHONE || '',
         COMPANY_EMAIL: initialSettings.COMPANY_EMAIL || '',
         COMPANY_ADDRESS: initialSettings.COMPANY_ADDRESS || '',
         COMPANY_TAX: initialSettings.COMPANY_TAX || ''
     });
+
+    const [isUploadingLogo, setIsUploadingLogo] = useState(false);
 
     const [isSaving, setIsSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
@@ -48,13 +53,63 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
             </p>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-                <Input
-                    label="Tên Doanh nghiệp / Thương hiệu"
-                    value={formData.COMPANY_NAME}
-                    onChange={e => setFormData({ ...formData, COMPANY_NAME: e.target.value })}
-                    required
-                    placeholder="Vd: Công ty TNHH Phần mềm Trường Thịnh"
-                />
+                <div className="grid grid-cols-2 gap-4">
+                    <Input
+                        label="Tên hiển thị (Tên ngắn/Thương hiệu trên Header)"
+                        value={formData.COMPANY_DISPLAY_NAME || formData.COMPANY_NAME}
+                        onChange={e => setFormData({ ...formData, COMPANY_DISPLAY_NAME: e.target.value })}
+                        required
+                        placeholder="Vd: TRỊNH GIA"
+                    />
+                    <Input
+                        label="Tên đầy đủ (Dùng trên Báo cáo, Văn bản)"
+                        value={formData.COMPANY_FULL_NAME || formData.COMPANY_NAME}
+                        onChange={e => setFormData({ ...formData, COMPANY_FULL_NAME: e.target.value })}
+                        required
+                        placeholder="Vd: CÔNG TY TNHH TRỊNH GIA"
+                    />
+                </div>
+
+                <div>
+                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-main)', marginBottom: '0.5rem' }}>Logo hệ thống</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        {formData.COMPANY_LOGO ? (
+                            <img src={formData.COMPANY_LOGO} alt="Logo" style={{ width: '80px', height: '80px', objectFit: 'contain', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }} />
+                        ) : (
+                            <div style={{ width: '80px', height: '80px', border: '1px dashed var(--border)', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.75rem' }}>Chưa có</div>
+                        )}
+                        <div>
+                            <input
+                                type="file"
+                                id="logo-upload"
+                                accept="image/*"
+                                style={{ display: 'none' }}
+                                onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+                                    setIsUploadingLogo(true);
+                                    try {
+                                        const form = new FormData();
+                                        form.append('file', file);
+                                        const res = await fetch('/api/upload', { method: 'POST', body: form });
+                                        if (!res.ok) throw new Error('Upload failed');
+                                        const data = await res.json();
+                                        setFormData(prev => ({ ...prev, COMPANY_LOGO: data.url }));
+                                    } catch (error) {
+                                        alert('Lỗi khi tải ảnh lên!');
+                                    } finally {
+                                        setIsUploadingLogo(false);
+                                        if (e.target) e.target.value = '';
+                                    }
+                                }}
+                            />
+                            <Button type="button" variant="secondary" onClick={() => document.getElementById('logo-upload')?.click()} disabled={isUploadingLogo}>
+                                {isUploadingLogo ? 'Đang tải...' : 'Tải lên Logo'}
+                            </Button>
+                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Khuyến nghị ảnh vuông, định dạng PNG/JPG/SVG.</p>
+                        </div>
+                    </div>
+                </div>
 
                 <div className="grid grid-cols-2 gap-4">
                     <Input

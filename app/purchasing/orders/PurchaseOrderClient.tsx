@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Plus, Search, Eye, Trash2, Calendar, FileText, ShoppingCart, ArrowUpDown } from 'lucide-react';
+import { Plus, Search, Eye, Trash2, Calendar, FileText, ShoppingCart, ArrowUpDown, Edit2 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { createPurchaseOrder, deletePurchaseOrder } from '@/app/purchasing/actions';
+import { createPurchaseOrder, deletePurchaseOrder, updatePurchaseOrder } from '@/app/purchasing/actions';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 
 export function PurchaseOrderClient({ initialOrders, suppliers, products }: { initialOrders: any[], suppliers: any[], products: any[] }) {
@@ -33,7 +33,7 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
     });
 
     // Order Items Form State
-    const [orderItems, setOrderItems] = useState<Array<{ productId: string, quantity: number, unitPrice: number }>>([]);
+    const [orderItems, setOrderItems] = useState<Array<{ productId: string, quantity: number, unitPrice: number, taxRate: number }>>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const searchParams = useSearchParams();
@@ -116,13 +116,31 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
     };
 
     const handleOpenCreate = () => {
-        setFormData({ supplierId: '', date: new Date().toISOString().substring(0, 10), notes: '', status: 'DRAFT' });
+        setFormData({ supplierId: '', date: new Date().toISOString().substring(0, 10), notes: '', status: 'DRAFT', id: undefined } as any);
         setOrderItems([]);
         setIsCreateModalOpen(true);
     };
 
+    const handleEdit = (order: any) => {
+        setFormData({
+            id: order.id,
+            code: order.code,
+            supplierId: order.supplierId,
+            date: order.date ? new Date(order.date).toISOString().substring(0, 10) : new Date().toISOString().substring(0, 10),
+            notes: order.notes || '',
+            status: order.status || 'DRAFT',
+        } as any);
+        setOrderItems(order.items?.map((i: any) => ({
+            productId: i.productId,
+            quantity: i.quantity,
+            unitPrice: i.unitPrice,
+            taxRate: i.taxRate || 0
+        })) || []);
+        setIsCreateModalOpen(true);
+    };
+
     const handleAddItem = () => {
-        setOrderItems([...orderItems, { productId: '', quantity: 1, unitPrice: 0 }]);
+        setOrderItems([...orderItems, { productId: '', quantity: 1, unitPrice: 0, taxRate: 0 }]);
     };
 
     const handleRemoveItem = (index: number) => {
@@ -133,15 +151,23 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
         const newItems = [...orderItems];
         if (field === 'productId') {
             const product = products.find(p => p.id === value);
-            newItems[index] = { ...newItems[index], [field]: value, unitPrice: product?.importPrice || 0 };
+            newItems[index] = { ...newItems[index], [field]: value, unitPrice: product?.importPrice || 0, taxRate: product?.taxRate || 0 };
         } else {
             newItems[index] = { ...newItems[index], [field]: value };
         }
         setOrderItems(newItems);
     };
 
-    const calculateTotal = () => {
+    const calculateSubTotal = () => {
         return orderItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+    };
+
+    const calculateTax = () => {
+        return orderItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice * (item.taxRate || 0) / 100), 0);
+    };
+
+    const calculateTotal = () => {
+        return calculateSubTotal() + calculateTax();
     };
 
     const handleDelete = async (id: string, code: string) => {
@@ -179,11 +205,18 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
         try {
             const submitData = {
                 ...formData,
+                subTotal: calculateSubTotal(),
+                taxAmount: calculateTax(),
                 totalAmount: calculateTotal(),
                 items: orderItems
             };
 
-            const created = await createPurchaseOrder(submitData);
+            let created;
+            if ((formData as any).id) {
+                created = await updatePurchaseOrder((formData as any).id, submitData);
+            } else {
+                created = await createPurchaseOrder(submitData);
+            }
 
             // Re-fetch or manually construct the new object for UI
             const supplier = suppliers.find(s => s.id === formData.supplierId);
@@ -336,20 +369,31 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                                     </td>
                                     <td className="p-4">
                                         <div className="flex items-center justify-center gap-2">
+                                            {order.status === 'DRAFT' && (
+                                                <button
+                                                    onClick={() => handleEdit(order)}
+                                                    className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded inline-block"
+                                                    title="Sửa"
+                                                >
+                                                    <Edit2 size={18} />
+                                                </button>
+                                            )}
                                             <Link
                                                 href={`/purchasing/orders/${order.id}`}
-                                                className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded inline-block"
+                                                className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded inline-block"
                                                 title="Xem chi tiết"
                                             >
                                                 <Eye size={18} />
                                             </Link>
-                                            <button
-                                                onClick={() => handleDelete(order.id, order.code)}
-                                                className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded inline-block"
-                                                title="Xóa"
-                                            >
-                                                <Trash2 size={18} />
-                                            </button>
+                                            {order.status === 'DRAFT' && (
+                                                <button
+                                                    onClick={() => handleDelete(order.id, order.code)}
+                                                    className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded inline-block"
+                                                    title="Xóa"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
@@ -367,7 +411,7 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                             <div>
                                 <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                                     <ShoppingCart className="text-primary" />
-                                    Tạo Đơn Đặt Hàng Mới
+                                    {(formData as any).id ? "Sửa Đơn Đặt Hàng" : "Tạo Đơn Đặt Hàng Mới"}
                                 </h2>
                             </div>
                             <button
@@ -432,9 +476,10 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                                             <thead>
                                                 <tr className="bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                                                     <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm">Sản Phẩm</th>
-                                                    <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm w-32">Số Lượng</th>
-                                                    <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm w-48">Đơn Giá Nhập (VNĐ)</th>
-                                                    <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm w-48 text-right">Thành Tiền</th>
+                                                    <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm w-24">Số Lượng</th>
+                                                    <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm w-40">Đơn Giá Nhập (VNĐ)</th>
+                                                    <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm w-24 text-center">Thuế (%)</th>
+                                                    <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm w-40 text-right">Thành Tiền</th>
                                                     <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm w-16 text-center"></th>
                                                 </tr>
                                             </thead>
@@ -467,8 +512,17 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                                                                 className="w-full rounded bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 p-2 text-sm text-right"
                                                             />
                                                         </td>
+                                                        <td className="p-2">
+                                                            <input
+                                                                type="number"
+                                                                required min="0" max="100"
+                                                                value={item.taxRate}
+                                                                onChange={(e) => handleItemChange(index, 'taxRate', Number(e.target.value))}
+                                                                className="w-full rounded bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 p-2 text-sm text-center"
+                                                            />
+                                                        </td>
                                                         <td className="p-2 text-right font-medium text-gray-800 dark:text-gray-200">
-                                                            {formatMoney(item.quantity * item.unitPrice)}
+                                                            {formatMoney(item.quantity * item.unitPrice * (1 + (item.taxRate || 0) / 100))}
                                                         </td>
                                                         <td className="p-2 text-center">
                                                             <button
@@ -489,10 +543,28 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                                                     </tr>
                                                 )}
                                                 <tr className="bg-gray-50 dark:bg-gray-800/50">
-                                                    <td colSpan={3} className="p-3 text-right font-semibold text-gray-700 dark:text-gray-300">
-                                                        Tổng Cộng:
+                                                    <td colSpan={4} className="p-3 text-right text-sm text-gray-600 dark:text-gray-400">
+                                                        Tổng tiền trước thuế:
                                                     </td>
-                                                    <td className="p-3 text-right font-bold text-primary text-lg">
+                                                    <td className="p-3 text-right font-medium text-gray-700 dark:text-gray-300">
+                                                        {formatMoney(calculateSubTotal())}
+                                                    </td>
+                                                    <td></td>
+                                                </tr>
+                                                <tr className="bg-gray-50 dark:bg-gray-800/50">
+                                                    <td colSpan={4} className="p-3 text-right text-sm text-gray-600 dark:text-gray-400">
+                                                        Tổng tiền thuế:
+                                                    </td>
+                                                    <td className="p-3 text-right font-medium text-gray-700 dark:text-gray-300">
+                                                        {formatMoney(calculateTax())}
+                                                    </td>
+                                                    <td></td>
+                                                </tr>
+                                                <tr className="bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
+                                                    <td colSpan={4} className="p-3 text-right font-semibold text-gray-800 dark:text-gray-200">
+                                                        Tổng Thanh Toán:
+                                                    </td>
+                                                    <td className="p-3 text-right font-bold text-primary text-lg flex flex-col items-end">
                                                         {formatMoney(calculateTotal())}
                                                     </td>
                                                     <td></td>

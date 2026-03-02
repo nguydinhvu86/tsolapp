@@ -1,0 +1,38 @@
+
+> contract-app@0.1.0 build
+> next build
+
+  ▲ Next.js 14.2.35
+  - Environments: .env
+
+   Creating an optimized production build ...
+
+Failed to compile.
+
+./lib/utils/formatters.ts
+Error: Failed to read source code from C:\Users\admin\Documents\CONTRACT\lib\utils\formatters.ts
+
+Caused by:
+    stream did not contain valid UTF-8
+
+Import trace for requested module:
+./lib/utils/formatters.ts
+./app/sales/estimates/SalesEstimateClient.tsx
+
+./app/sales/estimates/page.tsx
+Module not found: Can't resolve '@/app/inventory/products/actions'
+
+https://nextjs.org/docs/messages/module-not-found
+
+./app/sales/invoices/page.tsx
+Module not found: Can't resolve '@/app/inventory/products/actions'
+
+https://nextjs.org/docs/messages/module-not-found
+
+./app/sales/orders/page.tsx
+Module not found: Can't resolve '@/app/inventory/products/actions'
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+> Build failed because of webpack errors

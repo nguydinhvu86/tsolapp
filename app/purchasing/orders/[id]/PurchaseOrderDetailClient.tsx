@@ -2,13 +2,21 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, FileDown, Plus } from 'lucide-react';
+import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, FileDown, Plus, ExternalLink, Copy } from 'lucide-react';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import Link from 'next/link';
 
 export function PurchaseOrderDetailClient({ order, tasks, users }: { order: any, tasks: any[], users: any[] }) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'items' | 'bills' | 'tasks'>('items');
+    const [copied, setCopied] = useState(false);
+
+    const handleCopyPublicLink = () => {
+        const publicUrl = `${window.location.origin}/public/purchasing/orders/${order.id}`;
+        navigator.clipboard.writeText(publicUrl);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
 
     const formatMoney = (amount: number) => {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
@@ -74,12 +82,27 @@ export function PurchaseOrderDetailClient({ order, tasks, users }: { order: any,
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <button
+                        onClick={handleCopyPublicLink}
+                        className="btn btn-secondary"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: 'white', color: '#475569', border: '1px solid #cbd5e1', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                    >
+                        <Copy size={16} /> {copied ? 'Đã sao chép' : 'Copy Link Gửi KH'}
+                    </button>
+                    <Link
+                        href={`/public/purchasing/orders/${order.id}`}
+                        target="_blank"
+                        className="btn btn-secondary"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#f1f5f9', color: '#3b82f6', border: '1px solid #bfdbfe', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                    >
+                        <ExternalLink size={16} /> Xem Bản In
+                    </Link>
                     <Link
                         href={`/purchasing/bills?orderId=${order.id}`}
                         className="btn btn-primary"
                         style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.25rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#10b981', color: 'white', border: 'none', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
                     >
-                        <Plus size={18} /> Chuyển thành Hóa Đơn (Nhập kho)
+                        <Plus size={18} /> Nhập kho (Hóa Đơn)
                     </Link>
                 </div>
             </div>
@@ -160,6 +183,7 @@ export function PurchaseOrderDetailClient({ order, tasks, users }: { order: any,
                                                 <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Sản Phẩm</th>
                                                 <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Số Lượng</th>
                                                 <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Đơn Giá</th>
+                                                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Thuế (%)</th>
                                                 <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Thành Tiền</th>
                                             </tr>
                                         </thead>
@@ -175,15 +199,26 @@ export function PurchaseOrderDetailClient({ order, tasks, users }: { order: any,
                                                         </td>
                                                         <td style={{ padding: '1rem', textAlign: 'center', color: '#475569' }}>{item.quantity} {item.product?.unit || ''}</td>
                                                         <td style={{ padding: '1rem', textAlign: 'right', color: '#475569' }}>{formatMoney(item.unitPrice)}</td>
+                                                        <td style={{ padding: '1rem', textAlign: 'center', color: '#475569' }}>{item.taxRate || 0}%</td>
                                                         <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>{formatMoney(item.totalPrice)}</td>
                                                     </tr>
                                                 ))
                                             )}
                                             {order.items?.length > 0 && (
-                                                <tr style={{ backgroundColor: '#f8fafc' }}>
-                                                    <td colSpan={3} style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#64748b' }}>Tổng Cộng:</td>
-                                                    <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 700, color: '#10b981', fontSize: '1rem' }}>{formatMoney(order.totalAmount)}</td>
-                                                </tr>
+                                                <>
+                                                    <tr style={{ backgroundColor: '#f8fafc' }}>
+                                                        <td colSpan={4} style={{ padding: '1rem', textAlign: 'right', color: '#64748b' }}>Tổng tiền trước thuế:</td>
+                                                        <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 500, color: '#1e293b' }}>{formatMoney(order.subTotal || 0)}</td>
+                                                    </tr>
+                                                    <tr style={{ backgroundColor: '#f8fafc' }}>
+                                                        <td colSpan={4} style={{ padding: '1rem', textAlign: 'right', color: '#64748b' }}>Tổng tiền thuế:</td>
+                                                        <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 500, color: '#1e293b' }}>{formatMoney(order.taxAmount || 0)}</td>
+                                                    </tr>
+                                                    <tr style={{ backgroundColor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+                                                        <td colSpan={4} style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>Tổng Cộng:</td>
+                                                        <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 700, color: '#10b981', fontSize: '1.1rem' }}>{formatMoney(order.totalAmount)}</td>
+                                                    </tr>
+                                                </>
                                             )}
                                         </tbody>
                                     </table>

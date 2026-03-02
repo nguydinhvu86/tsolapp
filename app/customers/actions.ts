@@ -17,3 +17,7 @@ export async function deleteCustomer(id: string) {
     await prisma.customer.delete({ where: { id } });
     revalidatePath('/customers');
 }
+
+export async function getCustomers() {
+    return await prisma.customer.findMany({ orderBy: { name: 'asc' } });
+}

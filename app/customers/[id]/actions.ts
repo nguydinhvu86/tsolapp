@@ -23,7 +23,11 @@ export async function getCustomerWithRelations(id: string) {
                 dispatches: {
                     orderBy: { createdAt: 'desc' },
                     include: { template: true }
-                }
+                },
+                salesEstimates: { orderBy: { createdAt: 'desc' } },
+                salesOrders: { orderBy: { createdAt: 'desc' } },
+                salesInvoices: { orderBy: { createdAt: 'desc' } },
+                salesPayments: { orderBy: { createdAt: 'desc' } }
             }
         });
         return customer;

@@ -1,15 +1,16 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Plus, Search, Eye, Trash2, Calendar, FileText, FileDown, CheckCircle, ArrowUpDown } from 'lucide-react';
+import { Plus, Search, Eye, Trash2, Calendar, FileText, FileDown, CheckCircle, ArrowUpDown, Edit2 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { createPurchaseBill, approvePurchaseBill, deletePurchaseBill } from '@/app/purchasing/actions';
+import { createPurchaseBill, approvePurchaseBill, deletePurchaseBill, updatePurchaseBill } from '@/app/purchasing/actions';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 
 export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses, products }: { initialBills: any[], suppliers: any[], orders: any[], warehouses: any[], products: any[] }) {
     const [bills, setBills] = useState(initialBills);
     const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState('ALL');
 
     // Sort logic
     const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>({ key: 'date', direction: 'desc' });
@@ -29,10 +30,13 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
         orderId: '',
         supplierInvoice: '',
         date: new Date().toISOString().substring(0, 10),
+        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10),
         notes: '',
+        attachments: [] as { url: string, name: string, uploadedAt: string }[]
     });
-    const [billItems, setBillItems] = useState<Array<{ productId: string, quantity: number, unitPrice: number }>>([]);
+    const [billItems, setBillItems] = useState<Array<{ productId: string, quantity: number, unitPrice: number, taxRate: number }>>([]);
     const [approveWarehouseId, setApproveWarehouseId] = useState('');
+    const [isUploading, setIsUploading] = useState(false);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -52,7 +56,8 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                     const mappedItems = order.items.map((item: any) => ({
                         productId: item.productId,
                         quantity: item.quantity,
-                        unitPrice: item.unitPrice
+                        unitPrice: item.unitPrice,
+                        taxRate: item.taxRate || 0
                     }));
                     setBillItems(mappedItems);
                 }
@@ -65,12 +70,49 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
         }
     }, [searchParams, orders]);
 
-    const filteredBills = bills.filter(b =>
-        (b.code && b.code.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (b.supplierInvoice && b.supplierInvoice.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (b.supplierInvoice && b.supplierInvoice.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (b.supplier && b.supplier.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+    const filteredBills = bills.filter(b => {
+        const matchesSearch = (b.code && b.code.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (b.supplierInvoice && b.supplierInvoice.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (b.supplier && b.supplier.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+        const matchesStatus = statusFilter === 'ALL' || b.status === statusFilter;
+        return matchesSearch && matchesStatus;
+    });
+
+    const stats = React.useMemo(() => {
+        return bills.reduce((acc, bill) => {
+            acc.total++;
+
+            // Lấy nợ
+            const remaining = bill.totalAmount - (bill.paidAmount || 0);
+
+            switch (bill.status) {
+                case 'DRAFT':
+                    acc.draft.count++;
+                    break;
+                case 'APPROVED':
+                    acc.approved.count++;
+                    acc.approved.amount += remaining;
+                    break;
+                case 'PARTIAL_PAID':
+                    acc.partial.count++;
+                    acc.partial.amount += remaining;
+                    break;
+                case 'PAID':
+                    acc.paid.count++;
+                    break;
+                default:
+                    break;
+            }
+            return acc;
+        }, {
+            total: 0,
+            draft: { count: 0 },
+            approved: { count: 0, amount: 0 },
+            partial: { count: 0, amount: 0 },
+            paid: { count: 0 }
+        });
+    }, [bills]);
 
     const sortedBills = React.useMemo(() => {
         let sortableItems = [...filteredBills];
@@ -117,8 +159,47 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
     };
 
     const handleOpenCreate = () => {
-        setFormData({ supplierId: '', orderId: '', supplierInvoice: '', date: new Date().toISOString().substring(0, 10), notes: '' });
+        setFormData({
+            supplierId: '',
+            orderId: '',
+            supplierInvoice: '',
+            date: new Date().toISOString().substring(0, 10),
+            dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10),
+            notes: '',
+            attachments: [],
+            id: undefined
+        } as any);
         setBillItems([]);
+        setIsCreateModalOpen(true);
+    };
+
+    const handleEdit = (bill: any) => {
+        let parsedAttachments = [];
+        if (bill.attachment) {
+            try {
+                parsedAttachments = JSON.parse(bill.attachment);
+            } catch (e) { }
+        }
+
+        setFormData({
+            id: bill.id,
+            code: bill.code,
+            supplierId: bill.supplierId,
+            orderId: bill.orderId || '',
+            supplierInvoice: bill.supplierInvoice || '',
+            date: bill.date ? new Date(bill.date).toISOString().substring(0, 10) : new Date().toISOString().substring(0, 10),
+            dueDate: bill.dueDate ? new Date(bill.dueDate).toISOString().substring(0, 10) : '',
+            notes: bill.notes || '',
+            attachments: parsedAttachments
+        } as any);
+
+        setBillItems(bill.items?.map((i: any) => ({
+            productId: i.productId,
+            quantity: i.quantity,
+            unitPrice: i.unitPrice,
+            taxRate: i.taxRate || 0
+        })) || []);
+
         setIsCreateModalOpen(true);
     };
 
@@ -132,7 +213,8 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                     const mappedItems = order.items.map((item: any) => ({
                         productId: item.productId,
                         quantity: item.quantity,
-                        unitPrice: item.unitPrice
+                        unitPrice: item.unitPrice,
+                        taxRate: item.taxRate || 0
                     }));
                     setBillItems(mappedItems);
                 }
@@ -141,7 +223,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
     };
 
     const handleAddItem = () => {
-        setBillItems([...billItems, { productId: '', quantity: 1, unitPrice: 0 }]);
+        setBillItems([...billItems, { productId: '', quantity: 1, unitPrice: 0, taxRate: 0 }]);
     };
 
     const handleRemoveItem = (index: number) => {
@@ -152,15 +234,23 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
         const newItems = [...billItems];
         if (field === 'productId') {
             const product = products.find(p => p.id === value);
-            newItems[index] = { ...newItems[index], [field]: value, unitPrice: product?.importPrice || 0 };
+            newItems[index] = { ...newItems[index], [field]: value, unitPrice: product?.importPrice || 0, taxRate: product?.taxRate || 0 };
         } else {
             newItems[index] = { ...newItems[index], [field]: value };
         }
         setBillItems(newItems);
     };
 
-    const calculateTotal = () => {
+    const calculateSubTotal = () => {
         return billItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+    };
+
+    const calculateTax = () => {
+        return billItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice * (item.taxRate || 0) / 100), 0);
+    };
+
+    const calculateTotal = () => {
+        return calculateSubTotal() + calculateTax();
     };
 
     const handleDelete = async (id: string, code: string) => {
@@ -191,11 +281,19 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
         try {
             const submitData = {
                 ...formData,
+                attachment: formData.attachments.length > 0 ? JSON.stringify(formData.attachments) : null,
+                subTotal: calculateSubTotal(),
+                taxAmount: calculateTax(),
                 totalAmount: calculateTotal(),
                 items: billItems
             };
 
-            const created = await createPurchaseBill(submitData);
+            let created;
+            if ((formData as any).id) {
+                created = await updatePurchaseBill((formData as any).id, submitData);
+            } else {
+                created = await createPurchaseBill(submitData);
+            }
 
             const supplier = suppliers.find(s => s.id === formData.supplierId);
             const newBillUi = {
@@ -256,7 +354,129 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                 </button>
             </div>
 
-            <div className="card search-card">
+            <style>{`
+                .status-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 2rem; }
+                @media (min-width: 1024px) { .status-grid { grid-template-columns: repeat(5, 1fr); } }
+                .status-card {
+                    cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 1rem; padding: 1.25rem;
+                    background-color: white; border: 1px solid transparent; position: relative; overflow: hidden;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.025);
+                }
+                .status-card::before {
+                    content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; transition: opacity 0.3s; opacity: 0;
+                }
+                .status-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04); }
+                .status-card.active { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05); }
+                .status-card.active::before { opacity: 1; }
+                
+                /* Colors - All */
+                .status-card-all { background: linear-gradient(145deg, #ffffff, #f8fafc); border-color: #e2e8f0; }
+                .status-card-all:hover { border-color: #cbd5e1; }
+                .status-card-all.active { border-color: #3b82f6; background: #eff6ff; }
+                .status-card-all::before { background-color: #3b82f6; }
+                .status-card-all .card-title { color: #64748b; }
+                .status-card-all.active .card-title { color: #2563eb; }
+                .status-card-all .card-value { color: #0f172a; }
+                .status-card-all.active .card-value { color: #1e3a8a; }
+                .status-card-all .card-desc { color: #94a3b8; }
+                .status-card-all.active .card-desc { color: #60a5fa; }
+
+                /* Colors - Draft */
+                .status-card-draft { background: linear-gradient(145deg, #ffffff, #f1f5f9); border-color: #e2e8f0; }
+                .status-card-draft:hover { border-color: #cbd5e1; }
+                .status-card-draft.active { border-color: #64748b; background: #f8fafc; }
+                .status-card-draft::before { background-color: #64748b; }
+                .status-card-draft .card-title { color: #64748b; }
+                .status-card-draft.active .card-title { color: #475569; }
+                .status-card-draft .card-value { color: #334155; }
+                .status-card-draft.active .card-value { color: #0f172a; }
+                .status-card-draft .card-desc { color: #94a3b8; }
+                .status-card-draft.active .card-desc { color: #64748b; }
+
+                /* Colors - Approved */
+                .status-card-approved { background: linear-gradient(145deg, #ffffff, #fef2f2); border-color: #fee2e2; }
+                .status-card-approved:hover { border-color: #fca5a5; }
+                .status-card-approved.active { border-color: #ef4444; background: #fef2f2; }
+                .status-card-approved::before { background-color: #ef4444; }
+                .status-card-approved .card-title { color: #f87171; }
+                .status-card-approved.active .card-title { color: #ef4444; }
+                .status-card-approved .card-value { color: #ef4444; }
+                .status-card-approved.active .card-value { color: #b91c1c; }
+                .status-card-approved .card-desc { color: #fca5a5; }
+                .status-card-approved.active .card-desc { color: #ef4444; }
+
+                /* Colors - Partial Paid */
+                .status-card-partial { background: linear-gradient(145deg, #ffffff, #fffbeb); border-color: #fef3c7; }
+                .status-card-partial:hover { border-color: #fcd34d; }
+                .status-card-partial.active { border-color: #f59e0b; background: #fffcf5; }
+                .status-card-partial::before { background-color: #f59e0b; }
+                .status-card-partial .card-title { color: #fbbf24; }
+                .status-card-partial.active .card-title { color: #f59e0b; }
+                .status-card-partial .card-value { color: #f59e0b; }
+                .status-card-partial.active .card-value { color: #b45309; }
+                .status-card-partial .card-desc { color: #fcd34d; }
+                .status-card-partial.active .card-desc { color: #d97706; }
+
+                /* Colors - Paid */
+                .status-card-paid { background: linear-gradient(145deg, #ffffff, #f0fdf4); border-color: #dcfce3; }
+                .status-card-paid:hover { border-color: #86efac; }
+                .status-card-paid.active { border-color: #10b981; background: #f0fdf4; }
+                .status-card-paid::before { background-color: #10b981; }
+                .status-card-paid .card-title { color: #34d399; }
+                .status-card-paid.active .card-title { color: #10b981; }
+                .status-card-paid .card-value { color: #10b981; }
+                .status-card-paid.active .card-value { color: #047857; }
+                .status-card-paid .card-desc { color: #6ee7b7; }
+                .status-card-paid.active .card-desc { color: #059669; }
+            `}</style>
+            <div className="status-grid">
+                <div
+                    onClick={() => setStatusFilter('ALL')}
+                    className={`status-card status-card-all ${statusFilter === 'ALL' ? 'active' : ''}`}
+                >
+                    <div className="card-title text-xs font-bold uppercase tracking-wider mb-2">Tất cả</div>
+                    <div className="card-value text-3xl font-black">{stats.total}</div>
+                    <div className="card-desc text-sm mt-1 font-medium">Hóa đơn</div>
+                </div>
+
+                <div
+                    onClick={() => setStatusFilter('DRAFT')}
+                    className={`status-card status-card-draft ${statusFilter === 'DRAFT' ? 'active' : ''}`}
+                >
+                    <div className="card-title text-xs font-bold uppercase tracking-wider mb-2">Lưu nháp</div>
+                    <div className="card-value text-3xl font-black">{stats.draft.count}</div>
+                    <div className="card-desc text-sm mt-1 font-medium">Chờ duyệt</div>
+                </div>
+
+                <div
+                    onClick={() => setStatusFilter('APPROVED')}
+                    className={`status-card status-card-approved ${statusFilter === 'APPROVED' ? 'active' : ''}`}
+                >
+                    <div className="card-title text-xs font-bold uppercase tracking-wider mb-2">Đã duyệt (Nợ)</div>
+                    <div className="card-value text-3xl font-black">{stats.approved.count}</div>
+                    <div className="card-desc text-sm font-bold mt-1">{formatMoney(stats.approved.amount)}</div>
+                </div>
+
+                <div
+                    onClick={() => setStatusFilter('PARTIAL_PAID')}
+                    className={`status-card status-card-partial ${statusFilter === 'PARTIAL_PAID' ? 'active' : ''}`}
+                >
+                    <div className="card-title text-xs font-bold uppercase tracking-wider mb-2">Đã TT 1 phần</div>
+                    <div className="card-value text-3xl font-black">{stats.partial.count}</div>
+                    <div className="card-desc text-sm font-bold mt-1">Nợ: {formatMoney(stats.partial.amount)}</div>
+                </div>
+
+                <div
+                    onClick={() => setStatusFilter('PAID')}
+                    className={`status-card status-card-paid ${statusFilter === 'PAID' ? 'active' : ''}`}
+                >
+                    <div className="card-title text-xs font-bold uppercase tracking-wider mb-2">Đã thanh toán</div>
+                    <div className="card-value text-3xl font-black">{stats.paid.count}</div>
+                    <div className="card-desc text-sm font-bold mt-1">Hoàn thành</div>
+                </div>
+            </div>
+
+            <div className="card search-card mb-6">
                 <div className="search-input-wrapper">
                     <Search className="search-icon" size={20} />
                     <input
@@ -266,22 +486,6 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="input"
                     />
-                </div>
-                <div className="flex gap-4 w-full sm:w-auto text-sm mt-4 sm:mt-0">
-                    <div className="stat-card stat-card-blue" style={{ minWidth: '160px' }}>
-                        <div className="stat-info">
-                            <span className="stat-title">Tổng Số Hóa Đơn</span>
-                            <span className="stat-value">{bills.length}</span>
-                        </div>
-                    </div>
-                    <div className="stat-card stat-card-red" style={{ minWidth: '160px' }}>
-                        <div className="stat-info">
-                            <span className="stat-title">Tổng Giá Trị (Nợ)</span>
-                            <span className="stat-value">
-                                {formatMoney(bills.reduce((sum, b) => sum + (b.totalAmount || 0), 0))}
-                            </span>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -348,6 +552,13 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                             {bill.status === 'DRAFT' && (
                                                 <>
                                                     <button
+                                                        onClick={() => handleEdit(bill)}
+                                                        className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded inline-block"
+                                                        title="Sửa"
+                                                    >
+                                                        <Edit2 size={18} />
+                                                    </button>
+                                                    <button
                                                         onClick={() => { setSelectedBill(bill); setIsApproveModalOpen(true); }}
                                                         className="p-1.5 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded flex items-center gap-1 text-xs font-semibold px-2"
                                                         title="Duyệt & Nhập Kho"
@@ -410,29 +621,129 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                         {/* Similar form as PO, omitted repetitive boilerplate for brevity, ensuring essential inputs exist */}
                         <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
                             <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                <FileDown className="text-primary" /> Nhập Hóa Đơn Mua
+                                <FileDown className="text-primary" /> {(formData as any).id ? "Sửa Hóa Đơn Mua" : "Nhập Hóa Đơn Mua"}
                             </h2>
                             <button onClick={() => setIsCreateModalOpen(false)} className="text-gray-400 hover:text-gray-600">×</button>
                         </div>
                         <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 140px)' }}>
                             <form id="billForm" onSubmit={handleSubmit} className="space-y-6">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 bg-gray-50 dark:bg-gray-800/30 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-gray-50 dark:bg-gray-800/30 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
                                     <div className="sm:col-span-2 lg:col-span-1">
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nhà Cung Cấp *</label>
                                         <SearchableSelect
                                             value={formData.supplierId}
                                             onChange={(val) => setFormData({ ...formData, supplierId: val })}
                                             options={supplierFormOptions}
-                                            placeholder="-- Chọn Nhà Cung Cấp --"
+                                            placeholder="-- Chọn --"
                                         />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ngày Lập HĐ</label>
-                                        <input type="date" required value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2.5" />
+                                        <input type="date" required value={formData.date} onChange={e => {
+                                            const newDateStr = e.target.value;
+                                            if (newDateStr) {
+                                                const d = new Date(newDateStr);
+                                                d.setDate(d.getDate() + 30);
+                                                setFormData({ ...formData, date: newDateStr, dueDate: d.toISOString().substring(0, 10) });
+                                            } else {
+                                                setFormData({ ...formData, date: newDateStr });
+                                            }
+                                        }} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2.5" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Hạn TT (Công Nợ)</label>
+                                        <input type="date" required value={formData.dueDate} onChange={e => setFormData({ ...formData, dueDate: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2.5" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Số HĐ (Của NCC)</label>
-                                        <input type="text" value={formData.supplierInvoice} onChange={e => setFormData({ ...formData, supplierInvoice: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2.5" placeholder="Ví dụ: HD-1234" />
+                                        <input type="text" value={formData.supplierInvoice} onChange={e => setFormData({ ...formData, supplierInvoice: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2.5" placeholder="VD: HD-1234" />
+                                    </div>
+                                </div>
+
+                                {/* Attachments Section */}
+                                <div>
+                                    <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2">
+                                        <FileText size={16} className="text-gray-500" /> Tài Liệu Đính Kèm
+                                    </h3>
+
+                                    {formData.attachments.length > 0 && (
+                                        <div className="space-y-2 mb-3">
+                                            {formData.attachments.map((doc, idx) => (
+                                                <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded">
+                                                            <FileText size={18} />
+                                                        </div>
+                                                        <div>
+                                                            <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                                                                {doc.name}
+                                                            </a>
+                                                            <div className="text-xs text-gray-500 mt-0.5">
+                                                                {new Date(doc.uploadedAt).toLocaleString('vi-VN')}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        title="Xóa tệp"
+                                                        onClick={() => {
+                                                            const newDocs = [...formData.attachments];
+                                                            newDocs.splice(idx, 1);
+                                                            setFormData({ ...formData, attachments: newDocs });
+                                                        }}
+                                                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    <div className="relative inline-block w-full sm:w-auto">
+                                        <input
+                                            type="file"
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                            disabled={isUploading}
+                                            onChange={async (e) => {
+                                                const file = e.target.files?.[0];
+                                                if (!file) return;
+                                                setIsUploading(true);
+                                                try {
+                                                    const uploadData = new FormData();
+                                                    uploadData.append('file', file);
+                                                    const res = await fetch('/api/upload', { method: 'POST', body: uploadData });
+                                                    const data = await res.json();
+                                                    if (!res.ok) throw new Error(data.error);
+
+                                                    setFormData({
+                                                        ...formData,
+                                                        attachments: [
+                                                            ...formData.attachments,
+                                                            { url: data.url, name: file.name, uploadedAt: new Date().toISOString() }
+                                                        ]
+                                                    });
+                                                } catch (err: any) {
+                                                    alert(err.message || 'Lỗi tải tệp tin');
+                                                } finally {
+                                                    setIsUploading(false);
+                                                    e.target.value = '';
+                                                }
+                                            }}
+                                        />
+                                        <button
+                                            type="button"
+                                            disabled={isUploading}
+                                            className="flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:border-primary hover:text-primary transition-colors w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {isUploading ? (
+                                                <span className="flex items-center gap-2">
+                                                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div> Đang tải lên...
+                                                </span>
+                                            ) : (
+                                                <><Plus size={16} /> Thêm tài liệu (PDF, Ảnh, Docx...)</>
+                                            )}
+                                        </button>
                                     </div>
                                 </div>
 
@@ -453,6 +764,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                                     <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm">Sản Phẩm</th>
                                                     <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm w-32">Số Lượng</th>
                                                     <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm w-48">Đơn Giá Nhập</th>
+                                                    <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm w-24">Thuế (%)</th>
                                                     <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm w-48 text-right">Thành Tiền</th>
                                                     <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm w-16 text-center"></th>
                                                 </tr>
@@ -470,13 +782,24 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                                         </td>
                                                         <td className="p-2"><input type="number" required min="1" value={item.quantity} onChange={(e) => handleItemChange(index, 'quantity', Number(e.target.value))} className="w-full rounded bg-white dark:bg-gray-700 border p-2 text-sm text-center" /></td>
                                                         <td className="p-2"><input type="number" required min="0" value={item.unitPrice} onChange={(e) => handleItemChange(index, 'unitPrice', Number(e.target.value))} className="w-full rounded bg-white dark:bg-gray-700 border p-2 text-sm text-right" /></td>
-                                                        <td className="p-2 text-right font-medium">{formatMoney(item.quantity * item.unitPrice)}</td>
+                                                        <td className="p-2"><input type="number" required min="0" max="100" value={item.taxRate} onChange={(e) => handleItemChange(index, 'taxRate', Number(e.target.value))} className="w-full rounded bg-white dark:bg-gray-700 border p-2 text-sm text-center" /></td>
+                                                        <td className="p-2 text-right font-medium">{formatMoney(item.quantity * item.unitPrice * (1 + (item.taxRate || 0) / 100))}</td>
                                                         <td className="p-2 text-center"><button type="button" onClick={() => handleRemoveItem(index)} className="text-red-500 p-1"><Trash2 size={16} /></button></td>
                                                     </tr>
                                                 ))}
-                                                {billItems.length === 0 && <tr><td colSpan={5} className="p-6 text-center text-gray-500">Chưa có sản phẩm.</td></tr>}
+                                                {billItems.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-gray-500">Chưa có sản phẩm.</td></tr>}
                                                 <tr className="bg-gray-50 dark:bg-gray-800/50">
-                                                    <td colSpan={3} className="p-3 text-right font-semibold">Tổng Cộng:</td>
+                                                    <td colSpan={4} className="p-3 text-right text-sm text-gray-600 dark:text-gray-400">Tổng tiền trước thuế:</td>
+                                                    <td className="p-3 text-right font-medium text-gray-700 dark:text-gray-300">{formatMoney(calculateSubTotal())}</td>
+                                                    <td></td>
+                                                </tr>
+                                                <tr className="bg-gray-50 dark:bg-gray-800/50">
+                                                    <td colSpan={4} className="p-3 text-right text-sm text-gray-600 dark:text-gray-400">Tổng tiền Thuế:</td>
+                                                    <td className="p-3 text-right font-medium text-gray-700 dark:text-gray-300">{formatMoney(calculateTax())}</td>
+                                                    <td></td>
+                                                </tr>
+                                                <tr className="bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
+                                                    <td colSpan={4} className="p-3 text-right font-semibold text-gray-800 dark:text-gray-200">Tổng Thanh Toán:</td>
                                                     <td className="p-3 text-right font-bold text-primary text-lg">{formatMoney(calculateTotal())}</td>
                                                     <td></td>
                                                 </tr>

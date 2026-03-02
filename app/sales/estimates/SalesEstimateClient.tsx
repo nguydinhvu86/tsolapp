@@ -1,0 +1,632 @@
+'use client';
+
+import { useState, useMemo } from 'react';
+import Link from 'next/link';
+import { Card } from '@/app/components/ui/Card';
+import { Table } from '@/app/components/ui/Table';
+import { Button } from '@/app/components/ui/Button';
+import { Modal } from '@/app/components/ui/Modal';
+import { Plus, Edit2, Trash2, Save, X, Printer, FileText, Search, Calendar, FolderClock, LayoutList, CheckCircle2, XCircle, Eye, Link as LinkIcon, Download, ChevronUp, ChevronDown, Check, ArrowRightLeft } from 'lucide-react';
+import { submitSalesEstimate, updateSalesEstimateStatus, deleteSalesEstimate, updateSalesEstimate, convertEstimateToInvoice } from './actions';
+import { formatMoney } from '@/lib/utils/formatters';
+
+export default function SalesEstimateClient({ initialEstimates, customers, products, nextCode }: any) {
+    const [estimates, setEstimates] = useState(initialEstimates);
+    const [isFormOpen, setIsFormOpen] = useState(false);
+
+    // Filters & Sort
+    const [statusFilter, setStatusFilter] = useState('ALL');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
+    const [sortBy, setSortBy] = useState('date_desc');
+
+    const handleSort = (key: string) => {
+        if (sortBy === `${key}_desc`) {
+            setSortBy(`${key}_asc`);
+        } else {
+            setSortBy(`${key}_desc`);
+        }
+    };
+
+    const [formData, setFormData] = useState<any>({
+        code: nextCode,
+        customerId: '',
+        date: new Date().toISOString().split('T')[0],
+        validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        notes: '',
+        status: 'DRAFT',
+        subTotal: 0,
+        taxAmount: 0,
+        totalAmount: 0,
+        items: []
+    });
+
+    const handleOpenCreate = () => {
+        setFormData({
+            code: nextCode, // Assume nextCode persists or is updated elsewhere
+            customerId: '',
+            date: new Date().toISOString().split('T')[0],
+            validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            notes: '',
+            status: 'DRAFT',
+            subTotal: 0,
+            taxAmount: 0,
+            totalAmount: 0,
+            items: []
+        });
+        setQty(1);
+        setPrice(0);
+        setSelectedProduct('');
+        setIsFormOpen(true);
+    };
+
+    const handleEdit = (est: any) => {
+        const mappedItems = est.items ? est.items.map((i: any) => ({
+            productId: i.productId,
+            productName: i.product?.name || i.productName || '',
+            unit: i.product?.unit || i.unit || '',
+            quantity: i.quantity,
+            unitPrice: i.unitPrice,
+            taxRate: i.taxRate || 0,
+            taxAmount: i.taxAmount || 0,
+            totalPrice: i.totalPrice
+        })) : [];
+
+        const calcSubTotal = mappedItems.reduce((acc: number, curr: any) => acc + (curr.quantity * curr.unitPrice), 0);
+        const calcTaxAmount = mappedItems.reduce((acc: number, curr: any) => acc + curr.taxAmount, 0);
+        const calcTotalAmount = mappedItems.reduce((acc: number, curr: any) => acc + curr.totalPrice, 0);
+
+        setFormData({
+            id: est.id,
+            code: est.code || '',
+            customerId: est.customerId || '',
+            date: est.date ? new Date(est.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            validUntil: est.validUntil ? new Date(est.validUntil).toISOString().split('T')[0] : '',
+            notes: est.notes || '',
+            status: est.status || 'DRAFT',
+            subTotal: calcSubTotal,
+            taxAmount: calcTaxAmount,
+            totalAmount: calcTotalAmount,
+            items: mappedItems
+        });
+        setQty(1);
+        setPrice(0);
+        setSelectedProduct('');
+        setIsFormOpen(true);
+    };
+
+    // Quick Item state
+    const [selectedProduct, setSelectedProduct] = useState('');
+    const [qty, setQty] = useState(1);
+    const [price, setPrice] = useState(0);
+
+    const handleProductSelect = (pid: string) => {
+        const prod = products.find((p: any) => p.id === pid);
+        setSelectedProduct(pid);
+        setPrice(prod ? prod.salePrice : 0);
+    };
+
+    const handleAddItem = () => {
+        if (!selectedProduct) return;
+        const prod = products.find((p: any) => p.id === selectedProduct);
+        if (!prod) return;
+
+        const taxRate = prod.taxRate || 0;
+        const baseTotal = qty * price;
+        const taxItemAmount = baseTotal * taxRate / 100;
+        const total = baseTotal + taxItemAmount;
+
+        setFormData((prev: any) => ({
+            ...prev,
+            items: [...prev.items, {
+                productId: prod.id,
+                productName: prod.name,
+                unit: prod.unit,
+                quantity: qty,
+                unitPrice: price,
+                taxRate,
+                taxAmount: taxItemAmount,
+                totalPrice: total
+            }],
+            subTotal: (prev.subTotal || 0) + baseTotal,
+            taxAmount: (prev.taxAmount || 0) + taxItemAmount,
+            totalAmount: (prev.totalAmount || 0) + total
+        }));
+
+        setSelectedProduct('');
+        setQty(1);
+        setPrice(0);
+    };
+
+    const handleRemoveItem = (index: number) => {
+        setFormData((prev: any) => {
+            const newItems = [...prev.items];
+            newItems.splice(index, 1);
+
+            const calcSubTotal = newItems.reduce((acc: number, curr: any) => acc + (curr.quantity * curr.unitPrice), 0);
+            const calcTaxAmount = newItems.reduce((acc: number, curr: any) => acc + curr.taxAmount, 0);
+            const calcTotalAmount = newItems.reduce((acc: number, curr: any) => acc + curr.totalPrice, 0);
+
+            return {
+                ...prev,
+                items: newItems,
+                subTotal: calcSubTotal,
+                taxAmount: calcTaxAmount,
+                totalAmount: calcTotalAmount
+            };
+        });
+    };
+
+    const handleSave = async () => {
+        if (!formData.customerId || formData.items.length === 0) {
+            alert('Vui lòng chọn khách hàng và ít nhất 1 sản phẩm');
+            return;
+        }
+
+        let res;
+        if (formData.id) {
+            res = await updateSalesEstimate(formData.id, formData);
+        } else {
+            res = await submitSalesEstimate('system', formData); // 'system' or real user id if context available
+        }
+
+        if (res.success) {
+            // refresh
+            window.location.reload();
+        } else {
+            alert('Lỗi: ' + res.error);
+        }
+    };
+
+    const handleStatusChange = async (id: string, newStatus: string) => {
+        if (!confirm(`Chuyển trạng thái sang ${newStatus}?`)) return;
+        const res = await updateSalesEstimateStatus(id, newStatus);
+        if (res.success) {
+            setEstimates(estimates.map((e: any) => e.id === id ? { ...e, status: newStatus } : e));
+        } else alert(res.error);
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!confirm('Xóa báo giá này?')) return;
+        const res = await deleteSalesEstimate(id);
+        if (res.success) {
+            setEstimates(estimates.filter((e: any) => e.id !== id));
+        } else alert(res.error);
+    };
+
+    const handleConvertToInvoice = async (id: string) => {
+        if (!confirm('Tạo Hóa Đơn Trực Tiếp từ Báo Giá này? Báo giá sẽ chuyển thành "Đã Chốt".')) return;
+        const res = await convertEstimateToInvoice(id, 'system');
+        if (res.success) {
+            alert("Đã tạo Hóa Đơn thành công!");
+            window.location.href = '/sales/invoices';
+        } else alert(res.error);
+    };
+
+    const baseFilteredEstimates = useMemo(() => {
+        let result = estimates;
+
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            result = result.filter((e: any) =>
+                e.code?.toLowerCase().includes(query) ||
+                e.customer?.name?.toLowerCase().includes(query)
+            );
+        }
+
+        if (dateFrom) result = result.filter((e: any) => e.date >= dateFrom);
+        if (dateTo) result = result.filter((e: any) => e.date <= dateTo);
+
+        return result;
+    }, [estimates, searchQuery, dateFrom, dateTo]);
+
+    const stats = useMemo(() => {
+        return {
+            ALL: {
+                count: baseFilteredEstimates.length,
+                amount: baseFilteredEstimates.reduce((sum: number, e: any) => sum + (e.totalAmount || 0), 0)
+            },
+            DRAFT: {
+                count: baseFilteredEstimates.filter((e: any) => e.status === 'DRAFT').length,
+                amount: baseFilteredEstimates.filter((e: any) => e.status === 'DRAFT').reduce((sum: number, e: any) => sum + (e.totalAmount || 0), 0)
+            },
+            SENT: {
+                count: baseFilteredEstimates.filter((e: any) => e.status === 'SENT').length,
+                amount: baseFilteredEstimates.filter((e: any) => e.status === 'SENT').reduce((sum: number, e: any) => sum + (e.totalAmount || 0), 0)
+            },
+            ACCEPTED: {
+                count: baseFilteredEstimates.filter((e: any) => e.status === 'ACCEPTED').length,
+                amount: baseFilteredEstimates.filter((e: any) => e.status === 'ACCEPTED').reduce((sum: number, e: any) => sum + (e.totalAmount || 0), 0)
+            },
+            REJECTED: {
+                count: baseFilteredEstimates.filter((e: any) => e.status === 'REJECTED').length,
+                amount: baseFilteredEstimates.filter((e: any) => e.status === 'REJECTED').reduce((sum: number, e: any) => sum + (e.totalAmount || 0), 0)
+            }
+        };
+    }, [baseFilteredEstimates]);
+
+    const statsCards = [
+        { id: 'ALL', label: 'Tất Cả', count: stats.ALL.count, amount: stats.ALL.amount, colorClass: 'stat-card-purple', icon: LayoutList },
+        { id: 'DRAFT', label: 'Bản Nháp', count: stats.DRAFT.count, amount: stats.DRAFT.amount, colorClass: 'stat-card-amber', icon: FileText },
+        { id: 'SENT', label: 'Đã Gửi KH', count: stats.SENT.count, amount: stats.SENT.amount, colorClass: 'stat-card-blue', icon: FolderClock },
+        { id: 'ACCEPTED', label: 'Khách Chốt', count: stats.ACCEPTED.count, amount: stats.ACCEPTED.amount, colorClass: 'stat-card-green', icon: CheckCircle2 },
+        { id: 'REJECTED', label: 'Từ Chối', count: stats.REJECTED.count, amount: stats.REJECTED.amount, colorClass: 'stat-card-red', icon: XCircle },
+    ];
+
+    const filteredEstimates = useMemo(() => {
+        let result = baseFilteredEstimates;
+
+        if (statusFilter !== 'ALL') {
+            result = result.filter((e: any) => e.status === statusFilter);
+        }
+
+        result.sort((a: any, b: any) => {
+            if (sortBy === 'date_desc') return new Date(b.date).getTime() - new Date(a.date).getTime();
+            if (sortBy === 'date_asc') return new Date(a.date).getTime() - new Date(b.date).getTime();
+            if (sortBy === 'amount_desc') return b.totalAmount - a.totalAmount;
+            if (sortBy === 'amount_asc') return a.totalAmount - b.totalAmount;
+            if (sortBy === 'code_asc') return (a.code || '').localeCompare(b.code || '');
+            if (sortBy === 'code_desc') return (b.code || '').localeCompare(a.code || '');
+            return 0;
+        });
+
+        return result;
+    }, [baseFilteredEstimates, statusFilter, sortBy]);
+
+    const premiumCSS = `
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.025em;
+        }
+        .badge-success { background: #d1fae5; color: #047857; border: 1px solid #a7f3d0; }
+        .badge-warning { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+        .badge-neutral { background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
+        .badge-info { background: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        .badge-danger { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+        
+        .status-select {
+            appearance: none;
+            cursor: pointer;
+            outline: none;
+            text-align: center;
+            padding-right: 28px !important;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 4px center;
+            background-repeat: no-slash;
+            background-size: 1.2em 1.2em;
+        }
+        .status-select:hover { filter: brightness(0.95); }
+    `;
+
+    return (
+        <>
+            <Card className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl font-semibold">Báo Giá ERP</h2>
+                    <Button onClick={handleOpenCreate} className="flex items-center gap-2">
+                        <Plus size={16} /> Tạo Báo Giá Mới
+                    </Button>
+                </div>
+
+                <style dangerouslySetInnerHTML={{ __html: premiumCSS }} />
+                {/* Filter Cards */}
+                <div className="flex flex-wrap gap-4 mb-6">
+                    {statsCards.map(stat => (
+                        <div
+                            key={stat.id}
+                            onClick={() => setStatusFilter(stat.id)}
+                            className={`stat-card ${stat.colorClass} cursor-pointer flex-1 min-w-[160px] ${statusFilter === stat.id ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+                        >
+                            <div className="flex justify-between items-start mb-2">
+                                <span className="stat-title text-sm font-semibold uppercase tracking-wide">{stat.label}</span>
+                                <div className="stat-icon p-2 rounded-full flex items-center justify-center">
+                                    <stat.icon size={18} />
+                                </div>
+                            </div>
+                            <div className="stat-info">
+                                <span className="stat-value text-3xl font-bold">{stat.count}</span>
+                            </div>
+                            {stat.amount > 0 && (
+                                <div className="mt-2 text-xs font-semibold opacity-80 break-words whitespace-nowrap overflow-hidden text-ellipsis">
+                                    {formatMoney(stat.amount)}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+
+                {/* Filter Ribbon */}
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 mb-6 flex gap-4 items-center flex-wrap">
+                    <div className="flex-1 relative min-w-[200px]">
+                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Tìm theo Mã BG, Tên khách hàng..."
+                            className="pl-9 border border-slate-300 px-3 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 w-full bg-white"
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Calendar size={16} className="text-gray-400" />
+                        <input
+                            type="date"
+                            className="border border-slate-300 px-3 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 bg-white"
+                            value={dateFrom}
+                            onChange={e => setDateFrom(e.target.value)}
+                            title="Từ ngày"
+                        />
+                        <span className="text-gray-400">-</span>
+                        <input
+                            type="date"
+                            className="border border-slate-300 px-3 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 bg-white"
+                            value={dateTo}
+                            onChange={e => setDateTo(e.target.value)}
+                            title="Đến ngày"
+                        />
+                    </div>
+                    <div className="flex items-center gap-2 min-w-[200px]">
+                        <select
+                            className="border border-slate-300 px-3 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 w-full bg-white cursor-pointer"
+                            value={sortBy}
+                            onChange={e => setSortBy(e.target.value)}
+                        >
+                            <option value="date_desc">Ngày (Mới nhất)</option>
+                            <option value="date_asc">Ngày (Cũ nhất)</option>
+                            <option value="amount_desc">Tổng Tiền (Cao xuống thấp)</option>
+                            <option value="amount_asc">Tổng Tiền (Thấp lên cao)</option>
+                            <option value="code_asc">Mã BG (A-Z)</option>
+                            <option value="code_desc">Mã BG (Z-A)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <Table>
+                    <thead>
+                        <tr>
+                            <th className="text-left font-medium text-gray-500 pb-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('code')}>
+                                <div className="flex items-center gap-1">
+                                    Mã BG {sortBy === 'code_asc' ? <ChevronUp size={14} /> : sortBy === 'code_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
+                                </div>
+                            </th>
+                            <th className="text-left font-medium text-gray-500 pb-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('date')}>
+                                <div className="flex items-center gap-1">
+                                    Ngày {sortBy === 'date_asc' ? <ChevronUp size={14} /> : sortBy === 'date_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
+                                </div>
+                            </th>
+                            <th className="text-left font-medium text-gray-500 pb-3">Khách Hàng</th>
+                            <th className="text-right font-medium text-gray-500 pb-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('amount')}>
+                                <div className="flex items-center justify-end gap-1">
+                                    Tổng Tiền {sortBy === 'amount_asc' ? <ChevronUp size={14} /> : sortBy === 'amount_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
+                                </div>
+                            </th>
+                            <th className="text-center font-medium text-gray-500 pb-3">Trạng Thái</th>
+                            <th className="text-right font-medium text-gray-500 pb-3">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {filteredEstimates.map((est: any) => (
+                            <tr key={est.id} className="border-t border-gray-100">
+                                <td className="py-3 items-center gap-2 flex">
+                                    <FileText size={16} className="text-primary/70" />
+                                    <Link href={`/sales/estimates/${est.id}`} className="font-semibold text-gray-800 hover:text-primary hover:underline transition-colors block">
+                                        {est.code}
+                                    </Link>
+                                </td>
+                                <td className="py-3 text-gray-600">{new Date(est.date).toLocaleDateString()}</td>
+                                <td className="py-3">
+                                    {est.customerId ? (
+                                        <Link href={`/customers/${est.customerId}`} className="font-medium text-gray-800 hover:text-primary hover:underline transition-colors block">
+                                            {est.customer?.name}
+                                        </Link>
+                                    ) : (
+                                        est.customer?.name
+                                    )}
+                                </td>
+                                <td className="py-3 text-right font-bold text-gray-800">{formatMoney(est.totalAmount)}</td>
+                                <td className="py-3 text-center">
+                                    <select
+                                        className={`status-badge status-select appearance-none ${est.status === 'SENT' ? 'badge-info' :
+                                            est.status === 'ACCEPTED' ? 'badge-success' :
+                                                est.status === 'REJECTED' ? 'badge-danger' :
+                                                    'badge-warning'
+                                            }`}
+                                        value={est.status}
+                                        onChange={(e) => handleStatusChange(est.id, e.target.value)}
+                                        title="Nhấn để đổi trạng thái"
+                                    >
+                                        <option value="DRAFT" className="bg-white text-gray-900">Bản Nháp</option>
+                                        <option value="SENT" className="bg-white text-gray-900">Đã Gửi KH</option>
+                                        <option value="ACCEPTED" className="bg-white text-gray-900">Đã Chốt</option>
+                                        <option value="REJECTED" className="bg-white text-gray-900">Từ Chối</option>
+                                    </select>
+                                </td>
+                                <td className="py-3 text-right">
+                                    <div className="flex justify-end items-center gap-2">
+                                        {est.status === 'DRAFT' && (
+                                            <Button variant="secondary" onClick={() => handleStatusChange(est.id, 'SENT')} title="Ghi nhận Đã Gửi" className="px-3 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-300 py-1.5 text-xs font-semibold flex-shrink-0 shadow-sm transition-all rounded-md">
+                                                Gửi KH
+                                            </Button>
+                                        )}
+                                        {est.status === 'SENT' && (
+                                            <Button variant="secondary" onClick={() => handleStatusChange(est.id, 'ACCEPTED')} className="text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title="Đánh dấu Chốt đơn">
+                                                <Check size={14} className="mr-1.5 inline-block" /> Chốt
+                                            </Button>
+                                        )}
+                                        {(est.status === 'DRAFT' || est.status === 'SENT' || est.status === 'ACCEPTED') && (
+                                            <Button variant="secondary" onClick={() => handleConvertToInvoice(est.id)} className="text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title="Tạo Hóa Đơn Tự Động">
+                                                <ArrowRightLeft size={14} className="mr-1.5 inline-block" /> Lên HĐ
+                                            </Button>
+                                        )}
+
+                                        <div className="flex items-center bg-white border border-slate-200 rounded-md shadow-sm overflow-hidden divide-x divide-slate-200 ml-1">
+                                            {est.status === 'DRAFT' && (
+                                                <button onClick={() => handleEdit(est)} title="Chỉnh sửa" className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                                                    <Edit2 size={15} />
+                                                </button>
+                                            )}
+                                            <Link href={`/sales/estimates/${est.id}`} title="Xem chi tiết" className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors block">
+                                                <Eye size={15} />
+                                            </Link>
+                                            <Link href={`/print/sales/estimate/${est.id}`} target="_blank" title="Tải PDF / In ấn" className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors block">
+                                                <Download size={15} />
+                                            </Link>
+                                            <Link href={`/public/sales/estimate/${est.id}`} target="_blank" title="Link xem Public" className="p-2 text-slate-500 hover:text-teal-600 hover:bg-teal-50 transition-colors block">
+                                                <LinkIcon size={15} />
+                                            </Link>
+                                            <button onClick={() => handleDelete(est.id)} className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors" title="Xóa">
+                                                <Trash2 size={15} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                        {filteredEstimates.length === 0 && (
+                            <tr><td colSpan={6} className="py-8 text-center text-gray-500">
+                                {estimates.length === 0 ? 'Chưa có bảng báo giá ERP nào' : 'Không có báo giá nào khớp với trạng thái này'}
+                            </td></tr>
+                        )}
+                    </tbody>
+                </Table>
+            </Card>
+
+            <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title={formData.id ? "Sửa Báo Giá ERP" : "Tạo Báo Giá ERP"} maxWidth="1000px">
+                <div className="flex flex-col gap-4">
+                    <h3 className="font-medium">Thông tin chung</h3>
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Mã Báo Giá</label>
+                            <input
+                                type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white"
+                                value={formData.code}
+                                onChange={e => setFormData({ ...formData, code: e.target.value })}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Khách Hàng (*)</label>
+                            <select
+                                className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white"
+                                value={formData.customerId}
+                                onChange={e => setFormData({ ...formData, customerId: e.target.value })}
+                            >
+                                <option value="">-- Chọn KH --</option>
+                                {customers.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Ngày Báo Giá</label>
+                            <input
+                                type="date" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white"
+                                value={formData.date}
+                                onChange={e => setFormData({ ...formData, date: e.target.value })}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Hiệu Lực Đến</label>
+                            <input
+                                type="date" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white"
+                                value={formData.validUntil}
+                                onChange={e => setFormData({ ...formData, validUntil: e.target.value })}
+                            />
+                        </div>
+                        <div className="col-span-2 lg:col-span-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>
+                            <input
+                                type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white"
+                                value={formData.notes || ''}
+                                onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                                placeholder="Ghi chú thêm..."
+                            />
+                        </div>
+                    </div>
+
+                    <h3 className="font-medium mt-2">Chi tiết Sản Phẩm</h3>
+                    <div className="flex gap-2 items-end bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <div className="flex-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Thêm SP</label>
+                            <select className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white" value={selectedProduct} onChange={(e) => handleProductSelect(e.target.value)}>
+                                <option value="">-- Chọn Sản Phẩm --</option>
+                                {products.map((p: any) => <option key={p.id} value={p.id}>{p.sku} - {p.name}</option>)}
+                            </select>
+                        </div>
+                        <div className="w-32">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Giá bán</label>
+                            <input type="number" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white" value={price} onChange={e => setPrice(Number(e.target.value))} />
+                        </div>
+                        <div className="w-24">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Thuế SP</label>
+                            <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 bg-gray-100 text-center text-gray-600 font-medium cursor-not-allowed" value={`${products.find((p: any) => p.id === selectedProduct)?.taxRate || 0}%`} disabled />
+                        </div>
+                        <div className="w-24">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">SL</label>
+                            <input type="number" min="1" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary text-center bg-white" value={qty} onChange={e => setQty(Number(e.target.value))} />
+                        </div>
+                        <Button onClick={handleAddItem} variant="secondary" className="mb-[2px] h-[46px] px-6 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100">Thêm</Button>
+                    </div>
+
+                    {formData.items.length > 0 && (
+                        <div className="border border-gray-200 rounded-xl overflow-hidden mt-2">
+                            <table className="w-full text-sm bg-white text-left">
+                                <thead className="bg-gray-100 border-b border-gray-200">
+                                    <tr>
+                                        <th className="p-3 font-semibold text-gray-600">Sản Phẩm</th>
+                                        <th className="p-3 font-semibold text-gray-600 text-center w-20">SL</th>
+                                        <th className="p-3 font-semibold text-gray-600 text-right w-32">Đ.Giá</th>
+                                        <th className="p-3 font-semibold text-gray-600 text-center w-20">Thuế</th>
+                                        <th className="p-3 font-semibold text-gray-600 text-right w-36">Thành Tiền</th>
+                                        <th className="p-3 font-semibold text-gray-600 text-center w-12"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {formData.items.map((item: any, i: number) => (
+                                        <tr key={i} className="border-b border-gray-50 last:border-b-0 hover:bg-gray-50">
+                                            <td className="p-3">{item.productName}</td>
+                                            <td className="p-3 text-center">{item.quantity}</td>
+                                            <td className="p-3 text-right text-gray-600">{formatMoney(item.unitPrice)}</td>
+                                            <td className="p-3 text-center text-gray-600">{item.taxRate}%</td>
+                                            <td className="p-3 text-right font-medium text-gray-900">{formatMoney(item.totalPrice)}</td>
+                                            <td className="p-3 text-center">
+                                                <button type="button" onClick={() => handleRemoveItem(i)} className="text-red-500 hover:text-red-700 p-1"><Trash2 size={16} /></button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                                <tfoot className="bg-gray-50 border-t border-gray-200">
+                                    <tr>
+                                        <td colSpan={4} className="p-3 text-right text-gray-600 text-sm">Tổng tiền trước thuế:</td>
+                                        <td className="p-3 text-right font-medium text-gray-800">{formatMoney(formData.subTotal || 0)}</td>
+                                        <td className="p-3"></td>
+                                    </tr>
+                                    <tr>
+                                        <td colSpan={4} className="p-3 text-right text-gray-600 text-sm">Tổng tiền thuế:</td>
+                                        <td className="p-3 text-right font-medium text-gray-800">{formatMoney(formData.taxAmount || 0)}</td>
+                                        <td className="p-3"></td>
+                                    </tr>
+                                    <tr className="border-t border-gray-200">
+                                        <td colSpan={4} className="p-3 text-right font-semibold text-gray-800">Tổng Cộng:</td>
+                                        <td className="p-3 text-right font-bold text-primary text-lg">{formatMoney(formData.totalAmount || 0)}</td>
+                                        <td className="p-3"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    )}
+
+                    <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
+                        <Button onClick={() => setIsFormOpen(false)} variant="secondary" className="px-6">Hủy</Button>
+                        <Button onClick={handleSave} className="flex items-center gap-2 px-8">
+                            <Save size={16} /> Lưu Báo Giá
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
+        </>
+    );
+}

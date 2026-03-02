@@ -54,10 +54,21 @@ const mainNavItems: any[] = [
             { name: 'Báo Cáo Mua Hàng', href: '/purchasing/reports', permission: 'INVENTORY_VIEW' }
         ]
     },
+    {
+        name: 'Bán Hàng',
+        icon: ShoppingCart,
+        children: [
+            { name: 'Báo Giá (ERP)', href: '/sales/estimates', permission: 'INVENTORY_VIEW' },
+            { name: 'Đơn Đặt Hàng', href: '/sales/orders', permission: 'INVENTORY_VIEW' },
+            { name: 'Hóa Đơn / Xuất Kho', href: '/sales/invoices', permission: 'INVENTORY_VIEW' },
+            { name: 'Thu Tiền / Công Nợ', href: '/sales/payments', permission: 'INVENTORY_VIEW' },
+            { name: 'Báo Cáo Doanh Thu', href: '/sales/reports', permission: 'INVENTORY_VIEW' }
+        ]
+    },
     { name: 'Khách Hàng', href: '/customers', icon: Users, permission: 'CUSTOMERS_VIEW' },
 ];
 
-export function Sidebar({ brandName = 'ContractMgr', isOpen = false, onClose }: { brandName?: string, isOpen?: boolean, onClose?: () => void }) {
+export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, onClose }: { brandName?: string, logoUrl?: string | null, isOpen?: boolean, onClose?: () => void }) {
     const pathname = usePathname();
     const { data: session } = useSession();
     const [templatesOpen, setTemplatesOpen] = useState(false);
@@ -71,11 +82,15 @@ export function Sidebar({ brandName = 'ContractMgr', isOpen = false, onClose }: 
     return (
         <aside className={`sidebar-container ${isOpen ? 'open' : ''}`}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.5rem', borderBottom: '1px solid var(--border)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: 800, fontSize: '1.25rem', color: 'var(--text-main)' }}>
-                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'linear-gradient(135deg, var(--primary) 0%, #818cf8 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 2px 4px rgba(79,70,229,0.3)' }}>
-                        <FileText size={18} strokeWidth={2.5} />
-                    </div>
-                    {brandName}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: 800, fontSize: '1.25rem', color: 'var(--text-main)', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                    {logoUrl ? (
+                        <img src={logoUrl} alt="Logo" style={{ width: '32px', height: '32px', borderRadius: '4px', objectFit: 'contain' }} />
+                    ) : (
+                        <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'linear-gradient(135deg, var(--primary) 0%, #818cf8 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', flexShrink: 0, boxShadow: '0 2px 4px rgba(79,70,229,0.3)' }}>
+                            <FileText size={18} strokeWidth={2.5} />
+                        </div>
+                    )}
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{brandName}</span>
                 </div>
                 {onClose && (
                     <button
