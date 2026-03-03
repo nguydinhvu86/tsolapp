@@ -32,6 +32,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
         date: new Date().toISOString().substring(0, 10),
         dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10),
         notes: '',
+        tags: '',
         attachments: [] as { url: string, name: string, uploadedAt: string }[]
     });
     const [billItems, setBillItems] = useState<Array<{ productId: string, quantity: number, unitPrice: number, taxRate: number }>>([]);
@@ -166,6 +167,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
             date: new Date().toISOString().substring(0, 10),
             dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10),
             notes: '',
+            tags: '',
             attachments: [],
             id: undefined
         } as any);
@@ -190,6 +192,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
             date: bill.date ? new Date(bill.date).toISOString().substring(0, 10) : new Date().toISOString().substring(0, 10),
             dueDate: bill.dueDate ? new Date(bill.dueDate).toISOString().substring(0, 10) : '',
             notes: bill.notes || '',
+            tags: bill.tags || '',
             attachments: parsedAttachments
         } as any);
 
@@ -502,6 +505,9 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                             <th onClick={() => requestSort('date')} className="cursor-pointer hover:bg-gray-100">
                                 <div className="flex items-center gap-1">Ngày / Nhà Cung Cấp <ArrowUpDown size={14} className="text-gray-400" /></div>
                             </th>
+                            <th className="text-left font-medium text-gray-900 dark:text-gray-100">
+                                Thẻ Quản Lý
+                            </th>
                             <th onClick={() => requestSort('totalAmount')} className="cursor-pointer hover:bg-gray-100 text-right">
                                 <div className="flex items-center justify-end gap-1">Tổng Tiền <ArrowUpDown size={14} className="text-gray-400" /></div>
                             </th>
@@ -534,6 +540,13 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                         <Link href={`/suppliers/${bill.supplierId}`} className="font-semibold text-primary hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">
                                             {bill.supplier?.name}
                                         </Link>
+                                    </td>
+                                    <td className="p-4">
+                                        {bill.tags && bill.tags.split(',').map((t: string, i: number) => {
+                                            const trimmed = t.trim();
+                                            if (!trimmed) return null;
+                                            return <span key={i} className="inline-block bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-xs px-2 py-1 rounded-md mr-1 mb-1 border border-slate-200 dark:border-slate-700">{trimmed}</span>
+                                        })}
                                     </td>
                                     <td className="p-4 text-right">
                                         <div className="font-semibold text-gray-900 dark:text-gray-100">{formatMoney(bill.totalAmount || 0)}</div>
@@ -627,7 +640,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                         </div>
                         <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 140px)' }}>
                             <form id="billForm" onSubmit={handleSubmit} className="space-y-6">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-gray-50 dark:bg-gray-800/30 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 bg-gray-50 dark:bg-gray-800/30 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
                                     <div className="sm:col-span-2 lg:col-span-1">
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nhà Cung Cấp *</label>
                                         <SearchableSelect
@@ -635,6 +648,15 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                             onChange={(val) => setFormData({ ...formData, supplierId: val })}
                                             options={supplierFormOptions}
                                             placeholder="-- Chọn --"
+                                        />
+                                    </div>
+                                    <div className="sm:col-span-2 lg:col-span-1">
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kế thừa PO (Tùy chọn)</label>
+                                        <SearchableSelect
+                                            value={formData.orderId || ''}
+                                            onChange={handleOrderSelect}
+                                            options={[{ value: '', label: '-- Mua Trực Tiếp --' }, ...orders.filter((o: any) => o.status !== 'DRAFT').map((o: any) => ({ value: o.id, label: `${o.code} - ${o.supplier?.name}` }))]}
+                                            placeholder="-- Từ PO --"
                                         />
                                     </div>
                                     <div>
@@ -657,6 +679,14 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Số HĐ (Của NCC)</label>
                                         <input type="text" value={formData.supplierInvoice} onChange={e => setFormData({ ...formData, supplierInvoice: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2.5" placeholder="VD: HD-1234" />
+                                    </div>
+                                    <div className="sm:col-span-2 lg:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ghi chú</label>
+                                        <input type="text" value={formData.notes || ''} onChange={e => setFormData({ ...formData, notes: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2.5" placeholder="Ghi chú thêm..." />
+                                    </div>
+                                    <div className="sm:col-span-2 lg:col-span-3">
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Thẻ Quản Lý (Tags)</label>
+                                        <input type="text" value={formData.tags || ''} onChange={e => setFormData({ ...formData, tags: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2.5" placeholder="VD: Nhập khẩu, Quan trọng..." />
                                     </div>
                                 </div>
 

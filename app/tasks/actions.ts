@@ -19,6 +19,10 @@ export async function getTasks(filters?: any) {
             paymentReq: true,
             dispatch: true,
             appendix: true,
+            salesOrder: true,
+            salesInvoice: true,
+            salesEstimate: true,
+            salesPayment: true,
             activityLogs: { include: { user: true } },
             parentTask: { select: { id: true, title: true } }
         },
@@ -357,7 +361,7 @@ export async function toggleReaction(commentId: string, emoji: string, userId: s
     }
 }
 
-export async function updateTaskLinks(taskId: string, linkData: { customerId?: string | null, contractId?: string | null, quoteId?: string | null, handoverId?: string | null, paymentReqId?: string | null, dispatchId?: string | null }, userId: string) {
+export async function updateTaskLinks(taskId: string, linkData: { customerId?: string | null, contractId?: string | null, quoteId?: string | null, handoverId?: string | null, paymentReqId?: string | null, dispatchId?: string | null, salesOrderId?: string | null, salesInvoiceId?: string | null, salesEstimateId?: string | null, salesPaymentId?: string | null }, userId: string) {
     const oldTask = await prisma.task.findUnique({ where: { id: taskId } });
 
     await prisma.task.update({
@@ -367,7 +371,7 @@ export async function updateTaskLinks(taskId: string, linkData: { customerId?: s
 
     if (oldTask) {
         const changes: string[] = [];
-        const keysMap: any = { customerId: 'Khách hàng', contractId: 'Hợp đồng', quoteId: 'Báo giá', handoverId: 'Biên bản bàn giao', paymentReqId: 'Đề nghị thanh toán', dispatchId: 'Công văn' };
+        const keysMap: any = { customerId: 'Khách hàng', contractId: 'Hợp đồng', quoteId: 'Báo giá', handoverId: 'Biên bản bàn giao', paymentReqId: 'Đề nghị thanh toán', dispatchId: 'Công văn', salesOrderId: 'Đơn hàng', salesInvoiceId: 'Hóa đơn', salesEstimateId: 'Báo giá (Sales)', salesPaymentId: 'Phiếu thu' };
 
         for (const key of Object.keys(linkData)) {
             const oldVal = (oldTask as any)[key];
@@ -401,6 +405,14 @@ export async function searchEntities(type: string, query: string = '') {
             return prisma.paymentRequest.findMany({ where: { title: { contains: q } }, take: 5, select: { id: true, title: true } });
         case 'DISPATCH':
             return prisma.dispatch.findMany({ where: { title: { contains: q } }, take: 5, select: { id: true, title: true } });
+        case 'SALES_ORDER':
+            return prisma.salesOrder.findMany({ where: { code: { contains: q } }, take: 5, select: { id: true, code: true } });
+        case 'SALES_INVOICE':
+            return prisma.salesInvoice.findMany({ where: { code: { contains: q } }, take: 5, select: { id: true, code: true } });
+        case 'SALES_ESTIMATE':
+            return prisma.salesEstimate.findMany({ where: { code: { contains: q } }, take: 5, select: { id: true, code: true } });
+        case 'SALES_PAYMENT':
+            return prisma.salesPayment.findMany({ where: { code: { contains: q } }, take: 5, select: { id: true, code: true } });
         default:
             return [];
     }

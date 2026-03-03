@@ -11,6 +11,7 @@ export default async function SalesReportsPage() {
                 invoices={data.invoices}
                 payments={data.payments}
                 orders={data.orders}
+                estimates={data.estimates}
             />
         </div>
     );

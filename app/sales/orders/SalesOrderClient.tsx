@@ -4,13 +4,24 @@ import { useState, useMemo } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Table } from '@/app/components/ui/Table';
 import { Button } from '@/app/components/ui/Button';
-import { Plus, Edit2, Trash2, Save, X, Printer, PackageCheck, Search, Calendar, LayoutList, FolderClock, CheckCircle2, XCircle, FileText, ChevronUp, ChevronDown } from 'lucide-react';
-import { submitSalesOrder, updateSalesOrderStatus, deleteSalesOrder, updateSalesOrder } from './actions';
+import { Modal } from '@/app/components/ui/Modal';
+import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
+import { Plus, Edit2, Trash2, Save, X, Printer, PackageCheck, Search, Calendar, LayoutList, FolderClock, CheckCircle2, XCircle, FileText, ChevronUp, ChevronDown, Eye, Link as LinkIcon, Download, Check, ArrowRightLeft } from 'lucide-react';
+import { submitSalesOrder, updateSalesOrderStatus, deleteSalesOrder, updateSalesOrder, convertOrderToInvoice } from './actions';
 import { formatMoney } from '@/lib/utils/formatters';
+import Link from 'next/link';
 
-export default function SalesOrderClient({ initialOrders, customers, products, nextCode }: any) {
+export default function SalesOrderClient({ initialOrders, customers, products, nextCode, initialAction, initialCustomerId }: any) {
     const [orders, setOrders] = useState(initialOrders);
-    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [isFormOpen, setIsFormOpen] = useState(initialAction === 'new');
+
+    // Convert to Invoice state
+    const [convertModalId, setConvertModalId] = useState<string | null>(null);
+    const [isConverting, setIsConverting] = useState(false);
+
+    // Generic Action Modal State
+    const [actionModal, setActionModal] = useState<{ isOpen: boolean, title: string, message: React.ReactNode, action: () => Promise<void> } | null>(null);
+    const [isActioning, setIsActioning] = useState(false);
 
     // Filters & Sort
     const [statusFilter, setStatusFilter] = useState('ALL');
@@ -28,7 +39,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
     };
     const [formData, setFormData] = useState<any>({
         code: nextCode,
-        customerId: '',
+        customerId: initialCustomerId || '',
         date: new Date().toISOString().split('T')[0],
         notes: '',
         status: 'DRAFT',
@@ -174,26 +185,52 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
         }
 
         if (res.success) {
-            window.location.reload();
+            window.location.href = window.location.pathname;
         } else {
             alert('Lỗi: ' + res.error);
         }
     };
 
     const handleStatusChange = async (id: string, newStatus: string) => {
-        if (!confirm(`Chuyển trạng thái sang ${newStatus}?`)) return;
-        const res = await updateSalesOrderStatus(id, newStatus);
-        if (res.success) {
-            setOrders(orders.map((o: any) => o.id === id ? { ...o, status: newStatus } : o));
-        } else alert(res.error);
+        setActionModal({
+            isOpen: true,
+            title: 'Chuyển Trạng Thái',
+            message: `Bạn có chắc chắn muốn chuyển trạng thái đơn hàng sang "${newStatus}"?`,
+            action: async () => {
+                const res = await updateSalesOrderStatus(id, newStatus);
+                if (res.success) {
+                    setOrders(orders.map((o: any) => o.id === id ? { ...o, status: newStatus } : o));
+                } else alert(res.error);
+            }
+        });
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Xóa Đơn Đặt Hàng này?')) return;
-        const res = await deleteSalesOrder(id);
+        setActionModal({
+            isOpen: true,
+            title: 'Xóa Đơn Đặt Hàng',
+            message: 'Hành động này sẽ Xóa đơn đặt hàng này hoàn toàn (không thể phục hồi). Bạn chắc chắn chứ?',
+            action: async () => {
+                const res = await deleteSalesOrder(id);
+                if (res.success) {
+                    setOrders(orders.filter((o: any) => o.id !== id));
+                } else alert(res.error);
+            }
+        });
+    };
+
+    const handleConfirmConvert = async () => {
+        if (!convertModalId) return;
+        setIsConverting(true);
+        const res = await convertOrderToInvoice(convertModalId);
         if (res.success) {
-            setOrders(orders.filter((o: any) => o.id !== id));
-        } else alert(res.error);
+            alert("Đã tạo Hóa Đơn thành công!");
+            window.location.href = '/sales/invoices';
+        } else {
+            alert(res.error);
+            setIsConverting(false);
+            setConvertModalId(null);
+        }
     };
 
     const baseFilteredOrders = useMemo(() => {
@@ -267,290 +304,413 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
     }, [baseFilteredOrders, statusFilter, sortBy]);
 
     return (
-        <Card className="p-6">
-            <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold">Danh sách Đơn Hỏi Mua / Đặt Hàng</h2>
-                <Button onClick={() => isFormOpen ? setIsFormOpen(false) : handleOpenCreate()} className="flex items-center gap-2">
-                    {isFormOpen ? <X size={16} /> : <Plus size={16} />}
-                    {isFormOpen ? 'Hủy' : 'Tạo Đơn Đặt Hàng Mới'}
-                </Button>
-            </div>
+        <>
+            <Card className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl font-semibold">Danh sách Đơn Hỏi Mua / Đặt Hàng</h2>
+                    <Button onClick={handleOpenCreate} className="flex items-center gap-2">
+                        <Plus size={16} /> Tạo Đơn Đặt Hàng Mới
+                    </Button>
+                </div>
 
-            {/* Filter Cards */}
-            <div className="flex flex-wrap gap-4 mb-6">
-                {statsCards.map(stat => (
-                    <div
-                        key={stat.id}
-                        onClick={() => setStatusFilter(stat.id)}
-                        className={`stat-card ${stat.colorClass} cursor-pointer flex-1 min-w-[160px] ${statusFilter === stat.id ? 'ring-2 ring-primary ring-offset-2' : ''}`}
-                    >
-                        <div className="flex justify-between items-start mb-2">
-                            <span className="stat-title text-sm font-semibold uppercase tracking-wide">{stat.label}</span>
-                            <div className="stat-icon p-2 rounded-full flex items-center justify-center">
-                                <stat.icon size={18} />
+                {/* Filter Cards */}
+                <div className="flex flex-wrap gap-4 mb-6">
+                    {statsCards.map(stat => (
+                        <div
+                            key={stat.id}
+                            onClick={() => setStatusFilter(stat.id)}
+                            className={`stat-card ${stat.colorClass} cursor-pointer flex-1 min-w-[160px] ${statusFilter === stat.id ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+                        >
+                            <div className="flex justify-between items-start mb-2">
+                                <span className="stat-title text-sm font-semibold uppercase tracking-wide">{stat.label}</span>
+                                <div className="stat-icon p-2 rounded-full flex items-center justify-center">
+                                    <stat.icon size={18} />
+                                </div>
                             </div>
-                        </div>
-                        <div className="stat-info">
-                            <span className="stat-value text-3xl font-bold">{stat.count}</span>
-                        </div>
-                        {stat.amount > 0 && (
-                            <div className="mt-2 text-xs font-semibold opacity-80 break-words whitespace-nowrap overflow-hidden text-ellipsis">
-                                {formatMoney(stat.amount)}
+                            <div className="stat-info">
+                                <span className="stat-value text-3xl font-bold">{stat.count}</span>
                             </div>
+                            {stat.amount > 0 && (
+                                <div className="mt-2 text-xs font-semibold opacity-80 break-words whitespace-nowrap overflow-hidden text-ellipsis">
+                                    {formatMoney(stat.amount)}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+
+                {/* Filter Ribbon */}
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 mb-6 flex gap-4 items-center flex-wrap">
+                    <div className="flex-1 relative min-w-[200px]">
+                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Tìm theo Mã SO, Tên khách hàng..."
+                            className="pl-9 border border-slate-300 px-3 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 w-full bg-white"
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Calendar size={16} className="text-gray-400" />
+                        <input
+                            type="date"
+                            className="border border-slate-300 px-3 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 bg-white"
+                            value={dateFrom}
+                            onChange={e => setDateFrom(e.target.value)}
+                            title="Từ ngày"
+                        />
+                        <span className="text-gray-400">-</span>
+                        <input
+                            type="date"
+                            className="border border-slate-300 px-3 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 bg-white"
+                            value={dateTo}
+                            onChange={e => setDateTo(e.target.value)}
+                            title="Đến ngày"
+                        />
+                    </div>
+                    <div className="flex items-center gap-2 min-w-[200px]">
+                        <select
+                            className="border border-slate-300 px-3 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 w-full bg-white cursor-pointer"
+                            value={sortBy}
+                            onChange={e => setSortBy(e.target.value)}
+                        >
+                            <option value="date_desc">Ngày (Mới nhất)</option>
+                            <option value="date_asc">Ngày (Cũ nhất)</option>
+                            <option value="amount_desc">Tổng Tiền (Cao xuống thấp)</option>
+                            <option value="amount_asc">Tổng Tiền (Thấp lên cao)</option>
+                            <option value="code_asc">Mã SO (A-Z)</option>
+                            <option value="code_desc">Mã SO (Z-A)</option>
+                        </select>
+                    </div>
+                </div>
+
+
+                <Table>
+                    <thead>
+                        <tr>
+                            <th className="text-left font-medium text-gray-500 pb-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('code')}>
+                                <div className="flex items-center gap-1">
+                                    Mã SO {sortBy === 'code_asc' ? <ChevronUp size={14} /> : sortBy === 'code_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
+                                </div>
+                            </th>
+                            <th className="text-left font-medium text-gray-500 pb-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('date')}>
+                                <div className="flex items-center gap-1">
+                                    Ngày Lập {sortBy === 'date_asc' ? <ChevronUp size={14} /> : sortBy === 'date_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
+                                </div>
+                            </th>
+                            <th className="text-left font-medium text-gray-500 pb-3">Khách Hàng</th>
+                            <th className="text-right font-medium text-gray-500 pb-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('amount')}>
+                                <div className="flex items-center justify-end gap-1">
+                                    Tổng Tiền {sortBy === 'amount_asc' ? <ChevronUp size={14} /> : sortBy === 'amount_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
+                                </div>
+                            </th>
+                            <th className="text-center font-medium text-gray-500 pb-3">Trạng Thái</th>
+                            <th className="text-right font-medium text-gray-500 pb-3">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {filteredOrders.map((o: any) => (
+                            <tr key={o.id} className="border-t border-gray-100">
+                                <td className="py-3 items-center gap-2 flex">
+                                    <PackageCheck size={16} className="text-blue-500" />
+                                    <Link href={`/sales/orders/${o.id}`} className="font-semibold text-gray-800 hover:text-primary hover:underline transition-colors block">
+                                        {o.code}
+                                    </Link>
+                                </td>
+                                <td className="py-3 text-gray-600" suppressHydrationWarning>{new Date(o.date).toLocaleDateString()}</td>
+                                <td className="py-3">
+                                    {o.customerId ? (
+                                        <Link href={`/customers/${o.customerId}`} className="font-medium text-gray-800 hover:text-primary hover:underline transition-colors block">
+                                            {o.customer?.name}
+                                        </Link>
+                                    ) : (
+                                        o.customer?.name
+                                    )}
+                                </td>
+                                <td className="py-3 text-right font-medium">{formatMoney(o.totalAmount)}</td>
+                                <td className="py-3 text-center">
+                                    <span className={`px-2 py-1 rounded text-xs font-medium border ${o.status === 'SENT' ? 'bg-blue-50 text-blue-600 border-blue-200' :
+                                        o.status === 'CONFIRMED' ? 'bg-green-50 text-green-600 border-green-200' :
+                                            o.status === 'COMPLETED' ? 'bg-purple-50 text-purple-600 border-purple-200' :
+                                                o.status === 'CANCELLED' ? 'bg-red-50 text-red-600 border-red-200' :
+                                                    'bg-gray-50 text-gray-600 border-gray-200'
+                                        }`}>
+                                        {o.status}
+                                    </span>
+                                </td>
+                                <td className="py-3 text-right">
+                                    <div className="flex justify-end items-center gap-2">
+                                        {o.status === 'DRAFT' && (
+                                            <Button variant="secondary" onClick={() => handleStatusChange(o.id, 'CONFIRMED')} title="Chốt Đơn" className="px-3 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-300 py-1.5 text-xs font-semibold flex-shrink-0 shadow-sm transition-all rounded-md">
+                                                Chốt Đơn
+                                            </Button>
+                                        )}
+                                        {o.status === 'CONFIRMED' && (
+                                            <Button variant="secondary" onClick={() => handleStatusChange(o.id, 'COMPLETED')} className="text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title="Hoàn Thành">
+                                                <PackageCheck size={14} className="mr-1.5 inline-block" /> Xong
+                                            </Button>
+                                        )}
+                                        {(o.status === 'DRAFT' || o.status === 'CONFIRMED') && (
+                                            <Button variant="secondary" onClick={() => setConvertModalId(o.id)} className="text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title="Tạo Hóa Đơn Tự Động">
+                                                <ArrowRightLeft size={14} className="mr-1.5 inline-block" /> Lên Hóa Đơn
+                                            </Button>
+                                        )}
+
+                                        <div className="flex items-center bg-white border border-slate-200 rounded-md shadow-sm overflow-hidden divide-x divide-slate-200 ml-1">
+                                            {o.status === 'DRAFT' && (
+                                                <button onClick={() => handleEdit(o)} title="Chỉnh sửa" className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                                                    <Edit2 size={15} />
+                                                </button>
+                                            )}
+                                            <Link href={`/sales/orders/${o.id}`} title="Xem chi tiết" className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors block">
+                                                <Eye size={15} />
+                                            </Link>
+                                            <Link href={`/print/sales/order/${o.id}`} target="_blank" title="Tải PDF / In ấn" className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors block">
+                                                <Download size={15} />
+                                            </Link>
+                                            <Link href={`/public/sales/order/${o.id}`} target="_blank" title="Link xem Public" className="p-2 text-slate-500 hover:text-teal-600 hover:bg-teal-50 transition-colors block">
+                                                <LinkIcon size={15} />
+                                            </Link>
+                                            <button onClick={() => handleDelete(o.id)} className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors" title="Xóa">
+                                                <Trash2 size={15} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                        {filteredOrders.length === 0 && (
+                            <tr><td colSpan={6} className="py-8 text-center text-gray-500">Chưa có đơn đặt hàng nào khớp bộ lọc</td></tr>
                         )}
-                    </div>
-                ))}
-            </div>
+                    </tbody>
+                    <tfoot>
+                        <tr className="border-t-2 border-slate-200 bg-slate-50 font-bold text-gray-800">
+                            <td colSpan={3} className="py-4 px-4 text-right">
+                                Tổng Cộng ({filteredOrders.length} Đơn Hàng):
+                            </td>
+                            <td className="py-4 text-right text-primary">
+                                {formatMoney(filteredOrders.reduce((sum: number, o: any) => sum + (o.totalAmount || 0), 0))}
+                            </td>
+                            <td colSpan={2}></td>
+                        </tr>
+                    </tfoot>
+                </Table>
+            </Card>
 
-            {/* Filter Ribbon */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 mb-6 flex gap-4 items-center flex-wrap">
-                <div className="flex-1 relative min-w-[200px]">
-                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder="Tìm theo Mã SO, Tên khách hàng..."
-                        className="pl-9 border border-slate-300 px-3 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 w-full bg-white"
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                    />
-                </div>
-                <div className="flex items-center gap-2">
-                    <Calendar size={16} className="text-gray-400" />
-                    <input
-                        type="date"
-                        className="border border-slate-300 px-3 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 bg-white"
-                        value={dateFrom}
-                        onChange={e => setDateFrom(e.target.value)}
-                        title="Từ ngày"
-                    />
-                    <span className="text-gray-400">-</span>
-                    <input
-                        type="date"
-                        className="border border-slate-300 px-3 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 bg-white"
-                        value={dateTo}
-                        onChange={e => setDateTo(e.target.value)}
-                        title="Đến ngày"
-                    />
-                </div>
-                <div className="flex items-center gap-2 min-w-[200px]">
-                    <select
-                        className="border border-slate-300 px-3 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 w-full bg-white cursor-pointer"
-                        value={sortBy}
-                        onChange={e => setSortBy(e.target.value)}
-                    >
-                        <option value="date_desc">Ngày (Mới nhất)</option>
-                        <option value="date_asc">Ngày (Cũ nhất)</option>
-                        <option value="amount_desc">Tổng Tiền (Cao xuống thấp)</option>
-                        <option value="amount_asc">Tổng Tiền (Thấp lên cao)</option>
-                        <option value="code_asc">Mã SO (A-Z)</option>
-                        <option value="code_desc">Mã SO (Z-A)</option>
-                    </select>
-                </div>
-            </div>
-
-            {isFormOpen && (
-                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="font-medium">{formData.id ? "Sửa Đơn Đặt Hàng" : "Thông tin chung"}</h3>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4 mb-4">
-                        <div>
-                            <label className="block text-sm text-gray-600 mb-1">Mã Đơn</label>
-                            <input
-                                type="text" className="w-full border rounded p-2"
-                                value={formData.code}
-                                onChange={e => setFormData({ ...formData, code: e.target.value })}
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm text-gray-600 mb-1">Khách Hàng (*)</label>
-                            <select
-                                className="w-full border rounded p-2"
-                                value={formData.customerId}
-                                onChange={e => setFormData({ ...formData, customerId: e.target.value })}
-                            >
-                                <option value="">-- Chọn KH --</option>
-                                {customers.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm text-gray-600 mb-1">Ngày Lập Đơn</label>
-                            <input
-                                type="date" className="w-full border rounded p-2"
-                                value={formData.date}
-                                onChange={e => setFormData({ ...formData, date: e.target.value })}
-                            />
-                        </div>
-                        <div className="col-span-3">
-                            <label className="block text-sm text-gray-600 mb-1">Ghi chú yêu cầu</label>
-                            <input
-                                type="text" className="w-full border rounded p-2"
-                                value={formData.notes || ''}
-                                onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                            />
+            <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title={formData.id ? "Sửa Đơn Đặt Hàng" : "Tạo Đơn Đặt Hàng Mới"} maxWidth="1000px">
+                <div className="flex flex-col gap-6 py-2">
+                    <div>
+                        <h3 className="text-[1.1rem] font-semibold text-gray-800 mb-4">Thông tin chung</h3>
+                        <div className="grid grid-cols-2 gap-x-5 gap-y-4 bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Mã Đơn</label>
+                                <input
+                                    type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white"
+                                    value={formData.code}
+                                    onChange={e => setFormData({ ...formData, code: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Khách Hàng (*)</label>
+                                <SearchableSelect
+                                    options={customers.map((c: any) => ({ value: c.id, label: c.name }))}
+                                    value={formData.customerId || ''}
+                                    onChange={val => setFormData({ ...formData, customerId: val })}
+                                    placeholder="-- Chọn KH --"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Ngày Lập Đơn</label>
+                                <input
+                                    type="date" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white"
+                                    value={formData.date}
+                                    onChange={e => setFormData({ ...formData, date: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Hiệu Lực Đến</label>
+                                <input
+                                    type="date" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white"
+                                    value={formData.validUntil || ''}
+                                    onChange={e => setFormData({ ...formData, validUntil: e.target.value })}
+                                />
+                            </div>
+                            <div className="col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Ghi chú</label>
+                                <input
+                                    type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white"
+                                    value={formData.notes || ''}
+                                    onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                                    placeholder="Ghi chú thêm..."
+                                />
+                            </div>
                         </div>
                     </div>
 
-                    <h3 className="font-medium mb-4 mt-6">Sản Phẩm Khách Chọn</h3>
-                    <div className="flex gap-2 mb-4 items-end">
-                        <div className="flex-1">
-                            <label className="block text-sm text-gray-600 mb-1">Thêm SP</label>
-                            <select className="w-full border rounded p-2" value={selectedProduct} onChange={(e) => handleProductSelect(e.target.value)}>
-                                <option value="">-- Chọn Sản Phẩm --</option>
-                                {products.map((p: any) => <option key={p.id} value={p.id}>{p.sku} - {p.name}</option>)}
-                            </select>
+                    <div>
+                        <h3 className="text-[1.1rem] font-semibold text-gray-800 mb-4">Chi tiết Sản Phẩm</h3>
+                        <div className="flex flex-col gap-4 bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                            <div className="flex gap-3 items-end">
+                                <div className="flex-1">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Thêm SP</label>
+                                    <SearchableSelect
+                                        options={products.map((p: any) => ({ value: p.id, label: `${p.sku} - ${p.name}` }))}
+                                        value={selectedProduct || ''}
+                                        onChange={handleProductSelect}
+                                        placeholder="-- Chọn Sản Phẩm --"
+                                    />
+                                </div>
+                                <div className="w-40">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Giá bán</label>
+                                    <input type="number" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" value={price} onChange={e => setPrice(Number(e.target.value))} />
+                                </div>
+                                <div className="w-32">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Thuế SP</label>
+                                    <input type="text" className="w-full border border-gray-200 rounded-lg p-2.5 bg-slate-50 text-center text-gray-500 font-medium cursor-not-allowed" value={`${products.find((p: any) => p.id === selectedProduct)?.taxRate || 0}%`} disabled />
+                                </div>
+                                <div className="w-24">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">SL</label>
+                                    <input type="number" min="1" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-center text-gray-900 bg-white" value={qty} onChange={e => setQty(Number(e.target.value))} />
+                                </div>
+                                <Button onClick={handleAddItem} variant="secondary" className="mb-[2px] h-[46px] px-6 border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm font-medium rounded-lg">Thêm</Button>
+                            </div>
+
+                            {formData.items.length > 0 && (
+                                <div className="border border-gray-200 rounded-xl overflow-hidden mt-2 border-t mt-4 pt-4">
+                                    <table className="w-full text-sm bg-white text-left">
+                                        <thead className="bg-slate-50 border-b border-gray-200 text-gray-600">
+                                            <tr>
+                                                <th className="p-3 font-medium">Sản Phẩm</th>
+                                                <th className="p-3 font-medium text-center w-20">SL</th>
+                                                <th className="p-3 font-medium text-right w-32">Đ.Giá</th>
+                                                <th className="p-3 font-medium text-center w-20">Thuế</th>
+                                                <th className="p-3 font-medium text-right w-36">Thành Tiền</th>
+                                                <th className="p-3 font-medium text-center w-12"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {formData.items.map((item: any, i: number) => (
+                                                <tr key={i} className="hover:bg-slate-50 transition-colors">
+                                                    <td className="p-3 text-gray-800">{item.productName}</td>
+                                                    <td className="p-3 text-center text-gray-800">{item.quantity}</td>
+                                                    <td className="p-3 text-right text-gray-600 font-medium">{formatMoney(item.unitPrice)}</td>
+                                                    <td className="p-3 text-center text-gray-500 bg-gray-50 border-x border-white">{item.taxRate}%</td>
+                                                    <td className="p-3 text-right font-semibold text-gray-900">{formatMoney(item.totalPrice)}</td>
+                                                    <td className="p-3 text-center">
+                                                        <button type="button" onClick={() => handleRemoveItem(i)} className="text-red-400 hover:text-red-600 p-1.5 hover:bg-red-50 rounded-md transition-colors"><Trash2 size={16} /></button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                        <tfoot className="bg-slate-50 border-t border-gray-200 text-gray-700">
+                                            <tr>
+                                                <td colSpan={4} className="p-3 text-right text-sm">Tổng tiền trước thuế:</td>
+                                                <td className="p-3 text-right font-medium">{formatMoney(formData.subTotal || 0)}</td>
+                                                <td className="p-3"></td>
+                                            </tr>
+                                            <tr>
+                                                <td colSpan={4} className="p-3 text-right text-sm">Tổng tiền thuế:</td>
+                                                <td className="p-3 text-right font-medium text-gray-500">{formatMoney(formData.taxAmount || 0)}</td>
+                                                <td className="p-3"></td>
+                                            </tr>
+                                            <tr className="border-t border-gray-200">
+                                                <td colSpan={4} className="p-3 text-right font-semibold text-base">Tổng Cộng:</td>
+                                                <td className="p-3 text-right font-bold text-indigo-700 text-lg">{formatMoney(formData.totalAmount || 0)}</td>
+                                                <td className="p-3"></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            )}
                         </div>
-                        <div className="w-24">
-                            <label className="block text-sm text-gray-600 mb-1">Đơn giá</label>
-                            <input type="number" className="w-full border rounded p-2" value={price} onChange={e => setPrice(Number(e.target.value))} />
-                        </div>
-                        <div className="w-24">
-                            <label className="block text-sm text-gray-600 mb-1">Thuế SP</label>
-                            <input type="text" className="w-full border rounded p-2 bg-gray-100 text-center text-gray-600 font-medium cursor-not-allowed" value={`${products.find((p: any) => p.id === selectedProduct)?.taxRate || 0}%`} disabled />
-                        </div>
-                        <div className="w-20">
-                            <label className="block text-sm text-gray-600 mb-1">SL</label>
-                            <input type="number" min="1" className="w-full border rounded p-2" value={qty} onChange={e => setQty(Number(e.target.value))} />
-                        </div>
-                        <Button onClick={handleAddItem} variant="secondary" className="mb-[2px]">Thêm</Button>
                     </div>
 
-                    {formData.items.length > 0 && (
-                        <table className="w-full text-sm mb-4 bg-white border">
-                            <thead className="bg-gray-100">
-                                <tr>
-                                    <th className="p-2 border">Sản Phẩm</th>
-                                    <th className="p-2 border">SL</th>
-                                    <th className="p-2 border">Đ.Giá</th>
-                                    <th className="p-2 border">Thuế</th>
-                                    <th className="p-2 border">Thành Tiền</th>
-                                    <th className="p-2 border w-12"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {formData.items.map((item: any, i: number) => (
-                                    <tr key={i}>
-                                        <td className="p-2 border">{item.productName}</td>
-                                        <td className="p-2 border text-center">{item.quantity}</td>
-                                        <td className="p-2 border text-right">{formatMoney(item.unitPrice)}</td>
-                                        <td className="p-2 border text-center">{item.taxRate}%</td>
-                                        <td className="p-2 border text-right font-medium">{formatMoney(item.totalPrice)}</td>
-                                        <td className="p-2 border text-center">
-                                            <button onClick={() => handleRemoveItem(i)} className="text-red-500"><Trash2 size={14} /></button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td colSpan={4} className="p-2 border text-right font-medium text-gray-600 text-sm">Tổng tiền trước thuế:</td>
-                                    <td className="p-2 border text-right font-medium text-gray-800">{formatMoney(formData.subTotal || 0)}</td>
-                                    <td className="p-2 border"></td>
-                                </tr>
-                                <tr>
-                                    <td colSpan={4} className="p-2 border text-right font-medium text-gray-600 text-sm">Tổng tiền thuế:</td>
-                                    <td className="p-2 border text-right font-medium text-gray-800">{formatMoney(formData.taxAmount || 0)}</td>
-                                    <td className="p-2 border"></td>
-                                </tr>
-                                <tr>
-                                    <td colSpan={4} className="p-2 border text-right font-bold">Tổng Cộng:</td>
-                                    <td className="p-2 border text-right font-bold text-primary">{formatMoney(formData.totalAmount || 0)}</td>
-                                    <td className="p-2 border"></td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    )}
-
-                    <div className="flex justify-end pt-4">
-                        <Button onClick={handleSave} className="flex items-center gap-2">
-                            <Save size={16} /> Lưu Trữ Đơn
+                    <div className="flex justify-start gap-3 mt-4">
+                        <Button onClick={() => setIsFormOpen(false)} variant="secondary" className="px-6 py-2 border-gray-200 shadow-sm text-gray-700 font-medium bg-white hover:bg-gray-50">Hủy</Button>
+                        <Button onClick={handleSave} className="flex items-center gap-2 px-8 py-2 font-medium bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-all text-white">
+                            <Save size={16} /> Lưu Đơn Hàng
                         </Button>
                     </div>
                 </div>
-            )}
+            </Modal>
+            {/* Convert Modal */}
+            <Modal isOpen={!!convertModalId} onClose={() => !isConverting && setConvertModalId(null)} title="Xác nhận Lên Hóa Đơn">
+                <div className="p-6" style={{ fontFamily: 'Inter, sans-serif' }}>
+                    <p className="text-gray-700 text-[15px] mb-6 leading-relaxed">
+                        Bạn có chắc chắn muốn chuyển dữ liệu từ Đơn Đặt Hàng này thành <strong>Hóa Đơn</strong> không? Các thông tin chi tiết sẽ được tự động sao chép sang Hóa Đơn mới.
+                    </p>
 
-            <Table>
-                <thead>
-                    <tr>
-                        <th className="text-left font-medium text-gray-500 pb-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('code')}>
-                            <div className="flex items-center gap-1">
-                                Mã SO {sortBy === 'code_asc' ? <ChevronUp size={14} /> : sortBy === 'code_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
-                            </div>
-                        </th>
-                        <th className="text-left font-medium text-gray-500 pb-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('date')}>
-                            <div className="flex items-center gap-1">
-                                Ngày Lập {sortBy === 'date_asc' ? <ChevronUp size={14} /> : sortBy === 'date_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
-                            </div>
-                        </th>
-                        <th className="text-left font-medium text-gray-500 pb-3">Khách Hàng</th>
-                        <th className="text-right font-medium text-gray-500 pb-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('amount')}>
-                            <div className="flex items-center justify-end gap-1">
-                                Tổng Tiền {sortBy === 'amount_asc' ? <ChevronUp size={14} /> : sortBy === 'amount_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
-                            </div>
-                        </th>
-                        <th className="text-center font-medium text-gray-500 pb-3">Trạng Thái</th>
-                        <th className="text-right font-medium text-gray-500 pb-3">Thao Tác</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {filteredOrders.map((o: any) => (
-                        <tr key={o.id} className="border-t border-gray-100">
-                            <td className="py-3 items-center gap-2 flex">
-                                <PackageCheck size={16} className="text-blue-500" />
-                                {o.code}
-                            </td>
-                            <td className="py-3">{new Date(o.date).toLocaleDateString()}</td>
-                            <td className="py-3">{o.customer?.name}</td>
-                            <td className="py-3 text-right font-medium">{formatMoney(o.totalAmount)}</td>
-                            <td className="py-3 text-center">
-                                <span className={`px-2 py-1 rounded text-xs font-medium border ${o.status === 'SENT' ? 'bg-blue-50 text-blue-600 border-blue-200' :
-                                    o.status === 'CONFIRMED' ? 'bg-green-50 text-green-600 border-green-200' :
-                                        o.status === 'COMPLETED' ? 'bg-purple-50 text-purple-600 border-purple-200' :
-                                            o.status === 'CANCELLED' ? 'bg-red-50 text-red-600 border-red-200' :
-                                                'bg-gray-50 text-gray-600 border-gray-200'
-                                    }`}>
-                                    {o.status}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', marginBottom: '2rem', padding: '1rem', borderRadius: '0.75rem', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
+                        <div style={{ backgroundColor: 'white', padding: '0.5rem', borderRadius: '9999px', color: '#3b82f6', flexShrink: 0, boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
+                            <ArrowRightLeft size={20} />
+                        </div>
+                        <div style={{ fontSize: '0.875rem', color: '#1e3a8a', lineHeight: 1.625, marginTop: '0.125rem' }}>
+                            <strong style={{ display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Cập nhật tự động</strong>
+                            Đơn đặt hàng này sẽ tự động chuyển thành trạng thái <strong style={{ backgroundColor: '#dbeafe', padding: '0.125rem 0.375rem', borderRadius: '0.25rem', color: '#1d4ed8', fontWeight: 700 }}>"Hoàn Thành"</strong> sau quá trình khởi tạo thành công.
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '2rem', paddingTop: '1.25rem', borderTop: '1px solid #f3f4f6' }}>
+                        <button
+                            onClick={() => setConvertModalId(null)}
+                            className="btn btn-secondary"
+                            style={{ padding: '0.625rem 1.5rem', fontSize: '15px' }}
+                            disabled={isConverting}
+                        >
+                            Hủy Bỏ
+                        </button>
+                        <button
+                            onClick={handleConfirmConvert}
+                            className="btn btn-primary"
+                            style={{ padding: '0.625rem 1.5rem', fontSize: '15px', minWidth: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                            disabled={isConverting}
+                        >
+                            {isConverting ? (
+                                <>
+                                    <span style={{ display: 'inline-block', width: '16px', height: '16px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></span>
+                                    Đang xử lý...
+                                </>
+                            ) : (
+                                <>Xác Nhận Lên Hóa Đơn</>
+                            )}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Generic Action Modal */}
+            <Modal isOpen={!!actionModal?.isOpen} onClose={() => !isActioning && setActionModal(null)} title={actionModal?.title || 'Xác nhận'}>
+                <div className="p-6" style={{ fontFamily: 'Inter, sans-serif' }}>
+                    <div className="text-gray-700 text-[15px] mb-6 leading-relaxed">
+                        {actionModal?.message}
+                    </div>
+                    <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                        <Button variant="secondary" onClick={() => setActionModal(null)} disabled={isActioning}>Hủy Bỏ</Button>
+                        <Button
+                            className="bg-primary hover:bg-primary-dark text-white min-w-[120px]"
+                            onClick={async () => {
+                                if (!actionModal) return;
+                                setIsActioning(true);
+                                try {
+                                    await actionModal.action();
+                                    setActionModal(null);
+                                } finally {
+                                    setIsActioning(false);
+                                }
+                            }}
+                            disabled={isActioning}
+                        >
+                            {isActioning ? (
+                                <span className="flex items-center gap-2">
+                                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                    Đang xử lý...
                                 </span>
-                            </td>
-                            <td className="py-3 text-right">
-                                <div className="flex justify-end items-center gap-2">
-                                    <Button variant="secondary" onClick={() => handleStatusChange(o.id, 'CONFIRMED')} title="Chốt Đơn" className="px-3 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-300 py-1.5 text-xs font-semibold flex-shrink-0 shadow-sm transition-all rounded-md">
-                                        Chốt Đơn
-                                    </Button>
-                                    <Button variant="secondary" onClick={() => handleStatusChange(o.id, 'COMPLETED')} className="text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title="Hoàn Thành">
-                                        <PackageCheck size={14} className="mr-1.5 inline-block" /> Xong
-                                    </Button>
-
-                                    <div className="flex items-center bg-white border border-slate-200 rounded-md shadow-sm overflow-hidden divide-x divide-slate-200 ml-1">
-                                        {o.status === 'DRAFT' && (
-                                            <button onClick={() => handleEdit(o)} title="Chỉnh sửa" className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors">
-                                                <Edit2 size={15} />
-                                            </button>
-                                        )}
-                                        <button onClick={() => handleDelete(o.id)} className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors" title="Xóa">
-                                            <Trash2 size={15} />
-                                        </button>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                    ))}
-                    {filteredOrders.length === 0 && (
-                        <tr><td colSpan={6} className="py-8 text-center text-gray-500">Chưa có đơn đặt hàng nào khớp bộ lọc</td></tr>
-                    )}
-                </tbody>
-                <tfoot>
-                    <tr className="border-t-2 border-slate-200 bg-slate-50 font-bold text-gray-800">
-                        <td colSpan={3} className="py-4 px-4 text-right">
-                            Tổng Cộng ({filteredOrders.length} Đơn Hàng):
-                        </td>
-                        <td className="py-4 text-right text-primary">
-                            {formatMoney(filteredOrders.reduce((sum: number, o: any) => sum + (o.totalAmount || 0), 0))}
-                        </td>
-                        <td colSpan={2}></td>
-                    </tr>
-                </tfoot>
-            </Table>
-        </Card>
+                            ) : 'Xác Nhận'}
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
+        </>
     );
 }

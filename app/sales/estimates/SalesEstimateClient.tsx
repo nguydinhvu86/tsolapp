@@ -6,13 +6,26 @@ import { Card } from '@/app/components/ui/Card';
 import { Table } from '@/app/components/ui/Table';
 import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
-import { Plus, Edit2, Trash2, Save, X, Printer, FileText, Search, Calendar, FolderClock, LayoutList, CheckCircle2, XCircle, Eye, Link as LinkIcon, Download, ChevronUp, ChevronDown, Check, ArrowRightLeft } from 'lucide-react';
-import { submitSalesEstimate, updateSalesEstimateStatus, deleteSalesEstimate, updateSalesEstimate, convertEstimateToInvoice } from './actions';
+import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
+import { Plus, Edit2, Trash2, Save, X, Printer, FileText, Search, Calendar, FolderClock, LayoutList, CheckCircle2, XCircle, Eye, Link as LinkIcon, Download, ChevronUp, ChevronDown, Check, ArrowRightLeft, ShoppingCart } from 'lucide-react';
+import { submitSalesEstimate, updateSalesEstimateStatus, deleteSalesEstimate, updateSalesEstimate, convertEstimateToInvoice, convertEstimateToOrder } from './actions';
 import { formatMoney } from '@/lib/utils/formatters';
 
-export default function SalesEstimateClient({ initialEstimates, customers, products, nextCode }: any) {
+export default function SalesEstimateClient({ initialEstimates, customers, products, nextCode, initialAction, initialCustomerId }: any) {
     const [estimates, setEstimates] = useState(initialEstimates);
-    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [isFormOpen, setIsFormOpen] = useState(initialAction === 'new');
+
+    // Convert to Invoice state
+    const [convertModalId, setConvertModalId] = useState<string | null>(null);
+    const [isConverting, setIsConverting] = useState(false);
+
+    // Convert to Order state
+    const [convertOrderModalId, setConvertOrderModalId] = useState<string | null>(null);
+    const [isConvertingOrder, setIsConvertingOrder] = useState(false);
+
+    // Generic Action Modal State
+    const [actionModal, setActionModal] = useState<{ isOpen: boolean, title: string, message: React.ReactNode, action: () => Promise<void> } | null>(null);
+    const [isActioning, setIsActioning] = useState(false);
 
     // Filters & Sort
     const [statusFilter, setStatusFilter] = useState('ALL');
@@ -31,11 +44,12 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
 
     const [formData, setFormData] = useState<any>({
         code: nextCode,
-        customerId: '',
+        customerId: initialCustomerId || '',
         date: new Date().toISOString().split('T')[0],
         validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         notes: '',
         status: 'DRAFT',
+        tags: '',
         subTotal: 0,
         taxAmount: 0,
         totalAmount: 0,
@@ -50,6 +64,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
             validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
             notes: '',
             status: 'DRAFT',
+            tags: '',
             subTotal: 0,
             taxAmount: 0,
             totalAmount: 0,
@@ -85,6 +100,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
             validUntil: est.validUntil ? new Date(est.validUntil).toISOString().split('T')[0] : '',
             notes: est.notes || '',
             status: est.status || 'DRAFT',
+            tags: est.tags || '',
             subTotal: calcSubTotal,
             taxAmount: calcTaxAmount,
             totalAmount: calcTotalAmount,
@@ -173,35 +189,66 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
 
         if (res.success) {
             // refresh
-            window.location.reload();
+            window.location.href = window.location.pathname;
         } else {
             alert('Lỗi: ' + res.error);
         }
     };
 
     const handleStatusChange = async (id: string, newStatus: string) => {
-        if (!confirm(`Chuyển trạng thái sang ${newStatus}?`)) return;
-        const res = await updateSalesEstimateStatus(id, newStatus);
-        if (res.success) {
-            setEstimates(estimates.map((e: any) => e.id === id ? { ...e, status: newStatus } : e));
-        } else alert(res.error);
+        setActionModal({
+            isOpen: true,
+            title: 'Khẳng định thay đổi',
+            message: `Bạn có chắc chắn muốn chuyển trạng thái báo giá này sang "${newStatus}"?`,
+            action: async () => {
+                const res = await updateSalesEstimateStatus(id, newStatus);
+                if (res.success) {
+                    setEstimates(estimates.map((e: any) => e.id === id ? { ...e, status: newStatus } : e));
+                } else alert(res.error);
+            }
+        });
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Xóa báo giá này?')) return;
-        const res = await deleteSalesEstimate(id);
-        if (res.success) {
-            setEstimates(estimates.filter((e: any) => e.id !== id));
-        } else alert(res.error);
+        setActionModal({
+            isOpen: true,
+            title: 'Xóa Báo Giá',
+            message: 'Hành động này sẽ Xóa báo giá này hoàn toàn (không thể phục hồi). Bạn chắc chắn chứ?',
+            action: async () => {
+                const res = await deleteSalesEstimate(id);
+                if (res.success) {
+                    setEstimates(estimates.filter((e: any) => e.id !== id));
+                } else alert(res.error);
+            }
+        });
     };
 
-    const handleConvertToInvoice = async (id: string) => {
-        if (!confirm('Tạo Hóa Đơn Trực Tiếp từ Báo Giá này? Báo giá sẽ chuyển thành "Đã Chốt".')) return;
-        const res = await convertEstimateToInvoice(id, 'system');
+    const handleConfirmConvert = async () => {
+        if (!convertModalId) return;
+        setIsConverting(true);
+        const res = await convertEstimateToInvoice(convertModalId);
         if (res.success) {
             alert("Đã tạo Hóa Đơn thành công!");
             window.location.href = '/sales/invoices';
-        } else alert(res.error);
+        } else {
+            alert(res.error);
+            setIsConverting(false);
+            setConvertModalId(null);
+        }
+    };
+
+    const handleConfirmConvertOrder = async () => {
+        if (!convertOrderModalId) return;
+        setIsConvertingOrder(true);
+        const res = await convertEstimateToOrder(convertOrderModalId);
+        if (res.success) {
+            alert("Đã tạo Đơn Đặt Hàng thành công!");
+            window.location.href = '/sales/orders';
+        } else {
+            alert(res.error);
+            setIsConvertingOrder(false);
+            setConvertOrderModalId(null);
+        }
     };
 
     const baseFilteredEstimates = useMemo(() => {
@@ -242,6 +289,14 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
             REJECTED: {
                 count: baseFilteredEstimates.filter((e: any) => e.status === 'REJECTED').length,
                 amount: baseFilteredEstimates.filter((e: any) => e.status === 'REJECTED').reduce((sum: number, e: any) => sum + (e.totalAmount || 0), 0)
+            },
+            ORDERED: {
+                count: baseFilteredEstimates.filter((e: any) => e.status === 'ORDERED').length,
+                amount: baseFilteredEstimates.filter((e: any) => e.status === 'ORDERED').reduce((sum: number, e: any) => sum + (e.totalAmount || 0), 0)
+            },
+            INVOICED: {
+                count: baseFilteredEstimates.filter((e: any) => e.status === 'INVOICED').length,
+                amount: baseFilteredEstimates.filter((e: any) => e.status === 'INVOICED').reduce((sum: number, e: any) => sum + (e.totalAmount || 0), 0)
             }
         };
     }, [baseFilteredEstimates]);
@@ -251,6 +306,8 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         { id: 'DRAFT', label: 'Bản Nháp', count: stats.DRAFT.count, amount: stats.DRAFT.amount, colorClass: 'stat-card-amber', icon: FileText },
         { id: 'SENT', label: 'Đã Gửi KH', count: stats.SENT.count, amount: stats.SENT.amount, colorClass: 'stat-card-blue', icon: FolderClock },
         { id: 'ACCEPTED', label: 'Khách Chốt', count: stats.ACCEPTED.count, amount: stats.ACCEPTED.amount, colorClass: 'stat-card-green', icon: CheckCircle2 },
+        { id: 'ORDERED', label: 'Đã Lên Đơn', count: stats.ORDERED.count, amount: stats.ORDERED.amount, colorClass: 'stat-card-indigo', icon: ShoppingCart },
+        { id: 'INVOICED', label: 'Đã Hóa Đơn', count: stats.INVOICED.count, amount: stats.INVOICED.amount, colorClass: 'stat-card-emerald', icon: FileText },
         { id: 'REJECTED', label: 'Từ Chối', count: stats.REJECTED.count, amount: stats.REJECTED.amount, colorClass: 'stat-card-red', icon: XCircle },
     ];
 
@@ -289,6 +346,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         .badge-neutral { background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
         .badge-info { background: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; }
         .badge-danger { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+        .badge-purple { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
         
         .status-select {
             appearance: none;
@@ -401,6 +459,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                 </div>
                             </th>
                             <th className="text-left font-medium text-gray-500 pb-3">Khách Hàng</th>
+                            <th className="text-left font-medium text-gray-500 pb-3">Thẻ Quản Lý</th>
                             <th className="text-right font-medium text-gray-500 pb-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('amount')}>
                                 <div className="flex items-center justify-end gap-1">
                                     Tổng Tiền {sortBy === 'amount_asc' ? <ChevronUp size={14} /> : sortBy === 'amount_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
@@ -419,7 +478,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                         {est.code}
                                     </Link>
                                 </td>
-                                <td className="py-3 text-gray-600">{new Date(est.date).toLocaleDateString()}</td>
+                                <td className="py-3 text-gray-600" suppressHydrationWarning>{new Date(est.date).toLocaleDateString('vi-VN')}</td>
                                 <td className="py-3">
                                     {est.customerId ? (
                                         <Link href={`/customers/${est.customerId}`} className="font-medium text-gray-800 hover:text-primary hover:underline transition-colors block">
@@ -429,13 +488,22 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                         est.customer?.name
                                     )}
                                 </td>
+                                <td className="py-3">
+                                    {est.tags && est.tags.split(',').map((t: string, i: number) => {
+                                        const trimmed = t.trim();
+                                        if (!trimmed) return null;
+                                        return <span key={i} className="inline-block bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded-md mr-1 mb-1 border border-slate-200">{trimmed}</span>
+                                    })}
+                                </td>
                                 <td className="py-3 text-right font-bold text-gray-800">{formatMoney(est.totalAmount)}</td>
                                 <td className="py-3 text-center">
                                     <select
                                         className={`status-badge status-select appearance-none ${est.status === 'SENT' ? 'badge-info' :
                                             est.status === 'ACCEPTED' ? 'badge-success' :
-                                                est.status === 'REJECTED' ? 'badge-danger' :
-                                                    'badge-warning'
+                                                est.status === 'ORDERED' ? 'badge-purple' :
+                                                    est.status === 'INVOICED' ? 'badge-success' :
+                                                        est.status === 'REJECTED' ? 'badge-danger' :
+                                                            'badge-warning'
                                             }`}
                                         value={est.status}
                                         onChange={(e) => handleStatusChange(est.id, e.target.value)}
@@ -443,7 +511,9 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                     >
                                         <option value="DRAFT" className="bg-white text-gray-900">Bản Nháp</option>
                                         <option value="SENT" className="bg-white text-gray-900">Đã Gửi KH</option>
-                                        <option value="ACCEPTED" className="bg-white text-gray-900">Đã Chốt</option>
+                                        <option value="ACCEPTED" className="bg-white text-gray-900">Khách Chốt</option>
+                                        <option value="ORDERED" className="bg-white text-gray-900">Đã Lên Đơn</option>
+                                        <option value="INVOICED" className="bg-white text-gray-900">Đã Hóa Đơn</option>
                                         <option value="REJECTED" className="bg-white text-gray-900">Từ Chối</option>
                                     </select>
                                 </td>
@@ -460,9 +530,14 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                             </Button>
                                         )}
                                         {(est.status === 'DRAFT' || est.status === 'SENT' || est.status === 'ACCEPTED') && (
-                                            <Button variant="secondary" onClick={() => handleConvertToInvoice(est.id)} className="text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title="Tạo Hóa Đơn Tự Động">
-                                                <ArrowRightLeft size={14} className="mr-1.5 inline-block" /> Lên HĐ
-                                            </Button>
+                                            <>
+                                                <Button variant="secondary" onClick={() => setConvertOrderModalId(est.id)} className="text-indigo-700 bg-indigo-50 border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title="Tạo Đơn Hàng Tự Động">
+                                                    <ArrowRightLeft size={14} className="mr-1.5 inline-block" /> Lên Đơn Hàng
+                                                </Button>
+                                                <Button variant="secondary" onClick={() => setConvertModalId(est.id)} className="text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title="Tạo Hóa Đơn Tự Động">
+                                                    <ArrowRightLeft size={14} className="mr-1.5 inline-block" /> Lên Hóa Đơn
+                                                </Button>
+                                            </>
                                         )}
 
                                         <div className="flex items-center bg-white border border-slate-200 rounded-md shadow-sm overflow-hidden divide-x divide-slate-200 ml-1">
@@ -498,131 +573,269 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
             </Card>
 
             <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title={formData.id ? "Sửa Báo Giá ERP" : "Tạo Báo Giá ERP"} maxWidth="1000px">
-                <div className="flex flex-col gap-4">
-                    <h3 className="font-medium">Thông tin chung</h3>
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Mã Báo Giá</label>
-                            <input
-                                type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white"
-                                value={formData.code}
-                                onChange={e => setFormData({ ...formData, code: e.target.value })}
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Khách Hàng (*)</label>
-                            <select
-                                className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white"
-                                value={formData.customerId}
-                                onChange={e => setFormData({ ...formData, customerId: e.target.value })}
-                            >
-                                <option value="">-- Chọn KH --</option>
-                                {customers.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Ngày Báo Giá</label>
-                            <input
-                                type="date" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white"
-                                value={formData.date}
-                                onChange={e => setFormData({ ...formData, date: e.target.value })}
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Hiệu Lực Đến</label>
-                            <input
-                                type="date" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white"
-                                value={formData.validUntil}
-                                onChange={e => setFormData({ ...formData, validUntil: e.target.value })}
-                            />
-                        </div>
-                        <div className="col-span-2 lg:col-span-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>
-                            <input
-                                type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white"
-                                value={formData.notes || ''}
-                                onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                                placeholder="Ghi chú thêm..."
-                            />
+                <div className="flex flex-col gap-6 py-2">
+                    <div>
+                        <h3 className="text-[1.1rem] font-semibold text-gray-800 mb-4">Thông tin chung</h3>
+                        <div className="grid grid-cols-2 gap-x-5 gap-y-4 bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Mã Báo Giá</label>
+                                <input
+                                    type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white"
+                                    value={formData.code}
+                                    onChange={e => setFormData({ ...formData, code: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Khách Hàng (*)</label>
+                                <SearchableSelect
+                                    options={customers.map((c: any) => ({ value: c.id, label: c.name }))}
+                                    value={formData.customerId}
+                                    onChange={val => setFormData({ ...formData, customerId: val })}
+                                    placeholder="-- Chọn KH --"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Ngày Báo Giá</label>
+                                <input
+                                    type="date" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white"
+                                    value={formData.date}
+                                    onChange={e => setFormData({ ...formData, date: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Hiệu Lực Đến</label>
+                                <input
+                                    type="date" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white"
+                                    value={formData.validUntil}
+                                    onChange={e => setFormData({ ...formData, validUntil: e.target.value })}
+                                />
+                            </div>
+                            <div className="col-span-2 grid grid-cols-2 gap-x-5">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Ghi chú</label>
+                                    <input
+                                        type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white"
+                                        value={formData.notes || ''}
+                                        onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                                        placeholder="Ghi chú thêm..."
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Thẻ Quản Lý (Tags)</label>
+                                    <input
+                                        type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white"
+                                        value={formData.tags || ''}
+                                        onChange={e => setFormData({ ...formData, tags: e.target.value })}
+                                        placeholder="VD: VIP, Đại lý, Bán buôn..."
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <h3 className="font-medium mt-2">Chi tiết Sản Phẩm</h3>
-                    <div className="flex gap-2 items-end bg-gray-50 p-4 rounded-xl border border-gray-100">
-                        <div className="flex-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Thêm SP</label>
-                            <select className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white" value={selectedProduct} onChange={(e) => handleProductSelect(e.target.value)}>
-                                <option value="">-- Chọn Sản Phẩm --</option>
-                                {products.map((p: any) => <option key={p.id} value={p.id}>{p.sku} - {p.name}</option>)}
-                            </select>
+                    <div>
+                        <h3 className="text-[1.1rem] font-semibold text-gray-800 mb-4">Chi tiết Sản Phẩm</h3>
+                        <div className="flex flex-col gap-4 bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                            <div className="flex gap-3 items-end">
+                                <div className="flex-1">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Thêm SP</label>
+                                    <SearchableSelect
+                                        options={products.map((p: any) => ({ value: p.id, label: `${p.sku} - ${p.name}` }))}
+                                        value={selectedProduct}
+                                        onChange={handleProductSelect}
+                                        placeholder="-- Chọn Sản Phẩm --"
+                                    />
+                                </div>
+                                <div className="w-40">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Giá bán</label>
+                                    <input type="number" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" value={price} onChange={e => setPrice(Number(e.target.value))} />
+                                </div>
+                                <div className="w-32">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Thuế SP</label>
+                                    <input type="text" className="w-full border border-gray-200 rounded-lg p-2.5 bg-slate-50 text-center text-gray-500 font-medium cursor-not-allowed" value={`${products.find((p: any) => p.id === selectedProduct)?.taxRate || 0}%`} disabled />
+                                </div>
+                                <div className="w-24">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">SL</label>
+                                    <input type="number" min="1" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-center text-gray-900 bg-white" value={qty} onChange={e => setQty(Number(e.target.value))} />
+                                </div>
+                                <Button onClick={handleAddItem} variant="secondary" className="mb-[2px] h-[46px] px-6 border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm font-medium rounded-lg">Thêm</Button>
+                            </div>
+
+                            {formData.items.length > 0 && (
+                                <div className="border border-gray-200 rounded-xl overflow-hidden border-t mt-4 pt-4">
+                                    <table className="w-full text-sm bg-white text-left">
+                                        <thead className="bg-slate-50 border-b border-gray-200 text-gray-600">
+                                            <tr>
+                                                <th className="p-3 font-medium">Sản Phẩm</th>
+                                                <th className="p-3 font-medium text-center w-20">SL</th>
+                                                <th className="p-3 font-medium text-right w-32">Đ.Giá</th>
+                                                <th className="p-3 font-medium text-center w-20">Thuế</th>
+                                                <th className="p-3 font-medium text-right w-36">Thành Tiền</th>
+                                                <th className="p-3 font-medium text-center w-12"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {formData.items.map((item: any, i: number) => (
+                                                <tr key={i} className="hover:bg-slate-50 transition-colors">
+                                                    <td className="p-3 text-gray-800">{item.productName}</td>
+                                                    <td className="p-3 text-center text-gray-800">{item.quantity}</td>
+                                                    <td className="p-3 text-right text-gray-600 font-medium">{formatMoney(item.unitPrice)}</td>
+                                                    <td className="p-3 text-center text-gray-500 bg-gray-50 border-x border-white">{item.taxRate}%</td>
+                                                    <td className="p-3 text-right font-semibold text-gray-900">{formatMoney(item.totalPrice)}</td>
+                                                    <td className="p-3 text-center">
+                                                        <button type="button" onClick={() => handleRemoveItem(i)} className="text-red-400 hover:text-red-600 p-1.5 hover:bg-red-50 rounded-md transition-colors"><Trash2 size={16} /></button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                        <tfoot className="bg-slate-50 border-t border-gray-200 text-gray-700">
+                                            <tr>
+                                                <td colSpan={4} className="p-3 text-right text-sm">Tổng tiền trước thuế:</td>
+                                                <td className="p-3 text-right font-medium">{formatMoney(formData.subTotal || 0)}</td>
+                                                <td className="p-3"></td>
+                                            </tr>
+                                            <tr>
+                                                <td colSpan={4} className="p-3 text-right text-sm">Tổng tiền thuế:</td>
+                                                <td className="p-3 text-right font-medium text-gray-500">{formatMoney(formData.taxAmount || 0)}</td>
+                                                <td className="p-3"></td>
+                                            </tr>
+                                            <tr className="border-t border-gray-200">
+                                                <td colSpan={4} className="p-3 text-right font-semibold text-base">Tổng Cộng:</td>
+                                                <td className="p-3 text-right font-bold text-indigo-700 text-lg">{formatMoney(formData.totalAmount || 0)}</td>
+                                                <td className="p-3"></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            )}
                         </div>
-                        <div className="w-32">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Giá bán</label>
-                            <input type="number" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white" value={price} onChange={e => setPrice(Number(e.target.value))} />
-                        </div>
-                        <div className="w-24">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Thuế SP</label>
-                            <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 bg-gray-100 text-center text-gray-600 font-medium cursor-not-allowed" value={`${products.find((p: any) => p.id === selectedProduct)?.taxRate || 0}%`} disabled />
-                        </div>
-                        <div className="w-24">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">SL</label>
-                            <input type="number" min="1" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary text-center bg-white" value={qty} onChange={e => setQty(Number(e.target.value))} />
-                        </div>
-                        <Button onClick={handleAddItem} variant="secondary" className="mb-[2px] h-[46px] px-6 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100">Thêm</Button>
                     </div>
 
-                    {formData.items.length > 0 && (
-                        <div className="border border-gray-200 rounded-xl overflow-hidden mt-2">
-                            <table className="w-full text-sm bg-white text-left">
-                                <thead className="bg-gray-100 border-b border-gray-200">
-                                    <tr>
-                                        <th className="p-3 font-semibold text-gray-600">Sản Phẩm</th>
-                                        <th className="p-3 font-semibold text-gray-600 text-center w-20">SL</th>
-                                        <th className="p-3 font-semibold text-gray-600 text-right w-32">Đ.Giá</th>
-                                        <th className="p-3 font-semibold text-gray-600 text-center w-20">Thuế</th>
-                                        <th className="p-3 font-semibold text-gray-600 text-right w-36">Thành Tiền</th>
-                                        <th className="p-3 font-semibold text-gray-600 text-center w-12"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {formData.items.map((item: any, i: number) => (
-                                        <tr key={i} className="border-b border-gray-50 last:border-b-0 hover:bg-gray-50">
-                                            <td className="p-3">{item.productName}</td>
-                                            <td className="p-3 text-center">{item.quantity}</td>
-                                            <td className="p-3 text-right text-gray-600">{formatMoney(item.unitPrice)}</td>
-                                            <td className="p-3 text-center text-gray-600">{item.taxRate}%</td>
-                                            <td className="p-3 text-right font-medium text-gray-900">{formatMoney(item.totalPrice)}</td>
-                                            <td className="p-3 text-center">
-                                                <button type="button" onClick={() => handleRemoveItem(i)} className="text-red-500 hover:text-red-700 p-1"><Trash2 size={16} /></button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                                <tfoot className="bg-gray-50 border-t border-gray-200">
-                                    <tr>
-                                        <td colSpan={4} className="p-3 text-right text-gray-600 text-sm">Tổng tiền trước thuế:</td>
-                                        <td className="p-3 text-right font-medium text-gray-800">{formatMoney(formData.subTotal || 0)}</td>
-                                        <td className="p-3"></td>
-                                    </tr>
-                                    <tr>
-                                        <td colSpan={4} className="p-3 text-right text-gray-600 text-sm">Tổng tiền thuế:</td>
-                                        <td className="p-3 text-right font-medium text-gray-800">{formatMoney(formData.taxAmount || 0)}</td>
-                                        <td className="p-3"></td>
-                                    </tr>
-                                    <tr className="border-t border-gray-200">
-                                        <td colSpan={4} className="p-3 text-right font-semibold text-gray-800">Tổng Cộng:</td>
-                                        <td className="p-3 text-right font-bold text-primary text-lg">{formatMoney(formData.totalAmount || 0)}</td>
-                                        <td className="p-3"></td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    )}
-
-                    <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
-                        <Button onClick={() => setIsFormOpen(false)} variant="secondary" className="px-6">Hủy</Button>
-                        <Button onClick={handleSave} className="flex items-center gap-2 px-8">
+                    <div className="flex justify-start gap-3 mt-4">
+                        <Button onClick={() => setIsFormOpen(false)} variant="secondary" className="px-6 py-2 border-gray-200 shadow-sm text-gray-700 font-medium bg-white hover:bg-gray-50">Hủy</Button>
+                        <Button onClick={handleSave} className="flex items-center gap-2 px-8 py-2 font-medium bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-all text-white">
                             <Save size={16} /> Lưu Báo Giá
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
+            {/* Convert Modal */}
+            <Modal isOpen={!!convertModalId} onClose={() => !isConverting && setConvertModalId(null)} title="Xác nhận Lên Hóa Đơn">
+                <div className="p-6" style={{ fontFamily: 'Inter, sans-serif' }}>
+                    <p className="text-gray-700 text-[15px] mb-6 leading-relaxed">
+                        Bạn có chắc chắn muốn chuyển dữ liệu từ Báo Giá này thành <strong>Hóa Đơn</strong> không? Các thông tin chi tiết sẽ được tự động sao chép sang Hóa Đơn mới.
+                    </p>
+
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', marginBottom: '2rem', padding: '1rem', borderRadius: '0.75rem', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
+                        <div style={{ backgroundColor: 'white', padding: '0.5rem', borderRadius: '9999px', color: '#3b82f6', flexShrink: 0, boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
+                            <ArrowRightLeft size={20} />
+                        </div>
+                        <div style={{ fontSize: '0.875rem', color: '#1e3a8a', lineHeight: 1.625, marginTop: '0.125rem' }}>
+                            <strong style={{ display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Cập nhật tự động</strong>
+                            Báo giá này sẽ tự động chuyển thành trạng thái <strong style={{ backgroundColor: '#dbeafe', padding: '0.125rem 0.375rem', borderRadius: '0.25rem', color: '#1d4ed8', fontWeight: 700 }}>"Đã Chốt"</strong> sau quá trình khởi tạo thành công.
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '2rem', paddingTop: '1.25rem', borderTop: '1px solid #f3f4f6' }}>
+                        <button
+                            onClick={() => setConvertModalId(null)}
+                            className="btn btn-secondary"
+                            style={{ padding: '0.625rem 1.5rem', fontSize: '15px' }}
+                            disabled={isConverting}
+                        >
+                            Hủy Bỏ
+                        </button>
+                        <button
+                            onClick={handleConfirmConvert}
+                            className="btn btn-primary"
+                            style={{ padding: '0.625rem 1.5rem', fontSize: '15px', minWidth: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                            disabled={isConverting}
+                        >
+                            {isConverting ? (
+                                <>
+                                    <span style={{ display: 'inline-block', width: '16px', height: '16px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></span>
+                                    Đang xử lý...
+                                </>
+                            ) : (
+                                <>Xác Nhận Lên Hóa Đơn</>
+                            )}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+            {/* Convert to Order Modal */}
+            <Modal isOpen={!!convertOrderModalId} onClose={() => !isConvertingOrder && setConvertOrderModalId(null)} title="Xác nhận Lên Đơn Đặt Hàng">
+                <div className="p-6" style={{ fontFamily: 'Inter, sans-serif' }}>
+                    <p className="text-gray-700 text-[15px] mb-6 leading-relaxed">
+                        Bạn có chắc chắn muốn chuyển dữ liệu từ Báo Giá này thành <strong>Đơn Đặt Hàng</strong> không? Các thông tin chi tiết sẽ được tự động sao chép sang Đơn Đặt Hàng mới.
+                    </p>
+
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', marginBottom: '2rem', padding: '1rem', borderRadius: '0.75rem', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
+                        <div style={{ backgroundColor: 'white', padding: '0.5rem', borderRadius: '9999px', color: '#3b82f6', flexShrink: 0, boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
+                            <ArrowRightLeft size={20} />
+                        </div>
+                        <div style={{ fontSize: '0.875rem', color: '#1e3a8a', lineHeight: 1.625, marginTop: '0.125rem' }}>
+                            <strong style={{ display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Cập nhật tự động</strong>
+                            Báo giá này sẽ tự động chuyển thành trạng thái <strong style={{ backgroundColor: '#e0e7ff', padding: '0.125rem 0.375rem', borderRadius: '0.25rem', color: '#4338ca', fontWeight: 700 }}>"Đã Lên Đơn"</strong> sau quá trình khởi tạo thành công.
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '2rem', paddingTop: '1.25rem', borderTop: '1px solid #f3f4f6' }}>
+                        <button
+                            onClick={() => setConvertOrderModalId(null)}
+                            className="btn btn-secondary"
+                            style={{ padding: '0.625rem 1.5rem', fontSize: '15px' }}
+                            disabled={isConvertingOrder}
+                        >
+                            Hủy Bỏ
+                        </button>
+                        <button
+                            onClick={handleConfirmConvertOrder}
+                            className="btn btn-primary"
+                            style={{ padding: '0.625rem 1.5rem', fontSize: '15px', minWidth: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                            disabled={isConvertingOrder}
+                        >
+                            {isConvertingOrder ? (
+                                <>
+                                    <span style={{ display: 'inline-block', width: '16px', height: '16px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></span>
+                                    Đang xử lý...
+                                </>
+                            ) : (
+                                <>Xác Nhận Lên Đơn Hàng</>
+                            )}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Generic Action Modal */}
+            <Modal isOpen={!!actionModal?.isOpen} onClose={() => !isActioning && setActionModal(null)} title={actionModal?.title || 'Xác nhận'}>
+                <div className="p-6">
+                    <div className="text-gray-700 text-[15px] mb-6 leading-relaxed">
+                        {actionModal?.message}
+                    </div>
+                    <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                        <Button variant="secondary" onClick={() => setActionModal(null)} disabled={isActioning}>Hủy Bỏ</Button>
+                        <Button
+                            className="bg-primary hover:bg-primary-dark text-white min-w-[120px]"
+                            onClick={async () => {
+                                if (!actionModal) return;
+                                setIsActioning(true);
+                                try {
+                                    await actionModal.action();
+                                    setActionModal(null);
+                                } finally {
+                                    setIsActioning(false);
+                                }
+                            }}
+                            disabled={isActioning}
+                        >
+                            {isActioning ? (
+                                <span className="flex items-center gap-2">
+                                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                    Đang xử lý...
+                                </span>
+                            ) : 'Xác Nhận'}
                         </Button>
                     </div>
                 </div>

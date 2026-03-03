@@ -149,11 +149,12 @@ export default function PrintSalesEstimateClient({ estimate, settings }: any) {
                 <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2rem', fontSize: '1rem' }}>
                     <thead>
                         <tr style={{ backgroundColor: '#f1f5f9' }}>
-                            <th style={{ border: '1px solid #cbd5e1', padding: '12px 8px', textAlign: 'center', width: '50px' }}>STT</th>
-                            <th style={{ border: '1px solid #cbd5e1', padding: '12px 8px', textAlign: 'left' }}>Sản Phẩm / Dịch Vụ</th>
-                            <th style={{ border: '1px solid #cbd5e1', padding: '12px 8px', textAlign: 'center', width: '100px' }}>SL</th>
-                            <th style={{ border: '1px solid #cbd5e1', padding: '12px 8px', textAlign: 'right', width: '150px' }}>Đơn Giá (VNĐ)</th>
-                            <th style={{ border: '1px solid #cbd5e1', padding: '12px 8px', textAlign: 'right', width: '160px' }}>Thành Tiền (VNĐ)</th>
+                            <th style={{ border: '1px solid #cbd5e1', padding: '12px 6px', textAlign: 'center', width: '5%' }}>STT</th>
+                            <th style={{ border: '1px solid #cbd5e1', padding: '12px 6px', textAlign: 'left', width: '57%' }}>Sản Phẩm / Dịch Vụ</th>
+                            <th style={{ border: '1px solid #cbd5e1', padding: '12px 6px', textAlign: 'center', width: '5%' }}>SL</th>
+                            <th style={{ border: '1px solid #cbd5e1', padding: '12px 6px', textAlign: 'right', width: '13%', whiteSpace: 'nowrap' }}>Đơn Giá (VNĐ)</th>
+                            <th style={{ border: '1px solid #cbd5e1', padding: '12px 6px', textAlign: 'center', width: '6%' }}>Thuế (%)</th>
+                            <th style={{ border: '1px solid #cbd5e1', padding: '12px 6px', textAlign: 'right', width: '14%', whiteSpace: 'nowrap' }}>Thành Tiền (VNĐ)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -166,13 +167,22 @@ export default function PrintSalesEstimateClient({ estimate, settings }: any) {
                                 </td>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center' }}>{item.quantity} {item.product?.unit || ''}</td>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right' }}>{formatMoney(item.unitPrice)}</td>
+                                <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center' }}>{item.taxRate}</td>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', fontWeight: 600 }}>{formatMoney(item.totalPrice)}</td>
                             </tr>
                         ))}
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td colSpan={4} style={{ border: '1px solid #cbd5e1', padding: '12px 16px', textAlign: 'right', fontWeight: 700, fontSize: '1.1rem' }}>TỔNG CỘNG:</td>
+                            <td colSpan={5} style={{ border: '1px solid #cbd5e1', padding: '10px 16px', textAlign: 'right', fontWeight: 600 }}>Tổng tiền trước thuế:</td>
+                            <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', fontWeight: 600, color: '#334155' }}>{formatMoney(estimate.subTotal || 0)}</td>
+                        </tr>
+                        <tr>
+                            <td colSpan={5} style={{ border: '1px solid #cbd5e1', padding: '10px 16px', textAlign: 'right', fontWeight: 600 }}>Tổng tiền thuế:</td>
+                            <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', fontWeight: 600, color: '#334155' }}>{formatMoney(estimate.taxAmount || 0)}</td>
+                        </tr>
+                        <tr>
+                            <td colSpan={5} style={{ border: '1px solid #cbd5e1', padding: '12px 16px', textAlign: 'right', fontWeight: 700, fontSize: '1.1rem' }}>TỔNG CỘNG:</td>
                             <td style={{ border: '1px solid #cbd5e1', padding: '12px 8px', textAlign: 'right', fontWeight: 800, fontSize: '1.2rem', color: '#0f172a' }}>{formatMoney(estimate.totalAmount)}</td>
                         </tr>
                     </tfoot>

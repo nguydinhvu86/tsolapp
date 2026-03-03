@@ -109,7 +109,7 @@ export function TemplateClient({ initialData }: { initialData: ContractTemplate[
                         <tr key={template.id}>
                             <td style={{ fontWeight: 500 }}>{template.name}</td>
                             <td style={{ color: 'var(--text-muted)' }}>{template.description || '-'}</td>
-                            <td style={{ color: 'var(--text-muted)' }}>{new Date(template.createdAt).toLocaleDateString('vi-VN')}</td>
+                            <td style={{ color: 'var(--text-muted)' }} suppressHydrationWarning>{new Date(template.createdAt).toLocaleDateString('vi-VN')}</td>
                             <td>
                                 <div className="flex gap-2">
                                     {canEdit && (

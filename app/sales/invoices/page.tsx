@@ -4,12 +4,12 @@ import { getProducts } from '@/app/inventory/actions';
 import { getSalesOrders } from '@/app/sales/orders/actions';
 import SalesInvoiceClient from './SalesInvoiceClient';
 
-export default async function SalesInvoicesPage() {
+export default async function SalesInvoicesPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
     const [invoices, customers, products, orders, nextCode] = await Promise.all([
         getSalesInvoices(),
         getCustomers(),
         getProducts(),
-        getSalesOrders(), // Filter CONFIRMED/COMPLETED in frontend optionally
+        getSalesOrders(),
         getNextInvoiceCode()
     ]);
 
@@ -24,6 +24,8 @@ export default async function SalesInvoicesPage() {
                 products={products.filter((p: any) => p.isActive)}
                 orders={orders}
                 nextCode={nextCode}
+                initialAction={searchParams?.action}
+                initialCustomerId={searchParams?.customerId}
             />
         </div>
     );

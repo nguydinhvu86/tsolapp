@@ -186,7 +186,7 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
                                     <option value="CANCELLED">Hủy</option>
                                 </select>
                             </td>
-                            <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{new Date(c.createdAt).toLocaleDateString('vi-VN')}</td>
+                            <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }} suppressHydrationWarning>{new Date(c.createdAt).toLocaleDateString('vi-VN')}</td>
                             <td>
                                 <div className="flex gap-2">
                                     {canEdit && (

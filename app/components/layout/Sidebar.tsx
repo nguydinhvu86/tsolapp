@@ -36,33 +36,33 @@ const mainNavItems: any[] = [
         name: 'Quản Lý Kho',
         icon: Package,
         children: [
-            { name: 'Sản Phẩm & Dịch Vụ', href: '/inventory/products', permission: 'INVENTORY_VIEW' },
-            { name: 'Danh Sách Kho', href: '/inventory/warehouses', permission: 'INVENTORY_VIEW' },
-            { name: 'Lịch Sử Lệnh Kho', href: '/inventory/transactions', permission: 'INVENTORY_VIEW' },
-            { name: 'Kiểm Kê Kho', href: '/inventory/adjustments', permission: 'INVENTORY_VIEW' },
-            { name: 'Báo Cáo Tồn Kho', href: '/inventory/reports', permission: 'INVENTORY_VIEW' }
+            { name: 'Sản Phẩm & Dịch Vụ', href: '/inventory/products', permission: 'PRODUCTS_VIEW' },
+            { name: 'Danh Sách Kho', href: '/inventory/warehouses', permission: 'WAREHOUSES_VIEW' },
+            { name: 'Lịch Sử Lệnh Kho', href: '/inventory/transactions', permission: 'INVENTORY_TX_VIEW' },
+            { name: 'Kiểm Kê Kho', href: '/inventory/adjustments', permission: 'INVENTORY_TX_VIEW' },
+            { name: 'Báo Cáo Tồn Kho', href: '/inventory/reports', permission: 'INVENTORY_TX_VIEW' }
         ]
     },
     {
         name: 'Mua Hàng',
         icon: ShoppingCart,
         children: [
-            { name: 'Nhà Cung Cấp', href: '/suppliers', permission: 'INVENTORY_VIEW' }, // Fallback to inventory access if missing specific permission
-            { name: 'Đơn Đặt Hàng', href: '/purchasing/orders', permission: 'INVENTORY_VIEW' },
-            { name: 'Hóa Đơn Mua', href: '/purchasing/bills', permission: 'INVENTORY_VIEW' },
-            { name: 'Thanh Toán', href: '/purchasing/payments', permission: 'INVENTORY_VIEW' },
-            { name: 'Báo Cáo Mua Hàng', href: '/purchasing/reports', permission: 'INVENTORY_VIEW' }
+            { name: 'Nhà Cung Cấp', href: '/suppliers', permission: 'SUPPLIERS_VIEW' },
+            { name: 'Đơn Đặt Hàng', href: '/purchasing/orders', permission: 'PURCHASE_ORDERS_VIEW' },
+            { name: 'Hóa Đơn Mua', href: '/purchasing/bills', permission: 'PURCHASE_BILLS_VIEW' },
+            { name: 'Thanh Toán', href: '/purchasing/payments', permission: 'PURCHASE_PAYMENTS_VIEW' },
+            { name: 'Báo Cáo Mua Hàng', href: '/purchasing/reports', permission: 'PURCHASE_BILLS_VIEW' }
         ]
     },
     {
         name: 'Bán Hàng',
         icon: ShoppingCart,
         children: [
-            { name: 'Báo Giá (ERP)', href: '/sales/estimates', permission: 'INVENTORY_VIEW' },
-            { name: 'Đơn Đặt Hàng', href: '/sales/orders', permission: 'INVENTORY_VIEW' },
-            { name: 'Hóa Đơn / Xuất Kho', href: '/sales/invoices', permission: 'INVENTORY_VIEW' },
-            { name: 'Thu Tiền / Công Nợ', href: '/sales/payments', permission: 'INVENTORY_VIEW' },
-            { name: 'Báo Cáo Doanh Thu', href: '/sales/reports', permission: 'INVENTORY_VIEW' }
+            { name: 'Báo Giá (ERP)', href: '/sales/estimates', permission: 'SALES_ESTIMATES_VIEW' },
+            { name: 'Đơn Đặt Hàng', href: '/sales/orders', permission: 'SALES_ORDERS_VIEW' },
+            { name: 'Hóa Đơn / Xuất Kho', href: '/sales/invoices', permission: 'SALES_INVOICES_VIEW' },
+            { name: 'Thu Tiền / Công Nợ', href: '/sales/payments', permission: 'SALES_PAYMENTS_VIEW' },
+            { name: 'Báo Cáo Doanh Thu', href: '/sales/reports', permission: 'SALES_INVOICES_VIEW' }
         ]
     },
     { name: 'Khách Hàng', href: '/customers', icon: Users, permission: 'CUSTOMERS_VIEW' },

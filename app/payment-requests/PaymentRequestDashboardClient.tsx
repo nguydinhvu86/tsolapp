@@ -233,7 +233,7 @@ export function PaymentRequestDashboardClient({ initialData }: { initialData: Pa
                                     <option value="REJECTED">Hủy</option>
                                 </select>
                             </td>
-                            <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{new Date(q.createdAt).toLocaleDateString('vi-VN')}</td>
+                            <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }} suppressHydrationWarning>{new Date(q.createdAt).toLocaleDateString('vi-VN')}</td>
                             <td>
                                 <div className="flex gap-2">
                                     {canEdit && (

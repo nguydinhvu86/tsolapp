@@ -318,6 +318,15 @@ model Task {
   salesEstimateId String?
   salesEstimate   SalesEstimate? @relation(fields: [salesEstimateId], references: [id], onDelete: SetNull)
 
+  salesOrderId String?
+  salesOrder   SalesOrder? @relation(fields: [salesOrderId], references: [id], onDelete: SetNull)
+
+  salesInvoiceId String?
+  salesInvoice   SalesInvoice? @relation(fields: [salesInvoiceId], references: [id], onDelete: SetNull)
+
+  salesPaymentId String?
+  salesPayment   SalesPayment? @relation(fields: [salesPaymentId], references: [id], onDelete: SetNull)
+
   checklists   TaskChecklist[]
   comments     TaskComment[]
   attachments  TaskAttachment[]
@@ -645,6 +654,7 @@ model PurchaseBill {
   status      String   @default("DRAFT") // DRAFT, APPROVED (creates IN Tx & Debt), PARTIAL_PAID, PAID
   notes       String?  @db.Text
   attachment  String?  @db.Text // Chuỗi JSON chứa mảng tài liệu đính kèm
+  tags        String?  // Commas separated list of tags
   
   subTotal    Float    @default(0)
   taxAmount   Float    @default(0)
@@ -728,6 +738,7 @@ model SalesEstimate {
   validUntil  DateTime?
   status      String   @default("DRAFT") // DRAFT, SENT, ACCEPTED, REJECTED
   notes       String?  @db.Text
+  tags        String?  // Commas separated list of tags
   
   subTotal    Float    @default(0)
   taxAmount   Float    @default(0)
@@ -779,6 +790,7 @@ model SalesOrder {
   
   items       SalesOrderItem[]
   invoices    SalesInvoice[] // Invoices linked to this Sales Order
+  tasks       Task[]
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -806,6 +818,7 @@ model SalesInvoice {
   status      String   @default("DRAFT") // DRAFT, ISSUED (creates OUT Tx & Debt), PARTIAL_PAID, PAID
   notes       String?  @db.Text
   attachment  String?  @db.Text
+  tags        String?  // Commas separated list of tags
   
   subTotal    Float    @default(0)
   taxAmount   Float    @default(0)
@@ -823,6 +836,7 @@ model SalesInvoice {
   
   items       SalesInvoiceItem[]
   allocations SalesPaymentAllocation[]
+  tasks       Task[]
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -846,6 +860,7 @@ model SalesPayment {
   id          String   @id @default(cuid())
   code        String   @unique
   date        DateTime @default(now())
+  status      String   @default("COMPLETED") // COMPLETED, CANCELLED
   amount      Float
   paymentMethod String @default("CASH") // CASH, BANK_TRANSFER
   reference   String?  
@@ -859,6 +874,7 @@ model SalesPayment {
   creator     User     @relation("SalesPaymentCreator", fields: [creatorId], references: [id])
   
   allocations SalesPaymentAllocation[]
+  tasks       Task[]
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

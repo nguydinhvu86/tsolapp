@@ -21,6 +21,7 @@ const estimateSchema = z.object({
     validUntil: z.string().optional().transform((str) => str ? new Date(str) : null),
     status: z.string().default("DRAFT"),
     notes: z.string().optional(),
+    tags: z.string().optional(),
     customerId: z.string().min(1, "Customer is required"),
     subTotal: z.number().min(0, "Subtotal must be >= 0"),
     taxAmount: z.number().min(0, "Tax amount must be >= 0"),
@@ -47,6 +48,7 @@ export async function submitSalesEstimate(creatorId: string, formData: any) {
                 validUntil: formData.validUntil ? new Date(formData.validUntil) : null,
                 status: formData.status || "DRAFT",
                 notes: formData.notes,
+                tags: formData.tags || null,
                 customerId: formData.customerId,
                 subTotal: formData.subTotal,
                 taxAmount: formData.taxAmount,
@@ -87,6 +89,7 @@ export async function updateSalesEstimate(id: string, formData: any) {
                 validUntil: formData.validUntil ? new Date(formData.validUntil) : null,
                 status: formData.status || "DRAFT",
                 notes: formData.notes,
+                tags: formData.tags || null,
                 customerId: formData.customerId,
                 subTotal: formData.subTotal,
                 taxAmount: formData.taxAmount,
@@ -123,7 +126,10 @@ export async function getSalesEstimates() {
                     include: { product: true }
                 }
             },
-            orderBy: { date: 'desc' }
+            orderBy: [
+                { createdAt: 'desc' },
+                { id: 'desc' }
+            ]
         });
     } catch (error) {
         console.error("Lỗi khi lấy danh sách Báo Giá:", error);
@@ -156,16 +162,30 @@ export async function deleteSalesEstimate(id: string) {
 }
 
 export async function getNextEstimateCode() {
-    const last = await prisma.salesEstimate.findFirst({
-        orderBy: { code: 'desc' }
-    });
-    if (!last) return 'BG0001';
-    const numPart = parseInt(last.code.replace('BG', ''), 10);
-    return `BG${String(numPart + 1).padStart(4, '0')}`;
+    const estimates = await prisma.salesEstimate.findMany({ select: { code: true } });
+
+    let maxNum = 0;
+    for (const est of estimates) {
+        const m = est.code.match(/\d+/);
+        if (m) {
+            const n = parseInt(m[0], 10);
+            if (!isNaN(n) && n > maxNum) {
+                maxNum = n;
+            }
+        }
+    }
+
+    return `BG${String(maxNum + 1).padStart(4, '0')}`;
 }
 
-export async function convertEstimateToInvoice(estimateId: string, creatorId: string) {
+export async function convertEstimateToInvoice(estimateId: string) {
     try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" };
+        }
+        const actualCreatorId = session.user.id;
+
         const estimate = await prisma.salesEstimate.findUnique({
             where: { id: estimateId },
             include: { items: true }
@@ -173,16 +193,17 @@ export async function convertEstimateToInvoice(estimateId: string, creatorId: st
 
         if (!estimate) return { success: false, error: "Báo giá không tồn tại." };
 
-        // Lấy mã Invoice tiếp theo
-        const lastInvoice = await prisma.salesInvoice.findFirst({
-            orderBy: { code: 'desc' }
-        });
-
-        let nextCode = 'INV0001';
-        if (lastInvoice) {
-            const numPart = parseInt(lastInvoice.code.replace('INV', ''), 10);
-            nextCode = `INV${String(numPart + 1).padStart(4, '0')}`;
+        // Lấy mã Invoice tiếp theo (bỏ sort bằng string để tránh INV9999 > INV10000)
+        const invoices = await prisma.salesInvoice.findMany({ select: { code: true } });
+        let maxInvNum = 0;
+        for (const inv of invoices) {
+            const m = inv.code.match(/\d+/);
+            if (m) {
+                const n = parseInt(m[0], 10);
+                if (!isNaN(n) && n > maxInvNum) maxInvNum = n;
+            }
         }
+        const nextCode = `INV${String(maxInvNum + 1).padStart(4, '0')}`;
 
         const invoice = await prisma.salesInvoice.create({
             data: {
@@ -190,11 +211,12 @@ export async function convertEstimateToInvoice(estimateId: string, creatorId: st
                 date: new Date(),
                 status: "DRAFT",
                 notes: `Tạo từ Báo giá ${estimate.code}`,
+                tags: estimate.tags,
                 customerId: estimate.customerId,
                 subTotal: estimate.subTotal,
                 taxAmount: estimate.taxAmount,
                 totalAmount: estimate.totalAmount,
-                creatorId: creatorId,
+                creatorId: actualCreatorId,
                 items: {
                     create: estimate.items.map((i: any) => ({
                         productId: i.productId,
@@ -208,10 +230,10 @@ export async function convertEstimateToInvoice(estimateId: string, creatorId: st
             }
         });
 
-        // Đánh dấu Báo giá đã Chốt
+        // Đánh dấu Báo giá đã Lên Hóa Đơn
         await prisma.salesEstimate.update({
             where: { id: estimateId },
-            data: { status: 'ACCEPTED' }
+            data: { status: 'INVOICED' }
         });
 
         revalidatePath('/sales/invoices');
@@ -220,6 +242,73 @@ export async function convertEstimateToInvoice(estimateId: string, creatorId: st
         return { success: true, data: invoice };
     } catch (error: any) {
         console.error("Lỗi khi chuyển thành Hóa Đơn:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function convertEstimateToOrder(estimateId: string) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" };
+        }
+        const actualCreatorId = session.user.id;
+
+        const estimate = await prisma.salesEstimate.findUnique({
+            where: { id: estimateId },
+            include: { items: true }
+        });
+
+        if (!estimate) return { success: false, error: "Báo giá không tồn tại." };
+
+        // Lấy mã Đơn Hàng tiếp theo
+        const orders = await prisma.salesOrder.findMany({ select: { code: true } });
+        let maxOrdNum = 0;
+        for (const ord of orders) {
+            const m = ord.code.match(/\d+/);
+            if (m) {
+                const n = parseInt(m[0], 10);
+                if (!isNaN(n) && n > maxOrdNum) maxOrdNum = n;
+            }
+        }
+        const nextCode = `SO${String(maxOrdNum + 1).padStart(4, '0')}`;
+
+        const order = await prisma.salesOrder.create({
+            data: {
+                code: nextCode,
+                date: new Date(),
+                status: "DRAFT",
+                notes: `Tạo từ Báo giá ${estimate.code}`,
+                customerId: estimate.customerId,
+                subTotal: estimate.subTotal,
+                taxAmount: estimate.taxAmount,
+                totalAmount: estimate.totalAmount,
+                creatorId: actualCreatorId,
+                items: {
+                    create: estimate.items.map((i: any) => ({
+                        productId: i.productId,
+                        quantity: i.quantity,
+                        unitPrice: i.unitPrice,
+                        taxRate: i.taxRate,
+                        taxAmount: i.taxAmount,
+                        totalPrice: i.totalPrice
+                    }))
+                }
+            }
+        });
+
+        // Đánh dấu Báo giá đã Lên Đơn Hàng
+        await prisma.salesEstimate.update({
+            where: { id: estimateId },
+            data: { status: 'ORDERED' }
+        });
+
+        revalidatePath('/sales/orders');
+        revalidatePath('/sales/estimates');
+
+        return { success: true, data: order };
+    } catch (error: any) {
+        console.error("Lỗi khi chuyển thành Đơn Đặt Hàng:", error);
         return { success: false, error: error.message };
     }
 }

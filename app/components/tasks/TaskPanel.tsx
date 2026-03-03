@@ -13,11 +13,13 @@ import Link from 'next/link';
 interface TaskPanelProps {
     initialTasks: any[];
     users: any[];
-    entityType: 'CONTRACT' | 'QUOTE' | 'HANDOVER' | 'PAYMENT_REQUEST' | 'DISPATCH' | 'CUSTOMER' | 'APPENDIX' | 'SUPPLIER' | 'PURCHASE_ORDER' | 'PURCHASE_BILL' | 'PURCHASE_PAYMENT' | 'SALES_ESTIMATE' | 'OTHER';
+    entityType: 'CONTRACT' | 'QUOTE' | 'HANDOVER' | 'PAYMENT_REQUEST' | 'DISPATCH' | 'CUSTOMER' | 'APPENDIX' | 'SUPPLIER' | 'PURCHASE_ORDER' | 'PURCHASE_BILL' | 'PURCHASE_PAYMENT' | 'SALES_ESTIMATE' | 'SALES_ORDER' | 'SALES_INVOICE' | 'SALES_PAYMENT' | 'OTHER';
     entityId: string;
+    initialTitle?: string;
+    initialDescription?: string;
 }
 
-export function TaskPanel({ initialTasks, users, entityType, entityId }: TaskPanelProps) {
+export function TaskPanel({ initialTasks, users, entityType, entityId, initialTitle, initialDescription }: TaskPanelProps) {
     const router = useRouter();
     const { data: session } = useSession();
     const permissions = session?.user?.permissions || [];
@@ -36,6 +38,12 @@ export function TaskPanel({ initialTasks, users, entityType, entityId }: TaskPan
     const [selectedObservers, setSelectedObservers] = useState<string[]>([]);
     const [isSaving, setIsSaving] = useState(false);
 
+    const handleOpenModal = () => {
+        if (!title) setTitle(initialTitle || '');
+        if (!description) setDescription(initialDescription || '');
+        setCreateModalOpen(true);
+    };
+
     const handleCreate = async () => {
         if (!title.trim() || !session?.user?.id) return;
         setIsSaving(true);
@@ -53,6 +61,9 @@ export function TaskPanel({ initialTasks, users, entityType, entityId }: TaskPan
         if (entityType === 'PURCHASE_BILL') contextLinks.purchaseBillId = entityId;
         if (entityType === 'PURCHASE_PAYMENT') contextLinks.purchasePaymentId = entityId;
         if (entityType === 'SALES_ESTIMATE') contextLinks.salesEstimateId = entityId;
+        if (entityType === 'SALES_ORDER') contextLinks.salesOrderId = entityId;
+        if (entityType === 'SALES_INVOICE') contextLinks.salesInvoiceId = entityId;
+        if (entityType === 'SALES_PAYMENT') contextLinks.salesPaymentId = entityId;
 
         try {
             await createTask({
@@ -128,7 +139,7 @@ export function TaskPanel({ initialTasks, users, entityType, entityId }: TaskPan
                     <CheckSquare size={16} color="var(--primary)" /> Công việc liên quan
                 </h3>
                 {canCreate && (
-                    <Button onClick={() => setCreateModalOpen(true)} className="gap-2" style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', borderRadius: '6px' }}>
+                    <Button onClick={handleOpenModal} className="gap-2" style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', borderRadius: '6px' }}>
                         <Plus size={14} /> Giao việc
                     </Button>
                 )}

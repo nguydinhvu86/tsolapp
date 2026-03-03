@@ -4,25 +4,27 @@ import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Table } from '@/app/components/ui/Table';
 import { Button } from '@/app/components/ui/Button';
-import { ArrowLeft, User, Mail, Phone, MapPin, Building2, FileSpreadsheet, FileText, FileOutput, FilePlus2, Eye, Edit, FileStack, Plus, ShoppingCart, SearchCode, Ticket, HandCoins } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, MapPin, Building2, FileSpreadsheet, FileText, FileOutput, FilePlus2, Eye, Edit, FileStack, Plus, ShoppingCart, SearchCode, Ticket, HandCoins, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 
-export function CustomerDetailClient({ customer }: { customer: any }) {
+export function CustomerDetailClient({ customer, tasks, users }: { customer: any, tasks: any[], users: any[] }) {
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState<'quotes' | 'contracts' | 'handovers' | 'payments' | 'appendices' | 'dispatches' | 'salesEstimates' | 'salesOrders' | 'salesInvoices' | 'salesPayments'>('quotes');
+    const [activeTab, setActiveTab] = useState<'quotes' | 'contracts' | 'handovers' | 'payments' | 'appendices' | 'dispatches' | 'salesEstimates' | 'salesOrders' | 'salesInvoices' | 'salesPayments'>('salesEstimates');
+    const [searchQuery, setSearchQuery] = useState('');
 
     const tabs = [
+        { id: 'salesEstimates', name: 'Báo Giá (ERP)', count: customer.salesEstimates?.length || 0, icon: SearchCode },
+        { id: 'salesOrders', name: 'Đơn Đặt Hàng', count: customer.salesOrders?.length || 0, icon: ShoppingCart },
+        { id: 'salesInvoices', name: 'HĐ Bán & Nợ', count: customer.salesInvoices?.length || 0, icon: Ticket },
+        { id: 'salesPayments', name: 'Thu Tiền', count: customer.salesPayments?.length || 0, icon: HandCoins },
         { id: 'quotes', name: 'Báo Giá', count: customer.quotes.length, icon: FileSpreadsheet },
         { id: 'contracts', name: 'Hợp Đồng', count: customer.contracts.length, icon: FileText },
         { id: 'appendices', name: 'Phụ Lục HĐ', count: customer.contracts.reduce((acc: number, c: any) => acc + (c.appendices?.length || 0), 0), icon: FileStack },
         { id: 'dispatches', name: 'Công Văn', count: customer.dispatches?.length || 0, icon: Mail },
         { id: 'handovers', name: 'Bàn Giao', count: customer.handovers.length, icon: FileOutput },
         { id: 'payments', name: 'Đề Nghị TT', count: customer.paymentRequests.length, icon: FilePlus2 },
-        { id: 'salesEstimates', name: 'Báo Giá Phụ Tùng', count: customer.salesEstimates?.length || 0, icon: SearchCode },
-        { id: 'salesOrders', name: 'Đơn Hàng Phụ Tùng', count: customer.salesOrders?.length || 0, icon: ShoppingCart },
-        { id: 'salesInvoices', name: 'HĐ Bán & Nợ', count: customer.salesInvoices?.length || 0, icon: Ticket },
-        { id: 'salesPayments', name: 'Thu Tiền', count: customer.salesPayments?.length || 0, icon: HandCoins },
     ];
 
     const getStatusColor = (status: string) => {
@@ -102,120 +104,219 @@ export function CustomerDetailClient({ customer }: { customer: any }) {
                 </div>
             </Card>
 
-            {/* Tabs & Related Documents */}
-            <Card style={{ padding: '0', overflow: 'hidden' }}>
-                <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', background: '#fafafa' }}>
-                    {tabs.map((tab) => {
-                        const isActive = activeTab === tab.id;
-                        const Icon = tab.icon;
-                        return (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id as any)}
-                                style={{
-                                    display: 'flex', alignItems: 'center', gap: '0.5rem',
-                                    padding: '1rem 1.5rem', border: 'none', background: 'none', cursor: 'pointer',
-                                    borderBottom: isActive ? '2px solid var(--primary)' : '2px solid transparent',
-                                    color: isActive ? 'var(--primary)' : 'var(--text-muted)',
-                                    fontWeight: isActive ? 600 : 500, fontSize: '0.9375rem', transition: 'all 0.2s ease',
-                                    outline: 'none'
-                                }}
-                            >
-                                <Icon size={18} />
-                                {tab.name}
-                                <span style={{
-                                    background: isActive ? 'rgba(79, 70, 229, 0.1)' : 'var(--border)',
-                                    color: isActive ? 'var(--primary)' : 'var(--text-main)',
-                                    padding: '0.125rem 0.5rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700
-                                }}>
-                                    {tab.count}
-                                </span>
-                            </button>
-                        );
-                    })}
-                </div>
+            {/* 3 Columns Grid: Sidebar, Content Area, TaskPanel */}
+            <div style={{ display: 'grid', gridTemplateColumns: '260px minmax(0, 1fr) 350px', gap: '1.5rem', alignItems: 'start' }}>
+                {/* Column 1: Sidebar Menu */}
+                <Card style={{ padding: '0', overflow: 'hidden', position: 'sticky', top: '1.5rem', background: '#ffffff', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem 0' }}>
+                        {tabs.map((tab) => {
+                            const isActive = activeTab === tab.id;
+                            const Icon = tab.icon;
+                            return (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id as any)}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                        padding: '0.75rem 1.25rem', border: 'none', background: 'transparent', cursor: 'pointer',
+                                        borderLeft: isActive ? '3px solid #2563eb' : '3px solid transparent',
+                                        color: isActive ? '#2563eb' : '#64748b',
+                                        fontWeight: isActive ? 500 : 400, fontSize: '0.9rem', transition: 'all 0.2s ease',
+                                        outline: 'none', textAlign: 'left',
+                                        width: '100%'
+                                    }}
+                                    className="hover:bg-slate-50"
+                                >
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+                                        <Icon size={16} style={{ color: isActive ? '#2563eb' : '#94a3b8' }} />
+                                        {tab.name}
+                                    </span>
+                                    <span style={{
+                                        background: '#f1f5f9',
+                                        color: '#64748b',
+                                        padding: '0.125rem 0.5rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 600,
+                                        minWidth: '24px', textAlign: 'center'
+                                    }}>
+                                        {tab.count}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </Card>
 
-                <div style={{ padding: '1.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>Danh sách hồ sơ</h3>
+                {/* Column 2: Content Area */}
+                <div>
+                    {/* Header */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                        <h3 style={{ fontSize: '1.125rem', fontWeight: 700, margin: 0, color: '#1e293b' }}>
+                            {tabs.find(t => t.id === activeTab)?.name}
+                        </h3>
 
-                        {/* Contextual Quick Actions */}
-                        {activeTab === 'quotes' && (
-                            <Link href={`/quotes/new?customerId=${customer.id}`}>
-                                <Button className="gap-2" style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}><Plus size={16} /> Tạo Báo Giá</Button>
-                            </Link>
-                        )}
-                        {activeTab === 'contracts' && (
-                            <Link href={`/contracts/new?customerId=${customer.id}`}>
-                                <Button className="gap-2" style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}><Plus size={16} /> Soạn Hợp Đồng</Button>
-                            </Link>
-                        )}
-                        {activeTab === 'appendices' && (
-                            <Link href="/contract-appendices/new">
-                                <Button className="gap-2" style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}><Plus size={16} /> Thêm Phụ Lục</Button>
-                            </Link>
-                        )}
-                        {activeTab === 'dispatches' && (
-                            <Link href={`/dispatches/new?customerId=${customer.id}`}>
-                                <Button className="gap-2" style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}><Plus size={16} /> Soạn Công Văn</Button>
-                            </Link>
-                        )}
-                        {activeTab === 'handovers' && (
-                            <Link href={`/handovers/new?customerId=${customer.id}`}>
-                                <Button className="gap-2" style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}><Plus size={16} /> Tạo Bàn Giao</Button>
-                            </Link>
-                        )}
-                        {activeTab === 'payments' && (
-                            <Link href={`/payment-requests/new?customerId=${customer.id}`}>
-                                <Button className="gap-2" style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}><Plus size={16} /> Tạo Đề Nghị TT</Button>
-                            </Link>
-                        )}
+                        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                            {/* Contextual Quick Actions */}
+                            {activeTab === 'quotes' && (
+                                <Link href={`/quotes/new?customerId=${customer.id}`}>
+                                    <Button style={{ background: '#22c55e', color: 'white', padding: '0.5rem 1rem', fontSize: '0.875rem', border: 'none' }}><Plus size={16} /> Tạo Báo Giá</Button>
+                                </Link>
+                            )}
+                            {activeTab === 'contracts' && (
+                                <Link href={`/contracts/new?customerId=${customer.id}`}>
+                                    <Button style={{ background: '#22c55e', color: 'white', padding: '0.5rem 1rem', fontSize: '0.875rem', border: 'none' }}><Plus size={16} /> Soạn Hợp Đồng</Button>
+                                </Link>
+                            )}
+                            {activeTab === 'appendices' && (
+                                <Link href="/contract-appendices/new">
+                                    <Button style={{ background: '#22c55e', color: 'white', padding: '0.5rem 1rem', fontSize: '0.875rem', border: 'none' }}><Plus size={16} /> Thêm Phụ Lục</Button>
+                                </Link>
+                            )}
+                            {activeTab === 'dispatches' && (
+                                <Link href={`/dispatches/new?customerId=${customer.id}`}>
+                                    <Button style={{ background: '#22c55e', color: 'white', padding: '0.5rem 1rem', fontSize: '0.875rem', border: 'none' }}><Plus size={16} /> Soạn Công Văn</Button>
+                                </Link>
+                            )}
+                            {activeTab === 'handovers' && (
+                                <Link href={`/handovers/new?customerId=${customer.id}`}>
+                                    <Button style={{ background: '#22c55e', color: 'white', padding: '0.5rem 1rem', fontSize: '0.875rem', border: 'none' }}><Plus size={16} /> Tạo Bàn Giao</Button>
+                                </Link>
+                            )}
+                            {activeTab === 'payments' && (
+                                <Link href={`/payment-requests/new?customerId=${customer.id}`}>
+                                    <Button style={{ background: '#22c55e', color: 'white', padding: '0.5rem 1rem', fontSize: '0.875rem', border: 'none' }}><Plus size={16} /> Tạo Đề Nghị TT</Button>
+                                </Link>
+                            )}
+                            {/* New action buttons for sales tabs */}
+                            {activeTab === 'salesEstimates' && (
+                                <Link href={`/sales/estimates?action=new&customerId=${customer.id}`}>
+                                    <Button style={{ background: '#22c55e', color: 'white', padding: '0.5rem 1rem', fontSize: '0.875rem', border: 'none' }}><Plus size={16} /> Tạo Báo Giá (ERP)</Button>
+                                </Link>
+                            )}
+                            {activeTab === 'salesOrders' && (
+                                <Link href={`/sales/orders?action=new&customerId=${customer.id}`}>
+                                    <Button style={{ background: '#22c55e', color: 'white', padding: '0.5rem 1rem', fontSize: '0.875rem', border: 'none' }}><Plus size={16} /> Tạo Đơn Đặt Hàng</Button>
+                                </Link>
+                            )}
+                            {activeTab === 'salesInvoices' && (
+                                <Link href={`/sales/invoices?action=new&customerId=${customer.id}`}>
+                                    <Button style={{ background: '#22c55e', color: 'white', padding: '0.5rem 1rem', fontSize: '0.875rem', border: 'none' }}><Plus size={16} /> Tạo HĐ Bán & Nợ</Button>
+                                </Link>
+                            )}
+                            {activeTab === 'salesPayments' && (
+                                <Link href={`/sales/payments?action=new&customerId=${customer.id}`}>
+                                    <Button style={{ background: '#22c55e', color: 'white', padding: '0.5rem 1rem', fontSize: '0.875rem', border: 'none' }}><Plus size={16} /> Tạo Thu Tiền</Button>
+                                </Link>
+                            )}
+                        </div>
                     </div>
 
-                    <Table>
-                        <thead>
-                            <tr>
-                                <th>Mã HS</th>
-                                <th>Tiêu đề</th>
-                                <th>Trạng thái</th>
-                                <th>Ngày tạo</th>
-                                <th style={{ width: '100px', textAlign: 'right' }}>Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {activeTab === 'quotes' && customer.quotes.map((doc: any) => <DocumentRow key={doc.id} doc={doc} type="quotes" getStatusColor={getStatusColor} />)}
-                            {activeTab === 'contracts' && customer.contracts.map((doc: any) => <DocumentRow key={doc.id} doc={doc} type="contracts" getStatusColor={getStatusColor} />)}
-                            {activeTab === 'appendices' && customer.contracts.flatMap((c: any) => c.appendices || []).map((doc: any) => <DocumentRow key={doc.id} doc={doc} type="contract-appendices" getStatusColor={getStatusColor} />)}
-                            {activeTab === 'dispatches' && customer.dispatches?.map((doc: any) => <DocumentRow key={doc.id} doc={doc} type="dispatches" getStatusColor={getStatusColor} />)}
-                            {activeTab === 'handovers' && customer.handovers.map((doc: any) => <DocumentRow key={doc.id} doc={doc} type="handovers" getStatusColor={getStatusColor} />)}
-                            {activeTab === 'payments' && customer.paymentRequests.map((doc: any) => <DocumentRow key={doc.id} doc={doc} type="payment-requests" getStatusColor={getStatusColor} />)}
-                            {activeTab === 'salesEstimates' && customer.salesEstimates?.map((doc: any) => <SalesDocumentRow key={doc.id} doc={doc} type="sales/estimates" getStatusColor={getStatusColor} />)}
-                            {activeTab === 'salesOrders' && customer.salesOrders?.map((doc: any) => <SalesDocumentRow key={doc.id} doc={doc} type="sales/orders" getStatusColor={getStatusColor} />)}
-                            {activeTab === 'salesInvoices' && customer.salesInvoices?.map((doc: any) => <SalesDocumentRow key={doc.id} doc={doc} type="sales/invoices" getStatusColor={getStatusColor} />)}
-                            {activeTab === 'salesPayments' && customer.salesPayments?.map((doc: any) => <SalesDocumentRow key={doc.id} doc={doc} type="sales/payments" getStatusColor={getStatusColor} />)}
+                    <Card style={{ padding: '0', overflow: 'hidden', background: '#ffffff', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                        <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)' }}>
+                            <div style={{ position: 'relative' }}>
+                                <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                <input
+                                    type="text"
+                                    placeholder="Tìm kiếm theo mã, tiêu đề, trạng thái hoặc thẻ..."
+                                    value={searchQuery}
+                                    onChange={e => setSearchQuery(e.target.value)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.625rem 1rem 0.625rem 2.5rem',
+                                        borderRadius: '8px',
+                                        border: '1px solid var(--border)',
+                                        outline: 'none',
+                                        fontSize: '0.875rem'
+                                    }}
+                                />
+                            </div>
+                        </div>
+                        <Table>
+                            <thead>
+                                <tr>
+                                    <th>Mã HS</th>
+                                    <th>Tiêu đề</th>
+                                    <th>Trạng thái</th>
+                                    <th>Ngày tạo</th>
+                                    <th style={{ width: '100px', textAlign: 'right' }}>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {(() => {
+                                    const filterDocs = (docs: any[]) => {
+                                        if (!docs) return [];
+                                        if (!searchQuery) return docs;
+                                        const q = searchQuery.toLowerCase();
+                                        return docs.filter(doc =>
+                                            doc.code?.toLowerCase().includes(q) ||
+                                            doc.id?.toLowerCase().includes(q) ||
+                                            doc.title?.toLowerCase().includes(q) ||
+                                            doc.notes?.toLowerCase().includes(q) ||
+                                            doc.tags?.toLowerCase().includes(q) ||
+                                            getStatusColor(doc.status).text.toLowerCase().includes(q)
+                                        );
+                                    };
 
-                            {/* Empty state */}
-                            {((activeTab === 'quotes' && customer.quotes.length === 0) ||
-                                (activeTab === 'contracts' && customer.contracts.length === 0) ||
-                                (activeTab === 'appendices' && customer.contracts.reduce((acc: number, c: any) => acc + (c.appendices?.length || 0), 0) === 0) ||
-                                (activeTab === 'dispatches' && (!customer.dispatches || customer.dispatches.length === 0)) ||
-                                (activeTab === 'handovers' && customer.handovers.length === 0) ||
-                                (activeTab === 'payments' && customer.paymentRequests.length === 0) ||
-                                (activeTab === 'salesEstimates' && (!customer.salesEstimates || customer.salesEstimates.length === 0)) ||
-                                (activeTab === 'salesOrders' && (!customer.salesOrders || customer.salesOrders.length === 0)) ||
-                                (activeTab === 'salesInvoices' && (!customer.salesInvoices || customer.salesInvoices.length === 0)) ||
-                                (activeTab === 'salesPayments' && (!customer.salesPayments || customer.salesPayments.length === 0))
-                            ) && (
-                                    <tr>
-                                        <td colSpan={5} style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
-                                            Chưa có tài liệu nào trong mục này.
-                                        </td>
-                                    </tr>
-                                )}
-                        </tbody>
-                    </Table>
+                                    const lists: any = {
+                                        quotes: filterDocs(customer.quotes || []),
+                                        contracts: filterDocs(customer.contracts || []),
+                                        appendices: filterDocs(customer.contracts?.flatMap((c: any) => c.appendices || []) || []),
+                                        dispatches: filterDocs(customer.dispatches || []),
+                                        handovers: filterDocs(customer.handovers || []),
+                                        payments: filterDocs(customer.paymentRequests || []),
+                                        salesEstimates: filterDocs(customer.salesEstimates || []),
+                                        salesOrders: filterDocs(customer.salesOrders || []),
+                                        salesInvoices: filterDocs(customer.salesInvoices || []),
+                                        salesPayments: filterDocs(customer.salesPayments || []),
+                                    };
+
+                                    const currentList = lists[activeTab];
+
+                                    if (currentList.length === 0) {
+                                        return (
+                                            <tr>
+                                                <td colSpan={5} style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-muted)' }}>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                                                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--background)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+                                                            {React.createElement(tabs.find(t => t.id === activeTab)?.icon || FileText, { size: 24 })}
+                                                        </div>
+                                                        <p style={{ margin: 0, fontSize: '0.9375rem' }}>Không tìm thấy {tabs.find(t => t.id === activeTab)?.name.toLowerCase()} nào.</p>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    }
+
+                                    return currentList.map((doc: any) => {
+                                        if (activeTab.startsWith('sales')) {
+                                            const typeMap: any = {
+                                                salesEstimates: 'sales/estimates',
+                                                salesOrders: 'sales/orders',
+                                                salesInvoices: 'sales/invoices',
+                                                salesPayments: 'sales/payments'
+                                            };
+                                            return <SalesDocumentRow key={doc.id} doc={doc} type={typeMap[activeTab]} getStatusColor={getStatusColor} />;
+                                        }
+                                        const typeMap: any = {
+                                            quotes: 'quotes',
+                                            contracts: 'contracts',
+                                            appendices: 'contract-appendices',
+                                            dispatches: 'dispatches',
+                                            handovers: 'handovers',
+                                            payments: 'payment-requests'
+                                        };
+                                        return <DocumentRow key={doc.id} doc={doc} type={typeMap[activeTab]} getStatusColor={getStatusColor} />;
+                                    });
+                                })()}
+                            </tbody>
+                        </Table>
+                    </Card>
                 </div>
-            </Card>
+
+                {/* Column 3: TaskPanel */}
+                <div style={{ position: 'sticky', top: '1.5rem' }}>
+                    <TaskPanel initialTasks={tasks} users={users} entityType="CUSTOMER" entityId={customer.id} />
+                </div>
+
+            </div>
         </div>
     );
 }
@@ -235,7 +336,7 @@ function DocumentRow({ doc, type, getStatusColor }: { doc: any, type: string, ge
                     {statusObj.text}
                 </span>
             </td>
-            <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{new Date(doc.createdAt).toLocaleDateString('vi-VN')}</td>
+            <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }} suppressHydrationWarning>{new Date(doc.createdAt).toLocaleDateString('vi-VN')}</td>
             <td>
                 <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                     <Link href={`/${type}/${doc.id}`} style={{
@@ -255,8 +356,37 @@ export function SalesDocumentRow({ doc, type, getStatusColor }: { doc: any, type
     const statusObj = getStatusColor(doc.status);
     return (
         <tr>
-            <td style={{ fontWeight: 600, color: 'var(--text-muted)', fontSize: '0.875rem' }}>#{doc.code}</td>
-            <td style={{ fontWeight: 500, color: 'var(--text-main)' }}>{doc.notes || 'Hồ sơ Bán Hàng'} - Trị giá: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(doc.totalAmount || doc.amount || 0)}</td>
+            <td style={{ fontWeight: 600, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                <Link href={`/${type}/${doc.id}`} className="hover:text-primary hover:underline" style={{ color: 'inherit', textDecoration: 'none' }}>
+                    #{doc.code}
+                </Link>
+            </td>
+            <td style={{ fontWeight: 500, color: 'var(--text-main)' }}>
+                <Link href={`/${type}/${doc.id}`} className="hover:text-primary hover:underline block" style={{ color: 'inherit', textDecoration: 'none' }}>
+                    {doc.notes || 'Hồ sơ Bán Hàng'} - Trị giá: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(doc.totalAmount || doc.amount || 0)}
+                </Link>
+                {doc.tags && (
+                    <div style={{ marginTop: '0.375rem', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                        {doc.tags.split(',').map((tag: string, idx: number) => {
+                            const t = tag.trim();
+                            if (!t) return null;
+                            return (
+                                <span key={idx} style={{
+                                    padding: '2px 8px',
+                                    borderRadius: '12px',
+                                    fontSize: '0.75rem',
+                                    backgroundColor: '#f1f5f9',
+                                    color: '#475569',
+                                    border: '1px solid #e2e8f0',
+                                    fontWeight: 500
+                                }}>
+                                    {t}
+                                </span>
+                            );
+                        })}
+                    </div>
+                )}
+            </td>
             <td>
                 <span style={{
                     backgroundColor: statusObj.bg, color: statusObj.color,
@@ -266,10 +396,10 @@ export function SalesDocumentRow({ doc, type, getStatusColor }: { doc: any, type
                     {statusObj.text}
                 </span>
             </td>
-            <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{new Date(doc.createdAt).toLocaleDateString('vi-VN')}</td>
+            <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }} suppressHydrationWarning>{new Date(doc.createdAt).toLocaleDateString('vi-VN')}</td>
             <td>
                 <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                    <Link href={`/${type}`} style={{
+                    <Link href={`/${type}/${doc.id}`} style={{
                         width: '32px', height: '32px', borderRadius: '8px',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         background: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)', transition: 'all 0.2s'

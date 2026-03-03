@@ -22,14 +22,8 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
     const users = await prisma.user.findMany({ select: { id: true, name: true, email: true }, orderBy: { name: 'asc' } });
 
     return (
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 350px', gap: '1.5rem', alignItems: 'start', padding: '1rem' }}>
-            <div style={{ overflow: 'hidden' }}>
-                <CustomerDetailClient customer={customer} />
-            </div>
-
-            <div style={{ position: 'sticky', top: '1rem' }}>
-                <TaskPanel initialTasks={tasks} users={users} entityType="CUSTOMER" entityId={params.id} />
-            </div>
+        <div style={{ padding: '1.5rem', maxWidth: '1600px', margin: '0 auto' }}>
+            <CustomerDetailClient customer={customer} tasks={tasks} users={users} />
         </div>
     );
 }

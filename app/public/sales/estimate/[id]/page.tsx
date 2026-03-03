@@ -100,12 +100,12 @@ export default async function PublicSalesEstimatePage({ params }: { params: { id
                 <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2rem', fontSize: '0.95rem' }}>
                     <thead>
                         <tr style={{ backgroundColor: '#f1f5f9' }}>
-                            <th style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center', width: '50px' }}>STT</th>
-                            <th style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'left' }}>Sản Phẩm / Dịch Vụ</th>
-                            <th style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center', width: '80px' }}>SL</th>
-                            <th style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', width: '130px' }}>Đơn Giá</th>
-                            <th style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center', width: '80px' }}>Thuế (%)</th>
-                            <th style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', width: '150px' }}>Thành Tiền</th>
+                            <th style={{ border: '1px solid #cbd5e1', padding: '10px 6px', textAlign: 'center', width: '5%' }}>STT</th>
+                            <th style={{ border: '1px solid #cbd5e1', padding: '10px 6px', textAlign: 'left', width: '57%' }}>Sản Phẩm / Dịch Vụ</th>
+                            <th style={{ border: '1px solid #cbd5e1', padding: '10px 6px', textAlign: 'center', width: '5%' }}>SL</th>
+                            <th style={{ border: '1px solid #cbd5e1', padding: '10px 6px', textAlign: 'right', width: '13%', whiteSpace: 'nowrap' }}>Đơn Giá</th>
+                            <th style={{ border: '1px solid #cbd5e1', padding: '10px 6px', textAlign: 'center', width: '6%' }}>Thuế (%)</th>
+                            <th style={{ border: '1px solid #cbd5e1', padding: '10px 6px', textAlign: 'right', width: '14%', whiteSpace: 'nowrap' }}>Thành Tiền</th>
                         </tr>
                     </thead>
                     <tbody>

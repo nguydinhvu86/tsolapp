@@ -36,7 +36,11 @@ export default async function TaskDetailPage({ params }: { params: { id: string 
             quote: { select: { id: true, title: true } },
             handover: { select: { id: true, title: true } },
             paymentReq: { select: { id: true, title: true } },
-            dispatch: { select: { id: true, title: true } }
+            dispatch: { select: { id: true, title: true } },
+            salesOrder: { select: { id: true, code: true } },
+            salesInvoice: { select: { id: true, code: true } },
+            salesEstimate: { select: { id: true, code: true } },
+            salesPayment: { select: { id: true, code: true } }
         }
     });
 

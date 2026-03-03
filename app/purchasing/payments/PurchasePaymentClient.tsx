@@ -510,16 +510,26 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                                     {/* Allocation Section */}
                                     {formData.supplierId && supplierBills.length > 0 && (
                                         <div>
-                                            <div className="flex justify-between items-center mb-3">
-                                                <h3 className="font-semibold text-gray-800 dark:text-gray-200 text-lg flex items-center gap-2">
-                                                    Phân Bổ Cho Các Hóa Đơn Nợ
-                                                </h3>
+                                            <div className="flex justify-between items-end mb-3">
+                                                <div>
+                                                    <h3 className="font-semibold text-gray-800 dark:text-gray-200 text-lg flex items-center gap-2">
+                                                        Phân Bổ Cho Các Hóa Đơn Nợ
+                                                    </h3>
+                                                    {formData.amount > 0 && (
+                                                        <div className="mt-1.5 text-sm flex items-center gap-2">
+                                                            <span className="text-gray-600 dark:text-gray-400">Số tiền chưa phân bổ:</span>
+                                                            <span className={`font-bold px-2 py-0.5 rounded-md ${formData.amount - totalAllocated > 0 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : formData.amount === totalAllocated ? 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
+                                                                {formatMoney(formData.amount - totalAllocated)}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
                                                 <button
                                                     type="button"
                                                     onClick={handleAutoAllocate}
-                                                    className="text-sm font-medium bg-blue-50 text-blue-600 dark:bg-blue-900/30 px-3 py-1.5 rounded hover:bg-blue-100"
+                                                    className="text-sm font-medium bg-blue-50 text-blue-600 dark:bg-blue-900/30 px-3 py-1.5 rounded hover:bg-blue-100 flex items-center gap-1.5 transition-colors"
                                                 >
-                                                    Phân bổ tự động
+                                                    <CheckCircle2 size={16} /> Phân bổ tự động
                                                 </button>
                                             </div>
                                             <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
@@ -543,16 +553,39 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                                                                     </td>
                                                                     <td className="p-3 text-right text-gray-600 dark:text-gray-400">{formatMoney(bill.totalAmount)}</td>
                                                                     <td className="p-3 text-right font-medium text-red-600 dark:text-red-400">{formatMoney(debt)}</td>
-                                                                    <td className="p-3 pr-4">
-                                                                        <input
-                                                                            type="number"
-                                                                            min="0"
-                                                                            max={debt}
-                                                                            value={allocations[bill.id] || ''}
-                                                                            onChange={(e) => handleAllocationChange(bill.id, Number(e.target.value), debt)}
-                                                                            className="w-full rounded bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 p-2 text-sm text-right"
-                                                                            placeholder="0"
-                                                                        />
+                                                                    <td className="p-3 pr-4 align-top">
+                                                                        <div className="relative">
+                                                                            <input
+                                                                                type="number"
+                                                                                min="0"
+                                                                                max={debt}
+                                                                                value={allocations[bill.id] || ''}
+                                                                                onChange={(e) => handleAllocationChange(bill.id, Number(e.target.value), debt)}
+                                                                                className="w-full rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 p-2 text-sm text-right focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-medium"
+                                                                                placeholder="0"
+                                                                            />
+                                                                            {(() => {
+                                                                                const currentVal = allocations[bill.id] || 0;
+                                                                                const maxCanAdd = Math.max(0, formData.amount - totalAllocated + currentVal);
+                                                                                const recommendVal = Math.min(debt, maxCanAdd);
+
+                                                                                if (recommendVal > 0 && currentVal !== recommendVal) {
+                                                                                    return (
+                                                                                        <div className="flex justify-end mt-1.5">
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                onClick={() => handleAllocationChange(bill.id, recommendVal, debt)}
+                                                                                                className="text-[11px] font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-100 px-2 py-0.5 rounded shadow-sm transition-colors active:scale-95"
+                                                                                                title="Điền tối đa số tiền còn lại có thể phân bổ"
+                                                                                            >
+                                                                                                Điền {formatMoney(recommendVal)}
+                                                                                            </button>
+                                                                                        </div>
+                                                                                    );
+                                                                                }
+                                                                                return null;
+                                                                            })()}
+                                                                        </div>
                                                                     </td>
                                                                 </tr>
                                                             )

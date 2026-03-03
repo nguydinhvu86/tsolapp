@@ -18,6 +18,6 @@ export default withAuth(
 // Chặn toàn bộ các route ngoại trừ auth, _next (static files), api, login và public (in ấn)
 export const config = {
     matcher: [
-        "/((?!api/auth|_next/static|_next/image|favicon.ico|login|public).*)",
+        "/((?!api/auth|_next/static|_next/image|favicon.ico|login|public|uploads).*)",
     ],
 };

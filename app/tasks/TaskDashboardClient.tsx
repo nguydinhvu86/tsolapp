@@ -112,7 +112,7 @@ export function TaskDashboardClient({ initialTasks, users }: { initialTasks: any
 
     const filteredTasks = React.useMemo(() => {
         return initialTasks.filter((task: any) => {
-            if (filterStatus === 'ALL') return true;
+            if (filterStatus === 'ALL') return task.status !== 'DONE';
 
             // Core Statuses (also matched by the top cards)
             if (['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE'].includes(filterStatus)) {
@@ -155,7 +155,7 @@ export function TaskDashboardClient({ initialTasks, users }: { initialTasks: any
     }, [initialTasks, filterStatus, session?.user?.id]);
 
     const filterCounts = React.useMemo(() => {
-        let all = initialTasks.length;
+        let all = 0;
         let todo = 0, inProgress = 0, review = 0, done = 0, overdue = 0;
 
         initialTasks.forEach((task: any) => {
@@ -163,6 +163,8 @@ export function TaskDashboardClient({ initialTasks, users }: { initialTasks: any
             else if (task.status === 'IN_PROGRESS') inProgress++;
             else if (task.status === 'REVIEW') review++;
             else if (task.status === 'DONE') done++;
+
+            if (task.status !== 'DONE') all++; // Re-calculate 'all' to mean 'all active'
 
             if (isOverdue(task.dueDate, task.status)) overdue++;
         });
@@ -549,6 +551,7 @@ export function TaskDashboardClient({ initialTasks, users }: { initialTasks: any
                                         {sortField === 'dueDate' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
                                     </div>
                                 </th>
+                                <th>Liên Quan</th>
                                 <th>Tình Trạng</th>
                                 <th>Tiến Độ</th>
                                 <th style={{ width: '100px', textAlign: 'center' }}>Hành Động</th>
@@ -582,6 +585,21 @@ export function TaskDashboardClient({ initialTasks, users }: { initialTasks: any
                                         </td>
                                         <td style={{ color: isDueSoon ? 'var(--danger)' : 'inherit' }}>
                                             {task.dueDate ? new Date(task.dueDate).toLocaleDateString('vi-VN') : '-'}
+                                        </td>
+                                        <td>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '0.8rem' }}>
+                                                {task.customerId && task.customer && <div><span style={{ color: 'var(--text-muted)' }}>Khách hàng:</span> <Link href={`/customers/${task.customerId}`} className="text-blue-600 hover:underline">{task.customer.name}</Link></div>}
+                                                {task.contractId && task.contract && <div><span style={{ color: 'var(--text-muted)' }}>Hợp đồng:</span> <Link href={`/contracts/${task.contractId}`} className="text-blue-600 hover:underline">{task.contract.title}</Link></div>}
+                                                {task.quoteId && task.quote && <div><span style={{ color: 'var(--text-muted)' }}>Báo giá:</span> <Link href={`/quotes/${task.quoteId}`} className="text-blue-600 hover:underline">{task.quote.title}</Link></div>}
+                                                {task.handoverId && task.handover && <div><span style={{ color: 'var(--text-muted)' }}>Bàn giao:</span> <Link href={`/handovers/${task.handoverId}`} className="text-blue-600 hover:underline">{task.handover.title}</Link></div>}
+                                                {task.paymentReqId && task.paymentReq && <div><span style={{ color: 'var(--text-muted)' }}>Đ/N thanh toán:</span> <Link href={`/payment-requests/${task.paymentReqId}`} className="text-blue-600 hover:underline">{task.paymentReq.title}</Link></div>}
+                                                {task.dispatchId && task.dispatch && <div><span style={{ color: 'var(--text-muted)' }}>Công văn:</span> <Link href={`/dispatches/${task.dispatchId}`} className="text-blue-600 hover:underline">{task.dispatch.title}</Link></div>}
+                                                {task.salesOrderId && task.salesOrder && <div><span style={{ color: 'var(--text-muted)' }}>Đơn hàng:</span> <Link href={`/sales/orders/${task.salesOrderId}`} className="text-blue-600 hover:underline">{task.salesOrder.code}</Link></div>}
+                                                {task.salesInvoiceId && task.salesInvoice && <div><span style={{ color: 'var(--text-muted)' }}>Hóa đơn:</span> <Link href={`/sales/invoices/${task.salesInvoiceId}`} className="text-blue-600 hover:underline">{task.salesInvoice.code}</Link></div>}
+                                                {task.salesEstimateId && task.salesEstimate && <div><span style={{ color: 'var(--text-muted)' }}>Báo giá (Sales):</span> <Link href={`/sales/estimates/${task.salesEstimateId}`} className="text-blue-600 hover:underline">{task.salesEstimate.code}</Link></div>}
+                                                {task.salesPaymentId && task.salesPayment && <div><span style={{ color: 'var(--text-muted)' }}>Phiếu thu:</span> <Link href={`/sales/payments/${task.salesPaymentId}`} className="text-blue-600 hover:underline">{task.salesPayment.code}</Link></div>}
+                                                {!task.customerId && !task.contractId && !task.quoteId && !task.handoverId && !task.paymentReqId && !task.dispatchId && !task.salesOrderId && !task.salesInvoiceId && !task.salesEstimateId && !task.salesPaymentId && <span style={{ color: 'var(--text-muted)' }}>-</span>}
+                                            </div>
                                         </td>
                                         <td>
                                             <select
@@ -625,7 +643,7 @@ export function TaskDashboardClient({ initialTasks, users }: { initialTasks: any
 
                             {initialTasks.length === 0 && (
                                 <tr>
-                                    <td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                                    <td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
                                         Chưa có công việc nào.
                                     </td>
                                 </tr>

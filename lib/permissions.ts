@@ -7,7 +7,19 @@ export const RESOURCES = [
     { id: 'PAYMENTS', name: 'Thanh toán' },
     { id: 'DISPATCHES', name: 'Công văn' },
     { id: 'TEMPLATES', name: 'Biểu mẫu' },
-    { id: 'TASKS', name: 'Công việc' }
+    { id: 'TASKS', name: 'Công việc' },
+    { id: 'PRODUCTS', name: 'Sản phẩm & Dịch vụ' },
+    { id: 'WAREHOUSES', name: 'Kho hàng' },
+    { id: 'INVENTORY_TX', name: 'Giao dịch kho' },
+    { id: 'SUPPLIERS', name: 'Nhà cung cấp' },
+    { id: 'PURCHASE_REQUISITIONS', name: 'Yêu cầu mua hàng' },
+    { id: 'PURCHASE_ORDERS', name: 'Đơn mua hàng' },
+    { id: 'PURCHASE_BILLS', name: 'Hóa đơn mua hàng' },
+    { id: 'PURCHASE_PAYMENTS', name: 'Thanh toán mua hàng' },
+    { id: 'SALES_ESTIMATES', name: 'Báo giá / Ước tính' },
+    { id: 'SALES_ORDERS', name: 'Đơn bán hàng' },
+    { id: 'SALES_INVOICES', name: 'Hóa đơn bán hàng' },
+    { id: 'SALES_PAYMENTS', name: 'Thanh toán bán hàng' }
 ] as const;
 
 export const ACTIONS = [

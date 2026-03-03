@@ -64,6 +64,10 @@ export function TaskDetailClient({ initialTask, users }: { initialTask: any, use
     if (task.paymentReq) relatedLinks.push({ label: 'Thanh toán', value: task.paymentReq.title, href: `/payment-requests/${task.paymentReq.id}` });
     if (task.dispatch) relatedLinks.push({ label: 'Công văn', value: task.dispatch.title, href: `/dispatches/${task.dispatch.id}` });
     if (task.customer) relatedLinks.push({ label: 'Khách hàng', value: task.customer.name, href: `/customers/${task.customer.id}` });
+    if (task.salesOrder) relatedLinks.push({ label: 'Đơn hàng', value: task.salesOrder.code, href: `/sales/orders/${task.salesOrder.id}` });
+    if (task.salesInvoice) relatedLinks.push({ label: 'Hóa đơn', value: task.salesInvoice.code, href: `/sales/invoices/${task.salesInvoice.id}` });
+    if (task.salesEstimate) relatedLinks.push({ label: 'Báo giá (Sales)', value: task.salesEstimate.code, href: `/sales/estimates/${task.salesEstimate.id}` });
+    if (task.salesPayment) relatedLinks.push({ label: 'Phiếu thu', value: task.salesPayment.code, href: `/sales/payments/${task.salesPayment.id}` });
 
     // Context Links Linker State
     const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
@@ -110,7 +114,11 @@ export function TaskDetailClient({ initialTask, users }: { initialTask: any, use
             'QUOTE': { quoteId: entityId },
             'HANDOVER': { handoverId: entityId },
             'PAYMENT_REQ': { paymentReqId: entityId },
-            'DISPATCH': { dispatchId: entityId }
+            'DISPATCH': { dispatchId: entityId },
+            'SALES_ORDER': { salesOrderId: entityId },
+            'SALES_INVOICE': { salesInvoiceId: entityId },
+            'SALES_ESTIMATE': { salesEstimateId: entityId },
+            'SALES_PAYMENT': { salesPaymentId: entityId }
         };
         await updateTaskLinks(task.id, linkMap[linkType], session.user.id);
         setIsLinkModalOpen(false);
@@ -131,6 +139,10 @@ export function TaskDetailClient({ initialTask, users }: { initialTask: any, use
         else if (typeLabel === 'Biên bản bàn giao') linkKey = 'HANDOVER';
         else if (typeLabel === 'Đề nghị thanh toán') linkKey = 'PAYMENT_REQ';
         else if (typeLabel === 'Công văn') linkKey = 'DISPATCH';
+        else if (typeLabel === 'Đơn hàng') linkKey = 'SALES_ORDER';
+        else if (typeLabel === 'Hóa đơn') linkKey = 'SALES_INVOICE';
+        else if (typeLabel === 'Báo giá (Sales)') linkKey = 'SALES_ESTIMATE';
+        else if (typeLabel === 'Phiếu thu') linkKey = 'SALES_PAYMENT';
 
         const linkMap: any = {
             'CUSTOMER': { customerId: null },
@@ -138,7 +150,11 @@ export function TaskDetailClient({ initialTask, users }: { initialTask: any, use
             'QUOTE': { quoteId: null },
             'HANDOVER': { handoverId: null },
             'PAYMENT_REQ': { paymentReqId: null },
-            'DISPATCH': { dispatchId: null }
+            'DISPATCH': { dispatchId: null },
+            'SALES_ORDER': { salesOrderId: null },
+            'SALES_INVOICE': { salesInvoiceId: null },
+            'SALES_ESTIMATE': { salesEstimateId: null },
+            'SALES_PAYMENT': { salesPaymentId: null }
         };
 
         if (linkKey && linkMap[linkKey]) {
@@ -918,6 +934,10 @@ export function TaskDetailClient({ initialTask, users }: { initialTask: any, use
                                     <option value="HANDOVER">Biên bản bàn giao</option>
                                     <option value="PAYMENT_REQ">Đề nghị thanh toán</option>
                                     <option value="DISPATCH">Công văn</option>
+                                    <option value="SALES_ESTIMATE">Báo giá (Sales)</option>
+                                    <option value="SALES_ORDER">Đơn hàng</option>
+                                    <option value="SALES_INVOICE">Hóa đơn</option>
+                                    <option value="SALES_PAYMENT">Phiếu thu</option>
                                 </select>
                             </div>
 
@@ -943,7 +963,7 @@ export function TaskDetailClient({ initialTask, users }: { initialTask: any, use
                                             style={{ padding: '0.75rem', borderBottom: '1px solid var(--border)', cursor: 'pointer', fontSize: '0.9rem' }}
                                             className="hover:bg-gray-50 bg-white"
                                         >
-                                            {res.title || res.name}
+                                            {res.title || res.name || res.code}
                                         </div>
                                     ))
                                 )}

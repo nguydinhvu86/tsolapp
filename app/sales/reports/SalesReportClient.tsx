@@ -12,13 +12,13 @@ import { formatMoney } from '@/lib/utils/formatters';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
-export function SalesReportClient({ invoices, payments, orders, customers }: { invoices: any[], payments: any[], orders: any[], customers: any[] }) {
+export function SalesReportClient({ invoices, payments, orders, customers, estimates = [] }: { invoices: any[], payments: any[], orders: any[], customers: any[], estimates?: any[] }) {
     const today = new Date();
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
     const [startDate, setStartDate] = useState(firstDayOfMonth.toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(today.toISOString().split('T')[0]);
-    const [activeTab, setActiveTab] = useState<'overview' | 'customer' | 'product' | 'invoice' | 'order' | 'payment'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'customer' | 'product' | 'estimate' | 'order' | 'invoice' | 'payment'>('overview');
 
     // Filter states
     const [customerSearch, setCustomerSearch] = useState('');
@@ -26,6 +26,8 @@ export function SalesReportClient({ invoices, payments, orders, customers }: { i
     const [invoiceSearch, setInvoiceSearch] = useState('');
     const [orderSearch, setOrderSearch] = useState('');
     const [orderStatus, setOrderStatus] = useState('ALL');
+    const [estimateSearch, setEstimateSearch] = useState('');
+    const [estimateStatus, setEstimateStatus] = useState('ALL');
     const [paymentSearch, setPaymentSearch] = useState('');
     const [paymentMethod, setPaymentMethod] = useState('ALL');
 
@@ -51,6 +53,7 @@ export function SalesReportClient({ invoices, payments, orders, customers }: { i
     const filteredInvoices = useMemo(() => filterByDate(invoices), [invoices, startDate, endDate]);
     const filteredPayments = useMemo(() => filterByDate(payments), [payments, startDate, endDate]);
     const filteredOrders = useMemo(() => filterByDate(orders), [orders, startDate, endDate]);
+    const filteredEstimates = useMemo(() => filterByDate(estimates), [estimates, startDate, endDate]);
 
     // --- Tab 1: Overview Data ---
     const totalSales = filteredInvoices.reduce((sum, b) => sum + b.totalAmount, 0);
@@ -200,6 +203,18 @@ export function SalesReportClient({ invoices, payments, orders, customers }: { i
         }
         return result;
     }, [filteredOrders, orderSearch, orderStatus]);
+
+    const displayEstimates = useMemo(() => {
+        let result = filteredEstimates;
+        if (estimateSearch.trim()) {
+            const query = estimateSearch.toLowerCase();
+            result = result.filter(e => e.code?.toLowerCase().includes(query) || e.customer?.name?.toLowerCase().includes(query));
+        }
+        if (estimateStatus !== 'ALL') {
+            result = result.filter(e => e.status === estimateStatus);
+        }
+        return result;
+    }, [filteredEstimates, estimateSearch, estimateStatus]);
 
     const displayPayments = useMemo(() => {
         let result = filteredPayments;
@@ -353,6 +368,9 @@ export function SalesReportClient({ invoices, payments, orders, customers }: { i
                     </button>
                     <button className={`premium-tab ${activeTab === 'product' ? 'active' : ''}`} onClick={() => setActiveTab('product')}>
                         <Package size={16} /> Sản Phẩm
+                    </button>
+                    <button className={`premium-tab ${activeTab === 'estimate' ? 'active' : ''}`} onClick={() => setActiveTab('estimate')}>
+                        <FileText size={16} /> Báo Giá
                     </button>
                     <button className={`premium-tab ${activeTab === 'order' ? 'active' : ''}`} onClick={() => setActiveTab('order')}>
                         <FileText size={16} /> Đơn Hàng
@@ -657,6 +675,81 @@ export function SalesReportClient({ invoices, payments, orders, customers }: { i
                 </div>
             )}
 
+            {/* 3.5 ESTIMATES TAB */}
+            {activeTab === 'estimate' && (
+                <div className="card" style={{ padding: 0 }}>
+                    <div className="search-card" style={{ padding: '1.25rem', marginBottom: 0, borderBottom: '1px solid var(--border)' }}>
+                        <h3 className="font-bold text-lg"><FileText size={18} className="inline mr-2 text-primary" /> Báo Giá / Ước Tính</h3>
+                        <div className="flex gap-2">
+                            <select className="input" style={{ width: '130px', padding: '0.4rem' }} value={estimateStatus} onChange={e => setEstimateStatus(e.target.value)}>
+                                <option value="ALL">Mọi TT</option>
+                                <option value="DRAFT">Nháp</option>
+                                <option value="SENT">Đã Gửi KH</option>
+                                <option value="CONFIRMED">Đã Chốt</option>
+                                <option value="CANCELLED">Hủy</option>
+                            </select>
+                            <div className="search-input-wrapper">
+                                <Search size={16} className="search-icon" />
+                                <input type="text" placeholder="Tìm mã báo giá..." value={estimateSearch} onChange={e => setEstimateSearch(e.target.value)} className="input" />
+                            </div>
+                            <button
+                                onClick={() => exportToExcel(
+                                    displayEstimates.map(e => ({ "Mã/Ngày": `${e.code} (${formatDate(e.date)})`, "Khách Hàng": e.customer?.name, "Trạng Thái": e.status, "Tổng Tiền": e.totalAmount })),
+                                    `Bao_Gia_${startDate}_to_${endDate}`
+                                )}
+                                className="btn btn-secondary flex items-center gap-2"
+                            >
+                                <Download size={16} /> Excel
+                            </button>
+                            <button onClick={() => window.print()} className="btn btn-secondary flex items-center gap-2">
+                                <Printer size={16} /> Print
+                            </button>
+                        </div>
+                    </div>
+                    <div className="table-wrapper" style={{ border: 'none', borderRadius: '0 0 var(--radius) var(--radius)', maxHeight: '500px' }}>
+                        <table>
+                            <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+                                <tr>
+                                    <th>Mã / Ngày</th>
+                                    <th>Khách Hàng</th>
+                                    <th className="text-center">Trạng Thái</th>
+                                    <th className="text-right">Tổng Tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {displayEstimates.map(e => (
+                                    <tr key={e.id}>
+                                        <td>
+                                            <Link href={`/sales/estimates/${e.id}`} className="font-bold hover:text-primary hover:underline transition-colors block">{e.code}</Link>
+                                            <div className="text-sm text-gray-500">{formatDate(e.date)}</div>
+                                        </td>
+                                        <td className="font-medium text-sm">{e.customer?.name}</td>
+                                        <td className="text-center">
+                                            {e.status === 'CONFIRMED' ? <span className="status-badge badge-success">Đã Chốt</span> :
+                                                e.status === 'SENT' ? <span className="status-badge badge-warning">Đã gửi</span> :
+                                                    e.status === 'CANCELLED' ? <span className="status-badge badge-danger">Đã hủy</span> :
+                                                        <span className="status-badge badge-neutral">Nháp</span>}
+                                        </td>
+                                        <td className="text-right font-bold">{formatMoney(e.totalAmount)}</td>
+                                    </tr>
+                                ))}
+                                {displayEstimates.length === 0 && <tr><td colSpan={4} className="text-center p-8 text-gray-500">Không có báo giá.</td></tr>}
+                            </tbody>
+                            {displayEstimates.length > 0 && (
+                                <tfoot style={{ position: 'sticky', bottom: 0, backgroundColor: 'var(--surface)', borderTop: '2px solid var(--border)' }}>
+                                    <tr>
+                                        <td colSpan={3} className="text-right font-bold text-gray-700">TỔNG CỘNG ({displayEstimates.length}):</td>
+                                        <td className="text-right font-bold text-primary">
+                                            {formatMoney(displayEstimates.reduce((sum, e) => sum + (e.totalAmount || 0), 0))}
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            )}
+                        </table>
+                    </div>
+                </div>
+            )}
+
             {/* 4. ORDERS TAB */}
             {activeTab === 'order' && (
                 <div className="card" style={{ padding: 0 }}>
@@ -703,7 +796,7 @@ export function SalesReportClient({ invoices, payments, orders, customers }: { i
                                 {displayOrders.map(o => (
                                     <tr key={o.id}>
                                         <td>
-                                            <div className="font-bold">{o.code}</div>
+                                            <Link href={`/sales/orders/${o.id}`} className="font-bold hover:text-primary hover:underline transition-colors block">{o.code}</Link>
                                             <div className="text-sm text-gray-500">{formatDate(o.date)}</div>
                                         </td>
                                         <td className="font-medium text-sm">{o.customer?.name}</td>
@@ -772,7 +865,7 @@ export function SalesReportClient({ invoices, payments, orders, customers }: { i
                                 {displayInvoices.map(b => (
                                     <tr key={b.id}>
                                         <td>
-                                            <div className="font-bold">{b.code}</div>
+                                            <Link href={`/sales/invoices/${b.id}`} className="font-bold hover:text-primary hover:underline transition-colors block">{b.code}</Link>
                                             <div className="text-sm text-gray-500">{formatDate(b.date)}</div>
                                         </td>
                                         <td className="font-medium text-sm">
@@ -858,7 +951,7 @@ export function SalesReportClient({ invoices, payments, orders, customers }: { i
                                 {displayPayments.map(p => (
                                     <tr key={p.id}>
                                         <td>
-                                            <div className="font-bold">{p.code}</div>
+                                            <Link href={`/sales/payments/${p.id}`} className="font-bold hover:text-primary hover:underline transition-colors block">{p.code}</Link>
                                             <div className="text-sm text-gray-500">{formatDate(p.date)} {p.reference && `• Ref: ${p.reference}`}</div>
                                         </td>
                                         <td className="font-medium text-sm">{p.customer?.name}</td>

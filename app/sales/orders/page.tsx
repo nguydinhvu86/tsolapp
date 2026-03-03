@@ -3,7 +3,7 @@ import { getCustomers } from '@/app/customers/actions';
 import { getProducts } from '@/app/inventory/actions';
 import SalesOrderClient from './SalesOrderClient';
 
-export default async function SalesOrdersPage() {
+export default async function SalesOrdersPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
     const [orders, customers, products, nextCode] = await Promise.all([
         getSalesOrders(),
         getCustomers(),
@@ -21,6 +21,8 @@ export default async function SalesOrdersPage() {
                 customers={customers}
                 products={products.filter((p: any) => p.isActive)}
                 nextCode={nextCode}
+                initialAction={searchParams?.action}
+                initialCustomerId={searchParams?.customerId}
             />
         </div>
     );

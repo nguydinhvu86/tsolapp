@@ -1,27 +1,32 @@
-import { getSalesPayments, getNextPaymentCode } from './actions';
+import { getSalesPayments } from './actions';
 import { getCustomers } from '@/app/customers/actions';
 import { getSalesInvoices } from '@/app/sales/invoices/actions';
-import SalesPaymentClient from './SalesPaymentClient';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/authOptions';
+import { SalesPaymentClient } from './SalesPaymentClient';
 
-export default async function SalesPaymentsPage() {
-    const [payments, customers, invoices, nextCode] = await Promise.all([
+export default async function SalesPaymentsPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
+    const session = await getServerSession(authOptions);
+    if (!session) return null;
+
+    const [payments, customers, allInvoices] = await Promise.all([
         getSalesPayments(),
         getCustomers(),
-        getSalesInvoices(),
-        getNextPaymentCode()
+        getSalesInvoices()
     ]);
 
+    // Fetch only invoices that are issued or partially paid
+    const unpaidInvoices = allInvoices.filter((inv: any) =>
+        inv.status === 'ISSUED' || inv.status === 'PARTIAL_PAID' || inv.status === 'SENT'
+    );
+
     return (
-        <div className="p-6">
-            <h1 className="text-2xl font-bold mb-6 text-gray-800">
-                Quản Lý Thu Tiền & Công Nợ
-            </h1>
-            <SalesPaymentClient
-                initialPayments={payments}
-                customers={customers}
-                invoices={invoices.filter((i: any) => i.status !== 'DRAFT')}
-                nextCode={nextCode}
-            />
-        </div>
+        <SalesPaymentClient
+            initialPayments={payments as any[]}
+            customers={customers}
+            unpaidInvoices={unpaidInvoices as any[]}
+            initialAction={searchParams?.action}
+            initialCustomerId={searchParams?.customerId}
+        />
     );
 }

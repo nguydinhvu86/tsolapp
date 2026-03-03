@@ -5,6 +5,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { LogOut, Menu } from 'lucide-react';
 import Link from 'next/link';
 import { NotificationBell } from '../ui/NotificationBell';
+import { GlobalSearch } from './GlobalSearch';
 
 export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
     const { data: session } = useSession();
@@ -24,10 +25,10 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
                 padding: '0 2rem',
                 position: 'sticky',
                 top: 0,
-                zIndex: 30
+                zIndex: 50
             }}
         >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, maxWidth: '600px' }}>
                 {onMenuToggle && (
                     <button
                         onClick={onMenuToggle}
@@ -38,8 +39,13 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
                         <Menu size={20} />
                     </button>
                 )}
-                <div className="hide-on-mobile" style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '1.0625rem' }}>
-                    Chào mừng trở lại, <span style={{ color: 'var(--primary)' }}>{session?.user?.name || "Người dùng"}</span>
+
+                <GlobalSearch />
+
+                {/* Mobile search placeholder if GlobalSearch hides on mobile */}
+                <div style={{ marginLeft: '0.25rem', display: 'flex', flexDirection: 'column' }} className="hide-on-desktop">
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Mừng trở lại,</span>
+                    <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)', lineHeight: 1.2 }}>{session?.user?.name || 'Administrator'}</span>
                 </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>

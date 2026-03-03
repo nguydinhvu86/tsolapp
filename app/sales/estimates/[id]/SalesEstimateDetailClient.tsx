@@ -4,15 +4,25 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, FileDown, Plus, ExternalLink, Copy, User, ArrowRightLeft } from 'lucide-react';
 import Link from 'next/link';
-import { updateSalesEstimateStatus, convertEstimateToInvoice } from '../actions';
+import { updateSalesEstimateStatus, convertEstimateToInvoice, convertEstimateToOrder } from '../actions';
 import { formatMoney } from '@/lib/utils/formatters';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
+import { Modal } from '@/app/components/ui/Modal';
 
 export default function SalesEstimateDetailClient({ initialData, customers, products, users }: any) {
     const router = useRouter();
     const [estimate, setEstimate] = useState(initialData);
     const [activeTab, setActiveTab] = useState<'items'>('items');
     const [copied, setCopied] = useState(false);
+    const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
+    const [isConverting, setIsConverting] = useState(false);
+
+    const [isConvertOrderModalOpen, setIsConvertOrderModalOpen] = useState(false);
+    const [isConvertingOrder, setIsConvertingOrder] = useState(false);
+
+    // Generic Action Modal State
+    const [actionModal, setActionModal] = useState<{ isOpen: boolean, title: string, message: React.ReactNode, action: () => Promise<void> } | null>(null);
+    const [isActioning, setIsActioning] = useState(false);
 
     useEffect(() => {
         setEstimate(initialData);
@@ -35,29 +45,54 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
             case 'DRAFT': return <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">Bản Nháp</span>;
             case 'SENT': return <span className="px-2 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">Đã Gửi KH</span>;
             case 'ACCEPTED': return <span className="px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">Khách Chốt</span>;
+            case 'ORDERED': return <span className="px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">Đã Lên Đơn</span>;
+            case 'INVOICED': return <span className="px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">Đã Lên Hóa Đơn</span>;
             case 'REJECTED': return <span className="px-2 py-1 rounded-full bg-red-100 text-red-700 text-xs font-semibold">Từ Chối</span>;
             default: return <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">{status}</span>;
         }
     };
 
     const handleStatusChange = async (newStatus: string) => {
-        if (!confirm(`Xác nhận đổi trạng thái báo giá thành: ${newStatus}?`)) return;
-        const res = await updateSalesEstimateStatus(estimate.id, newStatus);
-        if (res.success) {
-            setEstimate({ ...estimate, status: newStatus });
-            router.refresh();
-        } else {
-            alert(res.error);
-        }
+        setActionModal({
+            isOpen: true,
+            title: 'Khẳng định thay đổi',
+            message: `Xác nhận đổi trạng thái báo giá thành: ${newStatus}?`,
+            action: async () => {
+                const res = await updateSalesEstimateStatus(estimate.id, newStatus);
+                if (res.success) {
+                    setEstimate({ ...estimate, status: newStatus });
+                    router.refresh();
+                } else {
+                    alert(res.error);
+                }
+            }
+        });
     };
 
-    const handleConvertToInvoice = async () => {
-        if (!confirm('Tạo Hóa Đơn Trực Tiếp từ Báo Giá này? Báo giá sẽ chuyển thành "Đã Chốt".')) return;
-        const res = await convertEstimateToInvoice(estimate.id, 'system');
+    const handleConfirmConvert = async () => {
+        setIsConverting(true);
+        const res = await convertEstimateToInvoice(estimate.id);
         if (res.success) {
             alert("Đã tạo Hóa Đơn thành công, đang chuyển hướng...");
             window.location.href = '/sales/invoices';
-        } else alert(res.error);
+        } else {
+            alert(res.error);
+            setIsConverting(false);
+            setIsConvertModalOpen(false);
+        }
+    };
+
+    const handleConfirmConvertOrder = async () => {
+        setIsConvertingOrder(true);
+        const res = await convertEstimateToOrder(estimate.id);
+        if (res.success) {
+            alert("Đã tạo Đơn Đặt Hàng thành công, đang chuyển hướng...");
+            window.location.href = '/sales/orders';
+        } else {
+            alert(res.error);
+            setIsConvertingOrder(false);
+            setIsConvertOrderModalOpen(false);
+        }
     };
 
     const tabs = [
@@ -108,12 +143,20 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                         <ExternalLink size={16} /> Xem Bản In
                     </Link>
                     {(estimate.status === 'DRAFT' || estimate.status === 'SENT' || estimate.status === 'ACCEPTED') && (
-                        <button
-                            onClick={handleConvertToInvoice}
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#fffbeb', color: '#d97706', border: '1px solid #fde68a', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
-                        >
-                            <ArrowRightLeft size={16} /> Lên Hóa Đơn
-                        </button>
+                        <>
+                            <button
+                                onClick={() => setIsConvertOrderModalOpen(true)}
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#e0e7ff', color: '#4338ca', border: '1px solid #c7d2fe', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                            >
+                                <ArrowRightLeft size={16} /> Lên Đơn Hàng
+                            </button>
+                            <button
+                                onClick={() => setIsConvertModalOpen(true)}
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#fffbeb', color: '#d97706', border: '1px solid #fde68a', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                            >
+                                <ArrowRightLeft size={16} /> Lên Hóa Đơn
+                            </button>
+                        </>
                     )}
 
                     {estimate.status === 'DRAFT' && (
@@ -281,6 +324,137 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                     />
                 </div>
             </div>
+            {/* Convert Modal */}
+            <Modal isOpen={isConvertModalOpen} onClose={() => !isConverting && setIsConvertModalOpen(false)} title="Xác nhận Lên Hóa Đơn">
+                <div className="p-6" style={{ fontFamily: 'Inter, sans-serif' }}>
+                    <p className="text-gray-700 text-[15px] mb-6 leading-relaxed">
+                        Bạn có chắc chắn muốn chuyển dữ liệu từ Báo Giá này thành <strong>Hóa Đơn</strong> không? Các thông tin chi tiết sẽ được tự động sao chép sang Hóa Đơn mới.
+                    </p>
+
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', marginBottom: '2rem', padding: '1rem', borderRadius: '0.75rem', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
+                        <div style={{ backgroundColor: 'white', padding: '0.5rem', borderRadius: '9999px', color: '#3b82f6', flexShrink: 0, boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
+                            <ArrowRightLeft size={20} />
+                        </div>
+                        <div style={{ fontSize: '0.875rem', color: '#1e3a8a', lineHeight: 1.625, marginTop: '0.125rem' }}>
+                            <strong style={{ display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Cập nhật tự động</strong>
+                            Báo giá này sẽ tự động chuyển thành trạng thái <strong style={{ backgroundColor: '#dbeafe', padding: '0.125rem 0.375rem', borderRadius: '0.25rem', color: '#1d4ed8', fontWeight: 700 }}>"Đã Chốt"</strong> sau quá trình khởi tạo thành công.
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '2rem', paddingTop: '1.25rem', borderTop: '1px solid #f3f4f6' }}>
+                        <button
+                            onClick={() => setIsConvertModalOpen(false)}
+                            className="btn btn-secondary"
+                            style={{ padding: '0.625rem 1.5rem', fontSize: '15px' }}
+                            disabled={isConverting}
+                        >
+                            Hủy Bỏ
+                        </button>
+                        <button
+                            onClick={handleConfirmConvert}
+                            className="btn btn-primary"
+                            style={{ padding: '0.625rem 1.5rem', fontSize: '15px', minWidth: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                            disabled={isConverting}
+                        >
+                            {isConverting ? (
+                                <>
+                                    <span style={{ display: 'inline-block', width: '16px', height: '16px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></span>
+                                    Đang xử lý...
+                                </>
+                            ) : (
+                                <>Xác Nhận Lên Hóa Đơn</>
+                            )}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+            {/* Convert to Order Modal */}
+            <Modal isOpen={isConvertOrderModalOpen} onClose={() => !isConvertingOrder && setIsConvertOrderModalOpen(false)} title="Xác nhận Lên Đơn Đặt Hàng">
+                <div className="p-6" style={{ fontFamily: 'Inter, sans-serif' }}>
+                    <p className="text-gray-700 text-[15px] mb-6 leading-relaxed">
+                        Bạn có chắc chắn muốn chuyển dữ liệu từ Báo Giá này thành <strong>Đơn Đặt Hàng</strong> không? Các thông tin chi tiết sẽ được tự động sao chép sang Đơn Đặt Hàng mới.
+                    </p>
+
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', marginBottom: '2rem', padding: '1rem', borderRadius: '0.75rem', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
+                        <div style={{ backgroundColor: 'white', padding: '0.5rem', borderRadius: '9999px', color: '#3b82f6', flexShrink: 0, boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
+                            <ArrowRightLeft size={20} />
+                        </div>
+                        <div style={{ fontSize: '0.875rem', color: '#1e3a8a', lineHeight: 1.625, marginTop: '0.125rem' }}>
+                            <strong style={{ display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Cập nhật tự động</strong>
+                            Báo giá này sẽ tự động chuyển thành trạng thái <strong style={{ backgroundColor: '#e0e7ff', padding: '0.125rem 0.375rem', borderRadius: '0.25rem', color: '#4338ca', fontWeight: 700 }}>"Đã Lên Đơn"</strong> sau quá trình khởi tạo thành công.
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '2rem', paddingTop: '1.25rem', borderTop: '1px solid #f3f4f6' }}>
+                        <button
+                            onClick={() => setIsConvertOrderModalOpen(false)}
+                            className="btn btn-secondary"
+                            style={{ padding: '0.625rem 1.5rem', fontSize: '15px' }}
+                            disabled={isConvertingOrder}
+                        >
+                            Hủy Bỏ
+                        </button>
+                        <button
+                            onClick={handleConfirmConvertOrder}
+                            className="btn btn-primary"
+                            style={{ padding: '0.625rem 1.5rem', fontSize: '15px', minWidth: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                            disabled={isConvertingOrder}
+                        >
+                            {isConvertingOrder ? (
+                                <>
+                                    <span style={{ display: 'inline-block', width: '16px', height: '16px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></span>
+                                    Đang xử lý...
+                                </>
+                            ) : (
+                                <>Xác Nhận Lên Đơn Hàng</>
+                            )}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Generic Action Modal */}
+            <Modal isOpen={!!actionModal?.isOpen} onClose={() => !isActioning && setActionModal(null)} title={actionModal?.title || 'Xác nhận'}>
+                <div className="p-6" style={{ fontFamily: 'Inter, sans-serif' }}>
+                    <div className="text-gray-700 text-[15px] mb-6 leading-relaxed">
+                        {actionModal?.message}
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '2rem', paddingTop: '1.25rem', borderTop: '1px solid #f3f4f6' }}>
+                        <button
+                            onClick={() => setActionModal(null)}
+                            className="btn btn-secondary"
+                            style={{ padding: '0.625rem 1.5rem', fontSize: '15px' }}
+                            disabled={isActioning}
+                        >
+                            Hủy Bỏ
+                        </button>
+                        <button
+                            onClick={async () => {
+                                if (!actionModal) return;
+                                setIsActioning(true);
+                                try {
+                                    await actionModal.action();
+                                    setActionModal(null);
+                                } finally {
+                                    setIsActioning(false);
+                                }
+                            }}
+                            className="btn btn-primary"
+                            style={{ padding: '0.625rem 1.5rem', fontSize: '15px', minWidth: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                            disabled={isActioning}
+                        >
+                            {isActioning ? (
+                                <>
+                                    <span style={{ display: 'inline-block', width: '16px', height: '16px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></span>
+                                    Đang xử lý...
+                                </>
+                            ) : (
+                                <>Xác Nhận</>
+                            )}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 }

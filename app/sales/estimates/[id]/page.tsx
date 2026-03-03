@@ -2,7 +2,6 @@ import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import { getCustomers } from '@/app/customers/actions';
 import { getProducts } from '@/app/inventory/actions';
-import { getUsers } from '@/app/users/actions';
 import SalesEstimateDetailClient from './SalesEstimateDetailClient';
 
 export default async function SalesEstimateDetailPage({ params }: { params: { id: string } }) {
@@ -38,7 +37,10 @@ export default async function SalesEstimateDetailPage({ params }: { params: { id
     const [customers, products, users] = await Promise.all([
         getCustomers(),
         getProducts(),
-        getUsers()
+        prisma.user.findMany({
+            select: { id: true, name: true, email: true, role: true },
+            orderBy: { name: 'asc' }
+        })
     ]);
 
     return (

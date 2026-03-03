@@ -56,5 +56,16 @@ export async function getSalesReportData() {
         orderBy: { date: 'desc' }
     });
 
-    return { customers, invoices, payments, orders };
+    // Fetch Estimates
+    const estimates = await prisma.salesEstimate.findMany({
+        where: {
+            date: { gte: firstDayOfYear }
+        },
+        include: {
+            customer: true
+        },
+        orderBy: { date: 'desc' }
+    });
+
+    return { customers, invoices, payments, orders, estimates };
 }
