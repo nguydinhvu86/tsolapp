@@ -8,6 +8,7 @@ import { updateSalesEstimateStatus, convertEstimateToInvoice, convertEstimateToO
 import { formatMoney } from '@/lib/utils/formatters';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import { Modal } from '@/app/components/ui/Modal';
+import { SalesEstimateActivityLog } from '@/app/components/sales/SalesEstimateActivityLog';
 
 export default function SalesEstimateDetailClient({ initialData, customers, products, users }: any) {
     const router = useRouter();
@@ -314,14 +315,19 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                     </div>
                 </div>
 
-                {/* Right Column: Related Tasks */}
-                <div>
+
+                {/* Column 2: TaskPanel and Timeline */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
                     <TaskPanel
                         initialTasks={estimate.tasks || []}
                         users={users || []}
                         entityType="SALES_ESTIMATE"
                         entityId={estimate.id}
                     />
+
+                    <SalesEstimateActivityLog logs={estimate.activityLogs || []} />
+
                 </div>
             </div>
             {/* Convert Modal */}

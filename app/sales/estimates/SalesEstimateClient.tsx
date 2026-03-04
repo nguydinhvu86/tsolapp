@@ -10,6 +10,7 @@ import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { Plus, Edit2, Trash2, Save, X, Printer, FileText, Search, Calendar, FolderClock, LayoutList, CheckCircle2, XCircle, Eye, Link as LinkIcon, Download, ChevronUp, ChevronDown, Check, ArrowRightLeft, ShoppingCart } from 'lucide-react';
 import { submitSalesEstimate, updateSalesEstimateStatus, deleteSalesEstimate, updateSalesEstimate, convertEstimateToInvoice, convertEstimateToOrder } from './actions';
 import { formatMoney } from '@/lib/utils/formatters';
+import { TagDisplay } from '@/app/components/ui/TagDisplay';
 
 export default function SalesEstimateClient({ initialEstimates, customers, products, nextCode, initialAction, initialCustomerId }: any) {
     const [estimates, setEstimates] = useState(initialEstimates);
@@ -489,11 +490,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                     )}
                                 </td>
                                 <td className="py-3">
-                                    {est.tags && est.tags.split(',').map((t: string, i: number) => {
-                                        const trimmed = t.trim();
-                                        if (!trimmed) return null;
-                                        return <span key={i} className="inline-block bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded-md mr-1 mb-1 border border-slate-200">{trimmed}</span>
-                                    })}
+                                    <TagDisplay tagsString={est.tags} />
                                 </td>
                                 <td className="py-3 text-right font-bold text-gray-800">{formatMoney(est.totalAmount)}</td>
                                 <td className="py-3 text-center">

@@ -17,6 +17,10 @@ export default async function SalesEstimateDetailPage({ params }: { params: { id
                     product: true
                 }
             },
+            activityLogs: {
+                include: { user: { select: { name: true, email: true } } },
+                orderBy: { createdAt: 'desc' }
+            },
             tasks: {
                 include: {
                     assignees: { include: { user: true } },

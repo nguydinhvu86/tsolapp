@@ -2,21 +2,25 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ExternalLink, Copy, CheckCircle2, User, FileText, ShoppingCart, Info, CheckSquare, XCircle, Undo2, History, ArrowRight, Clock, AlertTriangle, PackageCheck } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Copy, CheckCircle2, User, FileText, ShoppingCart, Info, CheckSquare, XCircle, Undo2, History, ArrowRight, Clock, AlertTriangle, PackageCheck, Activity, Edit } from 'lucide-react';
 import Link from 'next/link';
 import { approveSalesInvoice, updateSalesInvoiceStatus, cancelSalesInvoice, restoreSalesInvoice, paySalesInvoice } from '../actions';
 import { formatMoney } from '@/lib/utils/formatters';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import { Modal } from '@/app/components/ui/Modal';
 import { Input } from '@/app/components/ui/Input';
+import { SalesInvoiceNotes } from '@/app/components/sales/SalesInvoiceNotes';
+import { useSession } from 'next-auth/react';
 
 export default function SalesInvoiceDetailClient({ initialData, customers, products, users }: any) {
     const router = useRouter();
+    const { data: session } = useSession();
     const [invoice, setInvoice] = useState(initialData);
     const [activeTab, setActiveTab] = useState<'items'>('items');
     const [copied, setCopied] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [paymentData, setPaymentData] = useState({ amount: 0, method: 'CASH', notes: '' });
+    const [diffModal, setDiffModal] = useState<{ isOpen: boolean, changes: string[] }>({ isOpen: false, changes: [] });
 
     // Action Modal State
     const [actionModal, setActionModal] = useState<{
@@ -466,9 +470,30 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                 {/* Right Column: Related Tasks and History */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
 
-                    {/* Invoice History Panel */}
+                    {/* Invoice Notes Panel */}
+                    <SalesInvoiceNotes
+                        invoiceId={invoice.id}
+                        notes={invoice.invoiceNotes || []}
+                        currentUserId={session?.user?.id || ''}
+                        currentUserRole={session?.user?.role || ''}
+                    />
+
+                    {/* Task Panel */}
                     <div>
                         <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#0f172a', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <CheckSquare size={18} /> Công việc & Phối hợp
+                        </h2>
+                        <TaskPanel
+                            initialTasks={invoice.tasks || []}
+                            users={users || []}
+                            entityType="SALES_INVOICE"
+                            entityId={invoice.id}
+                        />
+                    </div>
+
+                    {/* Invoice History Panel */}
+                    <div>
+                        <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#0f172a', margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <History size={18} /> Lịch Sử Hóa Đơn
                         </h2>
                         <div style={{ backgroundColor: 'white', borderRadius: '0.75rem', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
@@ -521,37 +546,85 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                             <div style={{ padding: '1.25rem' }}>
                                 <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>Nhật Ký Hoạt Động</div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                    {/* Action: Created */}
-                                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                                        <div style={{ marginTop: '0.125rem' }}>
-                                            <Clock size={16} color="#94a3b8" />
+                                    {invoice.activityLogs && invoice.activityLogs.length > 0 ? (
+                                        invoice.activityLogs.map((log: any, index: number) => (
+                                            <div key={index} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                                                <div style={{ marginTop: '0.125rem' }}>
+                                                    {log.action === 'CREATED' || log.action === 'TẠO_HÓA_ĐƠN' ? <Clock size={16} color="#94a3b8" /> :
+                                                        log.action === 'UPDATED' || log.action === 'CẬP_NHẬT' ? <Edit size={16} color="#f59e0b" /> :
+                                                            log.action === 'STATUS_CHANGED' || log.action === 'CẬP_NHẬT_TRẠNG_THÁI' || log.action === 'APPROVED' ? <CheckCircle2 size={16} color="#10b981" /> :
+                                                                <Activity size={16} color="#64748b" />}
+                                                </div>
+                                                <div>
+                                                    <div style={{ fontSize: '0.875rem', color: '#334155' }}>
+                                                        {log.action === 'CREATED' ? `Hóa đơn được tạo bởi ` :
+                                                            log.action === 'TẠO_HÓA_ĐƠN' ? `Hóa đơn được tạo bởi ` :
+                                                                log.action === 'UPDATED' ? `Hóa đơn được cập nhật bởi ` :
+                                                                    log.action === 'CẬP_NHẬT' ? `Hóa đơn được cập nhật bởi ` :
+                                                                        log.action === 'STATUS_CHANGED' ? `Trạng thái thay đổi bởi ` :
+                                                                            log.action === 'CẬP_NHẬT_TRẠNG_THÁI' ? `Trạng thái thay đổi bởi ` :
+                                                                                log.action === 'APPROVED' ? `Hóa đơn được duyệt bởi ` :
+                                                                                    `Thao tác bởi `}
+                                                        <span style={{ fontWeight: 600 }}>{log.user?.name || log.userId || 'Hệ thống'}</span>
+                                                    </div>
+                                                    {log.details && (
+                                                        <div style={{ fontSize: '0.875rem', color: '#475569', marginTop: '0.125rem' }}>
+                                                            {(() => {
+                                                                try {
+                                                                    const parsed = JSON.parse(log.details);
+                                                                    if (parsed.type === 'UPDATE_DIFF') {
+                                                                        return (
+                                                                            <div>
+                                                                                <div>{parsed.summary}</div>
+                                                                                <button
+                                                                                    onClick={() => setDiffModal({ isOpen: true, changes: parsed.changes })}
+                                                                                    style={{ fontSize: '0.75rem', color: '#3b82f6', background: 'none', border: 'none', padding: 0, cursor: 'pointer', marginTop: '0.25rem', textDecoration: 'underline' }}
+                                                                                >
+                                                                                    Xem chi tiết thay đổi
+                                                                                </button>
+                                                                            </div>
+                                                                        );
+                                                                    }
+                                                                } catch (e) {
+                                                                    return log.details;
+                                                                }
+                                                                return log.details;
+                                                            })()}
+                                                        </div>
+                                                    )}
+                                                    <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.25rem' }}>{formatDate(log.createdAt)}</div>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                                            <div style={{ marginTop: '0.125rem' }}>
+                                                <Clock size={16} color="#94a3b8" />
+                                            </div>
+                                            <div>
+                                                <div style={{ fontSize: '0.875rem', color: '#334155' }}>Hóa đơn được tạo bởi <span style={{ fontWeight: 600 }}>{invoice.creator?.name || 'Hệ thống'}</span></div>
+                                                <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{formatDate(invoice.createdAt)}</div>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <div style={{ fontSize: '0.875rem', color: '#334155' }}>Hóa đơn được tạo bởi <span style={{ fontWeight: 600 }}>{invoice.creator?.name || 'Hệ thống'}</span></div>
-                                            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{formatDate(invoice.createdAt)}</div>
-                                        </div>
-                                    </div>
-                                    {/* Additional generic status updates can be derived here if needed, or we rely on tasks module entirely */}
+                                    )}
                                 </div>
                             </div>
 
                         </div>
                     </div>
 
-                    {/* Task Panel */}
-                    <div>
-                        <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#0f172a', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
 
-                            <CheckSquare size={18} /> Công việc & Phối hợp
-                        </h2>
-                        <TaskPanel
-                            initialTasks={invoice.tasks || []}
-                            users={users || []}
-                            entityType="SALES_INVOICE"
-                            entityId={invoice.id}
-                        />
-                    </div>
                 </div>
+
+                <Modal isOpen={diffModal.isOpen} onClose={() => setDiffModal({ ...diffModal, isOpen: false })} title="Chi Tiết Cập Nhật">
+                    <div style={{ padding: '0.5rem', maxHeight: '50vh', overflowY: 'auto' }}>
+                        <ul style={{ paddingLeft: '1.25rem', color: '#334155', fontSize: '0.9375rem', lineHeight: '1.6', margin: 0 }}>
+                            {diffModal.changes.map((change, i) => (
+                                <li key={i} style={{ marginBottom: '0.5rem' }}>{change}</li>
+                            ))}
+                        </ul>
+                    </div>
+                </Modal>
 
                 <Modal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} title="Thu Tiền Hóa Đơn">
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', padding: '0.5rem' }}>

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { createPurchaseBill, approvePurchaseBill, deletePurchaseBill, updatePurchaseBill } from '@/app/purchasing/actions';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
+import { TagDisplay } from '@/app/components/ui/TagDisplay';
 
 export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses, products }: { initialBills: any[], suppliers: any[], orders: any[], warehouses: any[], products: any[] }) {
     const [bills, setBills] = useState(initialBills);
@@ -542,11 +543,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                         </Link>
                                     </td>
                                     <td className="p-4">
-                                        {bill.tags && bill.tags.split(',').map((t: string, i: number) => {
-                                            const trimmed = t.trim();
-                                            if (!trimmed) return null;
-                                            return <span key={i} className="inline-block bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-xs px-2 py-1 rounded-md mr-1 mb-1 border border-slate-200 dark:border-slate-700">{trimmed}</span>
-                                        })}
+                                        <TagDisplay tagsString={bill.tags} />
                                     </td>
                                     <td className="p-4 text-right">
                                         <div className="font-semibold text-gray-900 dark:text-gray-100">{formatMoney(bill.totalAmount || 0)}</div>

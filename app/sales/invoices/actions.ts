@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
+import { logCustomerActivity } from '@/lib/customerLogger';
 
 export async function submitSalesInvoice(creatorId: string, formData: any) {
     try {
@@ -46,6 +47,17 @@ export async function submitSalesInvoice(creatorId: string, formData: any) {
         // Hóa đơn được tạo ở trạng thái ISSUED luôn, hoặc DRAFT rồi mới duyệt sang ISSUED.
         // Nếu truyền DRAFT và ISSUED ngay -> cập nhật kho. Ở đây cho phép lưu DRAFT trước.
 
+        await logCustomerActivity(formData.customerId, actualCreatorId, 'TẠO_HÓA_ĐƠN', `Tạo hóa đơn: ${formData.code}`);
+
+        await prisma.salesInvoiceActivityLog.create({
+            data: {
+                invoiceId: invoice.id,
+                userId: actualCreatorId,
+                action: 'TẠO_HÓA_ĐƠN',
+                details: `Khởi tạo hóa đơn: ${invoice.code}`
+            }
+        });
+
         revalidatePath('/sales/invoices');
         return { success: true, data: invoice };
     } catch (error: any) {
@@ -56,11 +68,20 @@ export async function submitSalesInvoice(creatorId: string, formData: any) {
 
 export async function updateSalesInvoice(id: string, formData: any) {
     try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" };
+        }
+        const actualUserId = session.user.id;
+
         if (!formData.code || !formData.customerId || !formData.items || formData.items.length === 0) {
             return { success: false, error: "Thiếu thông tin bắt buộc." };
         }
 
-        const existingInvoice = await prisma.salesInvoice.findUnique({ where: { id } });
+        const existingInvoice = await prisma.salesInvoice.findUnique({
+            where: { id },
+            include: { items: true }
+        });
         if (!existingInvoice) {
             return { success: false, error: "Không tìm thấy hóa đơn." };
         }
@@ -96,6 +117,39 @@ export async function updateSalesInvoice(id: string, formData: any) {
             }
         });
 
+        const changes: string[] = [];
+        if (existingInvoice.totalAmount !== formData.totalAmount) {
+            changes.push(`Tổng tiền: ${existingInvoice.totalAmount.toLocaleString('vi-VN')} đ ➔ ${formData.totalAmount.toLocaleString('vi-VN')} đ`);
+        }
+
+        const oldItemsStr = existingInvoice.items.map(i => `${i.productId}:${i.quantity}:${i.unitPrice}`).sort().join(',');
+        const newItemsStr = formData.items.map((i: any) => `${i.productId}:${i.quantity}:${i.unitPrice}`).sort().join(',');
+        if (oldItemsStr !== newItemsStr) {
+            changes.push(`Danh sách chi tiết sản phẩm / số lượng / đơn giá đã bị cập nhật.`);
+        }
+
+        if ((existingInvoice.notes || "") !== (formData.notes || "")) {
+            changes.push("Ghi chú của hóa đơn đã được chỉnh sửa.");
+        }
+
+        let detailsLog = "Cập nhật thông tin hóa đơn";
+        if (changes.length > 0) {
+            detailsLog = JSON.stringify({
+                type: 'UPDATE_DIFF',
+                summary: 'Cập nhật thông tin hóa đơn',
+                changes: changes
+            });
+        }
+
+        await prisma.salesInvoiceActivityLog.create({
+            data: {
+                invoiceId: id,
+                userId: actualUserId,
+                action: 'CẬP_NHẬT',
+                details: detailsLog
+            }
+        });
+
         revalidatePath('/sales/invoices');
         return { success: true, data: invoice };
     } catch (error: any) {
@@ -106,6 +160,12 @@ export async function updateSalesInvoice(id: string, formData: any) {
 
 export async function updateSalesInvoiceStatus(id: string, newStatus: string) {
     try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" };
+        }
+        const actualUserId = session.user.id;
+
         const inv = await prisma.salesInvoice.findUnique({ where: { id } });
         if (!inv) return { success: false, error: "Không tìm thấy hóa đơn" };
 
@@ -117,6 +177,18 @@ export async function updateSalesInvoiceStatus(id: string, newStatus: string) {
             where: { id },
             data: { status: newStatus }
         });
+
+        await logCustomerActivity(inv.customerId, 'SYSTEM', 'CẬP_NHẬT_TRẠNG_THÁI', `Hóa đơn ${inv.code} chuyển trạng thái: ${newStatus}`);
+
+        await prisma.salesInvoiceActivityLog.create({
+            data: {
+                invoiceId: id,
+                userId: actualUserId,
+                action: 'CẬP_NHẬT_TRẠNG_THÁI',
+                details: `Đổi trạng thái thành: ${newStatus}`
+            }
+        });
+
         revalidatePath('/sales/invoices');
         revalidatePath(`/sales/invoices/${id}`);
         return { success: true, data: result };
@@ -236,7 +308,28 @@ export async function approveSalesInvoice(invoiceId: string, userId: string) {
                 }
             }
 
+            await tx.customerActivityLog.create({
+                data: {
+                    customerId: invoice.customerId,
+                    userId: actualUserId,
+                    action: 'CẬP_NHẬT_TRẠNG_THÁI',
+                    details: `Duyệt xuất kho & ghi nhận công nợ hóa đơn ${invoice.code}`
+                }
+            });
+
+            await tx.salesInvoiceActivityLog.create({
+                data: {
+                    invoiceId: invoiceId,
+                    userId: actualUserId,
+                    action: 'APPROVED',
+                    details: `Duyệt xuất kho & ghi nhận công nợ`
+                }
+            });
+
             return updatedInvoice;
+        }, {
+            maxWait: 5000, // default is 2000
+            timeout: 15000 // default is 5000
         });
 
         revalidatePath('/sales/invoices');
@@ -336,6 +429,15 @@ export async function cancelSalesInvoice(invoiceId: string) {
                 data: { status: "CANCELLED" }
             });
 
+            await tx.salesInvoiceActivityLog.create({
+                data: {
+                    invoiceId: invoiceId,
+                    userId: session.user.id,
+                    action: 'STATUS_CHANGED',
+                    details: `Hủy hóa đơn & Thu hồi kho/công nợ`
+                }
+            });
+
             return updatedInvoice;
         });
 
@@ -432,6 +534,15 @@ export async function restoreSalesInvoice(invoiceId: string) {
                 }
             }
 
+            await tx.salesInvoiceActivityLog.create({
+                data: {
+                    invoiceId: invoiceId,
+                    userId: actualUserId,
+                    action: 'STATUS_CHANGED',
+                    details: `Khôi phục hóa đơn đã hủy`
+                }
+            });
+
             return updatedInvoice;
         });
 
@@ -502,6 +613,15 @@ export async function paySalesInvoice(
                 data: { paidAmount: { increment: amount } }
             });
 
+            await tx.salesInvoiceActivityLog.create({
+                data: {
+                    invoiceId: invoice.id,
+                    userId: creatorId,
+                    action: 'UPDATED',
+                    details: `Thu tiền: ${amount.toLocaleString('vi-VN')} đ (PT: ${payment.code})`
+                }
+            });
+
             // Update status if needed
             const newStatus = (inv.paidAmount >= inv.totalAmount) ? 'PAID' : 'PARTIAL_PAID';
             if (inv.status !== newStatus && inv.status !== 'DRAFT') {
@@ -519,6 +639,58 @@ export async function paySalesInvoice(
         return { success: true, data: result };
     } catch (error: any) {
         console.error("Lỗi khi thanh toán hóa đơn:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function createSalesInvoiceNote(invoiceId: string, content: string, attachment?: string) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) return { success: false, error: "Unauthorized" };
+        const userId = session.user.id;
+
+        const note = await prisma.salesInvoiceNote.create({
+            data: {
+                invoiceId,
+                userId,
+                content,
+                attachment
+            },
+            include: {
+                user: { select: { name: true, avatar: true } }
+            }
+        });
+
+        revalidatePath(`/sales/invoices/${invoiceId}`);
+        return { success: true, data: note };
+    } catch (error: any) {
+        console.error("Lỗi khi thêm ghi chú:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function deleteSalesInvoiceNote(noteId: string) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) return { success: false, error: "Unauthorized" };
+        const userId = session.user.id;
+
+        const note = await prisma.salesInvoiceNote.findUnique({ where: { id: noteId } });
+        if (!note) return { success: false, error: "Không tìm thấy ghi chú" };
+
+        if (note.userId !== userId) {
+            const user = await prisma.user.findUnique({ where: { id: userId } });
+            if (user?.role !== 'ADMIN') {
+                return { success: false, error: "Bạn không có quyền xóa ghi chú này" };
+            }
+        }
+
+        await prisma.salesInvoiceNote.delete({ where: { id: noteId } });
+
+        revalidatePath(`/sales/invoices/${note.invoiceId}`);
+        return { success: true };
+    } catch (error: any) {
+        console.error("Lỗi khi xóa ghi chú:", error);
         return { success: false, error: error.message };
     }
 }

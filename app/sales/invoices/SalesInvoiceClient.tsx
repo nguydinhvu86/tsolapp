@@ -10,6 +10,7 @@ import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { Plus, Edit2, Trash2, Save, X, Printer, Search, Calendar, PackageCheck, Eye, Download, LinkIcon, CheckCircle2, FileSearch, LayoutList, FileText, ChevronUp, ChevronDown, Undo2, XCircle, AlertTriangle, Info, ShieldAlert } from 'lucide-react';
 import { submitSalesInvoice, approveSalesInvoice, deleteSalesInvoice, updateSalesInvoice, cancelSalesInvoice, updateSalesInvoiceStatus, restoreSalesInvoice } from './actions';
 import { formatMoney } from '@/lib/utils/formatters';
+import { TagDisplay } from '@/app/components/ui/TagDisplay';
 
 export default function SalesInvoiceClient({ initialInvoices, customers, products, orders, nextCode, initialAction, initialCustomerId }: any) {
     const [invoices, setInvoices] = useState(initialInvoices);
@@ -781,11 +782,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                 )}
                             </td>
                             <td className="py-3">
-                                {inv.tags && inv.tags.split(',').map((t: string, i: number) => {
-                                    const trimmed = t.trim();
-                                    if (!trimmed) return null;
-                                    return <span key={i} className="inline-block bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded-md mr-1 mb-1 border border-slate-200">{trimmed}</span>
-                                })}
+                                <TagDisplay tagsString={inv.tags} />
                             </td>
                             <td className="py-3 text-right font-bold text-gray-800">{formatMoney(inv.totalAmount)}</td>
                             <td className="py-3 text-right text-green-600 font-medium">{formatMoney(inv.paidAmount)}</td>

@@ -723,8 +723,12 @@ export function TaskDashboardClient({ initialTasks, users }: { initialTasks: any
                                 style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', marginBottom: '0.5rem' }}>
                                 <option value="">-- Không liên kết --</option>
                                 <option value="CUSTOMER">Khách Hàng</option>
+                                <option value="QUOTE">Báo Giá (Sales)</option>
+                                <option value="SALES_ESTIMATE">Báo Giá (ERP)</option>
                                 <option value="CONTRACT">Hợp Đồng</option>
-                                <option value="QUOTE">Báo Giá</option>
+                                <option value="SALES_ORDER">Đơn Đặt Hàng</option>
+                                <option value="SALES_INVOICE">Hóa Đơn Bán</option>
+                                <option value="SALES_PAYMENT">Phiếu Thu</option>
                                 <option value="HANDOVER">Biên Bản Bàn Giao</option>
                                 <option value="PAYMENT_REQ">Đề Nghị Thanh Toán</option>
                                 <option value="DISPATCH">Công Văn</option>

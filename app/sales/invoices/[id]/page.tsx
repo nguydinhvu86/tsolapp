@@ -32,6 +32,14 @@ export default async function SalesInvoiceDetailPage({ params }: { params: { id:
                     observers: { include: { user: true } }
                 },
                 orderBy: { createdAt: 'desc' }
+            },
+            invoiceNotes: {
+                include: { user: true },
+                orderBy: { createdAt: 'desc' }
+            },
+            activityLogs: {
+                include: { user: true },
+                orderBy: { createdAt: 'desc' }
             }
         }
     });

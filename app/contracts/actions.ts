@@ -2,9 +2,22 @@
 
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
+import { logCustomerActivity } from "@/lib/customerLogger";
 
 export async function createContract(data: { title: string, content: string, variables: string, customerId: string, templateId: string, assignedToId?: string }, creatorId?: string) {
     const contract = await prisma.contract.create({ data });
+
+    const session = await getServerSession(authOptions);
+    if (session?.user?.id && data.customerId) {
+        await logCustomerActivity(
+            data.customerId,
+            session.user.id,
+            'TẠO_HỢP_ĐỒNG',
+            `Đã tạo Hợp Đồng [${contract.title}]` // Assuming contract.title is used for the message, as contract.code might not exist or be available here.
+        );
+    }
 
     // Notify Assginee or Admins
     const admins = await prisma.user.findMany({ where: { role: 'ADMIN' }, select: { id: true } });
@@ -35,6 +48,7 @@ export async function createContract(data: { title: string, content: string, var
     }
 
     revalidatePath('/contracts');
+    if (data.customerId) revalidatePath(`/customers/${data.customerId}`);
     return contract;
 }
 

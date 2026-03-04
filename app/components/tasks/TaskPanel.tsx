@@ -30,6 +30,7 @@ export function TaskPanel({ initialTasks, users, entityType, entityId, initialTi
     const canDelete = isAdmin || permissions.includes('TASKS_DELETE');
 
     const [isCreateModalOpen, setCreateModalOpen] = useState(false);
+    const [isViewAllModalOpen, setViewAllModalOpen] = useState(false);
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [priority, setPriority] = useState('MEDIUM');
@@ -37,6 +38,23 @@ export function TaskPanel({ initialTasks, users, entityType, entityId, initialTi
     const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
     const [selectedObservers, setSelectedObservers] = useState<string[]>([]);
     const [isSaving, setIsSaving] = useState(false);
+
+    // Filter tasks logic
+    const currentUserTasks = initialTasks.filter((t: any) => {
+        if (isAdmin) return true; // Admins see all for context
+        const userId = session?.user?.id;
+        if (!userId) return false;
+
+        const isAssignee = t.assignees?.some((a: any) => a.userId === userId);
+        const isObserver = t.observers?.some((o: any) => o.userId === userId);
+        const isCreator = t.creatorId === userId;
+
+        return isAssignee || isObserver || isCreator;
+    });
+
+    const activeTasks = currentUserTasks.filter(t => t.status !== 'DONE' && t.status !== 'CANCELLED');
+    const displayTasks = activeTasks.slice(0, 3);
+    const hasMoreTasks = activeTasks.length > 3;
 
     const handleOpenModal = () => {
         if (!title) setTitle(initialTitle || '');
@@ -147,14 +165,14 @@ export function TaskPanel({ initialTasks, users, entityType, entityId, initialTi
 
             {/* List */}
             <div style={{ padding: '1rem', overflowY: 'auto', flex: 1, backgroundColor: 'white' }}>
-                {initialTasks.length === 0 ? (
+                {activeTasks.length === 0 ? (
                     <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
                         <CheckSquare size={32} style={{ margin: '0 auto 1rem', opacity: 0.2 }} />
-                        <p style={{ fontSize: '0.85rem', margin: 0 }}>Chưa có công việc nào gắn với tài liệu này.</p>
+                        <p style={{ fontSize: '0.85rem', margin: 0 }}>Không có công việc nào đang chờ xử lý.</p>
                     </div>
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                        {initialTasks.map(task => {
+                        {displayTasks.map(task => {
                             const assigneesNames = task.assignees?.map((a: any) => a.user.name || a.user.email).join(', ') || 'Chưa phân công';
                             const isOverdue = task.dueDate && task.status !== 'DONE' && new Date(task.dueDate).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0);
 
@@ -228,7 +246,7 @@ export function TaskPanel({ initialTasks, users, entityType, entityId, initialTi
 
                                         <div style={{ display: 'flex', gap: '0.25rem' }}>
                                             <Link href={`/tasks/${task.id}`}>
-                                                <button style={{ color: 'var(--primary)', padding: '6px', borderRadius: '4px', transition: 'background 0.2s', backgroundColor: 'transparent' }} title="Full chi tiết" className="hover:bg-indigo-50">
+                                                <button style={{ color: 'var(--primary)', padding: '6px', borderRadius: '4px', transition: 'background 0.2s', backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }} title="Full chi tiết" className="hover:bg-indigo-50">
                                                     <MessageSquare size={16} />
                                                 </button>
                                             </Link>
@@ -242,9 +260,117 @@ export function TaskPanel({ initialTasks, users, entityType, entityId, initialTi
                                 </div>
                             );
                         })}
+                        {hasMoreTasks && (
+                            <button
+                                onClick={() => setViewAllModalOpen(true)}
+                                style={{
+                                    marginTop: '0.5rem',
+                                    padding: '0.75rem',
+                                    width: '100%',
+                                    backgroundColor: '#f1f5f9',
+                                    color: 'var(--primary)',
+                                    border: '1px dashed #cbd5e1',
+                                    borderRadius: '8px',
+                                    fontWeight: 600,
+                                    fontSize: '0.875rem',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                                className="hover:bg-slate-200"
+                            >
+                                Xem tất cả {activeTasks.length} công việc
+                            </button>
+                        )}
                     </div>
                 )}
             </div>
+
+            <Modal isOpen={isViewAllModalOpen} onClose={() => setViewAllModalOpen(false)} title={`Tất cả công việc (${activeTasks.length})`}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem', maxHeight: '70vh', overflowY: 'auto' }}>
+                    {activeTasks.map(task => {
+                        const assigneesNames = task.assignees?.map((a: any) => a.user.name || a.user.email).join(', ') || 'Chưa phân công';
+                        const isOverdue = task.dueDate && task.status !== 'DONE' && new Date(task.dueDate).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0);
+
+                        return (
+                            <div key={task.id} style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                padding: '1rem',
+                                border: '1px solid var(--border)',
+                                borderRadius: '8px',
+                                backgroundColor: task.status === 'DONE' ? '#f8fafc' : 'white',
+                                boxShadow: 'var(--shadow-sm)'
+                            }}>
+                                {/* Task Header info */}
+                                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                    <Link href={`/tasks/${task.id}`} style={{ color: 'var(--text-main)', textDecoration: 'none', fontWeight: 600, fontSize: '1rem', lineHeight: 1.4, flex: 1 }} className="hover:text-primary">
+                                        <span style={{ textDecoration: task.status === 'DONE' ? 'line-through' : 'none', color: task.status === 'DONE' ? 'var(--text-muted)' : 'inherit' }}>
+                                            {task.title}
+                                        </span>
+                                    </Link>
+                                </div>
+
+                                {/* Tags */}
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.75rem' }}>
+                                    <span style={{
+                                        padding: '2px 8px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 600,
+                                        backgroundColor: task.priority === 'URGENT' ? '#fee2e2' : (task.priority === 'HIGH' ? '#fef3c7' : '#f1f5f9'),
+                                        color: task.priority === 'URGENT' ? '#dc2626' : (task.priority === 'HIGH' ? '#d97706' : '#475569')
+                                    }}>
+                                        {task.priority === 'URGENT' ? 'Khẩn Cấp' : (task.priority === 'HIGH' ? 'Cao' : (task.priority === 'LOW' ? 'Thấp' : 'Trung Bình'))}
+                                    </span>
+                                    {derivedProgress(task) && (
+                                        <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 600, backgroundColor: '#e0e7ff', padding: '2px 8px', borderRadius: '999px' }}>
+                                            {derivedProgress(task)}
+                                        </span>
+                                    )}
+                                </div>
+
+                                {/* Sub details */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <User size={14} /> <span>{assigneesNames}</span>
+                                    </div>
+                                    {task.dueDate && (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: isOverdue ? '#dc2626' : 'inherit' }}>
+                                            <Clock size={14} /> <span>{new Date(task.dueDate).toLocaleDateString('vi-VN')}</span>
+                                            {isOverdue && <span style={{ fontSize: '0.7rem', padding: '2px 6px', background: '#fee2e2', color: '#dc2626', borderRadius: '4px', fontWeight: 600 }}>Quá hạn</span>}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Actions */}
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: '1rem', marginTop: 'auto' }}>
+                                    <select
+                                        value={task.status}
+                                        onChange={(e) => canEdit ? updateStatus(task.id, e.target.value) : null}
+                                        disabled={!canEdit}
+                                        style={{
+                                            padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border)',
+                                            fontSize: '0.875rem', outline: 'none', backgroundColor: '#f8fafc', fontWeight: 500,
+                                            color: task.status === 'DONE' ? 'var(--success)' : 'var(--text-main)'
+                                        }}
+                                    >
+                                        <option value="TODO">Cần Làm</option>
+                                        <option value="IN_PROGRESS">Đang Xử Lý</option>
+                                        <option value="REVIEW">Chờ Duyệt</option>
+                                        <option value="DONE">Hoàn Thành</option>
+                                        <option value="CANCELLED">Hủy</option>
+                                    </select>
+
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <Link href={`/tasks/${task.id}`}>
+                                            <button style={{ color: 'var(--primary)', padding: '8px', borderRadius: '6px', transition: 'background 0.2s', backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }} title="Full chi tiết" className="hover:bg-indigo-50">
+                                                <MessageSquare size={18} />
+                                            </button>
+                                        </Link>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </Modal>
 
             <Modal isOpen={isCreateModalOpen} onClose={() => setCreateModalOpen(false)} title="Giao Việc Liên Quan">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', paddingTop: '1rem' }}>

@@ -1,7 +1,10 @@
 'use server'
 
 import { prisma } from '@/lib/prisma';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
 import { revalidatePath } from 'next/cache';
+import { logCustomerActivity } from "@/lib/customerLogger";
 
 export async function createQuote(data: { title: string, content: string, variables: string, customerId: string, templateId: string, assignedToId?: string }, creatorId?: string) {
     const quote = await prisma.quote.create({ data });
@@ -28,7 +31,18 @@ export async function createQuote(data: { title: string, content: string, variab
         console.error("Failed to create notifications for new quote:", error);
     }
 
+    const session = await getServerSession(authOptions);
+    if (session?.user?.id && data.customerId) {
+        await logCustomerActivity(
+            data.customerId,
+            session.user.id,
+            'TẠO_BÁO_GIÁ',
+            `Đã tạo Báo Giá [${quote.title}]`
+        );
+    }
+
     revalidatePath('/quotes');
+    if (data.customerId) revalidatePath(`/customers/${data.customerId}`);
     return quote;
 }
 

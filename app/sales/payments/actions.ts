@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { revalidatePath } from 'next/cache';
+import { logCustomerActivity } from '@/lib/customerLogger';
 
 async function getUser() {
     const session = await getServerSession(authOptions);
@@ -107,6 +108,8 @@ export async function createSalesPayment(data: any) {
             where: { id: data.customerId },
             data: { totalDebt: customer.totalDebt - data.amount } // totalDebt should go DOWN when we receive payment
         });
+
+        await logCustomerActivity(data.customerId, user.id, 'NHẬN_THANH_TOÁN', `Thu tiền ${data.amount.toLocaleString('vi-VN')} đ (Mã PT: ${code})`);
 
         return payment;
     });
