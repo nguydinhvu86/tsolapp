@@ -1,271 +1,525 @@
-'use client'
+'use client';
 
-import React, { useMemo } from 'react';
-import { Card } from '@/app/components/ui/Card';
-import { Button } from '@/app/components/ui/Button';
-import { FileText, FileSpreadsheet, FileOutput, FilePlus2, TrendingUp, Activity, ArrowUpRight, ArrowDownRight, FileStack, Mail, Plus } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import Link from 'next/link';
+import React, { useState, useEffect } from 'react';
+import { DollarSign, Receipt, CreditCard, Users, Box, Briefcase, Plus, X, CheckCircle2, Circle, Clock, CheckCheck } from 'lucide-react';
+import { AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { formatMoney } from '@/lib/utils/formatters';
 
-export function DashboardClient({ initialData }: { initialData: any }) {
+// Mock data for charts
+const revenueData = [
+    { name: 'T1', value: 1.8 },
+    { name: 'T2', value: 2.1 },
+    { name: 'T3', value: 2.3 },
+    { name: 'T4', value: 2.0 },
+    { name: 'T5', value: 2.5 },
+    { name: 'T6', value: 2.8 },
+    { name: 'T7', value: 2.6 },
+    { name: 'T8', value: 3.0 },
+    { name: 'T9', value: 2.9 },
+    { name: 'T10', value: 3.2 },
+    { name: 'T11', value: 2.7 },
+    { name: 'T12', value: 2.5 },
+];
 
-    // Process data for the monthly chart
-    const chartData = useMemo(() => {
-        const months = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
-        const currentYear = new Date().getFullYear();
+const salesDistribution = [
+    { name: 'Điện tử', value: 40 },
+    { name: 'Văn phòng phẩm', value: 20 },
+    { name: 'Thực phẩm', value: 15 },
+    { name: 'Khác', value: 25 },
+];
+const COLORS = ['#667eea', '#43e97b', '#fa709a', '#4facfe'];
 
-        // Initialize 12 months data
-        const data = months.map(m => ({
-            name: m,
-            BaoGia: 0,
-            HopDong: 0
-        }));
+interface TodoItem {
+    id: string;
+    text: string;
+    completed: boolean;
+    createdAt: number;
+}
 
-        // Count Quotes
-        initialData.recentActivity.quotes.forEach((q: { createdAt: string | Date }) => {
-            const date = new Date(q.createdAt);
-            if (date.getFullYear() === currentYear) {
-                data[date.getMonth()].BaoGia += 1;
+import { getTodos, addTodo, toggleTodo, deleteTodo } from '@/app/actions/todo';
+
+function TodoListWidget() {
+    const [todos, setTodos] = useState<any[]>([]);
+    const [inputValue, setInputValue] = useState('');
+    const [showAll, setShowAll] = useState(false);
+    const [isLoaded, setIsLoaded] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Fetch todos from database
+    useEffect(() => {
+        const fetchTodos = async () => {
+            try {
+                const res = await getTodos();
+                if (res.status === 'success') {
+                    setTodos(res.todos);
+                }
+            } catch (error) {
+                console.error("Failed to fetch todos", error);
+            } finally {
+                setIsLoaded(true);
             }
-        });
+        };
 
-        // Count Contracts
-        initialData.recentActivity.contracts.forEach((c: { createdAt: string | Date }) => {
-            const date = new Date(c.createdAt);
-            if (date.getFullYear() === currentYear) {
-                data[date.getMonth()].HopDong += 1;
+        fetchTodos();
+    }, []);
+
+    const handleAddTodo = async (e?: React.FormEvent | React.KeyboardEvent) => {
+        if (e) e.preventDefault();
+        if (!inputValue.trim() || isSubmitting) return;
+
+        setIsSubmitting(true);
+        // Optimistic update
+        const tempId = 'temp-' + Date.now();
+        const newTempTodo = {
+            id: tempId,
+            text: inputValue.trim(),
+            completed: false,
+            createdAt: new Date(),
+            updatedAt: new Date()
+        };
+        setTodos(prev => [newTempTodo, ...prev]);
+        setInputValue('');
+
+        try {
+            const res = await addTodo(newTempTodo.text);
+            if (res.status === 'success' && res.todo) {
+                // Replace temp ID with real DB ID
+                setTodos(prev => prev.map(t => t.id === tempId ? res.todo : t));
+            } else {
+                // Revert on failure
+                setTodos(prev => prev.filter(t => t.id !== tempId));
             }
-        });
+        } catch (error) {
+            console.error("Failed to add todo", error);
+            setTodos(prev => prev.filter(t => t.id !== tempId));
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
-        // Cut off until current month
-        const currentMonthIndex = new Date().getMonth();
-        return data.slice(Math.max(0, currentMonthIndex - 5), currentMonthIndex + 2);
+    const handleToggleTodo = async (id: string, currentStatus: boolean) => {
+        // Optimistic delete for completion
+        const backupTodos = [...todos];
+        setTodos(prev => prev.filter(todo => todo.id !== id));
 
-    }, [initialData]);
+        try {
+            const res = await deleteTodo(id);
+            if (res.status === 'error') {
+                // Revert
+                setTodos(backupTodos);
+            }
+        } catch (error) {
+            console.error("Failed to mark todo as completed", error);
+            setTodos(backupTodos);
+        }
+    };
 
-    const aggregateActivity = useMemo(() => {
-        const all: any[] = [];
-        initialData.recentActivity.quotes.forEach((x: any) => all.push({ ...x, type: 'báo giá', icon: FileSpreadsheet }));
-        initialData.recentActivity.contracts.forEach((x: any) => all.push({ ...x, type: 'hợp đồng', icon: FileText }));
-        initialData.recentActivity.appendices?.forEach((x: any) => all.push({ ...x, type: 'phụ lục', icon: FileStack }));
-        initialData.recentActivity.dispatches?.forEach((x: any) => all.push({ ...x, type: 'công văn', icon: Mail }));
-        initialData.recentActivity.handovers.forEach((x: any) => all.push({ ...x, type: 'bàn giao', icon: FileOutput }));
-        initialData.recentActivity.payments.forEach((x: any) => all.push({ ...x, type: 'đề nghị thanh toán', icon: FilePlus2 }));
+    const handleRemoveTodo = async (id: string) => {
+        // Same logic for manual remove
+        const backupTodos = [...todos];
+        setTodos(prev => prev.filter(todo => todo.id !== id));
 
-        return all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 6);
-    }, [initialData]);
+        try {
+            const res = await deleteTodo(id);
+            if (res.status === 'error') {
+                setTodos(backupTodos);
+            }
+        } catch (error) {
+            console.error("Failed to remove todo", error);
+            setTodos(backupTodos);
+        }
+    };
+
+    // Lọc và hiển thị chỉ tối đa 5 items nếu không showAll
+    const displayedTodos = showAll ? todos : todos.slice(0, 5);
+
+    if (!isLoaded) return (
+        <div className="flex items-center justify-center p-8 h-full">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+    ); // Avoid hydration mismatch and show loading state
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            {/* Header Area */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '0.5rem' }}>
-                <div>
-                    <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 0.5rem 0', letterSpacing: '-0.025em', color: 'var(--text-main)' }}>
-                        Bảng Điều Khiển
-                    </h1>
-                    <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9375rem' }}>
-                        Tổng quan hoạt động kinh doanh và quản lý hồ sơ của bạn.
-                    </p>
-                </div>
-                <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--surface)', padding: '0.5rem 1rem', borderRadius: '999px', border: '1px solid var(--border)' }}>
-                    <Activity size={16} color="var(--primary)" /> Dữ liệu được cập nhật tự động
-                </div>
+        <div className="flex flex-col h-full opacity-0 animate-fade-in" style={{ animationFillMode: 'forwards', animationDelay: '0.1s' }}>
+            <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <CheckCircle2 size={20} className="text-emerald-500" />
+                    Công việc cần làm
+                </h3>
+                {todos.length > 5 && (
+                    <button
+                        onClick={() => setShowAll(!showAll)}
+                        className="text-blue-600 text-sm hover:underline font-medium bg-blue-50 px-3 py-1 rounded-full transition-colors hover:bg-blue-100"
+                    >
+                        {showAll ? 'Thu gọn danh sách nhỏ lại' : `Xem toàn bộ ${todos.length} công việc`}
+                    </button>
+                )}
             </div>
 
-            {/* Quick Actions Panel */}
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                <Link href="/contract-appendices/new" style={{ textDecoration: 'none' }}>
-                    <Button variant="secondary" className="gap-2" style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-main)', fontWeight: 600 }}>
-                        <Plus size={16} color="var(--primary)" /> Soạn Phụ Lục Nhanh
-                    </Button>
-                </Link>
-                <Link href="/dispatches/new" style={{ textDecoration: 'none' }}>
-                    <Button variant="secondary" className="gap-2" style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-main)', fontWeight: 600 }}>
-                        <Plus size={16} color="var(--primary)" /> Soạn Công Văn / TB
-                    </Button>
-                </Link>
-                <Link href="/quotes/new" style={{ textDecoration: 'none' }}>
-                    <Button variant="secondary" className="gap-2" style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-main)', fontWeight: 600 }}>
-                        <Plus size={16} color="var(--primary)" /> Tạo Báo Giá
-                    </Button>
-                </Link>
-            </div>
+            <form onSubmit={handleAddTodo} className="mb-4 flex gap-2 items-start">
+                <textarea
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleAddTodo();
+                        }
+                    }}
+                    placeholder="Nhập nội dung vào đây...&#10;(Nhấn Enter để lưu, Shift + Enter để xuống dòng dài hơn)"
+                    className="flex-1 text-[15px] p-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all min-h-[64px] max-h-[250px] resize-y shadow-inner bg-gray-50/30"
+                    rows={2}
+                />
+                <button
+                    type="submit"
+                    title="Thêm công việc"
+                    disabled={!inputValue.trim()}
+                    className="p-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 transition-colors h-[64px] w-[54px] flex items-center justify-center shadow-sm"
+                >
+                    <Plus size={24} />
+                </button>
+            </form>
 
-            {/* KPI Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
-                <MetricCard
-                    title="Tổng Báo Giá"
-                    value={initialData.totalQuotes}
-                    subtitle={`${initialData.acceptedQuotes} đã duyệt`}
-                    icon={<FileSpreadsheet size={24} color="#4f46e5" />}
-                    trend={+12}
-                />
-                <MetricCard
-                    title="Hợp Đồng Đã Ký"
-                    value={initialData.signedContracts}
-                    subtitle={`Trên ${initialData.totalContracts} tổng số`}
-                    icon={<FileText size={24} color="#10b981" />}
-                    trend={+5}
-                />
-                <MetricCard
-                    title="Biên Bản Bàn Giao"
-                    value={initialData.totalHandovers}
-                    subtitle="Đang quản lý"
-                    icon={<FileOutput size={24} color="#f59e0b" />}
-                    trend={0}
-                />
-                <MetricCard
-                    title="Đề Nghị Thanh Toán"
-                    value={initialData.totalPayments}
-                    subtitle="Đang quản lý"
-                    icon={<FilePlus2 size={24} color="#8b5cf6" />}
-                    trend={-2}
-                />
-                <MetricCard
-                    title="Phụ Lục"
-                    value={initialData.totalAppendices}
-                    subtitle="Đính kèm HĐ"
-                    icon={<FileStack size={24} color="#ec4899" />}
-                    trend={+8}
-                />
-                <MetricCard
-                    title="Công Văn"
-                    value={initialData.totalDispatches}
-                    subtitle="Đã phát hành"
-                    icon={<Mail size={24} color="#06b6d4" />}
-                    trend={+15}
-                />
-            </div>
-
-            {/* Chart and Activity Feed Split */}
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', marginTop: '0.5rem' }}>
-                <Card style={{ padding: '2rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
-                        <div>
-                            <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.125rem', fontWeight: 700 }}>Tăng trưởng Hồ sơ</h3>
-                            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem' }}>Lưu lượng Báo giá & Hợp đồng 6 tháng gần nhất</p>
-                        </div>
+            <div className="flex-1 overflow-y-auto pr-1" style={{ maxHeight: showAll ? '400px' : 'auto' }}>
+                {todos.length === 0 ? (
+                    <div className="text-center text-sm text-gray-400 mt-8">
+                        Chưa có công việc nào.
                     </div>
-                    <div style={{ height: '320px', width: '100%', marginLeft: '-15px' }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                                <defs>
-                                    <linearGradient id="colorBaoGia" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.2} />
-                                        <stop offset="95%" stopColor="#4f46e5" stopOpacity={0} />
-                                    </linearGradient>
-                                    <linearGradient id="colorHopDong" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
-                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 13 }} dy={10} />
-                                <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 13 }} dx={-10} />
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.5} />
-                                <Tooltip
-                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: 'var(--shadow-lg)', padding: '12px' }}
-                                    cursor={{ stroke: 'var(--border)', strokeWidth: 1, strokeDasharray: '4 4' }}
-                                />
-                                <Area type="monotone" dataKey="BaoGia" name="Báo Giá" stroke="#4f46e5" strokeWidth={3} fillOpacity={1} fill="url(#colorBaoGia)" />
-                                <Area type="monotone" dataKey="HopDong" name="Hợp Đồng" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorHopDong)" />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </div>
-                </Card>
-
-                <Card style={{ padding: '2rem', display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ marginBottom: '1.5rem' }}>
-                        <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.125rem', fontWeight: 700 }}>Hoạt động Gần Đây</h3>
-                        <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem' }}>Cập nhật luồng công việc mới nhất.</p>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
-                        {aggregateActivity.map((activity, i) => {
-                            const Icon = activity.icon;
-                            return (
-                                <div key={i} style={{ display: 'flex', gap: '1rem', paddingBottom: '1rem', borderBottom: i !== aggregateActivity.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--background)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', flexShrink: 0 }}>
-                                        <Icon size={18} />
-                                    </div>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <p style={{ margin: '0 0 0.25rem 0', fontWeight: 500, fontSize: '0.9375rem', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                            Đã tạo một {activity.type} mới
-                                        </p>
-                                        <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-                                            {getTimeAgo(new Date(activity.createdAt))} - ID: {activity.id.slice(0, 6)}...
-                                        </p>
+                ) : (
+                    <ul className="space-y-2">
+                        {displayedTodos.map(todo => (
+                            <li
+                                key={todo.id}
+                                className={`flex items-start gap-2.5 p-3 rounded-lg group transition-all ${todo.completed ? 'bg-gray-50/50 opacity-75 border border-transparent' : 'bg-white shadow-sm border border-gray-100 hover:border-blue-200'}`}
+                            >
+                                <button
+                                    onClick={() => handleToggleTodo(todo.id, todo.completed)}
+                                    className="mt-0.5 text-gray-400 hover:text-emerald-500 flex-shrink-0 transition-colors"
+                                    title="Hoàn thành công việc"
+                                >
+                                    <Circle size={20} className="hover:text-emerald-500 transition-colors" />
+                                </button>
+                                <div className="flex-1 flex flex-col min-w-0 pt-0.5">
+                                    <span className={`text-[15px] font-medium text-gray-800 leading-relaxed whitespace-pre-wrap break-words`}>
+                                        {todo.text}
+                                    </span>
+                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-[11px] text-gray-400">
+                                        <span className="flex items-center gap-1 leading-none" title="Ngày tạo">
+                                            <Clock size={11} className={todo.completed ? "text-gray-300" : "text-blue-400/70"} />
+                                            {new Date(todo.createdAt).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                        </span>
                                     </div>
                                 </div>
-                            )
-                        })}
-
-                        {aggregateActivity.length === 0 && (
-                            <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem 0', fontSize: '0.875rem' }}>
-                                Chưa có hoạt động nào.
-                            </div>
-                        )}
-                    </div>
-                </Card>
+                                <button
+                                    onClick={() => handleRemoveTodo(todo.id)}
+                                    className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity"
+                                    title="Xóa công việc"
+                                >
+                                    <X size={16} />
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                )}
             </div>
         </div>
     );
 }
 
-// Sub-component for KPI Cards
-function MetricCard({ title, value, subtitle, icon, trend }: { title: string, value: string | number, subtitle: string, icon: React.ReactNode, trend: number }) {
-    const isPositive = trend > 0;
-    const isNeutral = trend === 0;
+export function DashboardClient({ kpiData, userTasks = [] }: { kpiData?: any, userTasks?: any[] }) {
+
+    // Revenue calculations
+    const revenueThisMonth = kpiData?.revenueThisMonth || 0;
+    const revenueLastMonth = kpiData?.revenueLastMonth || 0;
+
+    let revenueGrowth = 0;
+    if (revenueLastMonth > 0) {
+        revenueGrowth = ((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100;
+    } else if (revenueThisMonth > 0) {
+        // Mới có doanh thu tháng này
+        revenueGrowth = 100;
+    }
+
+    const isRevenueUp = revenueGrowth >= 0;
+
+    // Output calculations
+    const invoicesThisMonth = kpiData?.invoicesThisMonth || 0;
+    const invoicesLastMonth = kpiData?.invoicesLastMonth || 0;
+
+    let invoiceGrowth = 0;
+    if (invoicesLastMonth > 0) {
+        invoiceGrowth = ((invoicesThisMonth - invoicesLastMonth) / invoicesLastMonth) * 100;
+    } else if (invoicesThisMonth > 0) {
+        invoiceGrowth = 100;
+    }
+    const isInvoiceUp = invoiceGrowth >= 0;
+
+    // Payment calculations
+    const paymentsThisMonth = kpiData?.paymentsThisMonth || 0;
+    const paymentsLastMonth = kpiData?.paymentsLastMonth || 0;
+
+    let paymentGrowth = 0;
+    if (paymentsLastMonth > 0) {
+        paymentGrowth = ((paymentsThisMonth - paymentsLastMonth) / paymentsLastMonth) * 100;
+    } else if (paymentsThisMonth > 0) {
+        paymentGrowth = 100;
+    }
+    const isPaymentUp = paymentGrowth >= 0;
+
+    // Debt calculations
+    const debtThisMonth = kpiData?.debtThisMonth || 0;
+    const debtLastMonth = kpiData?.debtLastMonth || 0;
+
+    let debtGrowth = 0;
+    if (debtLastMonth > 0) {
+        debtGrowth = ((debtThisMonth - debtLastMonth) / debtLastMonth) * 100;
+    } else if (debtThisMonth > 0) {
+        debtGrowth = 100;
+    }
+    const isDebtUp = debtGrowth >= 0;
 
     return (
-        <Card style={{ padding: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                <div>
-                    <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        {title}
-                    </p>
-                    <h4 style={{ margin: 0, fontSize: '2rem', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.025em' }}>
-                        {value}
-                    </h4>
-                </div>
-                <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'var(--background)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {icon}
-                </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                {!isNeutral && (
-                    <div style={{
-                        display: 'flex', alignItems: 'center', gap: '0.25rem',
-                        fontSize: '0.8125rem', fontWeight: 600,
-                        color: isPositive ? 'var(--success)' : 'var(--danger)',
-                        background: isPositive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                        padding: '0.125rem 0.5rem', borderRadius: '999px'
-                    }}>
-                        {isPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-                        {Math.abs(trend)}%
+        <div className="bg-gray-50/50 min-h-screen p-4 xl:p-8 pt-4 xl:pt-6">
+            <div className="max-w-[1400px] mx-auto space-y-8 pb-10">
+                <div className="flex flex-col gap-6 -m-2">
+                    {/* Header Info */}
+                    <div className="mb-2">
+                        <h2 className="text-3xl font-bold text-gray-800 tracking-tight">Bảng Điều Khiển</h2>
+                        <p className="text-gray-600 mt-1">Tổng quan hoạt động doanh nghiệp</p>
                     </div>
-                )}
-                {isNeutral && (
-                    <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', background: 'var(--border)', padding: '0.125rem 0.5rem', borderRadius: '999px' }}>
-                        -
-                    </div>
-                )}
-                <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>{subtitle}</span>
-            </div>
-        </Card>
-    );
-}
 
-function getTimeAgo(date: Date) {
-    const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
-    let interval = seconds / 31536000;
-    if (interval > 1) return Math.floor(interval) + " năm trước";
-    interval = seconds / 2592000;
-    if (interval > 1) return Math.floor(interval) + " tháng trước";
-    interval = seconds / 86400;
-    if (interval > 1) return Math.floor(interval) + " ngày trước";
-    interval = seconds / 3600;
-    if (interval > 1) return Math.floor(interval) + " giờ trước";
-    interval = seconds / 60;
-    if (interval > 1) return Math.floor(interval) + " phút trước";
-    return Math.floor(seconds) + " giây trước";
+                    {/* KPI Cards */}
+                    <div
+                        className="gap-4 mb-8"
+                        style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))'
+                        }}
+                    >
+                        {/* Doanh Thu */}
+                        <div className="stat-card stat-card-purple flex-1 min-w-[200px]">
+                            <div className="flex justify-between items-start mb-2">
+                                <span className="stat-title text-sm font-semibold uppercase tracking-wide">Doanh Thu Tháng</span>
+                                <div className="stat-icon p-2 rounded-xl flex items-center justify-center">
+                                    <DollarSign size={20} strokeWidth={2.5} />
+                                </div>
+                            </div>
+                            <div className="stat-info">
+                                <span className="stat-value text-3xl font-bold mb-1 truncate" title={formatMoney(revenueThisMonth)}>{formatMoney(revenueThisMonth)}</span>
+                                <div className="text-[12px] font-medium mt-1" style={{ color: isRevenueUp ? '#10b981' : '#ef4444' }}>
+                                    <span className="font-bold">{isRevenueUp ? '↑' : '↓'} {Math.abs(revenueGrowth).toFixed(1)}%</span>
+                                    <span className="text-purple-700 opacity-80" style={{ color: 'inherit' }}> so với tháng trước</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Hóa Đơn Phát Hành */}
+                        <div className="stat-card stat-card-amber flex-1 min-w-[200px]">
+                            <div className="flex justify-between items-start mb-2">
+                                <span className="stat-title text-sm font-semibold uppercase tracking-wide">Hóa Đơn Phát Hành</span>
+                                <div className="stat-icon p-2 rounded-xl flex items-center justify-center">
+                                    <Receipt size={20} strokeWidth={2.5} />
+                                </div>
+                            </div>
+                            <div className="stat-info">
+                                <span className="stat-value text-3xl font-bold mb-1">{invoicesThisMonth}</span>
+                                <div className="text-[12px] font-medium mt-1" style={{ color: isInvoiceUp ? '#10b981' : '#ef4444' }}>
+                                    <span className="font-bold">{isInvoiceUp ? '↑' : '↓'} {Math.abs(invoiceGrowth).toFixed(1)}%</span>
+                                    <span className="text-amber-700 opacity-80" style={{ color: 'inherit' }}> so với tháng trước</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Thực Thu */}
+                        <div className="stat-card stat-card-blue flex-1 min-w-[200px]">
+                            <div className="flex justify-between items-start mb-2">
+                                <span className="stat-title text-sm font-semibold uppercase tracking-wide">Tiền Đã Thu</span>
+                                <div className="stat-icon p-2 rounded-xl flex items-center justify-center">
+                                    <CreditCard size={20} strokeWidth={2.5} />
+                                </div>
+                            </div>
+                            <div className="stat-info">
+                                <span className="stat-value text-3xl font-bold mb-1 truncate" title={formatMoney(paymentsThisMonth)}>{formatMoney(paymentsThisMonth)}</span>
+                                <div className="text-[12px] font-medium mt-1" style={{ color: isPaymentUp ? '#10b981' : '#ef4444' }}>
+                                    <span className="font-bold">{isPaymentUp ? '↑' : '↓'} {Math.abs(paymentGrowth).toFixed(1)}%</span>
+                                    <span className="text-blue-700 opacity-80" style={{ color: 'inherit' }}> so với tháng trước</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Công Nợ Phải Thu */}
+                        <div className="stat-card stat-card-green flex-1 min-w-[200px]">
+                            <div className="flex justify-between items-start mb-2">
+                                <span className="stat-title text-sm font-semibold uppercase tracking-wide" style={{ color: '#059669' }}>Công Nợ Phải Thu</span>
+                                <div className="stat-icon p-2 rounded-xl flex items-center justify-center">
+                                    <Briefcase size={20} strokeWidth={2.5} />
+                                </div>
+                            </div>
+                            <div className="stat-info">
+                                <span className="stat-value text-3xl font-bold mb-1 truncate" style={{ color: '#059669' }} title={formatMoney(debtThisMonth)}>{formatMoney(debtThisMonth)}</span>
+                                <div className="text-[12px] font-medium mt-1" style={{ color: isDebtUp ? '#ef4444' : '#10b981' }}>
+                                    <span className="font-bold">{isDebtUp ? '↑' : '↓'} {Math.abs(debtGrowth).toFixed(1)}%</span>
+                                    <span className="text-green-700 opacity-80" style={{ color: 'inherit' }}> so với tháng trước</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* My Work & Todo Row */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', marginBottom: '2rem', alignItems: 'flex-start' }}>
+                    {/* Vùng 1: Công việc của tôi */}
+                    <div style={{ flex: '3 1 500px', minWidth: 0 }} className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                <Briefcase size={20} className="text-blue-500" />
+                                Công việc của tôi
+                            </h3>
+                            <span className="text-sm font-medium bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full">{userTasks.length} việc</span>
+                        </div>
+
+                        {userTasks.length === 0 ? (
+                            <div className="flex-1 flex flex-col items-center justify-center text-gray-400 bg-gray-50/50 rounded-lg border border-dashed border-gray-200 p-8">
+                                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
+                                    <Briefcase size={24} className="text-gray-200" />
+                                </div>
+                                <p className="font-medium text-gray-500">Chưa có công việc nào</p>
+                                <p className="text-sm mt-1 text-center max-w-sm">
+                                    Các công việc bạn được giao phụ trách hoặc theo dõi sẽ hiển thị tại đây.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="flex-1 overflow-auto pr-2 -mr-2" style={{ maxHeight: '450px' }}>
+                                <div className="table-wrapper">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Tên công việc</th>
+                                                <th>Mức độ</th>
+                                                <th>Hạn chót</th>
+                                                <th>Liên quan</th>
+                                                <th>Tình trạng</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {userTasks.map((task) => {
+                                                const relatedEntityName = task.customer?.name || task.contract?.code || task.salesInvoice?.code || task.salesOrder?.code || '';
+                                                const isDueSoon = task.dueDate && new Date(task.dueDate).getTime() - new Date().getTime() < 86400000 && task.status !== 'DONE';
+
+                                                return (
+                                                    <tr key={task.id}>
+                                                        <td>
+                                                            <div style={{ fontWeight: 500, color: isDueSoon ? 'var(--danger)' : 'var(--text-main)', display: 'flex', alignItems: 'center' }}>
+                                                                <a href={`/tasks/${task.id}`} className="text-blue-600 hover:underline">
+                                                                    {task.title}
+                                                                </a>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <span style={{
+                                                                padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600,
+                                                                backgroundColor: task.priority === 'URGENT' ? 'var(--danger)' : (task.priority === 'HIGH' ? 'var(--warning)' : '#e2e8f0'),
+                                                                color: task.priority === 'URGENT' || task.priority === 'HIGH' ? '#fff' : '#000'
+                                                            }}>
+                                                                {task.priority === 'MEDIUM' ? 'TRUNG BÌNH' : task.priority === 'HIGH' ? 'CAO' : task.priority === 'URGENT' ? 'GẤP' : 'THẤP'}
+                                                            </span>
+                                                        </td>
+                                                        <td style={{ color: isDueSoon ? 'var(--danger)' : 'inherit' }}>
+                                                            {task.dueDate ? new Date(task.dueDate).toLocaleDateString('vi-VN') : '-'}
+                                                        </td>
+                                                        <td>
+                                                            {relatedEntityName ? (
+                                                                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{relatedEntityName}</span>
+                                                            ) : (
+                                                                <span style={{ color: 'var(--text-muted)' }}>-</span>
+                                                            )}
+                                                        </td>
+                                                        <td>
+                                                            <select
+                                                                value={task.status}
+                                                                onChange={(e) => {
+                                                                    // Handle status update
+                                                                }}
+                                                                style={{
+                                                                    padding: '4px 8px', borderRadius: 'var(--radius)',
+                                                                    border: '1px solid var(--border)', fontSize: '0.85rem',
+                                                                    backgroundColor: 'transparent', cursor: 'pointer'
+                                                                }}
+                                                            >
+                                                                <option value="TODO">Cần Làm</option>
+                                                                <option value="IN_PROGRESS">Đang Xử Lý</option>
+                                                                <option value="REVIEW">Chờ Duyệt</option>
+                                                                <option value="DONE">Hoàn Thành</option>
+                                                            </select>
+                                                        </td>
+                                                    </tr>
+                                                )
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Vùng 2: Công việc cần làm */}
+                    <div style={{ flex: '1 1 300px', minWidth: 0 }} className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col">
+                        <TodoListWidget />
+                    </div>
+                </div>
+
+                {/* Charts Row */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Doanh Thu Theo Tháng</h3>
+                        <div style={{ height: '350px', width: '100%', marginLeft: '-15px' }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={revenueData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#667eea" stopOpacity={0.8} />
+                                            <stop offset="95%" stopColor="#667eea" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 13 }} dy={10} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 13 }} dx={-10} />
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                                    <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                                    <Area type="monotone" dataKey="value" stroke="#667eea" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    <div className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Phân Bố Bán Hàng</h3>
+                        <div style={{ height: '350px', width: '100%' }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={salesDistribution}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius="50%"
+                                        outerRadius="80%"
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                        stroke="none"
+                                    >
+                                        {salesDistribution.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                                    <Legend layout="horizontal" verticalAlign="bottom" align="center" iconType="circle" />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+    );
 }

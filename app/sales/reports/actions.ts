@@ -22,7 +22,8 @@ export async function getSalesReportData() {
     // Fetch Invoices
     const invoices = await prisma.salesInvoice.findMany({
         where: {
-            date: { gte: firstDayOfYear }
+            date: { gte: firstDayOfYear },
+            status: { notIn: ['DRAFT', 'CANCELLED'] }
         },
         include: {
             customer: true,

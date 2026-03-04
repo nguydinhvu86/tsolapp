@@ -62,6 +62,7 @@ const mainNavItems: any[] = [
             { name: 'Đơn Đặt Hàng', href: '/sales/orders', permission: 'SALES_ORDERS_VIEW' },
             { name: 'Hóa Đơn / Xuất Kho', href: '/sales/invoices', permission: 'SALES_INVOICES_VIEW' },
             { name: 'Thu Tiền / Công Nợ', href: '/sales/payments', permission: 'SALES_PAYMENTS_VIEW' },
+            { name: 'Chi Phí', href: '/sales/expenses', permission: 'SALES_EXPENSES_VIEW' },
             { name: 'Báo Cáo Doanh Thu', href: '/sales/reports', permission: 'SALES_INVOICES_VIEW' }
         ]
     },
@@ -129,7 +130,7 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
                                         padding: '0.75rem 1rem', borderRadius: 'var(--radius)',
                                         backgroundColor: 'transparent', border: 'none', cursor: 'pointer',
                                         color: isChildActive ? 'var(--primary)' : 'var(--text-main)',
-                                        fontWeight: 500, transition: 'all 0.2s', outline: 'none'
+                                        fontSize: '0.875rem', fontWeight: 500, transition: 'all 0.2s', outline: 'none'
                                     }}
                                 >
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -153,7 +154,7 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
                                                                 padding: '0.5rem 0.75rem', borderRadius: 'var(--radius)',
                                                                 backgroundColor: 'transparent', border: 'none', cursor: 'pointer',
                                                                 color: isGrandChildActive ? 'var(--primary)' : 'var(--text-main)',
-                                                                fontWeight: 500, transition: 'all 0.2s', outline: 'none', fontSize: '0.9rem'
+                                                                fontWeight: 500, transition: 'all 0.2s', outline: 'none', fontSize: '0.875rem'
                                                             }}
                                                         >
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -179,7 +180,7 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
                                                                                 padding: '0.4rem 0.75rem', borderRadius: 'var(--radius)',
                                                                                 backgroundColor: isActive ? 'rgba(79, 70, 229, 0.05)' : 'transparent',
                                                                                 color: isActive ? 'var(--primary)' : 'var(--text-muted)',
-                                                                                fontSize: '0.85rem', fontWeight: isActive ? 600 : 400, textDecoration: 'none',
+                                                                                fontSize: '0.875rem', fontWeight: isActive ? 600 : 400, textDecoration: 'none',
                                                                                 transition: 'all 0.2s', display: 'block'
                                                                             }}
                                                                         >
@@ -236,7 +237,7 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
                                 padding: '0.75rem 1rem', borderRadius: 'var(--radius)',
                                 backgroundColor: isActive ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
                                 color: isActive ? 'var(--primary)' : 'var(--text-main)',
-                                fontWeight: isActive ? 600 : 500, transition: 'all 0.2s ease', textDecoration: 'none'
+                                fontSize: '0.875rem', fontWeight: isActive ? 600 : 500, transition: 'all 0.2s ease', textDecoration: 'none'
                             }}
                         >
                             <item.icon size={20} />
@@ -261,7 +262,7 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
                                 padding: '0.75rem 1rem', borderRadius: 'var(--radius)',
                                 backgroundColor: pathname === '/users' ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
                                 color: pathname === '/users' ? 'var(--primary)' : 'var(--text-main)',
-                                fontWeight: pathname === '/users' ? 600 : 500, transition: 'all 0.2s', textDecoration: 'none'
+                                fontSize: '0.875rem', fontWeight: pathname === '/users' ? 600 : 500, transition: 'all 0.2s', textDecoration: 'none'
                             }}
                         >
                             <Users size={20} />
@@ -280,7 +281,7 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
                                     padding: '0.75rem 1rem', borderRadius: 'var(--radius)',
                                     backgroundColor: pathname === '/users/roles' ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
                                     color: pathname === '/users/roles' ? 'var(--primary)' : 'var(--text-main)',
-                                    fontWeight: pathname === '/users/roles' ? 600 : 500, transition: 'all 0.2s', textDecoration: 'none'
+                                    fontSize: '0.875rem', fontWeight: pathname === '/users/roles' ? 600 : 500, transition: 'all 0.2s', textDecoration: 'none'
                                 }}
                             >
                                 <CheckSquare size={20} />
@@ -300,7 +301,7 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
                                     padding: '0.75rem 1rem', borderRadius: 'var(--radius)',
                                     backgroundColor: pathname?.startsWith('/settings') ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
                                     color: pathname?.startsWith('/settings') ? 'var(--primary)' : 'var(--text-main)',
-                                    fontWeight: pathname?.startsWith('/settings') ? 600 : 500, transition: 'all 0.2s', textDecoration: 'none'
+                                    fontSize: '0.875rem', fontWeight: pathname?.startsWith('/settings') ? 600 : 500, transition: 'all 0.2s', textDecoration: 'none'
                                 }}
                             >
                                 <Settings size={20} />

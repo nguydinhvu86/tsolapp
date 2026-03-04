@@ -26,6 +26,7 @@ model User {
   avatar                String? // Đường dẫn ảnh đại diện
   role                  String                 @default("USER") // ADMIN or USER
   permissions           String                 @default("[]") @db.Text // JSON string of granted permissions (legacy, to be deprecated or kept as overrides)
+  dashboardConfig       String                 @default("[]") @db.Text // JSON string for Dashboard customized layout
   permissionGroupId     String?
   permissionGroup       PermissionGroup?       @relation(fields: [permissionGroupId], references: [id])
   twoFactorSecret       String? // Khóa bí mật 2FA
@@ -57,6 +58,10 @@ model User {
   SalesInvoiceActivityLog  SalesInvoiceActivityLog[]
   CustomerNote             CustomerNote[]
   CustomerActivityLog      CustomerActivityLog[]
+  todos                    Todo[]
+  
+  // Expenses
+  expenses                 Expense[] @relation("ExpenseCreator")
 }
 
 model SystemSetting {
@@ -965,4 +970,47 @@ model SalesPaymentAllocation {
   createdAt DateTime @default(now())
 
   @@unique([paymentId, invoiceId])
+}
+
+model Todo {
+  id        String   @id @default(cuid())
+  text      String
+  completed Boolean  @default(false)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// --- EXPENSE MANAGEMENT MODULE ---
+
+model ExpenseCategory {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?   @db.Text
+  expenses    Expense[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Expense {
+  id            String          @id @default(cuid())
+  code          String          @unique // e.g. EXP-202310-001
+  date          DateTime        @default(now())
+  amount        Float
+  payee         String?         // Đối tượng nhận chi
+  description   String          @db.Text
+  paymentMethod String          @default("CASH") // CASH, BANK_TRANSFER, CREDIT_CARD
+  status        String          @default("COMPLETED") // PENDING, COMPLETED, CANCELLED
+  reference     String?         // Receipt number or transaction ID
+  attachment    String?         @db.Text // JSON string or URL
+  
+  categoryId    String
+  category      ExpenseCategory @relation(fields: [categoryId], references: [id])
+  
+  creatorId     String
+  creator       User            @relation("ExpenseCreator", fields: [creatorId], references: [id])
+  
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 }

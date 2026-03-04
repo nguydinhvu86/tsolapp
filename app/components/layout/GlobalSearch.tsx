@@ -44,7 +44,7 @@ export function GlobalSearch() {
             } finally {
                 setIsLoading(false);
             }
-        }, 400); // 400ms debounce
+        }, 500); // 500ms debounce
 
         return () => clearTimeout(timer);
     }, [query]);

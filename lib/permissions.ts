@@ -19,7 +19,8 @@ export const RESOURCES = [
     { id: 'SALES_ESTIMATES', name: 'Báo giá / Ước tính' },
     { id: 'SALES_ORDERS', name: 'Đơn bán hàng' },
     { id: 'SALES_INVOICES', name: 'Hóa đơn bán hàng' },
-    { id: 'SALES_PAYMENTS', name: 'Thanh toán bán hàng' }
+    { id: 'SALES_PAYMENTS', name: 'Thanh toán bán hàng' },
+    { id: 'SALES_EXPENSES', name: 'Chi phí' }
 ] as const;
 
 export const ACTIONS = [
