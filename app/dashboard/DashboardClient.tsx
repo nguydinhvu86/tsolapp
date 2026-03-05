@@ -573,150 +573,151 @@ export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices
                     </div>
                 </div>
 
-                {/* Calendar Tasks Modal */}
-                {selectedCalendarDate && (
-                    <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" style={{ zIndex: 9999 }}>
-                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden transform transition-all">
-                            <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-indigo-50/50">
-                                <div>
-                                    <h3 className="text-lg font-bold text-gray-800">
-                                        Lịch trình {format(selectedCalendarDate, 'dd/MM/yyyy')}
-                                    </h3>
-                                    <p className="text-sm text-gray-500">
-                                        {selectedCalendarTasks.length + selectedCalendarQuotes.length + selectedCalendarInvoices.length} mục
-                                    </p>
+            </div>
+
+            {/* Calendar Tasks Modal */}
+            {selectedCalendarDate && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" style={{ zIndex: 9999 }}>
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden transform transition-all">
+                        <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-indigo-50/50">
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-800">
+                                    Lịch trình {format(selectedCalendarDate, 'dd/MM/yyyy')}
+                                </h3>
+                                <p className="text-sm text-gray-500">
+                                    {selectedCalendarTasks.length + selectedCalendarQuotes.length + selectedCalendarInvoices.length} mục
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setSelectedCalendarDate(null)}
+                                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-6 bg-gray-50/30 custom-scrollbar">
+                            {(selectedCalendarTasks.length === 0 && selectedCalendarQuotes.length === 0 && selectedCalendarInvoices.length === 0) ? (
+                                <div className="flex flex-col items-center justify-center py-12 text-center">
+                                    <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                                        <CalendarIcon className="w-10 h-10 text-gray-300" />
+                                    </div>
+                                    <p className="text-gray-500 font-medium text-lg">Không có lịch trình nào</p>
+                                    <p className="text-gray-400 mt-1">Hôm nay là một ngày rảnh rỗi tuyệt vời.</p>
                                 </div>
-                                <button
-                                    onClick={() => setSelectedCalendarDate(null)}
-                                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
-                                >
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
-
-                            <div className="flex-1 overflow-y-auto p-6 bg-gray-50/30 custom-scrollbar">
-                                {(selectedCalendarTasks.length === 0 && selectedCalendarQuotes.length === 0 && selectedCalendarInvoices.length === 0) ? (
-                                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                                        <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                                            <CalendarIcon className="w-10 h-10 text-gray-300" />
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Invoices */}
+                                    {selectedCalendarInvoices.map(invoice => (
+                                        <div key={`inv-${invoice.id}`} className="border-l-4 border-l-orange-500 border-y border-r border-gray-100 rounded-lg p-3 hover:bg-orange-50/30 transition-colors shadow-sm cursor-pointer" onClick={() => router.push(`/sales/invoices/${invoice.id}`)}>
+                                            <div className="flex items-start justify-between">
+                                                <h4 className="font-medium text-gray-800 line-clamp-1 pr-2">Hóa đơn: {invoice.code}</h4>
+                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 shadow-sm bg-orange-100 text-orange-700">TỚI HẠN</span>
+                                            </div>
+                                            {invoice.customer && (
+                                                <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-600">
+                                                    <Users className="w-3.5 h-3.5 text-gray-400" />
+                                                    <span className="truncate">{invoice.customer.name}</span>
+                                                </div>
+                                            )}
+                                            <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-50">
+                                                <div className="font-bold text-orange-600 text-sm">
+                                                    {formatMoney(invoice.totalAmount)}
+                                                </div>
+                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded shadow-sm border
+                                                    ${invoice.status === 'DRAFT' ? 'bg-gray-100 text-gray-600' : ''}
+                                                    ${invoice.status === 'ISSUED' ? 'bg-blue-100 text-blue-700' : ''}
+                                                    ${invoice.status === 'PARTIAL_PAID' ? 'bg-orange-100 text-orange-700' : ''}
+                                                    ${invoice.status === 'PAID' ? 'bg-green-100 text-green-700' : ''}
+                                                `}>
+                                                    {invoice.status}
+                                                </span>
+                                            </div>
                                         </div>
-                                        <p className="text-gray-500 font-medium text-lg">Không có lịch trình nào</p>
-                                        <p className="text-gray-400 mt-1">Hôm nay là một ngày rảnh rỗi tuyệt vời.</p>
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {/* Invoices */}
-                                        {selectedCalendarInvoices.map(invoice => (
-                                            <div key={`inv-${invoice.id}`} className="border-l-4 border-l-orange-500 border-y border-r border-gray-100 rounded-lg p-3 hover:bg-orange-50/30 transition-colors shadow-sm cursor-pointer" onClick={() => router.push(`/sales/invoices/${invoice.id}`)}>
-                                                <div className="flex items-start justify-between">
-                                                    <h4 className="font-medium text-gray-800 line-clamp-1 pr-2">Hóa đơn: {invoice.code}</h4>
-                                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 shadow-sm bg-orange-100 text-orange-700">TỚI HẠN</span>
-                                                </div>
-                                                {invoice.customer && (
-                                                    <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-600">
-                                                        <Users className="w-3.5 h-3.5 text-gray-400" />
-                                                        <span className="truncate">{invoice.customer.name}</span>
-                                                    </div>
-                                                )}
-                                                <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-50">
-                                                    <div className="font-bold text-orange-600 text-sm">
-                                                        {formatMoney(invoice.totalAmount)}
-                                                    </div>
-                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded shadow-sm border
-                                                        ${invoice.status === 'DRAFT' ? 'bg-gray-100 text-gray-600' : ''}
-                                                        ${invoice.status === 'ISSUED' ? 'bg-blue-100 text-blue-700' : ''}
-                                                        ${invoice.status === 'PARTIAL_PAID' ? 'bg-orange-100 text-orange-700' : ''}
-                                                        ${invoice.status === 'PAID' ? 'bg-green-100 text-green-700' : ''}
-                                                    `}>
-                                                        {invoice.status}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        ))}
+                                    ))}
 
-                                        {/* Quotes */}
-                                        {selectedCalendarQuotes.map(quote => (
-                                            <div key={`quo-${quote.id}`} className="border-l-4 border-l-green-500 border-y border-r border-gray-100 rounded-lg p-3 hover:bg-green-50/30 transition-colors shadow-sm cursor-pointer" onClick={() => router.push(`/sales/estimates/${quote.id}`)}>
-                                                <div className="flex items-start justify-between">
-                                                    <h4 className="font-medium text-gray-800 line-clamp-2 pr-2">Báo giá: {quote.code}</h4>
-                                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 shadow-sm bg-green-100 text-green-700">TẠO MỚI</span>
-                                                </div>
-                                                {quote.customer && (
-                                                    <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-600">
-                                                        <Users className="w-3.5 h-3.5 text-gray-400" />
-                                                        <span className="truncate">{quote.customer.name}</span>
-                                                    </div>
-                                                )}
-                                                <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-50">
-                                                    <div className="flex items-center gap-1 text-xs text-gray-500 font-medium">
-                                                        <Clock className="w-3.5 h-3.5" />
-                                                        <span>{format(new Date(quote.createdAt), 'HH:mm', { locale: vi })}</span>
-                                                    </div>
-                                                    <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded shadow-sm border
-                                                        ${quote.status === 'DRAFT' ? 'bg-white border-gray-200 text-gray-600' : ''}
-                                                        ${quote.status === 'SENT' ? 'bg-blue-50 border-blue-200 text-blue-600' : ''}
-                                                        ${quote.status === 'ACCEPTED' ? 'bg-green-50 border-green-200 text-green-600' : ''}
-                                                        ${quote.status === 'REJECTED' ? 'bg-red-50 border-red-200 text-red-600' : ''}
-                                                    `}>
-                                                        {quote.status}
-                                                    </span>
-                                                </div>
+                                    {/* Quotes */}
+                                    {selectedCalendarQuotes.map(quote => (
+                                        <div key={`quo-${quote.id}`} className="border-l-4 border-l-green-500 border-y border-r border-gray-100 rounded-lg p-3 hover:bg-green-50/30 transition-colors shadow-sm cursor-pointer" onClick={() => router.push(`/sales/estimates/${quote.id}`)}>
+                                            <div className="flex items-start justify-between">
+                                                <h4 className="font-medium text-gray-800 line-clamp-2 pr-2">Báo giá: {quote.code}</h4>
+                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 shadow-sm bg-green-100 text-green-700">TẠO MỚI</span>
                                             </div>
-                                        ))}
-
-                                        {/* Tasks */}
-                                        {selectedCalendarTasks.map(task => (
-                                            <div key={`task-${task.id}`} className="border border-gray-100 rounded-lg p-3 hover:border-indigo-100 hover:bg-indigo-50/30 transition-colors shadow-sm cursor-pointer" onClick={() => router.push(`/tasks/${task.id}`)}>
-                                                <div className="flex items-start justify-between">
-                                                    <h4 className="font-medium text-gray-800 line-clamp-2 pr-2">{task.title}</h4>
-                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 shadow-sm
-                                                        ${task.priority === 'URGENT' ? 'bg-red-100 text-red-700' :
-                                                            task.priority === 'HIGH' ? 'bg-orange-100 text-orange-700' :
-                                                                task.priority === 'MEDIUM' ? 'bg-blue-100 text-blue-700' :
-                                                                    'bg-gray-100 text-gray-700'}
-                                                    `}>
-                                                        {task.priority === 'URGENT' ? 'KHẨN CẤP' : task.priority === 'HIGH' ? 'CAO' : task.priority === 'MEDIUM' ? 'TRUNG BÌNH' : 'THẤP'}
-                                                    </span>
+                                            {quote.customer && (
+                                                <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-600">
+                                                    <Users className="w-3.5 h-3.5 text-gray-400" />
+                                                    <span className="truncate">{quote.customer.name}</span>
                                                 </div>
-                                                {task.customer && (
-                                                    <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-600">
-                                                        <Users className="w-3.5 h-3.5 text-gray-400" />
-                                                        <span className="truncate">{task.customer.name}</span>
-                                                    </div>
-                                                )}
-                                                <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-50">
-                                                    <div className="flex items-center gap-1 text-xs text-gray-500 font-medium">
-                                                        <Clock className="w-3.5 h-3.5" />
-                                                        <span>{format(new Date(task.dueDate), 'HH:mm', { locale: vi })}</span>
-                                                    </div>
-                                                    <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded shadow-sm border
-                                                        ${task.status === 'TODO' ? 'bg-white border-gray-200 text-gray-600' : ''}
-                                                        ${task.status === 'IN_PROGRESS' ? 'bg-blue-50 border-blue-200 text-blue-600' : ''}
-                                                        ${task.status === 'REVIEW' ? 'bg-purple-50 border-purple-200 text-purple-600' : ''}
-                                                        ${task.status === 'DONE' ? 'bg-green-50 border-green-200 text-green-600' : ''}
-                                                    `}>
-                                                        {task.status === 'TODO' ? 'Cần làm' : task.status === 'IN_PROGRESS' ? 'Đang xử lý' : task.status === 'REVIEW' ? 'Chờ duyệt' : 'Hoàn thành'}
-                                                    </span>
+                                            )}
+                                            <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-50">
+                                                <div className="flex items-center gap-1 text-xs text-gray-500 font-medium">
+                                                    <Clock className="w-3.5 h-3.5" />
+                                                    <span>{format(new Date(quote.createdAt), 'HH:mm', { locale: vi })}</span>
                                                 </div>
+                                                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded shadow-sm border
+                                                    ${quote.status === 'DRAFT' ? 'bg-white border-gray-200 text-gray-600' : ''}
+                                                    ${quote.status === 'SENT' ? 'bg-blue-50 border-blue-200 text-blue-600' : ''}
+                                                    ${quote.status === 'ACCEPTED' ? 'bg-green-50 border-green-200 text-green-600' : ''}
+                                                    ${quote.status === 'REJECTED' ? 'bg-red-50 border-red-200 text-red-600' : ''}
+                                                `}>
+                                                    {quote.status}
+                                                </span>
                                             </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
+                                        </div>
+                                    ))}
 
-                            <div className="p-5 border-t border-gray-100 bg-white">
-                                <button
-                                    onClick={() => router.push(`/tasks/new?date=${format(selectedCalendarDate, 'yyyy-MM-dd')}`)}
-                                    className="w-full md:w-auto md:min-w-[200px] ml-auto bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-6 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm"
-                                >
-                                    <Plus className="w-5 h-5" />
-                                    <span>Thêm kế hoạch / Ghi chú</span>
-                                </button>
-                            </div>
+                                    {/* Tasks */}
+                                    {selectedCalendarTasks.map(task => (
+                                        <div key={`task-${task.id}`} className="border border-gray-100 rounded-lg p-3 hover:border-indigo-100 hover:bg-indigo-50/30 transition-colors shadow-sm cursor-pointer" onClick={() => router.push(`/tasks/${task.id}`)}>
+                                            <div className="flex items-start justify-between">
+                                                <h4 className="font-medium text-gray-800 line-clamp-2 pr-2">{task.title}</h4>
+                                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 shadow-sm
+                                                    ${task.priority === 'URGENT' ? 'bg-red-100 text-red-700' :
+                                                        task.priority === 'HIGH' ? 'bg-orange-100 text-orange-700' :
+                                                            task.priority === 'MEDIUM' ? 'bg-blue-100 text-blue-700' :
+                                                                'bg-gray-100 text-gray-700'}
+                                                `}>
+                                                    {task.priority === 'URGENT' ? 'KHẨN CẤP' : task.priority === 'HIGH' ? 'CAO' : task.priority === 'MEDIUM' ? 'TRUNG BÌNH' : 'THẤP'}
+                                                </span>
+                                            </div>
+                                            {task.customer && (
+                                                <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-600">
+                                                    <Users className="w-3.5 h-3.5 text-gray-400" />
+                                                    <span className="truncate">{task.customer.name}</span>
+                                                </div>
+                                            )}
+                                            <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-50">
+                                                <div className="flex items-center gap-1 text-xs text-gray-500 font-medium">
+                                                    <Clock className="w-3.5 h-3.5" />
+                                                    <span>{format(new Date(task.dueDate), 'HH:mm', { locale: vi })}</span>
+                                                </div>
+                                                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded shadow-sm border
+                                                    ${task.status === 'TODO' ? 'bg-white border-gray-200 text-gray-600' : ''}
+                                                    ${task.status === 'IN_PROGRESS' ? 'bg-blue-50 border-blue-200 text-blue-600' : ''}
+                                                    ${task.status === 'REVIEW' ? 'bg-purple-50 border-purple-200 text-purple-600' : ''}
+                                                    ${task.status === 'DONE' ? 'bg-green-50 border-green-200 text-green-600' : ''}
+                                                `}>
+                                                    {task.status === 'TODO' ? 'Cần làm' : task.status === 'IN_PROGRESS' ? 'Đang xử lý' : task.status === 'REVIEW' ? 'Chờ duyệt' : 'Hoàn thành'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="p-5 border-t border-gray-100 bg-white">
+                            <button
+                                onClick={() => router.push(`/tasks/new?date=${format(selectedCalendarDate, 'yyyy-MM-dd')}`)}
+                                className="w-full md:w-auto md:min-w-[200px] ml-auto bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-6 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm"
+                            >
+                                <Plus className="w-5 h-5" />
+                                <span>Thêm kế hoạch / Ghi chú</span>
+                            </button>
                         </div>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 }
