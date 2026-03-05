@@ -143,7 +143,7 @@ function TodoListWidget() {
     ); // Avoid hydration mismatch and show loading state
 
     return (
-        <div className="flex flex-col h-full opacity-0 animate-fade-in" style={{ animationFillMode: 'forwards', animationDelay: '0.1s' }}>
+        <div className="flex flex-col h-full">
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                     <CheckCircle2 size={20} className="text-emerald-500" />
@@ -577,8 +577,8 @@ export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices
 
             {/* Calendar Tasks Modal */}
             {selectedCalendarDate && (
-                <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 z-[99999]" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden transform transition-all">
+                <div className="modal-backdrop" style={{ zIndex: 99999 }}>
+                    <div className="modal-container !max-w-3xl">
                         <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-indigo-50/50">
                             <div>
                                 <h3 className="text-lg font-bold text-gray-800">
