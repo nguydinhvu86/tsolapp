@@ -6,7 +6,7 @@ import { Quote, Contract, Handover, PaymentRequest, ContractAppendix, Dispatch }
 export async function getDashboardStats(userId?: string) {
     try {
         const [
-            quotes,
+            estimates,
             contracts,
             handovers,
             payments,
@@ -17,7 +17,7 @@ export async function getDashboardStats(userId?: string) {
             purchaseOrders,
             salesInvoices
         ] = await Promise.all([
-            prisma.quote.findMany({ select: { id: true, status: true, createdAt: true, customer: { select: { name: true } }, title: true }, orderBy: { createdAt: 'desc' }, take: 200 }),
+            prisma.salesEstimate.findMany({ select: { id: true, status: true, validUntil: true, date: true, createdAt: true, customer: { select: { name: true } }, code: true, totalAmount: true }, orderBy: { createdAt: 'desc' }, take: 500 }),
             prisma.contract.findMany({ select: { id: true, status: true, createdAt: true, customer: { select: { name: true } }, title: true }, orderBy: { createdAt: 'desc' }, take: 200 }),
             prisma.handover.findMany({ select: { id: true, status: true, createdAt: true, customer: { select: { name: true } }, title: true }, orderBy: { createdAt: 'desc' }, take: 100 }),
             prisma.paymentRequest.findMany({ select: { id: true, status: true, createdAt: true, customer: { select: { name: true } }, title: true }, orderBy: { createdAt: 'desc' }, take: 100 }),
@@ -127,8 +127,8 @@ export async function getDashboardStats(userId?: string) {
         });
 
         return {
-            totalQuotes: quotes.length,
-            acceptedQuotes: quotes.filter(q => q.status === 'ACCEPTED').length,
+            totalQuotes: estimates.length,
+            acceptedQuotes: estimates.filter(q => q.status === 'ACCEPTED').length,
             totalContracts: contracts.length,
             signedContracts: contracts.filter(c => c.status === 'SIGNED').length,
             financialMetrics: {
@@ -139,7 +139,7 @@ export async function getDashboardStats(userId?: string) {
             // Pass raw arrays for client-side chart processing if needed, 
             // but usually we aggregate on server. For this scale, passing lightweight arrays is okay.
             recentActivity: {
-                quotes: quotes.slice(0, 100),
+                quotes: estimates.slice(0, 100),
                 contracts: contracts.slice(0, 100),
                 handovers: handovers.slice(0, 100),
                 payments: payments.slice(0, 100),
@@ -149,9 +149,9 @@ export async function getDashboardStats(userId?: string) {
             recentCustomers: customers,
             myTasks: myTasks,
             recentPurchaseOrders: purchaseOrders,
-            recentQuotes: quotes.slice(0, 10), // Specifically for the quotes list widget
+            recentQuotes: estimates.slice(0, 10), // Specifically for the quotes list widget
             chartDataSources: {
-                quotes: quotes,
+                quotes: estimates,
                 contracts: contracts,
                 invoices: salesInvoices
             }

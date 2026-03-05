@@ -636,9 +636,9 @@ export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices
 
                                         {/* Quotes */}
                                         {selectedCalendarQuotes.map(quote => (
-                                            <div key={`quo-${quote.id}`} className="border-l-4 border-l-green-500 border-y border-r border-gray-100 rounded-lg p-3 hover:bg-green-50/30 transition-colors shadow-sm cursor-pointer" onClick={() => router.push(`/quotes/${quote.id}`)}>
+                                            <div key={`quo-${quote.id}`} className="border-l-4 border-l-green-500 border-y border-r border-gray-100 rounded-lg p-3 hover:bg-green-50/30 transition-colors shadow-sm cursor-pointer" onClick={() => router.push(`/sales/estimates/${quote.id}`)}>
                                                 <div className="flex items-start justify-between">
-                                                    <h4 className="font-medium text-gray-800 line-clamp-2 pr-2">Báo giá: {quote.title}</h4>
+                                                    <h4 className="font-medium text-gray-800 line-clamp-2 pr-2">Báo giá: {quote.code}</h4>
                                                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 shadow-sm bg-green-100 text-green-700">TẠO MỚI</span>
                                                 </div>
                                                 {quote.customer && (

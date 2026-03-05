@@ -88,13 +88,15 @@ export const DashboardCalendar: React.FC<DashboardCalendarProps> = ({ tasks = []
                 });
 
                 const dayQuotes = quotes.filter(quote => {
-                    if (!quote.createdAt) return false;
-                    return isSameDay(new Date(quote.createdAt), cloneDay);
+                    const checkDate = quote.validUntil || quote.date || quote.createdAt;
+                    if (!checkDate) return false;
+                    return isSameDay(new Date(checkDate), cloneDay);
                 });
 
                 const dayInvoices = invoices.filter(invoice => {
-                    if (!invoice.dueDate) return false;
-                    return isSameDay(new Date(invoice.dueDate), cloneDay);
+                    const checkDate = invoice.dueDate || invoice.date || invoice.createdAt;
+                    if (!checkDate) return false;
+                    return isSameDay(new Date(checkDate), cloneDay);
                 });
 
                 const isCurrentMonth = isSameMonth(day, monthStart);
@@ -132,7 +134,7 @@ export const DashboardCalendar: React.FC<DashboardCalendarProps> = ({ tasks = []
                             ))}
                             {dayQuotes.slice(0, 2).map(quo => (
                                 <div key={`quo-${quo.id}`} className="cal-task-item cal-item-green">
-                                    BG: {quo.title}
+                                    BG: {quo.code}
                                 </div>
                             ))}
                             {dayTasks.slice(0, 3).map(task => (
