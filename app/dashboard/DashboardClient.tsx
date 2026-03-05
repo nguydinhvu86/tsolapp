@@ -575,8 +575,8 @@ export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices
 
                 {/* Calendar Tasks Modal */}
                 {selectedCalendarDate && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                    <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" style={{ zIndex: 9999 }}>
+                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden transform transition-all">
                             <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-indigo-50/50">
                                 <div>
                                     <h3 className="text-lg font-bold text-gray-800">
