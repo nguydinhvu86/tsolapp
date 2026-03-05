@@ -578,7 +578,7 @@ export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices
             {/* Calendar Tasks Modal */}
             {selectedCalendarDate && (
                 <div className="modal-backdrop" style={{ zIndex: 99999 }}>
-                    <div className="modal-container !max-w-3xl">
+                    <div className="modal-container w-full mx-auto" style={{ maxWidth: '700px' }}>
                         <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-indigo-50/50">
                             <div>
                                 <h3 className="text-lg font-bold text-gray-800">
@@ -606,7 +606,7 @@ export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices
                                     <p className="text-gray-400 mt-1">Hôm nay là một ngày rảnh rỗi tuyệt vời.</p>
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="flex flex-col gap-3">
                                     {/* Invoices */}
                                     {selectedCalendarInvoices.map(invoice => (
                                         <div key={`inv-${invoice.id}`} className="border-l-4 border-l-orange-500 border-y border-r border-gray-100 rounded-lg p-3 hover:bg-orange-50/30 transition-colors shadow-sm cursor-pointer" onClick={() => router.push(`/sales/invoices/${invoice.id}`)}>
