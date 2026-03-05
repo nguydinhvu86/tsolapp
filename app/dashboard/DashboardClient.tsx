@@ -1,9 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Receipt, CreditCard, Users, Box, Briefcase, Plus, X, CheckCircle2, Circle, Clock, CheckCheck } from 'lucide-react';
+import { DollarSign, Receipt, CreditCard, Users, Box, Briefcase, Plus, X, CheckCircle2, Circle, Clock, CheckCheck, Calendar as CalendarIcon } from 'lucide-react';
 import { AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { formatMoney } from '@/lib/utils/formatters';
+import { DashboardCalendar } from './DashboardCalendar';
+import { format } from 'date-fns';
+import { vi } from 'date-fns/locale';
 
 // Mock data for charts
 const revenueData = [
@@ -232,9 +235,17 @@ export function DashboardClient({ kpiData, userTasks = [] }: { kpiData?: any, us
     const router = useRouter();
     const [tasks, setTasks] = useState(userTasks);
 
+    const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(null);
+    const [selectedCalendarTasks, setSelectedCalendarTasks] = useState<any[]>([]);
+
     useEffect(() => {
-        setTasks(userTasks);
+        setTasks(userTasks || []);
     }, [userTasks]);
+
+    const handleDateClick = (date: Date, dayTasks: any[]) => {
+        setSelectedCalendarDate(date);
+        setSelectedCalendarTasks(dayTasks);
+    };
 
     // Revenue calculations
     const revenueThisMonth = kpiData?.revenueThisMonth || 0;
@@ -503,7 +514,7 @@ export function DashboardClient({ kpiData, userTasks = [] }: { kpiData?: any, us
                 {/* Charts Row */}
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                     <div className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm xl:col-span-1">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Lưu Chuyển Tiền Tệ Năm Nay</h3>
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Lưu Chuyển Tiền Tệ Năm {new Date().getFullYear()}</h3>
                         <div style={{ height: '350px', width: '100%', marginLeft: '-15px' }}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={kpiData?.cashFlow || []} margin={{ top: 10, right: 10, left: 20, bottom: 0 }}>
@@ -548,34 +559,97 @@ export function DashboardClient({ kpiData, userTasks = [] }: { kpiData?: any, us
                         </div>
                     </div>
 
-                    <div className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Phân Bố Bán Hàng</h3>
-                        <div style={{ height: '350px', width: '100%' }}>
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie
-                                        data={salesDistribution}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius="50%"
-                                        outerRadius="80%"
-                                        paddingAngle={5}
-                                        dataKey="value"
-                                        stroke="none"
-                                    >
-                                        {salesDistribution.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                                    <Legend layout="horizontal" verticalAlign="bottom" align="center" iconType="circle" />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        </div>
+                    <div className="xl:col-span-1 border border-gray-100 rounded-xl shadow-sm bg-white overflow-hidden flex flex-col">
+                        <DashboardCalendar
+                            tasks={tasks}
+                            onDateClick={handleDateClick}
+                        />
                     </div>
                 </div>
 
+                {/* Calendar Tasks Modal */}
+                {selectedCalendarDate && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                        <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[80vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-indigo-50/50">
+                                <div>
+                                    <h3 className="text-lg font-bold text-gray-800">
+                                        Kế hoạch ngày {format(selectedCalendarDate, 'dd/MM/yyyy')}
+                                    </h3>
+                                    <p className="text-sm text-gray-500">
+                                        {selectedCalendarTasks.length} công việc
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => setSelectedCalendarDate(null)}
+                                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
 
+                            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                                {selectedCalendarTasks.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center py-10 text-center">
+                                        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-3">
+                                            <CalendarIcon className="w-8 h-8 text-gray-300" />
+                                        </div>
+                                        <p className="text-gray-500 font-medium">Không có công việc nào</p>
+                                        <p className="text-gray-400 text-sm mt-1">Bạn có thể tạo kế hoạch mới khởi đầu ngày hiệu quả.</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {selectedCalendarTasks.map(task => (
+                                            <div key={task.id} className="border border-gray-100 rounded-lg p-3 hover:border-indigo-100 hover:bg-indigo-50/30 transition-colors shadow-sm cursor-pointer" onClick={() => router.push(`/tasks/${task.id}`)}>
+                                                <div className="flex items-start justify-between">
+                                                    <h4 className="font-medium text-gray-800 line-clamp-2 pr-2">{task.title}</h4>
+                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 shadow-sm
+                                                        ${task.priority === 'URGENT' ? 'bg-red-100 text-red-700' :
+                                                            task.priority === 'HIGH' ? 'bg-orange-100 text-orange-700' :
+                                                                task.priority === 'MEDIUM' ? 'bg-blue-100 text-blue-700' :
+                                                                    'bg-gray-100 text-gray-700'}
+                                                    `}>
+                                                        {task.priority === 'URGENT' ? 'KHẨN CẤP' : task.priority === 'HIGH' ? 'CAO' : task.priority === 'MEDIUM' ? 'TRUNG BÌNH' : 'THẤP'}
+                                                    </span>
+                                                </div>
+                                                {task.customer && (
+                                                    <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-600">
+                                                        <Users className="w-3.5 h-3.5 text-gray-400" />
+                                                        <span className="truncate">{task.customer.name}</span>
+                                                    </div>
+                                                )}
+                                                <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-50">
+                                                    <div className="flex items-center gap-1 text-xs text-gray-500 font-medium">
+                                                        <Clock className="w-3.5 h-3.5" />
+                                                        <span>{format(new Date(task.dueDate), 'HH:mm', { locale: vi })}</span>
+                                                    </div>
+                                                    <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded shadow-sm border
+                                                        ${task.status === 'TODO' ? 'bg-white border-gray-200 text-gray-600' : ''}
+                                                        ${task.status === 'IN_PROGRESS' ? 'bg-blue-50 border-blue-200 text-blue-600' : ''}
+                                                        ${task.status === 'REVIEW' ? 'bg-purple-50 border-purple-200 text-purple-600' : ''}
+                                                        ${task.status === 'DONE' ? 'bg-green-50 border-green-200 text-green-600' : ''}
+                                                    `}>
+                                                        {task.status === 'TODO' ? 'Cần làm' : task.status === 'IN_PROGRESS' ? 'Đang xử lý' : task.status === 'REVIEW' ? 'Chờ duyệt' : 'Hoàn thành'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="p-4 border-t border-gray-100 bg-gray-50">
+                                <button
+                                    onClick={() => router.push(`/tasks/new?date=${format(selectedCalendarDate, 'yyyy-MM-dd')}`)}
+                                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    <span>Thêm kế hoạch mới</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
