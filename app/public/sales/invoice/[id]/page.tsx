@@ -88,7 +88,7 @@ export default async function PublicSalesInvoicePage({ params }: { params: { id:
                         <div><strong>Hạn thanh toán:</strong> {formatDate(invoice.dueDate) || '---'}</div>
                         <div><strong>Người lập:</strong> {invoice.creator?.name || '---'}</div>
                         <div><strong>Trạng thái:</strong> {
-                            invoice.status === 'DRAFT' ? 'Bản Nháp' :
+                            invoice.status === 'DRAFT' ? 'Bản Dự Thảo' :
                                 invoice.status === 'ISSUED' ? 'Đã Giao / Ghi Nợ' :
                                     invoice.status === 'PARTIAL_PAID' ? 'Đã Thu Một Phần' :
                                         invoice.status === 'PAID' ? 'Đã Thu Đủ Tiền' : invoice.status

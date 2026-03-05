@@ -13,7 +13,7 @@ import Link from 'next/link';
 interface TaskPanelProps {
     initialTasks: any[];
     users: any[];
-    entityType: 'CONTRACT' | 'QUOTE' | 'HANDOVER' | 'PAYMENT_REQUEST' | 'DISPATCH' | 'CUSTOMER' | 'APPENDIX' | 'SUPPLIER' | 'PURCHASE_ORDER' | 'PURCHASE_BILL' | 'PURCHASE_PAYMENT' | 'SALES_ESTIMATE' | 'SALES_ORDER' | 'SALES_INVOICE' | 'SALES_PAYMENT' | 'OTHER';
+    entityType: 'CONTRACT' | 'QUOTE' | 'HANDOVER' | 'PAYMENT_REQUEST' | 'DISPATCH' | 'CUSTOMER' | 'APPENDIX' | 'SUPPLIER' | 'PURCHASE_ORDER' | 'PURCHASE_BILL' | 'PURCHASE_PAYMENT' | 'SALES_ESTIMATE' | 'SALES_ORDER' | 'SALES_INVOICE' | 'SALES_PAYMENT' | 'LEAD' | 'OTHER';
     entityId: string;
     initialTitle?: string;
     initialDescription?: string;
@@ -82,6 +82,7 @@ export function TaskPanel({ initialTasks, users, entityType, entityId, initialTi
         if (entityType === 'SALES_ORDER') contextLinks.salesOrderId = entityId;
         if (entityType === 'SALES_INVOICE') contextLinks.salesInvoiceId = entityId;
         if (entityType === 'SALES_PAYMENT') contextLinks.salesPaymentId = entityId;
+        if (entityType === 'LEAD') contextLinks.leadId = entityId;
 
         try {
             await createTask({

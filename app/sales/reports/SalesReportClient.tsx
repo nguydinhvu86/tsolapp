@@ -12,20 +12,20 @@ import { formatMoney } from '@/lib/utils/formatters';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
-export function SalesReportClient({ invoices, payments, orders, customers, estimates = [] }: { invoices: any[], payments: any[], orders: any[], customers: any[], estimates?: any[] }) {
+export function SalesReportClient({ invoices, payments, expenses, customers, estimates = [] }: { invoices: any[], payments: any[], expenses: any[], customers: any[], estimates?: any[] }) {
     const today = new Date();
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
     const [startDate, setStartDate] = useState(firstDayOfMonth.toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(today.toISOString().split('T')[0]);
-    const [activeTab, setActiveTab] = useState<'overview' | 'customer' | 'product' | 'estimate' | 'order' | 'invoice' | 'payment'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'customer' | 'product' | 'estimate' | 'expense' | 'invoice' | 'payment'>('overview');
 
     // Filter states
     const [customerSearch, setCustomerSearch] = useState('');
     const [productSearch, setProductSearch] = useState('');
     const [invoiceSearch, setInvoiceSearch] = useState('');
-    const [orderSearch, setOrderSearch] = useState('');
-    const [orderStatus, setOrderStatus] = useState('ALL');
+    const [expenseSearch, setExpenseSearch] = useState('');
+    const [expenseCategory, setExpenseCategory] = useState('ALL');
     const [estimateSearch, setEstimateSearch] = useState('');
     const [estimateStatus, setEstimateStatus] = useState('ALL');
     const [paymentSearch, setPaymentSearch] = useState('');
@@ -52,27 +52,34 @@ export function SalesReportClient({ invoices, payments, orders, customers, estim
 
     const filteredInvoices = useMemo(() => filterByDate(invoices), [invoices, startDate, endDate]);
     const filteredPayments = useMemo(() => filterByDate(payments), [payments, startDate, endDate]);
-    const filteredOrders = useMemo(() => filterByDate(orders), [orders, startDate, endDate]);
+    const filteredExpenses = useMemo(() => filterByDate(expenses), [expenses, startDate, endDate]);
     const filteredEstimates = useMemo(() => filterByDate(estimates), [estimates, startDate, endDate]);
 
     // --- Tab 1: Overview Data ---
     const totalSales = filteredInvoices.reduce((sum, b) => sum + b.totalAmount, 0);
     const totalPayments = filteredPayments.reduce((sum, p) => sum + p.amount, 0);
     const totalDebt = customers.reduce((sum, c) => sum + c.totalDebt, 0);
+    const totalExpenses = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
 
     const timelineData = useMemo(() => {
         const dataMap = new Map();
 
         filteredInvoices.forEach(b => {
             const dateStr = new Date(b.date).toISOString().split('T')[0];
-            if (!dataMap.has(dateStr)) dataMap.set(dateStr, { date: dateStr, 'Doanh Thu': 0, 'Thực Thu': 0 });
+            if (!dataMap.has(dateStr)) dataMap.set(dateStr, { date: dateStr, 'Doanh Thu': 0, 'Thực Thu': 0, 'Chi Phí': 0 });
             dataMap.get(dateStr)['Doanh Thu'] += b.totalAmount;
         });
 
         filteredPayments.forEach(p => {
             const dateStr = new Date(p.date).toISOString().split('T')[0];
-            if (!dataMap.has(dateStr)) dataMap.set(dateStr, { date: dateStr, 'Doanh Thu': 0, 'Thực Thu': 0 });
+            if (!dataMap.has(dateStr)) dataMap.set(dateStr, { date: dateStr, 'Doanh Thu': 0, 'Thực Thu': 0, 'Chi Phí': 0 });
             dataMap.get(dateStr)['Thực Thu'] += p.amount;
+        });
+
+        filteredExpenses.forEach(e => {
+            const dateStr = new Date(e.date).toISOString().split('T')[0];
+            if (!dataMap.has(dateStr)) dataMap.set(dateStr, { date: dateStr, 'Doanh Thu': 0, 'Thực Thu': 0, 'Chi Phí': 0 });
+            dataMap.get(dateStr)['Chi Phí'] += e.amount;
         });
 
         const sortedData = Array.from(dataMap.values()).sort((a, b) => a.date.localeCompare(b.date));
@@ -192,17 +199,27 @@ export function SalesReportClient({ invoices, payments, orders, customers, estim
         return result;
     }, [filteredInvoices, invoiceSearch]);
 
-    const displayOrders = useMemo(() => {
-        let result = filteredOrders;
-        if (orderSearch.trim()) {
-            const query = orderSearch.toLowerCase();
-            result = result.filter(o => o.code?.toLowerCase().includes(query) || o.customer?.name?.toLowerCase().includes(query));
+    const displayExpenses = useMemo(() => {
+        let result = filteredExpenses;
+        if (expenseSearch.trim()) {
+            const query = expenseSearch.toLowerCase();
+            result = result.filter(e => e.code?.toLowerCase().includes(query) || e.payee?.toLowerCase().includes(query) || e.customer?.name?.toLowerCase().includes(query) || e.supplier?.name?.toLowerCase().includes(query));
         }
-        if (orderStatus !== 'ALL') {
-            result = result.filter(o => o.status === orderStatus);
+        if (expenseCategory !== 'ALL') {
+            result = result.filter(e => e.categoryId === expenseCategory);
         }
         return result;
-    }, [filteredOrders, orderSearch, orderStatus]);
+    }, [filteredExpenses, expenseSearch, expenseCategory]);
+
+    const expenseCategoriesList = useMemo(() => {
+        const unique = new Map();
+        expenses.forEach(e => {
+            if (e.category) {
+                unique.set(e.categoryId, e.category.name);
+            }
+        });
+        return Array.from(unique.entries()).map(([id, name]) => ({ id, name }));
+    }, [expenses]);
 
     const displayEstimates = useMemo(() => {
         let result = filteredEstimates;
@@ -372,8 +389,8 @@ export function SalesReportClient({ invoices, payments, orders, customers, estim
                     <button className={`premium-tab ${activeTab === 'estimate' ? 'active' : ''}`} onClick={() => setActiveTab('estimate')}>
                         <FileText size={16} /> Báo Giá
                     </button>
-                    <button className={`premium-tab ${activeTab === 'order' ? 'active' : ''}`} onClick={() => setActiveTab('order')}>
-                        <FileText size={16} /> Đơn Hàng
+                    <button className={`premium-tab ${activeTab === 'expense' ? 'active' : ''}`} onClick={() => setActiveTab('expense')}>
+                        <DollarSign size={16} /> Chi Phí
                     </button>
                     <button className={`premium-tab ${activeTab === 'invoice' ? 'active' : ''}`} onClick={() => setActiveTab('invoice')}>
                         <FileText size={16} /> Hóa Đơn Xuất
@@ -389,7 +406,7 @@ export function SalesReportClient({ invoices, payments, orders, customers, estim
             {/* 1. OVERVIEW TAB */}
             {activeTab === 'overview' && (
                 <div>
-                    <div className="grid lg:grid-cols-3 gap-4 mb-6">
+                    <div className="grid gap-4 mb-6" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
                         <div className="stat-card stat-card-blue">
                             <div className="stat-header">
                                 <div className="stat-info">
@@ -428,11 +445,24 @@ export function SalesReportClient({ invoices, payments, orders, customers, estim
                                 Dư nợ tồn đọng từ khách hàng
                             </div>
                         </div>
+
+                        <div className="stat-card" style={{ backgroundColor: '#fef2f2', borderColor: '#fecaca', borderStyle: 'solid', borderWidth: '1px' }}>
+                            <div className="stat-header">
+                                <div className="stat-info">
+                                    <div className="stat-title" style={{ color: '#b91c1c' }}><Activity size={14} /> TỔNG CHI PHÍ</div>
+                                    <div className="stat-value text-danger">{formatMoney(totalExpenses)}</div>
+                                </div>
+                                <div className="stat-icon" style={{ backgroundColor: '#fee2e2', color: '#dc2626' }}><Activity size={24} /></div>
+                            </div>
+                            <div className="text-sm font-medium mt-2 opacity-80" style={{ color: '#b91c1c' }}>
+                                {filteredExpenses.length} khoản chi trong kỳ
+                            </div>
+                        </div>
                     </div>
 
                     {/* Chart */}
                     <div className="card">
-                        <h3 className="font-bold text-lg mb-4">Lưu Chuyển Dòng Tiền (Bán Hàng)</h3>
+                        <h3 className="font-bold text-lg mb-4">Lưu Chuyển Dòng Tiền (Kinh Doanh)</h3>
                         <div style={{ height: '350px', width: '100%' }}>
                             {timelineData.length > 0 ? (
                                 <ResponsiveContainer width="100%" height="100%">
@@ -446,6 +476,10 @@ export function SalesReportClient({ invoices, payments, orders, customers, estim
                                                 <stop offset="5%" stopColor="var(--success)" stopOpacity={0.3} />
                                                 <stop offset="95%" stopColor="var(--success)" stopOpacity={0} />
                                             </linearGradient>
+                                            <linearGradient id="colorChiPhi" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#dc2626" stopOpacity={0.3} />
+                                                <stop offset="95%" stopColor="#dc2626" stopOpacity={0} />
+                                            </linearGradient>
                                         </defs>
                                         <XAxis dataKey="displayDate" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} dy={10} />
                                         <YAxis tickFormatter={(val) => `${val / 1000000}M`} stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} width={60} />
@@ -454,6 +488,7 @@ export function SalesReportClient({ invoices, payments, orders, customers, estim
                                         <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
                                         <Area type="monotone" dataKey="Doanh Thu" stroke="var(--primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorDoanhThu)" />
                                         <Area type="monotone" dataKey="Thực Thu" stroke="var(--success)" strokeWidth={3} fillOpacity={1} fill="url(#colorThucThu)" />
+                                        <Area type="monotone" dataKey="Chi Phí" stroke="#dc2626" strokeWidth={3} fillOpacity={1} fill="url(#colorChiPhi)" />
                                     </AreaChart>
                                 </ResponsiveContainer>
                             ) : (
@@ -683,7 +718,7 @@ export function SalesReportClient({ invoices, payments, orders, customers, estim
                         <div className="flex gap-2">
                             <select className="input" style={{ width: '130px', padding: '0.4rem' }} value={estimateStatus} onChange={e => setEstimateStatus(e.target.value)}>
                                 <option value="ALL">Mọi TT</option>
-                                <option value="DRAFT">Nháp</option>
+                                <option value="DRAFT">Dự Thảo</option>
                                 <option value="SENT">Đã Gửi KH</option>
                                 <option value="CONFIRMED">Đã Chốt</option>
                                 <option value="CANCELLED">Hủy</option>
@@ -728,7 +763,7 @@ export function SalesReportClient({ invoices, payments, orders, customers, estim
                                             {e.status === 'CONFIRMED' ? <span className="status-badge badge-success">Đã Chốt</span> :
                                                 e.status === 'SENT' ? <span className="status-badge badge-warning">Đã gửi</span> :
                                                     e.status === 'CANCELLED' ? <span className="status-badge badge-danger">Đã hủy</span> :
-                                                        <span className="status-badge badge-neutral">Nháp</span>}
+                                                        <span className="status-badge badge-neutral">Dự Thảo</span>}
                                         </td>
                                         <td className="text-right font-bold">{formatMoney(e.totalAmount)}</td>
                                     </tr>
@@ -750,28 +785,26 @@ export function SalesReportClient({ invoices, payments, orders, customers, estim
                 </div>
             )}
 
-            {/* 4. ORDERS TAB */}
-            {activeTab === 'order' && (
+            {/* 4. EXPENSES TAB */}
+            {activeTab === 'expense' && (
                 <div className="card" style={{ padding: 0 }}>
                     <div className="search-card" style={{ padding: '1.25rem', marginBottom: 0, borderBottom: '1px solid var(--border)' }}>
-                        <h3 className="font-bold text-lg"><Package size={18} className="inline mr-2 text-primary" /> Đơn Đặt Hàng Bán</h3>
+                        <h3 className="font-bold text-lg"><DollarSign size={18} className="inline mr-2 text-primary" /> Phân Tích Chi Phí</h3>
                         <div className="flex gap-2">
-                            <select className="input" style={{ width: '130px', padding: '0.4rem' }} value={orderStatus} onChange={e => setOrderStatus(e.target.value)}>
-                                <option value="ALL">Mọi TT</option>
-                                <option value="DRAFT">Nháp</option>
-                                <option value="SENT">Đã Gửi KH</option>
-                                <option value="CONFIRMED">Chốt Đơn</option>
-                                <option value="COMPLETED">Hoàn Thành</option>
-                                <option value="CANCELLED">Hủy</option>
+                            <select className="input" style={{ width: '150px', padding: '0.4rem' }} value={expenseCategory} onChange={e => setExpenseCategory(e.target.value)}>
+                                <option value="ALL">Mọi Danh Mục</option>
+                                {expenseCategoriesList.map((cat: { id: string, name: string }) => (
+                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                ))}
                             </select>
                             <div className="search-input-wrapper">
                                 <Search size={16} className="search-icon" />
-                                <input type="text" placeholder="Tìm..." value={orderSearch} onChange={e => setOrderSearch(e.target.value)} className="input" />
+                                <input type="text" placeholder="Tìm mã, đối tượng..." value={expenseSearch} onChange={e => setExpenseSearch(e.target.value)} className="input" />
                             </div>
                             <button
                                 onClick={() => exportToExcel(
-                                    displayOrders.map(o => ({ "Mã SO/Ngày": `${o.code} (${formatDate(o.date)})`, "Khách Hàng": o.customer?.name, "Trạng Thái": o.status, "Tổng Tiền": o.totalAmount })),
-                                    `Don_Ban_Hang_${startDate}_to_${endDate}`
+                                    displayExpenses.map(e => ({ "Mã Phiếu/Ngày": `${e.code} (${formatDate(e.date)})`, "Đối Tượng": e.customer?.name || e.supplier?.name || e.payee, "Danh Mục": e.category?.name, "Tổng Tiền": e.amount })),
+                                    `Chi_Phi_${startDate}_to_${endDate}`
                                 )}
                                 className="btn btn-secondary flex items-center gap-2"
                             >
@@ -786,38 +819,44 @@ export function SalesReportClient({ invoices, payments, orders, customers, estim
                         <table>
                             <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
                                 <tr>
-                                    <th>Mã / Ngày</th>
-                                    <th>Khách Hàng</th>
-                                    <th className="text-center">Trạng Thái</th>
-                                    <th className="text-right">Tổng Tiền</th>
+                                    <th>Mã Ph / Ngày</th>
+                                    <th>Đối Tượng</th>
+                                    <th>Danh Mục</th>
+                                    <th className="text-right">Số Tiền Chi</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {displayOrders.map(o => (
-                                    <tr key={o.id}>
+                                {displayExpenses.map(e => (
+                                    <tr key={e.id}>
                                         <td>
-                                            <Link href={`/sales/orders/${o.id}`} className="font-bold hover:text-primary hover:underline transition-colors block">{o.code}</Link>
-                                            <div className="text-sm text-gray-500">{formatDate(o.date)}</div>
+                                            <Link href={`/sales/expenses/${e.id}`} className="font-bold hover:text-primary hover:underline transition-colors block">{e.code}</Link>
+                                            <div className="text-sm text-gray-500">{formatDate(e.date)}</div>
                                         </td>
-                                        <td className="font-medium text-sm">{o.customer?.name}</td>
-                                        <td className="text-center">
-                                            {o.status === 'COMPLETED' ? <span className="status-badge badge-success">Hoàn thành</span> :
-                                                o.status === 'CONFIRMED' ? <span className="status-badge badge-info">Chốt Đơn</span> :
-                                                    o.status === 'SENT' ? <span className="status-badge badge-warning">Đã gửi</span> :
-                                                        o.status === 'CANCELLED' ? <span className="status-badge badge-danger">Đã hủy</span> :
-                                                            <span className="status-badge badge-neutral">Nháp</span>}
+                                        <td className="font-medium text-sm">
+                                            {e.customer ? (
+                                                <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded text-xs border border-blue-200">KH: {e.customer.name}</span>
+                                            ) : e.supplier ? (
+                                                <span className="text-orange-600 bg-orange-50 px-2 py-0.5 rounded text-xs border border-orange-200">NCC: {e.supplier.name}</span>
+                                            ) : (
+                                                <span className="text-gray-700 font-medium">{e.payee}</span>
+                                            )}
                                         </td>
-                                        <td className="text-right font-bold">{formatMoney(o.totalAmount)}</td>
+                                        <td>
+                                            <span className="inline-block px-2 py-1 bg-slate-100 text-slate-700 text-xs rounded-md border border-slate-200 font-medium">
+                                                {e.category?.name}
+                                            </span>
+                                        </td>
+                                        <td className="text-right font-bold text-danger">{formatMoney(e.amount)}</td>
                                     </tr>
                                 ))}
-                                {displayOrders.length === 0 && <tr><td colSpan={4} className="text-center p-8 text-gray-500">Không có đơn bán hàng.</td></tr>}
+                                {displayExpenses.length === 0 && <tr><td colSpan={4} className="text-center p-8 text-gray-500">Chưa có khoản chi phí nào.</td></tr>}
                             </tbody>
-                            {displayOrders.length > 0 && (
+                            {displayExpenses.length > 0 && (
                                 <tfoot style={{ position: 'sticky', bottom: 0, backgroundColor: 'var(--surface)', borderTop: '2px solid var(--border)' }}>
                                     <tr>
-                                        <td colSpan={3} className="text-right font-bold text-gray-700">TỔNG CỘNG ({displayOrders.length}):</td>
-                                        <td className="text-right font-bold text-primary">
-                                            {formatMoney(displayOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0))}
+                                        <td colSpan={3} className="text-right font-bold text-gray-700">TỔNG CHI PHÍ ({displayExpenses.length}):</td>
+                                        <td className="text-right font-bold text-danger text-lg">
+                                            {formatMoney(displayExpenses.reduce((sum, e) => sum + (e.amount || 0), 0))}
                                         </td>
                                     </tr>
                                 </tfoot>

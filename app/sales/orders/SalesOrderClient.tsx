@@ -71,6 +71,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
         const mappedItems = order.items ? order.items.map((i: any) => ({
             productId: i.productId,
             productName: i.product?.name || i.productName || '',
+            description: i.description,
             unit: i.product?.unit || i.unit || '',
             quantity: i.quantity,
             unitPrice: i.unitPrice,
@@ -98,6 +99,11 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
         setQty(1);
         setPrice(0);
         setSelectedProduct('');
+        setIsCustomProduct(false);
+        setCustomName('');
+        setCustomDescription('');
+        setCustomUnit('Cái');
+        setCustomTaxRate(0);
         setIsFormOpen(true);
     };
 
@@ -105,28 +111,66 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
     const [selectedProduct, setSelectedProduct] = useState('');
     const [qty, setQty] = useState(1);
     const [price, setPrice] = useState(0);
+    const [isCustomProduct, setIsCustomProduct] = useState(false);
+    const [customName, setCustomName] = useState('');
+    const [customUnit, setCustomUnit] = useState('Cái');
+    const [customTaxRate, setCustomTaxRate] = useState(0);
+    const [customDescription, setCustomDescription] = useState('');
+    const [useInventoryDescription, setUseInventoryDescription] = useState(true);
 
     const handleProductSelect = (pid: string) => {
         const prod = products.find((p: any) => p.id === pid);
         setSelectedProduct(pid);
         setPrice(prod ? prod.salePrice : 0);
+        if (useInventoryDescription) {
+            setCustomDescription(prod?.description || '');
+        }
+    };
+
+    const handleDescSourceChange = (useInv: boolean) => {
+        setUseInventoryDescription(useInv);
+        if (useInv && !isCustomProduct && selectedProduct) {
+            const prod = products.find((p: any) => p.id === selectedProduct);
+            setCustomDescription(prod?.description || '');
+        }
     };
 
     const handleAddItem = () => {
-        if (!selectedProduct) return;
-        const prod = products.find((p: any) => p.id === selectedProduct);
-        if (!prod) return;
+        let taxRate = 0;
+        let pId = null;
+        let pName = '';
+        let pUnit = '';
+        let pDesc = customDescription;
 
-        const taxRate = prod.taxRate || 0;
+        if (isCustomProduct) {
+            if (!customName.trim()) {
+                alert('Vui lòng nhập tên sản phẩm tự do');
+                return;
+            }
+            pName = customName;
+            pUnit = customUnit;
+            taxRate = customTaxRate;
+        } else {
+            if (!selectedProduct) return;
+            const prod = products.find((p: any) => p.id === selectedProduct);
+            if (!prod) return;
+            pId = prod.id;
+            pName = prod.name;
+            pUnit = prod.unit;
+            taxRate = prod.taxRate || 0;
+        }
+
         const baseTotal = qty * price;
         const taxItemAmount = baseTotal * taxRate / 100;
         const total = baseTotal + taxItemAmount;
 
         setFormData((prev: any) => {
             const newItems = [...prev.items, {
-                productId: prod.id,
-                productName: prod.name,
-                unit: prod.unit,
+                productId: pId,
+                productName: pName,
+                customName: pName,
+                description: pDesc,
+                unit: pUnit,
                 quantity: qty,
                 unitPrice: price,
                 taxRate,
@@ -148,6 +192,9 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
         });
 
         setSelectedProduct('');
+        setCustomName('');
+        setCustomDescription('');
+        setCustomUnit('Cái');
         setQty(1);
         setPrice(0);
     };
@@ -169,6 +216,37 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                 totalAmount: calcTotalAmount
             };
         });
+    };
+
+    const handleEditItem = (index: number) => {
+        const item = formData.items[index];
+        if (item.productId) {
+            setIsCustomProduct(false);
+            setSelectedProduct(item.productId);
+            setCustomName('');
+            setCustomUnit('Cái');
+            setCustomTaxRate(item.taxRate || 0);
+
+            const prod = products.find((p: any) => p.id === item.productId);
+            if (prod && item.description === (prod.description || '')) {
+                setUseInventoryDescription(true);
+            } else {
+                setUseInventoryDescription(false);
+            }
+            setCustomDescription(item.description || '');
+        } else {
+            setIsCustomProduct(true);
+            setSelectedProduct('');
+            setCustomName(item.customName || item.productName || '');
+            setCustomUnit(item.unit || '');
+            setCustomTaxRate(item.taxRate || 0);
+            setUseInventoryDescription(false);
+            setCustomDescription(item.description || '');
+        }
+        setPrice(item.unitPrice);
+        setQty(item.quantity);
+
+        handleRemoveItem(index);
     };
 
     const handleSave = async () => {
@@ -277,7 +355,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
 
     const statsCards = [
         { id: 'ALL', label: 'Tất Cả', count: stats.ALL.count, amount: stats.ALL.amount, colorClass: 'stat-card-purple', icon: LayoutList },
-        { id: 'DRAFT', label: 'Bản Nháp', count: stats.DRAFT.count, amount: stats.DRAFT.amount, colorClass: 'stat-card-amber', icon: FileText },
+        { id: 'DRAFT', label: 'Bản Dự Thảo', count: stats.DRAFT.count, amount: stats.DRAFT.amount, colorClass: 'stat-card-amber', icon: FileText },
         { id: 'CONFIRMED', label: 'Chốt Đơn', count: stats.CONFIRMED.count, amount: stats.CONFIRMED.amount, colorClass: 'stat-card-blue', icon: FolderClock },
         { id: 'COMPLETED', label: 'Hoàn Thành', count: stats.COMPLETED.count, amount: stats.COMPLETED.amount, colorClass: 'stat-card-green', icon: CheckCircle2 },
         { id: 'CANCELLED', label: 'Đã Hủy', count: stats.CANCELLED.count, amount: stats.CANCELLED.amount, colorClass: 'stat-card-red', icon: XCircle },
@@ -441,23 +519,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                                 </td>
                                 <td className="py-3 text-right">
                                     <div className="flex justify-end items-center gap-2">
-                                        {o.status === 'DRAFT' && (
-                                            <Button variant="secondary" onClick={() => handleStatusChange(o.id, 'CONFIRMED')} title="Chốt Đơn" className="px-3 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-300 py-1.5 text-xs font-semibold flex-shrink-0 shadow-sm transition-all rounded-md">
-                                                Chốt Đơn
-                                            </Button>
-                                        )}
-                                        {o.status === 'CONFIRMED' && (
-                                            <Button variant="secondary" onClick={() => handleStatusChange(o.id, 'COMPLETED')} className="text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title="Hoàn Thành">
-                                                <PackageCheck size={14} className="mr-1.5 inline-block" /> Xong
-                                            </Button>
-                                        )}
-                                        {(o.status === 'DRAFT' || o.status === 'CONFIRMED') && (
-                                            <Button variant="secondary" onClick={() => setConvertModalId(o.id)} className="text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title="Tạo Hóa Đơn Tự Động">
-                                                <ArrowRightLeft size={14} className="mr-1.5 inline-block" /> Lên Hóa Đơn
-                                            </Button>
-                                        )}
-
-                                        <div className="flex items-center bg-white border border-slate-200 rounded-md shadow-sm overflow-hidden divide-x divide-slate-200 ml-1">
+                                        <div className="flex items-center gap-1 mr-1">
                                             {o.status === 'DRAFT' && (
                                                 <button onClick={() => handleEdit(o)} title="Chỉnh sửa" className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors">
                                                     <Edit2 size={15} />
@@ -476,6 +538,22 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                                                 <Trash2 size={15} />
                                             </button>
                                         </div>
+
+                                        {o.status === 'DRAFT' && (
+                                            <Button variant="secondary" onClick={() => handleStatusChange(o.id, 'CONFIRMED')} title="Chốt Đơn" className="px-3 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-300 py-1.5 text-xs font-semibold flex-shrink-0 shadow-sm transition-all rounded-md">
+                                                Chốt Đơn
+                                            </Button>
+                                        )}
+                                        {o.status === 'CONFIRMED' && (
+                                            <Button variant="secondary" onClick={() => handleStatusChange(o.id, 'COMPLETED')} className="text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title="Hoàn Thành">
+                                                <PackageCheck size={14} className="mr-1.5 inline-block" /> Xong
+                                            </Button>
+                                        )}
+                                        {(o.status === 'DRAFT' || o.status === 'CONFIRMED') && (
+                                            <Button variant="secondary" onClick={() => setConvertModalId(o.id)} className="text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title="Tạo Hóa Đơn Tự Động">
+                                                <ArrowRightLeft size={14} className="mr-1.5 inline-block" /> Lên Hóa Đơn
+                                            </Button>
+                                        )}
                                     </div>
                                 </td>
                             </tr>
@@ -550,34 +628,72 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
 
                     <div>
                         <h3 className="text-[1.1rem] font-semibold text-gray-800 mb-4">Chi tiết Sản Phẩm</h3>
-                        <div className="flex flex-col gap-4 bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-                            <div className="flex gap-3 items-end">
+                        <div className="flex flex-col bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                            <div className="mb-4 flex items-center gap-4 border-b border-gray-100 pb-3">
+                                <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
+                                    <input type="radio" className="accent-indigo-600 w-4 h-4 cursor-pointer" checked={!isCustomProduct} onChange={() => setIsCustomProduct(false)} />
+                                    <span>Chọn từ kho</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
+                                    <input type="radio" className="accent-indigo-600 w-4 h-4 cursor-pointer" checked={isCustomProduct} onChange={() => setIsCustomProduct(true)} />
+                                    <span>Nhập tự do ngoài hệ thống</span>
+                                </label>
+                            </div>
+                            <div className="flex gap-3 items-end mb-4">
                                 <div className="flex-1">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Thêm SP</label>
-                                    <SearchableSelect
-                                        options={products.map((p: any) => ({ value: p.id, label: `${p.sku} - ${p.name}` }))}
-                                        value={selectedProduct || ''}
-                                        onChange={handleProductSelect}
-                                        placeholder="-- Chọn Sản Phẩm --"
-                                    />
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Tên Sản Phẩm</label>
+                                    {!isCustomProduct ? (
+                                        <SearchableSelect
+                                            options={products.map((p: any) => ({ value: p.id, label: `${p.sku} - ${p.name}` }))}
+                                            value={selectedProduct || ''}
+                                            onChange={handleProductSelect}
+                                            placeholder="-- Chọn Sản Phẩm --"
+                                        />
+                                    ) : (
+                                        <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" placeholder="Nhập tên dịch vụ/sản phẩm..." value={customName} onChange={e => setCustomName(e.target.value)} />
+                                    )}
                                 </div>
-                                <div className="w-40">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Giá bán</label>
+                                {isCustomProduct && (
+                                    <div className="w-24">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1.5">ĐVT</label>
+                                        <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white text-center" placeholder="Đơn vị" value={customUnit} onChange={e => setCustomUnit(e.target.value)} />
+                                    </div>
+                                )}
+                                <div className="w-36">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Đơn giá</label>
                                     <input type="number" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" value={price} onChange={e => setPrice(Number(e.target.value))} />
                                 </div>
-                                <div className="w-32">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Thuế SP</label>
-                                    <input type="text" className="w-full border border-gray-200 rounded-lg p-2.5 bg-slate-50 text-center text-gray-500 font-medium cursor-not-allowed" value={`${products.find((p: any) => p.id === selectedProduct)?.taxRate || 0}%`} disabled />
+                                <div className="w-20">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Thuế %</label>
+                                    {isCustomProduct ? (
+                                        <input type="number" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-center text-gray-900 bg-white" value={customTaxRate} onChange={e => setCustomTaxRate(Number(e.target.value))} />
+                                    ) : (
+                                        <input type="text" className="w-full border border-gray-200 rounded-lg p-2.5 bg-slate-50 text-center text-gray-500 font-medium cursor-not-allowed" value={`${products.find((p: any) => p.id === selectedProduct)?.taxRate || 0}`} disabled />
+                                    )}
                                 </div>
-                                <div className="w-24">
+                                <div className="w-20">
                                     <label className="block text-sm font-medium text-gray-700 mb-1.5">SL</label>
                                     <input type="number" min="1" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-center text-gray-900 bg-white" value={qty} onChange={e => setQty(Number(e.target.value))} />
                                 </div>
-                                <Button onClick={handleAddItem} variant="secondary" className="mb-[2px] h-[46px] px-6 border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm font-medium rounded-lg">Thêm</Button>
+                                <Button onClick={handleAddItem} variant="secondary" className="mb-[2px] h-[46px] px-6 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 shadow-sm font-semibold rounded-lg">Thêm</Button>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Chi tiết Kỹ Thuật / Ghi chú cho khách hàng <span className="text-gray-400 font-normal">(In dưới tên SP)</span></label>
+                                <div className="flex items-center gap-4 mb-2">
+                                    <label className={`flex items-center gap-2 cursor-pointer text-sm font-medium ${isCustomProduct ? 'text-gray-400' : 'text-gray-700'}`}>
+                                        <input type="radio" className="accent-indigo-600 w-4 h-4 cursor-pointer" checked={useInventoryDescription && !isCustomProduct} onChange={() => handleDescSourceChange(true)} disabled={isCustomProduct} />
+                                        <span>Lấy mô tả từ kho</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
+                                        <input type="radio" className="accent-indigo-600 w-4 h-4 cursor-pointer" checked={!useInventoryDescription || isCustomProduct} onChange={() => handleDescSourceChange(false)} />
+                                        <span>Tự nhập mô tả</span>
+                                    </label>
+                                </div>
+                                <textarea rows={2} className={`w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all resize-none text-sm ${useInventoryDescription && !isCustomProduct ? 'bg-slate-50 text-gray-500' : 'text-gray-900 bg-white'}`} placeholder="Ghi chú thêm thông số, tính năng cho sản phẩm này..." value={customDescription} onChange={e => setCustomDescription(e.target.value)} disabled={useInventoryDescription && !isCustomProduct}></textarea>
                             </div>
 
                             {formData.items.length > 0 && (
-                                <div className="border border-gray-200 rounded-xl overflow-hidden mt-2 border-t mt-4 pt-4">
+                                <div className="border border-gray-200 rounded-xl overflow-hidden mt-2 border-t pt-4">
                                     <table className="w-full text-sm bg-white text-left">
                                         <thead className="bg-slate-50 border-b border-gray-200 text-gray-600">
                                             <tr>
@@ -592,13 +708,21 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                                         <tbody className="divide-y divide-gray-100">
                                             {formData.items.map((item: any, i: number) => (
                                                 <tr key={i} className="hover:bg-slate-50 transition-colors">
-                                                    <td className="p-3 text-gray-800">{item.productName}</td>
-                                                    <td className="p-3 text-center text-gray-800">{item.quantity}</td>
+                                                    <td className="p-3 text-gray-800">
+                                                        <div className="font-semibold">{item.productName || item.customName}</div>
+                                                        {item.description && <div className="text-xs text-gray-500 mt-0.5 max-w-sm whitespace-pre-wrap">{item.description}</div>}
+                                                    </td>
+                                                    <td className="p-3 text-center text-gray-800">
+                                                        {item.quantity} <span className="text-xs text-gray-500 ml-1">{item.unit}</span>
+                                                    </td>
                                                     <td className="p-3 text-right text-gray-600 font-medium">{formatMoney(item.unitPrice)}</td>
                                                     <td className="p-3 text-center text-gray-500 bg-gray-50 border-x border-white">{item.taxRate}%</td>
                                                     <td className="p-3 text-right font-semibold text-gray-900">{formatMoney(item.totalPrice)}</td>
                                                     <td className="p-3 text-center">
-                                                        <button type="button" onClick={() => handleRemoveItem(i)} className="text-red-400 hover:text-red-600 p-1.5 hover:bg-red-50 rounded-md transition-colors"><Trash2 size={16} /></button>
+                                                        <div className="flex items-center justify-center gap-1">
+                                                            <button type="button" onClick={() => handleEditItem(i)} className="text-blue-500 hover:text-blue-700 p-1.5 hover:bg-blue-50 rounded-md transition-colors" title="Sửa dòng này"><Edit2 size={16} /></button>
+                                                            <button type="button" onClick={() => handleRemoveItem(i)} className="text-red-400 hover:text-red-600 p-1.5 hover:bg-red-50 rounded-md transition-colors" title="Xóa"><Trash2 size={16} /></button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             ))}

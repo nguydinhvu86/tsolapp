@@ -10,7 +10,7 @@ export default async function SalesReportsPage() {
                 customers={data.customers}
                 invoices={data.invoices}
                 payments={data.payments}
-                orders={data.orders}
+                expenses={data.expenses}
                 estimates={data.estimates}
             />
         </div>

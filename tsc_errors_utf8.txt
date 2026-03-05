@@ -1,0 +1,18 @@
+﻿app/sales/expenses/ExpenseClient.tsx(99,17): error TS18049: 'aVal' is possibly 'null' or 'undefined'.
+app/sales/expenses/ExpenseClient.tsx(99,24): error TS18049: 'bVal' is possibly 'null' or 'undefined'.
+app/sales/expenses/ExpenseClient.tsx(100,17): error TS18049: 'aVal' is possibly 'null' or 'undefined'.
+app/sales/expenses/ExpenseClient.tsx(100,24): error TS18049: 'bVal' is possibly 'null' or 'undefined'.
+app/sales/invoices/actions.ts(284,25): error TS2322: Type '{ productId: string | null; quantity: number; price: number; }[]' is not assignable to type '(Without<InventoryTransactionItemCreateWithoutTransactionInput, InventoryTransactionItemUncheckedCreateWithoutTransactionInput> & InventoryTransactionItemUncheckedCreateWithoutTransactionInput) | (Without<...> & InventoryTransactionItemCreateWithoutTransactionInput) | InventoryTransactionItemCreateWithoutTransaction...'.
+  Type '{ productId: string | null; quantity: number; price: number; }[]' is not assignable to type 'InventoryTransactionItemCreateWithoutTransactionInput[]'.
+    Property 'product' is missing in type '{ productId: string | null; quantity: number; price: number; }' but required in type 'InventoryTransactionItemCreateWithoutTransactionInput'.
+app/sales/invoices/actions.ts(297,55): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+app/sales/invoices/actions.ts(309,29): error TS2322: Type 'string | null' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+app/sales/invoices/actions.ts(510,25): error TS2322: Type '{ productId: string | null; quantity: number; price: number; }[]' is not assignable to type '(Without<InventoryTransactionItemCreateWithoutTransactionInput, InventoryTransactionItemUncheckedCreateWithoutTransactionInput> & InventoryTransactionItemUncheckedCreateWithoutTransactionInput) | (Without<...> & InventoryTransactionItemCreateWithoutTransactionInput) | InventoryTransactionItemCreateWithoutTransaction...'.
+  Type '{ productId: string | null; quantity: number; price: number; }[]' is not assignable to type 'InventoryTransactionItemCreateWithoutTransactionInput[]'.
+    Property 'product' is missing in type '{ productId: string | null; quantity: number; price: number; }' but required in type 'InventoryTransactionItemCreateWithoutTransactionInput'.
+app/sales/invoices/actions.ts(523,55): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+app/sales/invoices/actions.ts(535,29): error TS2322: Type 'string | null' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.

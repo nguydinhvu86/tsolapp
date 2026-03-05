@@ -43,7 +43,7 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
 
     const getStatusBadge = (status: string) => {
         switch (status) {
-            case 'DRAFT': return <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">Bản Nháp</span>;
+            case 'DRAFT': return <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">Bản Dự Thảo</span>;
             case 'SENT': return <span className="px-2 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">Đã Gửi KH</span>;
             case 'ACCEPTED': return <span className="px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">Khách Chốt</span>;
             case 'ORDERED': return <span className="px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">Đã Lên Đơn</span>;
@@ -280,10 +280,11 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                                                 estimate.items?.map((item: any) => (
                                                     <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                                         <td style={{ padding: '1rem', fontWeight: 500, color: '#1e293b' }}>
-                                                            {item.product?.name || 'Sản phẩm không xác định'}
+                                                            {item.customName || item.product?.name || 'Sản phẩm tự do'}
                                                             {item.product?.sku && <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>SKU: {item.product.sku}</div>}
+                                                            {item.description && <div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.25rem', whiteSpace: 'pre-wrap', fontWeight: 400 }}>{item.description}</div>}
                                                         </td>
-                                                        <td style={{ padding: '1rem', textAlign: 'center', color: '#475569' }}>{item.quantity} {item.product?.unit || ''}</td>
+                                                        <td style={{ padding: '1rem', textAlign: 'center', color: '#475569' }}>{item.quantity} {item.unit || item.product?.unit || ''}</td>
                                                         <td style={{ padding: '1rem', textAlign: 'right', color: '#475569' }}>{formatMoney(item.unitPrice)}</td>
                                                         <td style={{ padding: '1rem', textAlign: 'center', color: '#475569' }}>{item.taxRate || 0}%</td>
                                                         <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>{formatMoney(item.totalPrice)}</td>

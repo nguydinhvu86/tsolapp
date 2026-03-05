@@ -87,7 +87,7 @@ export default async function PublicSalesOrderPage({ params }: { params: { id: s
                         <h3 style={{ fontSize: '1rem', fontWeight: 700, borderBottom: '1px solid #e2e8f0', display: 'inline-block', paddingBottom: '0.25rem', marginBottom: '0.75rem' }}>THÔNG TIN ĐƠN HÀNG</h3>
                         <div><strong>Người lập:</strong> {order.creator?.name || '---'}</div>
                         <div><strong>Trạng thái:</strong> {
-                            order.status === 'DRAFT' ? 'Bản Nháp' :
+                            order.status === 'DRAFT' ? 'Bản Dự Thảo' :
                                 order.status === 'CONFIRMED' ? 'Chốt Đơn' :
                                     order.status === 'COMPLETED' ? 'Hoàn Thành' :
                                         order.status === 'CANCELLED' ? 'Đã Hủy' : order.status

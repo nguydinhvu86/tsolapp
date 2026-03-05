@@ -7,7 +7,7 @@ import { Table } from '@/app/components/ui/Table';
 import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
-import { Plus, Edit2, Trash2, Save, X, Printer, Search, Calendar, PackageCheck, Eye, Download, LinkIcon, CheckCircle2, FileSearch, LayoutList, FileText, ChevronUp, ChevronDown, Undo2, XCircle, AlertTriangle, Info, ShieldAlert } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Printer, Search, Calendar, PackageCheck, Eye, Download, LinkIcon, CheckCircle2, FileSearch, LayoutList, FileText, ChevronUp, ChevronDown, Undo2, XCircle, AlertTriangle, Info, ShieldAlert, Copy } from 'lucide-react';
 import { submitSalesInvoice, approveSalesInvoice, deleteSalesInvoice, updateSalesInvoice, cancelSalesInvoice, updateSalesInvoiceStatus, restoreSalesInvoice } from './actions';
 import { formatMoney } from '@/lib/utils/formatters';
 import { TagDisplay } from '@/app/components/ui/TagDisplay';
@@ -61,10 +61,15 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         totalAmount: 0,
         items: []
     });
-
     const [selectedProduct, setSelectedProduct] = useState('');
     const [qty, setQty] = useState(1);
     const [price, setPrice] = useState(0);
+    const [isCustomProduct, setIsCustomProduct] = useState(false);
+    const [customName, setCustomName] = useState('');
+    const [customUnit, setCustomUnit] = useState('Cái');
+    const [customTaxRate, setCustomTaxRate] = useState(0);
+    const [customDescription, setCustomDescription] = useState('');
+    const [useInventoryDescription, setUseInventoryDescription] = useState(true);
 
     const handleOpenCreate = () => {
         setFormData({
@@ -84,13 +89,20 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         setQty(1);
         setPrice(0);
         setSelectedProduct('');
+        setIsCustomProduct(false);
+        setCustomName('');
+        setCustomDescription('');
+        setCustomUnit('Cái');
+        setCustomTaxRate(0);
         setIsFormOpen(true);
     };
 
     const handleEdit = (inv: any) => {
         const mappedItems = inv.items ? inv.items.map((i: any) => ({
             productId: i.productId,
-            productName: i.product?.name || i.productName || '',
+            productName: i.product?.name || i.customName || i.productName || '',
+            customName: i.customName || '',
+            description: i.description,
             unit: i.product?.unit || i.unit || '',
             quantity: i.quantity,
             unitPrice: i.unitPrice,
@@ -121,6 +133,54 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         setQty(1);
         setPrice(0);
         setSelectedProduct('');
+        setIsCustomProduct(false);
+        setCustomName('');
+        setCustomDescription('');
+        setCustomUnit('Cái');
+        setCustomTaxRate(0);
+        setIsFormOpen(true);
+    };
+
+    const handleCopy = (inv: any) => {
+        const mappedItems = inv.items ? inv.items.map((i: any) => ({
+            productId: i.productId,
+            productName: i.product?.name || i.customName || i.productName || '',
+            customName: i.customName || '',
+            description: i.description,
+            unit: i.product?.unit || i.unit || '',
+            quantity: i.quantity,
+            unitPrice: i.unitPrice,
+            taxRate: i.taxRate || 0,
+            taxAmount: i.taxAmount || 0,
+            totalPrice: i.totalPrice
+        })) : [];
+
+        const calcSubTotal = mappedItems.reduce((acc: number, curr: any) => acc + (curr.quantity * curr.unitPrice), 0);
+        const calcTaxAmount = mappedItems.reduce((acc: number, curr: any) => acc + curr.taxAmount, 0);
+        const calcTotalAmount = mappedItems.reduce((acc: number, curr: any) => acc + curr.totalPrice, 0);
+
+        setFormData({
+            code: nextCode,
+            customerId: inv.customerId || '',
+            orderId: inv.orderId || '',
+            date: new Date().toISOString().split('T')[0],
+            dueDate: inv.dueDate ? new Date(inv.dueDate).toISOString().split('T')[0] : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            notes: inv.notes || '',
+            status: 'DRAFT',
+            tags: inv.tags || '',
+            subTotal: calcSubTotal,
+            taxAmount: calcTaxAmount,
+            totalAmount: calcTotalAmount,
+            items: mappedItems
+        });
+        setQty(1);
+        setPrice(0);
+        setSelectedProduct('');
+        setIsCustomProduct(false);
+        setCustomName('');
+        setCustomDescription('');
+        setCustomUnit('Cái');
+        setCustomTaxRate(0);
         setIsFormOpen(true);
     };
 
@@ -133,8 +193,10 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
 
         const mappedItems = order.items.map((i: any) => ({
             productId: i.productId,
-            productName: i.product.name,
-            unit: i.product.unit,
+            productName: i.product?.name || i.customName || i.productName || '',
+            customName: i.customName || '',
+            description: i.description,
+            unit: i.product?.unit || i.unit || '',
             quantity: i.quantity,
             unitPrice: i.unitPrice,
             taxRate: i.taxRate,
@@ -157,23 +219,55 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         const prod = products.find((p: any) => p.id === pid);
         setSelectedProduct(pid);
         setPrice(prod ? prod.salePrice : 0);
+        if (useInventoryDescription) {
+            setCustomDescription(prod?.description || '');
+        }
+    };
+
+    const handleDescSourceChange = (useInv: boolean) => {
+        setUseInventoryDescription(useInv);
+        if (useInv && !isCustomProduct && selectedProduct) {
+            const prod = products.find((p: any) => p.id === selectedProduct);
+            setCustomDescription(prod?.description || '');
+        }
     };
 
     const handleAddItem = () => {
-        if (!selectedProduct) return;
-        const prod = products.find((p: any) => p.id === selectedProduct);
-        if (!prod) return;
+        let taxRate = 0;
+        let pId = null;
+        let pName = '';
+        let pUnit = '';
+        let pDesc = customDescription;
 
-        const taxRate = prod.taxRate || 0;
+        if (isCustomProduct) {
+            if (!customName.trim()) {
+                alert('Vui lòng nhập tên sản phẩm tự do');
+                return;
+            }
+            pName = customName;
+            pUnit = customUnit;
+            taxRate = customTaxRate;
+        } else {
+            if (!selectedProduct) return;
+            const prod = products.find((p: any) => p.id === selectedProduct);
+            if (!prod) return;
+            pId = prod.id;
+            pName = prod.name;
+            pUnit = prod.unit;
+            taxRate = prod.taxRate || 0;
+        }
+
         const baseTotal = qty * price;
         const taxItemAmount = baseTotal * taxRate / 100;
         const total = baseTotal + taxItemAmount;
 
         setFormData((prev: any) => {
             const newItems = [...prev.items, {
-                productId: prod.id,
-                productName: prod.name,
-                unit: prod.unit,
+                productId: pId,
+                productName: pName,
+                customName: pName,
+                description: pDesc,
+                unit: pUnit,
                 quantity: qty,
                 unitPrice: price,
                 taxRate,
@@ -195,6 +289,9 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         });
 
         setSelectedProduct('');
+        setCustomName('');
+        setCustomDescription('');
+        setCustomUnit('Cái');
         setQty(1);
         setPrice(0);
     };
@@ -216,6 +313,37 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                 totalAmount: calcTotalAmount
             };
         });
+    };
+
+    const handleEditItem = (index: number) => {
+        const item = formData.items[index];
+        if (item.productId) {
+            setIsCustomProduct(false);
+            setSelectedProduct(item.productId);
+            setCustomName('');
+            setCustomUnit('Cái');
+            setCustomTaxRate(item.taxRate || 0);
+
+            const prod = products.find((p: any) => p.id === item.productId);
+            if (prod && item.description === (prod.description || '')) {
+                setUseInventoryDescription(true);
+            } else {
+                setUseInventoryDescription(false);
+            }
+            setCustomDescription(item.description || '');
+        } else {
+            setIsCustomProduct(true);
+            setSelectedProduct('');
+            setCustomName(item.customName || item.productName || '');
+            setCustomUnit(item.unit || '');
+            setCustomTaxRate(item.taxRate || 0);
+            setUseInventoryDescription(false);
+            setCustomDescription(item.description || '');
+        }
+        setPrice(item.unitPrice);
+        setQty(item.quantity);
+
+        handleRemoveItem(index);
     };
 
     const handleSave = async () => {
@@ -386,12 +514,12 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
 
     const handleDelete = async (id: string, status: string) => {
         if (status !== 'DRAFT') {
-            alert("Chỉ có thể xóa Hóa đơn Nháp. Các Hóa đơn đã Ghi Nhận không thể xóa.");
+            alert("Chỉ có thể xóa Hóa đơn Dự Thảo. Các Hóa đơn đã Ghi Nhận không thể xóa.");
             return;
         }
         setActionModal({
             isOpen: true,
-            title: 'Xóa Hóa Đơn Nháp',
+            title: 'Xóa Hóa Đơn Dự Thảo',
             icon: <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#fef2f2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Trash2 size={24} /></div>,
             message: <p style={{ color: '#374151', fontSize: '0.9375rem' }}>Hóa đơn này sẽ bị <strong>xóa hoàn toàn khỏi hệ thống</strong> và không thể phục hồi. Bạn có chắc chắn muốn xóa?</p>,
             confirmLabel: 'Xóa Vĩnh Viễn',
@@ -453,7 +581,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
 
     const statsCards = [
         { id: 'ALL', label: 'Tất Cả', count: stats.ALL.count, amount: stats.ALL.amount, colorClass: 'stat-card-purple', icon: LayoutList },
-        { id: 'DRAFT', label: 'Nháp', count: stats.DRAFT.count, amount: stats.DRAFT.amount, colorClass: 'stat-card-amber', icon: FileText },
+        { id: 'DRAFT', label: 'Dự Thảo', count: stats.DRAFT.count, amount: stats.DRAFT.amount, colorClass: 'stat-card-amber', icon: FileText },
         { id: 'ISSUED', label: 'Ghi Nhận Nợ / Xuất Kho', count: stats.ISSUED.count, amount: stats.ISSUED.amount, colorClass: 'stat-card-blue', icon: PackageCheck },
         { id: 'PARTIAL_PAID', label: 'Đã Thu Một Phần', count: stats.PARTIAL_PAID.count, amount: stats.PARTIAL_PAID.amount, colorClass: 'stat-card-green', icon: CheckCircle2 },
         { id: 'PAID', label: 'Hoàn Tất Thu', count: stats.PAID.count, amount: stats.PAID.amount, colorClass: 'stat-card-green', icon: CheckCircle2 },
@@ -594,7 +722,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                 </div>
             </div>
 
-            <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title={formData.id ? "Sửa Hóa Đơn Nháp" : "Tạo Hóa Đơn Mới"} maxWidth="1000px">
+            <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title={formData.id ? "Sửa Hóa Đơn Dự Thảo" : "Tạo Hóa Đơn Mới"} maxWidth="1000px">
                 <div className="p-4">
                     <div className="grid grid-cols-4 gap-4 mb-4">
                         <div>
@@ -654,80 +782,130 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                     </div>
 
                     <h3 className="font-medium mb-4 mt-6">Chi tiết Sản Phẩm Xuất Bán</h3>
-                    <div className="flex gap-2 mb-4 items-end">
-                        <div className="flex-1">
-                            <label className="block text-sm text-gray-600 mb-1">Thêm SP</label>
-                            <SearchableSelect
-                                options={products.map((p: any) => ({ value: p.id, label: `${p.sku} - ${p.name} (Tồn: ${p.inventories?.[0]?.quantity || 0})` }))}
-                                value={selectedProduct || ''}
-                                onChange={handleProductSelect}
-                                placeholder="-- Chọn Sản Phẩm --"
-                            />
+                    <div className="flex flex-col bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                        <div className="mb-4 flex items-center gap-4 border-b border-gray-100 pb-3">
+                            <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
+                                <input type="radio" className="accent-indigo-600 w-4 h-4 cursor-pointer" checked={!isCustomProduct} onChange={() => setIsCustomProduct(false)} />
+                                <span>Chọn từ kho</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
+                                <input type="radio" className="accent-indigo-600 w-4 h-4 cursor-pointer" checked={isCustomProduct} onChange={() => setIsCustomProduct(true)} />
+                                <span>Nhập tự do ngoài hệ thống</span>
+                            </label>
                         </div>
-                        <div className="w-24">
-                            <label className="block text-sm text-gray-600 mb-1">Đơn giá</label>
-                            <input type="number" className="w-full border rounded p-2" value={price} onChange={e => setPrice(Number(e.target.value))} />
+                        <div className="flex gap-2 items-end mb-4">
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Tên Sản Phẩm</label>
+                                {!isCustomProduct ? (
+                                    <SearchableSelect
+                                        options={products.map((p: any) => ({ value: p.id, label: `${p.sku} - ${p.name} (Tồn: ${p.inventories?.[0]?.quantity || 0})` }))}
+                                        value={selectedProduct || ''}
+                                        onChange={handleProductSelect}
+                                        placeholder="-- Chọn Sản Phẩm --"
+                                    />
+                                ) : (
+                                    <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" placeholder="Nhập tên dịch vụ/sản phẩm..." value={customName} onChange={e => setCustomName(e.target.value)} />
+                                )}
+                            </div>
+                            {isCustomProduct && (
+                                <div className="w-24">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">ĐVT</label>
+                                    <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white text-center" placeholder="Đơn vị" value={customUnit} onChange={e => setCustomUnit(e.target.value)} />
+                                </div>
+                            )}
+                            <div className="w-24">
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Đơn giá</label>
+                                <input type="number" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" value={price} onChange={e => setPrice(Number(e.target.value))} />
+                            </div>
+                            <div className="w-20">
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Thuế %</label>
+                                {isCustomProduct ? (
+                                    <input type="number" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-center text-gray-900 bg-white" value={customTaxRate} onChange={e => setCustomTaxRate(Number(e.target.value))} />
+                                ) : (
+                                    <input type="text" className="w-full border border-gray-200 rounded-lg p-2.5 bg-slate-50 text-center text-gray-500 font-medium cursor-not-allowed" value={`${products.find((p: any) => p.id === selectedProduct)?.taxRate || 0}`} disabled />
+                                )}
+                            </div>
+                            <div className="w-16">
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">SL</label>
+                                <input type="number" min="1" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-center text-gray-900 bg-white" value={qty} onChange={e => setQty(Number(e.target.value))} />
+                            </div>
+                            <Button onClick={handleAddItem} variant="secondary" className="mb-[2px] h-[46px] px-4 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 shadow-sm font-semibold rounded-lg">Thêm</Button>
                         </div>
-                        <div className="w-24">
-                            <label className="block text-sm text-gray-600 mb-1">Thuế SP</label>
-                            <input type="text" className="w-full border rounded p-2 bg-gray-100 text-center text-gray-600 font-medium cursor-not-allowed" value={`${products.find((p: any) => p.id === selectedProduct)?.taxRate || 0}%`} disabled />
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1.5">Chi tiết Kỹ Thuật / Ghi chú cho khách hàng <span className="text-gray-400 font-normal">(In dưới tên SP)</span></label>
+                            <div className="flex items-center gap-4 mb-2">
+                                <label className={`flex items-center gap-2 cursor-pointer text-sm font-medium ${isCustomProduct ? 'text-gray-400' : 'text-gray-700'}`}>
+                                    <input type="radio" className="accent-indigo-600 w-4 h-4 cursor-pointer" checked={useInventoryDescription && !isCustomProduct} onChange={() => handleDescSourceChange(true)} disabled={isCustomProduct} />
+                                    <span>Lấy mô tả từ kho</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
+                                    <input type="radio" className="accent-indigo-600 w-4 h-4 cursor-pointer" checked={!useInventoryDescription || isCustomProduct} onChange={() => handleDescSourceChange(false)} />
+                                    <span>Tự nhập mô tả</span>
+                                </label>
+                            </div>
+                            <textarea rows={2} className={`w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all resize-none text-sm ${useInventoryDescription && !isCustomProduct ? 'bg-slate-50 text-gray-500' : 'text-gray-900 bg-white'}`} placeholder="Ghi chú thêm thông số, tính năng cho sản phẩm này..." value={customDescription} onChange={e => setCustomDescription(e.target.value)} disabled={useInventoryDescription && !isCustomProduct}></textarea>
                         </div>
-                        <div className="w-20">
-                            <label className="block text-sm text-gray-600 mb-1">SL</label>
-                            <input type="number" min="1" className="w-full border rounded p-2" value={qty} onChange={e => setQty(Number(e.target.value))} />
-                        </div>
-                        <Button onClick={handleAddItem} variant="secondary" className="mb-[2px]">Thêm</Button>
                     </div>
 
                     {formData.items.length > 0 && (
-                        <table className="w-full text-sm mb-4 bg-white border">
-                            <thead className="bg-gray-100">
-                                <tr>
-                                    <th className="p-2 border">Sản Phẩm</th>
-                                    <th className="p-2 border">SL</th>
-                                    <th className="p-2 border">Đ.Giá</th>
-                                    <th className="p-2 border">Thuế</th>
-                                    <th className="p-2 border">Thành Tiền</th>
-                                    <th className="p-2 border w-12"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {formData.items.map((item: any, i: number) => (
-                                    <tr key={i}>
-                                        <td className="p-2 border">{item.productName}</td>
-                                        <td className="p-2 border text-center">{item.quantity}</td>
-                                        <td className="p-2 border text-right">{formatMoney(item.unitPrice)}</td>
-                                        <td className="p-2 border text-center">{item.taxRate}%</td>
-                                        <td className="p-2 border text-right font-medium">{formatMoney(item.totalPrice)}</td>
-                                        <td className="p-2 border text-center">
-                                            <button onClick={() => handleRemoveItem(i)} className="text-red-500"><Trash2 size={14} /></button>
-                                        </td>
+                        <div className="border border-gray-200 rounded-xl overflow-hidden mt-2 border-t pt-4">
+                            <table className="w-full text-sm mb-4 bg-white text-left">
+                                <thead className="bg-slate-50 border-b border-gray-200 text-gray-600">
+                                    <tr>
+                                        <th className="p-3 font-medium">Sản Phẩm</th>
+                                        <th className="p-3 font-medium text-center w-20">SL</th>
+                                        <th className="p-3 font-medium text-right w-32">Đ.Giá</th>
+                                        <th className="p-3 font-medium text-center w-20">Thuế</th>
+                                        <th className="p-3 font-medium text-right w-36">Thành Tiền</th>
+                                        <th className="p-3 font-medium text-center w-12"></th>
                                     </tr>
-                                ))}
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td colSpan={4} className="p-2 border text-right font-medium text-gray-600 text-sm">Tổng tiền trước thuế:</td>
-                                    <td className="p-2 border text-right font-medium text-gray-800">{formatMoney(formData.subTotal || 0)}</td>
-                                    <td className="p-2 border"></td>
-                                </tr>
-                                <tr>
-                                    <td colSpan={4} className="p-2 border text-right font-medium text-gray-600 text-sm">Tổng tiền thuế:</td>
-                                    <td className="p-2 border text-right font-medium text-gray-800">{formatMoney(formData.taxAmount || 0)}</td>
-                                    <td className="p-2 border"></td>
-                                </tr>
-                                <tr>
-                                    <td colSpan={4} className="p-2 border text-right font-bold">Tổng Cộng:</td>
-                                    <td className="p-2 border text-right font-bold text-primary">{formatMoney(formData.totalAmount || 0)}</td>
-                                    <td className="p-2 border"></td>
-                                </tr>
-                            </tfoot>
-                        </table>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    {formData.items.map((item: any, i: number) => (
+                                        <tr key={i} className="hover:bg-slate-50 transition-colors">
+                                            <td className="p-3 text-gray-800">
+                                                <div className="font-semibold">{item.productName || item.customName}</div>
+                                                {item.description && <div className="text-xs text-gray-500 mt-0.5 max-w-sm whitespace-pre-wrap">{item.description}</div>}
+                                            </td>
+                                            <td className="p-3 text-center text-gray-800">
+                                                {item.quantity} <span className="text-xs text-gray-500 ml-1">{item.unit}</span>
+                                            </td>
+                                            <td className="p-3 text-right text-gray-600 font-medium">{formatMoney(item.unitPrice)}</td>
+                                            <td className="p-3 text-center text-gray-500 bg-gray-50 border-x border-white">{item.taxRate}%</td>
+                                            <td className="p-2 border text-right font-medium">{formatMoney(item.totalPrice)}</td>
+                                            <td className="p-2 border text-center">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <button type="button" onClick={() => handleEditItem(i)} className="text-blue-500 hover:text-blue-700 transition-colors" title="Sửa dòng này"><Edit2 size={14} /></button>
+                                                    <button type="button" onClick={() => handleRemoveItem(i)} className="text-red-500 hover:text-red-700 transition-colors" title="Xóa"><Trash2 size={14} /></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colSpan={4} className="p-2 border text-right font-medium text-gray-600 text-sm">Tổng tiền trước thuế:</td>
+                                        <td className="p-2 border text-right font-medium text-gray-800">{formatMoney(formData.subTotal || 0)}</td>
+                                        <td className="p-2 border"></td>
+                                    </tr>
+                                    <tr>
+                                        <td colSpan={4} className="p-2 border text-right font-medium text-gray-600 text-sm">Tổng tiền thuế:</td>
+                                        <td className="p-2 border text-right font-medium text-gray-800">{formatMoney(formData.taxAmount || 0)}</td>
+                                        <td className="p-2 border"></td>
+                                    </tr>
+                                    <tr>
+                                        <td colSpan={4} className="p-2 border text-right font-bold">Tổng Cộng:</td>
+                                        <td className="p-2 border text-right font-bold text-primary">{formatMoney(formData.totalAmount || 0)}</td>
+                                        <td className="p-2 border"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
                     )}
 
                     <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 mt-4">
                         <Button onClick={handleSave} variant="secondary" className="flex items-center gap-2 border-gray-300">
-                            <Save size={16} /> Lưu Nháp
+                            <Save size={16} /> Lưu Dự Thảo
                         </Button>
                         <Button onClick={handleSaveAndApprove} className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white">
                             <CheckCircle2 size={16} /> Lưu & Xuất Kho Trừ Tồn
@@ -799,7 +977,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                     title={inv.status === 'CANCELLED' ? "Hóa đơn đã phân hủy" : "Nhấn để đổi trạng thái"}
                                     disabled={inv.status === 'CANCELLED'}
                                 >
-                                    <option value="DRAFT" className="bg-white text-gray-900">Bản Nháp</option>
+                                    <option value="DRAFT" className="bg-white text-gray-900">Bản Dự Thảo</option>
                                     <option value="ISSUED" className="bg-white text-gray-900">Ghi Nhận Nợ / Xuất Kho</option>
                                     <option value="PARTIAL_PAID" className="bg-white text-gray-900">Đã Thu Một Phần</option>
                                     <option value="PAID" className="bg-white text-gray-900">Hoàn Tất Thu</option>
@@ -808,34 +986,42 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                             </td>
                             <td className="py-3 text-right">
                                 <div className="flex justify-end gap-2 items-center">
-                                    <Link href={`/sales/invoices/${inv.id}`} title="Xem chi tiết" className="hover:text-primary transition-colors p-1 text-xs flex items-center gap-1 text-gray-500">
-                                        <Eye size={16} />
-                                    </Link>
-                                    <Link href={`/print/sales/invoice/${inv.id}`} target="_blank" title="In ấn" className="hover:text-purple-600 transition-colors p-1 text-xs flex items-center gap-1 text-gray-500">
-                                        <Printer size={16} />
-                                    </Link>
+                                    <div className="flex items-center gap-1 mr-1">
+                                        {inv.status === 'DRAFT' && (
+                                            <button onClick={() => handleEdit(inv)} title="Chỉnh sửa" className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                                                <Edit2 size={15} />
+                                            </button>
+                                        )}
+                                        <button onClick={() => handleCopy(inv)} title="Copy Hóa Đơn" className="p-2 text-slate-500 hover:text-green-600 hover:bg-green-50 transition-colors">
+                                            <Copy size={15} />
+                                        </button>
+                                        <Link href={`/sales/invoices/${inv.id}`} title="Xem chi tiết" className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors block">
+                                            <Eye size={15} />
+                                        </Link>
+                                        <Link href={`/print/sales/invoice/${inv.id}`} target="_blank" title="Tải PDF / In ấn" className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors block">
+                                            <Printer size={15} />
+                                        </Link>
+                                        {inv.status !== 'CANCELLED' && (
+                                            <button onClick={() => handleCancel(inv.id)} title="Hủy Hóa Đơn" className="p-2 text-slate-500 hover:text-orange-600 hover:bg-orange-50 transition-colors block">
+                                                <XCircle size={15} />
+                                            </button>
+                                        )}
+                                        {inv.status === 'CANCELLED' && (
+                                            <button onClick={() => handleRestore(inv.id)} title="Khôi Phục" className="p-2 text-slate-500 hover:text-green-600 hover:bg-green-50 transition-colors block">
+                                                <Undo2 size={15} />
+                                            </button>
+                                        )}
+                                        {inv.status === 'DRAFT' && (
+                                            <button onClick={() => handleDelete(inv.id, inv.status)} title="Xóa" className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors block">
+                                                <Trash2 size={15} />
+                                            </button>
+                                        )}
+                                    </div>
+
                                     {inv.status === 'DRAFT' && (
-                                        <>
-                                            <button onClick={() => handleEdit(inv)} title="Chỉnh sửa" className="hover:text-blue-600 transition-colors p-1 text-xs flex items-center gap-1 text-gray-500">
-                                                <Edit2 size={16} />
-                                            </button>
-                                            <Button variant="secondary" onClick={() => handleApprove(inv.id)} className="text-amber-600 border-amber-600 px-2 py-1 text-xs flex items-center gap-1" title="Duyệt để Ghi nhận Nợ & Xuất Kho">
-                                                <CheckCircle2 size={14} /> Duyệt
-                                            </Button>
-                                            <button onClick={() => handleDelete(inv.id, inv.status)} title="Xóa" className="text-red-500 hover:text-red-700 transition-colors p-1 text-xs">
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </>
-                                    )}
-                                    {inv.status !== 'CANCELLED' && (
-                                        <button onClick={() => handleCancel(inv.id)} title="Hủy Hóa Đơn" className="text-orange-500 hover:text-orange-700 transition-colors p-1 text-xs flex items-center gap-1">
-                                            <XCircle size={16} />
-                                        </button>
-                                    )}
-                                    {inv.status === 'CANCELLED' && (
-                                        <button onClick={() => handleRestore(inv.id)} title="Khôi Phục" className="text-green-600 hover:text-green-800 transition-colors p-1 text-xs flex items-center gap-1">
-                                            <Undo2 size={16} />
-                                        </button>
+                                        <Button variant="secondary" onClick={() => handleApprove(inv.id)} className="text-amber-600 border-amber-600 px-2 py-1 flex-shrink-0 text-xs flex items-center gap-1 shadow-sm transition-all rounded-md" title="Duyệt để Ghi nhận Nợ & Xuất Kho">
+                                            <CheckCircle2 size={14} className="mr-0.5" /> Duyệt
+                                        </Button>
                                     )}
                                 </div>
                             </td>

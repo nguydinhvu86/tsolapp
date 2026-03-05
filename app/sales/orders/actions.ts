@@ -8,7 +8,10 @@ import { authOptions } from '@/lib/authOptions';
 
 const itemSchema = z.object({
     id: z.string().optional(),
-    productId: z.string().min(1, "Product is required"),
+    productId: z.string().optional(),
+    customName: z.string().optional(),
+    description: z.string().optional(),
+    unit: z.string().optional(),
     quantity: z.number().min(1, "Quantity must be at least 1"),
     unitPrice: z.number().min(0, "Unit price must be >= 0"),
     taxRate: z.number().min(0, "Tax rate must be >= 0"),
@@ -49,7 +52,10 @@ export async function submitSalesOrder(creatorId: string, formData: any) {
                 creatorId: actualCreatorId,
                 items: {
                     create: formData.items.map((item: any) => ({
-                        productId: item.productId,
+                        productId: item.productId || null,
+                        customName: item.customName || null,
+                        description: item.description || null,
+                        unit: item.unit || null,
                         quantity: item.quantity,
                         unitPrice: item.unitPrice,
                         taxRate: item.taxRate || 0,
@@ -88,7 +94,10 @@ export async function updateSalesOrder(id: string, formData: any) {
                 items: {
                     deleteMany: {},
                     create: formData.items.map((item: any) => ({
-                        productId: item.productId,
+                        productId: item.productId || null,
+                        customName: item.customName || null,
+                        description: item.description || null,
+                        unit: item.unit || null,
                         quantity: item.quantity,
                         unitPrice: item.unitPrice,
                         taxRate: item.taxRate || 0,
@@ -222,6 +231,9 @@ export async function convertOrderToInvoice(orderId: string) {
                 items: {
                     create: order.items.map((i: any) => ({
                         productId: i.productId,
+                        customName: i.customName,
+                        description: i.description,
+                        unit: i.unit,
                         quantity: i.quantity,
                         unitPrice: i.unitPrice,
                         taxRate: i.taxRate,

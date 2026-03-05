@@ -33,7 +33,10 @@ export async function submitSalesInvoice(creatorId: string, formData: any) {
                 creatorId: actualCreatorId,
                 items: {
                     create: formData.items.map((item: any) => ({
-                        productId: item.productId,
+                        productId: item.productId || null,
+                        customName: item.customName || null,
+                        description: item.description || null,
+                        unit: item.unit || null,
                         quantity: item.quantity,
                         unitPrice: item.unitPrice,
                         taxRate: item.taxRate || 0,
@@ -86,7 +89,7 @@ export async function updateSalesInvoice(id: string, formData: any) {
             return { success: false, error: "Không tìm thấy hóa đơn." };
         }
         if (existingInvoice.status !== "DRAFT") {
-            return { success: false, error: "Chỉ Hóa Đơn nháp (DRAFT) mới có thể sửa." };
+            return { success: false, error: "Chỉ Hóa Đơn Dự Thảo (DRAFT) mới có thể sửa." };
         }
 
         const invoice = await prisma.salesInvoice.update({
@@ -106,7 +109,10 @@ export async function updateSalesInvoice(id: string, formData: any) {
                 items: {
                     deleteMany: {},
                     create: formData.items.map((item: any) => ({
-                        productId: item.productId,
+                        productId: item.productId || null,
+                        customName: item.customName || null,
+                        description: item.description || null,
+                        unit: item.unit || null,
                         quantity: item.quantity,
                         unitPrice: item.unitPrice,
                         taxRate: item.taxRate || 0,
@@ -122,8 +128,8 @@ export async function updateSalesInvoice(id: string, formData: any) {
             changes.push(`Tổng tiền: ${existingInvoice.totalAmount.toLocaleString('vi-VN')} đ ➔ ${formData.totalAmount.toLocaleString('vi-VN')} đ`);
         }
 
-        const oldItemsStr = existingInvoice.items.map(i => `${i.productId}:${i.quantity}:${i.unitPrice}`).sort().join(',');
-        const newItemsStr = formData.items.map((i: any) => `${i.productId}:${i.quantity}:${i.unitPrice}`).sort().join(',');
+        const oldItemsStr = existingInvoice.items.map((i: any) => `${i.productId || i.customName}:${i.quantity}:${i.unitPrice}`).sort().join(',');
+        const newItemsStr = formData.items.map((i: any) => `${i.productId || i.customName}:${i.quantity}:${i.unitPrice}`).sort().join(',');
         if (oldItemsStr !== newItemsStr) {
             changes.push(`Danh sách chi tiết sản phẩm / số lượng / đơn giá đã bị cập nhật.`);
         }
@@ -170,7 +176,7 @@ export async function updateSalesInvoiceStatus(id: string, newStatus: string) {
         if (!inv) return { success: false, error: "Không tìm thấy hóa đơn" };
 
         if ((inv.status === 'ISSUED' || inv.status === 'PARTIAL_PAID' || inv.status === 'PAID') && newStatus === 'DRAFT') {
-            return { success: false, error: "Không thể tự chuyển hóa đơn đã Ghi Nhận về Nháp. Xin hãy dùng chức năng Hủy Hóa Đơn để hệ thống tự động rollback tồn kho và công nợ." };
+            return { success: false, error: "Không thể tự chuyển hóa đơn đã Ghi Nhận về Dự Thảo. Xin hãy dùng chức năng Hủy Hóa Đơn để hệ thống tự động rollback tồn kho và công nợ." };
         }
 
         const result = await prisma.salesInvoice.update({
@@ -275,17 +281,21 @@ export async function approveSalesInvoice(invoiceId: string, userId: string) {
                     fromWarehouseId: wh.id,
                     creatorId: actualUserId,
                     items: { // create items
-                        create: invoice.items.map(i => ({
-                            productId: i.productId,
-                            quantity: i.quantity,
-                            price: i.unitPrice
-                        }))
+                        create: invoice.items
+                            .filter(i => i.productId != null)
+                            .map(i => ({
+                                productId: i.productId as string,
+                                quantity: i.quantity,
+                                price: i.unitPrice
+                            }))
                     }
                 }
             });
 
             // Deduct actual Inventory balances
             for (const item of invoice.items) {
+                if (!item.productId) continue;
+
                 // Tìm inventory
                 const inventory = await tx.inventory.findUnique({
                     where: { productId_warehouseId: { productId: item.productId, warehouseId: wh.id } }
@@ -501,17 +511,21 @@ export async function restoreSalesInvoice(invoiceId: string) {
                     fromWarehouseId: wh.id,
                     creatorId: actualUserId,
                     items: { // create items
-                        create: invoice.items.map(i => ({
-                            productId: i.productId,
-                            quantity: i.quantity,
-                            price: i.unitPrice
-                        }))
+                        create: invoice.items
+                            .filter(i => i.productId != null)
+                            .map(i => ({
+                                productId: i.productId as string,
+                                quantity: i.quantity,
+                                price: i.unitPrice
+                            }))
                     }
                 }
             });
 
             // Deduct actual Inventory balances
             for (const item of invoice.items) {
+                if (!item.productId) continue;
+
                 // Tìm inventory
                 const inventory = await tx.inventory.findUnique({
                     where: { productId_warehouseId: { productId: item.productId, warehouseId: wh.id } }

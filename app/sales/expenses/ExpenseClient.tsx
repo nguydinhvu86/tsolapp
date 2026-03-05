@@ -8,22 +8,30 @@ import { Table } from '@/app/components/ui/Table';
 import { Modal } from '@/app/components/ui/Modal';
 import { Input } from '@/app/components/ui/Input';
 import { createExpense, updateExpense, deleteExpense, createExpenseCategory } from './actions';
-import { Plus, Edit, Trash2, ChevronUp, ChevronDown, ArrowUpDown, Search, DollarSign, ListPlus, Upload, Paperclip } from 'lucide-react';
+import { Plus, Edit, Trash2, ChevronUp, ChevronDown, ArrowUpDown, Search, DollarSign, ListPlus, Upload, Paperclip, Link as LinkIcon, Building2, UserCircle2 } from 'lucide-react';
 import { formatMoney } from '@/lib/utils/formatters';
+import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
+import Link from 'next/link';
 
 export type ExpenseWithDetails = Expense & {
     category: ExpenseCategory;
+    supplier?: { id: string, name: string } | null;
+    customer?: { id: string, name: string } | null;
     creator: { name: string | null; email: string };
 };
 
 export default function ExpenseClient({
     initialData,
     categories: initialCategories,
+    customers,
+    suppliers,
     isAdmin,
     permissions
 }: {
     initialData: ExpenseWithDetails[];
     categories: ExpenseCategory[];
+    customers: { id: string, name: string, phone?: string | null }[];
+    suppliers: { id: string, name: string, phone?: string | null }[];
     isAdmin: boolean;
     permissions: string[];
 }) {
@@ -47,7 +55,10 @@ export default function ExpenseClient({
         paymentMethod: 'CASH',
         date: new Date().toISOString().slice(0, 10),
         reference: '',
-        attachment: ''
+        attachment: '',
+        systemLinkType: 'NONE', // 'NONE', 'CUSTOMER', 'SUPPLIER'
+        customerId: '',
+        supplierId: ''
     });
     const [isUploading, setIsUploading] = useState(false);
 
@@ -86,8 +97,8 @@ export default function ExpenseClient({
                 bVal = new Date(b.date).getTime() as any;
             }
 
-            if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
-            if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
+            if (aVal! < bVal!) return sortOrder === 'asc' ? -1 : 1;
+            if (aVal! > bVal!) return sortOrder === 'asc' ? 1 : -1;
             return 0;
         });
 
@@ -105,7 +116,10 @@ export default function ExpenseClient({
                 paymentMethod: expense.paymentMethod,
                 date: new Date(expense.date).toISOString().slice(0, 10),
                 reference: expense.reference || '',
-                attachment: expense.attachment || ''
+                attachment: expense.attachment || '',
+                systemLinkType: expense.customerId ? 'CUSTOMER' : expense.supplierId ? 'SUPPLIER' : 'NONE',
+                customerId: expense.customerId || '',
+                supplierId: expense.supplierId || ''
             });
         } else {
             setEditingId(null);
@@ -117,7 +131,10 @@ export default function ExpenseClient({
                 paymentMethod: 'CASH',
                 date: new Date().toISOString().slice(0, 10),
                 reference: '',
-                attachment: ''
+                attachment: '',
+                systemLinkType: 'NONE',
+                customerId: '',
+                supplierId: ''
             });
         }
         setIsModalOpen(true);
@@ -145,6 +162,8 @@ export default function ExpenseClient({
                     date: new Date(formData.date),
                     reference: formData.reference,
                     attachment: formData.attachment,
+                    customerId: formData.systemLinkType === 'CUSTOMER' ? formData.customerId : null,
+                    supplierId: formData.systemLinkType === 'SUPPLIER' ? formData.supplierId : null,
                 });
             } else {
                 await createExpense({
@@ -156,6 +175,8 @@ export default function ExpenseClient({
                     date: new Date(formData.date),
                     reference: formData.reference,
                     attachment: formData.attachment,
+                    customerId: formData.systemLinkType === 'CUSTOMER' ? formData.customerId : null,
+                    supplierId: formData.systemLinkType === 'SUPPLIER' ? formData.supplierId : null,
                 });
             }
             window.location.reload();
@@ -249,9 +270,30 @@ export default function ExpenseClient({
                             <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Chưa có dữ liệu chi phí</td></tr>
                         ) : filteredExpenses.map(expense => (
                             <tr key={expense.id}>
-                                <td style={{ fontWeight: 600, color: 'var(--primary)' }}>{expense.code}</td>
+                                <td>
+                                    <Link
+                                        href={`/sales/expenses/${expense.id}`}
+                                        className="font-semibold text-primary hover:text-blue-700 hover:underline transition-colors"
+                                    >
+                                        {expense.code}
+                                    </Link>
+                                </td>
                                 <td>{new Date(expense.date).toLocaleDateString('vi-VN')}</td>
-                                <td style={{ fontWeight: 500, color: 'var(--text-main)' }}>{expense.payee || '---'}</td>
+                                <td style={{ fontWeight: 500, color: 'var(--text-main)' }}>
+                                    <div className="flex flex-col gap-1">
+                                        <span>{expense.payee || '---'}</span>
+                                        {expense.customer && (
+                                            <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-sm border border-blue-100 w-fit flex items-center gap-1">
+                                                <UserCircle2 size={10} /> {expense.customer.name}
+                                            </span>
+                                        )}
+                                        {expense.supplier && (
+                                            <span className="text-[10px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-sm border border-amber-100 w-fit flex items-center gap-1">
+                                                <Building2 size={10} /> {expense.supplier.name}
+                                            </span>
+                                        )}
+                                    </div>
+                                </td>
                                 <td>
                                     <span className="inline-block px-2 py-1 bg-slate-100 text-slate-700 text-xs rounded-md">
                                         {expense.category?.name}
@@ -311,6 +353,45 @@ export default function ExpenseClient({
                                 onChange={e => setFormData({ ...formData, payee: e.target.value })}
                                 placeholder="Vd: Tên người/công ty nhận tiền..."
                             />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-sm font-medium text-slate-700 flex items-center gap-1"><LinkIcon size={14} className="text-slate-400" /> Liên kết hệ thống</label>
+                                <select
+                                    value={formData.systemLinkType}
+                                    onChange={e => setFormData({ ...formData, systemLinkType: e.target.value, customerId: '', supplierId: '' })}
+                                    style={{ width: '100%', padding: '0.625rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: '#fff', fontSize: '0.9375rem', outline: 'none' }}
+                                >
+                                    <option value="NONE">-- Không có liên kết --</option>
+                                    <option value="CUSTOMER">Khách hàng</option>
+                                    <option value="SUPPLIER">Nhà cung cấp</option>
+                                </select>
+                            </div>
+
+                            {formData.systemLinkType === 'CUSTOMER' && (
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-sm font-medium text-slate-700">Chọn khách hàng</label>
+                                    <SearchableSelect
+                                        options={customers.map(c => ({ value: c.id, label: `${c.name} ${c.phone ? `- ${c.phone}` : ''}` }))}
+                                        value={formData.customerId}
+                                        onChange={val => setFormData({ ...formData, customerId: val, payee: formData.payee || customers.find(c => c.id === val)?.name || '' })}
+                                        placeholder="Tìm khách hàng..."
+                                    />
+                                </div>
+                            )}
+
+                            {formData.systemLinkType === 'SUPPLIER' && (
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-sm font-medium text-slate-700">Chọn nhà cung cấp</label>
+                                    <SearchableSelect
+                                        options={suppliers.map(s => ({ value: s.id, label: `${s.name} ${s.phone ? `- ${s.phone}` : ''}` }))}
+                                        value={formData.supplierId}
+                                        onChange={val => setFormData({ ...formData, supplierId: val, payee: formData.payee || suppliers.find(s => s.id === val)?.name || '' })}
+                                        placeholder="Tìm nhà cung cấp..."
+                                    />
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex flex-col gap-1.5" style={{ marginTop: '0.5rem' }}>

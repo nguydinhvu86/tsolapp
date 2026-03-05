@@ -9,7 +9,10 @@ import { logCustomerActivity } from '@/lib/customerLogger';
 
 const itemSchema = z.object({
     id: z.string().optional(),
-    productId: z.string().min(1, "Product is required"),
+    productId: z.string().optional(),
+    customName: z.string().optional(),
+    description: z.string().optional(),
+    unit: z.string().optional(),
     quantity: z.number().min(1, "Quantity must be at least 1"),
     unitPrice: z.number().min(0, "Unit price must be >= 0"),
     taxRate: z.number().min(0, "Tax rate must be >= 0"),
@@ -67,7 +70,10 @@ export async function submitSalesEstimate(creatorId: string, formData: any) {
                 creatorId: actualCreatorId,
                 items: {
                     create: formData.items.map((item: any) => ({
-                        productId: item.productId,
+                        productId: item.productId || null,
+                        customName: item.customName || null,
+                        description: item.description || null,
+                        unit: item.unit || null,
                         quantity: item.quantity,
                         unitPrice: item.unitPrice,
                         taxRate: item.taxRate || 0,
@@ -144,15 +150,16 @@ export async function updateSalesEstimate(id: string, formData: any) {
         }
 
         // Thu thập thông tin sản phẩm
-        const oldItemsMap = new Map(oldEstimate.items.map(item => [item.productId, item]));
-        const newItemsMap = new Map((formData.items as any[]).map(item => [item.productId, item]));
+        const oldItemsMap = new Map(oldEstimate.items.map((item: any) => [item.productId || item.customName, item]));
+        const newItemsMap = new Map((formData.items as any[]).map((item: any) => [item.productId || item.customName, item]));
 
         // Kiểm tra xóa sản phẩm & sửa sản phẩm
         const deletedProducts: string[] = [];
-        for (const [productId, oldItem] of Array.from(oldItemsMap.entries())) {
-            const newItem = newItemsMap.get(productId);
+        for (const [key, oldItem] of Array.from(oldItemsMap.entries())) {
+            const newItem = newItemsMap.get(key);
+            const itemName = oldItem.customName || oldItem.product?.name || 'Sản phẩm tự do';
             if (!newItem) {
-                deletedProducts.push(oldItem.product?.name || 'Sản phẩm không rõ');
+                deletedProducts.push(itemName);
             } else {
                 let itemChanges: string[] = [];
                 if (oldItem.quantity !== newItem.quantity) {
@@ -165,7 +172,7 @@ export async function updateSalesEstimate(id: string, formData: any) {
                     itemChanges.push(`thuế (${oldItem.taxRate}% ➔ ${newItem.taxRate || 0}%)`);
                 }
                 if (itemChanges.length > 0) {
-                    changes.push(`Cập nhật **${oldItem.product?.name}**: ${itemChanges.join(', ')}`);
+                    changes.push(`Cập nhật **${itemName}**: ${itemChanges.join(', ')}`);
                 }
             }
         }
@@ -175,14 +182,9 @@ export async function updateSalesEstimate(id: string, formData: any) {
         }
 
         // Kiểm tra thêm sản phẩm mới
-        const newProductIds = Array.from(newItemsMap.keys()).filter(id => !oldItemsMap.has(id));
-        if (newProductIds.length > 0) {
-            const newProducts = await prisma.product.findMany({
-                where: { id: { in: newProductIds } },
-                select: { id: true, name: true }
-            });
-            const newProductNames = newProducts.map(p => p.name);
-            changes.push(`Thêm sản phẩm mới: **${newProductNames.join(', ')}**`);
+        const newKeys = Array.from(newItemsMap.keys()).filter(key => !oldItemsMap.has(key));
+        if (newKeys.length > 0) {
+            changes.push(`Thêm ${newKeys.length} dòng sản phẩm mới`);
         }
 
         const estimate = await prisma.salesEstimate.update({
@@ -201,7 +203,10 @@ export async function updateSalesEstimate(id: string, formData: any) {
                 items: {
                     deleteMany: {},
                     create: formData.items.map((item: any) => ({
-                        productId: item.productId,
+                        productId: item.productId || null,
+                        customName: item.customName || null,
+                        description: item.description || null,
+                        unit: item.unit || null,
                         quantity: item.quantity,
                         unitPrice: item.unitPrice,
                         taxRate: item.taxRate || 0,
@@ -338,6 +343,9 @@ export async function convertEstimateToInvoice(estimateId: string) {
                     items: {
                         create: estimate.items.map((i: any) => ({
                             productId: i.productId,
+                            customName: i.customName,
+                            description: i.description,
+                            unit: i.unit,
                             quantity: i.quantity,
                             unitPrice: i.unitPrice,
                             taxRate: i.taxRate,
@@ -426,6 +434,9 @@ export async function convertEstimateToOrder(estimateId: string) {
                     items: {
                         create: estimate.items.map((i: any) => ({
                             productId: i.productId,
+                            customName: i.customName,
+                            description: i.description,
+                            unit: i.unit,
                             quantity: i.quantity,
                             unitPrice: i.unitPrice,
                             taxRate: i.taxRate,

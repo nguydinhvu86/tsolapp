@@ -32,6 +32,7 @@ export async function getCustomerWithRelations(id: string) {
                 salesOrders: { orderBy: { createdAt: 'desc' } },
                 salesInvoices: { orderBy: { createdAt: 'desc' } },
                 salesPayments: { orderBy: { createdAt: 'desc' } },
+                leads: { orderBy: { createdAt: 'desc' } },
                 notes: {
                     include: { user: { select: { name: true, avatar: true } } },
                     orderBy: { createdAt: 'desc' }

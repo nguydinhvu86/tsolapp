@@ -45,7 +45,7 @@ export function SalesEstimateActivityLog({ logs }: ActivityLogProps) {
             try {
                 const parsed = JSON.parse(details);
                 const statusMap: Record<string, string> = {
-                    'DRAFT': 'Bản Nháp',
+                    'DRAFT': 'Bản Dự Thảo',
                     'SENT': 'Đã Gửi KH',
                     'ACCEPTED': 'Khách Chốt',
                     'ORDERED': 'Đã Lên Đơn',

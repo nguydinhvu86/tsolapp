@@ -46,13 +46,15 @@ export async function getSalesReportData() {
         orderBy: { date: 'desc' }
     });
 
-    // Fetch Orders
-    const orders = await prisma.salesOrder.findMany({
+    // Fetch Expenses
+    const expenses = await prisma.expense.findMany({
         where: {
             date: { gte: firstDayOfYear }
         },
         include: {
-            customer: true
+            category: true,
+            customer: true,
+            supplier: true
         },
         orderBy: { date: 'desc' }
     });
@@ -68,5 +70,5 @@ export async function getSalesReportData() {
         orderBy: { date: 'desc' }
     });
 
-    return { customers, invoices, payments, orders, estimates };
+    return { customers, invoices, payments, expenses, estimates };
 }

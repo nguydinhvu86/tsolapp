@@ -14,6 +14,8 @@ export async function getExpenses() {
         const expenses = await prisma.expense.findMany({
             include: {
                 category: true,
+                supplier: { select: { id: true, name: true } },
+                customer: { select: { id: true, name: true } },
                 creator: {
                     select: {
                         id: true,
@@ -81,6 +83,8 @@ export async function createExpense(data: {
     date?: Date;
     reference?: string;
     attachment?: string;
+    supplierId?: string | null;
+    customerId?: string | null;
 }) {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -121,6 +125,8 @@ export async function createExpense(data: {
                 date: data.date || new Date(),
                 reference: data.reference,
                 attachment: data.attachment,
+                supplierId: data.supplierId || null,
+                customerId: data.customerId || null,
                 creatorId: session.user.id,
                 status: 'COMPLETED'
             }
@@ -143,6 +149,8 @@ export async function updateExpense(id: string, data: {
     status?: string;
     reference?: string;
     attachment?: string;
+    supplierId?: string | null;
+    customerId?: string | null;
 }) {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -160,6 +168,75 @@ export async function updateExpense(id: string, data: {
     } catch (error) {
         console.error('Lỗi khi cập nhật khoản Chi Phí:', error);
         throw new Error('Không thể cập nhật khoản Chi Phí');
+    }
+}
+
+export async function getExpenseById(id: string) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+        throw new Error('Unauthorized');
+    }
+
+    try {
+        const expense = await prisma.expense.findUnique({
+            where: { id },
+            include: {
+                category: true,
+                supplier: { select: { id: true, name: true, phone: true } },
+                customer: { select: { id: true, name: true, phone: true } },
+                creator: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                    }
+                },
+                notes: {
+                    include: {
+                        user: { select: { name: true } }
+                    },
+                    orderBy: { createdAt: 'desc' }
+                },
+                tasks: true
+            }
+        });
+        return expense;
+    } catch (error) {
+        console.error('Lỗi khi lấy chi tiết Chi Phí:', error);
+        throw new Error('Không thể tải dữ liệu Chi Phí');
+    }
+}
+
+export async function addExpenseNote(expenseId: string, content: string, attachment?: string) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+        throw new Error('Unauthorized');
+    }
+
+    try {
+        const note = await prisma.expenseNote.create({
+            data: {
+                expenseId,
+                userId: session.user.id,
+                content,
+                attachment,
+            }
+        });
+
+        // Add activity log
+        await prisma.expenseActivityLog.create({
+            data: {
+                expenseId,
+                userId: session.user.id,
+                action: 'THÊM_GHI_CHÚ',
+                details: 'Đã thêm ghi chú mới'
+            }
+        });
+
+        return { success: true, data: note };
+    } catch (error) {
+        console.error('Lỗi khi thêm ghi chú phiếu chi:', error);
+        return { success: false, error: 'Không thể thêm ghi chú' };
     }
 }
 

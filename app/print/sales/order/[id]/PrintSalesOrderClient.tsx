@@ -136,7 +136,7 @@ export default function PrintSalesOrderClient({ order, settings }: any) {
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 700, borderBottom: '1px dotted #ccc', display: 'inline-block', marginBottom: '0.5rem' }}>THÔNG TIN ĐƠN HÀNG</h3>
                         <div><strong>Người lập:</strong> {order.creator?.name || '---'}</div>
                         <div><strong>Trạng thái:</strong> {
-                            order.status === 'DRAFT' ? 'Bản Nháp' :
+                            order.status === 'DRAFT' ? 'Bản Dự Thảo' :
                                 order.status === 'CONFIRMED' ? 'Chốt Đơn' :
                                     order.status === 'COMPLETED' ? 'Hoàn Thành' :
                                         order.status === 'CANCELLED' ? 'Đã Hủy' : order.status
@@ -161,10 +161,11 @@ export default function PrintSalesOrderClient({ order, settings }: any) {
                             <tr key={item.id}>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center' }}>{index + 1}</td>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px' }}>
-                                    <strong style={{ display: 'block' }}>{item.product?.name}</strong>
-                                    {item.product?.sku && <span style={{ fontSize: '0.85rem', color: '#64748b' }}>SKU: {item.product.sku}</span>}
+                                    <strong style={{ display: 'block' }}>{item.customName || item.product?.name || 'Sản phẩm tự do'}</strong>
+                                    {item.product?.sku && <span style={{ fontSize: '0.85rem', color: '#64748b', display: 'block' }}>SKU: {item.product.sku}</span>}
+                                    {item.description && <span style={{ fontSize: '0.9rem', color: '#475569', display: 'block', whiteSpace: 'pre-wrap', marginTop: '4px' }}>{item.description}</span>}
                                 </td>
-                                <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center' }}>{item.quantity} {item.product?.unit || ''}</td>
+                                <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center' }}>{item.quantity} {item.unit || item.product?.unit || ''}</td>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right' }}>{formatMoney(item.unitPrice)}</td>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center' }}>{item.taxRate}</td>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', fontWeight: 600 }}>{formatMoney(item.totalPrice)}</td>

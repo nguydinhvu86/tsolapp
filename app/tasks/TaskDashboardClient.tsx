@@ -375,46 +375,62 @@ export function TaskDashboardClient({ initialTasks, users }: { initialTasks: any
     };
 
     const filterOptions = [
-        { id: 'ALL', label: 'Tất Cả', icon: List, count: filterCounts.all, color: 'var(--text-main)', bg: '#f1f5f9' },
-        { id: 'TODO', label: 'Cần Làm', icon: Clock, count: filterCounts.todo, color: '#000', bg: '#e2e8f0' },
-        { id: 'IN_PROGRESS', label: 'Đang Làm', icon: Loader2, count: filterCounts.inProgress, color: '#d97706', bg: '#fef3c7' },
-        { id: 'REVIEW', label: 'Chờ Duyệt', icon: Search, count: filterCounts.review, color: '#4f46e5', bg: '#e0e7ff' },
-        { id: 'DONE', label: 'Hoàn Thành', icon: CheckCircle2, count: filterCounts.done, color: '#16a34a', bg: '#dcfce7' },
-        { id: 'OVERDUE', label: 'Quá Hạn', icon: AlertTriangle, count: filterCounts.overdue, color: '#dc2626', bg: '#fee2e2' },
+        { id: 'ALL', label: 'TẤT CẢ', icon: List, count: filterCounts.all, color: { bg: '#faf5ff', text: '#9333ea', border: '#e9d5ff', iconBg: '#f3e8ff' } },
+        { id: 'TODO', label: 'CẦN LÀM', icon: Clock, count: filterCounts.todo, color: { bg: '#fffbeb', text: '#d97706', border: '#fde047', iconBg: '#fef3c7' } },
+        { id: 'IN_PROGRESS', label: 'ĐANG LÀM', icon: Loader2, count: filterCounts.inProgress, color: { bg: '#eff6ff', text: '#3b82f6', border: '#bfdbfe', iconBg: '#dbeafe' } },
+        { id: 'REVIEW', label: 'CHỜ DUYỆT', icon: Search, count: filterCounts.review, color: { bg: '#f0f9ff', text: '#0284c7', border: '#bae6fd', iconBg: '#e0f2fe' } },
+        { id: 'DONE', label: 'HOÀN THÀNH', icon: CheckCircle2, count: filterCounts.done, color: { bg: '#f0fdf4', text: '#16a34a', border: '#bbf7d0', iconBg: '#dcfce7' } },
+        { id: 'OVERDUE', label: 'QUÁ HẠN', icon: AlertTriangle, count: filterCounts.overdue, color: { bg: '#fef2f2', text: '#dc2626', border: '#fecaca', iconBg: '#fee2e2' } },
     ];
 
     return (
         <div>
-            {/* Filter Cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
                 {filterOptions.map((f) => {
                     const isActive = filterStatus === f.id;
                     const Icon = f.icon;
                     return (
-                        <Card
+                        <div
                             key={f.id}
                             style={{
-                                padding: '1rem',
+                                padding: '1.25rem',
                                 cursor: 'pointer',
-                                border: isActive ? `2px solid ${f.color}` : '2px solid transparent', // Add border width transparent
-                                borderColor: isActive ? f.color : 'transparent', // Make border visible on active
-                                backgroundColor: isActive ? `${f.color}11` : 'var(--surface)',
-                                transition: 'all 0.2s',
+                                border: isActive ? `2px solid ${f.color.text}` : `1px solid ${f.color.border}`,
+                                backgroundColor: f.color.bg,
+                                color: f.color.text,
+                                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                boxShadow: isActive ? '0 4px 6px -1px rgb(0 0 0 / 0.1)' : '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+                                borderRadius: '12px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '0.75rem'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!isActive) {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 10px 15px -3px rgb(0 0 0 / 0.1)';
+                                    e.currentTarget.style.borderColor = f.color.text;
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!isActive) {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 1px 2px 0 rgb(0 0 0 / 0.05)';
+                                    e.currentTarget.style.borderColor = f.color.border;
+                                }
                             }}
                             onClick={() => setFilterStatus(f.id)}
                         >
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: f.color }}>
-                                    <div style={{ padding: '6px', borderRadius: '8px', backgroundColor: f.bg, display: 'flex' }}>
-                                        <Icon size={16} />
-                                    </div>
-                                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{f.label}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <span style={{ fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.5px' }}>{f.label}</span>
+                                <div style={{ padding: '6px', borderRadius: '8px', backgroundColor: f.color.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Icon size={18} />
                                 </div>
                             </div>
-                            <div style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '0.25rem' }}>
+                            <div style={{ fontSize: '2.25rem', fontWeight: 800, lineHeight: 1 }}>
                                 {f.count}
                             </div>
-                        </Card>
+                        </div>
                     );
                 })}
             </div>

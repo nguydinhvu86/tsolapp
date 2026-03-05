@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Table } from '@/app/components/ui/Table';
 import { Button } from '@/app/components/ui/Button';
-import { ArrowLeft, User, Mail, Phone, MapPin, Building2, FileSpreadsheet, FileText, FileOutput, FilePlus2, Eye, Edit, FileStack, Plus, ShoppingCart, SearchCode, Ticket, HandCoins, Search } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, MapPin, Building2, FileSpreadsheet, FileText, FileOutput, FilePlus2, Eye, Edit, FileStack, Plus, ShoppingCart, SearchCode, Ticket, HandCoins, Search, Target } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
@@ -19,10 +19,11 @@ export function CustomerDetailClient({ customer, tasks, users }: { customer: any
     const { data: session } = useSession();
     const currentUserRole = session?.user?.role || 'USER';
     const currentUserId = session?.user?.id || '';
-    const [activeTab, setActiveTab] = useState<'documents' | 'statement' | 'quotes' | 'contracts' | 'handovers' | 'payments' | 'appendices' | 'dispatches' | 'salesEstimates' | 'salesOrders' | 'salesInvoices' | 'salesPayments'>('salesEstimates');
+    const [activeTab, setActiveTab] = useState<'documents' | 'statement' | 'quotes' | 'contracts' | 'handovers' | 'payments' | 'appendices' | 'dispatches' | 'salesEstimates' | 'salesOrders' | 'salesInvoices' | 'salesPayments' | 'leads'>('leads');
     const [searchQuery, setSearchQuery] = useState('');
 
     const tabs = [
+        { id: 'leads', name: 'Cơ hội Bán hàng', count: customer.leads?.length || 0, icon: Target },
         { id: 'salesEstimates', name: 'Báo Giá (ERP)', count: customer.salesEstimates?.length || 0, icon: SearchCode },
         { id: 'salesOrders', name: 'Đơn Đặt Hàng', count: customer.salesOrders?.length || 0, icon: ShoppingCart },
         { id: 'salesInvoices', name: 'HĐ Bán & Nợ', count: customer.salesInvoices?.length || 0, icon: Ticket },
@@ -201,6 +202,11 @@ export function CustomerDetailClient({ customer, tasks, users }: { customer: any
                                     <Button style={{ background: '#22c55e', color: 'white', padding: '0.5rem 1rem', fontSize: '0.875rem', border: 'none' }}><Plus size={16} /> Tạo Báo Giá (ERP)</Button>
                                 </Link>
                             )}
+                            {activeTab === 'leads' && (
+                                <Link href={`/sales/leads/new?customerId=${customer.id}`}>
+                                    <Button style={{ background: '#22c55e', color: 'white', padding: '0.5rem 1rem', fontSize: '0.875rem', border: 'none' }}><Plus size={16} /> Tạo Cơ Hội Mới</Button>
+                                </Link>
+                            )}
                             {activeTab === 'salesOrders' && (
                                 <Link href={`/sales/orders?action=new&customerId=${customer.id}`}>
                                     <Button style={{ background: '#22c55e', color: 'white', padding: '0.5rem 1rem', fontSize: '0.875rem', border: 'none' }}><Plus size={16} /> Tạo Đơn Đặt Hàng</Button>
@@ -289,6 +295,7 @@ export function CustomerDetailClient({ customer, tasks, users }: { customer: any
                                             salesOrders: filterDocs(customer.salesOrders || []),
                                             salesInvoices: filterDocs(customer.salesInvoices || []),
                                             salesPayments: filterDocs(customer.salesPayments || []),
+                                            leads: filterDocs(customer.leads || []),
                                         };
 
                                         const currentList = lists[activeTab];
@@ -324,7 +331,8 @@ export function CustomerDetailClient({ customer, tasks, users }: { customer: any
                                                 appendices: 'contract-appendices',
                                                 dispatches: 'dispatches',
                                                 handovers: 'handovers',
-                                                payments: 'payment-requests'
+                                                payments: 'payment-requests',
+                                                leads: 'sales/leads'
                                             };
                                             return <DocumentRow key={doc.id} doc={doc} type={typeMap[activeTab]} getStatusColor={getStatusColor} />;
                                         });
@@ -350,8 +358,8 @@ function DocumentRow({ doc, type, getStatusColor }: { doc: any, type: string, ge
     const statusObj = getStatusColor(doc.status);
     return (
         <tr>
-            <td style={{ fontWeight: 600, color: 'var(--text-muted)', fontSize: '0.875rem' }}>#{doc.id.slice(-6).toUpperCase()}</td>
-            <td style={{ fontWeight: 500, color: 'var(--text-main)' }}>{doc.title}</td>
+            <td style={{ fontWeight: 600, color: 'var(--text-muted)', fontSize: '0.875rem' }}>#{doc.code || doc.id.slice(-6).toUpperCase()}</td>
+            <td style={{ fontWeight: 500, color: 'var(--text-main)' }}>{doc.title || doc.name}</td>
             <td>
                 <span style={{
                     backgroundColor: statusObj.bg, color: statusObj.color,

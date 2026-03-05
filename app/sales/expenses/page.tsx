@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import ExpenseClient from "./ExpenseClient";
 
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
     title: 'Quản lý Chi Phí | ContractMgr',
 };
@@ -23,7 +25,7 @@ export default async function ExpensesPage() {
         redirect("/dashboard");
     }
 
-    const { expenses, categories } = await getInitialData();
+    const { expenses, categories, customers, suppliers } = await getInitialData();
 
     return (
         <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -34,6 +36,8 @@ export default async function ExpensesPage() {
             <ExpenseClient
                 initialData={expenses}
                 categories={categories}
+                customers={customers}
+                suppliers={suppliers}
                 isAdmin={isAdmin}
                 permissions={permissions}
             />
@@ -41,12 +45,13 @@ export default async function ExpensesPage() {
     );
 }
 
-// Lấy dữ liệu ban đầu trên Server
 async function getInitialData() {
     try {
         const expenses = await prisma.expense.findMany({
             include: {
                 category: true,
+                supplier: { select: { id: true, name: true } },
+                customer: { select: { id: true, name: true } },
                 creator: {
                     select: { name: true, email: true }
                 }
@@ -58,9 +63,19 @@ async function getInitialData() {
             orderBy: { name: 'asc' }
         });
 
-        return { expenses, categories };
+        const customers = await prisma.customer.findMany({
+            select: { id: true, name: true, phone: true },
+            orderBy: { name: 'asc' }
+        });
+
+        const suppliers = await prisma.supplier.findMany({
+            select: { id: true, name: true, phone: true },
+            orderBy: { name: 'asc' }
+        });
+
+        return { expenses, categories, customers, suppliers };
     } catch (error) {
         console.error("Lỗi khi tải dữ liệu Chi phí:", error);
-        return { expenses: [], categories: [] };
+        return { expenses: [], categories: [], customers: [], suppliers: [] };
     }
 }

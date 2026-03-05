@@ -119,7 +119,7 @@ export default function PrintSalesEstimateClient({ estimate, settings }: any) {
 
                 {/* Title */}
                 <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-                    <h1 style={{ fontSize: '2.25rem', fontWeight: 800, margin: '0 0 0.5rem 0', color: '#0f172a' }}>BÁO GIÁ</h1>
+                    <h1 style={{ fontSize: '2.25rem', fontWeight: 800, margin: '0 0 0.5rem 0', color: '#0f172a' }}>BẢNG BÁO GIÁ</h1>
                     <i style={{ fontSize: '1rem', color: '#475569' }}>Số: {estimate.code} | Ngày: {formatDate(estimate.date)}</i>
                 </div>
 
@@ -137,7 +137,7 @@ export default function PrintSalesEstimateClient({ estimate, settings }: any) {
                         <div><strong>Hiệu lực đến:</strong> {formatDate(estimate.validUntil) || '---'}</div>
                         <div><strong>Người lập:</strong> {estimate.creator?.name || '---'}</div>
                         <div><strong>Trạng thái:</strong> {
-                            estimate.status === 'DRAFT' ? 'Bản Nháp' :
+                            estimate.status === 'DRAFT' ? 'Bản Dự Thảo' :
                                 estimate.status === 'SENT' ? 'Đã Gửi KH' :
                                     estimate.status === 'ACCEPTED' ? 'Đã Phê Duyệt' :
                                         estimate.status === 'REJECTED' ? 'Từ Chối' : estimate.status
@@ -162,10 +162,11 @@ export default function PrintSalesEstimateClient({ estimate, settings }: any) {
                             <tr key={item.id}>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center' }}>{index + 1}</td>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px' }}>
-                                    <strong style={{ display: 'block' }}>{item.product?.name}</strong>
-                                    {item.product?.sku && <span style={{ fontSize: '0.85rem', color: '#64748b' }}>SKU: {item.product.sku}</span>}
+                                    <strong style={{ display: 'block' }}>{item.customName || item.product?.name || 'Sản phẩm tự do'}</strong>
+                                    {item.product?.sku && <span style={{ fontSize: '0.85rem', color: '#64748b', display: 'block' }}>SKU: {item.product.sku}</span>}
+                                    {item.description && <span style={{ fontSize: '0.9rem', color: '#475569', display: 'block', whiteSpace: 'pre-wrap', marginTop: '4px' }}>{item.description}</span>}
                                 </td>
-                                <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center' }}>{item.quantity} {item.product?.unit || ''}</td>
+                                <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center' }}>{item.quantity} {item.unit || item.product?.unit || ''}</td>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right' }}>{formatMoney(item.unitPrice)}</td>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center' }}>{item.taxRate}</td>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', fontWeight: 600 }}>{formatMoney(item.totalPrice)}</td>

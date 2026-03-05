@@ -137,7 +137,7 @@ export default function PrintSalesInvoiceClient({ invoice, companyInfo }: any) {
                         <div><strong>Hạn thanh toán:</strong> {formatDate(invoice.dueDate) || '---'}</div>
                         <div><strong>Người lập HĐ:</strong> {invoice.creator?.name || '---'}</div>
                         <div><strong>Trạng thái:</strong> {
-                            invoice.status === 'DRAFT' ? 'Bản Nháp' :
+                            invoice.status === 'DRAFT' ? 'Bản Dự Thảo' :
                                 invoice.status === 'ISSUED' ? 'Đã Xuất Kho / Ghi Nợ' :
                                     invoice.status === 'PARTIAL_PAID' ? 'Đã Thu Một Phần' :
                                         invoice.status === 'PAID' ? 'Đã Thu Đủ' : invoice.status
@@ -162,10 +162,11 @@ export default function PrintSalesInvoiceClient({ invoice, companyInfo }: any) {
                             <tr key={item.id}>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center' }}>{index + 1}</td>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px' }}>
-                                    <strong style={{ display: 'block' }}>{item.product?.name}</strong>
-                                    {item.product?.sku && <span style={{ fontSize: '0.85rem', color: '#64748b' }}>SKU: {item.product.sku}</span>}
+                                    <strong style={{ display: 'block' }}>{item.customName || item.product?.name || 'Sản phẩm tự do'}</strong>
+                                    {item.product?.sku && <span style={{ fontSize: '0.85rem', color: '#64748b', display: 'block' }}>SKU: {item.product.sku}</span>}
+                                    {item.description && <span style={{ fontSize: '0.9rem', color: '#475569', display: 'block', whiteSpace: 'pre-wrap', marginTop: '4px' }}>{item.description}</span>}
                                 </td>
-                                <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center' }}>{item.quantity} {item.product?.unit || ''}</td>
+                                <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center' }}>{item.quantity} {item.unit || item.product?.unit || ''}</td>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right' }}>{formatMoney(item.unitPrice)}</td>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center' }}>{item.taxRate}</td>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', fontWeight: 600 }}>{formatMoney(item.totalPrice)}</td>

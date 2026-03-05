@@ -71,7 +71,7 @@ export default async function PublicSalesEstimatePage({ params }: { params: { id
 
                 {/* Title */}
                 <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-                    <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 0.5rem 0', color: '#0f172a' }}>PHIẾU BÁO GIÁ</h1>
+                    <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 0.5rem 0', color: '#0f172a' }}>BẢNG BÁO GIÁ</h1>
                     <i style={{ fontSize: '0.95rem', color: '#475569' }}>Số: {estimate.code} | Ngày: {formatDate(estimate.date)}</i>
                 </div>
 
@@ -88,7 +88,7 @@ export default async function PublicSalesEstimatePage({ params }: { params: { id
                         <div><strong>Hiệu lực đến:</strong> {formatDate(estimate.validUntil) || '---'}</div>
                         <div><strong>Người lập:</strong> {estimate.creator?.name || '---'}</div>
                         <div><strong>Trạng thái:</strong> {
-                            estimate.status === 'DRAFT' ? 'Bản Nháp' :
+                            estimate.status === 'DRAFT' ? 'Bản Dự Thảo' :
                                 estimate.status === 'SENT' ? 'Đã Gửi KH' :
                                     estimate.status === 'ACCEPTED' ? 'Đã Phê Duyệt' :
                                         estimate.status === 'REJECTED' ? 'Từ Chối' : estimate.status
