@@ -33,6 +33,60 @@ export async function getDashboardStats(userId?: string) {
         const currentYear = new Date().getFullYear();
         const currentMonth = new Date().getMonth();
 
+        // Cash Flow Aggregation (Current Year)
+        const startOfYear = new Date(currentYear, 0, 1);
+        const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59, 999);
+
+        const [
+            allSalesPayments,
+            allPurchasePayments,
+            allExpenses
+        ] = await Promise.all([
+            prisma.salesPayment.findMany({
+                where: { date: { gte: startOfYear, lte: endOfYear } },
+                select: { amount: true, date: true }
+            }),
+            prisma.purchasePayment.findMany({
+                where: { date: { gte: startOfYear, lte: endOfYear } },
+                select: { amount: true, date: true }
+            }),
+            prisma.expense.findMany({
+                where: {
+                    status: { notIn: ['DRAFT', 'CANCELLED'] },
+                    date: { gte: startOfYear, lte: endOfYear }
+                },
+                select: { amount: true, date: true }
+            })
+        ]);
+
+        const cashFlow = Array.from({ length: 12 }, (_, i) => ({
+            name: `T${i + 1}`,
+            income: 0,
+            expense: 0,
+            supplierPayment: 0
+        }));
+
+        allSalesPayments.forEach(p => {
+            if (p.date) {
+                const month = new Date(p.date).getMonth();
+                cashFlow[month].income += p.amount || 0;
+            }
+        });
+
+        allPurchasePayments.forEach(p => {
+            if (p.date) {
+                const month = new Date(p.date).getMonth();
+                cashFlow[month].supplierPayment += p.amount || 0;
+            }
+        });
+
+        allExpenses.forEach(e => {
+            if (e.date) {
+                const month = new Date(e.date).getMonth();
+                cashFlow[month].expense += e.amount || 0;
+            }
+        });
+
         // 1. Phân tích Mua Hàng (Purchase Orders)
         let totalPurchaseParams = { total: 0, thisMonth: 0, lastMonth: 0 };
         purchaseOrders.forEach(po => {
@@ -79,7 +133,8 @@ export async function getDashboardStats(userId?: string) {
             signedContracts: contracts.filter(c => c.status === 'SIGNED').length,
             financialMetrics: {
                 purchase: totalPurchaseParams,
-                invoices: invoiceParams
+                invoices: invoiceParams,
+                cashFlow: cashFlow // Pass cash flow data to client
             },
             // Pass raw arrays for client-side chart processing if needed, 
             // but usually we aggregate on server. For this scale, passing lightweight arrays is okay.

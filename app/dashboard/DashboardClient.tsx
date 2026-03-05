@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { DollarSign, Receipt, CreditCard, Users, Box, Briefcase, Plus, X, CheckCircle2, Circle, Clock, CheckCheck } from 'lucide-react';
-import { AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { formatMoney } from '@/lib/utils/formatters';
 
 // Mock data for charts
@@ -501,24 +501,49 @@ export function DashboardClient({ kpiData, userTasks = [] }: { kpiData?: any, us
                 </div>
 
                 {/* Charts Row */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Doanh Thu Theo Tháng</h3>
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <div className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm xl:col-span-1">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Lưu Chuyển Tiền Tệ Năm Nay</h3>
                         <div style={{ height: '350px', width: '100%', marginLeft: '-15px' }}>
                             <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={revenueData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                                    <defs>
-                                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#667eea" stopOpacity={0.8} />
-                                            <stop offset="95%" stopColor="#667eea" stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
+                                <BarChart data={kpiData?.cashFlow || []} margin={{ top: 10, right: 10, left: 20, bottom: 0 }}>
                                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 13 }} dy={10} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 13 }} dx={-10} />
+                                    <YAxis
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fill: '#9ca3af', fontSize: 13 }}
+                                        dx={-10}
+                                        tickFormatter={(value) => {
+                                            if (value >= 1000000000) return `${(value / 1000000000).toFixed(1)}T`;
+                                            if (value >= 1000000) return `${(value / 1000000).toFixed(0)}Tr`;
+                                            return value;
+                                        }}
+                                    />
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                                    <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                                    <Area type="monotone" dataKey="value" stroke="#667eea" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
-                                </AreaChart>
+                                    <Tooltip
+                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                        formatter={(value: any, name: any) => {
+                                            let label = '';
+                                            if (name === 'income') label = 'Tổng Thu';
+                                            if (name === 'expense') label = 'Tổng Chi';
+                                            if (name === 'supplierPayment') label = 'Trả NCC';
+                                            return [new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(value) || 0), label];
+                                        }}
+                                    />
+                                    <Legend
+                                        verticalAlign="top"
+                                        height={36}
+                                        formatter={(value) => {
+                                            if (value === 'income') return 'Tổng Thu';
+                                            if (value === 'expense') return 'Lương / Chi Phí';
+                                            if (value === 'supplierPayment') return 'Thanh Toán NCC';
+                                            return value;
+                                        }}
+                                    />
+                                    <Bar dataKey="income" name="income" fill="#10b981" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="expense" name="expense" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="supplierPayment" name="supplierPayment" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                                </BarChart>
                             </ResponsiveContainer>
                         </div>
                     </div>

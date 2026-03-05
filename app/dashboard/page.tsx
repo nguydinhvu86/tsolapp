@@ -99,6 +99,9 @@ export default async function DashboardPage() {
     const debtThisMonth = Math.max(0, revenueThisMonth - paymentsThisMonth);
     const debtLastMonth = Math.max(0, revenueLastMonth - paymentsLastMonth);
 
+    const { getDashboardStats } = await import('@/app/dashboard/actions');
+    const stats = await getDashboardStats(session.user.id);
+
     return (
         <div className="p-4 md:p-8 pt-6 min-h-screen">
             <DashboardClient
@@ -110,7 +113,8 @@ export default async function DashboardPage() {
                     paymentsThisMonth,
                     paymentsLastMonth,
                     debtThisMonth,
-                    debtLastMonth
+                    debtLastMonth,
+                    cashFlow: stats?.financialMetrics?.cashFlow || []
                 }}
                 userTasks={userTasks}
             />
