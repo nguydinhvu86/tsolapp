@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { DollarSign, Receipt, CreditCard, Users, Box, Briefcase, Plus, X, CheckCircle2, Circle, Clock, CheckCheck, Calendar as CalendarIcon } from 'lucide-react';
 import { AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { formatMoney } from '@/lib/utils/formatters';
@@ -577,8 +576,8 @@ export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices
             </div>
 
             {/* Calendar Tasks Modal */}
-            {selectedCalendarDate && createPortal(
-                <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" style={{ zIndex: 99999 }}>
+            {selectedCalendarDate && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 z-[99999]" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden transform transition-all">
                         <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-indigo-50/50">
                             <div>
@@ -717,8 +716,7 @@ export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices
                             </button>
                         </div>
                     </div>
-                </div>,
-                document.body
+                </div>
             )}
         </div>
     );
