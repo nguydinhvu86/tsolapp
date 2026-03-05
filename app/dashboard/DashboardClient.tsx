@@ -580,8 +580,8 @@ export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices
             {/* Calendar Tasks Modal */}
             {selectedCalendarDate && (
                 <div className="modal-backdrop" style={{ zIndex: 99999 }}>
-                    <div className="modal-container w-full mx-auto" style={{ maxWidth: '700px' }}>
-                        <div className="px-6 py-5 flex justify-between items-center bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-t-xl text-white shadow-md">
+                    <div className="w-full mx-auto bg-white rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" style={{ maxWidth: '700px', maxHeight: '90vh' }}>
+                        <div className="px-6 py-5 flex justify-between items-center bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white shadow-md relative z-10 shrink-0">
                             <div>
                                 <h3 className="text-xl font-bold flex items-center gap-2">
                                     <CalendarIcon className="w-6 h-6 opacity-90" />
@@ -599,9 +599,9 @@ export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices
                             </button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-6 bg-gray-50/30 custom-scrollbar">
+                        <div className="flex-1 overflow-y-auto p-6 bg-slate-50 relative z-0 custom-scrollbar">
                             {(selectedCalendarTasks.length === 0 && selectedCalendarQuotes.length === 0 && selectedCalendarInvoices.length === 0) ? (
-                                <div className="flex flex-col items-center justify-center py-12 text-center">
+                                <div className="flex flex-col items-center justify-center py-12 text-center h-full">
                                     <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
                                         <CalendarIcon className="w-10 h-10 text-gray-300" />
                                     </div>
@@ -715,7 +715,7 @@ export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices
                             )}
                         </div>
 
-                        <div className="p-5 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
+                        <div className="p-5 border-t border-gray-100 bg-white flex justify-end gap-3 shrink-0 relative z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                             <button
                                 onClick={() => setIsAddEventModalOpen(true)}
                                 className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium py-2.5 px-6 rounded-lg flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
