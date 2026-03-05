@@ -26,7 +26,7 @@ export async function getDashboardStats(userId?: string) {
             prisma.customer.findMany({ select: { id: true, name: true, createdAt: true, taxCode: true, phone: true }, orderBy: { createdAt: 'desc' }, take: 10 }),
             userId ? prisma.task.findMany({ where: { OR: [{ assignees: { some: { userId: userId } } }, { creatorId: userId }], status: { not: 'COMPLETED' } }, orderBy: { dueDate: 'asc' }, take: 10, select: { id: true, title: true, dueDate: true, priority: true } }) : Promise.resolve([]),
             prisma.purchaseOrder.findMany({ select: { id: true, status: true, totalAmount: true, createdAt: true, supplier: { select: { name: true } } }, orderBy: { createdAt: 'desc' }, take: 500 }),
-            prisma.salesInvoice.findMany({ select: { id: true, status: true, totalAmount: true, paidAmount: true, createdAt: true, date: true, dueDate: true }, orderBy: { createdAt: 'desc' }, take: 1000 })
+            prisma.salesInvoice.findMany({ select: { id: true, status: true, totalAmount: true, paidAmount: true, createdAt: true, date: true, dueDate: true, code: true, customer: { select: { name: true } } }, orderBy: { createdAt: 'desc' }, take: 1000 })
         ]);
 
         // Financial Aggregations

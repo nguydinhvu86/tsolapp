@@ -117,6 +117,8 @@ export default async function DashboardPage() {
                     cashFlow: stats?.financialMetrics?.cashFlow || []
                 }}
                 userTasks={userTasks}
+                quotes={stats?.chartDataSources?.quotes || []}
+                invoices={stats?.chartDataSources?.invoices || []}
             />
         </div>
     );

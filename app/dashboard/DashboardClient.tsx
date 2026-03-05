@@ -231,20 +231,24 @@ function TodoListWidget() {
 
 import { useRouter } from 'next/navigation';
 
-export function DashboardClient({ kpiData, userTasks = [] }: { kpiData?: any, userTasks?: any[] }) {
+export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices = [] }: { kpiData?: any, userTasks?: any[], quotes?: any[], invoices?: any[] }) {
     const router = useRouter();
-    const [tasks, setTasks] = useState(userTasks);
+    const [tasks, setTasks] = useState<any[]>(userTasks);
 
     const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(null);
     const [selectedCalendarTasks, setSelectedCalendarTasks] = useState<any[]>([]);
+    const [selectedCalendarQuotes, setSelectedCalendarQuotes] = useState<any[]>([]);
+    const [selectedCalendarInvoices, setSelectedCalendarInvoices] = useState<any[]>([]);
 
     useEffect(() => {
         setTasks(userTasks || []);
     }, [userTasks]);
 
-    const handleDateClick = (date: Date, dayTasks: any[]) => {
+    const handleDateClick = (date: Date, dayTasks: any[], dayQuotes: any[] = [], dayInvoices: any[] = []) => {
         setSelectedCalendarDate(date);
         setSelectedCalendarTasks(dayTasks);
+        setSelectedCalendarQuotes(dayQuotes);
+        setSelectedCalendarInvoices(dayInvoices);
     };
 
     // Revenue calculations
@@ -562,6 +566,8 @@ export function DashboardClient({ kpiData, userTasks = [] }: { kpiData?: any, us
                     <div className="xl:col-span-1 border border-gray-100 rounded-xl shadow-sm bg-white overflow-hidden flex flex-col">
                         <DashboardCalendar
                             tasks={tasks}
+                            quotes={quotes || []}
+                            invoices={invoices || []}
                             onDateClick={handleDateClick}
                         />
                     </div>
@@ -574,10 +580,10 @@ export function DashboardClient({ kpiData, userTasks = [] }: { kpiData?: any, us
                             <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-indigo-50/50">
                                 <div>
                                     <h3 className="text-lg font-bold text-gray-800">
-                                        Kế hoạch ngày {format(selectedCalendarDate, 'dd/MM/yyyy')}
+                                        Lịch trình {format(selectedCalendarDate, 'dd/MM/yyyy')}
                                     </h3>
                                     <p className="text-sm text-gray-500">
-                                        {selectedCalendarTasks.length} công việc
+                                        {selectedCalendarTasks.length + selectedCalendarQuotes.length + selectedCalendarInvoices.length} mục
                                     </p>
                                 </div>
                                 <button
@@ -589,18 +595,78 @@ export function DashboardClient({ kpiData, userTasks = [] }: { kpiData?: any, us
                             </div>
 
                             <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                                {selectedCalendarTasks.length === 0 ? (
+                                {(selectedCalendarTasks.length === 0 && selectedCalendarQuotes.length === 0 && selectedCalendarInvoices.length === 0) ? (
                                     <div className="flex flex-col items-center justify-center py-10 text-center">
                                         <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-3">
                                             <CalendarIcon className="w-8 h-8 text-gray-300" />
                                         </div>
-                                        <p className="text-gray-500 font-medium">Không có công việc nào</p>
-                                        <p className="text-gray-400 text-sm mt-1">Bạn có thể tạo kế hoạch mới khởi đầu ngày hiệu quả.</p>
+                                        <p className="text-gray-500 font-medium">Không có lịch trình nào</p>
+                                        <p className="text-gray-400 text-sm mt-1">Hôm nay là một ngày rảnh rỗi tuyệt vời.</p>
                                     </div>
                                 ) : (
                                     <div className="space-y-3">
+                                        {/* Invoices */}
+                                        {selectedCalendarInvoices.map(invoice => (
+                                            <div key={`inv-${invoice.id}`} className="border-l-4 border-l-orange-500 border-y border-r border-gray-100 rounded-lg p-3 hover:bg-orange-50/30 transition-colors shadow-sm cursor-pointer" onClick={() => router.push(`/sales/invoices/${invoice.id}`)}>
+                                                <div className="flex items-start justify-between">
+                                                    <h4 className="font-medium text-gray-800 line-clamp-1 pr-2">Hóa đơn: {invoice.code}</h4>
+                                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 shadow-sm bg-orange-100 text-orange-700">TỚI HẠN</span>
+                                                </div>
+                                                {invoice.customer && (
+                                                    <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-600">
+                                                        <Users className="w-3.5 h-3.5 text-gray-400" />
+                                                        <span className="truncate">{invoice.customer.name}</span>
+                                                    </div>
+                                                )}
+                                                <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-50">
+                                                    <div className="font-bold text-orange-600 text-sm">
+                                                        {formatMoney(invoice.totalAmount)}
+                                                    </div>
+                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded shadow-sm border
+                                                        ${invoice.status === 'DRAFT' ? 'bg-gray-100 text-gray-600' : ''}
+                                                        ${invoice.status === 'ISSUED' ? 'bg-blue-100 text-blue-700' : ''}
+                                                        ${invoice.status === 'PARTIAL_PAID' ? 'bg-orange-100 text-orange-700' : ''}
+                                                        ${invoice.status === 'PAID' ? 'bg-green-100 text-green-700' : ''}
+                                                    `}>
+                                                        {invoice.status}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ))}
+
+                                        {/* Quotes */}
+                                        {selectedCalendarQuotes.map(quote => (
+                                            <div key={`quo-${quote.id}`} className="border-l-4 border-l-green-500 border-y border-r border-gray-100 rounded-lg p-3 hover:bg-green-50/30 transition-colors shadow-sm cursor-pointer" onClick={() => router.push(`/quotes/${quote.id}`)}>
+                                                <div className="flex items-start justify-between">
+                                                    <h4 className="font-medium text-gray-800 line-clamp-2 pr-2">Báo giá: {quote.title}</h4>
+                                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 shadow-sm bg-green-100 text-green-700">TẠO MỚI</span>
+                                                </div>
+                                                {quote.customer && (
+                                                    <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-600">
+                                                        <Users className="w-3.5 h-3.5 text-gray-400" />
+                                                        <span className="truncate">{quote.customer.name}</span>
+                                                    </div>
+                                                )}
+                                                <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-50">
+                                                    <div className="flex items-center gap-1 text-xs text-gray-500 font-medium">
+                                                        <Clock className="w-3.5 h-3.5" />
+                                                        <span>{format(new Date(quote.createdAt), 'HH:mm', { locale: vi })}</span>
+                                                    </div>
+                                                    <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded shadow-sm border
+                                                        ${quote.status === 'DRAFT' ? 'bg-white border-gray-200 text-gray-600' : ''}
+                                                        ${quote.status === 'SENT' ? 'bg-blue-50 border-blue-200 text-blue-600' : ''}
+                                                        ${quote.status === 'ACCEPTED' ? 'bg-green-50 border-green-200 text-green-600' : ''}
+                                                        ${quote.status === 'REJECTED' ? 'bg-red-50 border-red-200 text-red-600' : ''}
+                                                    `}>
+                                                        {quote.status}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ))}
+
+                                        {/* Tasks */}
                                         {selectedCalendarTasks.map(task => (
-                                            <div key={task.id} className="border border-gray-100 rounded-lg p-3 hover:border-indigo-100 hover:bg-indigo-50/30 transition-colors shadow-sm cursor-pointer" onClick={() => router.push(`/tasks/${task.id}`)}>
+                                            <div key={`task-${task.id}`} className="border border-gray-100 rounded-lg p-3 hover:border-indigo-100 hover:bg-indigo-50/30 transition-colors shadow-sm cursor-pointer" onClick={() => router.push(`/tasks/${task.id}`)}>
                                                 <div className="flex items-start justify-between">
                                                     <h4 className="font-medium text-gray-800 line-clamp-2 pr-2">{task.title}</h4>
                                                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 shadow-sm
@@ -644,7 +710,7 @@ export function DashboardClient({ kpiData, userTasks = [] }: { kpiData?: any, us
                                     className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm"
                                 >
                                     <Plus className="w-4 h-4" />
-                                    <span>Thêm kế hoạch mới</span>
+                                    <span>Thêm kế hoạch / Ghi chú</span>
                                 </button>
                             </div>
                         </div>
