@@ -576,8 +576,8 @@ export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices
                 {/* Calendar Tasks Modal */}
                 {selectedCalendarDate && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                        <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[80vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-indigo-50/50">
+                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                            <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-indigo-50/50">
                                 <div>
                                     <h3 className="text-lg font-bold text-gray-800">
                                         Lịch trình {format(selectedCalendarDate, 'dd/MM/yyyy')}
@@ -594,17 +594,17 @@ export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices
                                 </button>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                            <div className="flex-1 overflow-y-auto p-6 bg-gray-50/30 custom-scrollbar">
                                 {(selectedCalendarTasks.length === 0 && selectedCalendarQuotes.length === 0 && selectedCalendarInvoices.length === 0) ? (
-                                    <div className="flex flex-col items-center justify-center py-10 text-center">
-                                        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-3">
-                                            <CalendarIcon className="w-8 h-8 text-gray-300" />
+                                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                                        <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                                            <CalendarIcon className="w-10 h-10 text-gray-300" />
                                         </div>
-                                        <p className="text-gray-500 font-medium">Không có lịch trình nào</p>
-                                        <p className="text-gray-400 text-sm mt-1">Hôm nay là một ngày rảnh rỗi tuyệt vời.</p>
+                                        <p className="text-gray-500 font-medium text-lg">Không có lịch trình nào</p>
+                                        <p className="text-gray-400 mt-1">Hôm nay là một ngày rảnh rỗi tuyệt vời.</p>
                                     </div>
                                 ) : (
-                                    <div className="space-y-3">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {/* Invoices */}
                                         {selectedCalendarInvoices.map(invoice => (
                                             <div key={`inv-${invoice.id}`} className="border-l-4 border-l-orange-500 border-y border-r border-gray-100 rounded-lg p-3 hover:bg-orange-50/30 transition-colors shadow-sm cursor-pointer" onClick={() => router.push(`/sales/invoices/${invoice.id}`)}>
@@ -704,12 +704,12 @@ export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices
                                 )}
                             </div>
 
-                            <div className="p-4 border-t border-gray-100 bg-gray-50">
+                            <div className="p-5 border-t border-gray-100 bg-white">
                                 <button
                                     onClick={() => router.push(`/tasks/new?date=${format(selectedCalendarDate, 'yyyy-MM-dd')}`)}
-                                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm"
+                                    className="w-full md:w-auto md:min-w-[200px] ml-auto bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-6 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm"
                                 >
-                                    <Plus className="w-4 h-4" />
+                                    <Plus className="w-5 h-5" />
                                     <span>Thêm kế hoạch / Ghi chú</span>
                                 </button>
                             </div>
