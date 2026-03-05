@@ -43,6 +43,60 @@ export async function logSalesEstimateActivity(estimateId: string, userId: strin
     }
 }
 
+import { sendEmailWithTracking } from '@/lib/mailer';
+
+export async function sendEstimateEmail(
+    estimateId: string,
+    toEmail: string,
+    subject: string,
+    htmlBody: string,
+    attachmentName?: string,
+    attachmentBase64?: string
+) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" };
+        }
+        const senderId = session.user.id;
+
+        const estimate = await prisma.salesEstimate.findUnique({
+            where: { id: estimateId },
+            include: { customer: true }
+        });
+
+        if (!estimate) {
+            return { success: false, error: "Báo giá không tồn tại." };
+        }
+
+        const res = await sendEmailWithTracking({
+            to: toEmail,
+            subject,
+            htmlBody,
+            senderId,
+            customerId: estimate.customerId,
+            estimateId: estimate.id,
+            attachmentName,
+            attachmentBase64
+        });
+
+        if (res.success) {
+            await logSalesEstimateActivity(estimate.id, senderId, 'EMAIL_SENT', `Đã gửi email báo giá tới ${toEmail} với tiêu đề "${subject}"`);
+            // Automatically mark SENT if DRAFT
+            if (estimate.status === 'DRAFT') {
+                await updateSalesEstimateStatus(estimate.id, 'SENT');
+            }
+            revalidatePath(`/sales/estimates/${estimateId}`);
+            return { success: true };
+        } else {
+            return { success: false, error: res.error };
+        }
+    } catch (error: any) {
+        console.error("sendEstimateEmail error:", error);
+        return { success: false, error: "Lỗi hệ thống khi gửi email." };
+    }
+}
+
 export async function submitSalesEstimate(creatorId: string, formData: any) {
     try {
         const session = await getServerSession(authOptions);
@@ -263,6 +317,24 @@ export async function updateSalesEstimateStatus(id: string, newStatus: string) {
         if (userId) {
             await logSalesEstimateActivity(id, userId, 'STATUS_CHANGED', JSON.stringify({ to: newStatus }));
             await logCustomerActivity(estimate.customerId, userId, 'CẬP_NHẬT_TRẠNG_THÁI', `Báo giá ${estimate.code} chuyển trạng thái: ${newStatus}`);
+        }
+
+        if (newStatus === 'ACCEPTED' || newStatus === 'REJECTED') {
+            const statusText = newStatus === 'ACCEPTED' ? 'chốt' : 'từ chối';
+            const typeClass = newStatus === 'ACCEPTED' ? 'SUCCESS' : 'ERROR';
+
+            // Only notify if the person changing the status is NOT the creator
+            if (userId !== estimate.creatorId) {
+                await prisma.notification.create({
+                    data: {
+                        userId: estimate.creatorId,
+                        title: `Báo giá đã được ${statusText}`,
+                        message: `Báo giá ${estimate.code} đã chuyển sang trạng thái ${newStatus}.`,
+                        type: typeClass,
+                        link: `/sales/estimates/${estimate.id}`
+                    }
+                });
+            }
         }
 
         revalidatePath('/sales/estimates');

@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { revalidatePath } from 'next/cache';
 import { logCustomerActivity } from '@/lib/customerLogger';
+import { sendEmailWithTracking } from '@/lib/mailer';
 
 async function getUser() {
     const session = await getServerSession(authOptions);
@@ -388,4 +389,44 @@ export async function uploadSalesPaymentDocument(paymentId: string, url: string,
         revalidatePath(`/sales/payments/${paymentId}`);
         return updatedPayment;
     });
+}
+
+export async function sendPaymentEmail(paymentId: string, to: string, subject: string, htmlBody: string) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" };
+        }
+
+        const payment = await prisma.salesPayment.findUnique({
+            where: { id: paymentId },
+            include: { customer: true }
+        });
+
+        if (!payment || !payment.customer) {
+            return { success: false, error: "Không tìm thấy phiếu thu hoặc khách hàng." };
+        }
+
+        const res = await sendEmailWithTracking({
+            to,
+            subject,
+            htmlBody,
+            senderId: session.user.id,
+            customerId: payment.customerId
+        });
+
+        if (res.success) {
+            await logCustomerActivity(
+                payment.customerId,
+                session.user.id,
+                'GỬI_EMAIL',
+                `Đã gửi Email Xác nhận Thanh toán (Phiếu ${payment.code}) đến ${to}`
+            );
+        }
+
+        return res;
+    } catch (error: any) {
+        console.error("Lỗi khi gửi email xác nhận thanh toán:", error);
+        return { success: false, error: error.message };
+    }
 }

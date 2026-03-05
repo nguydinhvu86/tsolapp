@@ -5,6 +5,56 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
+import { sendEmailWithTracking } from '@/lib/mailer';
+
+export async function sendOrderEmail(
+    orderId: string,
+    toEmail: string,
+    subject: string,
+    htmlBody: string,
+    attachmentName?: string,
+    attachmentBase64?: string
+) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" };
+        }
+        const senderId = session.user.id;
+
+        const order = await prisma.salesOrder.findUnique({
+            where: { id: orderId },
+            include: { customer: true }
+        });
+
+        if (!order) {
+            return { success: false, error: "Đơn đặt hàng không tồn tại." };
+        }
+
+        const res = await sendEmailWithTracking({
+            to: toEmail,
+            subject,
+            htmlBody,
+            senderId,
+            customerId: order.customerId,
+            // Assuming there isn't an orderId tracking field in emailLog, we might omit or add later
+            // We'll omit it for now since mailer parameter doesn't explicitly have orderId
+            attachmentName,
+            attachmentBase64
+        });
+
+        if (res.success) {
+            // Log if needed
+            revalidatePath(`/sales/orders/${orderId}`);
+            return { success: true };
+        } else {
+            return { success: false, error: res.error };
+        }
+    } catch (error: any) {
+        console.error("sendOrderEmail error:", error);
+        return { success: false, error: "Lỗi hệ thống khi gửi email." };
+    }
+}
 
 const itemSchema = z.object({
     id: z.string().optional(),

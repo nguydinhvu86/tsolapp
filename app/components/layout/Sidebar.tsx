@@ -68,6 +68,17 @@ const mainNavItems: any[] = [
         ]
     },
     { name: 'Khách Hàng', href: '/customers', icon: Users, permission: 'CUSTOMERS_VIEW' },
+    {
+        name: 'Thiết Lập',
+        icon: Settings,
+        children: [
+            { name: 'Quản lý Người dùng', href: '/users', permission: 'USERS_VIEW', icon: Users },
+            { name: 'Nhóm Quyền', href: '/users/roles', permission: 'ROLES_VIEW', icon: CheckSquare },
+            { name: 'Cấu hình Email', href: '/email-config', permission: 'SETTINGS_VIEW', icon: Mail },
+            { name: 'Mẫu Email', href: '/email-templates', permission: 'SETTINGS_VIEW', icon: FileText },
+            { name: 'Cài đặt chung', href: '/settings', permission: 'SETTINGS_VIEW', icon: Settings }
+        ]
+    }
 ];
 
 export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, onClose }: { brandName?: string, logoUrl?: string | null, isOpen?: boolean, onClose?: () => void }) {
@@ -249,68 +260,6 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
 
 
 
-                {(isAdmin || userPermissions.includes('USERS_VIEW')) && (
-                    <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                        <Link
-                            href="/users"
-                            onClick={() => {
-                                if (onClose && window.innerWidth < 768) {
-                                    onClose();
-                                }
-                            }}
-                            style={{
-                                display: 'flex', alignItems: 'center', gap: '0.75rem',
-                                padding: '0.75rem 1rem', borderRadius: 'var(--radius)',
-                                backgroundColor: pathname === '/users' ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
-                                color: pathname === '/users' ? 'var(--primary)' : 'var(--text-main)',
-                                fontSize: '0.875rem', fontWeight: pathname === '/users' ? 600 : 500, transition: 'all 0.2s', textDecoration: 'none'
-                            }}
-                        >
-                            <Users size={20} />
-                            Quản lý Người dùng
-                        </Link>
-                        {isAdmin && (
-                            <Link
-                                href="/users/roles"
-                                onClick={() => {
-                                    if (onClose && window.innerWidth < 768) {
-                                        onClose();
-                                    }
-                                }}
-                                style={{
-                                    display: 'flex', alignItems: 'center', gap: '0.75rem',
-                                    padding: '0.75rem 1rem', borderRadius: 'var(--radius)',
-                                    backgroundColor: pathname === '/users/roles' ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
-                                    color: pathname === '/users/roles' ? 'var(--primary)' : 'var(--text-main)',
-                                    fontSize: '0.875rem', fontWeight: pathname === '/users/roles' ? 600 : 500, transition: 'all 0.2s', textDecoration: 'none'
-                                }}
-                            >
-                                <CheckSquare size={20} />
-                                Nhóm Quyền
-                            </Link>
-                        )}
-                        {isAdmin && (
-                            <Link
-                                href="/settings"
-                                onClick={() => {
-                                    if (onClose && window.innerWidth < 768) {
-                                        onClose();
-                                    }
-                                }}
-                                style={{
-                                    display: 'flex', alignItems: 'center', gap: '0.75rem',
-                                    padding: '0.75rem 1rem', borderRadius: 'var(--radius)',
-                                    backgroundColor: pathname?.startsWith('/settings') ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
-                                    color: pathname?.startsWith('/settings') ? 'var(--primary)' : 'var(--text-main)',
-                                    fontSize: '0.875rem', fontWeight: pathname?.startsWith('/settings') ? 600 : 500, transition: 'all 0.2s', textDecoration: 'none'
-                                }}
-                            >
-                                <Settings size={20} />
-                                Cài đặt
-                            </Link>
-                        )}
-                    </div>
-                )}
             </nav>
         </aside >
     );

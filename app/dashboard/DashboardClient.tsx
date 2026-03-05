@@ -226,7 +226,15 @@ function TodoListWidget() {
     );
 }
 
+import { useRouter } from 'next/navigation';
+
 export function DashboardClient({ kpiData, userTasks = [] }: { kpiData?: any, userTasks?: any[] }) {
+    const router = useRouter();
+    const [tasks, setTasks] = useState(userTasks);
+
+    useEffect(() => {
+        setTasks(userTasks);
+    }, [userTasks]);
 
     // Revenue calculations
     const revenueThisMonth = kpiData?.revenueThisMonth || 0;
@@ -375,10 +383,10 @@ export function DashboardClient({ kpiData, userTasks = [] }: { kpiData?: any, us
                                 <Briefcase size={20} className="text-blue-500" />
                                 Công việc của tôi
                             </h3>
-                            <span className="text-sm font-medium bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full">{userTasks.length} việc</span>
+                            <span className="text-sm font-medium bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full">{tasks.length} việc</span>
                         </div>
 
-                        {userTasks.length === 0 ? (
+                        {tasks.length === 0 ? (
                             <div className="flex-1 flex flex-col items-center justify-center text-gray-400 bg-gray-50/50 rounded-lg border border-dashed border-gray-200 p-8">
                                 <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
                                     <Briefcase size={24} className="text-gray-200" />
@@ -402,7 +410,7 @@ export function DashboardClient({ kpiData, userTasks = [] }: { kpiData?: any, us
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {userTasks.map((task) => {
+                                            {tasks.map((task: any) => {
                                                 const relatedEntityName = task.customer?.name || task.contract?.code || task.salesInvoice?.code || task.salesOrder?.code || '';
                                                 const isDueSoon = task.dueDate && new Date(task.dueDate).getTime() - new Date().getTime() < 86400000 && task.status !== 'DONE';
 
@@ -437,8 +445,32 @@ export function DashboardClient({ kpiData, userTasks = [] }: { kpiData?: any, us
                                                         <td>
                                                             <select
                                                                 value={task.status}
-                                                                onChange={(e) => {
-                                                                    // Handle status update
+                                                                onChange={async (e) => {
+                                                                    const newStatus = e.target.value;
+                                                                    const previousStatus = task.status;
+
+                                                                    // Optimistic update
+                                                                    setTasks((prev: any[]) => prev.map((t: any) =>
+                                                                        t.id === task.id ? { ...t, status: newStatus } : t
+                                                                    ));
+
+                                                                    try {
+                                                                        const { updateDashboardTaskStatus } = await import('@/app/dashboard/actions');
+                                                                        const res = await updateDashboardTaskStatus(task.id, newStatus);
+                                                                        if (!res || !res.success) {
+                                                                            // Revert if error
+                                                                            setTasks((prev: any[]) => prev.map((t: any) =>
+                                                                                t.id === task.id ? { ...t, status: previousStatus } : t
+                                                                            ));
+                                                                        } else {
+                                                                            router.refresh();
+                                                                        }
+                                                                    } catch (error) {
+                                                                        console.error("Failed to update status", error);
+                                                                        setTasks((prev: any[]) => prev.map((t: any) =>
+                                                                            t.id === task.id ? { ...t, status: previousStatus } : t
+                                                                        ));
+                                                                    }
                                                                 }}
                                                                 style={{
                                                                     padding: '4px 8px', borderRadius: 'var(--radius)',

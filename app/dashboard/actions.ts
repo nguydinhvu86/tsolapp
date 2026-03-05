@@ -1,3 +1,5 @@
+'use server';
+
 import { prisma } from '@/lib/prisma';
 import { Quote, Contract, Handover, PaymentRequest, ContractAppendix, Dispatch } from '@prisma/client';
 
@@ -128,5 +130,24 @@ export async function saveDashboardConfig(userId: string, configJson: string) {
     } catch (e) {
         console.error("Save dashboard config error", e);
         return { success: false, error: "Failed to save configuration" };
+    }
+}
+
+export async function updateDashboardTaskStatus(taskId: string, status: string) {
+    try {
+        const { getServerSession } = await import('next-auth');
+        const { authOptions } = await import('@/lib/authOptions');
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) return { success: false, error: 'Unauthorized' };
+
+        const { updateTaskStatus } = await import('@/app/tasks/actions');
+        await updateTaskStatus(taskId, status, session.user.id);
+
+        const { revalidatePath } = await import('next/cache');
+        revalidatePath('/dashboard');
+        return { success: true };
+    } catch (e: any) {
+        console.error("Failed to update task from dashboard:", e);
+        return { success: false, error: e.message };
     }
 }

@@ -8,14 +8,20 @@ import { updateSalesOrderStatus, convertOrderToInvoice } from '../actions';
 import { formatMoney } from '@/lib/utils/formatters';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import { Modal } from '@/app/components/ui/Modal';
+import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
+import { sendOrderEmail } from '../actions';
+import { Mail } from 'lucide-react';
 
-export default function SalesOrderDetailClient({ initialData, customers, products, users }: any) {
+export default function SalesOrderDetailClient({ initialData, customers, products, users, emailTemplates }: any) {
     const router = useRouter();
     const [order, setOrder] = useState(initialData);
     const [activeTab, setActiveTab] = useState<'items'>('items');
     const [copied, setCopied] = useState(false);
     const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
     const [isConverting, setIsConverting] = useState(false);
+
+    // Email Modal State
+    const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
     // Generic Action Modal State
     const [actionModal, setActionModal] = useState<{ isOpen: boolean, title: string, message: React.ReactNode, action: () => Promise<void> } | null>(null);
@@ -124,6 +130,13 @@ export default function SalesOrderDetailClient({ initialData, customers, product
                     >
                         <ExternalLink size={16} /> Xem Bản In
                     </Link>
+                    <button
+                        onClick={() => setIsEmailModalOpen(true)}
+                        className="btn btn-primary"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#10b981', color: 'white', border: 'none', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                    >
+                        <Mail size={16} /> Gửi Email
+                    </button>
                     {(order.status === 'DRAFT' || order.status === 'CONFIRMED') && (
                         <button
                             onClick={() => setIsConvertModalOpen(true)}
@@ -386,6 +399,34 @@ export default function SalesOrderDetailClient({ initialData, customers, product
                     </div>
                 </div>
             </Modal>
+
+            <SendEmailModal
+                isOpen={isEmailModalOpen}
+                onClose={() => setIsEmailModalOpen(false)}
+                moduleType="ESTIMATE" // For now, we reuse ESTIMATE templates or create ORDER templates.
+                defaultToEmail={order.customer?.email || ''}
+                variablesData={{
+                    customerName: order.customer?.name || '',
+                    customerEmail: order.customer?.email || '',
+                    senderName: order.creator?.name || '',
+                    today: new Date().toLocaleDateString('vi-VN'),
+                    code: order.code,
+                    totalAmount: formatMoney(order.totalAmount),
+                    link: `${window.location.origin}/public/sales/order/${order.id}`
+                }}
+                templates={emailTemplates || []}
+                printUrl={`${window.location.origin}/public/sales/order/${order.id}`}
+                documentName={`DonHang_${order.code}.pdf`}
+                onSend={async (data) => {
+                    const res = await sendOrderEmail(order.id, data.to, data.subject, data.htmlBody, data.attachmentName, data.attachmentBase64);
+                    if (res.success) {
+                        alert('Đã gửi email thành công!');
+                        router.refresh();
+                    } else {
+                        throw new Error(res.error);
+                    }
+                }}
+            />
         </div>
     );
 }

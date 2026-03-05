@@ -2,13 +2,16 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, FileDown, Plus, ExternalLink, Copy } from 'lucide-react';
+import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, FileDown, Plus, ExternalLink, Copy, Mail } from 'lucide-react';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
+import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
+import { sendPurchaseOrderEmail } from '../../actions';
 import Link from 'next/link';
 
-export function PurchaseOrderDetailClient({ order, tasks, users }: { order: any, tasks: any[], users: any[] }) {
+export function PurchaseOrderDetailClient({ order, tasks, users, emailTemplates = [] }: { order: any, tasks: any[], users: any[], emailTemplates?: any[] }) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'items' | 'bills' | 'tasks'>('items');
+    const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
     const [copied, setCopied] = useState(false);
 
     const handleCopyPublicLink = () => {
@@ -82,6 +85,13 @@ export function PurchaseOrderDetailClient({ order, tasks, users }: { order: any,
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <button
+                        onClick={() => setIsEmailModalOpen(true)}
+                        className="btn btn-secondary"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: 'white', color: '#3b82f6', border: '1px solid #bfdbfe', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                    >
+                        <Mail size={16} /> Gửi Email Thông Báo
+                    </button>
                     <button
                         onClick={handleCopyPublicLink}
                         className="btn btn-secondary"
@@ -284,6 +294,26 @@ export function PurchaseOrderDetailClient({ order, tasks, users }: { order: any,
                     </div>
                 </div>
             </div>
+
+            <SendEmailModal
+                isOpen={isEmailModalOpen}
+                onClose={() => setIsEmailModalOpen(false)}
+                templates={emailTemplates}
+                moduleType="PURCHASE_ORDER"
+                variablesData={{
+                    orderCode: order.code,
+                    supplierName: order.supplier?.name || '',
+                    totalAmount: formatMoney(order.totalAmount),
+                    date: formatDate(order.date),
+                    notes: order.notes || '',
+                    link: typeof window !== 'undefined' ? `${window.location.origin}/public/purchasing/orders/${order.id}` : ''
+                }}
+                onSend={async (emailData) => {
+                    const res = await sendPurchaseOrderEmail(order.id, emailData.to, emailData.subject, emailData.htmlBody);
+                    if (res?.success) alert("Đã gửi email đơn mua hàng thành công!");
+                    else alert("Lỗi khi gửi email: " + res?.error);
+                }}
+            />
         </div>
     );
 }

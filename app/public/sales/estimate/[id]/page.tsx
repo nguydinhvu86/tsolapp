@@ -113,10 +113,11 @@ export default async function PublicSalesEstimatePage({ params }: { params: { id
                             <tr key={item.id}>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{index + 1}</td>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '8px' }}>
-                                    <strong style={{ display: 'block' }}>{item.product?.name}</strong>
-                                    {item.product?.sku && <span style={{ fontSize: '0.8rem', color: '#64748b' }}>SKU: {item.product.sku}</span>}
+                                    <strong style={{ display: 'block' }}>{item.product?.name || item.name}</strong>
+                                    {item.product?.sku && <span style={{ fontSize: '0.8rem', color: '#64748b', display: 'block' }}>SKU: {item.product.sku}</span>}
+                                    {item.description && <span style={{ fontSize: '0.8rem', color: '#64748b', whiteSpace: 'pre-line' }}>{item.description}</span>}
                                 </td>
-                                <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{item.quantity} {item.product?.unit || ''}</td>
+                                <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{item.quantity} {item.product?.unit || item.unit || ''}</td>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'right' }}>{formatMoney(item.unitPrice)}</td>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{item.taxRate}</td>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'right', fontWeight: 600 }}>{formatMoney(item.totalPrice)}</td>

@@ -2,6 +2,8 @@ import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import PrintSalesOrderClient from './PrintSalesOrderClient';
 
+export const dynamic = 'force-dynamic';
+
 export default async function PrintSalesOrderPage({ params }: { params: { id: string } }) {
     const { id } = params;
 

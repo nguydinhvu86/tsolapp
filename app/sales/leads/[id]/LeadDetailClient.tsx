@@ -5,9 +5,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Edit, Trash2, CheckCircle, RefreshCcw, Building2, User, Phone, Mail, DollarSign, Calendar, Tag, FileText, CheckSquare, Plus, Paperclip, Send, Link as LinkIcon } from 'lucide-react';
 import { formatMoney, formatDate, formatDateTime } from '@/lib/utils/formatters';
-import { updateLeadStatus, deleteLead, convertLeadToCustomer, connectLeadToExistingCustomer, addLeadActivityLog } from '../actions';
+import { updateLeadStatus, deleteLead, convertLeadToCustomer, connectLeadToExistingCustomer, addLeadActivityLog, sendLeadEmail } from '../actions';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { Modal } from '@/app/components/ui/Modal';
+import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 
 const STATUSES = [
@@ -62,10 +63,11 @@ const styles = {
     activityContent: { fontSize: '14px', color: '#475569', backgroundColor: 'white', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', marginTop: '12px' }
 };
 
-export function LeadDetailClient({ lead, customers, users }: { lead: any, customers: any[], users: any[] }) {
+export function LeadDetailClient({ lead, customers, users, emailTemplates = [] }: { lead: any, customers: any[], users: any[], emailTemplates?: any[] }) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
     // Convert states
     const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
@@ -209,6 +211,13 @@ export function LeadDetailClient({ lead, customers, users }: { lead: any, custom
                             <User size={16} /> Xem hồ sơ KH
                         </Link>
                     )}
+                    <button
+                        onClick={() => setIsEmailModalOpen(true)}
+                        style={{ ...styles.btnSecondary, color: '#3b82f6', borderColor: '#bfdbfe', backgroundColor: '#eff6ff' }}
+                        title="Gửi Email Thông Báo"
+                    >
+                        <Mail size={16} /> Gửi Email
+                    </button>
                     <Link href={`/sales/leads/${lead.id}/edit`} style={styles.btnSecondary}>
                         <Edit size={16} /> Sửa
                     </Link>
@@ -613,6 +622,28 @@ export function LeadDetailClient({ lead, customers, users }: { lead: any, custom
                     </div>
                 </div>
             </Modal>
+
+            <SendEmailModal
+                isOpen={isEmailModalOpen}
+                onClose={() => setIsEmailModalOpen(false)}
+                templates={emailTemplates}
+                moduleType="LEAD"
+                variablesData={{
+                    leadName: lead.name,
+                    companyName: lead.company || lead.customer?.name || '---',
+                    phone: lead.phone || lead.customer?.phone || '---',
+                    email: lead.email || lead.customer?.email || '---',
+                    source: lead.source || '---',
+                    assignedTo: lead.assignedTo?.name || '---',
+                    status: currentStatus.label,
+                    link: typeof window !== 'undefined' ? `${window.location.origin}/sales/leads/${lead.id}` : ''
+                }}
+                onSend={async (emailData) => {
+                    const res = await sendLeadEmail(lead.id, emailData.to, emailData.subject, emailData.htmlBody);
+                    if (res?.success) alert("Đã gửi email thông báo thành công!");
+                    else alert("Lỗi khi gửi email: " + res?.error);
+                }}
+            />
         </div>
     );
 }

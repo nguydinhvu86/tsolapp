@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { logCustomerActivity } from "@/lib/customerLogger";
 import { revalidatePath } from 'next/cache';
+import { sendEmailWithTracking } from '@/lib/mailer';
 
 export async function createCustomer(data: { name: string, email?: string, phone?: string, address?: string, taxCode?: string }) {
     const customer = await prisma.customer.create({ data });
@@ -47,4 +48,40 @@ export async function deleteCustomer(id: string) {
 
 export async function getCustomers() {
     return await prisma.customer.findMany({ orderBy: { name: 'asc' } });
+}
+
+export async function sendDebtConfirmationEmail(customerId: string, to: string, subject: string, htmlBody: string) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" };
+        }
+
+        const customer = await prisma.customer.findUnique({ where: { id: customerId } });
+        if (!customer) {
+            return { success: false, error: "Không tìm thấy khách hàng." };
+        }
+
+        const res = await sendEmailWithTracking({
+            to,
+            subject,
+            htmlBody,
+            senderId: session.user.id,
+            customerId: customerId,
+        });
+
+        if (res.success) {
+            await logCustomerActivity(
+                customerId,
+                session.user.id,
+                'GỬI_EMAIL',
+                `Đã gửi Email Xác nhận Công nợ đến ${to}`
+            );
+        }
+
+        return res;
+    } catch (error: any) {
+        console.error("Lỗi khi gửi email xác nhận công nợ:", error);
+        return { success: false, error: error.message };
+    }
 }

@@ -4,14 +4,15 @@ import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
-import { ChevronLeft, CheckCircle2, Circle, MessageSquare, Clock, Plus, Trash2, User as UserIcon, Edit2, Info } from 'lucide-react';
+import { ChevronLeft, CheckCircle2, Circle, MessageSquare, Clock, Plus, Trash2, User as UserIcon, Edit2, Info, Mail } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { updateTaskStatus, addChecklist, toggleChecklist, addComment, updateTask, editChecklist, deleteChecklist } from '../actions';
+import { updateTaskStatus, addChecklist, toggleChecklist, addComment, updateTask, editChecklist, deleteChecklist, sendTaskEmail } from '../actions';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import dynamic from 'next/dynamic';
+import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
 import 'suneditor/dist/css/suneditor.min.css';
 import { toggleReaction, updateTaskLinks, searchEntities } from '../actions';
 
@@ -22,7 +23,7 @@ const SunEditor = dynamic(() => import('suneditor-react'), {
 
 const EMOJIS = ['👍', '❤️', '😂', '🎉', '👀'];
 
-export function TaskDetailClient({ initialTask, users }: { initialTask: any, users: any[] }) {
+export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { initialTask: any, users: any[], emailTemplates?: any[] }) {
     const router = useRouter();
     const { data: session } = useSession();
     const permissions = session?.user?.permissions || [];
@@ -46,6 +47,7 @@ export function TaskDetailClient({ initialTask, users }: { initialTask: any, use
 
     // Edit Task State
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
     const [editTaskTitle, setEditTaskTitle] = useState(initialTask.title || '');
     const [editTaskDesc, setEditTaskDesc] = useState(initialTask.description || '');
     const [editTaskPriority, setEditTaskPriority] = useState(initialTask.priority || 'MEDIUM');
@@ -431,9 +433,14 @@ export function TaskDetailClient({ initialTask, users }: { initialTask: any, use
                             <h1 style={{ margin: '0 0 0.25rem 0', fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                 {task.title}
                                 {canEdit && (
-                                    <button onClick={() => setIsEditModalOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center' }} title="Sửa chi tiết chung">
-                                        <Edit2 size={16} />
-                                    </button>
+                                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                        <button onClick={() => setIsEditModalOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center' }} title="Sửa chi tiết chung">
+                                            <Edit2 size={16} />
+                                        </button>
+                                        <button onClick={() => setIsEmailModalOpen(true)} style={{ background: 'none', border: '1px solid #bfdbfe', borderRadius: '4px', color: '#3b82f6', cursor: 'pointer', display: 'flex', alignItems: 'center', fontSize: '0.85rem', gap: '4px', padding: '0.2rem 0.5rem', marginLeft: '0.5rem' }} title="Gửi Email Thông Báo">
+                                            <Mail size={14} /> Gửi Email
+                                        </button>
+                                    </div>
                                 )}
                             </h1>
                             <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
@@ -1055,6 +1062,28 @@ export function TaskDetailClient({ initialTask, users }: { initialTask: any, use
                     </div>
                 </div>
             </Modal>
+
+            {/* Email Modal */}
+            <SendEmailModal
+                isOpen={isEmailModalOpen}
+                onClose={() => setIsEmailModalOpen(false)}
+                templates={emailTemplates}
+                moduleType="TASK"
+                variablesData={{
+                    taskTitle: task.title,
+                    taskDescription: task.description || 'Không có mô tả',
+                    dueDate: task.dueDate ? new Date(task.dueDate).toLocaleDateString('vi-VN') : 'Không có hạn chót',
+                    priority: task.priority === 'URGENT' ? 'Khẩn cấp' : task.priority === 'HIGH' ? 'Cao' : task.priority === 'MEDIUM' ? 'Trung bình' : 'Thấp',
+                    assignerName: task.creator?.name || task.creator?.email || 'Hệ thống',
+                    assigneeName: task.assignees?.map((a: any) => a.user?.name || a.user?.email || '').filter(Boolean).join(', ') || 'Chưa phân công',
+                    link: typeof window !== 'undefined' ? `${window.location.origin}/tasks/${task.id}` : ''
+                }}
+                onSend={async (emailData) => {
+                    const res = await sendTaskEmail(task.id, emailData.to, emailData.subject, emailData.htmlBody);
+                    if (res?.success) alert("Đã gửi email thông báo công việc thành công!");
+                    else alert("Lỗi khi gửi email: " + res?.error);
+                }}
+            />
         </div>
     );
 }

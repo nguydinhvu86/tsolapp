@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { SalesPaymentDetailClient } from './SalesPaymentDetailClient';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
+import { getTemplatesByModule } from '@/app/email-templates/actions';
 
 export default async function SalesPaymentDetailPage({ params }: { params: { id: string } }) {
     const session = await getServerSession(authOptions);
@@ -57,5 +58,9 @@ export default async function SalesPaymentDetailPage({ params }: { params: { id:
         }
     });
 
-    return <SalesPaymentDetailClient payment={payment} tasks={tasks} users={users} unpaidInvoices={unpaidInvoices} />;
+    const paymentTemplates = await getTemplatesByModule('PAYMENT_CONFIRMATION');
+    const generalTemplates = await getTemplatesByModule('GENERAL');
+    const allTemplates = [...paymentTemplates, ...generalTemplates];
+
+    return <SalesPaymentDetailClient payment={payment} tasks={tasks} users={users} unpaidInvoices={unpaidInvoices} emailTemplates={allTemplates} />;
 }

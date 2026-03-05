@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, Check } from 'lucide-react';
+import { Bell, Check, Info, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { getUnreadNotifications, markAsRead, markAllAsRead } from '@/app/notifications/actions';
 import { useRouter } from 'next/navigation';
@@ -131,21 +131,53 @@ export function NotificationBell() {
                                 Không có thông báo mới.
                             </div>
                         ) : (
-                            notifications.map(n => (
-                                <div
-                                    key={n.id}
-                                    onClick={() => handleNotificationClick(n)}
-                                    style={{ padding: '1rem', borderBottom: '1px solid var(--border)', cursor: 'pointer', transition: 'background 0.2s' }}
-                                    className="hover:bg-slate-50"
-                                >
-                                    <div style={{ fontSize: '0.9rem', marginBottom: '0.25rem', lineHeight: 1.4, color: 'var(--text-main)' }}>
-                                        {n.message}
+                            notifications.map(n => {
+                                let Icon = Info;
+                                let colorClass = 'text-blue-500';
+                                let bgClass = 'bg-blue-50';
+
+                                switch (n.type) {
+                                    case 'SUCCESS':
+                                        Icon = CheckCircle;
+                                        colorClass = 'text-green-500';
+                                        bgClass = 'bg-green-50';
+                                        break;
+                                    case 'WARNING':
+                                        Icon = AlertTriangle;
+                                        colorClass = 'text-amber-500';
+                                        bgClass = 'bg-amber-50';
+                                        break;
+                                    case 'ERROR':
+                                        Icon = XCircle;
+                                        colorClass = 'text-red-500';
+                                        bgClass = 'bg-red-50';
+                                        break;
+                                }
+
+                                return (
+                                    <div
+                                        key={n.id}
+                                        onClick={() => handleNotificationClick(n)}
+                                        style={{ padding: '1rem', borderBottom: '1px solid var(--border)', cursor: 'pointer', transition: 'background 0.2s', display: 'flex', gap: '12px', alignItems: 'flex-start' }}
+                                        className="hover:bg-slate-50"
+                                    >
+                                        <div className={`shrink-0 p-2 rounded-full ${bgClass} ${colorClass}`}>
+                                            <Icon size={16} />
+                                        </div>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.2rem' }}>
+                                                {n.title || 'Thông báo mới'}
+                                            </div>
+                                            <div style={{ fontSize: '0.85rem', marginBottom: '0.35rem', lineHeight: 1.4, color: 'var(--text-muted)' }}>
+                                                {n.message}
+                                            </div>
+                                            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                                                {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: vi })}
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                        {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: vi })}
-                                    </div>
-                                </div>
-                            ))
+                                );
+                            })
                         )}
                     </div>
                 </div>

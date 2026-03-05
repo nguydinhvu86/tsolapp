@@ -2,6 +2,9 @@
 
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { sendEmailWithTracking } from '@/lib/mailer';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/authOptions';
 
 export async function getTasks(filters?: any) {
     // Optionally apply filters in future iterations
@@ -106,21 +109,91 @@ export async function createTask(data: any, creatorId: string) {
     if (assignees && assignees.length > 0 && createdTasks.length > 0) {
         const firstTask = createdTasks[0];
         const creator = await prisma.user.findUnique({ where: { id: creatorId }, select: { name: true } });
-        const notifications = assignees
-            .filter((userId: string) => userId !== creatorId)
-            .map((userId: string) => ({
-                userId,
-                message: `${creator?.name || 'Ai đó'} đã giao cho bạn ${isRecurringMode ? taskCount + ' công việc định kỳ' : 'một công việc'}: "${firstTask.title}".`,
-                link: `/tasks/${firstTask.id}`
-            }));
+
+        const assigneeIdsToNotify = assignees.filter((userId: string) => userId !== creatorId);
+        const notifications = assigneeIdsToNotify.map((userId: string) => ({
+            userId,
+            title: 'Công việc mới được giao',
+            message: `${creator?.name || 'Ai đó'} đã giao cho bạn ${isRecurringMode ? taskCount + ' công việc định kỳ' : 'một công việc'}: "${firstTask.title}".`,
+            type: 'INFO',
+            link: `/tasks/${firstTask.id}`
+        }));
+
         if (notifications.length > 0) {
             await prisma.notification.createMany({ data: notifications });
         }
+
+        // Auto send emails
+        await triggerAutoTaskEmail(firstTask.id, assigneeIdsToNotify, creatorId);
     }
 
     revalidatePath('/tasks');
     return createdTasks[0]; // Return the first created task
 }
+
+export async function triggerAutoTaskEmail(taskId: string, newAssigneeIds: string[], creatorId: string) {
+    if (!newAssigneeIds || newAssigneeIds.length === 0) return;
+
+    try {
+        const task = await prisma.task.findUnique({
+            where: { id: taskId },
+            include: { creator: true }
+        });
+        if (!task) return;
+
+        const assigneesUsers = await prisma.user.findMany({
+            where: { id: { in: newAssigneeIds } }
+        });
+
+        // Import inside to avoid circular deps if any
+        const { getTemplatesByModule } = await import('@/app/email-templates/actions');
+        const templates = await getTemplatesByModule('TASK');
+        let template = templates[0];
+
+        const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+        for (const assignee of assigneesUsers) {
+            if (!assignee.email) continue;
+
+            let subject = `Công việc mới: ${task.title}`;
+            let htmlBody = `<p>Bạn vừa được giao một công việc mới: <strong>${task.title}</strong></p>
+    <p>Bởi: ${task.creator?.name || 'Hệ thống'}</p>
+    <p><a href="${baseUrl}/tasks/${task.id}">Xem công việc</a></p>`;
+
+            if (template) {
+                subject = template.subject || subject;
+                htmlBody = template.body || htmlBody;
+
+                const variables: Record<string, string> = {
+                    '{{taskTitle}}': task.title,
+                    '{{taskDescription}}': task.description || 'Không có mô tả',
+                    '{{dueDate}}': task.dueDate ? new Date(task.dueDate).toLocaleDateString('vi-VN') : 'Không có hạn chót',
+                    '{{priority}}': task.priority === 'URGENT' ? 'Khẩn cấp' : task.priority === 'HIGH' ? 'Cao' : task.priority === 'MEDIUM' ? 'Trung bình' : 'Thấp',
+                    '{{assignerName}}': task.creator?.name || task.creator?.email || 'Hệ thống',
+                    '{{assigneeName}}': assignee.name || assignee.email || 'Bạn',
+                    '{{link}}': `${baseUrl}/tasks/${task.id}`
+                };
+
+                for (const [key, value] of Object.entries(variables)) {
+                    // escape regex so we replace all
+                    const regexKey = key.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+                    subject = subject.replace(new RegExp(regexKey, 'g'), value);
+                    htmlBody = htmlBody.replace(new RegExp(regexKey, 'g'), value);
+                }
+            }
+
+            await sendEmailWithTracking({
+                to: assignee.email,
+                subject,
+                htmlBody,
+                senderId: creatorId
+            });
+        }
+    } catch (err: any) {
+        console.error("Auto email error:", err);
+    }
+}
+
 
 export async function updateTask(id: string, data: any, userId: string) {
     const { assignees, observers, recurrence, ...restData } = data;
@@ -186,6 +259,12 @@ export async function updateTask(id: string, data: any, userId: string) {
         data: restData
     });
 
+    let newAssigneesToNotify: string[] = [];
+    if (assignees && oldTask) {
+        const oldAssignedIds = oldTask.assignees.map((a: any) => a.userId);
+        newAssigneesToNotify = assignees.filter((aId: string) => !oldAssignedIds.includes(aId) && aId !== userId);
+    }
+
     // Re-sync Assignees if provided
     if (assignees) {
         await prisma.taskAssignee.deleteMany({ where: { taskId: id } });
@@ -241,6 +320,22 @@ export async function updateTask(id: string, data: any, userId: string) {
 
     if (changes.length > 0) {
         logActivity(id, userId, 'UPDATED_TASK', JSON.stringify({ summary: changes.join(' | ') }));
+    }
+
+    if (newAssigneesToNotify.length > 0) {
+        // Create notifications
+        const creator = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+        const notifications = newAssigneesToNotify.map((uId: string) => ({
+            userId: uId,
+            title: 'Bạn được gán vào 1 công việc',
+            message: `${creator?.name || 'Ai đó'} đã gán bạn vào công việc: "${restData.title || oldTask?.title}".`,
+            type: 'INFO',
+            link: `/tasks/${id}`
+        }));
+        await prisma.notification.createMany({ data: notifications });
+
+        // Auto send emails
+        await triggerAutoTaskEmail(id, newAssigneesToNotify, userId);
     }
 
     revalidatePath('/tasks');
@@ -312,24 +407,46 @@ export async function addComment(taskId: string, content: string, userId: string
     });
 
     // Parse Mentions
-    // Strip HTML to plain text for easier searching, or just search raw HTML
-    // Since we know the users, let's fetch all users to see if `@UserName` is in the content
     const allUsers = await prisma.user.findMany({ select: { id: true, name: true } });
     const mentionedUsers = allUsers.filter(u => u.name && content.includes(`@${u.name}`));
+    const sender = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
 
-    if (mentionedUsers.length > 0) {
-        const sender = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
-        const notifications = mentionedUsers
-            .filter(mu => mu.id !== userId) // don't notify self
-            .map(mu => ({
-                userId: mu.id,
-                message: `${sender?.name || 'Ai đó'} đã nhắc đến bạn trong một bình luận ở công việc này.`,
+    // Identify people to notify: Assginees, Observers, Mentioned
+    const taskData = await prisma.task.findUnique({
+        where: { id: taskId },
+        include: { assignees: true, observers: true }
+    });
+
+    const usersToNotify = new Set<string>();
+
+    if (taskData) {
+        // Add creator, assignees, observers
+        usersToNotify.add(taskData.creatorId);
+        taskData.assignees.forEach(a => usersToNotify.add(a.userId));
+        taskData.observers.forEach(o => usersToNotify.add(o.userId));
+    }
+
+    // Add mentioned
+    mentionedUsers.forEach(u => usersToNotify.add(u.id));
+
+    // Remove the sender from notifications (don't notify self)
+    usersToNotify.delete(userId);
+
+    if (usersToNotify.size > 0 && taskData) {
+        const notifications = Array.from(usersToNotify).map(uId => {
+            const isMentioned = mentionedUsers.some(u => u.id === uId);
+            return {
+                userId: uId,
+                title: isMentioned ? 'Bạn được nhắc đến' : 'Bình luận mới',
+                message: isMentioned
+                    ? `${sender?.name || 'Ai đó'} đã nhắc đến bạn trong bình luận công việc: "${taskData.title}"`
+                    : `${sender?.name || 'Ai đó'} đã bình luận vào công việc: "${taskData.title}"`,
+                type: 'INFO',
                 link: `/tasks/${taskId}`
-            }));
+            };
+        });
 
-        if (notifications.length > 0) {
-            await prisma.notification.createMany({ data: notifications });
-        }
+        await prisma.notification.createMany({ data: notifications });
     }
 
     logActivity(taskId, userId, 'COMMENT_ADDED', JSON.stringify({ summary: parentId ? 'Đã trả lời một bình luận' : 'Đã thêm bình luận mới' }));
@@ -473,4 +590,44 @@ export async function cloneTask(taskId: string, userId: string, keepAssignees: b
 
     revalidatePath('/tasks');
     return cloned;
+}
+
+export async function sendTaskEmail(taskId: string, to: string, subject: string, htmlBody: string) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" };
+        }
+
+        const task = await prisma.task.findUnique({
+            where: { id: taskId },
+            include: { customer: true, assignees: { include: { user: true } } }
+        });
+
+        if (!task) {
+            return { success: false, error: "Không tìm thấy công việc." };
+        }
+
+        const res = await sendEmailWithTracking({
+            to,
+            subject,
+            htmlBody,
+            senderId: session.user.id,
+            customerId: task.customerId || undefined
+        });
+
+        if (res.success) {
+            await logActivity(
+                taskId,
+                session.user.id,
+                'GỬI_EMAIL',
+                JSON.stringify({ summary: `Đã gửi Email thông báo Công việc đến ${to}` })
+            );
+        }
+
+        return res;
+    } catch (error: any) {
+        console.error("Lỗi khi gửi email công việc:", error);
+        return { success: false, error: error.message };
+    }
 }

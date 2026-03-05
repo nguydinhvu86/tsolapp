@@ -10,9 +10,12 @@ import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import { Modal } from '@/app/components/ui/Modal';
 import { Input } from '@/app/components/ui/Input';
 import { SalesInvoiceNotes } from '@/app/components/sales/SalesInvoiceNotes';
+import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
+import { sendInvoiceEmail } from '../actions';
 import { useSession } from 'next-auth/react';
+import { Mail } from 'lucide-react';
 
-export default function SalesInvoiceDetailClient({ initialData, customers, products, users }: any) {
+export default function SalesInvoiceDetailClient({ initialData, customers, products, users, emailTemplates }: any) {
     const router = useRouter();
     const { data: session } = useSession();
     const [invoice, setInvoice] = useState(initialData);
@@ -21,6 +24,9 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [paymentData, setPaymentData] = useState({ amount: 0, method: 'CASH', notes: '' });
     const [diffModal, setDiffModal] = useState<{ isOpen: boolean, changes: string[] }>({ isOpen: false, changes: [] });
+
+    // Email Modal State
+    const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
     // Action Modal State
     const [actionModal, setActionModal] = useState<{
@@ -250,11 +256,17 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                         href={`/print/sales/invoice/${invoice.id}`}
                         target="_blank"
                         className="btn btn-secondary"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#f1f5f9', color: '#8b5cf6', border: '1px solid #ddd6fe', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#f1f5f9', color: '#3b82f6', border: '1px solid #bfdbfe', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
                     >
                         <ExternalLink size={16} /> Xem Bản In
                     </Link>
-
+                    <button
+                        onClick={() => setIsEmailModalOpen(true)}
+                        className="btn btn-primary"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#10b981', color: 'white', border: 'none', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                    >
+                        <Mail size={16} /> Gửi Email
+                    </button>
                     {invoice.status === 'DRAFT' && (
                         <button
                             onClick={handleApprove}
@@ -762,6 +774,34 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                         </div>
                     </div>
                 </Modal>
+
+                <SendEmailModal
+                    isOpen={isEmailModalOpen}
+                    onClose={() => setIsEmailModalOpen(false)}
+                    moduleType="INVOICE"
+                    defaultToEmail={invoice.customer?.email || ''}
+                    variablesData={{
+                        customerName: invoice.customer?.name || '',
+                        customerEmail: invoice.customer?.email || '',
+                        senderName: invoice.creator?.name || '',
+                        today: new Date().toLocaleDateString('vi-VN'),
+                        code: invoice.code,
+                        totalAmount: formatMoney(invoice.totalAmount),
+                        link: `${window.location.origin}/public/sales/invoice/${invoice.id}`
+                    }}
+                    templates={emailTemplates || []}
+                    printUrl={`${window.location.origin}/public/sales/invoice/${invoice.id}`}
+                    documentName={`HoaDon_${invoice.code}.pdf`}
+                    onSend={async (data) => {
+                        const res = await sendInvoiceEmail(invoice.id, data.to, data.subject, data.htmlBody, data.attachmentName, data.attachmentBase64);
+                        if (res.success) {
+                            alert('Đã gửi email thành công!');
+                            router.refresh();
+                        } else {
+                            throw new Error(res.error);
+                        }
+                    }}
+                />
             </div>
         </div>
     );

@@ -17,7 +17,9 @@ export async function createPaymentRequest(data: { title: string, content: strin
     try {
         const notifications = Array.from(targetUserIds).map(userId => ({
             userId,
+            title: 'Hồ sơ thanh toán mới',
             message: `Yêu cầu thanh toán mới đã được tạo: "${paymentRequest.title}"`,
+            type: 'INFO',
             link: `/payment-requests/${paymentRequest.id}`
         }));
 
@@ -42,9 +44,12 @@ export async function updatePaymentRequestStatus(id: string, status: string, act
     if (actorId) targetUserIds.delete(actorId);
 
     try {
+        const typeClass = status === 'APPROVED' ? 'SUCCESS' : (status === 'REJECTED' ? 'ERROR' : 'INFO');
         const notifications = Array.from(targetUserIds).map(userId => ({
             userId,
+            title: 'Cập nhật trạng thái thanh toán',
             message: `Yêu cầu thanh toán "${paymentRequest.title}" đã chuyển trạng thái thành: ${status}`,
+            type: typeClass,
             link: `/payment-requests/${paymentRequest.id}`
         }));
 

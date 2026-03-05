@@ -1,0 +1,58 @@
+[
+  {
+    "id": "cmmcx8k7w0000t9cpi1nuyd7x",
+    "key": "COMPANY_NAME",
+    "value": "Công ty TNHH Phần mềm Trường Thịnh",
+    "description": null,
+    "updatedAt": "2026-03-05T04:17:27.815Z"
+  },
+  {
+    "id": "cmmcx8k7x0001t9cpb75igawf",
+    "key": "COMPANY_PHONE",
+    "value": "(0274) 999 2222 - HP: 090 1232255",
+    "description": null,
+    "updatedAt": "2026-03-05T04:17:27.843Z"
+  },
+  {
+    "id": "cmmcx8k7x0002t9cpymeyfzgg",
+    "key": "COMPANY_EMAIL",
+    "value": "vutg@trinhgiatelecom.vn",
+    "description": null,
+    "updatedAt": "2026-03-05T04:17:27.849Z"
+  },
+  {
+    "id": "cmmcx8k7x0003t9cpoof4f864",
+    "key": "COMPANY_ADDRESS",
+    "value": " Số 147/80, Đường NTMK,  Phường Phú Lợi,Tp. Hồ Chí Minh",
+    "description": null,
+    "updatedAt": "2026-03-05T04:17:27.854Z"
+  },
+  {
+    "id": "cmmcx8k7x0004t9cpq0se1fms",
+    "key": "COMPANY_TAX",
+    "value": "3703185173",
+    "description": null,
+    "updatedAt": "2026-03-05T04:17:27.860Z"
+  },
+  {
+    "id": "cmmcxtzr300011xci81amhivt",
+    "key": "COMPANY_DISPLAY_NAME",
+    "value": "T-SOLUTION",
+    "description": null,
+    "updatedAt": "2026-03-05T04:17:27.827Z"
+  },
+  {
+    "id": "cmmcxtzrf00021xciqksne0qn",
+    "key": "COMPANY_FULL_NAME",
+    "value": "CÔNG TY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA  ",
+    "description": null,
+    "updatedAt": "2026-03-05T04:17:27.832Z"
+  },
+  {
+    "id": "cmmcxtzrm00031xciut3fso5l",
+    "key": "COMPANY_LOGO",
+    "value": "",
+    "description": null,
+    "updatedAt": "2026-03-05T04:17:27.837Z"
+  }
+]

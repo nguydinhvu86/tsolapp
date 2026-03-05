@@ -2,6 +2,8 @@ import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import PrintSalesEstimateClient from './PrintSalesEstimateClient';
 
+export const dynamic = 'force-dynamic';
+
 export default async function PrintSalesEstimatePage({ params }: { params: { id: string } }) {
     const { id } = params;
 

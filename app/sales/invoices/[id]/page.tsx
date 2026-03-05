@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import { getCustomers } from '@/app/customers/actions';
 import { getProducts } from '@/app/inventory/actions';
+import { getTemplatesByModule } from '@/app/email-templates/actions';
 import SalesInvoiceDetailClient from './SalesInvoiceDetailClient';
 
 export default async function SalesInvoiceDetailPage({ params }: { params: { id: string } }) {
@@ -48,14 +49,18 @@ export default async function SalesInvoiceDetailPage({ params }: { params: { id:
         notFound();
     }
 
-    const [customers, products, users] = await Promise.all([
+    const [customers, products, users, templates] = await Promise.all([
         getCustomers(),
         getProducts(),
         prisma.user.findMany({
             select: { id: true, name: true, email: true, role: true },
             orderBy: { name: 'asc' }
-        })
+        }),
+        getTemplatesByModule('INVOICE')
     ]);
+
+    const generalTemplates = await getTemplatesByModule('GENERAL');
+    const allTemplates = [...templates, ...generalTemplates];
 
     return (
         <SalesInvoiceDetailClient
@@ -63,6 +68,7 @@ export default async function SalesInvoiceDetailPage({ params }: { params: { id:
             customers={customers}
             products={products.filter((p: any) => p.isActive)}
             users={users.filter((u: any) => u.role !== 'SYSTEM')}
+            emailTemplates={allTemplates}
         />
     );
 }

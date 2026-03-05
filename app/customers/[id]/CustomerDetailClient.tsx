@@ -13,14 +13,17 @@ import { CustomerStatementPanel } from '@/app/components/customers/CustomerState
 import { CustomerNotesPanel } from '@/app/components/customers/CustomerNotesPanel';
 import { CustomerHistoryTimeline } from '@/app/components/customers/CustomerHistoryTimeline';
 import { useSession } from 'next-auth/react';
+import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
+import { sendDebtConfirmationEmail } from '../actions';
 
-export function CustomerDetailClient({ customer, tasks, users }: { customer: any, tasks: any[], users: any[] }) {
+export function CustomerDetailClient({ customer, tasks, users, emailTemplates = [] }: { customer: any, tasks: any[], users: any[], emailTemplates?: any[] }) {
     const router = useRouter();
     const { data: session } = useSession();
     const currentUserRole = session?.user?.role || 'USER';
     const currentUserId = session?.user?.id || '';
     const [activeTab, setActiveTab] = useState<'documents' | 'statement' | 'quotes' | 'contracts' | 'handovers' | 'payments' | 'appendices' | 'dispatches' | 'salesEstimates' | 'salesOrders' | 'salesInvoices' | 'salesPayments' | 'leads'>('leads');
     const [searchQuery, setSearchQuery] = useState('');
+    const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
     const tabs = [
         { id: 'leads', name: 'Cơ hội Bán hàng', count: customer.leads?.length || 0, icon: Target },
@@ -72,7 +75,15 @@ export function CustomerDetailClient({ customer, tasks, users }: { customer: any
                         <User size={40} />
                     </div>
                     <div style={{ flex: 1 }}>
-                        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, margin: '0 0 1.25rem 0', color: 'var(--text-main)' }}>{customer.name}</h2>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>{customer.name}</h2>
+                            <Button
+                                onClick={() => setIsEmailModalOpen(true)}
+                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#3b82f6', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.5rem', cursor: 'pointer' }}
+                            >
+                                <Mail size={16} /> Gửi Email Công Nợ
+                            </Button>
+                        </div>
 
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -350,6 +361,24 @@ export function CustomerDetailClient({ customer, tasks, users }: { customer: any
                 </div>
 
             </div>
+
+            <SendEmailModal
+                isOpen={isEmailModalOpen}
+                onClose={() => setIsEmailModalOpen(false)}
+                templates={emailTemplates}
+                moduleType="DEBT_CONFIRMATION"
+                variablesData={{
+                    customerName: customer.name,
+                    customerEmail: customer.email || '',
+                    totalDebt: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(customer.totalDebt || 0),
+                }}
+                onSend={async (emailData) => {
+                    const res = await sendDebtConfirmationEmail(customer.id, emailData.to, emailData.subject, emailData.htmlBody);
+                    if (res?.success) alert("Đã gửi email công nợ thành công!");
+                    else alert("Lỗi khi gửi email: " + res?.error);
+                }}
+            />
+
         </div>
     );
 }

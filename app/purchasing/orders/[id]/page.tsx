@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { PurchaseOrderDetailClient } from './PurchaseOrderDetailClient';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
+import { getTemplatesByModule } from '@/app/email-templates/actions';
 
 export default async function PurchaseOrderDetailPage({ params }: { params: { id: string } }) {
     const session = await getServerSession(authOptions);
@@ -48,5 +49,9 @@ export default async function PurchaseOrderDetailPage({ params }: { params: { id
         orderBy: { name: 'asc' }
     });
 
-    return <PurchaseOrderDetailClient order={order} tasks={tasks} users={users} />;
+    const poTemplates = await getTemplatesByModule('PURCHASE_ORDER');
+    const generalTemplates = await getTemplatesByModule('GENERAL');
+    const allTemplates = [...poTemplates, ...generalTemplates];
+
+    return <PurchaseOrderDetailClient order={order} tasks={tasks} users={users} emailTemplates={allTemplates} />;
 }

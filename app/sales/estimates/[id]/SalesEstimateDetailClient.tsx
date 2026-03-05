@@ -9,8 +9,11 @@ import { formatMoney } from '@/lib/utils/formatters';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import { Modal } from '@/app/components/ui/Modal';
 import { SalesEstimateActivityLog } from '@/app/components/sales/SalesEstimateActivityLog';
+import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
+import { sendEstimateEmail } from '../actions';
+import { Mail } from 'lucide-react';
 
-export default function SalesEstimateDetailClient({ initialData, customers, products, users }: any) {
+export default function SalesEstimateDetailClient({ initialData, customers, products, users, emailTemplates }: any) {
     const router = useRouter();
     const [estimate, setEstimate] = useState(initialData);
     const [activeTab, setActiveTab] = useState<'items'>('items');
@@ -20,6 +23,9 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
 
     const [isConvertOrderModalOpen, setIsConvertOrderModalOpen] = useState(false);
     const [isConvertingOrder, setIsConvertingOrder] = useState(false);
+
+    // Email Modal State
+    const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
     // Generic Action Modal State
     const [actionModal, setActionModal] = useState<{ isOpen: boolean, title: string, message: React.ReactNode, action: () => Promise<void> } | null>(null);
@@ -143,6 +149,13 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                     >
                         <ExternalLink size={16} /> Xem Bản In
                     </Link>
+                    <button
+                        onClick={() => setIsEmailModalOpen(true)}
+                        className="btn btn-primary"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#10b981', color: 'white', border: 'none', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                    >
+                        <Mail size={16} /> Gửi Email
+                    </button>
                     {(estimate.status === 'DRAFT' || estimate.status === 'SENT' || estimate.status === 'ACCEPTED') && (
                         <>
                             <button
@@ -462,6 +475,34 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                     </div>
                 </div>
             </Modal>
+
+            <SendEmailModal
+                isOpen={isEmailModalOpen}
+                onClose={() => setIsEmailModalOpen(false)}
+                moduleType="ESTIMATE"
+                defaultToEmail={estimate.customer?.email || ''}
+                variablesData={{
+                    customerName: estimate.customer?.name || '',
+                    customerEmail: estimate.customer?.email || '',
+                    senderName: estimate.creator?.name || '',
+                    today: new Date().toLocaleDateString('vi-VN'),
+                    code: estimate.code,
+                    totalAmount: formatMoney(estimate.totalAmount),
+                    link: `${window.location.origin}/public/sales/estimate/${estimate.id}`
+                }}
+                templates={emailTemplates || []}
+                printUrl={`${window.location.origin}/public/sales/estimate/${estimate.id}`}
+                documentName={`BaoGia_${estimate.code}.pdf`}
+                onSend={async (data) => {
+                    const res = await sendEstimateEmail(estimate.id, data.to, data.subject, data.htmlBody, data.attachmentName, data.attachmentBase64);
+                    if (res.success) {
+                        alert('Đã gửi email thành công!');
+                        router.refresh();
+                    } else {
+                        throw new Error(res.error);
+                    }
+                }}
+            />
         </div>
     );
 }

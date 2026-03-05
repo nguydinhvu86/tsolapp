@@ -5,13 +5,16 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Calendar, FileText, CheckSquare, Building, Link as LinkIcon, Paperclip, Upload, X, CheckCircle2, ExternalLink, Copy, XCircle, RefreshCw, Trash2, Edit2 } from 'lucide-react';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import Link from 'next/link';
-import { uploadSalesPaymentDocument, cancelSalesPayment, restoreSalesPayment, deleteSalesPayment, updateSalesPayment } from '@/app/sales/payments/actions';
+import { uploadSalesPaymentDocument, cancelSalesPayment, restoreSalesPayment, deleteSalesPayment, updateSalesPayment, sendPaymentEmail } from '@/app/sales/payments/actions';
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
+import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
+import { Mail } from 'lucide-react';
 
-export function SalesPaymentDetailClient({ payment, tasks, users, unpaidInvoices = [] }: { payment: any, tasks: any[], users: any[], unpaidInvoices?: any[] }) {
+export function SalesPaymentDetailClient({ payment, tasks, users, unpaidInvoices = [], emailTemplates = [] }: { payment: any, tasks: any[], users: any[], unpaidInvoices?: any[], emailTemplates?: any[] }) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'allocations' | 'tasks'>('allocations');
     const [isUploading, setIsUploading] = useState(false);
+    const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
     const [localPayment, setLocalPayment] = useState(payment);
     const [copied, setCopied] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -240,6 +243,13 @@ export function SalesPaymentDetailClient({ payment, tasks, users, unpaidInvoices
                     >
                         In / Xem
                     </a>
+                    <button
+                        onClick={() => setIsEmailModalOpen(true)}
+                        className="btn btn-secondary"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: 'white', color: '#3b82f6', border: '1px solid #bfdbfe', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                    >
+                        <Mail size={16} /> Gửi Email
+                    </button>
                     <button
                         onClick={handleCopyPublicLink}
                         className="btn btn-secondary"
@@ -730,7 +740,27 @@ export function SalesPaymentDetailClient({ payment, tasks, users, unpaidInvoices
                     </div>
                 </div>
             )}
+
+            {/* Email Modal */}
+            <SendEmailModal
+                isOpen={isEmailModalOpen}
+                onClose={() => setIsEmailModalOpen(false)}
+                templates={emailTemplates}
+                moduleType="PAYMENT_CONFIRMATION"
+                variablesData={{
+                    code: localPayment.code,
+                    amount: formatMoney(localPayment.amount),
+                    date: formatDate(localPayment.date),
+                    customerName: localPayment.customer?.name || '',
+                    customerEmail: localPayment.customer?.email || '',
+                    link: typeof window !== 'undefined' ? `${window.location.origin}/public/sales/payments/${localPayment.id}` : ''
+                }}
+                onSend={async (emailData) => {
+                    const res = await sendPaymentEmail(localPayment.id, emailData.to, emailData.subject, emailData.htmlBody);
+                    if (res?.success) alert("Đã gửi email xác nhận thanh toán thành công!");
+                    else alert("Lỗi khi gửi email: " + res?.error);
+                }}
+            />
         </div>
     );
-
 }

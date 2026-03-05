@@ -5,6 +5,62 @@ import { revalidatePath } from 'next/cache';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { logCustomerActivity } from '@/lib/customerLogger';
+import { sendEmailWithTracking } from '@/lib/mailer';
+
+export async function sendInvoiceEmail(
+    invoiceId: string,
+    toEmail: string,
+    subject: string,
+    htmlBody: string,
+    attachmentName?: string,
+    attachmentBase64?: string
+) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" };
+        }
+        const senderId = session.user.id;
+
+        const invoice = await prisma.salesInvoice.findUnique({
+            where: { id: invoiceId },
+            include: { customer: true }
+        });
+
+        if (!invoice) {
+            return { success: false, error: "Hóa đơn không tồn tại." };
+        }
+
+        const res = await sendEmailWithTracking({
+            to: toEmail,
+            subject,
+            htmlBody,
+            senderId,
+            customerId: invoice.customerId,
+            invoiceId: invoice.id,
+            attachmentName,
+            attachmentBase64
+        });
+
+        if (res.success) {
+            await prisma.salesInvoiceActivityLog.create({
+                data: {
+                    invoiceId: invoice.id,
+                    userId: senderId,
+                    action: 'CẬP_NHẬT',
+                    details: `Đã gửi email hóa đơn tới ${toEmail} với tiêu đề "${subject}"`
+                }
+            });
+            revalidatePath(`/sales/invoices/${invoiceId}`);
+            return { success: true };
+        } else {
+            return { success: false, error: res.error };
+        }
+    } catch (error: any) {
+        console.error("sendInvoiceEmail error:", error);
+        return { success: false, error: "Lỗi hệ thống khi gửi email." };
+    }
+}
 
 export async function submitSalesInvoice(creatorId: string, formData: any) {
     try {

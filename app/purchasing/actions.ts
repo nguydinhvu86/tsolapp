@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { revalidatePath } from 'next/cache';
+import { sendEmailWithTracking } from '@/lib/mailer';
 
 async function getUser() {
     const session = await getServerSession(authOptions);
@@ -731,4 +732,35 @@ export async function uploadPurchaseBillDocument(billId: string, url: string, na
         revalidatePath(`/purchasing/bills/${billId}`);
         return updatedBill;
     });
+}
+
+export async function sendPurchaseOrderEmail(orderId: string, to: string, subject: string, htmlBody: string) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" };
+        }
+
+        const order = await prisma.purchaseOrder.findUnique({
+            where: { id: orderId },
+            include: { supplier: true }
+        });
+
+        if (!order) {
+            return { success: false, error: "Không tìm thấy đơn hàng." };
+        }
+
+        const res = await sendEmailWithTracking({
+            to,
+            subject,
+            htmlBody,
+            senderId: session.user.id,
+            // Supplier IDs are not supported by the email tracking currently, so we don't pass customerId unless we add supplierId to the model. 
+        });
+
+        return res;
+    } catch (error: any) {
+        console.error("Lỗi khi gửi email Đơn Mua Hàng:", error);
+        return { success: false, error: error.message };
+    }
 }

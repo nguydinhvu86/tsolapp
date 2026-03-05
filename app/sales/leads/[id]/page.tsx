@@ -3,6 +3,7 @@ import { getLeadById } from '../actions';
 import { getCustomers } from '@/app/customers/actions';
 import { LeadDetailClient } from './LeadDetailClient';
 import { notFound } from 'next/navigation';
+import { getTemplatesByModule } from '@/app/email-templates/actions';
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
     try {
@@ -29,7 +30,11 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
 
         if (!lead) return notFound();
 
-        return <LeadDetailClient lead={lead} customers={customers} users={users} />;
+        const leadTemplates = await getTemplatesByModule('LEAD');
+        const generalTemplates = await getTemplatesByModule('GENERAL');
+        const allTemplates = [...leadTemplates, ...generalTemplates];
+
+        return <LeadDetailClient lead={lead} customers={customers} users={users} emailTemplates={allTemplates} />;
     } catch (error) {
         console.error(error);
         return notFound();

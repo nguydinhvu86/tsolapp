@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "@/lib/authOptions";
+import { sendEmailWithTracking } from '@/lib/mailer';
 
 // 1. Get List of Leads
 export async function getLeads() {
@@ -361,5 +362,47 @@ export async function addLeadActivityLog(leadId: string, action: string, details
     } catch (error) {
         console.error('Error adding lead activity log:', error);
         return { success: false, error: 'Không thể thêm hoạt động' };
+    }
+}
+
+export async function sendLeadEmail(leadId: string, to: string, subject: string, htmlBody: string) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" };
+        }
+
+        const lead = await prisma.lead.findUnique({
+            where: { id: leadId },
+            include: { customer: true, assignee: true }
+        });
+
+        if (!lead) {
+            return { success: false, error: "Không tìm thấy cơ hội." };
+        }
+
+        const res = await sendEmailWithTracking({
+            to,
+            subject,
+            htmlBody,
+            senderId: session.user.id,
+            customerId: lead.customerId || undefined
+        });
+
+        if (res.success) {
+            await prisma.leadActivityLog.create({
+                data: {
+                    leadId,
+                    userId: session.user.id,
+                    action: "GỬI_EMAIL",
+                    details: `Đã gửi Email cho Lead hoặc Assignee tới ${to}`
+                }
+            });
+        }
+
+        return res;
+    } catch (error: any) {
+        console.error("Lỗi khi gửi email cơ hội bán hàng:", error);
+        return { success: false, error: error.message };
     }
 }

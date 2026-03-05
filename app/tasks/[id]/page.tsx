@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { TaskDetailClient } from './TaskDetailClient';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/authOptions';
+import { getTemplatesByModule } from '@/app/email-templates/actions';
 
 export default async function TaskDetailPage({ params }: { params: { id: string } }) {
     const session = await getServerSession(authOptions);
@@ -55,15 +56,18 @@ export default async function TaskDetailPage({ params }: { params: { id: string 
         if (!isRelated) return notFound(); // Or a custom 403 page
     }
 
-    // Pass all users for assigning/observing edits
     const users = await prisma.user.findMany({
         select: { id: true, name: true, email: true },
         orderBy: { name: 'asc' }
     });
 
+    const taskTemplates = await getTemplatesByModule('TASK');
+    const generalTemplates = await getTemplatesByModule('GENERAL');
+    const allTemplates = [...taskTemplates, ...generalTemplates];
+
     return (
         <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <TaskDetailClient initialTask={task as any} users={users} />
+            <TaskDetailClient initialTask={task as any} users={users} emailTemplates={allTemplates} />
         </div>
     );
 }

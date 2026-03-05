@@ -2,6 +2,8 @@ import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import PrintSalesInvoiceClient from './PrintSalesInvoiceClient';
 
+export const dynamic = 'force-dynamic';
+
 export default async function PrintSalesInvoicePage({ params }: { params: { id: string } }) {
     const { id } = params;
 
@@ -22,6 +24,7 @@ export default async function PrintSalesInvoicePage({ params }: { params: { id: 
         notFound();
     }
 
+    const companyFullName = await prisma.systemSetting.findUnique({ where: { key: 'COMPANY_FULL_NAME' } });
     const companyName = await prisma.systemSetting.findUnique({ where: { key: 'COMPANY_NAME' } });
     const companyAddress = await prisma.systemSetting.findUnique({ where: { key: 'COMPANY_ADDRESS' } });
     const companyPhone = await prisma.systemSetting.findUnique({ where: { key: 'COMPANY_PHONE' } });
@@ -31,7 +34,7 @@ export default async function PrintSalesInvoicePage({ params }: { params: { id: 
     const companyLogo = await prisma.systemSetting.findUnique({ where: { key: 'COMPANY_LOGO' } });
 
     const companyInfo = {
-        name: companyName?.value || 'Tên Công Ty',
+        name: companyFullName?.value || companyName?.value || 'Tên Công Ty',
         address: companyAddress?.value || 'Địa chỉ công ty',
         phone: companyPhone?.value || '',
         email: companyEmail?.value || '',
