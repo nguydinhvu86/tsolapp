@@ -17,8 +17,13 @@ export function NotificationBell() {
 
     const fetchNotifications = async () => {
         if (!session?.user?.id) return;
-        const data = await getUnreadNotifications(session.user.id);
-        setNotifications(data);
+        try {
+            const data = await getUnreadNotifications(session.user.id);
+            setNotifications(Array.isArray(data) ? data : []);
+        } catch (error) {
+            console.error('Lỗi khi tải thông báo:', error);
+            setNotifications([]);
+        }
     };
 
     useEffect(() => {
@@ -96,10 +101,10 @@ export function NotificationBell() {
                 }}
                 className="hover:bg-slate-100"
             >
-                <div className={notifications.length > 0 ? "bell-ring" : ""}>
+                <div className={notifications?.length > 0 ? "bell-ring" : ""}>
                     <Bell size={20} />
                 </div>
-                {notifications.length > 0 && (
+                {notifications?.length > 0 && (
                     <div className="dot-pulse" style={{
                         position: 'absolute', top: '6px', right: '8px',
                         width: '10px', height: '10px', borderRadius: '50%',
@@ -118,7 +123,7 @@ export function NotificationBell() {
                 }}>
                     <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f8fafc' }}>
                         <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>Thông báo</h4>
-                        {notifications.length > 0 && (
+                        {notifications?.length > 0 && (
                             <button onClick={handleMarkAllRead} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 <Check size={14} /> Đọc tất cả
                             </button>
@@ -126,7 +131,7 @@ export function NotificationBell() {
                     </div>
 
                     <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
-                        {notifications.length === 0 ? (
+                        {!notifications || notifications.length === 0 ? (
                             <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
                                 Không có thông báo mới.
                             </div>
