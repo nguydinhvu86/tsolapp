@@ -7,8 +7,27 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 
 export async function getTasks(filters?: any) {
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?.id;
+    const isAdmin = session?.user?.role === 'ADMIN';
+
+    let whereClause: any = {};
+
+    // Base Privacy Filter
+    if (!isAdmin && userId) {
+        whereClause = {
+            OR: [
+                { isPublic: true },
+                { creatorId: userId },
+                { assignees: { some: { userId: userId } } },
+                { observers: { some: { userId: userId } } }
+            ]
+        };
+    }
+
     // Optionally apply filters in future iterations
     const tasks = await (prisma.task as any).findMany({
+        where: whereClause,
         include: {
             creator: true,
             assignees: { include: { user: true } },

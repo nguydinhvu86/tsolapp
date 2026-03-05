@@ -315,6 +315,7 @@ model Task {
   status      String    @default("TODO") // TODO, IN_PROGRESS, REVIEW, DONE, CANCELLED
   priority    String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
   dueDate     DateTime?
+  isPublic    Boolean   @default(true) // true: Public, false: Private
 
   isRecurring    Boolean @default(false)
   recurrenceRule String? // vd: "DAILY", "WEEKLY", "MONTHLY"

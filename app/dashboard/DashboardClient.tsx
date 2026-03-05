@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Receipt, CreditCard, Users, Box, Briefcase, Plus, X, CheckCircle2, Circle, Clock, CheckCheck, Calendar as CalendarIcon } from 'lucide-react';
+import { DollarSign, Receipt, CreditCard, Users, Box, Briefcase, Plus, X, CheckCircle2, Circle, Clock, CheckCheck, Calendar as CalendarIcon, Globe, Lock } from 'lucide-react';
 import { AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { formatMoney } from '@/lib/utils/formatters';
 import { DashboardCalendar } from './DashboardCalendar';
@@ -230,6 +230,7 @@ function TodoListWidget() {
 }
 
 import { useRouter } from 'next/navigation';
+import { AddEventModal } from './AddEventModal';
 
 export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices = [] }: { kpiData?: any, userTasks?: any[], quotes?: any[], invoices?: any[] }) {
     const router = useRouter();
@@ -239,6 +240,7 @@ export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices
     const [selectedCalendarTasks, setSelectedCalendarTasks] = useState<any[]>([]);
     const [selectedCalendarQuotes, setSelectedCalendarQuotes] = useState<any[]>([]);
     const [selectedCalendarInvoices, setSelectedCalendarInvoices] = useState<any[]>([]);
+    const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
 
     useEffect(() => {
         setTasks(userTasks || []);
@@ -579,18 +581,19 @@ export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices
             {selectedCalendarDate && (
                 <div className="modal-backdrop" style={{ zIndex: 99999 }}>
                     <div className="modal-container w-full mx-auto" style={{ maxWidth: '700px' }}>
-                        <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-indigo-50/50">
+                        <div className="px-6 py-5 flex justify-between items-center bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-t-xl text-white shadow-md">
                             <div>
-                                <h3 className="text-lg font-bold text-gray-800">
-                                    Lịch trình {format(selectedCalendarDate, 'dd/MM/yyyy')}
+                                <h3 className="text-xl font-bold flex items-center gap-2">
+                                    <CalendarIcon className="w-6 h-6 opacity-90" />
+                                    Lịch trình ngày {format(selectedCalendarDate, 'dd/MM/yyyy')}
                                 </h3>
-                                <p className="text-sm text-gray-500">
-                                    {selectedCalendarTasks.length + selectedCalendarQuotes.length + selectedCalendarInvoices.length} mục
+                                <p className="text-sm text-white/80 mt-1 font-medium">
+                                    {selectedCalendarTasks.length + selectedCalendarQuotes.length + selectedCalendarInvoices.length} sự kiện/công việc trong ngày
                                 </p>
                             </div>
                             <button
                                 onClick={() => setSelectedCalendarDate(null)}
-                                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                                className="p-2 text-white/70 hover:text-white hover:bg-white/20 rounded-full transition-colors"
                             >
                                 <X className="w-5 h-5" />
                             </button>
@@ -669,16 +672,22 @@ export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices
                                     {/* Tasks */}
                                     {selectedCalendarTasks.map(task => (
                                         <div key={`task-${task.id}`} className="border border-gray-100 rounded-lg p-3 hover:border-indigo-100 hover:bg-indigo-50/30 transition-colors shadow-sm cursor-pointer" onClick={() => router.push(`/tasks/${task.id}`)}>
-                                            <div className="flex items-start justify-between">
-                                                <h4 className="font-medium text-gray-800 line-clamp-2 pr-2">{task.title}</h4>
-                                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 shadow-sm
+                                            <div className="flex items-start justify-between gap-2">
+                                                <h4 className="font-medium text-gray-800 line-clamp-2 pr-2 leading-tight flex-1">{task.title}</h4>
+                                                <div className="flex flex-col items-end gap-1 shrink-0">
+                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm
                                                     ${task.priority === 'URGENT' ? 'bg-red-100 text-red-700' :
-                                                        task.priority === 'HIGH' ? 'bg-orange-100 text-orange-700' :
-                                                            task.priority === 'MEDIUM' ? 'bg-blue-100 text-blue-700' :
-                                                                'bg-gray-100 text-gray-700'}
+                                                            task.priority === 'HIGH' ? 'bg-orange-100 text-orange-700' :
+                                                                task.priority === 'MEDIUM' ? 'bg-blue-100 text-blue-700' :
+                                                                    'bg-gray-100 text-gray-700'}
                                                 `}>
-                                                    {task.priority === 'URGENT' ? 'KHẨN CẤP' : task.priority === 'HIGH' ? 'CAO' : task.priority === 'MEDIUM' ? 'TRUNG BÌNH' : 'THẤP'}
-                                                </span>
+                                                        {task.priority === 'URGENT' ? 'KHẨN CẤP' : task.priority === 'HIGH' ? 'CAO' : task.priority === 'MEDIUM' ? 'TRUNG BÌNH' : 'THẤP'}
+                                                    </span>
+                                                    <span className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold shrink-0 border ${task.isPublic ? 'bg-gray-50 border-gray-200 text-gray-500' : 'bg-red-50 border-red-200 text-red-600'}`}>
+                                                        {task.isPublic ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                                                        {task.isPublic ? 'CÔNG KHAI' : 'CÁ NHÂN'}
+                                                    </span>
+                                                </div>
                                             </div>
                                             {task.customer && (
                                                 <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-600">
@@ -706,18 +715,27 @@ export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices
                             )}
                         </div>
 
-                        <div className="p-5 border-t border-gray-100 bg-white">
+                        <div className="p-5 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
                             <button
-                                onClick={() => router.push(`/tasks/new?date=${format(selectedCalendarDate, 'yyyy-MM-dd')}`)}
-                                className="w-full md:w-auto md:min-w-[200px] ml-auto bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-6 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm"
+                                onClick={() => setIsAddEventModalOpen(true)}
+                                className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium py-2.5 px-6 rounded-lg flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                             >
                                 <Plus className="w-5 h-5" />
-                                <span>Thêm kế hoạch / Ghi chú</span>
+                                <span>Thêm sự kiện</span>
                             </button>
                         </div>
                     </div>
                 </div>
             )}
+
+            <AddEventModal
+                isOpen={isAddEventModalOpen}
+                initialDate={selectedCalendarDate}
+                onClose={() => setIsAddEventModalOpen(false)}
+                onSuccess={() => {
+                    // Refetch or just rely on router.refresh() inside AddEventModal
+                }}
+            />
         </div>
     );
 }
