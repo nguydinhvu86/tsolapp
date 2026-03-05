@@ -47,6 +47,12 @@ const STATUSES = [
 
 export function LeadFormClient({ customers, users, initialData }: { customers: any[], users: any[], initialData?: any }) {
     const router = useRouter();
+    // Move useSearchParams logic strictly outside to another component if necessary, or just use window.location here since it's a client component.
+    // However, since it's a client component, `useSearchParams` is fine.
+
+    // We need to import useSearchParams if we are going to use it.
+    // Wait, let's use a simpler approach: check window.location.search in useEffect.
+
     const isEdit = !!initialData;
 
     const [isExistingCustomer, setIsExistingCustomer] = useState(isEdit ? !!initialData.customerId : false);
@@ -67,6 +73,17 @@ export function LeadFormClient({ customers, users, initialData }: { customers: a
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    React.useEffect(() => {
+        if (!isEdit && typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            const customerIdParam = params.get('customerId');
+            if (customerIdParam) {
+                setIsExistingCustomer(true);
+                setFormData(prev => ({ ...prev, customerId: customerIdParam }));
+            }
+        }
+    }, [isEdit]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;

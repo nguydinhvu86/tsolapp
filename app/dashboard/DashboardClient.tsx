@@ -7,6 +7,7 @@ import { formatMoney } from '@/lib/utils/formatters';
 import { DashboardCalendar } from './DashboardCalendar';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { Modal } from '@/app/components/ui/Modal';
 
 // Mock data for charts
 const revenueData = [
@@ -47,6 +48,7 @@ function TodoListWidget() {
     const [showAll, setShowAll] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isAddTodoModalOpen, setIsAddTodoModalOpen] = useState(false);
 
     // Fetch todos from database
     useEffect(() => {
@@ -88,6 +90,7 @@ function TodoListWidget() {
             if (res.status === 'success' && res.todo) {
                 // Replace temp ID with real DB ID
                 setTodos(prev => prev.map(t => t.id === tempId ? res.todo : t));
+                setIsAddTodoModalOpen(false);
             } else {
                 // Revert on failure
                 setTodos(prev => prev.filter(t => t.id !== tempId));
@@ -101,12 +104,14 @@ function TodoListWidget() {
     };
 
     const handleToggleTodo = async (id: string, currentStatus: boolean) => {
-        // Optimistic delete for completion
+        // Optimistic toggle
         const backupTodos = [...todos];
-        setTodos(prev => prev.filter(todo => todo.id !== id));
+        setTodos(prev => prev.map(todo =>
+            todo.id === id ? { ...todo, completed: !currentStatus } : todo
+        ));
 
         try {
-            const res = await deleteTodo(id);
+            const res = await toggleTodo(id, currentStatus);
             if (res.status === 'error') {
                 // Revert
                 setTodos(backupTodos);
@@ -118,7 +123,7 @@ function TodoListWidget() {
     };
 
     const handleRemoveTodo = async (id: string) => {
-        // Same logic for manual remove
+        // Manual remove
         const backupTodos = [...todos];
         setTodos(prev => prev.filter(todo => todo.id !== id));
 
@@ -133,8 +138,15 @@ function TodoListWidget() {
         }
     };
 
-    // Lọc và hiển thị chỉ tối đa 5 items nếu không showAll
-    const displayedTodos = showAll ? todos : todos.slice(0, 5);
+    const activeTodos = todos.filter(t => !t.completed);
+    const completedTodos = todos.filter(t => t.completed);
+
+    // Lọc và hiển thị
+    // Khi thu gọn: hiển thị tối đa 5 công việc chưa hoàn thành
+    // Khi mở rộng: hiển thị tất cả (chưa hoàn thành trước, hoàn thành sau)
+    const displayedTodos = showAll
+        ? [...activeTodos, ...completedTodos]
+        : activeTodos.slice(0, 5);
 
     if (!isLoaded) return (
         <div className="flex items-center justify-center p-8 h-full">
@@ -149,39 +161,27 @@ function TodoListWidget() {
                     <CheckCircle2 size={20} className="text-emerald-500" />
                     Công việc cần làm
                 </h3>
-                {todos.length > 5 && (
-                    <button
-                        onClick={() => setShowAll(!showAll)}
-                        className="text-blue-600 text-sm hover:underline font-medium bg-blue-50 px-3 py-1 rounded-full transition-colors hover:bg-blue-100"
-                    >
-                        {showAll ? 'Thu gọn danh sách nhỏ lại' : `Xem toàn bộ ${todos.length} công việc`}
-                    </button>
-                )}
             </div>
 
-            <form onSubmit={handleAddTodo} className="mb-4 flex gap-2 items-start">
-                <textarea
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            handleAddTodo();
-                        }
-                    }}
-                    placeholder="Nhập nội dung vào đây...&#10;(Nhấn Enter để lưu, Shift + Enter để xuống dòng dài hơn)"
-                    className="flex-1 text-[15px] p-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all min-h-[64px] max-h-[250px] resize-y shadow-inner bg-gray-50/30"
-                    rows={2}
-                />
+            <div className="flex items-center gap-2 mb-4">
                 <button
-                    type="submit"
-                    title="Thêm công việc"
-                    disabled={!inputValue.trim()}
-                    className="p-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 transition-colors h-[64px] w-[54px] flex items-center justify-center shadow-sm"
+                    onClick={() => setIsAddTodoModalOpen(true)}
+                    className="flex-1 text-white font-medium py-2 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-sm"
+                    style={{ backgroundColor: '#2563eb' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
                 >
-                    <Plus size={24} />
+                    <Plus size={18} />
+                    <span>Tạo Việc Cần Làm</span>
                 </button>
-            </form>
+                <button
+                    onClick={() => setShowAll(!showAll)}
+                    disabled={todos.length === 0}
+                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <span>{showAll ? 'Thu gọn danh sách' : `Xem toàn bộ (${todos.length})`}</span>
+                </button>
+            </div>
 
             <div className="flex-1 overflow-y-auto pr-1" style={{ maxHeight: showAll ? '400px' : 'auto' }}>
                 {todos.length === 0 ? (
@@ -198,12 +198,16 @@ function TodoListWidget() {
                                 <button
                                     onClick={() => handleToggleTodo(todo.id, todo.completed)}
                                     className="mt-0.5 text-gray-400 hover:text-emerald-500 flex-shrink-0 transition-colors"
-                                    title="Hoàn thành công việc"
+                                    title={todo.completed ? "Đánh dấu chưa hoàn thành" : "Hoàn thành công việc"}
                                 >
-                                    <Circle size={20} className="hover:text-emerald-500 transition-colors" />
+                                    {todo.completed ? (
+                                        <CheckCircle2 size={20} className="text-emerald-500" />
+                                    ) : (
+                                        <Circle size={20} className="hover:text-emerald-500 transition-colors" />
+                                    )}
                                 </button>
                                 <div className="flex-1 flex flex-col min-w-0 pt-0.5">
-                                    <span className={`text-[15px] font-medium text-gray-800 leading-relaxed whitespace-pre-wrap break-words`}>
+                                    <span className={`text-[15px] font-medium leading-relaxed whitespace-pre-wrap break-words ${todo.completed ? 'text-gray-400 line-through decoration-gray-300' : 'text-gray-800'}`}>
                                         {todo.text}
                                     </span>
                                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-[11px] text-gray-400">
@@ -225,6 +229,63 @@ function TodoListWidget() {
                     </ul>
                 )}
             </div>
+
+            <Modal isOpen={isAddTodoModalOpen} onClose={() => setIsAddTodoModalOpen(false)} title="Tạo Việc Cần Làm" maxWidth="500px">
+                <form onSubmit={handleAddTodo} className="flex flex-col gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Nội dung công việc <span className="text-red-500">*</span>
+                        </label>
+                        <textarea
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleAddTodo();
+                                }
+                            }}
+                            placeholder="Nhập nội dung các việc cần làm...&#10;(Hỗ trợ nhập nhiều dòng)"
+                            className="w-full border border-gray-300 rounded-lg p-3 outline-none transition-shadow resize-y min-h-[120px]"
+                            onFocus={(e) => { e.currentTarget.style.borderColor = '#2563eb'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(37,99,235,0.2)'; }}
+                            onBlur={(e) => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.boxShadow = 'none'; }}
+                            autoFocus
+                        />
+                        <p className="mt-1.5 text-xs text-gray-500">
+                            Nhấn <kbd className="bg-gray-100 border border-gray-300 rounded px-1 text-[10px] font-sans">Enter</kbd> để tạo nhanh, <kbd className="bg-gray-100 border border-gray-300 rounded px-1 text-[10px] font-sans">Shift + Enter</kbd> để xuống dòng.
+                        </p>
+                    </div>
+
+                    <div className="flex justify-end gap-3 mt-2 pt-4 border-t border-gray-100">
+                        <button
+                            type="button"
+                            onClick={() => setIsAddTodoModalOpen(false)}
+                            className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors"
+                            disabled={isSubmitting}
+                        >
+                            Hủy
+                        </button>
+                        <button
+                            type="submit"
+                            className="px-4 py-2 text-white rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+                            disabled={!inputValue.trim() || isSubmitting}
+                            style={{ backgroundColor: '#2563eb' }}
+                            onMouseEnter={(e) => {
+                                if (!(!inputValue.trim() || isSubmitting)) {
+                                    e.currentTarget.style.backgroundColor = '#1d4ed8';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!(!inputValue.trim() || isSubmitting)) {
+                                    e.currentTarget.style.backgroundColor = '#2563eb';
+                                }
+                            }}
+                        >
+                            {isSubmitting ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : 'Tạo mới'}
+                        </button>
+                    </div>
+                </form>
+            </Modal>
         </div>
     );
 }
@@ -580,26 +641,31 @@ export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices
             {/* Calendar Tasks Modal */}
             {selectedCalendarDate && (
                 <div className="modal-backdrop" style={{ zIndex: 99999 }}>
-                    <div className="w-full mx-auto bg-white rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" style={{ maxWidth: '700px', maxHeight: '90vh' }}>
-                        <div className="px-6 py-5 flex justify-between items-center bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white shadow-md relative z-10 shrink-0">
+                    <div className="w-full mx-auto bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" style={{ maxWidth: '650px', maxHeight: '90vh' }}>
+                        <div className="px-6 py-5 flex justify-between items-start bg-white relative z-10 shrink-0" style={{ borderBottom: '1px solid #f1f5f9' }}>
                             <div>
-                                <h3 className="text-xl font-bold flex items-center gap-2">
-                                    <CalendarIcon className="w-6 h-6 opacity-90" />
+                                <h3 className="text-xl font-bold flex items-center gap-2.5" style={{ color: '#0f172a' }}>
+                                    <div className="p-2 rounded-xl" style={{ backgroundColor: '#e0e7ff', color: '#4f46e5' }}>
+                                        <CalendarIcon className="w-5 h-5 stroke-[2.5px]" />
+                                    </div>
                                     Lịch trình ngày {format(selectedCalendarDate, 'dd/MM/yyyy')}
                                 </h3>
-                                <p className="text-sm text-white/80 mt-1 font-medium">
+                                <p className="text-sm font-medium mt-1.5 ml-[46px]" style={{ color: '#64748b' }}>
                                     {selectedCalendarTasks.length + selectedCalendarQuotes.length + selectedCalendarInvoices.length} sự kiện/công việc trong ngày
                                 </p>
                             </div>
                             <button
                                 onClick={() => setSelectedCalendarDate(null)}
-                                className="p-2 text-white/70 hover:text-white hover:bg-white/20 rounded-full transition-colors"
+                                className="p-2 rounded-full transition-colors flex items-center justify-center -mr-2 -mt-1"
+                                style={{ color: '#94a3b8', background: 'transparent' }}
+                                onMouseEnter={(e) => { e.currentTarget.style.color = '#0f172a'; e.currentTarget.style.background = '#f1f5f9'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.background = 'transparent'; }}
                             >
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-6 bg-slate-50 relative z-0 custom-scrollbar">
+                        <div className="flex-1 overflow-y-auto p-4 sm:p-6 relative z-0 custom-scrollbar" style={{ backgroundColor: '#f8fafc' }}>
                             {(selectedCalendarTasks.length === 0 && selectedCalendarQuotes.length === 0 && selectedCalendarInvoices.length === 0) ? (
                                 <div className="flex flex-col items-center justify-center py-12 text-center h-full">
                                     <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
@@ -612,27 +678,27 @@ export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices
                                 <div className="flex flex-col gap-3">
                                     {/* Invoices */}
                                     {selectedCalendarInvoices.map(invoice => (
-                                        <div key={`inv-${invoice.id}`} className="border-l-4 border-l-orange-500 border-y border-r border-gray-100 rounded-lg p-3 hover:bg-orange-50/30 transition-colors shadow-sm cursor-pointer" onClick={() => router.push(`/sales/invoices/${invoice.id}`)}>
-                                            <div className="flex items-start justify-between">
-                                                <h4 className="font-medium text-gray-800 line-clamp-1 pr-2">Hóa đơn: {invoice.code}</h4>
-                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 shadow-sm bg-orange-100 text-orange-700">TỚI HẠN</span>
-                                            </div>
-                                            {invoice.customer && (
-                                                <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-600">
-                                                    <Users className="w-3.5 h-3.5 text-gray-400" />
-                                                    <span className="truncate">{invoice.customer.name}</span>
+                                        <div key={`inv-${invoice.id}`} className="rounded-xl p-4 transition-all cursor-pointer flex flex-col gap-3" style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderLeft: '4px solid #f97316', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }} onClick={() => router.push(`/sales/invoices/${invoice.id}`)} onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05)'; e.currentTarget.style.transform = 'translateY(0)'; }}>
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="font-semibold text-[15px] line-clamp-1" style={{ color: '#0f172a' }}>Hóa đơn: {invoice.code}</h4>
+                                                    {invoice.customer && (
+                                                        <div className="flex items-center gap-1.5 mt-1.5 text-sm" style={{ color: '#64748b' }}>
+                                                            <Users className="w-4 h-4" />
+                                                            <span className="truncate flex-1">{invoice.customer.name}</span>
+                                                        </div>
+                                                    )}
                                                 </div>
-                                            )}
-                                            <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-50">
-                                                <div className="font-bold text-orange-600 text-sm">
+                                            </div>
+                                            <div className="flex items-center justify-between pt-3" style={{ borderTop: '1px dashed #e2e8f0' }}>
+                                                <div className="font-bold text-[15px]" style={{ color: '#ea580c' }}>
                                                     {formatMoney(invoice.totalAmount)}
                                                 </div>
-                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded shadow-sm border
-                                                    ${invoice.status === 'DRAFT' ? 'bg-gray-100 text-gray-600' : ''}
-                                                    ${invoice.status === 'ISSUED' ? 'bg-blue-100 text-blue-700' : ''}
-                                                    ${invoice.status === 'PARTIAL_PAID' ? 'bg-orange-100 text-orange-700' : ''}
-                                                    ${invoice.status === 'PAID' ? 'bg-green-100 text-green-700' : ''}
-                                                `}>
+                                                <span className="text-[11px] font-bold px-2.5 py-1 rounded-full tracking-wide" style={{
+                                                    backgroundColor: invoice.status === 'DRAFT' ? '#f1f5f9' : invoice.status === 'ISSUED' ? '#eff6ff' : invoice.status === 'PARTIAL_PAID' ? '#fff7ed' : invoice.status === 'PAID' ? '#ecfdf5' : 'transparent',
+                                                    color: invoice.status === 'DRAFT' ? '#475569' : invoice.status === 'ISSUED' ? '#2563eb' : invoice.status === 'PARTIAL_PAID' ? '#ea580c' : invoice.status === 'PAID' ? '#16a34a' : 'inherit',
+                                                    border: `1px solid ${invoice.status === 'DRAFT' ? '#e2e8f0' : invoice.status === 'ISSUED' ? '#bfdbfe' : invoice.status === 'PARTIAL_PAID' ? '#fed7aa' : invoice.status === 'PAID' ? '#a7f3d0' : 'transparent'}`
+                                                }}>
                                                     {invoice.status}
                                                 </span>
                                             </div>
@@ -641,28 +707,28 @@ export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices
 
                                     {/* Quotes */}
                                     {selectedCalendarQuotes.map(quote => (
-                                        <div key={`quo-${quote.id}`} className="border-l-4 border-l-green-500 border-y border-r border-gray-100 rounded-lg p-3 hover:bg-green-50/30 transition-colors shadow-sm cursor-pointer" onClick={() => router.push(`/sales/estimates/${quote.id}`)}>
-                                            <div className="flex items-start justify-between">
-                                                <h4 className="font-medium text-gray-800 line-clamp-2 pr-2">Báo giá: {quote.code}</h4>
-                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 shadow-sm bg-green-100 text-green-700">TẠO MỚI</span>
-                                            </div>
-                                            {quote.customer && (
-                                                <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-600">
-                                                    <Users className="w-3.5 h-3.5 text-gray-400" />
-                                                    <span className="truncate">{quote.customer.name}</span>
+                                        <div key={`quo-${quote.id}`} className="rounded-xl p-4 transition-all cursor-pointer flex flex-col gap-3" style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderLeft: '4px solid #22c55e', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }} onClick={() => router.push(`/sales/estimates/${quote.id}`)} onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05)'; e.currentTarget.style.transform = 'translateY(0)'; }}>
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="font-semibold text-[15px] line-clamp-2" style={{ color: '#0f172a' }}>Báo giá: {quote.code}</h4>
+                                                    {quote.customer && (
+                                                        <div className="flex items-center gap-1.5 mt-1.5 text-sm" style={{ color: '#64748b' }}>
+                                                            <Users className="w-4 h-4" />
+                                                            <span className="truncate flex-1">{quote.customer.name}</span>
+                                                        </div>
+                                                    )}
                                                 </div>
-                                            )}
-                                            <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-50">
-                                                <div className="flex items-center gap-1 text-xs text-gray-500 font-medium">
-                                                    <Clock className="w-3.5 h-3.5" />
+                                            </div>
+                                            <div className="flex items-center justify-between pt-3" style={{ borderTop: '1px dashed #e2e8f0' }}>
+                                                <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color: '#64748b' }}>
+                                                    <Clock className="w-4 h-4" />
                                                     <span>{format(new Date(quote.createdAt), 'HH:mm', { locale: vi })}</span>
                                                 </div>
-                                                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded shadow-sm border
-                                                    ${quote.status === 'DRAFT' ? 'bg-white border-gray-200 text-gray-600' : ''}
-                                                    ${quote.status === 'SENT' ? 'bg-blue-50 border-blue-200 text-blue-600' : ''}
-                                                    ${quote.status === 'ACCEPTED' ? 'bg-green-50 border-green-200 text-green-600' : ''}
-                                                    ${quote.status === 'REJECTED' ? 'bg-red-50 border-red-200 text-red-600' : ''}
-                                                `}>
+                                                <span className="text-[11px] uppercase font-bold px-2.5 py-1 rounded-full tracking-wide" style={{
+                                                    backgroundColor: quote.status === 'DRAFT' ? '#f8fafc' : quote.status === 'SENT' ? '#eff6ff' : quote.status === 'ACCEPTED' ? '#ecfdf5' : quote.status === 'REJECTED' ? '#fef2f2' : 'transparent',
+                                                    color: quote.status === 'DRAFT' ? '#64748b' : quote.status === 'SENT' ? '#2563eb' : quote.status === 'ACCEPTED' ? '#16a34a' : quote.status === 'REJECTED' ? '#dc2626' : 'inherit',
+                                                    border: `1px solid ${quote.status === 'DRAFT' ? '#e2e8f0' : quote.status === 'SENT' ? '#bfdbfe' : quote.status === 'ACCEPTED' ? '#bbf7d0' : quote.status === 'REJECTED' ? '#fecaca' : 'transparent'}`
+                                                }}>
                                                     {quote.status}
                                                 </span>
                                             </div>
@@ -671,41 +737,45 @@ export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices
 
                                     {/* Tasks */}
                                     {selectedCalendarTasks.map(task => (
-                                        <div key={`task-${task.id}`} className="border border-gray-100 rounded-lg p-3 hover:border-indigo-100 hover:bg-indigo-50/30 transition-colors shadow-sm cursor-pointer" onClick={() => router.push(`/tasks/${task.id}`)}>
-                                            <div className="flex items-start justify-between gap-2">
-                                                <h4 className="font-medium text-gray-800 line-clamp-2 pr-2 leading-tight flex-1">{task.title}</h4>
-                                                <div className="flex flex-col items-end gap-1 shrink-0">
-                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm
-                                                    ${task.priority === 'URGENT' ? 'bg-red-100 text-red-700' :
-                                                            task.priority === 'HIGH' ? 'bg-orange-100 text-orange-700' :
-                                                                task.priority === 'MEDIUM' ? 'bg-blue-100 text-blue-700' :
-                                                                    'bg-gray-100 text-gray-700'}
-                                                `}>
+                                        <div key={`task-${task.id}`} className="rounded-xl p-4 transition-all cursor-pointer flex flex-col gap-3" style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderLeft: '4px solid #6366f1', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }} onClick={() => router.push(`/tasks/${task.id}`)} onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05)'; e.currentTarget.style.transform = 'translateY(0)'; }}>
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="font-semibold text-[15px] line-clamp-2 leading-tight" style={{ color: '#0f172a', wordBreak: 'break-word' }}>{task.title}</h4>
+                                                    {task.customer && (
+                                                        <div className="flex items-center gap-1.5 mt-2 text-sm" style={{ color: '#64748b' }}>
+                                                            <Users className="w-4 h-4" />
+                                                            <span className="truncate flex-1">{task.customer.name}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="flex flex-col items-end gap-1.5 shrink-0">
+                                                    <span className="px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide" style={{
+                                                        backgroundColor: task.priority === 'URGENT' ? '#fef2f2' : task.priority === 'HIGH' ? '#fff7ed' : task.priority === 'MEDIUM' ? '#eff6ff' : '#f8fafc',
+                                                        color: task.priority === 'URGENT' ? '#dc2626' : task.priority === 'HIGH' ? '#ea580c' : task.priority === 'MEDIUM' ? '#2563eb' : '#475569'
+                                                    }}>
                                                         {task.priority === 'URGENT' ? 'KHẨN CẤP' : task.priority === 'HIGH' ? 'CAO' : task.priority === 'MEDIUM' ? 'TRUNG BÌNH' : 'THẤP'}
                                                     </span>
-                                                    <span className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold shrink-0 border ${task.isPublic ? 'bg-gray-50 border-gray-200 text-gray-500' : 'bg-red-50 border-red-200 text-red-600'}`}>
-                                                        {task.isPublic ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                                                    <span className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold tracking-wide" style={{
+                                                        backgroundColor: task.isPublic ? '#f8fafc' : '#fef2f2',
+                                                        color: task.isPublic ? '#64748b' : '#dc2626',
+                                                        border: `1px solid ${task.isPublic ? '#e2e8f0' : '#fecaca'}`
+                                                    }}>
+                                                        {task.isPublic ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3 stroke-[2.5px]" />}
                                                         {task.isPublic ? 'CÔNG KHAI' : 'CÁ NHÂN'}
                                                     </span>
                                                 </div>
                                             </div>
-                                            {task.customer && (
-                                                <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-600">
-                                                    <Users className="w-3.5 h-3.5 text-gray-400" />
-                                                    <span className="truncate">{task.customer.name}</span>
-                                                </div>
-                                            )}
-                                            <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-50">
-                                                <div className="flex items-center gap-1 text-xs text-gray-500 font-medium">
-                                                    <Clock className="w-3.5 h-3.5" />
+
+                                            <div className="flex items-center justify-between pt-3" style={{ borderTop: '1px dashed #e2e8f0' }}>
+                                                <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color: '#64748b' }}>
+                                                    <Clock className="w-4 h-4" />
                                                     <span>{format(new Date(task.dueDate), 'HH:mm', { locale: vi })}</span>
                                                 </div>
-                                                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded shadow-sm border
-                                                    ${task.status === 'TODO' ? 'bg-white border-gray-200 text-gray-600' : ''}
-                                                    ${task.status === 'IN_PROGRESS' ? 'bg-blue-50 border-blue-200 text-blue-600' : ''}
-                                                    ${task.status === 'REVIEW' ? 'bg-purple-50 border-purple-200 text-purple-600' : ''}
-                                                    ${task.status === 'DONE' ? 'bg-green-50 border-green-200 text-green-600' : ''}
-                                                `}>
+                                                <span className="text-[11px] uppercase font-bold px-2.5 py-1 rounded-full tracking-wide" style={{
+                                                    backgroundColor: task.status === 'TODO' ? '#f8fafc' : task.status === 'IN_PROGRESS' ? '#eff6ff' : task.status === 'REVIEW' ? '#faf5ff' : task.status === 'DONE' ? '#ecfdf5' : 'transparent',
+                                                    color: task.status === 'TODO' ? '#64748b' : task.status === 'IN_PROGRESS' ? '#2563eb' : task.status === 'REVIEW' ? '#9333ea' : task.status === 'DONE' ? '#16a34a' : 'inherit',
+                                                    border: `1px solid ${task.status === 'TODO' ? '#e2e8f0' : task.status === 'IN_PROGRESS' ? '#bfdbfe' : task.status === 'REVIEW' ? '#e9d5ff' : task.status === 'DONE' ? '#bbf7d0' : 'transparent'}`
+                                                }}>
                                                     {task.status === 'TODO' ? 'Cần làm' : task.status === 'IN_PROGRESS' ? 'Đang xử lý' : task.status === 'REVIEW' ? 'Chờ duyệt' : 'Hoàn thành'}
                                                 </span>
                                             </div>
@@ -715,10 +785,13 @@ export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices
                             )}
                         </div>
 
-                        <div className="p-5 border-t border-gray-100 bg-white flex justify-end gap-3 shrink-0 relative z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                        <div className="p-4 sm:p-5 flex justify-end gap-3 shrink-0 relative z-10" style={{ backgroundColor: '#ffffff', boxShadow: '0 -4px 6px -1px rgba(0,0,0,0.05)' }}>
                             <button
                                 onClick={() => setIsAddEventModalOpen(true)}
-                                className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium py-2.5 px-6 rounded-lg flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                                className="font-semibold py-2.5 px-6 flex items-center justify-center gap-2 transition-all w-full sm:w-auto"
+                                style={{ background: 'linear-gradient(to right, #6366f1, #9333ea)', color: '#ffffff', borderRadius: '0.75rem', boxShadow: '0 4px 6px -1px rgba(99,102,241,0.2)' }}
+                                onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(99,102,241,0.3)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(99,102,241,0.2)'; }}
                             >
                                 <Plus className="w-5 h-5" />
                                 <span>Thêm sự kiện</span>

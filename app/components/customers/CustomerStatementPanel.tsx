@@ -73,10 +73,7 @@ export function CustomerStatementPanel({ customerId, customerName }: CustomerSta
         <div className="statement-panel">
             {/* Header & Controls - Hidden when printing */}
             <div className="print-hide" style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexDirection: 'column' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: '#0f172a' }}>
-                        Sao kê công nợ
-                    </h2>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
                     <Button onClick={handlePrint} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'white', color: '#334155', border: '1px solid #cbd5e1' }}>
                         <Printer size={16} /> In Sao Kê
                     </Button>

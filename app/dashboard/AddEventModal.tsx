@@ -67,7 +67,7 @@ export function AddEventModal({ isOpen, onClose, initialDate, onSuccess }: AddEv
         <Modal isOpen={isOpen} onClose={onClose} title="Thêm kế hoạch / Sự kiện mới" maxWidth="500px">
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 {error && (
-                    <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm font-medium border border-red-100">
+                    <div className="p-3 rounded-lg text-sm font-medium border" style={{ backgroundColor: '#fef2f2', color: '#dc2626', borderColor: '#fee2e2' }}>
                         {error}
                     </div>
                 )}
@@ -80,7 +80,8 @@ export function AddEventModal({ isOpen, onClose, initialDate, onSuccess }: AddEv
                         <button
                             type="button"
                             onClick={() => setIsPublic(true)}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all ${isPublic ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all ${isPublic ? 'bg-white shadow-sm' : 'text-gray-500'}`}
+                            style={{ color: isPublic ? '#4338ca' : 'inherit' }}
                         >
                             <Globe className="w-4 h-4" />
                             Công khai
@@ -88,7 +89,8 @@ export function AddEventModal({ isOpen, onClose, initialDate, onSuccess }: AddEv
                         <button
                             type="button"
                             onClick={() => setIsPublic(false)}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all ${!isPublic ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all ${!isPublic ? 'bg-white shadow-sm' : 'text-gray-500'}`}
+                            style={{ color: !isPublic ? '#4338ca' : 'inherit' }}
                         >
                             <Lock className="w-4 h-4" />
                             Chỉ mình tôi
@@ -109,7 +111,9 @@ export function AddEventModal({ isOpen, onClose, initialDate, onSuccess }: AddEv
                         value={title}
                         onChange={e => setTitle(e.target.value)}
                         placeholder="VD: Họp giao ban đầu tuần..."
-                        className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow"
+                        className="w-full border border-gray-300 rounded-lg p-2.5 outline-none transition-shadow"
+                        onFocus={(e) => { e.currentTarget.style.borderColor = '#6366f1'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(99,102,241,0.2)'; }}
+                        onBlur={(e) => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.boxShadow = 'none'; }}
                     />
                 </div>
 
@@ -122,7 +126,9 @@ export function AddEventModal({ isOpen, onClose, initialDate, onSuccess }: AddEv
                         onChange={e => setDescription(e.target.value)}
                         placeholder="Thêm mô tả công việc..."
                         rows={3}
-                        className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow resize-none"
+                        className="w-full border border-gray-300 rounded-lg p-2.5 outline-none transition-shadow resize-none"
+                        onFocus={(e) => { e.currentTarget.style.borderColor = '#6366f1'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(99,102,241,0.2)'; }}
+                        onBlur={(e) => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.boxShadow = 'none'; }}
                     ></textarea>
                 </div>
 

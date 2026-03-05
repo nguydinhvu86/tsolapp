@@ -374,7 +374,7 @@ export async function sendLeadEmail(leadId: string, to: string, subject: string,
 
         const lead = await prisma.lead.findUnique({
             where: { id: leadId },
-            include: { customer: true, assignee: true }
+            include: { customer: true, assignedTo: true }
         });
 
         if (!lead) {
@@ -386,7 +386,7 @@ export async function sendLeadEmail(leadId: string, to: string, subject: string,
             subject,
             htmlBody,
             senderId: session.user.id,
-            customerId: lead.customerId || undefined
+            customerId: lead.customerId ?? undefined
         });
 
         if (res.success) {
