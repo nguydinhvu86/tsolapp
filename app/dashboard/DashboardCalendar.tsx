@@ -23,21 +23,21 @@ export const DashboardCalendar: React.FC<DashboardCalendarProps> = ({ tasks, onD
 
     const renderHeader = () => {
         return (
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                    <CalendarIcon className="w-5 h-5 text-indigo-600" />
+            <div className="cal-header">
+                <h3 className="cal-title">
+                    <CalendarIcon className="cal-icon" />
                     Lịch Biểu Kế Hoạch - {format(currentMonth, 'MMMM yyyy', { locale: vi })}
                 </h3>
-                <div className="flex items-center gap-2">
-                    <button onClick={prevMonth} className="p-1 rounded-md hover:bg-gray-100 transition-colors" title="Tháng trước">
-                        <ChevronLeft className="w-5 h-5 text-gray-600" />
+                <div className="cal-nav">
+                    <button onClick={prevMonth} className="cal-btn" title="Tháng trước">
+                        <ChevronLeft size={20} />
                     </button>
-                    <button onClick={nextMonth} className="p-1 rounded-md hover:bg-gray-100 transition-colors" title="Tháng sau">
-                        <ChevronRight className="w-5 h-5 text-gray-600" />
+                    <button onClick={nextMonth} className="cal-btn" title="Tháng sau">
+                        <ChevronRight size={20} />
                     </button>
                     <button
                         onClick={() => setCurrentMonth(new Date())}
-                        className="ml-2 text-sm font-medium text-indigo-600 hover:text-indigo-800 px-2 py-1 rounded-md hover:bg-indigo-50"
+                        className="cal-btn-text"
                     >
                         Hôm nay
                     </button>
@@ -53,13 +53,13 @@ export const DashboardCalendar: React.FC<DashboardCalendarProps> = ({ tasks, onD
 
         for (let i = 0; i < 7; i++) {
             days.push(
-                <div className="text-center font-medium text-xs text-gray-500 py-2 uppercase tracking-wider" key={i}>
+                <div className="cal-day-name" key={i}>
                     {format(addDays(startDate, i), dateFormat, { locale: vi }).substring(0, 4)}
                 </div>
             );
         }
 
-        return <div className="grid grid-cols-7 mb-2 border-b border-gray-100">{days}</div>;
+        return <div className="cal-days-grid">{days}</div>;
     };
 
     const renderCells = () => {
@@ -88,44 +88,45 @@ export const DashboardCalendar: React.FC<DashboardCalendarProps> = ({ tasks, onD
                 const isCurrentMonth = isSameMonth(day, monthStart);
                 const isToday = isSameDay(day, new Date());
 
+                let cellClass = "cal-cell";
+                if (!isCurrentMonth) cellClass += " cal-cell-inactive";
+                if (isToday) cellClass += " cal-cell-today";
+
                 days.push(
                     <div
-                        className={`min-h-[80px] sm:min-h-[100px] p-1.5 sm:p-2 border border-gray-100 bg-white transition-all cursor-pointer hover:bg-indigo-50/50 flex flex-col 
-                            ${!isCurrentMonth ? "text-gray-300 bg-gray-50/30" : "text-gray-700"}
-                            ${isToday ? "ring-1 ring-inset ring-indigo-500 bg-indigo-50/20" : ""}
-                        `}
+                        className={cellClass}
                         key={day.toString()}
                         onClick={() => onDateClick(cloneDay, dayTasks)}
                     >
-                        <div className="flex justify-between items-start mb-1">
-                            <span className={`text-sm font-medium ${isToday ? "bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center" : "w-6 h-6 flex items-center justify-center"}`}>
+                        <div className="cal-cell-header">
+                            <span className={isToday ? "cal-date cal-date-today" : "cal-date"}>
                                 {formattedDate}
                             </span>
                             {dayTasks.length > 0 && (
-                                <span className="text-[10px] sm:hidden font-bold text-indigo-600 bg-indigo-100 px-1.5 py-0.5 rounded-full">
+                                <span className="cal-task-count-mobile">
                                     {dayTasks.length}
                                 </span>
                             )}
                         </div>
 
                         {/* Task Indicators */}
-                        <div className="flex-1 overflow-y-auto mt-1 space-y-1 custom-scrollbar pr-1 hidden sm:block">
+                        <div className="cal-task-list">
                             {dayTasks.slice(0, 3).map(task => (
-                                <div key={task.id} className="text-xs truncate px-1.5 py-0.5 rounded-sm bg-indigo-50 text-indigo-700 font-medium shadow-sm border border-indigo-100">
+                                <div key={task.id} className="cal-task-item">
                                     {task.title}
                                 </div>
                             ))}
                             {dayTasks.length > 3 && (
-                                <div className="text-[10px] text-gray-500 font-medium pl-1">
+                                <div className="cal-task-more">
                                     +{dayTasks.length - 3} công việc
                                 </div>
                             )}
                         </div>
 
                         {/* Mobile dot indicators */}
-                        <div className="flex gap-1 mt-1 sm:hidden flex-wrap">
+                        <div className="cal-dot-list">
                             {dayTasks.slice(0, 5).map((_, idx) => (
-                                <div key={idx} className="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
+                                <div key={idx} className="cal-dot"></div>
                             ))}
                         </div>
                     </div>
@@ -133,26 +134,72 @@ export const DashboardCalendar: React.FC<DashboardCalendarProps> = ({ tasks, onD
                 day = addDays(day, 1);
             }
             rows.push(
-                <div className="grid grid-cols-7" key={day.toString()}>
+                <div className="cal-grid" key={day.toString()}>
                     {days}
                 </div>
             );
             days = [];
         }
-        return <div className="overflow-hidden rounded-lg border border-gray-200">{rows}</div>;
+        return <div className="cal-body">{rows}</div>;
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 w-full h-full flex flex-col">
+        <div className="cal-container">
+            <style>{`
+                .cal-container { background: #fff; padding: 1.5rem; width: 100%; height: 100%; display: flex; flex-direction: column; }
+                .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+                .cal-title { font-size: 1.125rem; font-weight: 600; color: #1f2937; display: flex; align-items: center; gap: 0.5rem; margin: 0; }
+                .cal-icon { width: 1.25rem; height: 1.25rem; color: #4f46e5; }
+                .cal-nav { display: flex; align-items: center; gap: 0.5rem; }
+                .cal-btn { background: none; border: none; padding: 0.25rem; border-radius: 0.375rem; cursor: pointer; color: #4b5563; display: flex; align-items: center; justify-content: center; }
+                .cal-btn:hover { background: #f3f4f6; }
+                .cal-btn-text { background: none; border: none; font-size: 0.875rem; font-weight: 500; color: #4f46e5; padding: 0.25rem 0.5rem; border-radius: 0.375rem; cursor: pointer; margin-left: 0.5rem; }
+                .cal-btn-text:hover { background: #eef2ff; color: #3730a3; }
+                
+                .cal-days-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-bottom: 1px solid #f3f4f6; margin-bottom: 0.5rem; }
+                .cal-day-name { text-align: center; font-weight: 500; font-size: 0.75rem; color: #6b7280; padding: 0.5rem 0; text-transform: uppercase; letter-spacing: 0.05em; }
+                
+                .cal-body { border: 1px solid #e5e7eb; border-radius: 0.5rem; overflow: hidden; }
+                .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+                
+                .cal-cell { min-height: 100px; padding: 0.5rem; border: 1px solid #f3f4f6; background: #fff; cursor: pointer; display: flex; flex-direction: column; transition: background-color 0.2s; }
+                .cal-cell:hover { background-color: #f5f3ff; }
+                .cal-cell-inactive { color: #d1d5db; background-color: #fafafa; }
+                .cal-cell-today { box-shadow: inset 0 0 0 1px #8b5cf6; background-color: #faf5ff; }
+                
+                .cal-cell-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.25rem; }
+                .cal-date { font-size: 0.875rem; font-weight: 500; width: 1.5rem; height: 1.5rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+                .cal-date-today { background-color: #4f46e5; color: #fff; }
+                
+                .cal-task-count-mobile { display: none; }
+                
+                .cal-task-list { flex: 1; overflow-y: auto; margin-top: 0.25rem; padding-right: 0.25rem; }
+                .cal-task-item { font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0.125rem 0.375rem; border-radius: 0.25rem; background-color: #eef2ff; color: #4338ca; font-weight: 500; margin-bottom: 0.25rem; border: 1px solid #e0e7ff; }
+                .cal-task-more { font-size: 0.625rem; color: #6b7280; font-weight: 500; padding-left: 0.25rem; }
+                
+                .cal-dot-list { display: none; }
+                
+                .cal-footer { margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid #f3f4f6; font-size: 0.75rem; color: #6b7280; display: flex; align-items: center; justify-content: space-between; }
+                .cal-legend { display: flex; align-items: center; gap: 0.5rem; }
+                .cal-legend-box { width: 0.5rem; height: 0.5rem; border-radius: 0.125rem; background-color: #eef2ff; border: 1px solid #c7d2fe; }
+                
+                @media (max-width: 640px) {
+                    .cal-cell { min-height: 80px; padding: 0.375rem; }
+                    .cal-task-list { display: none; }
+                    .cal-task-count-mobile { display: block; font-size: 0.625rem; font-weight: 700; color: #4f46e5; background-color: #e0e7ff; padding: 0.125rem 0.375rem; border-radius: 9999px; }
+                    .cal-dot-list { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.25rem; }
+                    .cal-dot { width: 0.375rem; height: 0.375rem; border-radius: 50%; background-color: #6366f1; }
+                }
+            `}</style>
             {renderHeader()}
-            <div className="flex-1">
+            <div style={{ flex: 1 }}>
                 {renderDays()}
                 {renderCells()}
             </div>
-            <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500 flex items-center justify-between">
+            <div className="cal-footer">
                 <div>Mẹo: Trỏ vào từng ngày để xem công việc / thêm kế hoạch.</div>
-                <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-sm bg-indigo-100 border border-indigo-200"></span>
+                <div className="cal-legend">
+                    <span className="cal-legend-box"></span>
                     <span>Có công việc</span>
                 </div>
             </div>
