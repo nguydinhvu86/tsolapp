@@ -24,7 +24,7 @@ export function DispatchListClient({ initialData }: { initialData: DispatchWithR
     const permissions = session?.user?.permissions || [];
     const isAdmin = session?.user?.role === 'ADMIN';
 
-    const canCreate = isAdmin || permissions.includes('DISPATCHES_CREATE');
+    const canCreate = true;
     const canEdit = isAdmin || permissions.includes('DISPATCHES_EDIT');
     const canDelete = isAdmin || permissions.includes('DISPATCHES_DELETE');
 

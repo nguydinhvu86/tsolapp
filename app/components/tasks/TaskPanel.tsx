@@ -26,7 +26,7 @@ export function TaskPanel({ initialTasks, users, entityType, entityId, initialTi
     const permissions = session?.user?.permissions || [];
     const isAdmin = session?.user?.role === 'ADMIN';
 
-    const canCreate = isAdmin || permissions.includes('TASKS_CREATE');
+    const canCreate = true;
     const canEdit = isAdmin || permissions.includes('TASKS_EDIT');
     const canDelete = isAdmin || permissions.includes('TASKS_DELETE');
 

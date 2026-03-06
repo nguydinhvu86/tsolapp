@@ -101,7 +101,7 @@ export function QuoteDashboardClient({ initialData }: { initialData: QuoteWithRe
     const permissions = session?.user?.permissions || [];
     const isAdmin = session?.user?.role === 'ADMIN';
 
-    const canCreate = isAdmin || permissions.includes('QUOTES_CREATE');
+    const canCreate = true;
     const canEdit = isAdmin || permissions.includes('QUOTES_EDIT');
     const canDelete = isAdmin || permissions.includes('QUOTES_DELETE');
 

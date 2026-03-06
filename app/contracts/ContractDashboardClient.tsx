@@ -22,7 +22,7 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
     const permissions = session?.user?.permissions || [];
     const isAdmin = session?.user?.role === 'ADMIN';
 
-    const canCreate = isAdmin || permissions.includes('CONTRACTS_CREATE');
+    const canCreate = true;
     const canEdit = isAdmin || permissions.includes('CONTRACTS_EDIT');
     const canDelete = isAdmin || permissions.includes('CONTRACTS_DELETE');
 

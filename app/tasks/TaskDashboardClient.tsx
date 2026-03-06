@@ -18,9 +18,10 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
     const permissions = session?.user?.permissions || [];
     const isAdmin = session?.user?.role === 'ADMIN';
 
-    const canCreate = isAdmin || permissions.includes('TASKS_CREATE');
-    const canEdit = isAdmin || permissions.includes('TASKS_EDIT');
-    const canDelete = isAdmin || permissions.includes('TASKS_DELETE');
+    // Mọi người đều có thể tạo/sửa/xoá công việc (thực tế server action sẽ kiểm tra quyền sở hữu)
+    const canCreate = true;
+    const canEdit = true;
+    const canDelete = true;
 
     const [isCreateModalOpen, setCreateModalOpen] = useState(false);
     const [title, setTitle] = useState('');

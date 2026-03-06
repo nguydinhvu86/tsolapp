@@ -23,7 +23,7 @@ export function HandoverDashboardClient({ initialData }: { initialData: Handover
     const permissions = session?.user?.permissions || [];
     const isAdmin = session?.user?.role === 'ADMIN';
 
-    const canCreate = isAdmin || permissions.includes('HANDOVERS_CREATE');
+    const canCreate = true;
     const canEdit = isAdmin || permissions.includes('HANDOVERS_EDIT');
     const canDelete = isAdmin || permissions.includes('HANDOVERS_DELETE');
 

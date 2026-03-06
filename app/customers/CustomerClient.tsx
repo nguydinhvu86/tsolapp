@@ -22,7 +22,7 @@ export function CustomerClient({ initialData }: { initialData: CustomerWithStats
     const permissions = session?.user?.permissions || [];
     const isAdmin = session?.user?.role === 'ADMIN';
 
-    const canCreate = isAdmin || permissions.includes('CUSTOMERS_CREATE');
+    const canCreate = true;
     const canEdit = isAdmin || permissions.includes('CUSTOMERS_EDIT');
     const canDelete = isAdmin || permissions.includes('CUSTOMERS_DELETE');
 

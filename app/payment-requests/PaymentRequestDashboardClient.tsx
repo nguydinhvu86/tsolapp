@@ -23,7 +23,7 @@ export function PaymentRequestDashboardClient({ initialData }: { initialData: Pa
     const permissions = session?.user?.permissions || [];
     const isAdmin = session?.user?.role === 'ADMIN';
 
-    const canCreate = isAdmin || permissions.includes('PAYMENTS_CREATE');
+    const canCreate = true;
     const canEdit = isAdmin || permissions.includes('PAYMENTS_EDIT');
     const canDelete = isAdmin || permissions.includes('PAYMENTS_DELETE');
 
