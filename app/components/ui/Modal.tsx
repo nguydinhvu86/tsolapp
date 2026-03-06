@@ -5,10 +5,10 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = '500px' }: 
     if (!isOpen) return null;
 
     return (
-        <div className="modal-backdrop">
+        <div className="modal-backdrop" style={{ position: 'fixed', inset: 0, padding: '2rem', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }}>
             <div
                 className="modal-container"
-                style={{ maxWidth, maxHeight: '90vh' }}
+                style={{ width: '100%', maxWidth, maxHeight: '90vh', background: 'var(--surface)', borderRadius: 'var(--radius)', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}
             >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}>
                     <h3 style={{ fontSize: '1.125rem', fontWeight: 600, margin: 0, color: 'var(--text-main)' }}>{title}</h3>

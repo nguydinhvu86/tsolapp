@@ -44,18 +44,20 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
     const [editIsRecurring, setEditIsRecurring] = useState(false);
     const [editRecurrenceFreq, setEditRecurrenceFreq] = useState('MONTHLY');
     const [editRecurrenceCount, setEditRecurrenceCount] = useState<number | string>(2);
+    const [editStartDate, setEditStartDate] = useState('');
 
     // Recurrence State
     const [isRecurring, setIsRecurring] = useState(false);
     const [recurrenceFreq, setRecurrenceFreq] = useState('MONTHLY');
     const [recurrenceCount, setRecurrenceCount] = useState(2);
+    const [startDate, setStartDate] = useState('');
 
     // Derived Preview Dates for Recurrence
     const previewDates = React.useMemo(() => {
-        if (!isRecurring || !dueDate || recurrenceCount < 2) return [];
+        if (!isRecurring || (!dueDate && !startDate) || recurrenceCount < 2) return [];
         const generateDates = () => {
             const dates = [];
-            const base = new Date(dueDate);
+            const base = new Date(startDate || dueDate);
             for (let i = 0; i < recurrenceCount; i++) {
                 const d = new Date(base);
                 switch (recurrenceFreq) {
@@ -135,12 +137,27 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
         });
 
         seriesMap.forEach((tasksInSeries, seriesId) => {
-            // Sort by due date
-            tasksInSeries.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+            // Sort by due date or start date
+            tasksInSeries.sort((a, b) => {
+                const dateA = a.startDate ? new Date(a.startDate).getTime() : new Date(a.dueDate).getTime();
+                const dateB = b.startDate ? new Date(b.startDate).getTime() : new Date(b.dueDate).getTime();
+                return dateA - dateB;
+            });
+
             // Find first incomplete
             const firstIncomplete = tasksInSeries.find(t => t.status !== 'DONE');
             if (firstIncomplete) {
-                activeRecurringIds.add(firstIncomplete.id);
+                // Check if this task is happening reasonably soon (e.g. within 7 days)
+                // If the user wants to see ALL RECURRING tasks, we bypass this hide logic later.
+                // But for the default views, we only treat it as "active" if it's near.
+                const thresholdDate = new Date();
+                thresholdDate.setDate(thresholdDate.getDate() + 7); // Show 7 days in advance
+
+                const taskDate = firstIncomplete.startDate ? new Date(firstIncomplete.startDate) : new Date(firstIncomplete.dueDate);
+
+                if (taskDate.getTime() <= thresholdDate.getTime() || filterStatus === 'RECURRING') {
+                    activeRecurringIds.add(firstIncomplete.id);
+                }
             } else {
                 // If all done, maybe show the last one
                 if (tasksInSeries.length > 0) {
@@ -267,6 +284,7 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
             description,
             priority,
             dueDate: dueDate ? new Date(dueDate) : null,
+            startDate: startDate ? new Date(startDate) : null,
             status: 'TODO',
             assignees: selectedAssignees,
             observers: selectedObservers
@@ -323,6 +341,7 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
             setDescription('');
             setPriority('MEDIUM');
             setDueDate('');
+            setStartDate('');
             setSelectedAssignees([]);
             setSelectedObservers([]);
             setIsRecurring(false);
@@ -345,6 +364,7 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
         setEditDescription(task.description || '');
         setEditPriority(task.priority || 'MEDIUM');
         setEditDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '');
+        setEditStartDate(task.startDate ? new Date(task.startDate).toISOString().split('T')[0] : '');
         setEditSelectedAssignees(task.assignees?.map((a: any) => a.userId) || []);
         setEditSelectedObservers(task.observers?.map((o: any) => o.userId) || []);
 
@@ -364,6 +384,7 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                 description: editDescription,
                 priority: editPriority,
                 dueDate: editDueDate ? new Date(editDueDate) : null,
+                startDate: editStartDate ? new Date(editStartDate) : null,
                 assignees: editSelectedAssignees,
                 observers: editSelectedObservers
             };
@@ -630,9 +651,15 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                                         {sortField === 'priority' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
                                     </div>
                                 </th>
+                                <th onClick={() => handleSort('startDate')} style={{ cursor: 'pointer' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        Ngày Bắt Đầu
+                                        {sortField === 'startDate' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
+                                    </div>
+                                </th>
                                 <th onClick={() => handleSort('dueDate')} style={{ cursor: 'pointer' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        Hạn Chót
+                                        Deadline
                                         {sortField === 'dueDate' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
                                     </div>
                                 </th>
@@ -667,6 +694,9 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                                             }}>
                                                 {task.priority}
                                             </span>
+                                        </td>
+                                        <td style={{ color: 'var(--text-main)' }}>
+                                            {task.startDate ? formatDate(new Date(task.startDate)) : '-'}
                                         </td>
                                         <td style={{ color: isDueSoon ? 'var(--danger)' : 'inherit' }}>
                                             {task.dueDate ? formatDate(new Date(task.dueDate)) : '-'}
@@ -793,7 +823,7 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                         </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)', gap: '1rem' }}>
                         <div>
                             <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Mức độ ưu tiên</label>
                             <select value={priority} onChange={e => setPriority(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
@@ -804,7 +834,11 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                             </select>
                         </div>
                         <div>
-                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Hạn chót bắt đầu (Deadline)</label>
+                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Ngày bắt đầu</label>
+                            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }} />
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Deadline</label>
                             <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }} />
                         </div>
                     </div>
@@ -877,13 +911,18 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
 
                             {isRecurring && (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                    <select value={recurrenceFreq} onChange={e => setRecurrenceFreq(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-                                        <option value="DAILY">Hàng ngày</option>
-                                        <option value="MONTHLY">Hàng tháng</option>
-                                        <option value="QUARTERLY">Mỗi 3 tháng</option>
-                                        <option value="BIANNUALLY">Mỗi 6 tháng</option>
-                                        <option value="YEARLY">Hàng năm</option>
-                                    </select>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Tần suất lặp</label>
+                                            <select value={recurrenceFreq} onChange={e => setRecurrenceFreq(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+                                                <option value="DAILY">Hàng ngày</option>
+                                                <option value="MONTHLY">Hàng tháng</option>
+                                                <option value="QUARTERLY">Mỗi 3 tháng</option>
+                                                <option value="BIANNUALLY">Mỗi 6 tháng</option>
+                                                <option value="YEARLY">Hàng năm</option>
+                                            </select>
+                                        </div>
+                                    </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                         <span style={{ fontSize: '0.85rem', color: 'var(--text-main)' }}>Số lần tạo:</span>
                                         <input
@@ -969,7 +1008,7 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                         </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)', gap: '1rem' }}>
                         <div>
                             <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Mức độ ưu tiên</label>
                             <select value={editPriority} onChange={e => setEditPriority(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
@@ -980,7 +1019,11 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                             </select>
                         </div>
                         <div>
-                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Hạn chót bắt đầu</label>
+                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Ngày bắt đầu</label>
+                            <input type="date" value={editStartDate} onChange={e => setEditStartDate(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }} />
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Deadline</label>
                             <input type="date" value={editDueDate} onChange={e => setEditDueDate(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }} />
                         </div>
                     </div>
@@ -999,7 +1042,11 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                             opacity: editIsRecurring ? 1 : 0,
                             transition: 'all 0.3s'
                         }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1.5fr) minmax(0, 1fr)', gap: '1rem' }}>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Ngày bắt đầu chu kỳ</label>
+                                    <input type="date" value={editStartDate} onChange={e => setEditStartDate(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }} />
+                                </div>
                                 <div>
                                     <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Tần suất lặp</label>
                                     <select value={editRecurrenceFreq} onChange={e => setEditRecurrenceFreq(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
@@ -1012,11 +1059,13 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                                     </select>
                                 </div>
                                 <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Số việc tạo thêm (Tương lai)</label>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Số việc tạo thêm</label>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                         <input type="number" min="1" max="60" value={editRecurrenceCount} onChange={e => setEditRecurrenceCount(e.target.value)} style={{ width: '100px', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', textAlign: 'center' }} />
                                     </div>
-                                    <small style={{ color: 'var(--text-muted)' }}>Mặc định sẽ lưu dưới dạng 1 task mẹ gốc và tạo thêm N task mới theo hạn chót tịnh tiến.</small>
+                                </div>
+                                <div style={{ gridColumn: 'span 3' }}>
+                                    <small style={{ color: 'var(--text-muted)' }}>Mặc định sẽ lưu dưới dạng 1 task mẹ gốc và tạo thêm N task mới theo hạn chót tịnh tiến bắt đầu từ Ngày bắt đầu chu kỳ.</small>
                                 </div>
                             </div>
                         </div>

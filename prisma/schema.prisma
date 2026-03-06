@@ -79,6 +79,13 @@ model User {
   // Internal Chat
   chatParticipants ChatParticipant[]
   chatMessages     ChatMessage[]
+
+  // HR & Attendance
+  shiftConfigId        String?
+  shiftConfig          ShiftConfig?       @relation("UserShiftConfig", fields: [shiftConfigId], references: [id], onDelete: SetNull)
+  attendances          AttendanceRecord[] @relation("UserAttendance")
+  leaveRequests        LeaveRequest[]     @relation("UserLeaveRequests")
+  approvedLeaveRequests LeaveRequest[]    @relation("ApprovedLeaveRequests")
 }
 
 model SystemSetting {
@@ -1262,4 +1269,65 @@ model ChatMessage {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ==========================================
+// HR & ATTENDANCE MODULE
+// ==========================================
+
+model ShiftConfig {
+  id              String   @id @default(cuid())
+  name            String   // Tên ca làm việc
+  startTime       String   @default("08:00")
+  endTime         String   @default("17:00")
+  lunchStart      String   @default("12:00")
+  lunchEnd        String   @default("13:00")
+  lateThreshold   Int      @default(0) // Số phút cho phép đi muộn
+  earlyThreshold  Int      @default(0) // Số phút cho phép về sớm
+  isActive        Boolean  @default(true)
+  
+  users           User[]   @relation("UserShiftConfig")
+}
+
+model AttendanceRecord {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation("UserAttendance", fields: [userId], references: [id], onDelete: Cascade)
+  
+  date            DateTime @db.Date // Ngày chấm công (chỉ lấy phần ngày, ko lấy giờ)
+  
+  checkInTime     DateTime? 
+  checkInPhotoUrl String?   
+  checkInLocation String?   
+  
+  checkOutTime    DateTime? 
+  checkOutPhotoUrl String?  
+  checkOutLocation String?  
+  
+  status          String    @default("PRESENT") // PRESENT, LATE, HALF_DAY, ABSENT
+  notes           String?   
+  
+  totalWorkMinutes Int? // Tính bằng phút
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, date]) // Mỗi nhân viên chỉ có 1 bản ghi chấm công mỗi ngày
+}
+
+model LeaveRequest {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation("UserLeaveRequests", fields: [userId], references: [id])
+  type            String   // SICK_LEAVE, ANNUAL_LEAVE, UNPAID_LEAVE
+  startDate       DateTime
+  endDate         DateTime
+  reason          String
+  status          String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  
+  approverId      String?  
+  approver        User?    @relation("ApprovedLeaveRequests", fields: [approverId], references: [id])
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

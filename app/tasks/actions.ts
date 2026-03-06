@@ -80,14 +80,18 @@ export async function createTask(data: any, creatorId: string) {
     const taskCount = isRecurringMode ? recurrence.count : 1;
     const frequency = isRecurringMode ? recurrence.frequency : null;
     let baseDueDate = restData.dueDate ? new Date(restData.dueDate) : null;
+    let baseStartDate = restData.startDate ? new Date(restData.startDate) : null;
 
     const createdTasks: any[] = [];
     let firstTaskId: string | null = null;
 
     for (let i = 0; i < taskCount; i++) {
         let currentDueDate = baseDueDate;
-        if (isRecurringMode && baseDueDate && i > 0) {
-            currentDueDate = addFrequency(baseDueDate, frequency, i);
+        let currentStartDate = baseStartDate;
+
+        if (isRecurringMode && i > 0) {
+            if (baseDueDate) currentDueDate = addFrequency(baseDueDate, frequency, i);
+            if (baseStartDate) currentStartDate = addFrequency(baseStartDate, frequency, i);
         }
 
         // Add suffix to title if recurring
@@ -99,6 +103,7 @@ export async function createTask(data: any, creatorId: string) {
                 ...restData,
                 title: restData.title + titleSuffix,
                 dueDate: currentDueDate,
+                startDate: currentStartDate,
                 isRecurring: isRecurringMode,
                 recurrenceRule: frequency,
                 creatorId,
@@ -239,6 +244,11 @@ export async function updateTask(id: string, data: any, userId: string) {
             const newDate = restData.dueDate ? new Date(restData.dueDate).toISOString().split('T')[0] : 'None';
             if (oldDate !== newDate) changes.push(`Hạn chót: ${oldDate} -> ${newDate}`);
         }
+        if ('startDate' in restData) {
+            const oldDate = oldTask.startDate ? oldTask.startDate.toISOString().split('T')[0] : 'None';
+            const newDate = restData.startDate ? new Date(restData.startDate).toISOString().split('T')[0] : 'None';
+            if (oldDate !== newDate) changes.push(`Ngày bắt đầu: ${oldDate} -> ${newDate}`);
+        }
         if (assignees) {
             const oldAssignedIds = oldTask.assignees.map((a: any) => a.userId).sort().join(',');
             const newAssignedIds = [...assignees].sort().join(',');
@@ -260,13 +270,21 @@ export async function updateTask(id: string, data: any, userId: string) {
 
     // Process Recurrence Toggle Off
     if (oldTask && oldTask.isRecurring && recurrence && !recurrence.isRecurring) {
-        // Find and delete future incomplete child tasks generated from this parent
-        await (prisma.task as any).deleteMany({
-            where: {
-                parentTaskId: id,
-                status: { not: 'DONE' }
-            }
-        });
+        if (!oldTask.parentTaskId) {
+            // Find and delete future incomplete child tasks generated from this parent
+            await (prisma.task as any).deleteMany({
+                where: {
+                    parentTaskId: id,
+                    status: { notIn: ['DONE', 'CANCELLED'] }
+                }
+            });
+
+            // Detach remaining completed child tasks so they become independent
+            await (prisma.task as any).updateMany({
+                where: { parentTaskId: id },
+                data: { parentTaskId: null, isRecurring: false, recurrenceRule: null }
+            });
+        }
 
         // Remove tracking fields on the current task
         restData.isRecurring = false;
@@ -312,14 +330,17 @@ export async function updateTask(id: string, data: any, userId: string) {
         const taskCount = recurrence.count || 1;
         const frequency = recurrence.frequency;
         const baseDueDate = restData.dueDate ? new Date(restData.dueDate) : (oldTask.dueDate || new Date());
+        const baseStartDate = restData.startDate ? new Date(restData.startDate) : (oldTask.startDate || null);
 
         const childTasksData = [];
         for (let i = 1; i < taskCount; i++) {
-            let nextDueDate = addFrequency(baseDueDate, frequency, i);
+            let nextDueDate = baseDueDate ? addFrequency(baseDueDate, frequency, i) : null;
+            let nextStartDate = baseStartDate ? addFrequency(baseStartDate, frequency, i) : null;
             childTasksData.push({
                 ...restData,
                 title: restData.title + ` (Lần ${i + 1}/${taskCount})`,
                 dueDate: nextDueDate,
+                startDate: nextStartDate,
                 isRecurring: true,
                 recurrenceRule: frequency,
                 creatorId: oldTask.creatorId,
@@ -377,6 +398,24 @@ export async function updateTaskStatus(id: string, status: string, userId: strin
 }
 
 export async function deleteTask(id: string) {
+    const task = await prisma.task.findUnique({ where: { id }, include: { childTasks: true } });
+
+    if (task && task.childTasks && task.childTasks.length > 0) {
+        // Xóa các task con chưa hoàn thành để dọn dẹp
+        await prisma.task.deleteMany({
+            where: {
+                parentTaskId: id,
+                status: { notIn: ['DONE', 'CANCELLED'] }
+            }
+        });
+
+        // Hủy liên kết các task con đã hoàn thành (giữ lại lịch sử)
+        await prisma.task.updateMany({
+            where: { parentTaskId: id },
+            data: { parentTaskId: null, isRecurring: false, recurrenceRule: null }
+        });
+    }
+
     await prisma.task.delete({ where: { id } });
     revalidatePath('/tasks');
 }

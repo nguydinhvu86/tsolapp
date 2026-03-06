@@ -36,10 +36,38 @@ export function TaskPanel({ initialTasks, users, entityType, entityId, initialTi
     const [description, setDescription] = useState('');
     const [priority, setPriority] = useState('MEDIUM');
     const [dueDate, setDueDate] = useState('');
+    const [startDate, setStartDate] = useState('');
     const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
     const [selectedObservers, setSelectedObservers] = useState<string[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     const [showCompleted, setShowCompleted] = useState(false);
+
+    // Recurrence State
+    const [isRecurring, setIsRecurring] = useState(false);
+    const [recurrenceFreq, setRecurrenceFreq] = useState('MONTHLY');
+    const [recurrenceCount, setRecurrenceCount] = useState(2);
+
+    // Derived Preview Dates for Recurrence
+    const previewDates = React.useMemo(() => {
+        if (!isRecurring || (!dueDate && !startDate) || recurrenceCount < 2) return [];
+        const generateDates = () => {
+            const dates = [];
+            const base = new Date(startDate || dueDate);
+            for (let i = 0; i < recurrenceCount; i++) {
+                const d = new Date(base);
+                switch (recurrenceFreq) {
+                    case 'DAILY': d.setDate(d.getDate() + i); break;
+                    case 'MONTHLY': d.setMonth(d.getMonth() + i); break;
+                    case 'QUARTERLY': d.setMonth(d.getMonth() + 3 * i); break;
+                    case 'BIANNUALLY': d.setMonth(d.getMonth() + 6 * i); break;
+                    case 'YEARLY': d.setFullYear(d.getFullYear() + i); break;
+                }
+                dates.push(d);
+            }
+            return dates;
+        };
+        return generateDates();
+    }, [isRecurring, dueDate, startDate, recurrenceFreq, recurrenceCount]);
 
     // Filter tasks logic
     const currentUserTasks = initialTasks.filter((t: any) => {
@@ -57,11 +85,12 @@ export function TaskPanel({ initialTasks, users, entityType, entityId, initialTi
     const activeTasks = currentUserTasks.filter((t: any) => {
         if (!showCompleted && (t.status === 'DONE' || t.status === 'CANCELLED')) return false;
 
-        // Hide recurring tasks until their exact due date arrives (or they become overdue)
-        if (t.isRecurring && t.dueDate) {
-            const today = new Date().setHours(0, 0, 0, 0);
-            const due = new Date(t.dueDate).setHours(0, 0, 0, 0);
-            if (due > today) return false; // Hide if due date is in the future
+        // Hide recurring tasks until their exact start/due date arrives (or within 7 days)
+        if (t.isRecurring) {
+            const thresholdDate = new Date();
+            thresholdDate.setDate(thresholdDate.getDate() + 7); // Show 7 days in advance
+            const taskDate = t.startDate ? new Date(t.startDate) : (t.dueDate ? new Date(t.dueDate) : null);
+            if (taskDate && taskDate.getTime() > thresholdDate.getTime()) return false; // Hide if date is too far in the future
         }
 
         return true;
@@ -100,24 +129,39 @@ export function TaskPanel({ initialTasks, users, entityType, entityId, initialTi
         if (entityType === 'LEAD') contextLinks.leadId = entityId;
 
         try {
-            await createTask({
+            const payload: any = {
                 title,
                 description,
                 priority,
                 dueDate: dueDate ? new Date(dueDate) : null,
+                startDate: startDate ? new Date(startDate) : null,
                 status: 'TODO',
                 assignees: selectedAssignees,
                 observers: selectedObservers,
                 ...contextLinks
-            }, session.user.id);
+            };
+
+            if (isRecurring) {
+                payload.recurrence = {
+                    isRecurring: true,
+                    frequency: recurrenceFreq,
+                    count: parseInt(recurrenceCount as any) || 1
+                };
+            }
+
+            await createTask(payload, session.user.id);
 
             setCreateModalOpen(false);
             setTitle('');
             setDescription('');
             setPriority('MEDIUM');
             setDueDate('');
+            setStartDate('');
             setSelectedAssignees([]);
             setSelectedObservers([]);
+            setIsRecurring(false);
+            setRecurrenceFreq('MONTHLY');
+            setRecurrenceCount(2);
 
             router.refresh();
         } finally {
@@ -358,9 +402,16 @@ export function TaskPanel({ initialTasks, users, entityType, entityId, initialTi
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                         <User size={14} /> <span>{assigneesNames}</span>
                                     </div>
-                                    {task.dueDate && (
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: isOverdue ? '#dc2626' : 'inherit' }}>
-                                            <Clock size={14} /> <span>{formatDate(new Date(task.dueDate))}</span>
+                                    {(task.startDate || task.dueDate) && (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                            <Clock size={14} />
+                                            {task.startDate && <span style={{ color: 'var(--text-main)' }}>Bắt đầu: {formatDate(new Date(task.startDate))}</span>}
+                                            {task.startDate && task.dueDate && <span style={{ color: 'var(--text-muted)' }}>-</span>}
+                                            {task.dueDate && (
+                                                <span style={{ color: isOverdue ? '#dc2626' : 'inherit' }}>
+                                                    Deadline: {formatDate(new Date(task.dueDate))}
+                                                </span>
+                                            )}
                                             {isOverdue && <span style={{ fontSize: '0.7rem', padding: '2px 6px', background: '#fee2e2', color: '#dc2626', borderRadius: '4px', fontWeight: 600 }}>Quá hạn</span>}
                                         </div>
                                     )}
@@ -399,7 +450,7 @@ export function TaskPanel({ initialTasks, users, entityType, entityId, initialTi
                 </div>
             </Modal>
 
-            <Modal isOpen={isCreateModalOpen} onClose={() => setCreateModalOpen(false)} title="Giao Việc Liên Quan">
+            <Modal isOpen={isCreateModalOpen} onClose={() => setCreateModalOpen(false)} title="Giao Việc Liên Quan" maxWidth="575px">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', paddingTop: '1rem' }}>
                     <div>
                         <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Tên công việc <span style={{ color: 'var(--danger)' }}>*</span></label>
@@ -418,20 +469,90 @@ export function TaskPanel({ initialTasks, users, entityType, entityId, initialTi
                             }} style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', minHeight: '100px' }}>
                                 {users.map(u => <option key={u.id} value={u.id}>{u.name || u.email}</option>)}
                             </select>
+                            <small style={{ color: 'var(--text-muted)' }}>Bấm Ctrl hoặc kéo thả để chọn nhiều người.</small>
                         </div>
                         <div>
-                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Cấp độ</label>
-                            <select value={priority} onChange={e => setPriority(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', marginBottom: '1rem' }}>
-                                <option value="LOW">Thấp</option>
-                                <option value="MEDIUM">Trung Bình</option>
-                                <option value="HIGH">Cao</option>
-                                <option value="URGENT">Khẩn Cấp</option>
+                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Người theo dõi</label>
+                            <select multiple value={selectedObservers} onChange={e => {
+                                const options = Array.from(e.target.selectedOptions);
+                                setSelectedObservers(options.map(o => o.value));
+                            }} style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', minHeight: '100px' }}>
+                                {users.map(u => <option key={u.id} value={u.id}>{u.name || u.email}</option>)}
                             </select>
+                        </div>
+                    </div>
 
+                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)', gap: '1rem' }}>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Mức độ ưu tiên</label>
+                            <select value={priority} onChange={e => setPriority(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+                                <option value="LOW">Thấp (Low)</option>
+                                <option value="MEDIUM">Trung Bình (Medium)</option>
+                                <option value="HIGH">Cao (High)</option>
+                                <option value="URGENT">Khẩn Cấp (Urgent)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Ngày bắt đầu</label>
+                            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }} />
+                        </div>
+                        <div>
                             <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Deadline</label>
                             <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }} />
                         </div>
                     </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', background: 'rgba(0,0,0,0.02)', padding: '1rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+                        <div>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem', color: 'var(--primary)', cursor: 'pointer' }}>
+                                <input type="checkbox" checked={isRecurring} onChange={e => setIsRecurring(e.target.checked)} />
+                                Lặp lại định kỳ
+                            </label>
+
+                            {isRecurring && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Tần suất lặp</label>
+                                            <select value={recurrenceFreq} onChange={e => setRecurrenceFreq(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+                                                <option value="DAILY">Hàng ngày</option>
+                                                <option value="MONTHLY">Hàng tháng</option>
+                                                <option value="QUARTERLY">Mỗi 3 tháng</option>
+                                                <option value="BIANNUALLY">Mỗi 6 tháng</option>
+                                                <option value="YEARLY">Hàng năm</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <span style={{ fontSize: '0.85rem', color: 'var(--text-main)' }}>Số lần lặp thêm:</span>
+                                        <input
+                                            type="number"
+                                            min="1" max="100"
+                                            value={recurrenceCount}
+                                            onChange={e => setRecurrenceCount(parseInt(e.target.value))}
+                                            style={{ width: '80px', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}
+                                        />
+                                    </div>
+                                    <small style={{ color: 'var(--text-muted)' }}>Hệ thống sẽ tạo gốc và {recurrenceCount || 0} công việc tự động.</small>
+                                </div>
+                            )}
+
+                            {isRecurring && previewDates.length > 0 && (
+                                <div style={{ marginTop: '0.75rem', padding: '0.75rem', backgroundColor: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: 'var(--radius)' }}>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>Lịch trình dự kiến:</div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', maxHeight: '120px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+                                        {previewDates.map((d, index) => (
+                                            <div key={index} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: index === 0 ? 'var(--primary)' : 'var(--text-muted)' }}>
+                                                <span>{index === 0 ? 'Lần 1 (Gốc):' : `Lần ${index + 1}:`}</span>
+                                                <span style={{ fontWeight: 500 }}>{formatDate(d)}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
                         <Button variant="secondary" onClick={() => setCreateModalOpen(false)}>Hủy</Button>
                         <Button onClick={handleCreate} disabled={isSaving || !title.trim()}>

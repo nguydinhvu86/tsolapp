@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { LayoutDashboard, Users, FileText, Settings, FileSpreadsheet, FileCode, ChevronDown, ChevronRight, FileOutput, FilePlus2, FileStack, Mail, CheckSquare, Package, ShoppingCart, Target, GripVertical } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Settings, FileSpreadsheet, FileCode, ChevronDown, ChevronRight, FileOutput, FilePlus2, FileStack, Mail, CheckSquare, Package, ShoppingCart, Target, GripVertical, Clock } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -74,6 +74,16 @@ const mainNavItems: any[] = [
         ]
     },
     { name: 'Khách Hàng', href: '/customers', icon: Users, permission: 'CUSTOMERS_VIEW' },
+    {
+        name: 'Nhân Sự (HR)',
+        icon: Clock,
+        children: [
+            { name: 'Công Của Tôi', href: '/my-attendance' },
+            { name: 'Đơn Nghỉ Phép', href: '/leave-requests' },
+            { name: 'Bảng Công', href: '/hr/attendance', permission: 'SETTINGS_VIEW' }, // using SETTINGS_VIEW for admin/hr bypass for now
+            { name: 'Duyệt Đơn', href: '/hr/approvals', permission: 'SETTINGS_VIEW' }
+        ]
+    },
     {
         name: 'Thiết Lập',
         icon: Settings,
