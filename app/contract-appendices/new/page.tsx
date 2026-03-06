@@ -3,7 +3,7 @@ import { NewAppendixClient } from './NewAppendixClient';
 
 export default async function NewAppendixPage({ searchParams }: { searchParams: { contractId?: string } }) {
     // We need to fetch the existing contracts to let user select which contract this appendix belongs to
-    const [contracts, templates, customers] = await Promise.all([
+    const [contracts, templates, customers, products] = await Promise.all([
         prisma.contract.findMany({
             include: { customer: true },
             orderBy: { createdAt: 'desc' }
@@ -12,6 +12,9 @@ export default async function NewAppendixPage({ searchParams }: { searchParams: 
             orderBy: { createdAt: 'desc' }
         }),
         prisma.customer.findMany({
+            orderBy: { name: 'asc' }
+        }),
+        prisma.product.findMany({
             orderBy: { name: 'asc' }
         })
     ]);
@@ -22,6 +25,7 @@ export default async function NewAppendixPage({ searchParams }: { searchParams: 
                 contracts={contracts}
                 templates={templates}
                 customers={customers}
+                products={products}
                 preselectedContractId={searchParams.contractId}
             />
         </div>

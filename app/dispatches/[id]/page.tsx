@@ -45,8 +45,8 @@ export default async function DispatchPrintView({ params }: { params: { id: stri
                 </div>
 
                 {/* A4 Document Area & Task Panel */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 350px', gap: '1.5rem', alignItems: 'start' }}>
-                    <div style={{ overflow: 'hidden' }}>
+                <div className="dispatch-layout-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 350px', gap: '1.5rem', alignItems: 'start' }}>
+                    <div className="dispatch-layout-main" style={{ overflow: 'hidden' }}>
                         <div className="a4-document" style={{ width: '100%', maxWidth: '210mm', minHeight: '297mm', padding: '15mm 20mm', margin: '0 auto', background: 'white', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', boxSizing: 'border-box' }}>
                             <style dangerouslySetInnerHTML={{
                                 __html: `
@@ -55,6 +55,8 @@ export default async function DispatchPrintView({ params }: { params: { id: stri
                     body { background: white; margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 13pt; }
                     .no-print { display: none !important; }
                     aside, header { display: none !important; }
+                    .dispatch-layout-grid { display: block !important; }
+                    .dispatch-layout-main { overflow: visible !important; width: 100% !important; max-width: 100% !important; }
                     .main-wrapper { margin-left: 0 !important; width: 100% !important; display: block !important; }
                     main { padding: 0 !important; margin: 0 !important; max-width: 100% !important; overflow: visible; display: block !important; }
                     

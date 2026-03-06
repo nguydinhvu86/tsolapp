@@ -27,16 +27,25 @@ export default async function ContractDetailPage({ params }: { params: { id: str
     const users = await prisma.user.findMany({ select: { id: true, name: true, email: true }, orderBy: { name: 'asc' } });
 
     return (
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 350px', gap: '1.5rem', alignItems: 'start' }}>
-            {/* Left Area: Main Content */}
-            <div style={{ overflow: 'hidden' }}>
-                <ContractDetailClient contract={contract} />
-            </div>
+        <>
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                @media print {
+                    .contract-layout-grid { display: block !important; }
+                    .contract-layout-main { width: 100% !important; max-width: 100% !important; overflow: visible !important; }
+                }
+            `}} />
+            <div className="contract-layout-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 350px', gap: '1.5rem', alignItems: 'start' }}>
+                {/* Left Area: Main Content */}
+                <div className="contract-layout-main" style={{ overflow: 'hidden' }}>
+                    <ContractDetailClient contract={contract} />
+                </div>
 
-            {/* Right Area: Task Panel */}
-            <div style={{ position: 'sticky', top: '1rem' }}>
-                <TaskPanel initialTasks={tasks} users={users} entityType="CONTRACT" entityId={params.id} />
+                {/* Right Area: Task Panel */}
+                <div className="no-print" style={{ position: 'sticky', top: '1rem' }}>
+                    <TaskPanel initialTasks={tasks} users={users} entityType="CONTRACT" entityId={params.id} />
+                </div>
             </div>
-        </div>
+        </>
     );
 }

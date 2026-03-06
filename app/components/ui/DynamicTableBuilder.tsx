@@ -205,32 +205,24 @@ export function DynamicTableBuilder({ value, onChange, onTotalsChange, type = 'q
             // Auto sum at bottom for all money columns
             if (isFinancialTable && visibleAmountIdx > 0) {
                 const taxLabel = repTaxRate ? `Thuế ${repTaxRate.includes('%') ? repTaxRate : repTaxRate + '%'}` : 'Thuế VAT';
+                const remainingCols = visibleColCount - visibleAmountIdx;
 
                 // Row 1: Tổng tạm tính chưa bao gồm thuế
                 html += '  <tr>\n';
                 html += `    <td colspan="${visibleAmountIdx}" style="border: 1px solid #000; padding: 6px 8px; text-align: right;">Tổng tạm tính chưa bao gồm thuế</td>\n`;
-                html += `    <td style="border: 1px solid #000; padding: 6px 8px; text-align: center;">${formatVNNumber(baseTotal)}</td>\n`;
-                for (let i = visibleAmountIdx + 1; i < visibleColCount; i++) {
-                    html += `    <td style="border: 1px solid #000; padding: 6px 8px;"></td>\n`;
-                }
+                html += `    <td colspan="${remainingCols}" style="border: 1px solid #000; padding: 6px 8px; text-align: center;">${formatVNNumber(baseTotal)}</td>\n`;
                 html += '  </tr>\n';
 
                 // Row 2: Thuế
                 html += '  <tr>\n';
                 html += `    <td colspan="${visibleAmountIdx}" style="border: 1px solid #000; padding: 6px 8px; text-align: right;">${taxLabel}</td>\n`;
-                html += `    <td style="border: 1px solid #000; padding: 6px 8px; text-align: center;">${formatVNNumber(taxTotal)}</td>\n`;
-                for (let i = visibleAmountIdx + 1; i < visibleColCount; i++) {
-                    html += `    <td style="border: 1px solid #000; padding: 6px 8px;"></td>\n`;
-                }
+                html += `    <td colspan="${remainingCols}" style="border: 1px solid #000; padding: 6px 8px; text-align: center;">${formatVNNumber(taxTotal)}</td>\n`;
                 html += '  </tr>\n';
 
                 // Row 3: Tổng tạm tính đã bao gồm thuế VAT
                 html += '  <tr>\n';
                 html += `    <td colspan="${visibleAmountIdx}" style="border: 1px solid #000; padding: 6px 8px; text-align: right; font-weight: bold; background-color: #a9d08e;">Tổng tạm tính đã bao gồm thuế VAT</td>\n`;
-                html += `    <td style="border: 1px solid #000; padding: 6px 8px; text-align: center; font-weight: bold; background-color: #a9d08e; color: #ff0000;">${formatVNNumber(grandTotal)}</td>\n`;
-                for (let i = visibleAmountIdx + 1; i < visibleColCount; i++) {
-                    html += `    <td style="border: 1px solid #000; padding: 6px 8px;"></td>\n`;
-                }
+                html += `    <td colspan="${remainingCols}" style="border: 1px solid #000; padding: 6px 8px; text-align: center; font-weight: bold; background-color: #a9d08e; color: #ff0000;">${formatVNNumber(grandTotal)}</td>\n`;
                 html += '  </tr>\n';
 
             } else {

@@ -879,7 +879,10 @@ table {
 @media print {
 
     aside,
-    header {
+    header,
+    .app-header,
+    .sidebar-container,
+    .no-print {
         display: none !important;
     }
 
@@ -912,7 +915,9 @@ table {
         overflow: visible !important;
     }
 
-    .no-print {
+    /* Target specific components if they aren't hidden by .no-print */
+    .modal-backdrop,
+    .modal-container {
         display: none !important;
     }
 }
