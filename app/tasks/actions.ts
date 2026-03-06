@@ -41,6 +41,12 @@ export async function getTasks(filters?: any) {
             paymentReq: true,
             dispatch: true,
             appendix: true,
+            supplier: true,
+            expense: true,
+            purchaseOrder: true,
+            purchaseBill: true,
+            purchasePayment: true,
+            lead: true,
             salesOrder: true,
             salesInvoice: true,
             salesEstimate: true,
@@ -95,7 +101,7 @@ export async function createTask(data: any, creatorId: string) {
                 isRecurring: isRecurringMode,
                 recurrenceRule: frequency,
                 creatorId,
-                parentTaskId: i > 0 ? firstTaskId : null
+                parentTaskId: isRecurringMode ? (i > 0 ? firstTaskId : null) : restData.parentTaskId
             }
         });
 
@@ -580,6 +586,18 @@ export async function searchEntities(type: string, query: string = '') {
             return prisma.salesPayment.findMany({ where: { code: { contains: q } }, take: 5, select: { id: true, code: true } });
         case 'LEAD':
             return prisma.lead.findMany({ where: { OR: [{ code: { contains: q } }, { name: { contains: q } }] }, take: 5, select: { id: true, name: true, code: true } });
+        case 'APPENDIX':
+            return prisma.contractAppendix.findMany({ where: { title: { contains: q } }, take: 5, select: { id: true, title: true } });
+        case 'SUPPLIER':
+            return prisma.supplier.findMany({ where: { OR: [{ code: { contains: q } }, { name: { contains: q } }] }, take: 5, select: { id: true, name: true, code: true } });
+        case 'EXPENSE':
+            return prisma.expense.findMany({ where: { OR: [{ code: { contains: q } }, { description: { contains: q } }] }, take: 5, select: { id: true, description: true, code: true } });
+        case 'PURCHASE_ORDER':
+            return prisma.purchaseOrder.findMany({ where: { code: { contains: q } }, take: 5, select: { id: true, code: true } });
+        case 'PURCHASE_BILL':
+            return prisma.purchaseBill.findMany({ where: { code: { contains: q } }, take: 5, select: { id: true, code: true } });
+        case 'PURCHASE_PAYMENT':
+            return prisma.purchasePayment.findMany({ where: { code: { contains: q } }, take: 5, select: { id: true, code: true } });
         default:
             return [];
     }

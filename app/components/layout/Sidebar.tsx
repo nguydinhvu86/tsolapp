@@ -11,6 +11,7 @@ import { updateSidebarOrder } from './actions';
 
 const mainNavItems: any[] = [
     { name: 'Bảng Điều Khiển', href: '/dashboard', icon: LayoutDashboard, permission: 'VIEW_DASHBOARD' },
+    { name: 'Dự Án (Projects)', href: '/projects', icon: Target, permission: 'TASKS_VIEW' },
     { name: 'Công Việc (Tasks)', href: '/tasks', icon: CheckSquare, permission: 'TASKS_VIEW' },
     {
         name: 'Quản Lý Văn Thư',

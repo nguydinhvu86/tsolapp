@@ -12,7 +12,7 @@ import { useSession } from 'next-auth/react';
 import { createTask, updateTaskStatus, deleteTask, searchEntities, updateTask } from './actions';
 import Link from 'next/link';
 
-export function TaskDashboardClient({ initialTasks, users }: { initialTasks: any[], users: any[] }) {
+export function TaskDashboardClient({ initialTasks, users, parentProjectId, parentProject }: { initialTasks: any[], users: any[], parentProjectId?: string, parentProject?: any }) {
     const router = useRouter();
     const { data: session } = useSession();
     const permissions = session?.user?.permissions || [];
@@ -97,6 +97,15 @@ export function TaskDashboardClient({ initialTasks, users }: { initialTasks: any
     const [filterStatus, setFilterStatus] = useState<string>('ALL');
     const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
 
+    // If parentProject is passed, filter available users to only those assigned to the project
+    const availableUsersForAssign = React.useMemo(() => {
+        if (parentProject && parentProject.assignees) {
+            const projectAssigneeIds = parentProject.assignees.map((a: any) => a.userId);
+            return users.filter(u => projectAssigneeIds.includes(u.id));
+        }
+        return users;
+    }, [users, parentProject]);
+
     const handleSort = (field: string) => {
         if (sortField === field) {
             setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
@@ -112,7 +121,39 @@ export function TaskDashboardClient({ initialTasks, users }: { initialTasks: any
     };
 
     const filteredTasks = React.useMemo(() => {
+        // Find the "active" task for each recurring series
+        const activeRecurringIds = new Set<string>();
+        const seriesMap = new Map<string, any[]>();
+
+        initialTasks.forEach((t: any) => {
+            if (t.isRecurring) {
+                const seriesId = t.parentTaskId || t.id;
+                if (!seriesMap.has(seriesId)) seriesMap.set(seriesId, []);
+                seriesMap.get(seriesId)!.push(t);
+            }
+        });
+
+        seriesMap.forEach((tasksInSeries, seriesId) => {
+            // Sort by due date
+            tasksInSeries.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+            // Find first incomplete
+            const firstIncomplete = tasksInSeries.find(t => t.status !== 'DONE');
+            if (firstIncomplete) {
+                activeRecurringIds.add(firstIncomplete.id);
+            } else {
+                // If all done, maybe show the last one
+                if (tasksInSeries.length > 0) {
+                    activeRecurringIds.add(tasksInSeries[tasksInSeries.length - 1].id);
+                }
+            }
+        });
+
         return initialTasks.filter((task: any) => {
+            // Hide future/past recurring tasks unless in RECURRING tab
+            if (filterStatus !== 'RECURRING' && task.isRecurring) {
+                if (!activeRecurringIds.has(task.id)) return false;
+            }
+
             if (filterStatus === 'ALL') return task.status !== 'DONE';
 
             // Core Statuses (also matched by the top cards)
@@ -148,7 +189,7 @@ export function TaskDashboardClient({ initialTasks, users }: { initialTasks: any
 
             // Other 
             if (filterStatus === 'RECURRING') {
-                return task.isRecurring || task.parentTaskId; // Created as recurring or is a child of recurring
+                return task.isRecurring;
             }
 
             return true;
@@ -246,6 +287,31 @@ export function TaskDashboardClient({ initialTasks, users }: { initialTasks: any
             else if (linkType === 'PAYMENT_REQ') payload.paymentReqId = selectedLink.id;
             else if (linkType === 'DISPATCH') payload.dispatchId = selectedLink.id;
             else if (linkType === 'LEAD') payload.leadId = selectedLink.id;
+            else if (linkType === 'APPENDIX') payload.appendixId = selectedLink.id;
+            else if (linkType === 'SUPPLIER') payload.supplierId = selectedLink.id;
+            else if (linkType === 'EXPENSE') payload.expenseId = selectedLink.id;
+            else if (linkType === 'PURCHASE_ORDER') payload.purchaseOrderId = selectedLink.id;
+            else if (linkType === 'PURCHASE_BILL') payload.purchaseBillId = selectedLink.id;
+            else if (linkType === 'PURCHASE_PAYMENT') payload.purchasePaymentId = selectedLink.id;
+            else if (linkType === 'SALES_ORDER') payload.salesOrderId = selectedLink.id;
+            else if (linkType === 'SALES_INVOICE') payload.salesInvoiceId = selectedLink.id;
+            else if (linkType === 'SALES_ESTIMATE') payload.salesEstimateId = selectedLink.id;
+            else if (linkType === 'SALES_PAYMENT') payload.salesPaymentId = selectedLink.id;
+        }
+
+        if (parentProjectId) {
+            payload.parentTaskId = parentProjectId;
+            payload.isProject = false;
+        }
+
+        // Always inherit parent project links if we are creating a sub-task inside a project
+        if (parentProject) {
+            if (parentProject.customerId) payload.customerId = parentProject.customerId;
+            if (parentProject.contractId) payload.contractId = parentProject.contractId;
+            if (parentProject.quoteId) payload.quoteId = parentProject.quoteId;
+            if (parentProject.leadId) payload.leadId = parentProject.leadId;
+            if (parentProject.salesOrderId) payload.salesOrderId = parentProject.salesOrderId;
+            if (parentProject.salesInvoiceId) payload.salesInvoiceId = parentProject.salesInvoiceId;
         }
 
         try {
@@ -606,17 +672,27 @@ export function TaskDashboardClient({ initialTasks, users }: { initialTasks: any
                                         </td>
                                         <td>
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '0.8rem' }}>
+                                                {task.leadId && task.lead && <div><span style={{ color: 'var(--text-muted)' }}>Cơ hội:</span> <Link href={`/leads/${task.leadId}`} className="text-blue-600 hover:underline">{task.lead.name}</Link></div>}
                                                 {task.customerId && task.customer && <div><span style={{ color: 'var(--text-muted)' }}>Khách hàng:</span> <Link href={`/customers/${task.customerId}`} className="text-blue-600 hover:underline">{task.customer.name}</Link></div>}
                                                 {task.contractId && task.contract && <div><span style={{ color: 'var(--text-muted)' }}>Hợp đồng:</span> <Link href={`/contracts/${task.contractId}`} className="text-blue-600 hover:underline">{task.contract.title}</Link></div>}
+                                                {task.appendixId && task.appendix && <div><span style={{ color: 'var(--text-muted)' }}>Phụ lục HĐ:</span> <Link href={`/contract-appendices/${task.appendixId}`} className="text-blue-600 hover:underline">{task.appendix.title}</Link></div>}
                                                 {task.quoteId && task.quote && <div><span style={{ color: 'var(--text-muted)' }}>Báo giá:</span> <Link href={`/quotes/${task.quoteId}`} className="text-blue-600 hover:underline">{task.quote.title}</Link></div>}
                                                 {task.handoverId && task.handover && <div><span style={{ color: 'var(--text-muted)' }}>Bàn giao:</span> <Link href={`/handovers/${task.handoverId}`} className="text-blue-600 hover:underline">{task.handover.title}</Link></div>}
                                                 {task.paymentReqId && task.paymentReq && <div><span style={{ color: 'var(--text-muted)' }}>Đ/N thanh toán:</span> <Link href={`/payment-requests/${task.paymentReqId}`} className="text-blue-600 hover:underline">{task.paymentReq.title}</Link></div>}
                                                 {task.dispatchId && task.dispatch && <div><span style={{ color: 'var(--text-muted)' }}>Công văn:</span> <Link href={`/dispatches/${task.dispatchId}`} className="text-blue-600 hover:underline">{task.dispatch.title}</Link></div>}
-                                                {task.salesOrderId && task.salesOrder && <div><span style={{ color: 'var(--text-muted)' }}>Đơn hàng:</span> <Link href={`/sales/orders/${task.salesOrderId}`} className="text-blue-600 hover:underline">{task.salesOrder.code}</Link></div>}
-                                                {task.salesInvoiceId && task.salesInvoice && <div><span style={{ color: 'var(--text-muted)' }}>Hóa đơn:</span> <Link href={`/sales/invoices/${task.salesInvoiceId}`} className="text-blue-600 hover:underline">{task.salesInvoice.code}</Link></div>}
-                                                {task.salesEstimateId && task.salesEstimate && <div><span style={{ color: 'var(--text-muted)' }}>Báo giá (Sales):</span> <Link href={`/sales/estimates/${task.salesEstimateId}`} className="text-blue-600 hover:underline">{task.salesEstimate.code}</Link></div>}
+
+                                                {task.supplierId && task.supplier && <div><span style={{ color: 'var(--text-muted)' }}>Nhà C.Cấp:</span> <Link href={`/suppliers/${task.supplierId}`} className="text-blue-600 hover:underline">{task.supplier.name}</Link></div>}
+                                                {task.purchaseOrderId && task.purchaseOrder && <div><span style={{ color: 'var(--text-muted)' }}>Đơn mua:</span> <Link href={`/purchasing/orders/${task.purchaseOrderId}`} className="text-blue-600 hover:underline">{task.purchaseOrder.code}</Link></div>}
+                                                {task.purchaseBillId && task.purchaseBill && <div><span style={{ color: 'var(--text-muted)' }}>Hóa đơn mua:</span> <Link href={`/purchasing/bills/${task.purchaseBillId}`} className="text-blue-600 hover:underline">{task.purchaseBill.code}</Link></div>}
+                                                {task.purchasePaymentId && task.purchasePayment && <div><span style={{ color: 'var(--text-muted)' }}>Phiếu chi (Mua):</span> <Link href={`/purchasing/payments/${task.purchasePaymentId}`} className="text-blue-600 hover:underline">{task.purchasePayment.code}</Link></div>}
+                                                {task.expenseId && task.expense && <div><span style={{ color: 'var(--text-muted)' }}>Phiếu chi:</span> <Link href={`/sales/expenses/${task.expenseId}`} className="text-blue-600 hover:underline">{task.expense.description || task.expense.code}</Link></div>}
+
+                                                {task.salesOrderId && task.salesOrder && <div><span style={{ color: 'var(--text-muted)' }}>Đơn hàng (Sales):</span> <Link href={`/sales/orders/${task.salesOrderId}`} className="text-blue-600 hover:underline">{task.salesOrder.code}</Link></div>}
+                                                {task.salesInvoiceId && task.salesInvoice && <div><span style={{ color: 'var(--text-muted)' }}>Hóa đơn (Sales):</span> <Link href={`/sales/invoices/${task.salesInvoiceId}`} className="text-blue-600 hover:underline">{task.salesInvoice.code}</Link></div>}
+                                                {task.salesEstimateId && task.salesEstimate && <div><span style={{ color: 'var(--text-muted)' }}>Báo giá (ERP):</span> <Link href={`/sales/estimates/${task.salesEstimateId}`} className="text-blue-600 hover:underline">{task.salesEstimate.code}</Link></div>}
                                                 {task.salesPaymentId && task.salesPayment && <div><span style={{ color: 'var(--text-muted)' }}>Phiếu thu:</span> <Link href={`/sales/payments/${task.salesPaymentId}`} className="text-blue-600 hover:underline">{task.salesPayment.code}</Link></div>}
-                                                {!task.customerId && !task.contractId && !task.quoteId && !task.handoverId && !task.paymentReqId && !task.dispatchId && !task.salesOrderId && !task.salesInvoiceId && !task.salesEstimateId && !task.salesPaymentId && <span style={{ color: 'var(--text-muted)' }}>-</span>}
+
+                                                {!task.customerId && !task.contractId && !task.quoteId && !task.handoverId && !task.paymentReqId && !task.dispatchId && !task.salesOrderId && !task.salesInvoiceId && !task.salesEstimateId && !task.salesPaymentId && !task.leadId && !task.appendixId && !task.supplierId && !task.expenseId && !task.purchaseOrderId && !task.purchaseBillId && !task.purchasePaymentId && <span style={{ color: 'var(--text-muted)' }}>-</span>}
                                             </div>
                                         </td>
                                         <td>
@@ -709,7 +785,7 @@ export function TaskDashboardClient({ initialTasks, users }: { initialTasks: any
                                     setSelectedObservers(options.map(o => o.value));
                                 }}
                                 style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', minHeight: '120px' }}>
-                                {users.map(u => (
+                                {availableUsersForAssign.map(u => (
                                     <option key={u.id} value={u.id}>{u.name || u.email}</option>
                                 ))}
                             </select>
@@ -745,12 +821,18 @@ export function TaskDashboardClient({ initialTasks, users }: { initialTasks: any
                                 <option value="QUOTE">Báo Giá (Sales)</option>
                                 <option value="SALES_ESTIMATE">Báo Giá (ERP)</option>
                                 <option value="CONTRACT">Hợp Đồng</option>
-                                <option value="SALES_ORDER">Đơn Đặt Hàng</option>
+                                <option value="APPENDIX">Phụ Lục Hợp Đồng</option>
+                                <option value="SALES_ORDER">Đơn Đặt Hàng (Sales)</option>
                                 <option value="SALES_INVOICE">Hóa Đơn Bán</option>
                                 <option value="SALES_PAYMENT">Phiếu Thu</option>
                                 <option value="HANDOVER">Biên Bản Bàn Giao</option>
                                 <option value="PAYMENT_REQ">Đề Nghị Thanh Toán</option>
+                                <option value="EXPENSE">Phiếu Chi (Sales)</option>
                                 <option value="DISPATCH">Công Văn</option>
+                                <option value="SUPPLIER">Nhà Cung Cấp</option>
+                                <option value="PURCHASE_ORDER">Đơn Mua Hàng</option>
+                                <option value="PURCHASE_BILL">Hóa Đơn Mua</option>
+                                <option value="PURCHASE_PAYMENT">Phiếu Chi (Mua Hàng)</option>
                             </select>
 
                             {linkType && !selectedLink && (
@@ -863,7 +945,7 @@ export function TaskDashboardClient({ initialTasks, users }: { initialTasks: any
                                     setEditSelectedAssignees(options.map(o => o.value));
                                 }}
                                 style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', minHeight: '120px' }}>
-                                {users.map(u => (
+                                {availableUsersForAssign.map(u => (
                                     <option key={u.id} value={u.id}>{u.name || u.email}</option>
                                 ))}
                             </select>

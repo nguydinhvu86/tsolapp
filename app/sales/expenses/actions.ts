@@ -121,7 +121,7 @@ export async function createExpense(data: {
                 payee: data.payee,
                 description: data.description,
                 categoryId: data.categoryId,
-                paymentMethod: data.paymentMethod || 'CASH',
+                paymentMethod: data.paymentMethod || 'BANK_TRANSFER',
                 date: data.date || new Date(),
                 reference: data.reference,
                 attachment: data.attachment,

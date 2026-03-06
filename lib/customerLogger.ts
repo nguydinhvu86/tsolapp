@@ -1,8 +1,15 @@
 import { prisma } from '@/lib/prisma';
 
-export async function logCustomerActivity(customerId: string, userId: string, action: string, details?: string) {
+export async function logCustomerActivity(
+    customerId: string,
+    userId: string,
+    action: string,
+    details?: string,
+    tx?: any
+) {
     try {
-        await prisma.customerActivityLog.create({
+        const client = tx || prisma;
+        await client.customerActivityLog.create({
             data: {
                 customerId,
                 userId,

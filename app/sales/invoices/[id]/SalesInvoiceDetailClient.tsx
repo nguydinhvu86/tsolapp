@@ -22,7 +22,7 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
     const [activeTab, setActiveTab] = useState<'items'>('items');
     const [copied, setCopied] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-    const [paymentData, setPaymentData] = useState({ amount: 0, method: 'CASH', notes: '' });
+    const [paymentData, setPaymentData] = useState({ amount: 0, method: 'BANK_TRANSFER', notes: '' });
     const [diffModal, setDiffModal] = useState<{ isOpen: boolean, changes: string[] }>({ isOpen: false, changes: [] });
 
     // Email Modal State
@@ -119,7 +119,7 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
     };
 
     const openPartialPaymentModal = () => {
-        setPaymentData({ amount: remainingAmount, method: 'CASH', notes: `Thu tiền một phần hóa đơn ${invoice.code}` });
+        setPaymentData({ amount: remainingAmount, method: 'BANK_TRANSFER', notes: `Thu tiền một phần hóa đơn ${invoice.code}` });
         setIsPaymentModalOpen(true);
     };
 
@@ -150,7 +150,7 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
             confirmLabel: 'Xác Nhận & Tạo Phiếu Thu',
             confirmVariant: 'success',
             action: async () => {
-                const res = await paySalesInvoice(invoice.id, remainingAmount, 'CASH', '', `Thu toàn bộ phần còn lại hóa đơn ${invoice.code}`);
+                const res = await paySalesInvoice(invoice.id, remainingAmount, 'BANK_TRANSFER', '', `Thu toàn bộ phần còn lại hóa đơn ${invoice.code}`);
                 if (res.success) {
                     alert('Đã thu đủ Hóa Đơn thành công!');
                     window.location.reload();

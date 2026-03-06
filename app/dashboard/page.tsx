@@ -99,6 +99,33 @@ export default async function DashboardPage() {
     const debtThisMonth = Math.max(0, revenueThisMonth - paymentsThisMonth);
     const debtLastMonth = Math.max(0, revenueLastMonth - paymentsLastMonth);
 
+    // Lọc bỏ bớt các công việc định kỳ trong tương lai (chỉ giữ lại 1 việc gần nhất chưa xong của mỗi chuỗi)
+    const activeRecurringIds = new Set<string>();
+    const seriesMap = new Map<string, any[]>();
+
+    userTasks.forEach((t: any) => {
+        if (t.isRecurring) {
+            const seriesId = t.parentTaskId || t.id;
+            if (!seriesMap.has(seriesId)) seriesMap.set(seriesId, []);
+            seriesMap.get(seriesId)!.push(t);
+        }
+    });
+
+    seriesMap.forEach((tasksInSeries, seriesId) => {
+        tasksInSeries.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+        const firstIncomplete = tasksInSeries.find(t => t.status !== 'DONE');
+        if (firstIncomplete) {
+            activeRecurringIds.add(firstIncomplete.id);
+        } else if (tasksInSeries.length > 0) {
+            activeRecurringIds.add(tasksInSeries[tasksInSeries.length - 1].id);
+        }
+    });
+
+    const filteredUserTasks = userTasks.filter((task: any) => {
+        if (task.isRecurring && !activeRecurringIds.has(task.id)) return false;
+        return true;
+    });
+
     const { getDashboardStats, getDashboardConfig } = await import('@/app/dashboard/actions');
     const stats = await getDashboardStats(session.user.id);
     const rawConfig = await getDashboardConfig(session.user.id);
@@ -117,7 +144,7 @@ export default async function DashboardPage() {
                     debtLastMonth,
                     cashFlow: stats?.financialMetrics?.cashFlow || []
                 }}
-                userTasks={userTasks}
+                userTasks={filteredUserTasks}
                 quotes={stats?.chartDataSources?.quotes || []}
                 invoices={stats?.chartDataSources?.invoices || []}
                 savedConfig={rawConfig}

@@ -652,7 +652,7 @@ export async function restoreSalesInvoice(invoiceId: string) {
 export async function paySalesInvoice(
     invoiceId: string,
     amount: number,
-    paymentMethod: string = 'CASH',
+    paymentMethod: string = 'BANK_TRANSFER',
     reference: string = '',
     notes: string = ''
 ) {

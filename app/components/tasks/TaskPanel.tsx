@@ -14,7 +14,7 @@ import Link from 'next/link';
 interface TaskPanelProps {
     initialTasks: any[];
     users: any[];
-    entityType: 'CONTRACT' | 'QUOTE' | 'HANDOVER' | 'PAYMENT_REQUEST' | 'DISPATCH' | 'CUSTOMER' | 'APPENDIX' | 'SUPPLIER' | 'PURCHASE_ORDER' | 'PURCHASE_BILL' | 'PURCHASE_PAYMENT' | 'SALES_ESTIMATE' | 'SALES_ORDER' | 'SALES_INVOICE' | 'SALES_PAYMENT' | 'LEAD' | 'OTHER';
+    entityType: 'PROJECT' | 'CONTRACT' | 'QUOTE' | 'HANDOVER' | 'PAYMENT_REQUEST' | 'DISPATCH' | 'CUSTOMER' | 'APPENDIX' | 'SUPPLIER' | 'PURCHASE_ORDER' | 'PURCHASE_BILL' | 'PURCHASE_PAYMENT' | 'SALES_ESTIMATE' | 'SALES_ORDER' | 'SALES_INVOICE' | 'SALES_PAYMENT' | 'LEAD' | 'OTHER';
     entityId: string;
     initialTitle?: string;
     initialDescription?: string;
@@ -68,6 +68,7 @@ export function TaskPanel({ initialTasks, users, entityType, entityId, initialTi
         setIsSaving(true);
 
         let contextLinks: any = {};
+        if (entityType === 'PROJECT') contextLinks.parentTaskId = entityId;
         if (entityType === 'CONTRACT') contextLinks.contractId = entityId;
         if (entityType === 'QUOTE') contextLinks.quoteId = entityId;
         if (entityType === 'HANDOVER') contextLinks.handoverId = entityId;

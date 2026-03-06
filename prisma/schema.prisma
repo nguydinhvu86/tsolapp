@@ -319,6 +319,11 @@ model Task {
   priority    String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
   dueDate     DateTime?
   isPublic    Boolean   @default(true) // true: Public, false: Private
+  isProject   Boolean   @default(false)
+  startDate   DateTime?
+  estimatedValue Float? @default(0)
+  estimatedDuration String?
+  tags        String?
 
   isRecurring    Boolean @default(false)
   recurrenceRule String? // vd: "DAILY", "WEEKLY", "MONTHLY"

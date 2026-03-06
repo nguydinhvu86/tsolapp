@@ -110,7 +110,7 @@ export async function createSalesPayment(data: any) {
             data: { totalDebt: customer.totalDebt - data.amount } // totalDebt should go DOWN when we receive payment
         });
 
-        await logCustomerActivity(data.customerId, user.id, 'NHẬN_THANH_TOÁN', `Thu tiền ${data.amount.toLocaleString('vi-VN')} đ (Mã PT: ${code})`);
+        await logCustomerActivity(data.customerId, user.id, 'NHẬN_THANH_TOÁN', `Thu tiền ${data.amount.toLocaleString('vi-VN')} đ (Mã PT: ${code})`, tx);
 
         return payment;
     }, {

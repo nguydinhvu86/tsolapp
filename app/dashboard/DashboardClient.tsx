@@ -552,99 +552,97 @@ export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices
                                                                             </p>
                                                                         </div>
                                                                     ) : (
-                                                                        <div className="flex-1 overflow-auto pr-2 -mr-2" style={{ maxHeight: '450px' }}>
-                                                                            <div className="table-wrapper">
-                                                                                <table>
-                                                                                    <thead>
-                                                                                        <tr>
-                                                                                            <th>Tên công việc</th>
-                                                                                            <th>Mức độ</th>
-                                                                                            <th>Hạn chót</th>
-                                                                                            <th>Liên quan</th>
-                                                                                            <th>Tình trạng</th>
-                                                                                        </tr>
-                                                                                    </thead>
-                                                                                    <tbody>
-                                                                                        {tasks.map((task: any) => {
-                                                                                            const relatedEntityName = task.customer?.name || task.contract?.code || task.salesInvoice?.code || task.salesOrder?.code || '';
-                                                                                            const isDueSoon = task.dueDate && new Date(task.dueDate).getTime() - new Date().getTime() < 86400000 && task.status !== 'DONE';
+                                                                        <div className="table-wrapper custom-scrollbar" style={{ flex: 1, maxHeight: '320px', overflowY: 'auto' }}>
+                                                                            <table style={{ minWidth: '100%' }}>
+                                                                                <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+                                                                                    <tr>
+                                                                                        <th>Tên công việc</th>
+                                                                                        <th>Mức độ</th>
+                                                                                        <th>Hạn chót</th>
+                                                                                        <th>Liên quan</th>
+                                                                                        <th>Tình trạng</th>
+                                                                                    </tr>
+                                                                                </thead>
+                                                                                <tbody>
+                                                                                    {tasks.map((task: any) => {
+                                                                                        const relatedEntityName = task.customer?.name || task.contract?.code || task.salesInvoice?.code || task.salesOrder?.code || '';
+                                                                                        const isDueSoon = task.dueDate && new Date(task.dueDate).getTime() - new Date().getTime() < 86400000 && task.status !== 'DONE';
 
-                                                                                            return (
-                                                                                                <tr key={task.id}>
-                                                                                                    <td>
-                                                                                                        <div style={{ fontWeight: 500, color: isDueSoon ? 'var(--danger)' : 'var(--text-main)', display: 'flex', alignItems: 'center' }}>
-                                                                                                            <a href={`/tasks/${task.id}`} className="text-blue-600 hover:underline">
-                                                                                                                {task.title}
-                                                                                                            </a>
-                                                                                                        </div>
-                                                                                                    </td>
-                                                                                                    <td>
-                                                                                                        <span style={{
-                                                                                                            padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600,
-                                                                                                            backgroundColor: task.priority === 'URGENT' ? 'var(--danger)' : (task.priority === 'HIGH' ? 'var(--warning)' : '#e2e8f0'),
-                                                                                                            color: task.priority === 'URGENT' || task.priority === 'HIGH' ? '#fff' : '#000'
-                                                                                                        }}>
-                                                                                                            {task.priority === 'MEDIUM' ? 'TRUNG BÌNH' : task.priority === 'HIGH' ? 'CAO' : task.priority === 'URGENT' ? 'GẤP' : 'THẤP'}
-                                                                                                        </span>
-                                                                                                    </td>
-                                                                                                    <td style={{ color: isDueSoon ? 'var(--danger)' : 'inherit' }}>
-                                                                                                        {task.dueDate ? formatDate(new Date(task.dueDate)) : '-'}
-                                                                                                    </td>
-                                                                                                    <td>
-                                                                                                        {relatedEntityName ? (
-                                                                                                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{relatedEntityName}</span>
-                                                                                                        ) : (
-                                                                                                            <span style={{ color: 'var(--text-muted)' }}>-</span>
-                                                                                                        )}
-                                                                                                    </td>
-                                                                                                    <td>
-                                                                                                        <select
-                                                                                                            value={task.status}
-                                                                                                            onChange={async (e) => {
-                                                                                                                const newStatus = e.target.value;
-                                                                                                                const previousStatus = task.status;
+                                                                                        return (
+                                                                                            <tr key={task.id}>
+                                                                                                <td>
+                                                                                                    <div style={{ fontWeight: 500, color: isDueSoon ? 'var(--danger)' : 'var(--text-main)', display: 'flex', alignItems: 'center' }}>
+                                                                                                        <a href={`/tasks/${task.id}`} className="text-blue-600 hover:underline">
+                                                                                                            {task.title}
+                                                                                                        </a>
+                                                                                                    </div>
+                                                                                                </td>
+                                                                                                <td>
+                                                                                                    <span style={{
+                                                                                                        padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600,
+                                                                                                        backgroundColor: task.priority === 'URGENT' ? 'var(--danger)' : (task.priority === 'HIGH' ? 'var(--warning)' : '#e2e8f0'),
+                                                                                                        color: task.priority === 'URGENT' || task.priority === 'HIGH' ? '#fff' : '#000'
+                                                                                                    }}>
+                                                                                                        {task.priority === 'MEDIUM' ? 'TRUNG BÌNH' : task.priority === 'HIGH' ? 'CAO' : task.priority === 'URGENT' ? 'GẤP' : 'THẤP'}
+                                                                                                    </span>
+                                                                                                </td>
+                                                                                                <td style={{ color: isDueSoon ? 'var(--danger)' : 'inherit' }}>
+                                                                                                    {task.dueDate ? formatDate(new Date(task.dueDate)) : '-'}
+                                                                                                </td>
+                                                                                                <td>
+                                                                                                    {relatedEntityName ? (
+                                                                                                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{relatedEntityName}</span>
+                                                                                                    ) : (
+                                                                                                        <span style={{ color: 'var(--text-muted)' }}>-</span>
+                                                                                                    )}
+                                                                                                </td>
+                                                                                                <td>
+                                                                                                    <select
+                                                                                                        value={task.status}
+                                                                                                        onChange={async (e) => {
+                                                                                                            const newStatus = e.target.value;
+                                                                                                            const previousStatus = task.status;
 
-                                                                                                                // Optimistic update
-                                                                                                                setTasks((prev: any[]) => prev.map((t: any) =>
-                                                                                                                    t.id === task.id ? { ...t, status: newStatus } : t
-                                                                                                                ));
+                                                                                                            // Optimistic update
+                                                                                                            setTasks((prev: any[]) => prev.map((t: any) =>
+                                                                                                                t.id === task.id ? { ...t, status: newStatus } : t
+                                                                                                            ));
 
-                                                                                                                try {
-                                                                                                                    const { updateDashboardTaskStatus } = await import('@/app/dashboard/actions');
-                                                                                                                    const res = await updateDashboardTaskStatus(task.id, newStatus);
-                                                                                                                    if (!res || !res.success) {
-                                                                                                                        // Revert if error
-                                                                                                                        setTasks((prev: any[]) => prev.map((t: any) =>
-                                                                                                                            t.id === task.id ? { ...t, status: previousStatus } : t
-                                                                                                                        ));
-                                                                                                                    } else {
-                                                                                                                        router.refresh();
-                                                                                                                    }
-                                                                                                                } catch (error) {
-                                                                                                                    console.error("Failed to update status", error);
+                                                                                                            try {
+                                                                                                                const { updateDashboardTaskStatus } = await import('@/app/dashboard/actions');
+                                                                                                                const res = await updateDashboardTaskStatus(task.id, newStatus);
+                                                                                                                if (!res || !res.success) {
+                                                                                                                    // Revert if error
                                                                                                                     setTasks((prev: any[]) => prev.map((t: any) =>
                                                                                                                         t.id === task.id ? { ...t, status: previousStatus } : t
                                                                                                                     ));
+                                                                                                                } else {
+                                                                                                                    router.refresh();
                                                                                                                 }
-                                                                                                            }}
-                                                                                                            style={{
-                                                                                                                padding: '4px 8px', borderRadius: 'var(--radius)',
-                                                                                                                border: '1px solid var(--border)', fontSize: '0.85rem',
-                                                                                                                backgroundColor: 'transparent', cursor: 'pointer'
-                                                                                                            }}
-                                                                                                        >
-                                                                                                            <option value="TODO">Cần Làm</option>
-                                                                                                            <option value="IN_PROGRESS">Đang Xử Lý</option>
-                                                                                                            <option value="REVIEW">Chờ Duyệt</option>
-                                                                                                            <option value="DONE">Hoàn Thành</option>
-                                                                                                        </select>
-                                                                                                    </td>
-                                                                                                </tr>
-                                                                                            )
-                                                                                        })}
-                                                                                    </tbody>
-                                                                                </table>
-                                                                            </div>
+                                                                                                            } catch (error) {
+                                                                                                                console.error("Failed to update status", error);
+                                                                                                                setTasks((prev: any[]) => prev.map((t: any) =>
+                                                                                                                    t.id === task.id ? { ...t, status: previousStatus } : t
+                                                                                                                ));
+                                                                                                            }
+                                                                                                        }}
+                                                                                                        style={{
+                                                                                                            padding: '4px 8px', borderRadius: 'var(--radius)',
+                                                                                                            border: '1px solid var(--border)', fontSize: '0.85rem',
+                                                                                                            backgroundColor: 'transparent', cursor: 'pointer'
+                                                                                                        }}
+                                                                                                    >
+                                                                                                        <option value="TODO">Cần Làm</option>
+                                                                                                        <option value="IN_PROGRESS">Đang Xử Lý</option>
+                                                                                                        <option value="REVIEW">Chờ Duyệt</option>
+                                                                                                        <option value="DONE">Hoàn Thành</option>
+                                                                                                    </select>
+                                                                                                </td>
+                                                                                            </tr>
+                                                                                        )
+                                                                                    })}
+                                                                                </tbody>
+                                                                            </table>
                                                                         </div>
                                                                     )}
                                                                 </div>
