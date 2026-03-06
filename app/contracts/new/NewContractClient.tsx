@@ -103,15 +103,12 @@ export function NewContractClient({ templates, customers, preselectedCustomerId 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        console.log("Submitting with template:", selectedTemplate?.id, "customer:", selectedCustomer?.id);
-
         if (!selectedTemplate || !selectedCustomer) {
             alert('Vui lòng chọn đầy đủ Mẫu hợp đồng và Khách hàng');
             return;
         }
 
         try {
-            console.log("Creating contract...");
             const result = await createContract({
                 title: `Hợp đồng - ${selectedCustomer.name} - ${new Date().toLocaleDateString('vi-VN')}`,
                 content: previewContent,
@@ -119,7 +116,6 @@ export function NewContractClient({ templates, customers, preselectedCustomerId 
                 customerId: selectedCustomer.id,
                 templateId: selectedTemplate.id
             });
-            console.log("Contract created successfully:", result);
             router.push('/contracts');
         } catch (error) {
             console.error('Lỗi khi tạo hợp đồng:', error);

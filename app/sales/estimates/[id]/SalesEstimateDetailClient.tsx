@@ -77,7 +77,7 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
         const res = await convertEstimateToInvoice(estimate.id);
         if (res.success) {
             alert("Đã tạo Hóa Đơn thành công, đang chuyển hướng...");
-            window.location.href = '/sales/invoices';
+            router.push('/sales/invoices');
         } else {
             alert(res.error);
             setIsConverting(false);
@@ -90,7 +90,7 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
         const res = await convertEstimateToOrder(estimate.id);
         if (res.success) {
             alert("Đã tạo Đơn Đặt Hàng thành công, đang chuyển hướng...");
-            window.location.href = '/sales/orders';
+            router.push('/sales/orders');
         } else {
             alert(res.error);
             setIsConvertingOrder(false);

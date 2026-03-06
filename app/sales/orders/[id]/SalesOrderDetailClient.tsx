@@ -71,7 +71,7 @@ export default function SalesOrderDetailClient({ initialData, customers, product
         const res = await convertOrderToInvoice(order.id);
         if (res.success) {
             alert("Đã tạo Hóa Đơn thành công, đang chuyển hướng...");
-            window.location.href = '/sales/invoices';
+            router.push('/sales/invoices');
         } else {
             alert(res.error);
             setIsConverting(false);

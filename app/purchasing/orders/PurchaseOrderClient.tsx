@@ -659,8 +659,8 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
 
                                     {/* Read-Only Items Table */}
                                     {orderItems.length > 0 && (
-                                        <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden mt-2 border-t pt-4">
-                                            <table className="w-full text-sm mb-4 bg-white dark:bg-gray-800 text-left">
+                                        <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-x-auto mt-2 border-t pt-4">
+                                            <table className="w-full min-w-[600px] text-sm mb-4 bg-white dark:bg-gray-800 text-left">
                                                 <thead className="bg-slate-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400">
                                                     <tr>
                                                         <th className="p-3 font-medium">Sản Phẩm Đặt</th>

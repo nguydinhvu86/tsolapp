@@ -1,6 +1,6 @@
 'use client';
-
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Expense, ExpenseCategory } from '@prisma/client';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
@@ -35,6 +35,7 @@ export default function ExpenseClient({
     isAdmin: boolean;
     permissions: string[];
 }) {
+    const router = useRouter();
     const [expenses, setExpenses] = useState<ExpenseWithDetails[]>(initialData);
     const [categories, setCategories] = useState<ExpenseCategory[]>(initialCategories);
 
@@ -179,7 +180,7 @@ export default function ExpenseClient({
                     supplierId: formData.systemLinkType === 'SUPPLIER' ? formData.supplierId : null,
                 });
             }
-            window.location.reload();
+            router.refresh();
         } catch (error) {
             alert("Có lỗi xảy ra, vui lòng thử lại.");
         }

@@ -132,7 +132,7 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
         if (res.success) {
             alert('Đã thu tiền và tạo Phiếu Thu thành công!');
             setIsPaymentModalOpen(false);
-            window.location.reload();
+            router.refresh();
         } else alert('Lỗi: ' + res.error);
     };
 
@@ -153,7 +153,7 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                 const res = await paySalesInvoice(invoice.id, remainingAmount, 'BANK_TRANSFER', '', `Thu toàn bộ phần còn lại hóa đơn ${invoice.code}`);
                 if (res.success) {
                     alert('Đã thu đủ Hóa Đơn thành công!');
-                    window.location.reload();
+                    router.refresh();
                 } else alert('Lỗi: ' + res.error);
             }
         });

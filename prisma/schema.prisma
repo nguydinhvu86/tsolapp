@@ -22,7 +22,7 @@ model User {
   id                    String                 @id @default(cuid())
   email                 String                 @unique
   password              String // Thêm trường mật khẩu đã mã hóa (hashed)
-  resetToken            String? @unique // Mã khôi phục mật khẩu
+  resetToken            String?                @unique // Mã khôi phục mật khẩu
   resetTokenExpiry      DateTime? // Hạn sử dụng của mã khôi phục
   name                  String?
   avatar                String? // Đường dẫn ảnh đại diện
@@ -312,18 +312,18 @@ model Dispatch {
 
 // --- TASKS MODULE ---
 model Task {
-  id          String    @id @default(cuid())
-  title       String
-  description String?   @db.Text
-  status      String    @default("TODO") // TODO, IN_PROGRESS, REVIEW, DONE, CANCELLED
-  priority    String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
-  dueDate     DateTime?
-  isPublic    Boolean   @default(true) // true: Public, false: Private
-  isProject   Boolean   @default(false)
-  startDate   DateTime?
-  estimatedValue Float? @default(0)
+  id                String    @id @default(cuid())
+  title             String
+  description       String?   @db.Text
+  status            String    @default("TODO") // TODO, IN_PROGRESS, REVIEW, DONE, CANCELLED
+  priority          String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  dueDate           DateTime?
+  isPublic          Boolean   @default(true) // true: Public, false: Private
+  isProject         Boolean   @default(false)
+  startDate         DateTime?
+  estimatedValue    Float?    @default(0)
   estimatedDuration String?
-  tags        String?
+  tags              String?
 
   isRecurring    Boolean @default(false)
   recurrenceRule String? // vd: "DAILY", "WEEKLY", "MONTHLY"
@@ -700,15 +700,15 @@ model PurchaseOrder {
 }
 
 model PurchaseOrderItem {
-  id         String  @id @default(cuid())
-  orderId    String
-  productId  String? // Made optional for external products
+  id          String  @id @default(cuid())
+  orderId     String
+  productId   String? // Made optional for external products
   productName String? // Added for external product custom names
-  quantity   Int
-  unitPrice  Float   @default(0)
-  taxRate    Float   @default(0)
-  taxAmount  Float   @default(0)
-  totalPrice Float   @default(0)
+  quantity    Int
+  unitPrice   Float   @default(0)
+  taxRate     Float   @default(0)
+  taxAmount   Float   @default(0)
+  totalPrice  Float   @default(0)
 
   order   PurchaseOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product?      @relation(fields: [productId], references: [id])
@@ -823,9 +823,9 @@ model SalesEstimate {
   items        SalesEstimateItem[]
   activityLogs SalesEstimateActivityLog[]
   tasks        Task[]
-  
-  leadId       String?
-  lead         Lead?    @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  leadId String?
+  lead   Lead?   @relation(fields: [leadId], references: [id], onDelete: SetNull)
 
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt

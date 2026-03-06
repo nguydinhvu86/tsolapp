@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card } from '@/app/components/ui/Card';
 import { Table } from '@/app/components/ui/Table';
 import { Button } from '@/app/components/ui/Button';
@@ -12,6 +13,7 @@ import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import Link from 'next/link';
 
 export default function SalesOrderClient({ initialOrders, customers, products, nextCode, initialAction, initialCustomerId }: any) {
+    const router = useRouter();
     const [orders, setOrders] = useState(initialOrders);
     const [isFormOpen, setIsFormOpen] = useState(initialAction === 'new');
 
@@ -263,7 +265,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
         }
 
         if (res.success) {
-            window.location.href = window.location.pathname;
+            router.refresh();
         } else {
             alert('Lỗi: ' + res.error);
         }
@@ -303,7 +305,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
         const res = await convertOrderToInvoice(convertModalId);
         if (res.success) {
             alert("Đã tạo Hóa Đơn thành công!");
-            window.location.href = '/sales/invoices';
+            router.push('/sales/invoices');
         } else {
             alert(res.error);
             setIsConverting(false);
@@ -692,8 +694,8 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                             </div>
 
                             {formData.items.length > 0 && (
-                                <div className="border border-gray-200 rounded-xl overflow-hidden mt-2 border-t pt-4">
-                                    <table className="w-full text-sm bg-white text-left">
+                                <div className="border border-gray-200 rounded-xl overflow-x-auto mt-2 border-t pt-4">
+                                    <table className="w-full min-w-[600px] text-sm bg-white text-left">
                                         <thead className="bg-slate-50 border-b border-gray-200 text-gray-600">
                                             <tr>
                                                 <th className="p-3 font-medium">Sản Phẩm</th>

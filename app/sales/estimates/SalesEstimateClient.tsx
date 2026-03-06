@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card } from '@/app/components/ui/Card';
 import { Table } from '@/app/components/ui/Table';
@@ -13,6 +14,7 @@ import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { TagDisplay } from '@/app/components/ui/TagDisplay';
 
 export default function SalesEstimateClient({ initialEstimates, customers, products, leads, nextCode, initialAction, initialCustomerId, initialLeadId }: any) {
+    const router = useRouter();
     const [estimates, setEstimates] = useState(initialEstimates);
     const [isFormOpen, setIsFormOpen] = useState(initialAction === 'new');
 
@@ -314,7 +316,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
 
         if (res.success) {
             // refresh
-            window.location.href = window.location.pathname;
+            router.refresh();
         } else {
             alert('Lỗi: ' + res.error);
         }
@@ -354,7 +356,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         const res = await convertEstimateToInvoice(convertModalId);
         if (res.success) {
             alert("Đã tạo Hóa Đơn thành công!");
-            window.location.href = '/sales/invoices';
+            router.push('/sales/invoices');
         } else {
             alert(res.error);
             setIsConverting(false);
@@ -368,7 +370,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         const res = await convertEstimateToOrder(convertOrderModalId);
         if (res.success) {
             alert("Đã tạo Đơn Đặt Hàng thành công!");
-            window.location.href = '/sales/orders';
+            router.push('/sales/orders');
         } else {
             alert(res.error);
             setIsConvertingOrder(false);
@@ -839,8 +841,8 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                             </div>
 
                             {formData.items.length > 0 && (
-                                <div className="border border-gray-200 rounded-xl overflow-hidden border-t mt-4 pt-4">
-                                    <table className="w-full text-sm bg-white text-left">
+                                <div className="border border-gray-200 rounded-xl overflow-x-auto border-t mt-4 pt-4">
+                                    <table className="w-full min-w-[600px] text-sm bg-white text-left">
                                         <thead className="bg-slate-50 border-b border-gray-200 text-gray-600">
                                             <tr>
                                                 <th className="p-3 font-medium">Sản Phẩm</th>

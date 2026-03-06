@@ -21,7 +21,6 @@ export async function GET(request: NextRequest) {
                         openedAt: new Date(),
                     }
                 });
-                console.log(`Email ${trackingId} marked as opened.`);
             }
         } catch (error) {
             console.error('Error tracking email open:', error);

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Plus, Search, Filter, Wallet, Calendar, ArrowUpDown, Receipt, MoreVertical, Trash2, CheckCircle2, Upload, FileText, Eye, X, XCircle, RefreshCw } from 'lucide-react';
 import { createSalesPayment, deleteSalesPayment, cancelSalesPayment, restoreSalesPayment } from './actions';
@@ -8,6 +9,7 @@ import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
 
 export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices, initialAction, initialCustomerId }: any) {
+    const router = useRouter();
     const [payments, setPayments] = useState(initialPayments);
 
     // Filter states
@@ -198,7 +200,7 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
             });
             setAllocations({});
             setIsCreateModalOpen(false);
-            window.location.href = window.location.pathname;
+            router.refresh();
         } catch (error: any) {
             alert(error.message);
         } finally {
@@ -214,7 +216,7 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
             action: async () => {
                 try {
                     await cancelSalesPayment(id);
-                    window.location.href = window.location.pathname;
+                    router.refresh();
                 } catch (error: any) {
                     alert(error.message);
                 }
@@ -230,7 +232,7 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
             action: async () => {
                 try {
                     await restoreSalesPayment(id);
-                    window.location.href = window.location.pathname;
+                    router.refresh();
                 } catch (error: any) {
                     alert(error.message);
                 }
@@ -246,7 +248,7 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
             action: async () => {
                 try {
                     await deleteSalesPayment(id);
-                    window.location.href = window.location.pathname;
+                    router.refresh();
                 } catch (error: any) {
                     alert(error.message);
                 }

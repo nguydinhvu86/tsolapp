@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Customer } from '@prisma/client';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
@@ -16,6 +17,7 @@ import { formatMoney } from '@/lib/utils/formatters';
 export type CustomerWithStats = Customer & { revenue?: number, lastActivityAt?: Date | string };
 
 export function CustomerClient({ initialData }: { initialData: CustomerWithStats[] }) {
+    const router = useRouter();
     const { data: session } = useSession();
     const permissions = session?.user?.permissions || [];
     const isAdmin = session?.user?.role === 'ADMIN';
@@ -121,7 +123,7 @@ export function CustomerClient({ initialData }: { initialData: CustomerWithStats
             setCustomers(customers.map(c => c.id === editingId ? { ...c, ...formData } : c));
         } else {
             await createCustomer(formData);
-            window.location.reload();
+            router.refresh();
         }
         closeModal();
     };

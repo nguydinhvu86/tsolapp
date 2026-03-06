@@ -2,6 +2,7 @@
 import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Plus, Search, Eye, Trash2, Calendar, DollarSign, Wallet, ArrowUpDown, Upload, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -9,6 +10,7 @@ import { createPurchasePayment, deletePurchasePayment } from '@/app/purchasing/a
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 
 export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills }: { initialPayments: any[], suppliers: any[], unpaidBills: any[] }) {
+    const router = useRouter();
     const [payments, setPayments] = useState(initialPayments);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -242,7 +244,7 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
             // Note: In a real SPA, we'd also update the unpaidBills list in memory here,
             // or rely on a full page reload / Server Action revalidation.
             // Next.js revalidatePath will handle the fresh data on next visit anyway.
-            window.location.reload(); // Force reload to get fresh debts and bills
+            router.refresh();
         } catch (error: any) {
             console.error(error);
             alert(error.message || "Có lỗi xảy ra khi tạo Thanh toán");

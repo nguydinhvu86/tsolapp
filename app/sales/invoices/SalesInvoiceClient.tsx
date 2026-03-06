@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card } from '@/app/components/ui/Card';
 import { Table } from '@/app/components/ui/Table';
@@ -13,6 +14,7 @@ import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { TagDisplay } from '@/app/components/ui/TagDisplay';
 
 export default function SalesInvoiceClient({ initialInvoices, customers, products, orders, nextCode, initialAction, initialCustomerId }: any) {
+    const router = useRouter();
     const [invoices, setInvoices] = useState(initialInvoices);
     const [isFormOpen, setIsFormOpen] = useState(initialAction === 'new');
 
@@ -360,7 +362,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         }
 
         if (res.success) {
-            window.location.href = window.location.pathname;
+            router.refresh();
         } else {
             alert('Lỗi: ' + res.error);
         }
@@ -398,7 +400,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
 
                     if (approveRes.success) {
                         alert('Đã Lưu Hóa Đơn và Xuất Kho thành công!');
-                        window.location.href = window.location.pathname;
+                        router.refresh();
                     } else {
                         alert('Lưu Hóa Đơn thành công nhưng lỗi khi Xuất Kho: ' + approveRes.error);
                     }
@@ -437,7 +439,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                 if (res.success) {
                     setInvoices(invoices.map((inv: any) => inv.id === id ? res.data : inv));
                     alert("Đã duyệt Hóa Đơn thành công!");
-                    window.location.href = window.location.pathname;
+                    router.refresh();
                 } else alert(res.error);
             }
         });
@@ -504,7 +506,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                 const res = await restoreSalesInvoice(id);
                 if (res.success) {
                     alert('Đã khôi phục hóa đơn thành công!');
-                    window.location.href = window.location.pathname;
+                    router.refresh();
                 } else {
                     alert('Lỗi: ' + res.error);
                 }
@@ -847,8 +849,8 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                     </div>
 
                     {formData.items.length > 0 && (
-                        <div className="border border-gray-200 rounded-xl overflow-hidden mt-2 border-t pt-4">
-                            <table className="w-full text-sm mb-4 bg-white text-left">
+                        <div className="border border-gray-200 rounded-xl overflow-x-auto mt-2 border-t pt-4">
+                            <table className="w-full min-w-[600px] text-sm mb-4 bg-white text-left">
                                 <thead className="bg-slate-50 border-b border-gray-200 text-gray-600">
                                     <tr>
                                         <th className="p-3 font-medium">Sản Phẩm</th>
