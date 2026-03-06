@@ -99,8 +99,9 @@ export default async function DashboardPage() {
     const debtThisMonth = Math.max(0, revenueThisMonth - paymentsThisMonth);
     const debtLastMonth = Math.max(0, revenueLastMonth - paymentsLastMonth);
 
-    const { getDashboardStats } = await import('@/app/dashboard/actions');
+    const { getDashboardStats, getDashboardConfig } = await import('@/app/dashboard/actions');
     const stats = await getDashboardStats(session.user.id);
+    const rawConfig = await getDashboardConfig(session.user.id);
 
     return (
         <div className="p-4 md:p-8 pt-6 min-h-screen">
@@ -119,6 +120,7 @@ export default async function DashboardPage() {
                 userTasks={userTasks}
                 quotes={stats?.chartDataSources?.quotes || []}
                 invoices={stats?.chartDataSources?.invoices || []}
+                savedConfig={rawConfig}
             />
         </div>
     );

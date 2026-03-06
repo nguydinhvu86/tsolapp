@@ -1,52 +1,11 @@
 'use client';
-import React from 'react';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
-import 'suneditor/dist/css/suneditor.min.css';
-import * as XLSX from 'xlsx';
+import { fetchGoogleDocHTML } from '../../actions/fetchGoogleDoc';
+import { Link2, Download, Loader2 } from 'lucide-react';
 
-const SunEditor = dynamic(() => import('suneditor-react'), {
-    ssr: false,
-    loading: () => <div style={{ height: '300px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px' }}>Đang tải công cụ soạn thảo Chuyên nghiệp...</div>
-});
-
-const editorOptions = {
-    buttonList: [
-        ['undo', 'redo'],
-        ['font', 'fontSize', 'formatBlock'],
-        ['paragraphStyle', 'blockquote'],
-        ['bold', 'underline', 'italic', 'strike', 'subscript', 'superscript'],
-        ['fontColor', 'hiliteColor', 'textStyle'],
-        ['removeFormat'],
-        '/', // Line break
-        ['outdent', 'indent'],
-        ['align', 'horizontalRule', 'list', 'lineHeight'],
-        ['table', 'link', 'image', 'video'],
-        ['fullScreen', 'showBlocks', 'codeView'],
-        ['preview', 'print']
-    ],
-    defaultTag: 'div',
-    minHeight: '600px',
-    showPathLabel: false,
-    font: [
-        'Times New Roman', 'Arial', 'Tahoma', 'Courier New', 'Verdana', 'Georgia', 'Calibri', 'Consolas'
-    ],
-    fontSize: [
-        8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 36
-    ],
-    // Allow any classes from Word or Excel
-    allowedClassNames: '.*',
-    // Allow any styles
-    allowedStyleProps: ['.*'],
-    // Which tags to keep when pasting
-    pasteTagsWhitelist: 'p|span|font|b|strong|i|em|u|ins|s|strike|del|a|ul|ol|li|hr|table|tbody|thead|tfoot|tr|th|td|div|h1|h2|h3|h4|h5|h6|br|img',
-    // Add custom inline CSS style definitions
-    textStyles: [
-        'translucent',
-        'dashed',
-        'solid',
-        'double'
-    ]
-};
+// Jodit heavily relies on browser APIs (window/document), so it must be dynamically imported
+const JoditEditor = dynamic(() => import('jodit-react'), { ssr: false });
 
 interface RichTextEditorProps {
     value: string;
@@ -55,97 +14,158 @@ interface RichTextEditorProps {
 }
 
 export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorProps) {
-    const editorRef = React.useRef<any>(null);
-    const [mode, setMode] = React.useState<'visual' | 'html'>(
-        (value || '').includes('<table') || (value || '').includes('<div style=') ? 'html' : 'visual'
-    );
+    const editorRef = useRef<any>(null);
 
-    // Track internal vs external changes to prevent cursor jumping
-    const latestValue = React.useRef(value);
+    const [isFetchingGoogleDoc, setIsFetchingGoogleDoc] = useState(false);
+    const [googleDocLink, setGoogleDocLink] = useState('');
+    const [googleDocError, setGoogleDocError] = useState('');
+    const [isMounted, setIsMounted] = useState(false);
 
-    React.useEffect(() => {
-        if (editorRef.current && typeof editorRef.current.setContents === 'function' && value !== latestValue.current) {
-            // Only update if the parent forced a completely new value that we don't know about
-            // (e.g. switching templates)
-            latestValue.current = value;
-            editorRef.current.setContents(value);
-        } else if (value !== latestValue.current) {
-            // Keep latestValue in sync even if editor isn't ready or in HTML mode
-            latestValue.current = value;
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    const handleImportGoogleDoc = async () => {
+        if (!googleDocLink.trim()) {
+            setGoogleDocError('Vui lòng nhập link bài viết Google Docs.');
+            return;
         }
-    }, [value]);
 
-    const handleEditorChange = (content: string) => {
-        latestValue.current = content;
-        onChange(content);
+        setGoogleDocError('');
+        setIsFetchingGoogleDoc(true);
+
+        try {
+            const res = await fetchGoogleDocHTML(googleDocLink);
+            if (!res.success) {
+                setGoogleDocError(res.error || 'Có lỗi xảy ra khi tải dữ liệu.');
+            } else if (res.html) {
+                // If Jodit ref exists, we try to set it, otherwise fallback to prop onChange
+                onChange(res.html);
+                setGoogleDocLink('');
+            }
+        } catch (error: any) {
+            setGoogleDocError(error.message || 'Lỗi mạng nội bộ.');
+        } finally {
+            setIsFetchingGoogleDoc(false);
+        }
     };
 
+    // Jodit configuration
+    const config = useMemo(() => ({
+        readonly: false,
+        placeholder: placeholder || 'Nhập nội dung mẫu văn bản...',
+        language: 'vi',
+        height: 800,
+        width: '100%',
+        theme: 'default',
+        enableDragAndDropFileToEditor: true,
+        uploader: {
+            insertImageAsBase64URI: true
+        },
+        buttons: [
+            'source', '|',
+            'bold', 'strikethrough', 'underline', 'italic', '|',
+            'superscript', 'subscript', '|',
+            'ul', 'ol', '|',
+            'outdent', 'indent', '|',
+            'font', 'fontsize', 'brush', 'paragraph', '|',
+            'image', 'table', 'link', '|',
+            'align', 'undo', 'redo', '|',
+            'hr', 'eraser', 'copyformat', '|',
+            'symbol', 'fullsize', 'print'
+        ],
+        extraButtons: [],
+        showCharsCounter: false,
+        showWordsCounter: false,
+        showXPathInStatusbar: false,
+        // Using iframe is crucial for scoping CSS without affecting the whole page
+        iframe: true,
+        iframeStyle: `
+            html { background: #f1f5f9; padding: 2rem 0; display: flex; justify-content: center; min-height: 100%; }
+            body { 
+                width: 21cm !important; 
+                min-height: 29.7cm !important; 
+                margin: 0 auto !important; 
+                box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important; 
+                background: white !important; 
+                padding: 2cm !important;
+                box-sizing: border-box !important;
+                font-family: 'Times New Roman', Times, serif;
+                font-size: 14pt;
+                line-height: 1.5;
+            }
+            body > *:first-child { margin-top: 0; }
+        `,
+        style: {
+            // style for the wrapper when iframe=false, ignored mostly when iframe=true
+        }
+    }), [placeholder]);
+
+    if (!isMounted) {
+        return <div style={{ height: 800, background: '#f8fafc', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Đang tải trình soạn thảo...</div>;
+    }
+
     return (
-        <div className="quill-wrapper" style={{ position: 'relative' }}>
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>
-                <button
-                    type="button"
-                    onClick={() => setMode('visual')}
-                    style={{ fontWeight: mode === 'visual' ? 'bold' : 'normal', color: mode === 'visual' ? 'var(--primary)' : 'var(--text-muted)' }}
-                >
-                    Trực quan (Rich Text)
-                </button>
-                <button
-                    type="button"
-                    onClick={() => setMode('html')}
-                    style={{ fontWeight: mode === 'html' ? 'bold' : 'normal', color: mode === 'html' ? 'var(--primary)' : 'var(--text-muted)' }}
-                >
-                    Mã HTML (Bảo toàn Format)
-                </button>
+        <div className="jodit-wrapper" style={{ position: 'relative' }}>
+            {/* Google Docs Feature Section */}
+            <div style={{ background: '#f8fafc', padding: '12px 16px', borderRadius: '8px', marginBottom: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#0f172a', fontWeight: '500', fontSize: '14px' }}>
+                    <Link2 size={16} color="#3b82f6" /> <span>Tải nội dung trực tiếp từ Google Docs</span>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: '250px' }}>
+                        <input
+                            type="text"
+                            className="input"
+                            placeholder="Dán link bài viết (Chế độ chia sẻ: Bất kỳ ai có liên kết đều xem được)..."
+                            value={googleDocLink}
+                            onChange={(e) => setGoogleDocLink(e.target.value)}
+                            disabled={isFetchingGoogleDoc}
+                            style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }}
+                        />
+                        {googleDocError && <div style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>{googleDocError}</div>}
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleImportGoogleDoc}
+                        disabled={isFetchingGoogleDoc || !googleDocLink.trim()}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: '6px',
+                            background: isFetchingGoogleDoc || !googleDocLink.trim() ? '#94a3b8' : '#2563eb',
+                            color: 'white', padding: '8px 16px', borderRadius: '6px',
+                            fontWeight: '500', fontSize: '14px', border: 'none', cursor: isFetchingGoogleDoc || !googleDocLink.trim() ? 'not-allowed' : 'pointer',
+                            whiteSpace: 'nowrap'
+                        }}
+                    >
+                        {isFetchingGoogleDoc ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                        {isFetchingGoogleDoc ? 'Đang tải...' : 'Chép dữ liệu'}
+                    </button>
+                </div>
             </div>
 
-            {mode === 'visual' ? (
-                <div style={{ position: 'relative' }}>
-                    <SunEditor
-                        getSunEditorInstance={(sunEditor: any) => {
-                            editorRef.current = sunEditor;
-                        }}
-                        setContents={value}
-                        onChange={handleEditorChange}
-                        setOptions={editorOptions}
-                        placeholder={placeholder || 'Nhập nội dung...'}
-                    />
-                </div>
-            ) : (
-                <div style={{ marginTop: '0.5rem' }}>
-                    <div style={{ background: '#eff6ff', borderLeft: '4px solid #3b82f6', padding: '1rem', marginBottom: '1rem', borderRadius: '4px' }}>
-                        <p style={{ margin: 0, fontSize: '0.875rem', color: '#1e3a8a' }}>
-                            <strong>💡 MẸO COPY BẢNG TỪ EXCEL / WORD DÀNH CHO CODE:</strong><br />
-                            Hệ thống đã tự động hỗ trợ tự động Copy & Paste giữ nguyên định dạng (kể cả bảng biểu, màu sắc) trên thẻ Trực quan. <br />
-                            <br />
-                            Nếu thẻ trực quan bị lỗi định dạng bảng hiển thị phức tạp, bạn có thể copy nội dung dạng HTML vào đây.
-                            <br /><br />
-                            1. Truy cập <a href="https://wordhtml.com/" target="_blank" rel="noreferrer" style={{ textDecoration: 'underline', fontWeight: 'bold' }}>WordHTML.com</a><br />
-                            2. Dán file Word/Excel của bạn vào đó, sau đó copy <strong>mã HTML</strong> kết quả.<br />
-                            3. Dán mã HTML đó vào ô bên dưới đây.
-                        </p>
-                    </div>
-                    <textarea
-                        value={value}
-                        onChange={(e) => onChange(e.target.value)}
-                        placeholder="Dán mã HTML vào đây..."
-                        style={{ width: '100%', height: '600px', padding: '1rem', fontFamily: 'monospace', fontSize: '13px', border: '1px solid #e2e8f0', borderRadius: '4px', background: '#f8fafc' }}
-                    />
-                </div>
-            )}
-
+            <div className="jodit-a4-container">
+                <JoditEditor
+                    ref={editorRef}
+                    value={value || ''}
+                    config={config}
+                    onBlur={newContent => onChange(newContent)}
+                    onChange={(newContent) => {
+                        // Jodit triggers this often, we only rely on onBlur or manual state if we want strictly less re-renders, 
+                        // but onChange provides realtime typing feedback for preview mapping if used in forms.
+                        onChange(newContent);
+                    }}
+                />
+            </div>
             <style dangerouslySetInnerHTML={{
                 __html: `
-        .quill-wrapper .se-wrapper-inner { font-family: 'Times New Roman', Times, serif; font-size: 14pt; line-height: 1.6; }
-        .quill-wrapper .sun-editor { border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
-        .quill-wrapper .se-toolbar { background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
-        .quill-wrapper .se-resizing-bar { background: #f8fafc; border-top: 1px solid #e2e8f0; }
-        
-        /* MS Word styles override */
-        .se-wrapper-inner table { width: 100% !important; border-collapse: collapse !important; }
-        .se-wrapper-inner table td, .se-wrapper-inner table th { padding: 4px; border: 1px solid #000; }
-        .se-wrapper-inner p.MsoNormal, .se-wrapper-inner li.MsoNormal, .se-wrapper-inner div.MsoNormal { margin-bottom: 0pt; line-height: normal; }
-      `}} />
+                .jodit-wrapper .jodit-container {
+                    border: 1px solid #e2e8f0 !important;
+                    border-radius: 8px !important;
+                }
+                .jodit-a4-container {
+                    position: relative;
+                }
+            `}} />
         </div>
     );
 }

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import 'suneditor/dist/css/suneditor.min.css';
+
 import { NextAuthProvider } from './components/providers/NextAuthProvider'
 import { MainLayout } from './components/layout/MainLayout'
 import { getLayoutSettings, getSidebarOrder } from './components/layout/actions'
