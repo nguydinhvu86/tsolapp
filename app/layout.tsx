@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 import { NextAuthProvider } from './components/providers/NextAuthProvider'
@@ -9,6 +9,20 @@ import { PushNotificationListener } from './components/PushNotificationListener'
 export const metadata: Metadata = {
     title: 'ERP System',
     description: 'Manage and generate contracts easily',
+    manifest: '/manifest.json',
+    appleWebApp: {
+        capable: true,
+        statusBarStyle: 'default',
+        title: 'ERP System',
+    },
+}
+
+export const viewport: Viewport = {
+    themeColor: '#4f46e5',
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
 }
 
 export default async function RootLayout({

@@ -875,6 +875,28 @@ table {
     }
 }
 
+.app-header {
+    z-index: 1000 !important;
+}
+
+@media (max-width: 1024px) {
+
+    /* Specific overrides for main page layouts with sidebars */
+    div[style*="340px"],
+    div[style*="350px"],
+    div[style*="5fr"] {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 768px) {
+
+    /* Override all inline hardcoded grids to 1 column on mobile */
+    div[style*="grid-template-columns"]:not([style*="auto-fit"]):not([style*="auto-fill"]) {
+        grid-template-columns: 1fr !important;
+    }
+}
+
 /* Global Print Styles to Hide Layout Elements */
 @media print {
 

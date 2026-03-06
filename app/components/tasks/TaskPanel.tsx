@@ -39,6 +39,7 @@ export function TaskPanel({ initialTasks, users, entityType, entityId, initialTi
     const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
     const [selectedObservers, setSelectedObservers] = useState<string[]>([]);
     const [isSaving, setIsSaving] = useState(false);
+    const [showCompleted, setShowCompleted] = useState(false);
 
     // Filter tasks logic
     const currentUserTasks = initialTasks.filter((t: any) => {
@@ -54,7 +55,7 @@ export function TaskPanel({ initialTasks, users, entityType, entityId, initialTi
     });
 
     const activeTasks = currentUserTasks.filter((t: any) => {
-        if (t.status === 'DONE' || t.status === 'CANCELLED') return false;
+        if (!showCompleted && (t.status === 'DONE' || t.status === 'CANCELLED')) return false;
 
         // Hide recurring tasks until their exact due date arrives (or they become overdue)
         if (t.isRecurring && t.dueDate) {
@@ -171,11 +172,22 @@ export function TaskPanel({ initialTasks, users, entityType, entityId, initialTi
                 <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>
                     <CheckSquare size={16} color="var(--primary)" /> Công việc liên quan
                 </h3>
-                {canCreate && (
-                    <Button onClick={handleOpenModal} className="gap-2" style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', borderRadius: '6px' }}>
-                        <Plus size={14} /> Giao việc
-                    </Button>
-                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>
+                        <input
+                            type="checkbox"
+                            checked={showCompleted}
+                            onChange={(e) => setShowCompleted(e.target.checked)}
+                            style={{ cursor: 'pointer', accentColor: 'var(--primary)', width: '14px', height: '14px' }}
+                        />
+                        <span>Hiện việc đã xong</span>
+                    </label>
+                    {canCreate && (
+                        <Button onClick={handleOpenModal} className="gap-2" style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', borderRadius: '6px' }}>
+                            <Plus size={14} /> Giao việc
+                        </Button>
+                    )}
+                </div>
             </div>
 
             {/* List */}

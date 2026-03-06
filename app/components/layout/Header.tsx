@@ -13,23 +13,15 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
 
     return (
         <header
-            className="app-header"
+            className="app-header sticky top-0 z-50 px-4 md:px-8 flex items-center justify-between border-b border-slate-200"
             style={{
                 height: '64px',
                 backgroundColor: 'rgba(255, 255, 255, 0.8)',
                 backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
-                borderBottom: '1px solid var(--border)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0 2rem',
-                position: 'sticky',
-                top: 0,
-                zIndex: 50
+                WebkitBackdropFilter: 'blur(12px)'
             }}
         >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, maxWidth: '600px' }}>
+            <div className="flex items-center gap-2 md:gap-4 flex-1 max-w-[600px]">
                 {onMenuToggle && (
                     <button
                         onClick={onMenuToggle}
@@ -43,13 +35,13 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
 
                 <GlobalSearch />
 
-                {/* Mobile search placeholder if GlobalSearch hides on mobile */}
-                <div style={{ marginLeft: '0.25rem', display: 'flex', flexDirection: 'column' }} className="hide-on-desktop">
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Mừng trở lại,</span>
-                    <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)', lineHeight: 1.2 }}>{session?.user?.name || 'Administrator'}</span>
+                {/* Greeting on mobile */}
+                <div className="hidden sm:flex md:hidden flex-col ml-1">
+                    <span className="text-xs text-slate-500">Mừng trở lại,</span>
+                    <span className="text-sm font-semibold text-slate-800 leading-tight">{session?.user?.name || 'Administrator'}</span>
                 </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div className="flex items-center gap-2 md:gap-3">
                 {session?.user && <ChatWidget currentUser={session.user} />}
                 <NotificationBell />
                 <Link href="/profile" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', cursor: 'pointer', padding: '0.5rem', borderRadius: '8px', transition: 'background 0.2s' }} className="hover:bg-slate-100">

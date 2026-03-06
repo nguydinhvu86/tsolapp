@@ -11,6 +11,7 @@ export async function getCustomerWithRelations(id: string) {
         const customer = await prisma.customer.findUnique({
             where: { id },
             include: {
+                contacts: true,
                 quotes: {
                     orderBy: { createdAt: 'desc' }
                 },

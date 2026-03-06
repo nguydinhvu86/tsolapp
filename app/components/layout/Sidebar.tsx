@@ -82,6 +82,7 @@ const mainNavItems: any[] = [
             { name: 'Nhóm Quyền', href: '/users/roles', permission: 'ROLES_VIEW', icon: CheckSquare },
             { name: 'Cấu hình Email', href: '/email-config', permission: 'SETTINGS_VIEW', icon: Mail },
             { name: 'Mẫu Email', href: '/email-templates', permission: 'SETTINGS_VIEW', icon: FileText },
+            { name: 'Cấu hình Lead', href: '/settings/lead-forms', permission: 'SETTINGS_VIEW', icon: Target },
             { name: 'Cài đặt chung', href: '/settings', permission: 'SETTINGS_VIEW', icon: Settings }
         ]
     }

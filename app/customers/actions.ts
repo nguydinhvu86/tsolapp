@@ -105,3 +105,108 @@ export async function sendDebtConfirmationEmail(customerId: string, to: string, 
         return { success: false, error: error.message };
     }
 }
+
+export async function saveCustomerMenuOrder(userId: string, menuOrderJson: string) {
+    try {
+        await prisma.user.update({
+            where: { id: userId },
+            data: { customerMenuOrder: menuOrderJson }
+        });
+        return { success: true };
+    } catch (e: any) {
+        console.error("Save customer menu order error", e);
+        return { success: false, error: "Failed to save menu ordering" };
+    }
+}
+
+// ==========================================
+// Customer Contacts Actions
+// ==========================================
+
+export async function createCustomerContact(customerId: string, data: { name: string, email?: string, position?: string, phone?: string, otherPhone?: string, birthday?: Date | null }) {
+    try {
+        const contact = await prisma.customerContact.create({
+            data: {
+                customerId,
+                name: data.name,
+                email: data.email || null,
+                position: data.position || null,
+                phone: data.phone || null,
+                otherPhone: data.otherPhone || null,
+                birthday: data.birthday || null,
+            }
+        });
+
+        const session = await getServerSession(authOptions);
+        if (session?.user?.id) {
+            await logCustomerActivity(
+                customerId,
+                session.user.id,
+                'TẠO_LIÊN_HỆ',
+                `Đã thêm người liên hệ: ${contact.name} (${contact.position || 'Không có chức vụ'})`
+            );
+        }
+
+        revalidatePath('/customers');
+        return { success: true, contact };
+    } catch (e: any) {
+        console.error("Create contact error", e);
+        return { success: false, error: e.message };
+    }
+}
+
+export async function updateCustomerContact(contactId: string, data: { name: string, email?: string, position?: string, phone?: string, otherPhone?: string, birthday?: Date | null }) {
+    try {
+        const contact = await prisma.customerContact.update({
+            where: { id: contactId },
+            data: {
+                name: data.name,
+                email: data.email || null,
+                position: data.position || null,
+                phone: data.phone || null,
+                otherPhone: data.otherPhone || null,
+                birthday: data.birthday || null,
+            }
+        });
+
+        const session = await getServerSession(authOptions);
+        if (session?.user?.id) {
+            await logCustomerActivity(
+                contact.customerId,
+                session.user.id,
+                'CẬP_NHẬT_LIÊN_HỆ',
+                `Đã cập nhật thông tin người liên hệ: ${contact.name}`
+            );
+        }
+
+        revalidatePath('/customers');
+        return { success: true, contact };
+    } catch (e: any) {
+        console.error("Update contact error", e);
+        return { success: false, error: e.message };
+    }
+}
+
+export async function deleteCustomerContact(contactId: string) {
+    try {
+        const contact = await prisma.customerContact.delete({
+            where: { id: contactId }
+        });
+
+        const session = await getServerSession(authOptions);
+        if (session?.user?.id) {
+            await logCustomerActivity(
+                contact.customerId,
+                session.user.id,
+                'XÓA_LIÊN_HỆ',
+                `Đã xóa người liên hệ: ${contact.name}`
+            );
+        }
+
+        revalidatePath('/customers');
+        return { success: true };
+    } catch (e: any) {
+        console.error("Delete contact error", e);
+        return { success: false, error: e.message };
+    }
+}

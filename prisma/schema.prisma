@@ -30,6 +30,7 @@ model User {
   permissions           String                 @default("[]") @db.Text // JSON string of granted permissions (legacy, to be deprecated or kept as overrides)
   dashboardConfig       String                 @default("[]") @db.Text // JSON string for Dashboard customized layout
   sidebarOrder          String                 @default("[]") @db.Text // JSON string for custom Sidebar menu ordering
+  customerMenuOrder     String                 @default("[]") @db.Text // JSON for custom Customer Menu ordering
   permissionGroupId     String?
   permissionGroup       PermissionGroup?       @relation(fields: [permissionGroupId], references: [id])
   twoFactorSecret       String? // Khóa bí mật 2FA
@@ -72,6 +73,7 @@ model User {
 
   // Leads
   assignedLeads   Lead[]            @relation("LeadAssignee")
+  leadForms       LeadForm[]        @relation("LeadFormAssignee")
   LeadActivityLog LeadActivityLog[]
 
   // Internal Chat
@@ -127,9 +129,25 @@ model Customer {
   notes        CustomerNote[]
   activityLogs CustomerActivityLog[]
   emailLogs    EmailLog[]
+  contacts     CustomerContact[] // Relation to CustomerContact model
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model CustomerContact {
+  id         String    @id @default(cuid())
+  customerId String
+  name       String
+  email      String?
+  position   String? // Role or Title in the company (e.g., CEO, Accountant)
+  phone      String?
+  otherPhone String? // Optional secondary phone number
+  birthday   DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 }
 
 model CustomerActivityLog {
@@ -1136,6 +1154,20 @@ model Lead {
   tasks          Task[] // Công việc liên quan (gọi điện, hẹn gặp...)
   EmailLog       EmailLog[]
   salesEstimates SalesEstimate[]
+}
+
+model LeadForm {
+  id             String   @id @default(cuid())
+  title          String // Tên nội bộ, ví dụ: "Form Landing Page Máy Lọc Nước"
+  isActive       Boolean  @default(true)
+  source         String   @default("Website") // Nguồn khách hàng gán mặc định (Website, Zalo, Landing Page...)
+  successMessage String? // Câu thông báo sau khi điền thành công
+  
+  assigneeId     String? // ID Nhân viên mặc định sẽ được nhận/assigned cho Lead này
+  assignee       User?    @relation("LeadFormAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model LeadActivityLog {

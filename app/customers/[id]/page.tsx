@@ -4,8 +4,17 @@ import { prisma } from '@/lib/prisma';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 
 import { getTemplatesByModule } from '@/app/email-templates/actions';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
 
 export default async function CustomerDetailPage({ params }: { params: { id: string } }) {
+    const session = await getServerSession(authOptions);
+    let savedMenuOrder = "[]";
+    if (session?.user?.id) {
+        const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { customerMenuOrder: true } });
+        savedMenuOrder = user?.customerMenuOrder || "[]";
+    }
+
     const customer = await getCustomerWithRelations(params.id);
 
     if (!customer) {
@@ -29,7 +38,7 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
 
     return (
         <div style={{ padding: '1.5rem', maxWidth: '1600px', margin: '0 auto' }}>
-            <CustomerDetailClient customer={customer} tasks={tasks} users={users} emailTemplates={allTemplates} />
+            <CustomerDetailClient customer={customer} tasks={tasks} users={users} emailTemplates={allTemplates} savedMenuOrder={savedMenuOrder} />
         </div>
     );
 }

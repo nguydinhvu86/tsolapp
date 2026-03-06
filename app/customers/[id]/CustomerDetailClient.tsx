@@ -5,27 +5,30 @@ import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Table } from '@/app/components/ui/Table';
 import { Button } from '@/app/components/ui/Button';
-import { ArrowLeft, User, Mail, Phone, MapPin, Building2, FileSpreadsheet, FileText, FileOutput, FilePlus2, Eye, Edit, FileStack, Plus, ShoppingCart, SearchCode, Ticket, HandCoins, Search, Target } from 'lucide-react';
+import { ArrowLeft, User, Users, Mail, Phone, MapPin, Building2, FileSpreadsheet, FileText, FileOutput, FilePlus2, Eye, Edit, FileStack, Plus, ShoppingCart, SearchCode, Ticket, HandCoins, Search, Target } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import { TagDisplay } from '@/app/components/ui/TagDisplay';
 import { CustomerStatementPanel } from '@/app/components/customers/CustomerStatementPanel';
 import { CustomerNotesPanel } from '@/app/components/customers/CustomerNotesPanel';
+import { CustomerContactsPanel } from '@/app/components/customers/CustomerContactsPanel';
 import { CustomerHistoryTimeline } from '@/app/components/customers/CustomerHistoryTimeline';
 import { useSession } from 'next-auth/react';
-import { sendDebtConfirmationEmail } from '../actions';
+import { sendDebtConfirmationEmail, saveCustomerMenuOrder } from '../actions';
 import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
 import { EmailLogTable } from '@/app/components/ui/EmailLogTable';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 
-export function CustomerDetailClient({ customer, tasks, users, emailTemplates = [] }: { customer: any, tasks: any[], users: any[], emailTemplates?: any[] }) {
+export function CustomerDetailClient({ customer, tasks, users, emailTemplates = [], savedMenuOrder = "[]" }: { customer: any, tasks: any[], users: any[], emailTemplates?: any[], savedMenuOrder?: string }) {
     const router = useRouter();
     const { data: session } = useSession();
     const currentUserRole = session?.user?.role || 'USER';
     const currentUserId = session?.user?.id || '';
-    const [activeTab, setActiveTab] = useState<'documents' | 'statement' | 'quotes' | 'contracts' | 'handovers' | 'payments' | 'appendices' | 'dispatches' | 'salesEstimates' | 'salesOrders' | 'salesInvoices' | 'salesPayments' | 'leads' | 'emailLogs'>('leads');
+    const [activeTab, setActiveTab] = useState<'documents' | 'statement' | 'quotes' | 'contracts' | 'handovers' | 'payments' | 'appendices' | 'dispatches' | 'salesEstimates' | 'salesOrders' | 'salesInvoices' | 'salesPayments' | 'leads' | 'emailLogs' | 'contacts'>('leads');
     const [searchQuery, setSearchQuery] = useState('');
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
 
     const now = new Date();
     now.setHours(0, 0, 0, 0);
@@ -41,6 +44,7 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
     ).length || 0;
 
     const tabs = [
+        { id: 'contacts', name: 'Người Liên Hệ', count: customer.contacts?.length || 0, icon: Users },
         { id: 'leads', name: 'Cơ hội Bán hàng', count: customer.leads?.length || 0, icon: Target },
         { id: 'salesEstimates', name: 'Báo Giá (ERP)', count: validEstimatesCount, icon: SearchCode },
         { id: 'salesOrders', name: 'Đơn Đặt Hàng', count: customer.salesOrders?.length || 0, icon: ShoppingCart },
@@ -56,6 +60,46 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
         { id: 'payments', name: 'Đề Nghị TT', count: customer.paymentRequests.length, icon: FilePlus2 },
         { id: 'emailLogs', name: 'Lịch Sử Email', count: customer.emailLogs?.length || 0, icon: Mail },
     ];
+
+    const [orderedTabs, setOrderedTabs] = useState<typeof tabs>(() => {
+        try {
+            const savedOrder = JSON.parse(savedMenuOrder);
+            if (Array.isArray(savedOrder) && savedOrder.length > 0) {
+                const ordered = [];
+                const remaining = [...tabs];
+                for (const id of savedOrder) {
+                    const idx = remaining.findIndex(t => t.id === id);
+                    if (idx !== -1) {
+                        ordered.push(remaining[idx]);
+                        remaining.splice(idx, 1);
+                    }
+                }
+                return [...ordered, ...remaining];
+            }
+        } catch (e) {
+            console.error("Failed to parse savedMenuOrder", e);
+        }
+        return tabs;
+    });
+
+    React.useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    const handleDragEnd = async (result: DropResult) => {
+        if (!result.destination) return;
+
+        const newTabs = Array.from(orderedTabs);
+        const [reorderedItem] = newTabs.splice(result.source.index, 1);
+        newTabs.splice(result.destination.index, 0, reorderedItem);
+
+        setOrderedTabs(newTabs);
+
+        if (currentUserId) {
+            const orderList = newTabs.map(t => t.id);
+            await saveCustomerMenuOrder(currentUserId, JSON.stringify(orderList));
+        }
+    };
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -147,39 +191,98 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                 {/* Column 1: Sidebar Menu */}
                 <Card style={{ padding: '0', overflow: 'hidden', position: 'sticky', top: '1.5rem', background: '#ffffff', borderRadius: '12px', border: '1px solid var(--border)' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem 0' }}>
-                        {tabs.map((tab) => {
-                            const isActive = activeTab === tab.id;
-                            const Icon = tab.icon;
-                            return (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id as any)}
-                                    style={{
-                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                        padding: '0.75rem 1.25rem', border: 'none', background: 'transparent', cursor: 'pointer',
-                                        borderLeft: isActive ? '3px solid #2563eb' : '3px solid transparent',
-                                        color: isActive ? '#2563eb' : '#64748b',
-                                        fontWeight: isActive ? 500 : 400, fontSize: '0.9rem', transition: 'all 0.2s ease',
-                                        outline: 'none', textAlign: 'left',
-                                        width: '100%'
-                                    }}
-                                    className="hover:bg-slate-50"
-                                >
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
-                                        <Icon size={16} style={{ color: isActive ? '#2563eb' : '#94a3b8' }} />
-                                        {tab.name}
-                                    </span>
-                                    <span style={{
-                                        background: '#f1f5f9',
-                                        color: '#64748b',
-                                        padding: '0.125rem 0.5rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 600,
-                                        minWidth: '24px', textAlign: 'center'
-                                    }}>
-                                        {tab.count}
-                                    </span>
-                                </button>
-                            );
-                        })}
+                        {isMounted ? (
+                            <DragDropContext onDragEnd={handleDragEnd}>
+                                <Droppable droppableId="customer-menu">
+                                    {(provided) => (
+                                        <div {...provided.droppableProps} ref={provided.innerRef}>
+                                            {orderedTabs.map((tab, index) => {
+                                                const isActive = activeTab === tab.id;
+                                                const Icon = tab.icon;
+                                                return (
+                                                    <Draggable key={tab.id} draggableId={tab.id} index={index}>
+                                                        {(provided, snapshot) => (
+                                                            <button
+                                                                ref={provided.innerRef}
+                                                                {...provided.draggableProps}
+                                                                {...provided.dragHandleProps}
+                                                                onClick={(e) => {
+                                                                    // Only trigger click if not dragging
+                                                                    if (!snapshot.isDragging) {
+                                                                        setActiveTab(tab.id as any);
+                                                                    }
+                                                                }}
+                                                                style={{
+                                                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                                    padding: '0.75rem 1.25rem', border: 'none', background: snapshot.isDragging ? '#f8fafc' : 'transparent',
+                                                                    cursor: snapshot.isDragging ? 'grabbing' : 'pointer',
+                                                                    borderLeft: isActive ? '3px solid #2563eb' : '3px solid transparent',
+                                                                    color: isActive ? '#2563eb' : '#64748b',
+                                                                    fontWeight: isActive ? 500 : 400, fontSize: '0.9rem', transition: 'all 0.2s ease',
+                                                                    outline: 'none', textAlign: 'left',
+                                                                    width: '100%',
+                                                                    boxShadow: snapshot.isDragging ? '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' : 'none',
+                                                                    ...provided.draggableProps.style
+                                                                }}
+                                                                className={`hover:bg-slate-50 ${snapshot.isDragging ? 'ring-2 ring-blue-500 ring-inset z-50' : ''}`}
+                                                            >
+                                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+                                                                    <Icon size={16} style={{ color: isActive ? '#2563eb' : '#94a3b8' }} />
+                                                                    {tab.name}
+                                                                </span>
+                                                                <span style={{
+                                                                    background: '#f1f5f9',
+                                                                    color: '#64748b',
+                                                                    padding: '0.125rem 0.5rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 600,
+                                                                    minWidth: '24px', textAlign: 'center'
+                                                                }}>
+                                                                    {tab.count}
+                                                                </span>
+                                                            </button>
+                                                        )}
+                                                    </Draggable>
+                                                );
+                                            })}
+                                            {provided.placeholder}
+                                        </div>
+                                    )}
+                                </Droppable>
+                            </DragDropContext>
+                        ) : (
+                            orderedTabs.map((tab) => {
+                                const isActive = activeTab === tab.id;
+                                const Icon = tab.icon;
+                                return (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id as any)}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                            padding: '0.75rem 1.25rem', border: 'none', background: 'transparent', cursor: 'pointer',
+                                            borderLeft: isActive ? '3px solid #2563eb' : '3px solid transparent',
+                                            color: isActive ? '#2563eb' : '#64748b',
+                                            fontWeight: isActive ? 500 : 400, fontSize: '0.9rem', transition: 'all 0.2s ease',
+                                            outline: 'none', textAlign: 'left',
+                                            width: '100%'
+                                        }}
+                                        className="hover:bg-slate-50"
+                                    >
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+                                            <Icon size={16} style={{ color: isActive ? '#2563eb' : '#94a3b8' }} />
+                                            {tab.name}
+                                        </span>
+                                        <span style={{
+                                            background: '#f1f5f9',
+                                            color: '#64748b',
+                                            padding: '0.125rem 0.5rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 600,
+                                            minWidth: '24px', textAlign: 'center'
+                                        }}>
+                                            {tab.count}
+                                        </span>
+                                    </button>
+                                );
+                            })
+                        )}
                     </div>
                 </Card>
 
@@ -259,6 +362,11 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                             notes={customer.notes || []}
                             currentUserId={currentUserId}
                             currentUserRole={currentUserRole}
+                        />
+                    ) : activeTab === 'contacts' ? (
+                        <CustomerContactsPanel
+                            customerId={customer.id}
+                            contacts={customer.contacts || []}
                         />
                     ) : activeTab === 'statement' ? (
                         <Card style={{ padding: '0', background: 'transparent', border: 'none', boxShadow: 'none' }}>
