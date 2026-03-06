@@ -1,4 +1,5 @@
 'use client';
+import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -37,10 +38,6 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
     };
 
-    const formatDate = (dateString: string | Date | null) => {
-        if (!dateString) return '--';
-        return new Date(dateString).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    };
 
     const getStatusBadge = (status: string) => {
         switch (status) {
@@ -219,7 +216,7 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
                                                 bill.items?.map((item: any) => (
                                                     <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                                         <td style={{ padding: '1rem', fontWeight: 500, color: '#1e293b' }}>
-                                                            {item.product?.name || 'Sản phẩm không xác định'}
+                                                            {item.product?.name || item.productName || 'Sản phẩm không xác định'}
                                                             {item.product?.sku && <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>SKU: {item.product.sku}</div>}
                                                         </td>
                                                         <td style={{ padding: '1rem', textAlign: 'center', color: '#475569' }}>{item.quantity} {item.product?.unit || ''}</td>
@@ -373,7 +370,7 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
                                                             {doc.name}
                                                         </a>
                                                         <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                                                            {new Date(doc.uploadedAt).toLocaleDateString('vi-VN')}
+                                                            {formatDate(new Date(doc.uploadedAt))}
                                                         </span>
                                                     </div>
                                                 </div>

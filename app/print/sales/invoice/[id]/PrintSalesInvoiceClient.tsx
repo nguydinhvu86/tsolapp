@@ -1,17 +1,13 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { formatMoney } from '@/lib/utils/formatters';
+import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { Printer, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function PrintSalesInvoiceClient({ invoice, companyInfo }: any) {
     const router = useRouter();
 
-    const formatDate = (dateString: string | Date | null) => {
-        if (!dateString) return '';
-        return new Date(dateString).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    };
 
     const handlePrint = () => {
         window.print();

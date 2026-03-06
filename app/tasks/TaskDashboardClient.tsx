@@ -1,4 +1,5 @@
 'use client'
+import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
@@ -244,6 +245,7 @@ export function TaskDashboardClient({ initialTasks, users }: { initialTasks: any
             else if (linkType === 'HANDOVER') payload.handoverId = selectedLink.id;
             else if (linkType === 'PAYMENT_REQ') payload.paymentReqId = selectedLink.id;
             else if (linkType === 'DISPATCH') payload.dispatchId = selectedLink.id;
+            else if (linkType === 'LEAD') payload.leadId = selectedLink.id;
         }
 
         try {
@@ -342,7 +344,7 @@ export function TaskDashboardClient({ initialTasks, users }: { initialTasks: any
 
         sortedTasks.forEach((task: any) => {
             const assigneesNames = task.assignees?.map((a: any) => a.user.name || a.user.email).join(', ') || 'Chưa gán';
-            const dueDateStr = task.dueDate ? new Date(task.dueDate).toLocaleDateString('vi-VN') : '-';
+            const dueDateStr = task.dueDate ? formatDate(new Date(task.dueDate)) : '-';
 
             let progress = '-';
             if (task.checklists && task.checklists.length > 0) {
@@ -600,7 +602,7 @@ export function TaskDashboardClient({ initialTasks, users }: { initialTasks: any
                                             </span>
                                         </td>
                                         <td style={{ color: isDueSoon ? 'var(--danger)' : 'inherit' }}>
-                                            {task.dueDate ? new Date(task.dueDate).toLocaleDateString('vi-VN') : '-'}
+                                            {task.dueDate ? formatDate(new Date(task.dueDate)) : '-'}
                                         </td>
                                         <td>
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '0.8rem' }}>
@@ -667,7 +669,7 @@ export function TaskDashboardClient({ initialTasks, users }: { initialTasks: any
                         </tbody>
                     </Table>
                 </div>
-            </Card>
+            </Card >
 
             <Modal isOpen={isCreateModalOpen} onClose={() => setCreateModalOpen(false)} title="Giao Việc Mới">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', paddingTop: '1rem' }}>
@@ -738,6 +740,7 @@ export function TaskDashboardClient({ initialTasks, users }: { initialTasks: any
                                 onChange={e => { setLinkType(e.target.value); setSelectedLink(null); setSearchQuery(''); setSearchResults([]); }}
                                 style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', marginBottom: '0.5rem' }}>
                                 <option value="">-- Không liên kết --</option>
+                                <option value="LEAD">Cơ hội bán hàng</option>
                                 <option value="CUSTOMER">Khách Hàng</option>
                                 <option value="QUOTE">Báo Giá (Sales)</option>
                                 <option value="SALES_ESTIMATE">Báo Giá (ERP)</option>
@@ -819,7 +822,7 @@ export function TaskDashboardClient({ initialTasks, users }: { initialTasks: any
                                         {previewDates.map((d, index) => (
                                             <div key={index} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: index === 0 ? 'var(--primary)' : 'var(--text-muted)' }}>
                                                 <span>{index === 0 ? 'Lần 1 (Gốc):' : `Lần ${index + 1}:`}</span>
-                                                <span style={{ fontWeight: 500 }}>{d.toLocaleDateString('vi-VN')}</span>
+                                                <span style={{ fontWeight: 500 }}>{formatDate(d)}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -944,6 +947,6 @@ export function TaskDashboardClient({ initialTasks, users }: { initialTasks: any
                     </div>
                 </div>
             </Modal>
-        </div>
+        </div >
     );
 }

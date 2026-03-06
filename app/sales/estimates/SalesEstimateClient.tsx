@@ -9,10 +9,10 @@ import { Modal } from '@/app/components/ui/Modal';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { Plus, Edit2, Trash2, Save, X, Printer, FileText, Search, Calendar, FolderClock, LayoutList, CheckCircle2, XCircle, Eye, Link as LinkIcon, Download, ChevronUp, ChevronDown, Check, ArrowRightLeft, ShoppingCart, Copy } from 'lucide-react';
 import { submitSalesEstimate, updateSalesEstimateStatus, deleteSalesEstimate, updateSalesEstimate, convertEstimateToInvoice, convertEstimateToOrder } from './actions';
-import { formatMoney } from '@/lib/utils/formatters';
+import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { TagDisplay } from '@/app/components/ui/TagDisplay';
 
-export default function SalesEstimateClient({ initialEstimates, customers, products, nextCode, initialAction, initialCustomerId }: any) {
+export default function SalesEstimateClient({ initialEstimates, customers, products, leads, nextCode, initialAction, initialCustomerId, initialLeadId }: any) {
     const [estimates, setEstimates] = useState(initialEstimates);
     const [isFormOpen, setIsFormOpen] = useState(initialAction === 'new');
 
@@ -46,6 +46,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
     const [formData, setFormData] = useState<any>({
         code: nextCode,
         customerId: initialCustomerId || '',
+        leadId: initialLeadId || '',
         date: new Date().toISOString().split('T')[0],
         validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         notes: '',
@@ -61,6 +62,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         setFormData({
             code: nextCode, // Assume nextCode persists or is updated elsewhere
             customerId: '',
+            leadId: '',
             date: new Date().toISOString().split('T')[0],
             validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
             notes: '',
@@ -99,6 +101,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
             id: est.id,
             code: est.code || '',
             customerId: est.customerId || '',
+            leadId: est.leadId || '',
             date: est.date ? new Date(est.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
             validUntil: est.validUntil ? new Date(est.validUntil).toISOString().split('T')[0] : '',
             notes: est.notes || '',
@@ -524,11 +527,10 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                 {/* Filter Ribbon */}
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 mb-6 flex gap-4 items-center flex-wrap">
                     <div className="flex-1 relative min-w-[200px]">
-                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                         <input
                             type="text"
                             placeholder="Tìm theo Mã BG, Tên khách hàng..."
-                            className="pl-9 border border-slate-300 px-3 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 w-full bg-white"
+                            className="px-3 border border-slate-300 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 w-full bg-white"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
                         />
@@ -600,7 +602,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                         {est.code}
                                     </Link>
                                 </td>
-                                <td className="py-3 text-gray-600" suppressHydrationWarning>{new Date(est.date).toLocaleDateString('vi-VN')}</td>
+                                <td className="py-3 text-gray-600" suppressHydrationWarning>{formatDate(new Date(est.date))}</td>
                                 <td className="py-3">
                                     {est.customerId ? (
                                         <Link href={`/customers/${est.customerId}`} className="font-medium text-gray-800 hover:text-primary hover:underline transition-colors block">
@@ -711,8 +713,24 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                 <SearchableSelect
                                     options={customers.map((c: any) => ({ value: c.id, label: c.name }))}
                                     value={formData.customerId}
-                                    onChange={val => setFormData({ ...formData, customerId: val })}
+                                    onChange={val => setFormData({ ...formData, customerId: val, leadId: '' })}
                                     placeholder="-- Chọn KH --"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Cơ Hội Bán Hàng</label>
+                                <SearchableSelect
+                                    options={leads?.map((l: any) => ({ value: l.id, label: l.name })) || []}
+                                    value={formData.leadId}
+                                    onChange={val => {
+                                        const selectedLead = leads?.find((l: any) => l.id === val);
+                                        if (selectedLead && selectedLead.customerId) {
+                                            setFormData({ ...formData, leadId: val, customerId: selectedLead.customerId });
+                                        } else {
+                                            setFormData({ ...formData, leadId: val });
+                                        }
+                                    }}
+                                    placeholder="-- Chọn Cơ Hội --"
                                 />
                             </div>
                             <div>

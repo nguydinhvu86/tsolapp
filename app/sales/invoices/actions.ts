@@ -316,61 +316,61 @@ export async function approveSalesInvoice(invoiceId: string, userId: string) {
                 data: { totalDebt: { increment: invoice.totalAmount } }
             });
 
-            // 3. Create OUT Inventory Transaction
-            // Tìm warehouse mặc định
-            let wh = await tx.warehouse.findFirst({ where: { isDefault: true } });
-            if (!wh) {
-                wh = await tx.warehouse.findFirst(); // Lấy kho đầu tiên
-            }
-            if (!wh) throw new Error("Chưa có kho lưu trữ nào.");
+            // 3. Create OUT Inventory Transaction (Only if there are internal products)
+            const inventoryItems = invoice.items.filter(i => i.productId != null);
 
-            const nextTxCode = `TX-OUT-${invoice.code}`;
+            if (inventoryItems.length > 0) {
+                // Tìm warehouse mặc định
+                let wh = await tx.warehouse.findFirst({ where: { isDefault: true } });
+                if (!wh) {
+                    wh = await tx.warehouse.findFirst(); // Lấy kho đầu tiên
+                }
+                if (!wh) throw new Error("Chưa có kho lưu trữ nào.");
 
-            // Create inventory transaction
-            const invTx = await tx.inventoryTransaction.create({
-                data: {
-                    code: nextTxCode,
-                    type: "OUT",
-                    status: "COMPLETED",
-                    date: new Date(),
-                    notes: `Xuất kho tự động cho hóa đơn bán ${invoice.code}`,
-                    fromWarehouseId: wh.id,
-                    creatorId: actualUserId,
-                    items: { // create items
-                        create: invoice.items
-                            .filter(i => i.productId != null)
-                            .map(i => ({
+                const nextTxCode = `TX-OUT-${invoice.code}`;
+
+                // Create inventory transaction
+                const invTx = await tx.inventoryTransaction.create({
+                    data: {
+                        code: nextTxCode,
+                        type: "OUT",
+                        status: "COMPLETED",
+                        date: new Date(),
+                        notes: `Xuất kho tự động cho hóa đơn bán ${invoice.code}`,
+                        fromWarehouseId: wh.id,
+                        creatorId: actualUserId,
+                        items: { // create items
+                            create: inventoryItems.map(i => ({
                                 productId: i.productId as string,
                                 quantity: i.quantity,
                                 price: i.unitPrice
                             }))
+                        }
                     }
-                }
-            });
-
-            // Deduct actual Inventory balances
-            for (const item of invoice.items) {
-                if (!item.productId) continue;
-
-                // Tìm inventory
-                const inventory = await tx.inventory.findUnique({
-                    where: { productId_warehouseId: { productId: item.productId, warehouseId: wh.id } }
                 });
 
-                if (inventory) {
-                    await tx.inventory.update({
-                        where: { id: inventory.id },
-                        data: { quantity: { decrement: item.quantity } }
+                // Deduct actual Inventory balances
+                for (const item of inventoryItems) {
+                    // Tìm inventory
+                    const inventory = await tx.inventory.findUnique({
+                        where: { productId_warehouseId: { productId: item.productId as string, warehouseId: wh.id } }
                     });
-                } else {
-                    // Nếu không có, tạo cứng số âm (cho phép xuất âm)
-                    await tx.inventory.create({
-                        data: {
-                            productId: item.productId,
-                            warehouseId: wh.id,
-                            quantity: -item.quantity
-                        }
-                    });
+
+                    if (inventory) {
+                        await tx.inventory.update({
+                            where: { id: inventory.id },
+                            data: { quantity: { decrement: item.quantity } }
+                        });
+                    } else {
+                        // Nếu không có, tạo cứng số âm (cho phép xuất âm)
+                        await tx.inventory.create({
+                            data: {
+                                productId: item.productId as string,
+                                warehouseId: wh.id,
+                                quantity: -item.quantity
+                            }
+                        });
+                    }
                 }
             }
 
@@ -421,16 +421,41 @@ export async function deleteSalesInvoice(id: string) {
 }
 
 export async function getNextInvoiceCode() {
+    const settings = await prisma.systemSetting.findMany({
+        where: { key: { in: ['INVOICE_CODE_FORMAT', 'INVOICE_START_SEQ'] } }
+    });
+    const formatSetting = settings.find(s => s.key === 'INVOICE_CODE_FORMAT');
+    const startSeqSetting = settings.find(s => s.key === 'INVOICE_START_SEQ');
+
+    const format = formatSetting?.value || 'INV{SEQ}';
+    const startSeq = parseInt(startSeqSetting?.value || '1', 10) || 1;
+
     const invoices = await prisma.salesInvoice.findMany({ select: { code: true } });
+
+    const now = new Date();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const yyyy = String(now.getFullYear());
+
+    const dateReplacedFormat = format.replace('{MM}', mm).replace('{YYYY}', yyyy);
+    const prefix = dateReplacedFormat.split('{SEQ}')[0] || '';
+    const suffix = dateReplacedFormat.split('{SEQ}')[1] || '';
+
+    const safePrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const safeSuffix = suffix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    const regex = new RegExp(`^${safePrefix}(\\d+)${safeSuffix}$`);
+
     let maxInvNum = 0;
     for (const inv of invoices) {
-        const m = inv.code.match(/\d+/);
-        if (m) {
-            const n = parseInt(m[0], 10);
+        const m = inv.code.match(regex);
+        if (m && m[1]) {
+            const n = parseInt(m[1], 10);
             if (!isNaN(n) && n > maxInvNum) maxInvNum = n;
         }
     }
-    return `INV${String(maxInvNum + 1).padStart(4, '0')}`;
+    const nextNumber = Math.max(maxInvNum + 1, startSeq);
+    const nextSeq = String(nextNumber).padStart(4, '0');
+    return prefix + nextSeq + suffix;
 }
 
 export async function cancelSalesInvoice(invoiceId: string) {
@@ -546,61 +571,61 @@ export async function restoreSalesInvoice(invoiceId: string) {
                 data: { totalDebt: { increment: invoice.totalAmount } }
             });
 
-            // 3. Create OUT Inventory Transaction
-            // Tìm warehouse mặc định
-            let wh = await tx.warehouse.findFirst({ where: { isDefault: true } });
-            if (!wh) {
-                wh = await tx.warehouse.findFirst(); // Lấy kho đầu tiên
-            }
-            if (!wh) throw new Error("Chưa có kho lưu trữ nào.");
+            // 3. Create OUT Inventory Transaction (Only if there are internal products)
+            const inventoryItems = invoice.items.filter(i => i.productId != null);
 
-            const nextTxCode = `TX-OUT-${invoice.code}`;
+            if (inventoryItems.length > 0) {
+                // Tìm warehouse mặc định
+                let wh = await tx.warehouse.findFirst({ where: { isDefault: true } });
+                if (!wh) {
+                    wh = await tx.warehouse.findFirst(); // Lấy kho đầu tiên
+                }
+                if (!wh) throw new Error("Chưa có kho lưu trữ nào.");
 
-            // Create inventory transaction
-            const invTx = await tx.inventoryTransaction.create({
-                data: {
-                    code: nextTxCode,
-                    type: "OUT",
-                    status: "COMPLETED",
-                    date: new Date(),
-                    notes: `Xuất kho tự động cho hóa đơn bán ${invoice.code} (Khôi phục)`,
-                    fromWarehouseId: wh.id,
-                    creatorId: actualUserId,
-                    items: { // create items
-                        create: invoice.items
-                            .filter(i => i.productId != null)
-                            .map(i => ({
+                const nextTxCode = `TX-OUT-${invoice.code}`;
+
+                // Create inventory transaction
+                const invTx = await tx.inventoryTransaction.create({
+                    data: {
+                        code: nextTxCode,
+                        type: "OUT",
+                        status: "COMPLETED",
+                        date: new Date(),
+                        notes: `Xuất kho tự động cho hóa đơn bán ${invoice.code} (Khôi phục)`,
+                        fromWarehouseId: wh.id,
+                        creatorId: actualUserId,
+                        items: { // create items
+                            create: inventoryItems.map(i => ({
                                 productId: i.productId as string,
                                 quantity: i.quantity,
                                 price: i.unitPrice
                             }))
+                        }
                     }
-                }
-            });
-
-            // Deduct actual Inventory balances
-            for (const item of invoice.items) {
-                if (!item.productId) continue;
-
-                // Tìm inventory
-                const inventory = await tx.inventory.findUnique({
-                    where: { productId_warehouseId: { productId: item.productId, warehouseId: wh.id } }
                 });
 
-                if (inventory) {
-                    await tx.inventory.update({
-                        where: { id: inventory.id },
-                        data: { quantity: { decrement: item.quantity } }
+                // Deduct actual Inventory balances
+                for (const item of inventoryItems) {
+                    // Tìm inventory
+                    const inventory = await tx.inventory.findUnique({
+                        where: { productId_warehouseId: { productId: item.productId as string, warehouseId: wh.id } }
                     });
-                } else {
-                    // Nếu không có, tạo cứng số âm (cho phép xuất âm)
-                    await tx.inventory.create({
-                        data: {
-                            productId: item.productId,
-                            warehouseId: wh.id,
-                            quantity: -item.quantity
-                        }
-                    });
+
+                    if (inventory) {
+                        await tx.inventory.update({
+                            where: { id: inventory.id },
+                            data: { quantity: { decrement: item.quantity } }
+                        });
+                    } else {
+                        // Nếu không có, tạo cứng số âm (cho phép xuất âm)
+                        await tx.inventory.create({
+                            data: {
+                                productId: item.productId as string,
+                                warehouseId: wh.id,
+                                quantity: -item.quantity
+                            }
+                        });
+                    }
                 }
             }
 

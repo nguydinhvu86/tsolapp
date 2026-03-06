@@ -1,3 +1,4 @@
+import { formatDate } from '@/lib/utils/formatters';
 import React from 'react';
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
@@ -31,10 +32,6 @@ export default async function PublicSalesInvoicePage({ params }: { params: { id:
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
     };
 
-    const formatDate = (dateString: string | Date | null) => {
-        if (!dateString) return '--';
-        return new Date(dateString).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    };
 
     return (
         <div style={{ minHeight: '100vh', backgroundColor: '#e2e8f0', padding: '2rem 0', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>

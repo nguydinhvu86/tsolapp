@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, ExternalLink, Copy, CheckCircle2, User, FileText, ShoppingCart, Info, CheckSquare, XCircle, Undo2, History, ArrowRight, Clock, AlertTriangle, PackageCheck, Activity, Edit } from 'lucide-react';
 import Link from 'next/link';
 import { approveSalesInvoice, updateSalesInvoiceStatus, cancelSalesInvoice, restoreSalesInvoice, paySalesInvoice } from '../actions';
-import { formatMoney } from '@/lib/utils/formatters';
+import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import { Modal } from '@/app/components/ui/Modal';
 import { Input } from '@/app/components/ui/Input';
@@ -55,10 +55,6 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
         setTimeout(() => setCopied(false), 2000);
     };
 
-    const formatDate = (dateString: string | Date | null) => {
-        if (!dateString) return '--';
-        return new Date(dateString).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    };
 
     const getStatusBadge = (status: string) => {
         switch (status) {

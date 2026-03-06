@@ -7,7 +7,7 @@ import { Button } from '@/app/components/ui/Button';
 import { ArrowLeft, User as UserIcon, Calendar, CheckCircle2, DollarSign, Tag, FileText, Plus, MapPin, Phone, Building2, CreditCard, Clock, Link as LinkIcon, Download, Printer } from 'lucide-react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { formatMoney } from '@/lib/utils/formatters';
+import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { addExpenseNote } from '../actions';
 import { useRouter } from 'next/navigation';
 
@@ -93,7 +93,7 @@ export function ExpenseDetailClient({ initialData }: { initialData: ExpenseWithR
                             </div>
                             <div>
                                 <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1.5"><Calendar size={14} /> Ngày Chi</h3>
-                                <p className="text-base font-medium text-slate-900">{new Date(initialData.date).toLocaleDateString('vi-VN')}</p>
+                                <p className="text-base font-medium text-slate-900">{formatDate(new Date(initialData.date))}</p>
                             </div>
 
                             <div className="md:col-span-2">
@@ -241,7 +241,7 @@ export function ExpenseDetailClient({ initialData }: { initialData: ExpenseWithR
                                         <div className="flex justify-between items-start mb-1.5">
                                             <span className="font-semibold text-sm text-slate-800">{note.user?.name || "Người dùng"}</span>
                                             <span className="text-xs text-slate-400 font-medium" title={new Date(note.createdAt).toLocaleString('vi-VN')}>
-                                                {new Date(note.createdAt).toLocaleDateString('vi-VN')}
+                                                {formatDate(new Date(note.createdAt))}
                                             </span>
                                         </div>
                                         <p className="text-sm text-slate-700 whitespace-pre-wrap">{note.content}</p>
@@ -294,7 +294,7 @@ export function ExpenseDetailClient({ initialData }: { initialData: ExpenseWithR
                                                     {task.status}
                                                 </span>
                                                 {task.dueDate && (
-                                                    <span className="text-slate-500 font-medium">Hạn: {new Date(task.dueDate).toLocaleDateString()}</span>
+                                                    <span className="text-slate-500 font-medium">Hạn: {formatDate(new Date(task.dueDate))}</span>
                                                 )}
                                             </div>
                                         </div>

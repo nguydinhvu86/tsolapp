@@ -9,7 +9,7 @@ import { Modal } from '@/app/components/ui/Modal';
 import { Input } from '@/app/components/ui/Input';
 import { createExpense, updateExpense, deleteExpense, createExpenseCategory } from './actions';
 import { Plus, Edit, Trash2, ChevronUp, ChevronDown, ArrowUpDown, Search, DollarSign, ListPlus, Upload, Paperclip, Link as LinkIcon, Building2, UserCircle2 } from 'lucide-react';
-import { formatMoney } from '@/lib/utils/formatters';
+import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import Link from 'next/link';
 
@@ -278,7 +278,7 @@ export default function ExpenseClient({
                                         {expense.code}
                                     </Link>
                                 </td>
-                                <td>{new Date(expense.date).toLocaleDateString('vi-VN')}</td>
+                                <td>{formatDate(new Date(expense.date))}</td>
                                 <td style={{ fontWeight: 500, color: 'var(--text-main)' }}>
                                     <div className="flex flex-col gap-1">
                                         <span>{expense.payee || '---'}</span>

@@ -8,7 +8,7 @@ import { Modal } from '@/app/components/ui/Modal';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { Plus, Edit2, Trash2, Save, X, Printer, PackageCheck, Search, Calendar, LayoutList, FolderClock, CheckCircle2, XCircle, FileText, ChevronUp, ChevronDown, Eye, Link as LinkIcon, Download, Check, ArrowRightLeft } from 'lucide-react';
 import { submitSalesOrder, updateSalesOrderStatus, deleteSalesOrder, updateSalesOrder, convertOrderToInvoice } from './actions';
-import { formatMoney } from '@/lib/utils/formatters';
+import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import Link from 'next/link';
 
 export default function SalesOrderClient({ initialOrders, customers, products, nextCode, initialAction, initialCustomerId }: any) {
@@ -420,11 +420,10 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                 {/* Filter Ribbon */}
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 mb-6 flex gap-4 items-center flex-wrap">
                     <div className="flex-1 relative min-w-[200px]">
-                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                         <input
                             type="text"
                             placeholder="Tìm theo Mã SO, Tên khách hàng..."
-                            className="pl-9 border border-slate-300 px-3 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 w-full bg-white"
+                            className="px-3 border border-slate-300 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 w-full bg-white"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
                         />
@@ -496,7 +495,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                                         {o.code}
                                     </Link>
                                 </td>
-                                <td className="py-3 text-gray-600" suppressHydrationWarning>{new Date(o.date).toLocaleDateString()}</td>
+                                <td className="py-3 text-gray-600" suppressHydrationWarning>{formatDate(new Date(o.date))}</td>
                                 <td className="py-3">
                                     {o.customerId ? (
                                         <Link href={`/customers/${o.customerId}`} className="font-medium text-gray-800 hover:text-primary hover:underline transition-colors block">
@@ -574,7 +573,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                         </tr>
                     </tfoot>
                 </Table>
-            </Card>
+            </Card >
 
             <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title={formData.id ? "Sửa Đơn Đặt Hàng" : "Tạo Đơn Đặt Hàng Mới"} maxWidth="1000px">
                 <div className="flex flex-col gap-6 py-2">

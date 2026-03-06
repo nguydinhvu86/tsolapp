@@ -181,8 +181,10 @@ export async function createPurchaseOrder(data: any) {
                 create: data.items.map((item: any) => {
                     const lineSubTotal = item.quantity * item.unitPrice;
                     const lineTaxAmount = lineSubTotal * (item.taxRate || 0) / 100;
+                    const isExternal = item.productId === 'EXTERNAL';
                     return {
-                        productId: item.productId,
+                        productId: isExternal ? null : item.productId,
+                        productName: isExternal ? item.productName : null,
                         quantity: item.quantity,
                         unitPrice: item.unitPrice,
                         taxRate: item.taxRate || 0,
@@ -219,8 +221,10 @@ export async function updatePurchaseOrder(id: string, data: any) {
                 create: data.items.map((item: any) => {
                     const lineSubTotal = item.quantity * item.unitPrice;
                     const lineTaxAmount = lineSubTotal * (item.taxRate || 0) / 100;
+                    const isExternal = item.productId === 'EXTERNAL' || !item.productId;
                     return {
-                        productId: item.productId,
+                        productId: isExternal ? null : item.productId,
+                        productName: isExternal ? item.productName : null,
                         quantity: item.quantity,
                         unitPrice: item.unitPrice,
                         taxRate: item.taxRate || 0,
@@ -318,8 +322,10 @@ export async function createPurchaseBill(data: any) {
                 create: data.items.map((item: any) => {
                     const lineSubTotal = item.quantity * item.unitPrice;
                     const lineTaxAmount = lineSubTotal * (item.taxRate || 0) / 100;
+                    const isExternal = item.productId === 'EXTERNAL' || !item.productId;
                     return {
-                        productId: item.productId,
+                        productId: isExternal ? null : item.productId,
+                        productName: isExternal ? item.productName : null,
                         quantity: item.quantity,
                         unitPrice: item.unitPrice,
                         taxRate: item.taxRate || 0,
@@ -349,52 +355,57 @@ export async function approvePurchaseBill(billId: string, toWarehouseId: string)
         if (bill.status !== 'DRAFT') throw new Error("Hóa đơn đã được duyệt hoặc đang ở trạng thái khác DRAFT");
         if (!toWarehouseId) throw new Error("Vui lòng chọn Kho nhập hàng");
 
-        // 2. Create Inventory Transaction IN
-        const invTxCode = `IN-${bill.code}`; // Link codes visually
-        await tx.inventoryTransaction.create({
-            data: {
-                code: invTxCode,
-                type: 'IN',
-                status: 'COMPLETED',
-                date: new Date(),
-                notes: `Nhập kho tự động từ Hóa đơn mua hàng ${bill.code}`,
-                toWarehouseId: toWarehouseId,
-                supplierId: bill.supplierId,
-                creatorId: user.id,
-                items: {
-                    create: bill.items.map((item: any) => ({
-                        productId: item.productId,
-                        quantity: item.quantity,
-                        price: item.unitPrice
-                    }))
-                }
-            }
-        });
+        // 2. Setup internal inventory items (exclude EXTERNAL products)
+        const inventoryItems = bill.items.filter((item: any) => item.productId !== null);
 
-        // 3. Update Inventory Quantities
-        for (const item of bill.items) {
-            const inventory = await tx.inventory.findUnique({
-                where: {
-                    productId_warehouseId: {
-                        productId: item.productId,
-                        warehouseId: toWarehouseId
+        if (inventoryItems.length > 0) {
+            // 2. Create Inventory Transaction IN
+            const invTxCode = `IN-${bill.code}`; // Link codes visually
+            await tx.inventoryTransaction.create({
+                data: {
+                    code: invTxCode,
+                    type: 'IN',
+                    status: 'COMPLETED',
+                    date: new Date(),
+                    notes: `Nhập kho tự động từ Hóa đơn mua hàng ${bill.code}`,
+                    toWarehouseId: toWarehouseId,
+                    supplierId: bill.supplierId,
+                    creatorId: user.id,
+                    items: {
+                        create: inventoryItems.map((item: any) => ({
+                            productId: item.productId,
+                            quantity: item.quantity,
+                            price: item.unitPrice
+                        }))
                     }
                 }
             });
 
-            if (inventory) {
-                await tx.inventory.update({
-                    where: { id: inventory.id },
-                    data: { quantity: inventory.quantity + item.quantity }
-                });
-            } else {
-                await tx.inventory.create({
-                    data: {
-                        productId: item.productId,
-                        warehouseId: toWarehouseId,
-                        quantity: item.quantity
+            // 3. Update Inventory Quantities
+            for (const item of inventoryItems) {
+                const inventory = await tx.inventory.findUnique({
+                    where: {
+                        productId_warehouseId: {
+                            productId: item.productId,
+                            warehouseId: toWarehouseId
+                        }
                     }
                 });
+
+                if (inventory) {
+                    await tx.inventory.update({
+                        where: { id: inventory.id },
+                        data: { quantity: inventory.quantity + item.quantity }
+                    });
+                } else {
+                    await tx.inventory.create({
+                        data: {
+                            productId: item.productId,
+                            warehouseId: toWarehouseId,
+                            quantity: item.quantity
+                        }
+                    });
+                }
             }
         }
 
@@ -440,8 +451,10 @@ export async function updatePurchaseBill(id: string, data: any) {
                 create: data.items.map((item: any) => {
                     const lineSubTotal = item.quantity * item.unitPrice;
                     const lineTaxAmount = lineSubTotal * (item.taxRate || 0) / 100;
+                    const isExternal = item.productId === 'EXTERNAL' || !item.productId;
                     return {
-                        productId: item.productId,
+                        productId: isExternal ? null : item.productId,
+                        productName: isExternal ? item.productName : null,
                         quantity: item.quantity,
                         unitPrice: item.unitPrice,
                         taxRate: item.taxRate || 0,

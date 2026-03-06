@@ -1,4 +1,5 @@
 'use client';
+import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -36,10 +37,6 @@ export function PurchasePaymentDetailClient({ payment, tasks, users }: { payment
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
     };
 
-    const formatDate = (dateString: string | Date | null) => {
-        if (!dateString) return '--';
-        return new Date(dateString).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    };
 
     const tabs = [
         { id: 'allocations', label: 'Cấn trừ Hóa Đơn', icon: <LinkIcon size={18} />, count: localPayment.allocations?.length || 0 },

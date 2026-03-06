@@ -1,4 +1,5 @@
 'use client'
+import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState } from 'react';
 import { PrintButton } from '@/app/components/ui/PrintButton';
@@ -27,7 +28,7 @@ export function ContractDetailClient({ contract }: { contract: any }) {
                             {contract.title}
                         </h1>
                         <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                            Soạn thảo lúc: {new Date(contract.createdAt).toLocaleDateString('vi-VN')}
+                            Soạn thảo lúc: {formatDate(new Date(contract.createdAt))}
                         </p>
                     </div>
                 </div>
@@ -149,7 +150,7 @@ export function ContractDetailClient({ contract }: { contract: any }) {
                                             {apx.status}
                                         </span>
                                     </td>
-                                    <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }} suppressHydrationWarning>{new Date(apx.createdAt).toLocaleDateString('vi-VN')}</td>
+                                    <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }} suppressHydrationWarning>{formatDate(new Date(apx.createdAt))}</td>
                                     <td>
                                         <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                                             <Link href={`/contract-appendices/${apx.id}`} style={{

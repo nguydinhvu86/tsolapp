@@ -27,6 +27,7 @@ model User {
   role                  String                 @default("USER") // ADMIN or USER
   permissions           String                 @default("[]") @db.Text // JSON string of granted permissions (legacy, to be deprecated or kept as overrides)
   dashboardConfig       String                 @default("[]") @db.Text // JSON string for Dashboard customized layout
+  sidebarOrder          String                 @default("[]") @db.Text // JSON string for custom Sidebar menu ordering
   permissionGroupId     String?
   permissionGroup       PermissionGroup?       @relation(fields: [permissionGroupId], references: [id])
   twoFactorSecret       String? // Khóa bí mật 2FA
@@ -441,7 +442,7 @@ model TaskActivityLog {
 
 model TaskComment {
   id      String @id @default(cuid())
-  content String @db.Text
+  content String @db.LongText
   taskId  String
   userId  String
   task    Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
@@ -452,8 +453,8 @@ model TaskComment {
   parent   TaskComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies  TaskComment[] @relation("CommentReplies")
 
-  images String? @db.Text
-  files  String? @db.Text
+  images String? @db.LongText
+  files  String? @db.LongText
 
   reactions TaskCommentReaction[]
 
@@ -476,7 +477,7 @@ model TaskCommentReaction {
 model TaskAttachment {
   id           String   @id @default(cuid())
   fileName     String
-  fileUrl      String
+  fileUrl      String   @db.LongText
   fileType     String
   taskId       String
   task         Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
@@ -692,17 +693,18 @@ model PurchaseOrder {
 }
 
 model PurchaseOrderItem {
-  id         String @id @default(cuid())
+  id         String  @id @default(cuid())
   orderId    String
-  productId  String
+  productId  String? // Made optional for external products
+  productName String? // Added for external product custom names
   quantity   Int
-  unitPrice  Float  @default(0)
-  taxRate    Float  @default(0)
-  taxAmount  Float  @default(0)
-  totalPrice Float  @default(0)
+  unitPrice  Float   @default(0)
+  taxRate    Float   @default(0)
+  taxAmount  Float   @default(0)
+  totalPrice Float   @default(0)
 
   order   PurchaseOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product       @relation(fields: [productId], references: [id])
+  product Product?      @relation(fields: [productId], references: [id])
 }
 
 model PurchaseBill {
@@ -739,17 +741,18 @@ model PurchaseBill {
 }
 
 model PurchaseBillItem {
-  id         String @id @default(cuid())
-  billId     String
-  productId  String
-  quantity   Int
-  unitPrice  Float  @default(0)
-  taxRate    Float  @default(0)
-  taxAmount  Float  @default(0)
-  totalPrice Float  @default(0)
+  id          String  @id @default(cuid())
+  billId      String
+  productId   String? // Made optional for external products
+  productName String? // Added for external product custom names
+  quantity    Int
+  unitPrice   Float   @default(0)
+  taxRate     Float   @default(0)
+  taxAmount   Float   @default(0)
+  totalPrice  Float   @default(0)
 
   bill    PurchaseBill @relation(fields: [billId], references: [id], onDelete: Cascade)
-  product Product      @relation(fields: [productId], references: [id])
+  product Product?     @relation(fields: [productId], references: [id])
 }
 
 model PurchasePayment {
@@ -813,6 +816,9 @@ model SalesEstimate {
   items        SalesEstimateItem[]
   activityLogs SalesEstimateActivityLog[]
   tasks        Task[]
+  
+  leadId       String?
+  lead         Lead?    @relation(fields: [leadId], references: [id], onDelete: SetNull)
 
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
@@ -1115,9 +1121,10 @@ model Lead {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  activityLogs LeadActivityLog[]
-  tasks        Task[] // Công việc liên quan (gọi điện, hẹn gặp...)
-  EmailLog     EmailLog[]
+  activityLogs   LeadActivityLog[]
+  tasks          Task[] // Công việc liên quan (gọi điện, hẹn gặp...)
+  EmailLog       EmailLog[]
+  salesEstimates SalesEstimate[]
 }
 
 model LeadActivityLog {

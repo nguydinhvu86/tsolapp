@@ -6,7 +6,13 @@ import { authOptions } from '@/lib/authOptions';
 import { revalidatePath } from 'next/cache';
 
 // Các key mặc định
-const SETTING_KEYS = ['COMPANY_NAME', 'COMPANY_DISPLAY_NAME', 'COMPANY_FULL_NAME', 'COMPANY_LOGO', 'COMPANY_PHONE', 'COMPANY_EMAIL', 'COMPANY_ADDRESS', 'COMPANY_TAX'];
+const SETTING_KEYS = [
+    'COMPANY_NAME', 'COMPANY_DISPLAY_NAME', 'COMPANY_FULL_NAME',
+    'COMPANY_LOGO', 'COMPANY_PHONE', 'COMPANY_EMAIL',
+    'COMPANY_ADDRESS', 'COMPANY_TAX',
+    'ESTIMATE_CODE_FORMAT', 'INVOICE_CODE_FORMAT',
+    'ESTIMATE_START_SEQ', 'INVOICE_START_SEQ'
+];
 
 export async function getSystemSettings() {
     const session = await getServerSession(authOptions);

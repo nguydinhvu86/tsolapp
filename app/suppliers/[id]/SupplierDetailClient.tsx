@@ -1,4 +1,5 @@
 'use client';
+import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
@@ -70,10 +71,6 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks }
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0);
     };
 
-    const formatDate = (dateString: string | Date) => {
-        if (!dateString) return '--';
-        return new Date(dateString).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    };
 
     const tabs = [
         { id: 'orders', label: 'Đơn Đặt Hàng', count: supplier.orders?.length || 0, icon: <ShoppingCart size={16} /> },

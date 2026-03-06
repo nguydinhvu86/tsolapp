@@ -1,4 +1,5 @@
 'use client'
+import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
@@ -220,7 +221,7 @@ export function TaskPanel({ initialTasks, users, entityType, entityId, initialTi
                                         </div>
                                         {task.dueDate && (
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: isOverdue ? '#dc2626' : 'inherit' }}>
-                                                <Clock size={13} /> <span>{new Date(task.dueDate).toLocaleDateString('vi-VN')}</span>
+                                                <Clock size={13} /> <span>{formatDate(new Date(task.dueDate))}</span>
                                                 {isOverdue && <span style={{ fontSize: '0.6rem', padding: '1px 4px', background: '#fee2e2', color: '#dc2626', borderRadius: '4px', fontWeight: 600 }}>Quá hạn</span>}
                                             </div>
                                         )}
@@ -334,7 +335,7 @@ export function TaskPanel({ initialTasks, users, entityType, entityId, initialTi
                                     </div>
                                     {task.dueDate && (
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: isOverdue ? '#dc2626' : 'inherit' }}>
-                                            <Clock size={14} /> <span>{new Date(task.dueDate).toLocaleDateString('vi-VN')}</span>
+                                            <Clock size={14} /> <span>{formatDate(new Date(task.dueDate))}</span>
                                             {isOverdue && <span style={{ fontSize: '0.7rem', padding: '2px 6px', background: '#fee2e2', color: '#dc2626', borderRadius: '4px', fontWeight: 600 }}>Quá hạn</span>}
                                         </div>
                                     )}

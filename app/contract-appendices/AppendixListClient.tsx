@@ -1,4 +1,5 @@
 'use client'
+import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState } from 'react';
 import { ContractAppendix, Contract, Customer, ContractAppendixTemplate } from '@prisma/client';
@@ -175,7 +176,7 @@ export function AppendixListClient({ initialData }: { initialData: AppendixWithR
                                     <option value="CANCELLED">Hủy</option>
                                 </select>
                             </td>
-                            <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }} suppressHydrationWarning>{new Date(apx.createdAt).toLocaleDateString('vi-VN')}</td>
+                            <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }} suppressHydrationWarning>{formatDate(new Date(apx.createdAt))}</td>
                             <td>
                                 <div className="flex gap-2">
                                     <Link href={`/contract-appendices/${apx.id}`} target="_blank">

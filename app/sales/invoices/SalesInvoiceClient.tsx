@@ -9,7 +9,7 @@ import { Modal } from '@/app/components/ui/Modal';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { Plus, Edit2, Trash2, Save, X, Printer, Search, Calendar, PackageCheck, Eye, Download, LinkIcon, CheckCircle2, FileSearch, LayoutList, FileText, ChevronUp, ChevronDown, Undo2, XCircle, AlertTriangle, Info, ShieldAlert, Copy } from 'lucide-react';
 import { submitSalesInvoice, approveSalesInvoice, deleteSalesInvoice, updateSalesInvoice, cancelSalesInvoice, updateSalesInvoiceStatus, restoreSalesInvoice } from './actions';
-import { formatMoney } from '@/lib/utils/formatters';
+import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { TagDisplay } from '@/app/components/ui/TagDisplay';
 
 export default function SalesInvoiceClient({ initialInvoices, customers, products, orders, nextCode, initialAction, initialCustomerId }: any) {
@@ -679,11 +679,10 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
             {/* Filter Ribbon */}
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 mb-6 flex gap-4 items-center flex-wrap">
                 <div className="flex-1 relative min-w-[200px]">
-                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input
                         type="text"
                         placeholder="Tìm theo Mã HĐ, Tên khách hàng..."
-                        className="pl-9 border border-slate-300 px-3 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 w-full bg-white"
+                        className="px-3 border border-slate-300 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 w-full bg-white"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                     />
@@ -949,7 +948,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                 </Link>
                                 {inv.orderId && <span className="text-[10px] bg-blue-100 text-blue-600 px-1 rounded ml-1">Kế thừa</span>}
                             </td>
-                            <td className="py-3 text-gray-600" suppressHydrationWarning>{new Date(inv.date).toLocaleDateString()}</td>
+                            <td className="py-3 text-gray-600" suppressHydrationWarning>{formatDate(new Date(inv.date))}</td>
                             <td className="py-3">
                                 {inv.customerId ? (
                                     <Link href={`/customers/${inv.customerId}`} className="font-medium text-gray-800 hover:text-primary hover:underline transition-colors block">

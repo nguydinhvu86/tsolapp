@@ -1,4 +1,5 @@
 'use client'
+import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState } from 'react';
 import { Dispatch, Customer, DispatchTemplate } from '@prisma/client';
@@ -179,7 +180,7 @@ export function DispatchListClient({ initialData }: { initialData: DispatchWithR
                                     <option value="CANCELLED">Hủy</option>
                                 </select>
                             </td>
-                            <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }} suppressHydrationWarning>{new Date(d.createdAt).toLocaleDateString('vi-VN')}</td>
+                            <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }} suppressHydrationWarning>{formatDate(new Date(d.createdAt))}</td>
                             <td>
                                 <div className="flex gap-2">
                                     <Link href={`/dispatches/${d.id}`} target="_blank">

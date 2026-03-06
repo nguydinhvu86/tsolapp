@@ -1,4 +1,5 @@
 'use client'
+import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState } from 'react';
 import { HandoverTemplate } from '@prisma/client';
@@ -98,7 +99,7 @@ export function HandoverTemplateClient({ initialData }: { initialData: HandoverT
                         <tr key={template.id}>
                             <td style={{ fontWeight: 500 }}>{template.name}</td>
                             <td style={{ color: 'var(--text-muted)' }}>{template.description || '-'}</td>
-                            <td style={{ color: 'var(--text-muted)' }} suppressHydrationWarning>{new Date(template.createdAt).toLocaleDateString('vi-VN')}</td>
+                            <td style={{ color: 'var(--text-muted)' }} suppressHydrationWarning>{formatDate(new Date(template.createdAt))}</td>
                             <td>
                                 <div className="flex gap-2">
                                     <button onClick={() => openModal(template)} style={{ color: 'var(--text-muted)' }} title="Sửa">

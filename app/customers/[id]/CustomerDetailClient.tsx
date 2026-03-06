@@ -1,4 +1,5 @@
 'use client'
+import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
@@ -25,16 +26,29 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
     const [searchQuery, setSearchQuery] = useState('');
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    const validEstimatesCount = customer.salesEstimates?.filter((e: any) => {
+        if (['REJECTED', 'CANCELLED'].includes(e.status)) return false;
+        if (!e.validUntil) return true;
+        return new Date(e.validUntil) >= now;
+    }).length || 0;
+
+    const unpaidInvoicesCount = customer.salesInvoices?.filter((i: any) =>
+        !['PAID', 'CANCELLED', 'DRAFT'].includes(i.status)
+    ).length || 0;
+
     const tabs = [
         { id: 'leads', name: 'Cơ hội Bán hàng', count: customer.leads?.length || 0, icon: Target },
-        { id: 'salesEstimates', name: 'Báo Giá (ERP)', count: customer.salesEstimates?.length || 0, icon: SearchCode },
+        { id: 'salesEstimates', name: 'Báo Giá (ERP)', count: validEstimatesCount, icon: SearchCode },
         { id: 'salesOrders', name: 'Đơn Đặt Hàng', count: customer.salesOrders?.length || 0, icon: ShoppingCart },
-        { id: 'salesInvoices', name: 'HĐ Bán & Nợ', count: customer.salesInvoices?.length || 0, icon: Ticket },
+        { id: 'salesInvoices', name: 'HĐ Bán & Nợ', count: unpaidInvoicesCount, icon: Ticket },
         { id: 'salesPayments', name: 'Thu Tiền', count: customer.salesPayments?.length || 0, icon: HandCoins },
         { id: 'statement', name: 'Sao Kê Công Nợ', count: '-', icon: FileSpreadsheet },
         { id: 'documents', name: 'Tủ Hồ Sơ', count: customer.notes?.length || 0, icon: FileText },
-        { id: 'quotes', name: 'Báo Giá', count: customer.quotes.length, icon: FileSpreadsheet },
-        { id: 'contracts', name: 'Hợp Đồng', count: customer.contracts.length, icon: FileText },
+        { id: 'quotes', name: 'Báo Giá', count: customer.quotes?.length || 0, icon: FileSpreadsheet },
+        { id: 'contracts', name: 'Hợp Đồng', count: customer.contracts?.length || 0, icon: FileText },
         { id: 'appendices', name: 'Phụ Lục HĐ', count: customer.contracts.reduce((acc: number, c: any) => acc + (c.appendices?.length || 0), 0), icon: FileStack },
         { id: 'dispatches', name: 'Công Văn', count: customer.dispatches?.length || 0, icon: Mail },
         { id: 'handovers', name: 'Bàn Giao', count: customer.handovers.length, icon: FileOutput },
@@ -398,7 +412,7 @@ function DocumentRow({ doc, type, getStatusColor }: { doc: any, type: string, ge
                     {statusObj.text}
                 </span>
             </td>
-            <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }} suppressHydrationWarning>{new Date(doc.createdAt).toLocaleDateString('vi-VN')}</td>
+            <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }} suppressHydrationWarning>{formatDate(new Date(doc.createdAt))}</td>
             <td>
                 <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                     <Link href={`/${type}/${doc.id}`} style={{
@@ -442,7 +456,7 @@ export function SalesDocumentRow({ doc, type, getStatusColor }: { doc: any, type
                     {statusObj.text}
                 </span>
             </td>
-            <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }} suppressHydrationWarning>{new Date(doc.createdAt).toLocaleDateString('vi-VN')}</td>
+            <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }} suppressHydrationWarning>{formatDate(new Date(doc.createdAt))}</td>
             <td>
                 <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                     <Link href={`/${type}/${doc.id}`} style={{

@@ -4,22 +4,15 @@ import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
-import { ChevronLeft, CheckCircle2, Circle, MessageSquare, Clock, Plus, Trash2, User as UserIcon, Edit2, Info, Mail } from 'lucide-react';
+import { ChevronLeft, CheckCircle2, Circle, MessageSquare, Clock, Plus, Trash2, User as UserIcon, Edit2, Info, Mail, Paperclip, Image as ImageIcon, X, FileIcon, Download, Type } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { updateTaskStatus, addChecklist, toggleChecklist, addComment, updateTask, editChecklist, deleteChecklist, sendTaskEmail } from '../actions';
+import { updateTaskStatus, addChecklist, toggleChecklist, addComment, updateTask, editChecklist, deleteChecklist, sendTaskEmail, uploadTaskAttachment, deleteTaskAttachment } from '../actions';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import dynamic from 'next/dynamic';
 import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
-import 'suneditor/dist/css/suneditor.min.css';
 import { toggleReaction, updateTaskLinks, searchEntities } from '../actions';
-
-const SunEditor = dynamic(() => import('suneditor-react'), {
-    ssr: false,
-    loading: () => <div style={{ height: '120px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px' }}>Đang tải công cụ soạn thảo...</div>
-});
 
 const EMOJIS = ['👍', '❤️', '😂', '🎉', '👀'];
 
@@ -28,8 +21,13 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
     const { data: session } = useSession();
     const permissions = session?.user?.permissions || [];
     const isAdmin = session?.user?.role === 'ADMIN';
+    const isAssignee = initialTask.assignees?.some((a: any) => a.userId === session?.user?.id);
 
-    const canEdit = isAdmin || permissions.includes('TASKS_EDIT');
+    // canEdit allows changing task details/status (Assignees can do this)
+    const canEdit = isAdmin || permissions.includes('TASKS_EDIT') || isAssignee;
+
+    // canDelete allows removing documents, links, etc. (Strictly Admin / TASKS_EDIT)
+    const canDelete = isAdmin || permissions.includes('TASKS_EDIT');
 
     const [task, setTask] = useState(initialTask);
 
@@ -58,6 +56,21 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
     const [editAssignees, setEditAssignees] = useState<string[]>(initialTask.assignees?.map((a: any) => a.userId) || []);
     const [editObservers, setEditObservers] = useState<string[]>(initialTask.observers?.map((o: any) => o.userId) || []);
 
+    // Comment & Note Attachments State
+    const [commentImages, setCommentImages] = useState<{ url: string, file: File }[]>([]);
+    const [isAddingNote, setIsAddingNote] = useState(false);
+    const [newNoteContent, setNewNoteContent] = useState('');
+
+    // Lightbox State
+    const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+
+    const handleCommentClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        const target = e.target as HTMLElement;
+        if (target.tagName.toLowerCase() === 'img') {
+            setLightboxImage((target as HTMLImageElement).src);
+        }
+    };
+
     // Contextual references
     const relatedLinks = [];
     if (task.contract) relatedLinks.push({ label: 'Hợp đồng', value: task.contract.title, href: `/contracts/${task.contract.id}` });
@@ -70,6 +83,7 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
     if (task.salesInvoice) relatedLinks.push({ label: 'Hóa đơn', value: task.salesInvoice.code, href: `/sales/invoices/${task.salesInvoice.id}` });
     if (task.salesEstimate) relatedLinks.push({ label: 'Báo giá (Sales)', value: task.salesEstimate.code, href: `/sales/estimates/${task.salesEstimate.id}` });
     if (task.salesPayment) relatedLinks.push({ label: 'Phiếu thu', value: task.salesPayment.code, href: `/sales/payments/${task.salesPayment.id}` });
+    if (task.lead) relatedLinks.push({ label: 'Cơ hội bán hàng', value: task.lead.name, href: `/sales/leads/${task.lead.id}` });
 
     // Context Links Linker State
     const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
@@ -87,10 +101,10 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
         return () => clearTimeout(delay);
     }, [linkQuery, linkType, isLinkModalOpen]);
 
-    const handleEditorChange = (content: string) => {
+    const handleEditorChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const content = e.target.value;
         setNewComment(content);
-        const plainText = content.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ');
-        const match = plainText.match(/@([a-zA-Z0-9_\u00C0-\u024F\u1E00-\u1EFF ]*)$/);
+        const match = content.match(/@([a-zA-Z0-9_\u00C0-\u024F\u1E00-\u1EFF ]*)$/);
         if (match && match[1].length < 20) {
             setMentionQuery(match[1]);
         } else {
@@ -102,10 +116,90 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
         if (mentionQuery === null) return;
         const escapedQuery = mentionQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const regex = new RegExp(`@${escapedQuery}(?!.*@${escapedQuery})`, 'i');
-        const newHtml = newComment.replace(regex, `<strong style="color: #4f46e5;">@${userName}</strong>&nbsp;`);
-        setNewComment(newHtml);
+        const newText = newComment.replace(regex, `@${userName} `);
+        setNewComment(newText);
         setMentionQuery(null);
     };
+
+    const handleCommentImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files?.length) return;
+        Array.from(e.target.files).forEach(file => {
+            if (file.size > 5242880) {
+                alert(`File ${file.name} quá lớn (Tối đa 5MB)`);
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                if (event.target?.result) {
+                    const url = event.target.result as string;
+                    setCommentImages(prev => [...prev, { url, file }]);
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+        e.target.value = ''; // Reset input
+    };
+
+    const removeCommentImage = (index: number) => {
+        setCommentImages(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files?.length || !session?.user?.id) return;
+        setIsSaving(true);
+        try {
+            for (const file of Array.from(e.target.files)) {
+                if (file.size > 15 * 1024 * 1024) {
+                    alert(`Tài liệu ${file.name} quá lớn (Tối đa 15MB)`);
+                    continue;
+                }
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    if (event.target?.result) {
+                        await uploadTaskAttachment(task.id, file.name, event.target.result as string, file.type, session.user.id);
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+            // Wait a moment for async readers to complete database actions
+            setTimeout(() => router.refresh(), 1000);
+        } catch (error) {
+            console.error(error);
+            alert("Lỗi tải lên tài liệu");
+        } finally {
+            setIsSaving(false);
+            e.target.value = ''; // Reset
+        }
+    };
+
+    const handleNoteSave = async () => {
+        if (!newNoteContent.trim() || !session?.user?.id) return;
+        setIsSaving(true);
+        try {
+            // we use uploadTaskAttachment but send plain text in fileUrl and 'TEXT_NOTE' as type
+            await uploadTaskAttachment(task.id, 'Ghi chú văn bản', newNoteContent, 'TEXT_NOTE', session.user.id);
+            setIsAddingNote(false);
+            setNewNoteContent('');
+            router.refresh();
+        } catch (error) {
+            console.error(error);
+            alert("Lỗi lưu ghi chú");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleDocDelete = async (attachmentId: string) => {
+        if (!confirm('Bạn có chắc muốn xóa tài liệu / ghi chú này?')) return;
+        if (!session?.user?.id) return;
+        setIsSaving(true);
+        try {
+            await deleteTaskAttachment(attachmentId, session.user.id);
+            router.refresh();
+        } finally {
+            setIsSaving(false);
+        }
+    }
 
     const handleSaveLink = async (entityId: string) => {
         if (!session?.user?.id) return;
@@ -120,7 +214,8 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
             'SALES_ORDER': { salesOrderId: entityId },
             'SALES_INVOICE': { salesInvoiceId: entityId },
             'SALES_ESTIMATE': { salesEstimateId: entityId },
-            'SALES_PAYMENT': { salesPaymentId: entityId }
+            'SALES_PAYMENT': { salesPaymentId: entityId },
+            'LEAD': { leadId: entityId }
         };
         await updateTaskLinks(task.id, linkMap[linkType], session.user.id);
         setIsLinkModalOpen(false);
@@ -145,6 +240,7 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
         else if (typeLabel === 'Hóa đơn') linkKey = 'SALES_INVOICE';
         else if (typeLabel === 'Báo giá (Sales)') linkKey = 'SALES_ESTIMATE';
         else if (typeLabel === 'Phiếu thu') linkKey = 'SALES_PAYMENT';
+        else if (typeLabel === 'Cơ hội bán hàng') linkKey = 'LEAD';
 
         const linkMap: any = {
             'CUSTOMER': { customerId: null },
@@ -156,7 +252,8 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
             'SALES_ORDER': { salesOrderId: null },
             'SALES_INVOICE': { salesInvoiceId: null },
             'SALES_ESTIMATE': { salesEstimateId: null },
-            'SALES_PAYMENT': { salesPaymentId: null }
+            'SALES_PAYMENT': { salesPaymentId: null },
+            'LEAD': { leadId: null }
         };
 
         if (linkKey && linkMap[linkKey]) {
@@ -306,15 +403,22 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
     const handleAddComment = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
 
-        // Strip out empty p tags from SunEditor
-        const cleanComment = newComment.replace(/<p><br><\/p>/g, '').trim();
-        if (!cleanComment || !session?.user?.id) return;
+        if (!newComment.trim() && commentImages.length === 0 || !session?.user?.id) return;
+
+        let finalHtml = newComment.replace(/\n/g, '<br/>');
+        // Mention parsing
+        finalHtml = finalHtml.replace(/@([a-zA-Z0-9_\u00C0-\u024F\u1E00-\u1EFF ]+?)(?=\s|$|<)/g, '<strong style="color: #4f46e5;">@$1</strong>');
+
+        if (commentImages.length > 0) {
+            const imgTags = commentImages.map(img => `<img src="${img.url}" />`).join('');
+            finalHtml += `<div>${imgTags}</div>`;
+        }
 
         setIsSaving(true);
         // Optimistic Update
         const optimisticComment = {
             id: 'temp-' + Date.now(),
-            content: cleanComment,
+            content: finalHtml,
             userId: session.user.id,
             parentId: replyTo,
             createdAt: new Date().toISOString(),
@@ -325,11 +429,12 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
 
         // Clear input early
         setNewComment('');
+        setCommentImages([]);
         const parentId = replyTo;
         setReplyTo(null);
 
         try {
-            await addComment(task.id, cleanComment, session.user.id, parentId || undefined);
+            await addComment(task.id, finalHtml, session.user.id, parentId || undefined);
             router.refresh(); // Sync actual IDs from DB
         } finally {
             setIsSaving(false);
@@ -643,7 +748,8 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                                                     <div
                                                         style={{ padding: '0.75rem', backgroundColor: isReply ? '#f8fafc' : 'var(--background)', borderRadius: '0.5rem', lineHeight: 1.5, fontSize: '0.95rem', overflowWrap: 'anywhere' }}
                                                         dangerouslySetInnerHTML={{ __html: c.content }}
-                                                        className="sun-editor-output"
+                                                        className="sun-editor-output custom-comment-content"
+                                                        onClick={handleCommentClick}
                                                     />
 
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem' }}>
@@ -699,23 +805,32 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                                 </div>
                             )}
 
-                            <div className="sun-editor-wrapper" style={{ position: 'relative' }}>
-                                <SunEditor
-                                    setContents={newComment}
+                            <div style={{ position: 'relative' }}>
+                                <textarea
+                                    value={newComment}
                                     onChange={handleEditorChange}
-                                    setOptions={{
-                                        buttonList: [
-                                            ['undo', 'redo'],
-                                            ['bold', 'underline', 'italic', 'strike'],
-                                            ['fontColor', 'hiliteColor'],
-                                            ['link', 'image'],
-                                            ['removeFormat']
-                                        ],
-                                        minHeight: '120px',
-                                        defaultStyle: "font-family: inherit; font-size: 14px;"
+                                    style={{
+                                        width: '100%',
+                                        minHeight: '100px',
+                                        padding: '0.75rem',
+                                        paddingRight: '2.5rem',
+                                        borderRadius: '8px',
+                                        border: '1px solid var(--border)',
+                                        resize: 'vertical',
+                                        fontSize: '0.95rem',
+                                        lineHeight: 1.5,
+                                        boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.05)'
                                     }}
                                     placeholder="Gõ phím @ để nhắc tên ai đó, hoặc chia sẻ hình ảnh..."
                                 />
+                                <div style={{ position: 'absolute', bottom: '1rem', right: '0.75rem' }}>
+                                    <label style={{ cursor: 'pointer', color: 'var(--text-muted)' }} title="Đính kèm ảnh">
+                                        <ImageIcon size={20} className="hover:text-primary transition-colors" />
+                                        <input type="file" hidden multiple accept="image/*" onChange={handleCommentImageSelect} disabled={isSaving} />
+                                    </label>
+                                </div>
+
+                                {/* Mentions Dropdown */}
                                 {mentionQuery !== null && (
                                     <div style={{
                                         position: 'absolute', bottom: '100%', left: 0,
@@ -745,8 +860,25 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                                 )}
                             </div>
 
+                            {/* Image Preview List */}
+                            {commentImages.length > 0 && (
+                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                                    {commentImages.map((img, i) => (
+                                        <div key={i} style={{ position: 'relative', width: '60px', height: '60px', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border)' }}>
+                                            <img src={img.url} alt={`preview-${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            <button
+                                                onClick={() => removeCommentImage(i)}
+                                                style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '0.7rem' }}
+                                            >
+                                                &times;
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
                             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                                <Button onClick={() => handleAddComment()} disabled={isSaving || !newComment.replace(/<[^>]*>?/gm, '').trim()}>
+                                <Button onClick={() => handleAddComment()} disabled={isSaving || (!newComment.trim() && commentImages.length === 0)}>
                                     Gửi bình luận
                                 </Button>
                             </div>
@@ -781,13 +913,120 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                                                 {link.value}
                                             </Link>
                                         </div>
-                                        {canEdit && (
+                                        {canDelete && (
                                             <button onClick={() => handleRemoveLink(link.label)} disabled={isSaving} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: '0.5rem', opacity: isSaving ? 0.5 : 1 }} title="Gỡ liên kết">
                                                 <Trash2 size={16} />
                                             </button>
                                         )}
                                     </div>
                                 ))}
+                            </div>
+                        )}
+                    </div>
+                </Card>
+
+                {/* Documents & Notes */}
+                <Card>
+                    <div style={{ padding: '1.25rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                            <h4 style={{ margin: 0, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <Paperclip size={16} /> Tài liệu và Ghi chú
+                            </h4>
+                            {canEdit && (
+                                <div style={{ display: 'flex', gap: '1rem' }}>
+                                    <button onClick={() => setIsAddingNote(!isAddingNote)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem' }}>
+                                        <Plus size={14} /> Ghi chú
+                                    </button>
+                                    <label style={{ cursor: 'pointer', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem' }}>
+                                        <Plus size={14} /> Tài liệu
+                                        <input type="file" multiple hidden onChange={handleDocUpload} disabled={isSaving} />
+                                    </label>
+                                </div>
+                            )}
+                        </div>
+
+                        {isAddingNote && (
+                            <div style={{ marginBottom: '1rem', padding: '0.75rem', backgroundColor: '#f8fafc', borderRadius: '6px', border: '1px solid var(--border)' }}>
+                                <textarea
+                                    value={newNoteContent}
+                                    onChange={(e) => setNewNoteContent(e.target.value)}
+                                    placeholder="Nhập nội dung ghi chú..."
+                                    style={{ width: '100%', minHeight: '80px', padding: '0.5rem', borderRadius: '4px', border: '1px solid #e2e8f0', resize: 'vertical', fontSize: '0.9rem', marginBottom: '0.5rem' }}
+                                />
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                                    <Button variant="secondary" onClick={() => { setIsAddingNote(false); setNewNoteContent(''); }}>Hủy</Button>
+                                    <Button onClick={handleNoteSave} disabled={isSaving || !newNoteContent.trim()}>Lưu ghi chú</Button>
+                                </div>
+                            </div>
+                        )}
+
+                        {(!task.attachments || task.attachments.length === 0) ? (
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', padding: '1rem 0' }}>
+                                <FileIcon size={32} opacity={0.2} style={{ margin: '0 auto 0.5rem' }} />
+                                Chưa có tài liệu nào tải lên.
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                {task.attachments.map((doc: any) => {
+                                    const isImage = doc.fileType?.startsWith('image/');
+                                    const isNote = doc.fileType === 'TEXT_NOTE';
+
+                                    if (isNote) {
+                                        return (
+                                            <div key={doc.id} style={{ display: 'flex', flexDirection: 'column', padding: '0.75rem', backgroundColor: '#fcf8e3', borderRadius: '6px', border: '1px solid #faebcc' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#8a6d3b' }}>
+                                                        <Type size={14} />
+                                                        <strong>Ghi chú từ {doc.uploadedBy?.name || 'Hệ thống'}</strong>
+                                                        <span style={{ opacity: 0.7 }}>• {formatDistanceToNow(new Date(doc.createdAt), { addSuffix: true, locale: vi })}</span>
+                                                    </div>
+                                                    {canDelete && (
+                                                        <button onClick={() => handleDocDelete(doc.id)} disabled={isSaving} style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }} className="hover:opacity-70">
+                                                            <Trash2 size={12} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <div style={{ fontSize: '0.9rem', color: 'var(--text)', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
+                                                    {doc.fileUrl}
+                                                </div>
+                                            </div>
+                                        );
+                                    }
+
+                                    return (
+                                        <div key={doc.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', backgroundColor: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', overflow: 'hidden' }}>
+                                                {isImage ? (
+                                                    <div style={{ width: '32px', height: '32px', borderRadius: '4px', overflow: 'hidden', flexShrink: 0, cursor: 'pointer' }} onClick={() => setLightboxImage(doc.fileUrl)}>
+                                                        <img src={doc.fileUrl} alt={doc.fileName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                    </div>
+                                                ) : (
+                                                    <div style={{ width: '32px', height: '32px', borderRadius: '4px', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#64748b' }}>
+                                                        <FileIcon size={16} />
+                                                    </div>
+                                                )}
+                                                <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                                                    <a href={doc.fileUrl} download={doc.fileName} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text)', textDecoration: 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} className="hover:text-primary transition-colors">
+                                                        {doc.fileName}
+                                                    </a>
+                                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                                                        Bởi {doc.uploadedBy?.name || 'Hệ thống'} • {formatDistanceToNow(new Date(doc.createdAt), { addSuffix: true, locale: vi })}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                <a href={doc.fileUrl} download={doc.fileName} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-muted)', display: 'flex', padding: '4px' }} className="hover:text-primary">
+                                                    <Download size={14} />
+                                                </a>
+                                                {canDelete && (
+                                                    <button onClick={() => handleDocDelete(doc.id)} disabled={isSaving} style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }} className="hover:opacity-70">
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
@@ -945,6 +1184,7 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                                     <option value="SALES_ORDER">Đơn hàng</option>
                                     <option value="SALES_INVOICE">Hóa đơn</option>
                                     <option value="SALES_PAYMENT">Phiếu thu</option>
+                                    <option value="LEAD">Cơ hội bán hàng</option>
                                 </select>
                             </div>
 
@@ -1084,6 +1324,19 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                     else alert("Lỗi khi gửi email: " + res?.error);
                 }}
             />
+
+            {/* Lightbox Overlay */}
+            {lightboxImage && (
+                <div className="lightbox-overlay" onClick={() => setLightboxImage(null)}>
+                    <img src={lightboxImage} alt="Phóng to ảnh" className="lightbox-image" />
+                    <button
+                        onClick={() => setLightboxImage(null)}
+                        style={{ position: 'absolute', top: '20px', right: '30px', background: 'rgba(0,0,0,0.5)', border: 'none', color: '#fff', fontSize: '2rem', cursor: 'pointer', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                        &times;
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

@@ -18,7 +18,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
 
     const supplierFormOptions = [{ value: '', label: '-- Chọn Nhà Cung Cấp --' }, ...suppliers.map((s: any) => ({ value: s.id, label: s.name }))];
     const warehouseOptions = [{ value: '', label: '-- Chọn Kho --' }, ...warehouses.map((w: any) => ({ value: w.id, label: w.name }))];
-    const productOptions = [{ value: '', label: 'Lựa chọn...' }, ...products.map((p: any) => ({ value: p.id, label: p.code ? `[${p.code}] ${p.name}` : p.name }))];
+    const productOptions = [{ value: '', label: 'Lựa chọn...' }, { value: 'EXTERNAL', label: '+ Nhập Sản Phẩm tùy chỉnh ngoài hệ thống...' }, ...products.map((p: any) => ({ value: p.id, label: p.code ? `[${p.code}] ${p.name}` : p.name }))];
 
     // Modals
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -36,11 +36,21 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
         tags: '',
         attachments: [] as { url: string, name: string, uploadedAt: string }[]
     });
-    const [billItems, setBillItems] = useState<Array<{ productId: string, quantity: number, unitPrice: number, taxRate: number }>>([]);
+    const [billItems, setBillItems] = useState<Array<{ productId: string, productName?: string, quantity: number, unitPrice: number, taxRate: number, description?: string, unit?: string, customName?: string }>>([]);
     const [approveWarehouseId, setApproveWarehouseId] = useState('');
     const [isUploading, setIsUploading] = useState(false);
-
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Item Sub-Form Buffer States
+    const [selectedProduct, setSelectedProduct] = useState('');
+    const [qty, setQty] = useState(1);
+    const [price, setPrice] = useState(0);
+    const [isCustomProduct, setIsCustomProduct] = useState(false);
+    const [customName, setCustomName] = useState('');
+    const [customUnit, setCustomUnit] = useState('Cái');
+    const [customTaxRate, setCustomTaxRate] = useState(0);
+    const [customDescription, setCustomDescription] = useState('');
+    const [useInventoryDescription, setUseInventoryDescription] = useState(true);
 
     const searchParams = useSearchParams();
 
@@ -56,7 +66,8 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                 // Map items from order to bill
                 if (order.items && order.items.length > 0) {
                     const mappedItems = order.items.map((item: any) => ({
-                        productId: item.productId,
+                        productId: item.productId || 'EXTERNAL',
+                        productName: item.productName || '',
                         quantity: item.quantity,
                         unitPrice: item.unitPrice,
                         taxRate: item.taxRate || 0
@@ -173,6 +184,17 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
             id: undefined
         } as any);
         setBillItems([]);
+
+        // Reset sub-form
+        setQty(1);
+        setPrice(0);
+        setSelectedProduct('');
+        setIsCustomProduct(false);
+        setCustomName('');
+        setCustomDescription('');
+        setCustomUnit('Cái');
+        setCustomTaxRate(0);
+
         setIsCreateModalOpen(true);
     };
 
@@ -198,11 +220,25 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
         } as any);
 
         setBillItems(bill.items?.map((i: any) => ({
-            productId: i.productId,
+            productId: i.productId || 'EXTERNAL',
+            productName: i.product?.name || i.productName || '',
+            customName: i.productName || '',
             quantity: i.quantity,
             unitPrice: i.unitPrice,
-            taxRate: i.taxRate || 0
+            taxRate: i.taxRate || 0,
+            unit: i.product?.unit || 'Cái',
+            description: i.notes || ''
         })) || []);
+
+        // Reset sub-form
+        setQty(1);
+        setPrice(0);
+        setSelectedProduct('');
+        setIsCustomProduct(false);
+        setCustomName('');
+        setCustomDescription('');
+        setCustomUnit('Cái');
+        setCustomTaxRate(0);
 
         setIsCreateModalOpen(true);
     };
@@ -215,7 +251,8 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                 setFormData(prev => ({ ...prev, supplierId: order.supplierId }));
                 if (order.items && order.items.length > 0) {
                     const mappedItems = order.items.map((item: any) => ({
-                        productId: item.productId,
+                        productId: item.productId || 'EXTERNAL',
+                        productName: item.productName || '',
                         quantity: item.quantity,
                         unitPrice: item.unitPrice,
                         taxRate: item.taxRate || 0
@@ -226,23 +263,111 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
         }
     };
 
+    const handleProductSelect = (productId: string) => {
+        setIsCustomProduct(false);
+        setSelectedProduct(productId);
+        const product = products.find((p: any) => p.id === productId);
+        if (product) {
+            setPrice(product.importPrice || 0);
+            setCustomUnit(product.unit || 'Cái');
+            setCustomTaxRate(product.taxRate || 0);
+            if (useInventoryDescription) {
+                setCustomDescription(product.description || '');
+            }
+        }
+    };
+
+    const handleDescSourceChange = (useInventory: boolean) => {
+        setUseInventoryDescription(useInventory);
+        if (useInventory && selectedProduct && !isCustomProduct) {
+            const product = products.find((p: any) => p.id === selectedProduct);
+            setCustomDescription(product?.description || '');
+        } else if (!useInventory) {
+            setCustomDescription('');
+        }
+    };
+
     const handleAddItem = () => {
-        setBillItems([...billItems, { productId: '', quantity: 1, unitPrice: 0, taxRate: 0 }]);
+        if (!isCustomProduct && !selectedProduct) {
+            alert('Vui lòng chọn sản phẩm');
+            return;
+        }
+        if (isCustomProduct && !customName.trim()) {
+            alert('Vui lòng nhập tên sản phẩm tùy chỉnh');
+            return;
+        }
+        if (qty <= 0) {
+            alert('Số lượng phải lớn hơn 0');
+            return;
+        }
+
+        let newItem: any = {
+            quantity: qty,
+            unitPrice: price,
+            description: customDescription,
+            taxRate: 0,
+            productName: '',
+            unit: 'Cái'
+        };
+
+        if (isCustomProduct) {
+            newItem.productId = 'EXTERNAL';
+            newItem.productName = customName;
+            newItem.customName = customName;
+            newItem.unit = customUnit;
+            newItem.taxRate = customTaxRate;
+        } else {
+            const product = products.find((p: any) => p.id === selectedProduct);
+            newItem.productId = selectedProduct;
+            newItem.productName = product?.name || '';
+            newItem.unit = product?.unit || 'Cái';
+            newItem.taxRate = product?.taxRate || 0;
+        }
+
+        setBillItems(prev => [...prev, newItem]);
+
+        // Reset the form
+        setSelectedProduct('');
+        setCustomName('');
+        setCustomDescription('');
+        setCustomUnit('Cái');
+        setQty(1);
+        setPrice(0);
     };
 
     const handleRemoveItem = (index: number) => {
         setBillItems(billItems.filter((_, i) => i !== index));
     };
 
-    const handleItemChange = (index: number, field: string, value: any) => {
-        const newItems = [...billItems];
-        if (field === 'productId') {
-            const product = products.find(p => p.id === value);
-            newItems[index] = { ...newItems[index], [field]: value, unitPrice: product?.importPrice || 0, taxRate: product?.taxRate || 0 };
+    const handleEditItem = (index: number) => {
+        const item = billItems[index];
+        if (item.productId && item.productId !== 'EXTERNAL') {
+            setIsCustomProduct(false);
+            setSelectedProduct(item.productId);
+            setCustomName('');
+            setCustomUnit('Cái');
+            setCustomTaxRate(item.taxRate || 0);
+
+            const prod = products.find((p: any) => p.id === item.productId);
+            if (prod && item.description === (prod.description || '')) {
+                setUseInventoryDescription(true);
+            } else {
+                setUseInventoryDescription(false);
+            }
+            setCustomDescription(item.description || '');
         } else {
-            newItems[index] = { ...newItems[index], [field]: value };
+            setIsCustomProduct(true);
+            setSelectedProduct('');
+            setCustomName(item.customName || item.productName || '');
+            setCustomUnit(item.unit || '');
+            setCustomTaxRate(item.taxRate || 0);
+            setUseInventoryDescription(false);
+            setCustomDescription(item.description || '');
         }
-        setBillItems(newItems);
+        setPrice(item.unitPrice);
+        setQty(item.quantity);
+
+        handleRemoveItem(index);
     };
 
     const calculateSubTotal = () => {
@@ -279,6 +404,13 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
         if (billItems.length === 0) {
             alert("Vui lòng thêm ít nhất 1 sản phẩm vào hóa đơn");
             return;
+        }
+
+        for (let i = 0; i < billItems.length; i++) {
+            if (billItems[i].productId === 'EXTERNAL' && !billItems[i].productName?.trim()) {
+                alert(`Vui lòng nhập tên sản phẩm cho dòng ${i + 1}`);
+                return;
+            }
         }
 
         setIsSubmitting(true);
@@ -778,67 +910,143 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                 <div>
                                     <div className="flex justify-between items-center mb-3">
                                         <h3 className="font-semibold text-gray-800 dark:text-gray-200 text-lg flex items-center gap-2">
-                                            <FileText size={18} /> Chi Tiết Sản Phẩm
+                                            <FileText size={18} /> Chi Tiết Sản Phẩm Nhập
                                         </h3>
-                                        <button type="button" onClick={handleAddItem} className="text-primary hover:text-primary/80 font-medium text-sm flex items-center gap-1 bg-primary/10 px-3 py-1.5 rounded">
-                                            <Plus size={16} /> Thêm Dòng
-                                        </button>
                                     </div>
-                                    <div className="border border-gray-200 dark:border-gray-700 rounded-xl">
-                                        <table className="w-full text-left border-collapse">
-                                            <thead>
-                                                <tr className="bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                                                    <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm">Sản Phẩm</th>
-                                                    <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm w-32">Số Lượng</th>
-                                                    <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm w-48">Đơn Giá Nhập</th>
-                                                    <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm w-24">Thuế (%)</th>
-                                                    <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm w-48 text-right">Thành Tiền</th>
-                                                    <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm w-16 text-center"></th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {billItems.map((item, index) => (
-                                                    <tr key={index} className="border-b border-gray-100 dark:border-gray-800">
-                                                        <td className="p-2">
-                                                            <SearchableSelect
-                                                                value={item.productId}
-                                                                onChange={(val) => handleItemChange(index, 'productId', val)}
-                                                                options={productOptions}
-                                                                placeholder="Lựa chọn..."
-                                                            />
-                                                        </td>
-                                                        <td className="p-2"><input type="number" required min="1" value={item.quantity} onChange={(e) => handleItemChange(index, 'quantity', Number(e.target.value))} className="w-full rounded bg-white dark:bg-gray-700 border p-2 text-sm text-center" /></td>
-                                                        <td className="p-2"><input type="number" required min="0" value={item.unitPrice} onChange={(e) => handleItemChange(index, 'unitPrice', Number(e.target.value))} className="w-full rounded bg-white dark:bg-gray-700 border p-2 text-sm text-right" /></td>
-                                                        <td className="p-2"><input type="number" required min="0" max="100" value={item.taxRate} onChange={(e) => handleItemChange(index, 'taxRate', Number(e.target.value))} className="w-full rounded bg-white dark:bg-gray-700 border p-2 text-sm text-center" /></td>
-                                                        <td className="p-2 text-right font-medium">{formatMoney(item.quantity * item.unitPrice * (1 + (item.taxRate || 0) / 100))}</td>
-                                                        <td className="p-2 text-center"><button type="button" onClick={() => handleRemoveItem(index)} className="text-red-500 p-1"><Trash2 size={16} /></button></td>
+
+                                    {/* Sub-Form for Add Item */}
+                                    <div className="flex flex-col bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mb-4">
+                                        <div className="mb-4 flex items-center gap-4 border-b border-gray-100 dark:border-gray-700 pb-3">
+                                            <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                <input type="radio" className="accent-primary w-4 h-4 cursor-pointer" checked={!isCustomProduct} onChange={() => setIsCustomProduct(false)} />
+                                                <span>Chọn từ kho</span>
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                <input type="radio" className="accent-primary w-4 h-4 cursor-pointer" checked={isCustomProduct} onChange={() => setIsCustomProduct(true)} />
+                                                <span>Nhập tự do ngoài hệ thống</span>
+                                            </label>
+                                        </div>
+                                        <div className="flex flex-wrap lg:flex-nowrap gap-3 items-end mb-4">
+                                            <div className="flex-1 min-w-[200px]">
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Tên Sản Phẩm</label>
+                                                {!isCustomProduct ? (
+                                                    <SearchableSelect
+                                                        options={products.map((p: any) => ({ value: p.id, label: `${p.sku} - ${p.name}` }))}
+                                                        value={selectedProduct || ''}
+                                                        onChange={handleProductSelect}
+                                                        placeholder="-- Chọn Sản Phẩm --"
+                                                    />
+                                                ) : (
+                                                    <input type="text" className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700" placeholder="Nhập tên sản phẩm/dịch vụ..." value={customName} onChange={e => setCustomName(e.target.value)} />
+                                                )}
+                                            </div>
+                                            {isCustomProduct && (
+                                                <div className="w-24">
+                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">ĐVT</label>
+                                                    <input type="text" className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 text-center" placeholder="Đơn vị" value={customUnit} onChange={e => setCustomUnit(e.target.value)} />
+                                                </div>
+                                            )}
+                                            <div className="w-28">
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Đơn giá nhập</label>
+                                                <input type="number" className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700" value={price} onChange={e => setPrice(Number(e.target.value))} />
+                                            </div>
+                                            <div className="w-20">
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Thuế %</label>
+                                                {isCustomProduct ? (
+                                                    <input type="number" className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-center text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700" value={customTaxRate} onChange={e => setCustomTaxRate(Number(e.target.value))} />
+                                                ) : (
+                                                    <input type="text" className="w-full border border-gray-200 dark:border-gray-600 rounded-lg p-2.5 bg-slate-50 dark:bg-gray-800 text-center text-gray-500 dark:text-gray-400 font-medium cursor-not-allowed" value={`${products.find((p: any) => p.id === selectedProduct)?.taxRate || 0}`} disabled />
+                                                )}
+                                            </div>
+                                            <div className="w-20">
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">SL</label>
+                                                <input type="number" min="1" className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-center text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700" value={qty} onChange={e => setQty(Number(e.target.value))} />
+                                            </div>
+                                            <button type="button" onClick={handleAddItem} className="h-[46px] px-5 border border-primary text-primary bg-primary/10 hover:bg-primary/20 shadow-sm font-semibold rounded-lg flex items-center justify-center transition-colors">Thêm</button>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Ghi chú SP nhập <span className="text-gray-400 font-normal">(In trên luân chuyển)</span></label>
+                                            <div className="flex flex-wrap items-center gap-4 mb-2">
+                                                <label className={`flex items-center gap-2 cursor-pointer text-sm font-medium ${isCustomProduct ? 'text-gray-400' : 'text-gray-700 dark:text-gray-300'}`}>
+                                                    <input type="radio" className="accent-primary w-4 h-4 cursor-pointer" checked={useInventoryDescription && !isCustomProduct} onChange={() => handleDescSourceChange(true)} disabled={isCustomProduct} />
+                                                    <span>Lấy mô tả từ kho</span>
+                                                </label>
+                                                <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                    <input type="radio" className="accent-primary w-4 h-4 cursor-pointer" checked={!useInventoryDescription || isCustomProduct} onChange={() => handleDescSourceChange(false)} />
+                                                    <span>Tự nhập ghi chú</span>
+                                                </label>
+                                            </div>
+                                            <textarea rows={2} className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-none text-sm ${useInventoryDescription && !isCustomProduct ? 'bg-slate-50 dark:bg-gray-800 text-gray-500' : 'text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700'}`} placeholder="Ghi chú thêm thông số, tính năng cho sản phẩm này..." value={customDescription} onChange={e => setCustomDescription(e.target.value)} disabled={useInventoryDescription && !isCustomProduct}></textarea>
+                                        </div>
+                                    </div>
+
+                                    {/* Read-Only Items Table */}
+                                    {billItems.length > 0 && (
+                                        <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden mt-2 border-t pt-4">
+                                            <table className="w-full text-sm mb-4 bg-white dark:bg-gray-800 text-left">
+                                                <thead className="bg-slate-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400">
+                                                    <tr>
+                                                        <th className="p-3 font-medium">Sản Phẩm Nhập</th>
+                                                        <th className="p-3 font-medium text-center w-20">SL</th>
+                                                        <th className="p-3 font-medium text-right w-32">Đ.Giá</th>
+                                                        <th className="p-3 font-medium text-center w-20">Thuế</th>
+                                                        <th className="p-3 font-medium text-right w-36">Thành Tiền</th>
+                                                        <th className="p-3 font-medium text-center w-16"></th>
                                                     </tr>
-                                                ))}
-                                                {billItems.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-gray-500">Chưa có sản phẩm.</td></tr>}
-                                                <tr className="bg-gray-50 dark:bg-gray-800/50">
-                                                    <td colSpan={4} className="p-3 text-right text-sm text-gray-600 dark:text-gray-400">Tổng tiền trước thuế:</td>
-                                                    <td className="p-3 text-right font-medium text-gray-700 dark:text-gray-300">{formatMoney(calculateSubTotal())}</td>
-                                                    <td></td>
-                                                </tr>
-                                                <tr className="bg-gray-50 dark:bg-gray-800/50">
-                                                    <td colSpan={4} className="p-3 text-right text-sm text-gray-600 dark:text-gray-400">Tổng tiền Thuế:</td>
-                                                    <td className="p-3 text-right font-medium text-gray-700 dark:text-gray-300">{formatMoney(calculateTax())}</td>
-                                                    <td></td>
-                                                </tr>
-                                                <tr className="bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
-                                                    <td colSpan={4} className="p-3 text-right font-semibold text-gray-800 dark:text-gray-200">Tổng Thanh Toán:</td>
-                                                    <td className="p-3 text-right font-bold text-primary text-lg">{formatMoney(calculateTotal())}</td>
-                                                    <td></td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                                </thead>
+                                                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                                                    {billItems.map((item, i) => {
+                                                        const rowSubtotal = item.quantity * item.unitPrice;
+                                                        const rowTax = rowSubtotal * (item.taxRate || 0) / 100;
+                                                        const rowTotal = rowSubtotal + rowTax;
+                                                        return (
+                                                            <tr key={i} className="hover:bg-slate-50 dark:hover:bg-gray-800/50 transition-colors">
+                                                                <td className="p-3 text-gray-800 dark:text-gray-200">
+                                                                    <div className="font-semibold">{item.productName || item.customName}</div>
+                                                                    {item.description && <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 max-w-sm whitespace-pre-wrap">{item.description}</div>}
+                                                                </td>
+                                                                <td className="p-3 text-center text-gray-800 dark:text-gray-200">
+                                                                    {item.quantity} <span className="text-xs text-gray-500 ml-1">{item.unit}</span>
+                                                                </td>
+                                                                <td className="p-3 text-right text-gray-600 dark:text-gray-300 font-medium">{formatMoney(item.unitPrice)}</td>
+                                                                <td className="p-3 text-center text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/30 border-x border-white dark:border-gray-800">{item.taxRate}%</td>
+                                                                <td className="p-3 text-right font-medium text-gray-800 dark:text-gray-200">{formatMoney(rowTotal)}</td>
+                                                                <td className="p-3 text-center">
+                                                                    <div className="flex items-center justify-center gap-2">
+                                                                        <button type="button" onClick={() => handleEditItem(i)} className="text-blue-500 hover:text-blue-700 transition-colors" title="Sửa dòng này"><Edit2 size={14} /></button>
+                                                                        <button type="button" onClick={() => handleRemoveItem(i)} className="text-red-500 hover:text-red-700 transition-colors" title="Xóa"><Trash2 size={14} /></button>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                                <tfoot>
+                                                    <tr className="bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
+                                                        <td colSpan={4} className="p-3 text-right font-medium text-gray-600 dark:text-gray-400 text-sm">Tổng tiền trước thuế:</td>
+                                                        <td className="p-3 text-right font-medium text-gray-800 dark:text-gray-200 text-sm">{formatMoney(calculateSubTotal())}</td>
+                                                        <td className="p-3 border"></td>
+                                                    </tr>
+                                                    <tr className="bg-gray-50 dark:bg-gray-800/50">
+                                                        <td colSpan={4} className="p-3 text-right font-medium text-gray-600 dark:text-gray-400 text-sm">Tổng tiền thuế:</td>
+                                                        <td className="p-3 text-right font-medium text-gray-800 dark:text-gray-200 text-sm">{formatMoney(calculateTax())}</td>
+                                                        <td className="p-3 border"></td>
+                                                    </tr>
+                                                    <tr className="bg-slate-100 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-700">
+                                                        <td colSpan={4} className="p-3 text-right font-bold text-gray-800 dark:text-gray-200">Tổng Cộng:</td>
+                                                        <td className="p-3 text-right font-bold text-primary text-[15px]">{formatMoney(calculateTotal())}</td>
+                                                        <td className="p-3 border"></td>
+                                                    </tr>
+                                                </tfoot>
+                                            </table>
+                                        </div>
+                                    )}
                                 </div>
                             </form>
                         </div>
                         <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 flex justify-end gap-3 mt-auto">
-                            <button type="button" onClick={() => setIsCreateModalOpen(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Hủy</button>
-                            <button type="submit" form="billForm" disabled={isSubmitting || billItems.length === 0} className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 font-medium">Lưu Nháp</button>
+                            <button type="button" onClick={() => setIsCreateModalOpen(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50 font-medium">Hủy</button>
+                            <button type="submit" form="billForm" disabled={isSubmitting || billItems.length === 0} className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 font-bold">Lưu Hóa Đơn</button>
                         </div>
                     </div>
                 </div>

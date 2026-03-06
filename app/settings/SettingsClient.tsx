@@ -18,7 +18,31 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
         COMPANY_PHONE: initialSettings.COMPANY_PHONE || '',
         COMPANY_EMAIL: initialSettings.COMPANY_EMAIL || '',
         COMPANY_ADDRESS: initialSettings.COMPANY_ADDRESS || '',
-        COMPANY_TAX: initialSettings.COMPANY_TAX || ''
+        COMPANY_TAX: initialSettings.COMPANY_TAX || '',
+        ESTIMATE_CODE_FORMAT: initialSettings.ESTIMATE_CODE_FORMAT || 'BG{SEQ}',
+        INVOICE_CODE_FORMAT: initialSettings.INVOICE_CODE_FORMAT || 'INV{SEQ}'
+    });
+
+    const [estStartSeq, setEstStartSeq] = useState(() => {
+        return parseInt(initialSettings.ESTIMATE_START_SEQ || '1', 10) || 1;
+    });
+
+    const [invStartSeq, setInvStartSeq] = useState(() => {
+        return parseInt(initialSettings.INVOICE_START_SEQ || '1', 10) || 1;
+    });
+
+    const [estPrefix, setEstPrefix] = useState(() => {
+        return (initialSettings.ESTIMATE_CODE_FORMAT || 'BG{SEQ}').split('{')[0] || 'BG';
+    });
+    const [estHasDate, setEstHasDate] = useState(() => {
+        return (initialSettings.ESTIMATE_CODE_FORMAT || 'BG{SEQ}').includes('{MM}');
+    });
+
+    const [invPrefix, setInvPrefix] = useState(() => {
+        return (initialSettings.INVOICE_CODE_FORMAT || 'INV{SEQ}').split('{')[0] || 'INV';
+    });
+    const [invHasDate, setInvHasDate] = useState(() => {
+        return (initialSettings.INVOICE_CODE_FORMAT || 'INV{SEQ}').includes('{MM}');
     });
 
     const [isUploadingLogo, setIsUploadingLogo] = useState(false);
@@ -32,7 +56,16 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
         setSaveSuccess(false);
 
         try {
-            await updateSystemSettings(formData);
+            const finalEstimateFormat = `${estPrefix}{SEQ}${estHasDate ? '/{MM}/{YYYY}' : ''}`;
+            const finalInvoiceFormat = `${invPrefix}{SEQ}${invHasDate ? '/{MM}/{YYYY}' : ''}`;
+
+            await updateSystemSettings({
+                ...formData,
+                ESTIMATE_CODE_FORMAT: finalEstimateFormat,
+                INVOICE_CODE_FORMAT: finalInvoiceFormat,
+                ESTIMATE_START_SEQ: estStartSeq.toString(),
+                INVOICE_START_SEQ: invStartSeq.toString()
+            });
             setSaveSuccess(true);
             router.refresh(); // Refresh để header/sidebar update (nếu cần load lại auth session context - hoặc sidebar fetch again)
 
@@ -141,6 +174,90 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
                     placeholder="Vd: 0102030405"
                 />
 
+                <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: '0 0 1rem 0', color: 'var(--text-main)' }}>Định dạng Sinh Mã Tự Động</h3>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+                        Tùy chỉnh cấu trúc mã tự tăng. Tiền tố viết tắt của công ty hoặc loại chứng từ. Hệ thống sẽ tự động thêm số thứ tự tăng dần vào cuối cùng một cách an toàn.
+                    </p>
+                    <div className="grid grid-cols-2 gap-8">
+                        {/* BÁO GIÁ */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1.25rem', backgroundColor: 'var(--bg-subtle)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+                            <div style={{ fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: 'var(--primary)' }}></div>
+                                Mã Báo Giá
+                            </div>
+                            <Input
+                                label="Tiền tố chữ"
+                                value={estPrefix}
+                                onChange={e => setEstPrefix(e.target.value.toUpperCase())}
+                                placeholder="Vd: BG-"
+                                required
+                            />
+                            <Input
+                                label="Số đếm khởi đầu"
+                                type="number"
+                                min={1}
+                                value={estStartSeq}
+                                onChange={e => setEstStartSeq(parseInt(e.target.value, 10) || 1)}
+                                required
+                            />
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', color: 'var(--text-main)' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={estHasDate}
+                                    onChange={(e) => setEstHasDate(e.target.checked)}
+                                    style={{ width: 16, height: 16, accentColor: 'var(--primary)', cursor: 'pointer' }}
+                                />
+                                Kèm theo [Tháng]/[Năm] (VD: /06/2026)
+                            </label>
+                            <div style={{ marginTop: '0.5rem', padding: '0.75rem', backgroundColor: 'var(--bg-main)', border: '1px dashed var(--border)', borderRadius: 'var(--radius)', fontSize: '0.875rem' }}>
+                                <span style={{ color: 'var(--text-muted)' }}>Xem trước mẫu: </span>
+                                <strong style={{ color: 'var(--primary)', letterSpacing: '0.5px' }}>
+                                    {estPrefix}{String(estStartSeq).padStart(4, '0')}{estHasDate ? '/06/2026' : ''}
+                                </strong>
+                            </div>
+                        </div>
+
+                        {/* HÓA ĐƠN */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1.25rem', backgroundColor: 'var(--bg-subtle)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+                            <div style={{ fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: 'var(--danger)' }}></div>
+                                Mã Hóa Đơn
+                            </div>
+                            <Input
+                                label="Tiền tố chữ"
+                                value={invPrefix}
+                                onChange={e => setInvPrefix(e.target.value.toUpperCase())}
+                                placeholder="Vd: INV"
+                                required
+                            />
+                            <Input
+                                label="Số đếm khởi đầu"
+                                type="number"
+                                min={1}
+                                value={invStartSeq}
+                                onChange={e => setInvStartSeq(parseInt(e.target.value, 10) || 1)}
+                                required
+                            />
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', color: 'var(--text-main)' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={invHasDate}
+                                    onChange={(e) => setInvHasDate(e.target.checked)}
+                                    style={{ width: 16, height: 16, accentColor: 'var(--primary)', cursor: 'pointer' }}
+                                />
+                                Kèm theo [Tháng]/[Năm] (VD: /06/2026)
+                            </label>
+                            <div style={{ marginTop: '0.5rem', padding: '0.75rem', backgroundColor: 'var(--bg-main)', border: '1px dashed var(--border)', borderRadius: 'var(--radius)', fontSize: '0.875rem' }}>
+                                <span style={{ color: 'var(--text-muted)' }}>Xem trước mẫu: </span>
+                                <strong style={{ color: 'var(--danger)', letterSpacing: '0.5px' }}>
+                                    {invPrefix}{String(invStartSeq).padStart(4, '0')}{invHasDate ? '/06/2026' : ''}
+                                </strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="flex gap-4 items-center justify-end" style={{ marginTop: '1rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
                     {saveSuccess && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#16a34a', fontSize: '0.875rem', fontWeight: 500 }}>
@@ -152,6 +269,6 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
                     </Button>
                 </div>
             </form>
-        </Card>
+        </Card >
     );
 }

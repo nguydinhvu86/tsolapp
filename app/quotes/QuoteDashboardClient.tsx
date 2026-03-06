@@ -1,4 +1,5 @@
 'use client'
+import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState, useEffect } from 'react';
 import { Quote, Customer, QuoteTemplate } from '@prisma/client';
@@ -317,7 +318,6 @@ export function QuoteDashboardClient({ initialData }: { initialData: QuoteWithRe
                 <div className="flex justify-between items-center" style={{ marginBottom: '1.5rem' }}>
                     <div className="flex gap-4 items-center">
                         <div className="flex gap-2 items-center" style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '0.25rem 0.75rem', background: '#fff' }}>
-                            <Search size={18} color="var(--text-muted)" />
                             <input
                                 style={{ border: 'none', outline: 'none', padding: '0.25rem', background: 'transparent' }}
                                 placeholder="Tìm theo tên/khách hàng..."
@@ -402,7 +402,7 @@ export function QuoteDashboardClient({ initialData }: { initialData: QuoteWithRe
                                         <option value="CANCELLED">Hủy</option>
                                     </select>
                                 </td>
-                                <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }} suppressHydrationWarning>{new Date(q.createdAt).toLocaleDateString('vi-VN')}</td>
+                                <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }} suppressHydrationWarning>{formatDate(new Date(q.createdAt))}</td>
                                 <td>
                                     <div className="flex gap-2">
                                         {canEdit && (

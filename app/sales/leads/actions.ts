@@ -53,6 +53,14 @@ export async function getLeadById(id: string) {
                     orderBy: {
                         createdAt: 'desc'
                     }
+                },
+                salesEstimates: {
+                    include: {
+                        creator: { select: { name: true, avatar: true } }
+                    },
+                    orderBy: {
+                        createdAt: 'desc'
+                    }
                 }
             }
         });

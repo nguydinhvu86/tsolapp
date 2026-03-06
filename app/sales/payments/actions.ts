@@ -113,6 +113,9 @@ export async function createSalesPayment(data: any) {
         await logCustomerActivity(data.customerId, user.id, 'NHẬN_THANH_TOÁN', `Thu tiền ${data.amount.toLocaleString('vi-VN')} đ (Mã PT: ${code})`);
 
         return payment;
+    }, {
+        maxWait: 15000,
+        timeout: 60000
     });
 }
 
@@ -203,6 +206,9 @@ export async function updateSalesPayment(id: string, data: any) {
         revalidatePath('/sales/payments');
         revalidatePath(`/sales/payments/${id}`);
         return newPayment;
+    }, {
+        maxWait: 15000,
+        timeout: 60000
     });
 }
 
@@ -249,6 +255,9 @@ export async function cancelSalesPayment(id: string) {
         revalidatePath('/sales/payments');
         revalidatePath(`/sales/payments/${id}`);
         return updatedPayment;
+    }, {
+        maxWait: 15000,
+        timeout: 60000
     });
 }
 
@@ -295,6 +304,9 @@ export async function restoreSalesPayment(id: string) {
         revalidatePath('/sales/payments');
         revalidatePath(`/sales/payments/${id}`);
         return updatedPayment;
+    }, {
+        maxWait: 15000,
+        timeout: 60000
     });
 }
 
@@ -339,6 +351,9 @@ export async function deleteSalesPayment(id: string) {
 
         revalidatePath('/sales/payments');
         return true;
+    }, {
+        maxWait: 15000,
+        timeout: 60000
     });
 }
 

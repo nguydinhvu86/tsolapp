@@ -1,4 +1,5 @@
 'use client';
+import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState, useMemo } from 'react';
 import {
@@ -32,10 +33,6 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0);
     };
 
-    const formatDate = (dateString: string) => {
-        if (!dateString) return '';
-        return new Date(dateString).toLocaleDateString('vi-VN');
-    };
 
     // --- Data Filtering based on Date Range ---
     const filterByDate = (items: any[], dateField: string = 'date') => {
@@ -79,7 +76,7 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
 
         return sortedData.map(d => ({
             ...d,
-            displayDate: new Date(d.date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+            displayDate: formatDate(new Date(d.date))
         }));
     }, [filteredBills, filteredPayments]);
 
@@ -145,7 +142,7 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
                         map.set(prodId, {
                             id: prodId,
                             sku: item.product?.sku || '',
-                            name: item.product?.name || 'Sản phẩm không xác định',
+                            name: item.product?.name || item.productName || 'Sản phẩm không xác định',
                             unit: item.product?.unit || '',
                             totalQuantity: 0,
                             totalValue: 0,

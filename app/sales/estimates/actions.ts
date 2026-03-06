@@ -1,11 +1,12 @@
 'use server';
-
+import { formatDate } from '@/lib/utils/formatters';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { logCustomerActivity } from '@/lib/customerLogger';
+import { getNextInvoiceCode } from '../invoices/actions';
 
 const itemSchema = z.object({
     id: z.string().optional(),
@@ -122,6 +123,7 @@ export async function submitSalesEstimate(creatorId: string, formData: any) {
                 taxAmount: formData.taxAmount,
                 totalAmount: formData.totalAmount,
                 creatorId: actualCreatorId,
+                leadId: formData.leadId || null,
                 items: {
                     create: formData.items.map((item: any) => ({
                         productId: item.productId || null,
@@ -184,8 +186,8 @@ export async function updateSalesEstimate(id: string, formData: any) {
         const oldDateStr = oldEstimate.date.toISOString().split('T')[0];
         const newDateStr = new Date(formData.date).toISOString().split('T')[0];
         if (oldDateStr !== newDateStr) {
-            const fmtOld = oldEstimate.date.toLocaleDateString('vi-VN');
-            const fmtNew = new Date(formData.date).toLocaleDateString('vi-VN');
+            const fmtOld = formatDate(oldEstimate.date);
+            const fmtNew = formatDate(new Date(formData.date));
             changes.push(`Đổi Ngày báo giá từ **${fmtOld}** sang **${fmtNew}**`);
         }
 
@@ -193,8 +195,8 @@ export async function updateSalesEstimate(id: string, formData: any) {
         const oldValidStr = oldEstimate.validUntil ? oldEstimate.validUntil.toISOString().split('T')[0] : null;
         const newValidStr = formData.validUntil ? new Date(formData.validUntil).toISOString().split('T')[0] : null;
         if (oldValidStr !== newValidStr) {
-            const fmtOld = oldEstimate.validUntil ? oldEstimate.validUntil.toLocaleDateString('vi-VN') : 'Không có';
-            const fmtNew = formData.validUntil ? new Date(formData.validUntil).toLocaleDateString('vi-VN') : 'Không có';
+            const fmtOld = oldEstimate.validUntil ? formatDate(oldEstimate.validUntil) : 'Không có';
+            const fmtNew = formData.validUntil ? formatDate(new Date(formData.validUntil)) : 'Không có';
             changes.push(`Đổi Ngày hết hạn từ **${fmtOld}** sang **${fmtNew}**`);
         }
 
@@ -254,6 +256,7 @@ export async function updateSalesEstimate(id: string, formData: any) {
                 subTotal: formData.subTotal,
                 taxAmount: formData.taxAmount,
                 totalAmount: formData.totalAmount,
+                leadId: formData.leadId || null,
                 items: {
                     deleteMany: {},
                     create: formData.items.map((item: any) => ({
@@ -356,20 +359,53 @@ export async function deleteSalesEstimate(id: string) {
 }
 
 export async function getNextEstimateCode() {
+    const settings = await prisma.systemSetting.findMany({
+        where: { key: { in: ['ESTIMATE_CODE_FORMAT', 'ESTIMATE_START_SEQ'] } }
+    });
+    const formatSetting = settings.find(s => s.key === 'ESTIMATE_CODE_FORMAT');
+    const startSeqSetting = settings.find(s => s.key === 'ESTIMATE_START_SEQ');
+
+    const format = formatSetting?.value || 'BG{SEQ}';
+    const startSeq = parseInt(startSeqSetting?.value || '1', 10) || 1;
+
     const estimates = await prisma.salesEstimate.findMany({ select: { code: true } });
+
+    // Generate regex to match codes of this format and extract {SEQ}
+    const escapedPrefix = format.split('{SEQ}')[0]?.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') || '';
+    const escapedSuffix = format.split('{SEQ}')[1]?.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') || '';
+
+    // Replace {MM} and {YYYY} in regex with actual current month/year to only match current month/year codes?
+    // Actually, usually sequence should just increment regardless of month/year unless sequence resets every month.
+    // Let's just extract the number where {SEQ} is located.
+    // Regex: ^PREFIX(\d+)SUFFIX$
+    // But prefix might contain {MM} and {YYYY}. Let's substitute them first for the CURRENT date to find max sequence of current date.
+    const now = new Date();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const yyyy = String(now.getFullYear());
+
+    const dateReplacedFormat = format.replace('{MM}', mm).replace('{YYYY}', yyyy);
+    const prefix = dateReplacedFormat.split('{SEQ}')[0] || '';
+    const suffix = dateReplacedFormat.split('{SEQ}')[1] || '';
+
+    const safePrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const safeSuffix = suffix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    const regex = new RegExp(`^${safePrefix}(\\d+)${safeSuffix}$`);
 
     let maxNum = 0;
     for (const est of estimates) {
-        const m = est.code.match(/\d+/);
-        if (m) {
-            const n = parseInt(m[0], 10);
+        const m = est.code.match(regex);
+        if (m && m[1]) {
+            const n = parseInt(m[1], 10);
             if (!isNaN(n) && n > maxNum) {
                 maxNum = n;
             }
         }
     }
 
-    return `BG${String(maxNum + 1).padStart(4, '0')}`;
+    const nextNumber = Math.max(maxNum + 1, startSeq);
+    const nextSeq = String(nextNumber).padStart(4, '0');
+    return prefix + nextSeq + suffix;
 }
 
 export async function convertEstimateToInvoice(estimateId: string) {
@@ -387,17 +423,8 @@ export async function convertEstimateToInvoice(estimateId: string) {
 
         if (!estimate) return { success: false, error: "Báo giá không tồn tại." };
 
-        // Lấy mã Invoice tiếp theo (bỏ sort bằng string để tránh INV9999 > INV10000)
-        const invoices = await prisma.salesInvoice.findMany({ select: { code: true } });
-        let maxInvNum = 0;
-        for (const inv of invoices) {
-            const m = inv.code.match(/\d+/);
-            if (m) {
-                const n = parseInt(m[0], 10);
-                if (!isNaN(n) && n > maxInvNum) maxInvNum = n;
-            }
-        }
-        const nextCode = `INV${String(maxInvNum + 1).padStart(4, '0')}`;
+        // Lấy mã Invoice tiếp theo dùng config tự động
+        const nextCode = await getNextInvoiceCode();
 
         const { invoice, estimateId: estId, actualCreatorId: creatorId } = await prisma.$transaction(async (tx) => {
             const invoice = await tx.salesInvoice.create({

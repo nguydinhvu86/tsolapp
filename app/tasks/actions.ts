@@ -1,5 +1,5 @@
-'use server'
-
+'use server';
+import { formatDate } from '@/lib/utils/formatters';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { sendEmailWithTracking } from '@/lib/mailer';
@@ -186,7 +186,7 @@ export async function triggerAutoTaskEmail(taskId: string, newAssigneeIds: strin
                 const variables: Record<string, string> = {
                     '{{taskTitle}}': task.title,
                     '{{taskDescription}}': task.description || 'Không có mô tả',
-                    '{{dueDate}}': task.dueDate ? new Date(task.dueDate).toLocaleDateString('vi-VN') : 'Không có hạn chót',
+                    '{{dueDate}}': task.dueDate ? formatDate(new Date(task.dueDate)) : 'Không có hạn chót',
                     '{{priority}}': task.priority === 'URGENT' ? 'Khẩn cấp' : task.priority === 'HIGH' ? 'Cao' : task.priority === 'MEDIUM' ? 'Trung bình' : 'Thấp',
                     '{{assignerName}}': task.creator?.name || task.creator?.email || 'Hệ thống',
                     '{{assigneeName}}': assignee.name || assignee.email || 'Bạn',
@@ -471,6 +471,35 @@ export async function addComment(taskId: string, content: string, userId: string
     logActivity(taskId, userId, 'COMMENT_ADDED', JSON.stringify({ summary: parentId ? 'Đã trả lời một bình luận' : 'Đã thêm bình luận mới' }));
 
     revalidatePath(`/tasks/${taskId}`);
+    revalidatePath(`/tasks/${taskId}`);
+}
+
+export async function uploadTaskAttachment(taskId: string, fileName: string, fileUrl: string, fileType: string, userId: string) {
+    const taskData = await prisma.task.findUnique({ where: { id: taskId } });
+    if (!taskData) throw new Error("Thẻ công việc không tồn tại");
+
+    await prisma.taskAttachment.create({
+        data: {
+            fileName,
+            fileUrl,
+            fileType,
+            taskId,
+            uploadedById: userId
+        }
+    });
+
+    logActivity(taskId, userId, 'ATTACHMENT_ADDED', JSON.stringify({ summary: `Đã tải lên tài liệu: ${fileName}` }));
+    revalidatePath(`/tasks/${taskId}`);
+}
+
+export async function deleteTaskAttachment(attachmentId: string, userId: string) {
+    const attachment = await prisma.taskAttachment.findUnique({ where: { id: attachmentId } });
+    if (!attachment) return;
+
+    await prisma.taskAttachment.delete({ where: { id: attachmentId } });
+
+    logActivity(attachment.taskId, userId, 'ATTACHMENT_DELETED', JSON.stringify({ summary: `Đã xóa tài liệu: ${attachment.fileName}` }));
+    revalidatePath(`/tasks/${attachment.taskId}`);
 }
 
 export async function toggleReaction(commentId: string, emoji: string, userId: string) {
@@ -507,7 +536,7 @@ export async function updateTaskLinks(taskId: string, linkData: { customerId?: s
 
     if (oldTask) {
         const changes: string[] = [];
-        const keysMap: any = { customerId: 'Khách hàng', contractId: 'Hợp đồng', quoteId: 'Báo giá', handoverId: 'Biên bản bàn giao', paymentReqId: 'Đề nghị thanh toán', dispatchId: 'Công văn', salesOrderId: 'Đơn hàng', salesInvoiceId: 'Hóa đơn', salesEstimateId: 'Báo giá (Sales)', salesPaymentId: 'Phiếu thu' };
+        const keysMap: any = { customerId: 'Khách hàng', contractId: 'Hợp đồng', quoteId: 'Báo giá', handoverId: 'Biên bản bàn giao', paymentReqId: 'Đề nghị thanh toán', dispatchId: 'Công văn', salesOrderId: 'Đơn hàng', salesInvoiceId: 'Hóa đơn', salesEstimateId: 'Báo giá (Sales)', salesPaymentId: 'Phiếu thu', leadId: 'Cơ hội bán hàng' };
 
         for (const key of Object.keys(linkData)) {
             const oldVal = (oldTask as any)[key];
@@ -549,6 +578,8 @@ export async function searchEntities(type: string, query: string = '') {
             return prisma.salesEstimate.findMany({ where: { code: { contains: q } }, take: 5, select: { id: true, code: true } });
         case 'SALES_PAYMENT':
             return prisma.salesPayment.findMany({ where: { code: { contains: q } }, take: 5, select: { id: true, code: true } });
+        case 'LEAD':
+            return prisma.lead.findMany({ where: { OR: [{ code: { contains: q } }, { name: { contains: q } }] }, take: 5, select: { id: true, name: true, code: true } });
         default:
             return [];
     }

@@ -8,7 +8,7 @@ import {
 import { Calendar, TrendingUp, DollarSign, Users, Package, FileText, CreditCard, Search, ArrowUpRight, Activity, Download, Printer } from 'lucide-react';
 import Link from 'next/link';
 import { exportToExcel, exportToPDF } from '@/lib/utils/export';
-import { formatMoney } from '@/lib/utils/formatters';
+import { formatMoney, formatDate } from '@/lib/utils/formatters';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
@@ -31,10 +31,7 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
     const [paymentSearch, setPaymentSearch] = useState('');
     const [paymentMethod, setPaymentMethod] = useState('ALL');
 
-    const formatDate = (dateString: string) => {
-        if (!dateString) return '';
-        return new Date(dateString).toLocaleDateString('vi-VN');
-    };
+
 
     // --- Data Filtering based on Date Range ---
     const filterByDate = (items: any[], dateField: string = 'date') => {
@@ -86,7 +83,7 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
 
         return sortedData.map(d => ({
             ...d,
-            displayDate: new Date(d.date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+            displayDate: formatDate(new Date(d.date))
         }));
     }, [filteredInvoices, filteredPayments]);
 
@@ -152,7 +149,7 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
                         map.set(prodId, {
                             id: prodId,
                             sku: item.product?.sku || '',
-                            name: item.product?.name || 'Sản phẩm không xác định',
+                            name: item.product?.name || item.productName || item.customName || 'Sản phẩm không xác định',
                             unit: item.product?.unit || '',
                             totalQuantity: 0,
                             totalValue: 0,
@@ -469,26 +466,30 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
                                     <AreaChart data={timelineData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                                         <defs>
                                             <linearGradient id="colorDoanhThu" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.3} />
-                                                <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
+                                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
+                                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                                             </linearGradient>
                                             <linearGradient id="colorThucThu" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="var(--success)" stopOpacity={0.3} />
-                                                <stop offset="95%" stopColor="var(--success)" stopOpacity={0} />
+                                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                                                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                                             </linearGradient>
                                             <linearGradient id="colorChiPhi" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#dc2626" stopOpacity={0.3} />
-                                                <stop offset="95%" stopColor="#dc2626" stopOpacity={0} />
+                                                <stop offset="5%" stopColor="#ef4444" stopOpacity={0.4} />
+                                                <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
                                             </linearGradient>
                                         </defs>
-                                        <XAxis dataKey="displayDate" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} dy={10} />
-                                        <YAxis tickFormatter={(val) => `${val / 1000000}M`} stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} width={60} />
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                                        <XAxis dataKey="displayDate" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} dy={10} />
+                                        <YAxis tickFormatter={(val) => {
+                                            if (val >= 1000000000) return `${(val / 1000000000).toFixed(1)}T`;
+                                            if (val >= 1000000) return `${(val / 1000000).toFixed(0)}M`;
+                                            return val;
+                                        }} stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} width={60} dx={-10} />
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                                         <RechartsTooltip content={<CustomRechartsTooltip />} />
                                         <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
-                                        <Area type="monotone" dataKey="Doanh Thu" stroke="var(--primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorDoanhThu)" />
-                                        <Area type="monotone" dataKey="Thực Thu" stroke="var(--success)" strokeWidth={3} fillOpacity={1} fill="url(#colorThucThu)" />
-                                        <Area type="monotone" dataKey="Chi Phí" stroke="#dc2626" strokeWidth={3} fillOpacity={1} fill="url(#colorChiPhi)" />
+                                        <Area type="monotone" dataKey="Doanh Thu" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorDoanhThu)" />
+                                        <Area type="monotone" dataKey="Thực Thu" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorThucThu)" />
+                                        <Area type="monotone" dataKey="Chi Phí" stroke="#ef4444" strokeWidth={3} fillOpacity={1} fill="url(#colorChiPhi)" />
                                     </AreaChart>
                                 </ResponsiveContainer>
                             ) : (

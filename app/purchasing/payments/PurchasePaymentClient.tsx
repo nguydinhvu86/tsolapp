@@ -1,4 +1,5 @@
 'use client';
+import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState, useMemo } from 'react';
 import { Plus, Search, Eye, Trash2, Calendar, DollarSign, Wallet, ArrowUpDown, Upload, CheckCircle2 } from 'lucide-react';
@@ -132,9 +133,6 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
         ...suppliers.map((s: any) => ({ value: s.id, label: `${s.name} (Nợ: ${formatMoney(s.totalDebt)})` }))
     ], [suppliers]);
 
-    const formatDate = (dateString: string | Date) => {
-        return new Date(dateString).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    };
 
     const handleOpenCreate = () => {
         setFormData({ supplierId: '', date: new Date().toISOString().substring(0, 10), amount: 0, paymentMethod: 'BANK_TRANSFER', reference: '', notes: '', attachment: '' });

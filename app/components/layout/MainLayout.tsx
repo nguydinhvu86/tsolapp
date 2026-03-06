@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 
-export function MainLayout({ children, brandName, logoUrl }: { children: React.ReactNode, brandName: string, logoUrl?: string | null }) {
+export function MainLayout({ children, brandName, logoUrl, initialSidebarOrder }: { children: React.ReactNode, brandName: string, logoUrl?: string | null, initialSidebarOrder?: string[] }) {
     const pathname = usePathname();
     const isLoginPage = pathname === '/login';
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -22,6 +22,7 @@ export function MainLayout({ children, brandName, logoUrl }: { children: React.R
                 logoUrl={logoUrl}
                 isOpen={isMobileMenuOpen}
                 onClose={() => setIsMobileMenuOpen(false)}
+                initialSidebarOrder={initialSidebarOrder}
             />
 
             {/* Main content wrapper pushes right on desktop, takes full width on mobile */}

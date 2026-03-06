@@ -211,6 +211,9 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [] }
                             <User size={16} /> Xem hồ sơ KH
                         </Link>
                     )}
+                    <Link href={`/sales/estimates?action=new&leadId=${lead.id}&customerId=${lead.customerId || ''}`} style={{ ...styles.btnSecondary, color: '#0ea5e9', borderColor: '#bae6fd', backgroundColor: '#f0f9ff' }} title="Tạo Báo Giá">
+                        <FileText size={16} /> Tạo Báo Giá
+                    </Link>
                     <button
                         onClick={() => setIsEmailModalOpen(true)}
                         style={{ ...styles.btnSecondary, color: '#3b82f6', borderColor: '#bfdbfe', backgroundColor: '#eff6ff' }}
@@ -364,6 +367,37 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [] }
                             initialTitle={`Nhiệm vụ: Cơ hội ${lead.name}`}
                         />
                     </div>
+
+                    {/* Quotes section */}
+                    {lead.salesEstimates && lead.salesEstimates.length > 0 && (
+                        <div style={{ ...styles.sectionCard }}>
+                            <h2 style={{ ...styles.sectionTitle, borderBottom: 'none', paddingBottom: 0, marginBottom: '12px' }}>
+                                <FileText size={18} style={{ color: '#0ea5e9' }} /> Báo Giá Liên Quan
+                            </h2>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {lead.salesEstimates.map((est: any) => (
+                                    <div key={est.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', border: '1px solid #f1f5f9', borderRadius: '12px', backgroundColor: '#f8fafc' }}>
+                                        <div>
+                                            <Link href={`/sales/estimates/${est.id}`} style={{ fontWeight: '600', color: '#3b82f6', textDecoration: 'none', fontSize: '14px' }}>
+                                                {est.code}
+                                            </Link>
+                                            <span style={{ fontSize: '13px', color: '#64748b', marginLeft: '8px' }}>
+                                                {formatDate(new Date(est.date))}
+                                            </span>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                            <span style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '14px' }}>
+                                                {formatMoney(est.totalAmount)}
+                                            </span>
+                                            <span style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '99px', fontWeight: '600', backgroundColor: est.status === 'DRAFT' ? '#f1f5f9' : est.status === 'ACCEPTED' ? '#dcfce7' : est.status === 'REJECTED' ? '#fee2e2' : '#e0e7ff', color: est.status === 'DRAFT' ? '#475569' : est.status === 'ACCEPTED' ? '#166534' : est.status === 'REJECTED' ? '#991b1b' : '#3730a3' }}>
+                                                {est.status === 'DRAFT' ? 'Bản Nháp' : est.status === 'ACCEPTED' ? 'Đã Chốt' : est.status === 'SENT' ? 'Đã Gửi' : est.status === 'INVOICED' ? 'Đã Hóa Đơn' : est.status === 'ORDERED' ? 'Đã Lên Đơn' : est.status === 'REJECTED' ? 'Từ Chối' : est.status}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Input System Link, Note, and Data Upload */}
                     <div style={{ ...styles.sectionCard }}>

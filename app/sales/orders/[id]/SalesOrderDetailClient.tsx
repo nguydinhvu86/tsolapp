@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, FileDown, Plus, ExternalLink, Copy, User, ArrowRightLeft } from 'lucide-react';
 import Link from 'next/link';
 import { updateSalesOrderStatus, convertOrderToInvoice } from '../actions';
-import { formatMoney } from '@/lib/utils/formatters';
+import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import { Modal } from '@/app/components/ui/Modal';
 import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
@@ -38,10 +38,6 @@ export default function SalesOrderDetailClient({ initialData, customers, product
         setTimeout(() => setCopied(false), 2000);
     };
 
-    const formatDate = (dateString: string | Date | null) => {
-        if (!dateString) return '--';
-        return new Date(dateString).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    };
 
     const getStatusBadge = (status: string) => {
         switch (status) {

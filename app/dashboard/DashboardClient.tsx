@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { DollarSign, Receipt, CreditCard, Users, Box, Briefcase, Plus, X, CheckCircle2, Circle, Clock, CheckCheck, Calendar as CalendarIcon, Globe, Lock } from 'lucide-react';
 import { AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
-import { formatMoney } from '@/lib/utils/formatters';
+import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { DashboardCalendar } from './DashboardCalendar';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -511,7 +511,7 @@ export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices
                                                             </span>
                                                         </td>
                                                         <td style={{ color: isDueSoon ? 'var(--danger)' : 'inherit' }}>
-                                                            {task.dueDate ? new Date(task.dueDate).toLocaleDateString('vi-VN') : '-'}
+                                                            {task.dueDate ? formatDate(new Date(task.dueDate)) : '-'}
                                                         </td>
                                                         <td>
                                                             {relatedEntityName ? (
@@ -584,7 +584,21 @@ export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices
                         <h3 className="text-lg font-semibold text-gray-800 mb-4">Lưu Chuyển Tiền Tệ Năm {new Date().getFullYear()}</h3>
                         <div style={{ height: '350px', width: '100%', marginLeft: '-15px' }}>
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={kpiData?.cashFlow || []} margin={{ top: 10, right: 10, left: 20, bottom: 0 }}>
+                                <AreaChart data={kpiData?.cashFlow || []} margin={{ top: 10, right: 10, left: 20, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                                            <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+                                        </linearGradient>
+                                        <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4} />
+                                            <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.0} />
+                                        </linearGradient>
+                                        <linearGradient id="colorSupplier" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#ef4444" stopOpacity={0.4} />
+                                            <stop offset="95%" stopColor="#ef4444" stopOpacity={0.0} />
+                                        </linearGradient>
+                                    </defs>
                                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 13 }} dy={10} />
                                     <YAxis
                                         axisLine={false}
@@ -618,10 +632,10 @@ export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices
                                             return value;
                                         }}
                                     />
-                                    <Bar dataKey="income" name="income" fill="#10b981" radius={[4, 4, 0, 0]} />
-                                    <Bar dataKey="expense" name="expense" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-                                    <Bar dataKey="supplierPayment" name="supplierPayment" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                                </BarChart>
+                                    <Area type="monotone" dataKey="income" name="income" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorIncome)" />
+                                    <Area type="monotone" dataKey="expense" name="expense" stroke="#f59e0b" strokeWidth={3} fillOpacity={1} fill="url(#colorExpense)" />
+                                    <Area type="monotone" dataKey="supplierPayment" name="supplierPayment" stroke="#ef4444" strokeWidth={3} fillOpacity={1} fill="url(#colorSupplier)" />
+                                </AreaChart>
                             </ResponsiveContainer>
                         </div>
                     </div>

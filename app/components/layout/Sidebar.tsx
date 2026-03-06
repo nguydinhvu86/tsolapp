@@ -3,7 +3,12 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { LayoutDashboard, Users, FileText, Settings, FileSpreadsheet, FileCode, ChevronDown, ChevronRight, FileOutput, FilePlus2, FileStack, Mail, CheckSquare, Package, ShoppingCart, Target } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Settings, FileSpreadsheet, FileCode, ChevronDown, ChevronRight, FileOutput, FilePlus2, FileStack, Mail, CheckSquare, Package, ShoppingCart, Target, GripVertical } from 'lucide-react';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { updateSidebarOrder } from './actions';
+
 const mainNavItems: any[] = [
     { name: 'Bảng Điều Khiển', href: '/dashboard', icon: LayoutDashboard, permission: 'VIEW_DASHBOARD' },
     { name: 'Công Việc (Tasks)', href: '/tasks', icon: CheckSquare, permission: 'TASKS_VIEW' },
@@ -81,16 +86,204 @@ const mainNavItems: any[] = [
     }
 ];
 
-export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, onClose }: { brandName?: string, logoUrl?: string | null, isOpen?: boolean, onClose?: () => void }) {
+function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, toggleSubMenu, onClose }: any) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.name });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.7 : 1,
+        position: 'relative' as any,
+        zIndex: isDragging ? 99 : 1,
+    };
+
+    if (!isAdmin && item.permission && !userPermissions.includes(item.permission)) return null;
+
+    let visibleChildren = item.children;
+    if (item.children && !isAdmin) {
+        visibleChildren = item.children.filter((child: any) => !child.permission || userPermissions.includes(child.permission));
+        if (visibleChildren.length === 0) return null;
+    }
+
+    if (visibleChildren) {
+        const isChildActive = visibleChildren.some((child: any) => {
+            if (child.children) return child.children.some((gChild: any) => pathname?.startsWith(gChild.href) || pathname === gChild.href);
+            return pathname?.startsWith(child.href) || pathname === child.href;
+        });
+        const isOpen = openSubMenus[item.name] !== undefined ? openSubMenus[item.name] : isChildActive;
+
+        return (
+            <div ref={setNodeRef} style={{ ...style, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                    <div {...attributes} {...listeners} style={{ cursor: 'grab', padding: '0.5rem 0.25rem', color: 'var(--text-muted)' }}>
+                        <GripVertical size={16} />
+                    </div>
+                    <button
+                        onClick={() => toggleSubMenu(item.name)}
+                        style={{
+                            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            padding: '0.75rem 1rem 0.75rem 0.25rem', borderRadius: 'var(--radius)',
+                            backgroundColor: 'transparent', border: 'none', cursor: 'pointer',
+                            color: isChildActive ? 'var(--primary)' : 'var(--text-main)',
+                            fontSize: '0.875rem', fontWeight: 500, transition: 'all 0.2s', outline: 'none'
+                        }}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            {item.icon && <item.icon size={20} />}
+                            {item.name}
+                        </div>
+                        {isOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                    </button>
+                </div>
+                {isOpen && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginLeft: '2.25rem', marginTop: '0.25rem', borderLeft: '2px solid var(--border)', paddingLeft: '0.75rem' }}>
+                        {visibleChildren.map((child: any) => {
+                            if (child.children) {
+                                const isGrandChildActive = child.children.some((gChild: any) => pathname?.startsWith(gChild.href) || pathname === gChild.href);
+                                const isChildOpen = openSubMenus[child.name] !== undefined ? openSubMenus[child.name] : isGrandChildActive;
+                                return (
+                                    <div key={child.name} style={{ display: 'flex', flexDirection: 'column', marginTop: '0.25rem' }}>
+                                        <button
+                                            onClick={() => toggleSubMenu(child.name)}
+                                            style={{
+                                                width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                padding: '0.5rem 0.75rem', borderRadius: 'var(--radius)',
+                                                backgroundColor: 'transparent', border: 'none', cursor: 'pointer',
+                                                color: isGrandChildActive ? 'var(--primary)' : 'var(--text-main)',
+                                                fontWeight: 500, transition: 'all 0.2s', outline: 'none', fontSize: '0.875rem'
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                {child.icon ? <child.icon size={18} /> : <FileCode size={18} />}
+                                                {child.name}
+                                            </div>
+                                            {isChildOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                                        </button>
+                                        {isChildOpen && (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', marginLeft: '1.25rem', marginTop: '0.15rem', borderLeft: '1px solid var(--border)', paddingLeft: '0.5rem' }}>
+                                                {child.children.map((gChild: any) => {
+                                                    const isActive = pathname?.startsWith(gChild.href) || pathname === gChild.href;
+                                                    return (
+                                                        <Link
+                                                            key={gChild.name}
+                                                            href={gChild.href}
+                                                            onClick={() => { if (onClose && window.innerWidth < 768) onClose(); }}
+                                                            style={{
+                                                                padding: '0.4rem 0.75rem', borderRadius: 'var(--radius)',
+                                                                backgroundColor: isActive ? 'rgba(79, 70, 229, 0.05)' : 'transparent',
+                                                                color: isActive ? 'var(--primary)' : 'var(--text-muted)',
+                                                                fontSize: '0.875rem', fontWeight: isActive ? 600 : 400, textDecoration: 'none',
+                                                                transition: 'all 0.2s', display: 'block'
+                                                            }}
+                                                        >
+                                                            {gChild.name}
+                                                        </Link>
+                                                    )
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+                                )
+                            }
+
+                            const isChildMenuActive = pathname?.startsWith(child.href) || pathname === child.href;
+                            return (
+                                <Link
+                                    key={child.name}
+                                    href={child.href}
+                                    onClick={() => { if (onClose && window.innerWidth < 768) onClose(); }}
+                                    style={{
+                                        padding: '0.5rem 0.75rem', borderRadius: 'var(--radius)',
+                                        backgroundColor: isChildMenuActive ? 'rgba(79, 70, 229, 0.05)' : 'transparent',
+                                        color: isChildMenuActive ? 'var(--primary)' : 'var(--text-muted)',
+                                        fontSize: '0.875rem', fontWeight: isChildMenuActive ? 600 : 500, textDecoration: 'none',
+                                        transition: 'all 0.2s', display: 'block'
+                                    }}
+                                >
+                                    {child.name}
+                                </Link>
+                            )
+                        })}
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href));
+    return (
+        <div ref={setNodeRef} style={{ ...style, display: 'flex', alignItems: 'center', width: '100%' }}>
+            <div {...attributes} {...listeners} style={{ cursor: 'grab', padding: '0.5rem 0.25rem', color: 'var(--text-muted)' }}>
+                <GripVertical size={16} />
+            </div>
+            <Link
+                href={item.href}
+                onClick={() => { if (onClose && window.innerWidth < 768) onClose(); }}
+                style={{
+                    flex: 1, display: 'flex', alignItems: 'center', gap: '0.75rem',
+                    padding: '0.75rem 1rem 0.75rem 0.25rem', borderRadius: 'var(--radius)',
+                    backgroundColor: isActive ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
+                    color: isActive ? 'var(--primary)' : 'var(--text-main)',
+                    fontSize: '0.875rem', fontWeight: isActive ? 600 : 500, transition: 'all 0.2s ease', textDecoration: 'none'
+                }}
+            >
+                <item.icon size={20} />
+                {item.name}
+            </Link>
+        </div>
+    );
+}
+
+
+export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, onClose, initialSidebarOrder = [] }: { brandName?: string, logoUrl?: string | null, isOpen?: boolean, onClose?: () => void, initialSidebarOrder?: string[] }) {
     const pathname = usePathname();
     const { data: session } = useSession();
-    const [templatesOpen, setTemplatesOpen] = useState(false);
     const [openSubMenus, setOpenSubMenus] = useState<Record<string, boolean>>({});
+
+    const [navItems, setNavItems] = useState(mainNavItems);
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+        if (initialSidebarOrder && initialSidebarOrder.length > 0) {
+            try {
+                const ordered: any[] = [];
+                initialSidebarOrder.forEach((name: string) => {
+                    const found = mainNavItems.find(i => i.name === name);
+                    if (found) ordered.push(found);
+                });
+                mainNavItems.forEach(i => {
+                    if (!ordered.find(o => o.name === i.name)) ordered.push(i);
+                });
+                setNavItems(ordered);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    }, [initialSidebarOrder]);
 
     const toggleSubMenu = (name: string) => setOpenSubMenus(prev => ({ ...prev, [name]: !prev[name] }));
 
     const userPermissions = session?.user?.permissions || [];
     const isAdmin = session?.user?.role === 'ADMIN';
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    );
+
+    function handleDragEnd(event: any) {
+        const { active, over } = event;
+        if (active.id !== over?.id) {
+            setNavItems((items) => {
+                const oldIndex = items.findIndex((i) => i.name === active.id);
+                const newIndex = items.findIndex((i) => i.name === over.id);
+                const newArr = arrayMove(items, oldIndex, newIndex);
+                updateSidebarOrder(newArr.map(i => i.name));
+                return newArr;
+            });
+        }
+    }
 
     return (
         <aside className={`sidebar-container ${isOpen ? 'open' : ''}`}>
@@ -117,150 +310,25 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
                 )}
             </div>
             <nav style={{ padding: '1.25rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1, overflowY: 'auto' }}>
-                {mainNavItems.map((item) => {
-                    if (!isAdmin && item.permission && !userPermissions.includes(item.permission)) return null;
-
-                    let visibleChildren = item.children;
-                    if (item.children && !isAdmin) {
-                        visibleChildren = item.children.filter((child: any) => !child.permission || userPermissions.includes(child.permission));
-                        if (visibleChildren.length === 0) return null;
-                    }
-
-                    if (visibleChildren) {
-                        const isChildActive = visibleChildren.some((child: any) => {
-                            if (child.children) return child.children.some((gChild: any) => pathname?.startsWith(gChild.href) || pathname === gChild.href);
-                            return pathname?.startsWith(child.href) || pathname === child.href;
-                        });
-                        const isOpen = openSubMenus[item.name] !== undefined ? openSubMenus[item.name] : isChildActive;
-
-                        return (
-                            <div key={item.name} style={{ display: 'flex', flexDirection: 'column' }}>
-                                <button
-                                    onClick={() => toggleSubMenu(item.name)}
-                                    style={{
-                                        width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                        padding: '0.75rem 1rem', borderRadius: 'var(--radius)',
-                                        backgroundColor: 'transparent', border: 'none', cursor: 'pointer',
-                                        color: isChildActive ? 'var(--primary)' : 'var(--text-main)',
-                                        fontSize: '0.875rem', fontWeight: 500, transition: 'all 0.2s', outline: 'none'
-                                    }}
-                                >
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                        {item.icon && <item.icon size={20} />}
-                                        {item.name}
-                                    </div>
-                                    {isOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-                                </button>
-                                {isOpen && (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginLeft: '1.25rem', marginTop: '0.25rem', borderLeft: '2px solid var(--border)', paddingLeft: '0.75rem' }}>
-                                        {visibleChildren.map((child: any) => {
-                                            if (child.children) {
-                                                const isGrandChildActive = child.children.some((gChild: any) => pathname?.startsWith(gChild.href) || pathname === gChild.href);
-                                                const isChildOpen = openSubMenus[child.name] !== undefined ? openSubMenus[child.name] : isGrandChildActive;
-                                                return (
-                                                    <div key={child.name} style={{ display: 'flex', flexDirection: 'column', marginTop: '0.25rem' }}>
-                                                        <button
-                                                            onClick={() => toggleSubMenu(child.name)}
-                                                            style={{
-                                                                width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                                padding: '0.5rem 0.75rem', borderRadius: 'var(--radius)',
-                                                                backgroundColor: 'transparent', border: 'none', cursor: 'pointer',
-                                                                color: isGrandChildActive ? 'var(--primary)' : 'var(--text-main)',
-                                                                fontWeight: 500, transition: 'all 0.2s', outline: 'none', fontSize: '0.875rem'
-                                                            }}
-                                                        >
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                                {child.icon ? <child.icon size={18} /> : <FileCode size={18} />}
-                                                                {child.name}
-                                                            </div>
-                                                            {isChildOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                                                        </button>
-                                                        {isChildOpen && (
-                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', marginLeft: '1.25rem', marginTop: '0.15rem', borderLeft: '1px solid var(--border)', paddingLeft: '0.5rem' }}>
-                                                                {child.children.map((gChild: any) => {
-                                                                    const isActive = pathname?.startsWith(gChild.href) || pathname === gChild.href;
-                                                                    return (
-                                                                        <Link
-                                                                            key={gChild.name}
-                                                                            href={gChild.href}
-                                                                            onClick={() => {
-                                                                                if (onClose && window.innerWidth < 768) {
-                                                                                    onClose();
-                                                                                }
-                                                                            }}
-                                                                            style={{
-                                                                                padding: '0.4rem 0.75rem', borderRadius: 'var(--radius)',
-                                                                                backgroundColor: isActive ? 'rgba(79, 70, 229, 0.05)' : 'transparent',
-                                                                                color: isActive ? 'var(--primary)' : 'var(--text-muted)',
-                                                                                fontSize: '0.875rem', fontWeight: isActive ? 600 : 400, textDecoration: 'none',
-                                                                                transition: 'all 0.2s', display: 'block'
-                                                                            }}
-                                                                        >
-                                                                            {gChild.name}
-                                                                        </Link>
-                                                                    )
-                                                                })}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )
-                                            }
-
-                                            const isChildMenuActive = pathname?.startsWith(child.href) || pathname === child.href;
-                                            return (
-                                                <Link
-                                                    key={child.name}
-                                                    href={child.href}
-                                                    onClick={() => {
-                                                        if (onClose && window.innerWidth < 768) {
-                                                            onClose();
-                                                        }
-                                                    }}
-                                                    style={{
-                                                        padding: '0.5rem 0.75rem', borderRadius: 'var(--radius)',
-                                                        backgroundColor: isChildMenuActive ? 'rgba(79, 70, 229, 0.05)' : 'transparent',
-                                                        color: isChildMenuActive ? 'var(--primary)' : 'var(--text-muted)',
-                                                        fontSize: '0.875rem', fontWeight: isChildMenuActive ? 600 : 500, textDecoration: 'none',
-                                                        transition: 'all 0.2s', display: 'block'
-                                                    }}
-                                                >
-                                                    {child.name}
-                                                </Link>
-                                            )
-                                        })}
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    }
-
-                    const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href));
-                    return (
-                        <Link
-                            key={item.name}
-                            href={item.href}
-                            onClick={() => {
-                                if (onClose && window.innerWidth < 768) {
-                                    onClose();
-                                }
-                            }}
-                            style={{
-                                display: 'flex', alignItems: 'center', gap: '0.75rem',
-                                padding: '0.75rem 1rem', borderRadius: 'var(--radius)',
-                                backgroundColor: isActive ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
-                                color: isActive ? 'var(--primary)' : 'var(--text-main)',
-                                fontSize: '0.875rem', fontWeight: isActive ? 600 : 500, transition: 'all 0.2s ease', textDecoration: 'none'
-                            }}
-                        >
-                            <item.icon size={20} />
-                            {item.name}
-                        </Link>
-                    )
-                })}
-
-
-
+                {isClient && (
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                        <SortableContext items={navItems.map(i => i.name)} strategy={verticalListSortingStrategy}>
+                            {navItems.map((item) => (
+                                <SortableItem
+                                    key={item.name}
+                                    item={item}
+                                    isAdmin={isAdmin}
+                                    userPermissions={userPermissions}
+                                    pathname={pathname}
+                                    openSubMenus={openSubMenus}
+                                    toggleSubMenu={toggleSubMenu}
+                                    onClose={onClose}
+                                />
+                            ))}
+                        </SortableContext>
+                    </DndContext>
+                )}
             </nav>
-        </aside >
+        </aside>
     );
 }

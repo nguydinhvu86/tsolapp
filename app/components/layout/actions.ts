@@ -148,3 +148,35 @@ export async function getLayoutSettings() {
         return { name: 'ContractMgr', logo: null };
     }
 }
+
+export async function getSidebarOrder(): Promise<string[]> {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) return [];
+
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { sidebarOrder: true }
+        });
+        if (user && user.sidebarOrder) {
+            return JSON.parse(user.sidebarOrder);
+        }
+    } catch (e) {
+        console.error("Failed to fetch sidebar order", e);
+    }
+    return [];
+}
+
+export async function updateSidebarOrder(order: string[]) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) return;
+
+    try {
+        await prisma.user.update({
+            where: { id: session.user.id },
+            data: { sidebarOrder: JSON.stringify(order) }
+        });
+    } catch (e) {
+        console.error("Failed to update sidebar order", e);
+    }
+}

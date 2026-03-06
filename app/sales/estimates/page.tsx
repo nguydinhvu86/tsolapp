@@ -1,14 +1,16 @@
 import { getSalesEstimates, getNextEstimateCode } from './actions';
 import { getCustomers } from '@/app/customers/actions';
 import { getProducts } from '@/app/inventory/actions';
+import { getLeads } from '@/app/sales/leads/actions';
 import SalesEstimateClient from './SalesEstimateClient';
 
 export default async function SalesEstimatesPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
-    const [estimates, customers, products, nextCode] = await Promise.all([
+    const [estimates, customers, products, nextCode, leads] = await Promise.all([
         getSalesEstimates(),
         getCustomers(),
         getProducts(),
-        getNextEstimateCode()
+        getNextEstimateCode(),
+        getLeads()
     ]);
 
     return (
@@ -20,9 +22,11 @@ export default async function SalesEstimatesPage({ searchParams }: { searchParam
                 initialEstimates={estimates}
                 customers={customers}
                 products={products.filter((p: any) => p.isActive)}
+                leads={leads}
                 nextCode={nextCode}
                 initialAction={searchParams?.action}
                 initialCustomerId={searchParams?.customerId}
+                initialLeadId={searchParams?.leadId}
             />
         </div>
     );

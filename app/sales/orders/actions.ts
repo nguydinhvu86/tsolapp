@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { sendEmailWithTracking } from '@/lib/mailer';
+import { getNextInvoiceCode } from '../invoices/actions';
 
 export async function sendOrderEmail(
     orderId: string,
@@ -255,17 +256,8 @@ export async function convertOrderToInvoice(orderId: string) {
 
         if (!order) return { success: false, error: "Đơn đặt hàng không tồn tại." };
 
-        // Lấy mã Invoice tiếp theo (bỏ sort bằng string để tránh INV9999 > INV10000)
-        const invoices = await prisma.salesInvoice.findMany({ select: { code: true } });
-        let maxInvNum = 0;
-        for (const inv of invoices) {
-            const m = inv.code.match(/\d+/);
-            if (m) {
-                const n = parseInt(m[0], 10);
-                if (!isNaN(n) && n > maxInvNum) maxInvNum = n;
-            }
-        }
-        const nextCode = `INV${String(maxInvNum + 1).padStart(4, '0')}`;
+        // Lấy mã Invoice tiếp theo dùng config tự động
+        const nextCode = await getNextInvoiceCode();
 
         const invoice = await prisma.salesInvoice.create({
             data: {
