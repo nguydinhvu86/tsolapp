@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/Input';
 import { ShieldAlert } from 'lucide-react';
@@ -168,7 +169,9 @@ export default function LoginPage() {
                                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#334155' }}>
                                     Mật khẩu
                                 </label>
-                                <a href="#" style={{ fontSize: '0.875rem', color: '#4f46e5', textDecoration: 'none', fontWeight: 600 }}>Quên mật khẩu?</a>
+                                <Link href="/forgot-password" style={{ fontSize: '0.875rem', color: '#4f46e5', textDecoration: 'none', fontWeight: 600 }}>
+                                    Quên mật khẩu?
+                                </Link>
                             </div>
                             <Input
                                 type="password"

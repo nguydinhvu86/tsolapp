@@ -22,6 +22,8 @@ model User {
   id                    String                 @id @default(cuid())
   email                 String                 @unique
   password              String // Thêm trường mật khẩu đã mã hóa (hashed)
+  resetToken            String? @unique // Mã khôi phục mật khẩu
+  resetTokenExpiry      DateTime? // Hạn sử dụng của mã khôi phục
   name                  String?
   avatar                String? // Đường dẫn ảnh đại diện
   role                  String                 @default("USER") // ADMIN or USER

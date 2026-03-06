@@ -7,10 +7,10 @@ import { Header } from './Header';
 
 export function MainLayout({ children, brandName, logoUrl, initialSidebarOrder }: { children: React.ReactNode, brandName: string, logoUrl?: string | null, initialSidebarOrder?: string[] }) {
     const pathname = usePathname();
-    const isLoginPage = pathname === '/login';
+    const isAuthPage = ['/login', '/forgot-password', '/reset-password'].includes(pathname || '');
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    if (isLoginPage) {
+    if (isAuthPage) {
         return <>{children}</>;
     }
 
