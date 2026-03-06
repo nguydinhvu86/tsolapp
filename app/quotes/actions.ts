@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { revalidatePath } from 'next/cache';
+import { createManyNotifications } from '@/app/notifications/actions';
 import { logCustomerActivity } from "@/lib/customerLogger";
 
 export async function createQuote(data: { title: string, content: string, variables: string, customerId: string, templateId: string, assignedToId?: string }, creatorId?: string) {
@@ -20,12 +21,13 @@ export async function createQuote(data: { title: string, content: string, variab
     try {
         const notifications = Array.from(targetUserIds).map(userId => ({
             userId,
+            title: 'Báo giá mới',
             message: `Báo giá mới đã được tạo: "${quote.title}"`,
             link: `/quotes/${quote.id}`
         }));
 
         if (notifications.length > 0) {
-            await prisma.notification.createMany({ data: notifications });
+            await createManyNotifications(notifications);
         }
     } catch (error) {
         console.error("Failed to create notifications for new quote:", error);
@@ -58,12 +60,13 @@ export async function updateQuoteStatus(id: string, status: string, actorId?: st
     try {
         const notifications = Array.from(targetUserIds).map(userId => ({
             userId,
+            title: 'Cập nhật Báo giá',
             message: `Báo giá "${quote.title}" đã chuyển trạng thái thành: ${status}`,
             link: `/quotes/${quote.id}`
         }));
 
         if (notifications.length > 0) {
-            await prisma.notification.createMany({ data: notifications });
+            await createManyNotifications(notifications);
         }
     } catch (error) {
         console.error("Failed to create notifications for quote status update:", error);

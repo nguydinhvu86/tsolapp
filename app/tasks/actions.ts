@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { sendEmailWithTracking } from '@/lib/mailer';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
+import { createManyNotifications } from '@/app/notifications/actions';
 
 export async function getTasks(filters?: any) {
     const session = await getServerSession(authOptions);
@@ -145,7 +146,7 @@ export async function createTask(data: any, creatorId: string) {
         }));
 
         if (notifications.length > 0) {
-            await prisma.notification.createMany({ data: notifications });
+            await createManyNotifications(notifications);
         }
 
         // Auto send emails
@@ -357,7 +358,7 @@ export async function updateTask(id: string, data: any, userId: string) {
             type: 'INFO',
             link: `/tasks/${id}`
         }));
-        await prisma.notification.createMany({ data: notifications });
+        await createManyNotifications(notifications);
 
         // Auto send emails
         await triggerAutoTaskEmail(id, newAssigneesToNotify, userId);
@@ -471,7 +472,7 @@ export async function addComment(taskId: string, content: string, userId: string
             };
         });
 
-        await prisma.notification.createMany({ data: notifications });
+        await createManyNotifications(notifications);
     }
 
     logActivity(taskId, userId, 'COMMENT_ADDED', JSON.stringify({ summary: parentId ? 'Đã trả lời một bình luận' : 'Đã thêm bình luận mới' }));

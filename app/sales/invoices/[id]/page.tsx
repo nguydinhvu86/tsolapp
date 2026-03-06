@@ -41,6 +41,10 @@ export default async function SalesInvoiceDetailPage({ params }: { params: { id:
             activityLogs: {
                 include: { user: true },
                 orderBy: { createdAt: 'desc' }
+            },
+            emailLogs: {
+                include: { sender: { select: { name: true } } },
+                orderBy: { createdAt: 'desc' }
             }
         }
     });

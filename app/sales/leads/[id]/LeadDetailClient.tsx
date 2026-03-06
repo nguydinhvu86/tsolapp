@@ -10,6 +10,7 @@ import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { Modal } from '@/app/components/ui/Modal';
 import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
+import { EmailLogTable } from '@/app/components/ui/EmailLogTable';
 
 const STATUSES = [
     { id: 'NEW', label: 'Tiếp nhận mới', color: { bg: '#e0e7ff', text: '#3730a3', border: '#c7d2fe', light: '#a5b4fc', solid: '#4f46e5' } },
@@ -68,6 +69,7 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [] }
     const [loading, setLoading] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState<'info' | 'emailLogs'>('info');
 
     // Convert states
     const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
@@ -282,75 +284,113 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [] }
             {/* Left Col: Info & Tasks */}
             <div style={{ ...styles.mainLayout, ...(window.innerWidth >= 1024 ? styles.mainLayoutDesktop : {}) }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                    {/* Cơ bản */}
-                    <div style={styles.sectionCard}>
-                        <h2 style={styles.sectionTitle}>
-                            <Building2 size={20} color="#6366f1" /> Thông tin chung
-                        </h2>
-
-                        <div style={styles.infoGrid}>
-                            <div style={styles.infoGroup}>
-                                <p style={styles.infoLabel}>Công ty / Tổ chức</p>
-                                <p style={styles.infoValue}>
-                                    {lead.customer?.name || lead.company || '—'}
-                                </p>
-                            </div>
-                            <div style={styles.infoGroup}>
-                                <p style={styles.infoLabel}>Người liên hệ</p>
-                                <div style={styles.infoValue}>
-                                    <User size={16} style={styles.infoIcon} />
-                                    {lead.customer?.contactName || lead.contactName || '—'}
-                                </div>
-                            </div>
-                            <div style={styles.infoGroup}>
-                                <p style={styles.infoLabel}>Số điện thoại</p>
-                                <div style={styles.infoValue}>
-                                    <Phone size={16} style={styles.infoIcon} />
-                                    {lead.customer?.phone || lead.phone || '—'}
-                                </div>
-                            </div>
-                            <div style={styles.infoGroup}>
-                                <p style={styles.infoLabel}>Email</p>
-                                <div style={styles.infoValue}>
-                                    <Mail size={16} style={styles.infoIcon} />
-                                    {lead.customer?.email || lead.email || '—'}
-                                </div>
-                            </div>
-                            <div style={styles.infoGroup}>
-                                <p style={styles.infoLabel}>Giá trị dự kiến</p>
-                                <div style={styles.infoValue}>
-                                    <DollarSign size={16} style={{ color: '#059669' }} />
-                                    <span style={{ color: '#059669', fontWeight: 'bold', fontSize: '18px' }}>{formatMoney(lead.estimatedValue)}</span>
-                                </div>
-                            </div>
-                            <div style={styles.infoGroup}>
-                                <p style={styles.infoLabel}>Ngày chốt dự kiến</p>
-                                <div style={styles.infoValue}>
-                                    <Calendar size={16} style={styles.infoIcon} />
-                                    {lead.expectedCloseDate ? formatDate(lead.expectedCloseDate) : '—'}
-                                </div>
-                            </div>
-                            <div style={styles.infoGroup}>
-                                <p style={styles.infoLabel}>Nguồn khách hàng</p>
-                                <div style={styles.infoValue}>
-                                    <Tag size={16} style={styles.infoIcon} />
-                                    {lead.source || '—'}
-                                </div>
-                            </div>
-                        </div>
-
-                        {lead.notes && (
-                            <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #f1f5f9' }}>
-                                <p style={{ ...styles.infoLabel, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                    <FileText size={16} /> Ghi chú nội bộ
-                                </p>
-                                <p style={{ fontSize: '14px', color: '#475569', whiteSpace: 'pre-wrap', backgroundColor: '#fffbeb', padding: '16px', borderRadius: '12px', border: '1px solid #fef3c7', margin: 0 }}>
-                                    {lead.notes}
-                                </p>
-                            </div>
-                        )}
+                    {/* Tabs */}
+                    <div style={{ display: 'flex', backgroundColor: '#f1f5f9', padding: '4px', borderRadius: '12px', gap: '4px' }}>
+                        <button
+                            onClick={() => setActiveTab('info')}
+                            style={{
+                                flex: 1, padding: '10px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: '600',
+                                backgroundColor: activeTab === 'info' ? 'white' : 'transparent',
+                                color: activeTab === 'info' ? '#0f172a' : '#64748b',
+                                border: 'none', cursor: 'pointer',
+                                boxShadow: activeTab === 'info' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                                transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                            }}
+                        >
+                            <Building2 size={16} /> Thông tin chung
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('emailLogs')}
+                            style={{
+                                flex: 1, padding: '10px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: '600',
+                                backgroundColor: activeTab === 'emailLogs' ? 'white' : 'transparent',
+                                color: activeTab === 'emailLogs' ? '#0f172a' : '#64748b',
+                                border: 'none', cursor: 'pointer',
+                                boxShadow: activeTab === 'emailLogs' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                                transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                            }}
+                        >
+                            <Mail size={16} /> Lịch sử Email
+                            <span style={{ backgroundColor: activeTab === 'emailLogs' ? '#e0e7ff' : '#cbd5e1', color: activeTab === 'emailLogs' ? '#4f46e5' : '#475569', padding: '2px 8px', borderRadius: '99px', fontSize: '12px' }}>
+                                {lead.emailLogs?.length || 0}
+                            </span>
+                        </button>
                     </div>
 
+                    {activeTab === 'info' ? (
+                        <>
+                            {/* Cơ bản */}
+                            <div style={styles.sectionCard}>
+                                <h2 style={styles.sectionTitle}>
+                                    <Building2 size={20} color="#6366f1" /> Thông tin chung
+                                </h2>
+
+                                <div style={styles.infoGrid}>
+                                    <div style={styles.infoGroup}>
+                                        <p style={styles.infoLabel}>Công ty / Tổ chức</p>
+                                        <p style={styles.infoValue}>
+                                            {lead.customer?.name || lead.company || '—'}
+                                        </p>
+                                    </div>
+                                    <div style={styles.infoGroup}>
+                                        <p style={styles.infoLabel}>Người liên hệ</p>
+                                        <div style={styles.infoValue}>
+                                            <User size={16} style={styles.infoIcon} />
+                                            {lead.customer?.contactName || lead.contactName || '—'}
+                                        </div>
+                                    </div>
+                                    <div style={styles.infoGroup}>
+                                        <p style={styles.infoLabel}>Số điện thoại</p>
+                                        <div style={styles.infoValue}>
+                                            <Phone size={16} style={styles.infoIcon} />
+                                            {lead.customer?.phone || lead.phone || '—'}
+                                        </div>
+                                    </div>
+                                    <div style={styles.infoGroup}>
+                                        <p style={styles.infoLabel}>Email</p>
+                                        <div style={styles.infoValue}>
+                                            <Mail size={16} style={styles.infoIcon} />
+                                            {lead.customer?.email || lead.email || '—'}
+                                        </div>
+                                    </div>
+                                    <div style={styles.infoGroup}>
+                                        <p style={styles.infoLabel}>Giá trị dự kiến</p>
+                                        <div style={styles.infoValue}>
+                                            <DollarSign size={16} style={{ color: '#059669' }} />
+                                            <span style={{ color: '#059669', fontWeight: 'bold', fontSize: '18px' }}>{formatMoney(lead.estimatedValue)}</span>
+                                        </div>
+                                    </div>
+                                    <div style={styles.infoGroup}>
+                                        <p style={styles.infoLabel}>Ngày chốt dự kiến</p>
+                                        <div style={styles.infoValue}>
+                                            <Calendar size={16} style={styles.infoIcon} />
+                                            {lead.expectedCloseDate ? formatDate(lead.expectedCloseDate) : '—'}
+                                        </div>
+                                    </div>
+                                    <div style={styles.infoGroup}>
+                                        <p style={styles.infoLabel}>Nguồn khách hàng</p>
+                                        <div style={styles.infoValue}>
+                                            <Tag size={16} style={styles.infoIcon} />
+                                            {lead.source || '—'}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {lead.notes && (
+                                    <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #f1f5f9' }}>
+                                        <p style={{ ...styles.infoLabel, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                            <FileText size={16} /> Ghi chú nội bộ
+                                        </p>
+                                        <p style={{ fontSize: '14px', color: '#475569', whiteSpace: 'pre-wrap', backgroundColor: '#fffbeb', padding: '16px', borderRadius: '12px', border: '1px solid #fef3c7', margin: 0 }}>
+                                            {lead.notes}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    ) : (
+                        <EmailLogTable emailLogs={lead.emailLogs || []} />
+                    )}
 
                 </div>
 

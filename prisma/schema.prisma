@@ -73,6 +73,10 @@ model User {
   // Leads
   assignedLeads   Lead[]            @relation("LeadAssignee")
   LeadActivityLog LeadActivityLog[]
+
+  // Internal Chat
+  chatParticipants ChatParticipant[]
+  chatMessages     ChatMessage[]
 }
 
 model SystemSetting {
@@ -100,7 +104,7 @@ model Notification {
 model Customer {
   id              String           @id @default(cuid())
   name            String
-  email           String?
+  email           String?          @unique
   phone           String?
   address         String?
   taxCode         String?
@@ -1106,7 +1110,7 @@ model Lead {
   // Thông tin liên hệ (Dành cho Lead MỚI chưa là Khách Hàng)
   company     String? // Tên khách hàng / Công ty mới
   contactName String? // Người liên hệ chính mới
-  email       String?
+  email       String? @unique
   phone       String?
 
   // Liên kết với Khách Hàng HIỆN TẠI (Nếu là cơ hội từ KH cũ bán thêm)
@@ -1183,4 +1187,47 @@ model EmailLog {
   estimate SalesEstimate? @relation(fields: [estimateId], references: [id], onDelete: SetNull)
   invoice  SalesInvoice?  @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
   lead     Lead?          @relation(fields: [leadId], references: [id], onDelete: SetNull)
+}
+
+// --- INTERNAL CHAT MODULE ---
+
+model ChatRoom {
+  id        String   @id @default(cuid())
+  name      String?  // Optional name for group chats
+  isGroup   Boolean  @default(false)
+  
+  participants ChatParticipant[]
+  messages     ChatMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ChatParticipant {
+  id        String   @id @default(cuid())
+  roomId    String
+  userId    String
+  lastRead  DateTime @default(now())
+  
+  room      ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([roomId, userId])
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  roomId    String
+  senderId  String
+  content       String   @db.Text
+  attachmentUrl String?  @db.Text
+
+  room      ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

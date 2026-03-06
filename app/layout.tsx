@@ -4,9 +4,10 @@ import './globals.css'
 import { NextAuthProvider } from './components/providers/NextAuthProvider'
 import { MainLayout } from './components/layout/MainLayout'
 import { getLayoutSettings, getSidebarOrder } from './components/layout/actions'
+import { PushNotificationListener } from './components/PushNotificationListener'
 
 export const metadata: Metadata = {
-    title: 'Contract Management',
+    title: 'ERP System',
     description: 'Manage and generate contracts easily',
 }
 
@@ -22,6 +23,7 @@ export default async function RootLayout({
         <html lang="en">
             <body style={{ minHeight: '100vh', backgroundColor: 'var(--background)', margin: 0 }}>
                 <NextAuthProvider>
+                    <PushNotificationListener />
                     <MainLayout brandName={brandName} logoUrl={logoUrl} initialSidebarOrder={initialSidebarOrder}>
                         {children}
                     </MainLayout>

@@ -14,15 +14,16 @@ import { CustomerStatementPanel } from '@/app/components/customers/CustomerState
 import { CustomerNotesPanel } from '@/app/components/customers/CustomerNotesPanel';
 import { CustomerHistoryTimeline } from '@/app/components/customers/CustomerHistoryTimeline';
 import { useSession } from 'next-auth/react';
-import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
 import { sendDebtConfirmationEmail } from '../actions';
+import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
+import { EmailLogTable } from '@/app/components/ui/EmailLogTable';
 
 export function CustomerDetailClient({ customer, tasks, users, emailTemplates = [] }: { customer: any, tasks: any[], users: any[], emailTemplates?: any[] }) {
     const router = useRouter();
     const { data: session } = useSession();
     const currentUserRole = session?.user?.role || 'USER';
     const currentUserId = session?.user?.id || '';
-    const [activeTab, setActiveTab] = useState<'documents' | 'statement' | 'quotes' | 'contracts' | 'handovers' | 'payments' | 'appendices' | 'dispatches' | 'salesEstimates' | 'salesOrders' | 'salesInvoices' | 'salesPayments' | 'leads'>('leads');
+    const [activeTab, setActiveTab] = useState<'documents' | 'statement' | 'quotes' | 'contracts' | 'handovers' | 'payments' | 'appendices' | 'dispatches' | 'salesEstimates' | 'salesOrders' | 'salesInvoices' | 'salesPayments' | 'leads' | 'emailLogs'>('leads');
     const [searchQuery, setSearchQuery] = useState('');
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
@@ -53,6 +54,7 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
         { id: 'dispatches', name: 'Công Văn', count: customer.dispatches?.length || 0, icon: Mail },
         { id: 'handovers', name: 'Bàn Giao', count: customer.handovers.length, icon: FileOutput },
         { id: 'payments', name: 'Đề Nghị TT', count: customer.paymentRequests.length, icon: FilePlus2 },
+        { id: 'emailLogs', name: 'Lịch Sử Email', count: customer.emailLogs?.length || 0, icon: Mail },
     ];
 
     const getStatusColor = (status: string) => {
@@ -262,6 +264,8 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                         <Card style={{ padding: '0', background: 'transparent', border: 'none', boxShadow: 'none' }}>
                             <CustomerStatementPanel customerId={customer.id} customerName={customer.name} />
                         </Card>
+                    ) : activeTab === 'emailLogs' ? (
+                        <EmailLogTable emailLogs={customer.emailLogs || []} />
                     ) : (
                         <Card style={{ padding: '0', overflow: 'hidden', background: '#ffffff', borderRadius: '12px', border: '1px solid var(--border)' }}>
                             <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)' }}>

@@ -6,6 +6,7 @@ import { LogOut, Menu } from 'lucide-react';
 import Link from 'next/link';
 import { NotificationBell } from '../ui/NotificationBell';
 import { GlobalSearch } from './GlobalSearch';
+import ChatWidget from '../chat/ChatWidget';
 
 export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
     const { data: session } = useSession();
@@ -49,6 +50,7 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
                 </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                {session?.user && <ChatWidget currentUser={session.user} />}
                 <NotificationBell />
                 <Link href="/profile" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', cursor: 'pointer', padding: '0.5rem', borderRadius: '8px', transition: 'background 0.2s' }} className="hover:bg-slate-100">
                     {session?.user?.avatar ? (

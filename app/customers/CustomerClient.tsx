@@ -118,14 +118,18 @@ export function CustomerClient({ initialData }: { initialData: CustomerWithStats
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (editingId) {
-            await updateCustomer(editingId, formData);
-            setCustomers(customers.map(c => c.id === editingId ? { ...c, ...formData } : c));
-        } else {
-            await createCustomer(formData);
-            router.refresh();
+        try {
+            if (editingId) {
+                const res = await updateCustomer(editingId, formData);
+                setCustomers(customers.map(c => c.id === editingId ? res : c));
+            } else {
+                await createCustomer(formData);
+                router.refresh();
+            }
+            closeModal();
+        } catch (error: any) {
+            alert(error.message || "Đã xảy ra lỗi hệ thống.");
         }
-        closeModal();
     };
 
     const handleDelete = async (id: string) => {

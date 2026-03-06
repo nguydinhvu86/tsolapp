@@ -32,6 +32,8 @@
     "next-auth": "^4.24.13",
     "nodemailer": "^7.0.13",
     "otplib": "^13.3.0",
+    "pusher": "^5.3.2",
+    "pusher-js": "^8.4.0",
     "qrcode": "^1.5.4",
     "qrcode.react": "^4.2.0",
     "quill-paste-smart": "^2.0.0",

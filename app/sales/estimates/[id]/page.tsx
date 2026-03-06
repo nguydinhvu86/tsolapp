@@ -22,6 +22,10 @@ export default async function SalesEstimateDetailPage({ params }: { params: { id
                 include: { user: { select: { name: true, email: true } } },
                 orderBy: { createdAt: 'desc' }
             },
+            EmailLog: {
+                include: { sender: { select: { name: true } } },
+                orderBy: { createdAt: 'desc' }
+            },
             tasks: {
                 include: {
                     assignees: { include: { user: true } },
@@ -49,13 +53,18 @@ export default async function SalesEstimateDetailPage({ params }: { params: { id
         getTemplatesByModule('ESTIMATE')
     ]);
 
-    // Lấy General Templates gộp chung
     const generalTemplates = await getTemplatesByModule('GENERAL');
     const allTemplates = [...templates, ...generalTemplates];
 
+    // Map EmailLog to emailLogs for standardized Client usage
+    const mappedEstimate = {
+        ...estimate,
+        emailLogs: estimate.EmailLog || []
+    };
+
     return (
         <SalesEstimateDetailClient
-            initialData={estimate}
+            initialData={mappedEstimate}
             customers={customers}
             products={products.filter((p: any) => p.isActive)}
             users={users.filter((u: any) => u.role !== 'SYSTEM')}

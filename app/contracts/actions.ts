@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { logCustomerActivity } from "@/lib/customerLogger";
+import { createManyNotifications } from '@/app/notifications/actions';
 
 export async function createContract(data: { title: string, content: string, variables: string, customerId: string, templateId: string, assignedToId?: string }, creatorId?: string) {
     const contract = await prisma.contract.create({ data });
@@ -36,12 +37,13 @@ export async function createContract(data: { title: string, content: string, var
     try {
         const notifications = Array.from(targetUserIds).map(userId => ({
             userId,
+            title: 'Hợp đồng mới',
             message: `Hợp đồng mới đã được tạo: "${contract.title}"`,
             link: `/contracts/${contract.id}`
         }));
 
         if (notifications.length > 0) {
-            await prisma.notification.createMany({ data: notifications });
+            await createManyNotifications(notifications);
         }
     } catch (error) {
         console.error("Failed to create notifications for new contract:", error);
@@ -64,12 +66,13 @@ export async function updateContractStatus(id: string, status: string, actorId?:
     try {
         const notifications = Array.from(targetUserIds).map(userId => ({
             userId,
+            title: 'Cập nhật Hợp đồng',
             message: `Hợp đồng "${contract.title}" đã chuyển trạng thái thành: ${status}`,
             link: `/contracts/${contract.id}`
         }));
 
         if (notifications.length > 0) {
-            await prisma.notification.createMany({ data: notifications });
+            await createManyNotifications(notifications);
         }
     } catch (error) {
         console.error("Failed to create notifications for contract status update:", error);

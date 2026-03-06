@@ -53,7 +53,19 @@ export function TaskPanel({ initialTasks, users, entityType, entityId, initialTi
         return isAssignee || isObserver || isCreator;
     });
 
-    const activeTasks = currentUserTasks.filter(t => t.status !== 'DONE' && t.status !== 'CANCELLED');
+    const activeTasks = currentUserTasks.filter((t: any) => {
+        if (t.status === 'DONE' || t.status === 'CANCELLED') return false;
+
+        // Hide recurring tasks until their exact due date arrives (or they become overdue)
+        if (t.isRecurring && t.dueDate) {
+            const today = new Date().setHours(0, 0, 0, 0);
+            const due = new Date(t.dueDate).setHours(0, 0, 0, 0);
+            if (due > today) return false; // Hide if due date is in the future
+        }
+
+        return true;
+    });
+
     const displayTasks = activeTasks.slice(0, 3);
     const hasMoreTasks = activeTasks.length > 3;
 

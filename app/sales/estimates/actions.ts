@@ -7,6 +7,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { logCustomerActivity } from '@/lib/customerLogger';
 import { getNextInvoiceCode } from '../invoices/actions';
+import { createNotification } from '@/app/notifications/actions';
 
 const itemSchema = z.object({
     id: z.string().optional(),
@@ -328,15 +329,13 @@ export async function updateSalesEstimateStatus(id: string, newStatus: string) {
 
             // Only notify if the person changing the status is NOT the creator
             if (userId !== estimate.creatorId) {
-                await prisma.notification.create({
-                    data: {
-                        userId: estimate.creatorId,
-                        title: `Báo giá đã được ${statusText}`,
-                        message: `Báo giá ${estimate.code} đã chuyển sang trạng thái ${newStatus}.`,
-                        type: typeClass,
-                        link: `/sales/estimates/${estimate.id}`
-                    }
-                });
+                await createNotification(
+                    estimate.creatorId,
+                    `Báo giá đã được ${statusText}`,
+                    `Báo giá ${estimate.code} đã chuyển sang trạng thái ${newStatus}.`,
+                    typeClass,
+                    `/sales/estimates/${estimate.id}`
+                );
             }
         }
 

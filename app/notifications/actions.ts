@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { triggerPusherEvent } from '@/lib/pusher-server';
 
 export async function getUnreadNotifications(userId: string) {
     if (!userId) return [];
@@ -39,6 +40,15 @@ export async function createNotification(userId: string, title: string, message:
                 link
             }
         });
+
+        // Trigger real-time notification
+        await triggerPusherEvent(`user-${userId}`, 'new-notification', {
+            title,
+            message,
+            link,
+            type
+        });
+
         return { success: true, data: notif };
     } catch (error: any) {
         console.error("Error creating notification:", error);
@@ -60,4 +70,47 @@ export async function getUnreadCount(userId: string) {
     return prisma.notification.count({
         where: { userId, isRead: false }
     });
+}
+
+export async function createManyNotifications(notifications: { userId: string, title: string, message: string, type?: string, link?: string }[]) {
+    try {
+        if (!notifications || notifications.length === 0) return { success: true };
+
+        // Ensure type default
+        const sanitized = notifications.map(n => ({
+            ...n,
+            type: n.type || 'INFO'
+        }));
+
+        await prisma.notification.createMany({ data: sanitized });
+
+        // Trigger pusher for each
+        for (const notif of sanitized) {
+            await triggerPusherEvent(`user-${notif.userId}`, 'new-notification', {
+                title: notif.title,
+                message: notif.message,
+                link: notif.link,
+                type: notif.type
+            });
+        }
+
+        return { success: true };
+    } catch (error: any) {
+        console.error("Error creating many notifications:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function getPusherClientConfig() {
+    const settings = await prisma.systemSetting.findMany({
+        where: {
+            key: { in: ['PUSHER_KEY', 'PUSHER_CLUSTER'] }
+        }
+    });
+    const config = { key: '', cluster: '' };
+    settings.forEach(s => {
+        if (s.key === 'PUSHER_KEY') config.key = s.value;
+        if (s.key === 'PUSHER_CLUSTER') config.cluster = s.value;
+    });
+    return config;
 }

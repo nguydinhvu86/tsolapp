@@ -87,7 +87,19 @@ export function SendEmailModal({ isOpen, onClose, onSend, defaultToEmail, module
                     // Give it a tiny bit of time for React to render inside the iframe if needed
                     await new Promise(r => setTimeout(r, 500));
 
-                    const element = iframeDoc.querySelector('.print-container') || iframeDoc.body;
+                    const element = iframeDoc.querySelector('.print-container') || iframeDoc.querySelector('.a4-document') || iframeDoc.querySelector('.sun-editor-editable') || iframeDoc.body;
+                    const htmlElement = element as HTMLElement;
+
+                    // Xóa bỏ định dạng cứng để html2pdf dàn trang theo A4
+                    htmlElement.style.cssText = `
+                        width: 170mm !important;
+                        max-width: 170mm !important;
+                        padding: 0 !important;
+                        margin: 0 !important;
+                        min-height: auto !important;
+                        box-shadow: none !important;
+                        background: white !important;
+                    `;
 
                     // @ts-ignore
                     const html2pdf = (await import('html2pdf.js')).default;
@@ -96,7 +108,7 @@ export function SendEmailModal({ isOpen, onClose, onSend, defaultToEmail, module
                         margin: [15, 20, 15, 20] as [number, number, number, number],
                         filename: documentName || 'document.pdf',
                         image: { type: 'jpeg' as const, quality: 1 },
-                        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+                        html2canvas: { scale: 4, useCORS: true, letterRendering: true, windowWidth: htmlElement.scrollWidth },
                         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
                         pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
                     };
@@ -183,7 +195,7 @@ export function SendEmailModal({ isOpen, onClose, onSend, defaultToEmail, module
                 `}</style>
 
                 {/* Hidden iframe for PDF generation */}
-                <iframe ref={iframeRef} style={{ display: 'none' }} title="PDF Generator" />
+                <iframe ref={iframeRef} style={{ position: 'absolute', top: '-10000px', left: '-10000px', width: '210mm', height: '297mm', pointerEvents: 'none' }} title="PDF Generator" />
 
                 {/* Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.5rem', borderBottom: '1px solid #f1f5f9', background: 'white', flexShrink: 0 }}>

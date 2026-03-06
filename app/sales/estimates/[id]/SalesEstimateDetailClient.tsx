@@ -12,11 +12,12 @@ import { SalesEstimateActivityLog } from '@/app/components/sales/SalesEstimateAc
 import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
 import { sendEstimateEmail } from '../actions';
 import { Mail } from 'lucide-react';
+import { EmailLogTable } from '@/app/components/ui/EmailLogTable';
 
 export default function SalesEstimateDetailClient({ initialData, customers, products, users, emailTemplates }: any) {
     const router = useRouter();
     const [estimate, setEstimate] = useState(initialData);
-    const [activeTab, setActiveTab] = useState<'items'>('items');
+    const [activeTab, setActiveTab] = useState<'items' | 'emailLogs'>('items');
     const [copied, setCopied] = useState(false);
     const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
     const [isConverting, setIsConverting] = useState(false);
@@ -248,25 +249,32 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                     {/* Tabs area */}
                     <div style={{ backgroundColor: 'white', borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }}>
                         <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0' }}>
-                            {tabs.map((tab) => {
-                                const isActive = activeTab === tab.id;
-                                return (
-                                    <button
-                                        key={tab.id}
-                                        onClick={() => setActiveTab(tab.id as any)}
-                                        style={{
-                                            flex: 1, padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                                            backgroundColor: 'transparent', border: 'none', borderBottom: isActive ? '2px solid #6366f1' : '2px solid transparent',
-                                            color: isActive ? '#4f46e5' : '#64748b', fontWeight: isActive ? 600 : 500, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.2s'
-                                        }}
-                                    >
-                                        {tab.icon} {tab.label}
-                                        <span style={{ backgroundColor: isActive ? '#e0e7ff' : '#f1f5f9', color: isActive ? '#4f46e5' : '#64748b', padding: '0.1rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 600 }}>
-                                            {tab.count}
-                                        </span>
-                                    </button>
-                                );
-                            })}
+                            <button
+                                onClick={() => setActiveTab('items')}
+                                style={{
+                                    flex: 1, padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                                    backgroundColor: 'transparent', border: 'none', borderBottom: activeTab === 'items' ? '2px solid #6366f1' : '2px solid transparent',
+                                    color: activeTab === 'items' ? '#4f46e5' : '#64748b', fontWeight: activeTab === 'items' ? 600 : 500, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.2s'
+                                }}
+                            >
+                                <ShoppingCart size={16} /> Chi Tiết
+                                <span style={{ backgroundColor: activeTab === 'items' ? '#e0e7ff' : '#f1f5f9', color: activeTab === 'items' ? '#4f46e5' : '#64748b', padding: '0.1rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 600 }}>
+                                    {estimate.items?.length || 0}
+                                </span>
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('emailLogs')}
+                                style={{
+                                    flex: 1, padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                                    backgroundColor: 'transparent', border: 'none', borderBottom: activeTab === 'emailLogs' ? '2px solid #6366f1' : '2px solid transparent',
+                                    color: activeTab === 'emailLogs' ? '#4f46e5' : '#64748b', fontWeight: activeTab === 'emailLogs' ? 600 : 500, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.2s'
+                                }}
+                            >
+                                <Mail size={16} /> Lịch Sử Email
+                                <span style={{ backgroundColor: activeTab === 'emailLogs' ? '#e0e7ff' : '#f1f5f9', color: activeTab === 'emailLogs' ? '#4f46e5' : '#64748b', padding: '0.1rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 600 }}>
+                                    {estimate.emailLogs?.length || 0}
+                                </span>
+                            </button>
                         </div>
 
                         <div style={{ padding: '1.5rem' }}>
@@ -319,6 +327,10 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                                         </tbody>
                                     </table>
                                 </div>
+                            )}
+
+                            {activeTab === 'emailLogs' && (
+                                <EmailLogTable emailLogs={estimate.emailLogs || []} />
                             )}
 
                         </div>

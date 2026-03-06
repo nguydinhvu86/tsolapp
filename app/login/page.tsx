@@ -94,14 +94,14 @@ export default function LoginPage() {
                         fontSize: '2rem', fontWeight: 900, color: 'white',
                         animation: 'pulse 3s infinite alternate'
                     }}>
-                        CM
+                        ERP
                     </div>
                     <h1 className="glow-text" style={{
                         fontSize: '4rem', fontWeight: 900, lineHeight: 1.1, marginBottom: '1.5rem',
-                        letterSpacing: '-0.02em', fontFamily: '"Outfit", sans-serif',
+                        letterSpacing: '-0.02em', fontFamily: '"Inter", sans-serif',
                         color: '#ffffff'
                     }}>
-                        Quản lý Hợp đồng <br /> <span style={{ color: '#818cf8' }}>& Khách hàng</span>
+                        Quản Lý <br /> <span style={{ color: '#818cf8' }}>& Vận Hành Doanh Nghiệp</span>
                     </h1>
                     <p style={{
                         fontSize: '1.25rem', color: '#94a3b8', lineHeight: 1.6, fontWeight: 400,
@@ -224,7 +224,7 @@ export default function LoginPage() {
                     </form>
 
                     <div style={{ marginTop: '2.5rem', textAlign: 'center', fontSize: '0.875rem', color: '#94a3b8' }}>
-                        &copy; 2026 Contract Management System
+                        &copy; 2026 ERP System
                     </div>
                 </div>
             </div>

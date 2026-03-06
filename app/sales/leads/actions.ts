@@ -61,6 +61,10 @@ export async function getLeadById(id: string) {
                     orderBy: {
                         createdAt: 'desc'
                     }
+                },
+                EmailLog: {
+                    include: { sender: { select: { name: true } } },
+                    orderBy: { createdAt: 'desc' }
                 }
             }
         });
@@ -91,6 +95,9 @@ export async function createLead(data: {
 }) {
     const session = await getServerSession(authOptions);
     if (!session?.user) throw new Error('Unauthorized');
+
+    if (data.email) data.email = data.email.trim();
+    if (!data.email) data.email = null;
 
     try {
         // Generate a code LEAD-YYYYMM-001
@@ -150,7 +157,10 @@ export async function createLead(data: {
         });
 
         return result;
-    } catch (error) {
+    } catch (error: any) {
+        if (error.code === 'P2002' && error.meta?.target?.includes('email')) {
+            throw new Error(`Cảnh báo: Email "${data.email}" đã tồn tại trong hệ thống.`);
+        }
         console.error('Error creating lead:', error);
         throw new Error('Không thể tạo Cơ hội bán hàng');
     }
@@ -160,6 +170,9 @@ export async function createLead(data: {
 export async function updateLead(id: string, data: any) {
     const session = await getServerSession(authOptions);
     if (!session?.user) throw new Error('Unauthorized');
+
+    if (data.email) data.email = data.email.trim();
+    if (!data.email) data.email = null;
 
     try {
         const lead = await prisma.lead.update({
@@ -190,7 +203,10 @@ export async function updateLead(id: string, data: any) {
         });
 
         return lead;
-    } catch (error) {
+    } catch (error: any) {
+        if (error.code === 'P2002' && error.meta?.target?.includes('email')) {
+            throw new Error(`Cảnh báo: Email "${data.email}" đã tồn tại trong hệ thống.`);
+        }
         console.error('Error updating lead:', error);
         throw new Error('Không thể cập nhật Cơ hội bán hàng');
     }

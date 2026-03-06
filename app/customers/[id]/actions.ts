@@ -40,6 +40,10 @@ export async function getCustomerWithRelations(id: string) {
                 activityLogs: {
                     include: { user: { select: { name: true, avatar: true } } },
                     orderBy: { createdAt: 'desc' }
+                },
+                emailLogs: {
+                    include: { sender: { select: { name: true } } },
+                    orderBy: { createdAt: 'desc' }
                 }
             }
         });

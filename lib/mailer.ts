@@ -53,9 +53,23 @@ export async function sendEmailWithTracking(params: SendEmailParams) {
     });
 
     // 2. Inject Tracking Pixel into HTML body
-    const trackingUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/email/track?id=${emailLog.trackingId}`;
-    const trackingPixel = `<img src="${trackingUrl}" width="1" height="1" style="display:none;" />`;
-    const finalHtml = `${htmlBody}${trackingPixel}`;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const trackingPixelUrl = `${appUrl}/api/email/track?id=${emailLog.trackingId}`;
+    const trackingPixel = `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none;" />`;
+
+    // Inject Click Tracking into Anchor tags (hrefs)
+    let processedHtml = htmlBody;
+    const urlRegex = /href=["']([^"']+)["']/g;
+    processedHtml = processedHtml.replace(urlRegex, (match, url) => {
+        // Skip mailto, tel, or internal non-http links
+        if (url.startsWith('http')) {
+            const clickUrl = `${appUrl}/api/email/click?id=${emailLog.trackingId}&url=${encodeURIComponent(url)}`;
+            return `href="${clickUrl}"`;
+        }
+        return match;
+    });
+
+    const finalHtml = `${processedHtml}${trackingPixel}`;
 
     const fromName = config.SMTP_FROM_NAME || process.env.SMTP_FROM_NAME || 'ERP System';
     const fromEmail = config.SMTP_FROM_EMAIL || config.SMTP_USER || process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER;
@@ -63,8 +77,10 @@ export async function sendEmailWithTracking(params: SendEmailParams) {
     // Handle Attachments
     const attachments = [];
     if (attachmentName && attachmentBase64) {
-        // Strip out the data:application/pdf;base64, prefix if it's there
-        const base64Data = attachmentBase64.replace(/^data:application\/pdf;base64,/, "");
+        let base64Data = attachmentBase64;
+        if (attachmentBase64.includes('base64,')) {
+            base64Data = attachmentBase64.split('base64,')[1];
+        }
         attachments.push({
             filename: attachmentName,
             content: Buffer.from(base64Data, 'base64'),

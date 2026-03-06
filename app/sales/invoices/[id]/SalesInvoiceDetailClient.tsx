@@ -14,12 +14,13 @@ import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
 import { sendInvoiceEmail } from '../actions';
 import { useSession } from 'next-auth/react';
 import { Mail } from 'lucide-react';
+import { EmailLogTable } from '@/app/components/ui/EmailLogTable';
 
 export default function SalesInvoiceDetailClient({ initialData, customers, products, users, emailTemplates }: any) {
     const router = useRouter();
     const { data: session } = useSession();
     const [invoice, setInvoice] = useState(initialData);
-    const [activeTab, setActiveTab] = useState<'items'>('items');
+    const [activeTab, setActiveTab] = useState<'items' | 'emailLogs'>('items');
     const [copied, setCopied] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [paymentData, setPaymentData] = useState({ amount: 0, method: 'BANK_TRANSFER', notes: '' });
@@ -413,6 +414,28 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                                     </span>
                                 </button>
                             ))}
+                            <button
+                                onClick={() => setActiveTab('emailLogs')}
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '1rem 1.25rem',
+                                    fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer',
+                                    backgroundColor: 'transparent',
+                                    border: 'none',
+                                    borderBottom: activeTab === 'emailLogs' ? '2px solid #4f46e5' : '2px solid transparent',
+                                    color: activeTab === 'emailLogs' ? '#4f46e5' : '#64748b',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                <Mail size={16} />
+                                Lịch Sử Email
+                                <span style={{
+                                    backgroundColor: activeTab === 'emailLogs' ? '#e0e7ff' : '#f1f5f9',
+                                    color: activeTab === 'emailLogs' ? '#4f46e5' : '#64748b',
+                                    padding: '0.125rem 0.5rem', borderRadius: '1rem', fontSize: '0.75rem', fontWeight: 600
+                                }}>
+                                    {invoice.emailLogs?.length || 0}
+                                </span>
+                            </button>
                         </div>
 
                         <div style={{ padding: '1.5rem' }}>
@@ -474,6 +497,10 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                                         </div>
                                     </div>
                                 </div>
+                            )}
+
+                            {activeTab === 'emailLogs' && (
+                                <EmailLogTable emailLogs={invoice.emailLogs || []} />
                             )}
                         </div>
                     </div>

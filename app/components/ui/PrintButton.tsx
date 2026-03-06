@@ -43,7 +43,7 @@ export function PrintButton({ label = 'In Tài Liệu (A4)' }: PrintButtonProps)
                 filename: `${label.replace(/[^a-zA-Z0-9\s]/g, '').trim().replace(/\s+/g, '_')}.pdf`,
                 image: { type: 'jpeg' as const, quality: 1 },
                 html2canvas: {
-                    scale: 2,
+                    scale: 4,
                     useCORS: true,
                     letterRendering: true
                 },

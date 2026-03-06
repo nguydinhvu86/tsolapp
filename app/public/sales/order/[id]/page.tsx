@@ -109,7 +109,7 @@ export default async function PublicSalesOrderPage({ params }: { params: { id: s
                             <tr key={item.id}>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{index + 1}</td>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '8px' }}>
-                                    <strong style={{ display: 'block' }}>{item.product?.name}</strong>
+                                    <strong style={{ display: 'block' }}>{item.product?.name || item.customName || 'Sản phẩm tự do'}</strong>
                                     {item.product?.sku && <span style={{ fontSize: '0.8rem', color: '#64748b' }}>SKU: {item.product.sku}</span>}
                                 </td>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{item.quantity} {item.product?.unit || ''}</td>

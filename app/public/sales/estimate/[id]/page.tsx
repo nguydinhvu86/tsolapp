@@ -110,7 +110,7 @@ export default async function PublicSalesEstimatePage({ params }: { params: { id
                             <tr key={item.id}>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{index + 1}</td>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '8px' }}>
-                                    <strong style={{ display: 'block' }}>{item.product?.name || item.name}</strong>
+                                    <strong style={{ display: 'block' }}>{item.product?.name || item.customName || item.name || 'Sản phẩm tự do'}</strong>
                                     {item.product?.sku && <span style={{ fontSize: '0.8rem', color: '#64748b', display: 'block' }}>SKU: {item.product.sku}</span>}
                                     {item.description && <span style={{ fontSize: '0.8rem', color: '#64748b', whiteSpace: 'pre-line' }}>{item.description}</span>}
                                 </td>

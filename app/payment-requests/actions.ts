@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { createManyNotifications } from '@/app/notifications/actions';
 
 export async function createPaymentRequest(data: { title: string, content: string, variables: string, customerId: string, templateId: string, assignedToId?: string }, creatorId?: string) {
     const paymentRequest = await prisma.paymentRequest.create({ data });
@@ -24,7 +25,7 @@ export async function createPaymentRequest(data: { title: string, content: strin
         }));
 
         if (notifications.length > 0) {
-            await prisma.notification.createMany({ data: notifications });
+            await createManyNotifications(notifications);
         }
     } catch (error) {
         console.error("Failed to create notifications for new payment request:", error);
@@ -54,7 +55,7 @@ export async function updatePaymentRequestStatus(id: string, status: string, act
         }));
 
         if (notifications.length > 0) {
-            await prisma.notification.createMany({ data: notifications });
+            await createManyNotifications(notifications);
         }
     } catch (error) {
         console.error("Failed to create notifications for payment request status update:", error);

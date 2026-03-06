@@ -1,0 +1,1444 @@
+﻿diff --git a/app/components/ui/PrintButton.tsx b/app/components/ui/PrintButton.tsx
+index 0d0d480..9f16aa8 100644
+--- a/app/components/ui/PrintButton.tsx
++++ b/app/components/ui/PrintButton.tsx
+@@ -43,7 +43,7 @@ export function PrintButton({ label = 'In T├ái Liß╗çu (A4)' }: PrintButtonProps)
+                 filename: `${label.replace(/[^a-zA-Z0-9\s]/g, '').trim().replace(/\s+/g, '_')}.pdf`,
+                 image: { type: 'jpeg' as const, quality: 1 },
+                 html2canvas: {
+-                    scale: 2,
++                    scale: 4,
+                     useCORS: true,
+                     letterRendering: true
+                 },
+diff --git a/app/components/ui/modals/SendEmailModal.tsx b/app/components/ui/modals/SendEmailModal.tsx
+index 78e0c9b..6bd57b0 100644
+--- a/app/components/ui/modals/SendEmailModal.tsx
++++ b/app/components/ui/modals/SendEmailModal.tsx
+@@ -87,7 +87,19 @@ export function SendEmailModal({ isOpen, onClose, onSend, defaultToEmail, module
+                     // Give it a tiny bit of time for React to render inside the iframe if needed
+                     await new Promise(r => setTimeout(r, 500));
+ 
+-                    const element = iframeDoc.querySelector('.print-container') || iframeDoc.body;
++                    const element = iframeDoc.querySelector('.print-container') || iframeDoc.querySelector('.a4-document') || iframeDoc.querySelector('.sun-editor-editable') || iframeDoc.body;
++                    const htmlElement = element as HTMLElement;
++
++                    // X├│a bß╗Å ─æß╗ïnh dß║íng cß╗⌐ng ─æß╗â html2pdf d├án trang theo A4
++                    htmlElement.style.cssText = `
++                        width: 170mm !important;
++                        max-width: 170mm !important;
++                        padding: 0 !important;
++                        margin: 0 !important;
++                        min-height: auto !important;
++                        box-shadow: none !important;
++                        background: white !important;
++                    `;
+ 
+                     // @ts-ignore
+                     const html2pdf = (await import('html2pdf.js')).default;
+@@ -96,7 +108,7 @@ export function SendEmailModal({ isOpen, onClose, onSend, defaultToEmail, module
+                         margin: [15, 20, 15, 20] as [number, number, number, number],
+                         filename: documentName || 'document.pdf',
+                         image: { type: 'jpeg' as const, quality: 1 },
+-                        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
++                        html2canvas: { scale: 4, useCORS: true, letterRendering: true, windowWidth: htmlElement.scrollWidth },
+                         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
+                         pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+                     };
+@@ -183,7 +195,7 @@ export function SendEmailModal({ isOpen, onClose, onSend, defaultToEmail, module
+                 `}</style>
+ 
+                 {/* Hidden iframe for PDF generation */}
+-                <iframe ref={iframeRef} style={{ display: 'none' }} title="PDF Generator" />
++                <iframe ref={iframeRef} style={{ position: 'absolute', top: '-10000px', left: '-10000px', width: '210mm', height: '297mm', pointerEvents: 'none' }} title="PDF Generator" />
+ 
+                 {/* Header */}
+                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.5rem', borderBottom: '1px solid #f1f5f9', background: 'white', flexShrink: 0 }}>
+diff --git a/app/customers/CustomerClient.tsx b/app/customers/CustomerClient.tsx
+index 4a2919f..a6c068d 100644
+--- a/app/customers/CustomerClient.tsx
++++ b/app/customers/CustomerClient.tsx
+@@ -118,14 +118,18 @@ export function CustomerClient({ initialData }: { initialData: CustomerWithStats
+ 
+     const handleSubmit = async (e: React.FormEvent) => {
+         e.preventDefault();
+-        if (editingId) {
+-            await updateCustomer(editingId, formData);
+-            setCustomers(customers.map(c => c.id === editingId ? { ...c, ...formData } : c));
+-        } else {
+-            await createCustomer(formData);
+-            router.refresh();
++        try {
++            if (editingId) {
++                const res = await updateCustomer(editingId, formData);
++                setCustomers(customers.map(c => c.id === editingId ? res : c));
++            } else {
++                await createCustomer(formData);
++                router.refresh();
++            }
++            closeModal();
++        } catch (error: any) {
++            alert(error.message || "─É├ú xß║úy ra lß╗ùi hß╗ç thß╗æng.");
+         }
+-        closeModal();
+     };
+ 
+     const handleDelete = async (id: string) => {
+diff --git a/app/customers/[id]/CustomerDetailClient.tsx b/app/customers/[id]/CustomerDetailClient.tsx
+index f7f9382..db9b770 100644
+--- a/app/customers/[id]/CustomerDetailClient.tsx
++++ b/app/customers/[id]/CustomerDetailClient.tsx
+@@ -14,15 +14,16 @@ import { CustomerStatementPanel } from '@/app/components/customers/CustomerState
+ import { CustomerNotesPanel } from '@/app/components/customers/CustomerNotesPanel';
+ import { CustomerHistoryTimeline } from '@/app/components/customers/CustomerHistoryTimeline';
+ import { useSession } from 'next-auth/react';
+-import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
+ import { sendDebtConfirmationEmail } from '../actions';
++import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
++import { EmailLogTable } from '@/app/components/ui/EmailLogTable';
+ 
+ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = [] }: { customer: any, tasks: any[], users: any[], emailTemplates?: any[] }) {
+     const router = useRouter();
+     const { data: session } = useSession();
+     const currentUserRole = session?.user?.role || 'USER';
+     const currentUserId = session?.user?.id || '';
+-    const [activeTab, setActiveTab] = useState<'documents' | 'statement' | 'quotes' | 'contracts' | 'handovers' | 'payments' | 'appendices' | 'dispatches' | 'salesEstimates' | 'salesOrders' | 'salesInvoices' | 'salesPayments' | 'leads'>('leads');
++    const [activeTab, setActiveTab] = useState<'documents' | 'statement' | 'quotes' | 'contracts' | 'handovers' | 'payments' | 'appendices' | 'dispatches' | 'salesEstimates' | 'salesOrders' | 'salesInvoices' | 'salesPayments' | 'leads' | 'emailLogs'>('leads');
+     const [searchQuery, setSearchQuery] = useState('');
+     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+ 
+@@ -53,6 +54,7 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates =
+         { id: 'dispatches', name: 'C├┤ng V─ân', count: customer.dispatches?.length || 0, icon: Mail },
+         { id: 'handovers', name: 'B├án Giao', count: customer.handovers.length, icon: FileOutput },
+         { id: 'payments', name: '─Éß╗ü Nghß╗ï TT', count: customer.paymentRequests.length, icon: FilePlus2 },
++        { id: 'emailLogs', name: 'Lß╗ïch Sß╗¡ Email', count: customer.emailLogs?.length || 0, icon: Mail },
+     ];
+ 
+     const getStatusColor = (status: string) => {
+@@ -262,6 +264,8 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates =
+                         <Card style={{ padding: '0', background: 'transparent', border: 'none', boxShadow: 'none' }}>
+                             <CustomerStatementPanel customerId={customer.id} customerName={customer.name} />
+                         </Card>
++                    ) : activeTab === 'emailLogs' ? (
++                        <EmailLogTable emailLogs={customer.emailLogs || []} />
+                     ) : (
+                         <Card style={{ padding: '0', overflow: 'hidden', background: '#ffffff', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                             <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)' }}>
+diff --git a/app/customers/[id]/actions.ts b/app/customers/[id]/actions.ts
+index d73328a..05f9592 100644
+--- a/app/customers/[id]/actions.ts
++++ b/app/customers/[id]/actions.ts
+@@ -40,6 +40,10 @@ export async function getCustomerWithRelations(id: string) {
+                 activityLogs: {
+                     include: { user: { select: { name: true, avatar: true } } },
+                     orderBy: { createdAt: 'desc' }
++                },
++                emailLogs: {
++                    include: { sender: { select: { name: true } } },
++                    orderBy: { createdAt: 'desc' }
+                 }
+             }
+         });
+diff --git a/app/customers/actions.ts b/app/customers/actions.ts
+index 3ca8c69..e1e4122 100644
+--- a/app/customers/actions.ts
++++ b/app/customers/actions.ts
+@@ -8,37 +8,57 @@ import { revalidatePath } from 'next/cache';
+ import { sendEmailWithTracking } from '@/lib/mailer';
+ 
+ export async function createCustomer(data: { name: string, email?: string, phone?: string, address?: string, taxCode?: string }) {
+-    const customer = await prisma.customer.create({ data });
+-
+-    const session = await getServerSession(authOptions);
+-    if (session?.user?.id) {
+-        await logCustomerActivity(
+-            customer.id,
+-            session.user.id,
+-            'Tß║áO_Mß╗ÜI',
+-            `Tß║ío mß╗¢i hß╗ô s╞í kh├ích h├áng: ${customer.name}`
+-        );
+-    }
++    if (data.email) data.email = data.email.trim();
++    if (!data.email) data.email = undefined; // Prisma expects undefined/null to not insert an empty string
+ 
+-    revalidatePath('/customers');
+-    return customer;
++    try {
++        const customer = await prisma.customer.create({ data: { ...data, email: data.email || null } });
++
++        const session = await getServerSession(authOptions);
++        if (session?.user?.id) {
++            await logCustomerActivity(
++                customer.id,
++                session.user.id,
++                'Tß║áO_Mß╗ÜI',
++                `Tß║ío mß╗¢i hß╗ô s╞í kh├ích h├áng: ${customer.name}`
++            );
++        }
++
++        revalidatePath('/customers');
++        return customer;
++    } catch (error: any) {
++        if (error.code === 'P2002' && error.meta?.target?.includes('email')) {
++            throw new Error(`Cß║únh b├ío: Email "${data.email}" ─æ├ú tß╗ôn tß║íi trong hß╗ç thß╗æng. Vui l├▓ng sß╗¡ dß╗Ñng email kh├íc.`);
++        }
++        throw new Error("─É├ú xß║úy ra lß╗ùi khi tß║ío kh├ích h├áng.");
++    }
+ }
+ 
+ export async function updateCustomer(id: string, data: { name: string, email?: string, phone?: string, address?: string, taxCode?: string }) {
+-    const customer = await prisma.customer.update({ where: { id }, data });
+-
+-    const session = await getServerSession(authOptions);
+-    if (session?.user?.id) {
+-        await logCustomerActivity(
+-            customer.id,
+-            session.user.id,
+-            'Cß║¼P_NHß║¼T',
+-            `Cß║¡p nhß║¡t hß╗ô s╞í kh├ích h├áng: ${customer.name}`
+-        );
+-    }
++    if (data.email) data.email = data.email.trim();
++    if (!data.email) data.email = undefined;
+ 
+-    revalidatePath('/customers');
+-    return customer;
++    try {
++        const customer = await prisma.customer.update({ where: { id }, data: { ...data, email: data.email || null } });
++
++        const session = await getServerSession(authOptions);
++        if (session?.user?.id) {
++            await logCustomerActivity(
++                customer.id,
++                session.user.id,
++                'Cß║¼P_NHß║¼T',
++                `Cß║¡p nhß║¡t hß╗ô s╞í kh├ích h├áng: ${customer.name}`
++            );
++        }
++
++        revalidatePath('/customers');
++        return customer;
++    } catch (error: any) {
++        if (error.code === 'P2002' && error.meta?.target?.includes('email')) {
++            throw new Error(`Cß║únh b├ío: Email "${data.email}" ─æ├ú ─æ╞░ß╗úc sß╗¡ dß╗Ñng bß╗ƒi mß╗Öt kh├ích h├áng kh├íc.`);
++        }
++        throw new Error("─É├ú xß║úy ra lß╗ùi khi cß║¡p nhß║¡t kh├ích h├áng.");
++    }
+ }
+ 
+ export async function deleteCustomer(id: string) {
+diff --git a/app/public/sales/estimate/[id]/page.tsx b/app/public/sales/estimate/[id]/page.tsx
+index edf6682..67b774f 100644
+--- a/app/public/sales/estimate/[id]/page.tsx
++++ b/app/public/sales/estimate/[id]/page.tsx
+@@ -110,7 +110,7 @@ export default async function PublicSalesEstimatePage({ params }: { params: { id
+                             <tr key={item.id}>
+                                 <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{index + 1}</td>
+                                 <td style={{ border: '1px solid #cbd5e1', padding: '8px' }}>
+-                                    <strong style={{ display: 'block' }}>{item.product?.name || item.name}</strong>
++                                    <strong style={{ display: 'block' }}>{item.product?.name || item.customName || item.name || 'Sß║ún phß║⌐m tß╗▒ do'}</strong>
+                                     {item.product?.sku && <span style={{ fontSize: '0.8rem', color: '#64748b', display: 'block' }}>SKU: {item.product.sku}</span>}
+                                     {item.description && <span style={{ fontSize: '0.8rem', color: '#64748b', whiteSpace: 'pre-line' }}>{item.description}</span>}
+                                 </td>
+diff --git a/app/public/sales/invoice/[id]/page.tsx b/app/public/sales/invoice/[id]/page.tsx
+index 9bc217e..9209d51 100644
+--- a/app/public/sales/invoice/[id]/page.tsx
++++ b/app/public/sales/invoice/[id]/page.tsx
+@@ -110,7 +110,7 @@ export default async function PublicSalesInvoicePage({ params }: { params: { id:
+                             <tr key={item.id}>
+                                 <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{index + 1}</td>
+                                 <td style={{ border: '1px solid #cbd5e1', padding: '8px' }}>
+-                                    <strong style={{ display: 'block' }}>{item.product?.name}</strong>
++                                    <strong style={{ display: 'block' }}>{item.product?.name || item.customName || 'Sß║ún phß║⌐m tß╗▒ do'}</strong>
+                                     {item.product?.sku && <span style={{ fontSize: '0.8rem', color: '#64748b' }}>SKU: {item.product.sku}</span>}
+                                 </td>
+                                 <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{item.quantity} {item.product?.unit || ''}</td>
+diff --git a/app/public/sales/order/[id]/page.tsx b/app/public/sales/order/[id]/page.tsx
+index 1994573..a137c4c 100644
+--- a/app/public/sales/order/[id]/page.tsx
++++ b/app/public/sales/order/[id]/page.tsx
+@@ -109,7 +109,7 @@ export default async function PublicSalesOrderPage({ params }: { params: { id: s
+                             <tr key={item.id}>
+                                 <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{index + 1}</td>
+                                 <td style={{ border: '1px solid #cbd5e1', padding: '8px' }}>
+-                                    <strong style={{ display: 'block' }}>{item.product?.name}</strong>
++                                    <strong style={{ display: 'block' }}>{item.product?.name || item.customName || 'Sß║ún phß║⌐m tß╗▒ do'}</strong>
+                                     {item.product?.sku && <span style={{ fontSize: '0.8rem', color: '#64748b' }}>SKU: {item.product.sku}</span>}
+                                 </td>
+                                 <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{item.quantity} {item.product?.unit || ''}</td>
+diff --git a/app/sales/estimates/[id]/SalesEstimateDetailClient.tsx b/app/sales/estimates/[id]/SalesEstimateDetailClient.tsx
+index 8c40ca8..d635dd9 100644
+--- a/app/sales/estimates/[id]/SalesEstimateDetailClient.tsx
++++ b/app/sales/estimates/[id]/SalesEstimateDetailClient.tsx
+@@ -12,11 +12,12 @@ import { SalesEstimateActivityLog } from '@/app/components/sales/SalesEstimateAc
+ import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
+ import { sendEstimateEmail } from '../actions';
+ import { Mail } from 'lucide-react';
++import { EmailLogTable } from '@/app/components/ui/EmailLogTable';
+ 
+ export default function SalesEstimateDetailClient({ initialData, customers, products, users, emailTemplates }: any) {
+     const router = useRouter();
+     const [estimate, setEstimate] = useState(initialData);
+-    const [activeTab, setActiveTab] = useState<'items'>('items');
++    const [activeTab, setActiveTab] = useState<'items' | 'emailLogs'>('items');
+     const [copied, setCopied] = useState(false);
+     const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
+     const [isConverting, setIsConverting] = useState(false);
+@@ -248,25 +249,32 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
+                     {/* Tabs area */}
+                     <div style={{ backgroundColor: 'white', borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }}>
+                         <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0' }}>
+-                            {tabs.map((tab) => {
+-                                const isActive = activeTab === tab.id;
+-                                return (
+-                                    <button
+-                                        key={tab.id}
+-                                        onClick={() => setActiveTab(tab.id as any)}
+-                                        style={{
+-                                            flex: 1, padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+-                                            backgroundColor: 'transparent', border: 'none', borderBottom: isActive ? '2px solid #6366f1' : '2px solid transparent',
+-                                            color: isActive ? '#4f46e5' : '#64748b', fontWeight: isActive ? 600 : 500, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.2s'
+-                                        }}
+-                                    >
+-                                        {tab.icon} {tab.label}
+-                                        <span style={{ backgroundColor: isActive ? '#e0e7ff' : '#f1f5f9', color: isActive ? '#4f46e5' : '#64748b', padding: '0.1rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 600 }}>
+-                                            {tab.count}
+-                                        </span>
+-                                    </button>
+-                                );
+-                            })}
++                            <button
++                                onClick={() => setActiveTab('items')}
++                                style={{
++                                    flex: 1, padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
++                                    backgroundColor: 'transparent', border: 'none', borderBottom: activeTab === 'items' ? '2px solid #6366f1' : '2px solid transparent',
++                                    color: activeTab === 'items' ? '#4f46e5' : '#64748b', fontWeight: activeTab === 'items' ? 600 : 500, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.2s'
++                                }}
++                            >
++                                <ShoppingCart size={16} /> Chi Tiß║┐t
++                                <span style={{ backgroundColor: activeTab === 'items' ? '#e0e7ff' : '#f1f5f9', color: activeTab === 'items' ? '#4f46e5' : '#64748b', padding: '0.1rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 600 }}>
++                                    {estimate.items?.length || 0}
++                                </span>
++                            </button>
++                            <button
++                                onClick={() => setActiveTab('emailLogs')}
++                                style={{
++                                    flex: 1, padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
++                                    backgroundColor: 'transparent', border: 'none', borderBottom: activeTab === 'emailLogs' ? '2px solid #6366f1' : '2px solid transparent',
++                                    color: activeTab === 'emailLogs' ? '#4f46e5' : '#64748b', fontWeight: activeTab === 'emailLogs' ? 600 : 500, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.2s'
++                                }}
++                            >
++                                <Mail size={16} /> Lß╗ïch Sß╗¡ Email
++                                <span style={{ backgroundColor: activeTab === 'emailLogs' ? '#e0e7ff' : '#f1f5f9', color: activeTab === 'emailLogs' ? '#4f46e5' : '#64748b', padding: '0.1rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 600 }}>
++                                    {estimate.emailLogs?.length || 0}
++                                </span>
++                            </button>
+                         </div>
+ 
+                         <div style={{ padding: '1.5rem' }}>
+@@ -321,6 +329,10 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
+                                 </div>
+                             )}
+ 
++                            {activeTab === 'emailLogs' && (
++                                <EmailLogTable emailLogs={estimate.emailLogs || []} />
++                            )}
++
+                         </div>
+                     </div>
+                 </div>
+diff --git a/app/sales/estimates/[id]/page.tsx b/app/sales/estimates/[id]/page.tsx
+index 046d32b..e365588 100644
+--- a/app/sales/estimates/[id]/page.tsx
++++ b/app/sales/estimates/[id]/page.tsx
+@@ -22,6 +22,10 @@ export default async function SalesEstimateDetailPage({ params }: { params: { id
+                 include: { user: { select: { name: true, email: true } } },
+                 orderBy: { createdAt: 'desc' }
+             },
++            EmailLog: {
++                include: { sender: { select: { name: true } } },
++                orderBy: { createdAt: 'desc' }
++            },
+             tasks: {
+                 include: {
+                     assignees: { include: { user: true } },
+diff --git a/app/sales/invoices/[id]/SalesInvoiceDetailClient.tsx b/app/sales/invoices/[id]/SalesInvoiceDetailClient.tsx
+index 4f444fc..dbc9c95 100644
+--- a/app/sales/invoices/[id]/SalesInvoiceDetailClient.tsx
++++ b/app/sales/invoices/[id]/SalesInvoiceDetailClient.tsx
+@@ -14,12 +14,13 @@ import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
+ import { sendInvoiceEmail } from '../actions';
+ import { useSession } from 'next-auth/react';
+ import { Mail } from 'lucide-react';
++import { EmailLogTable } from '@/app/components/ui/EmailLogTable';
+ 
+ export default function SalesInvoiceDetailClient({ initialData, customers, products, users, emailTemplates }: any) {
+     const router = useRouter();
+     const { data: session } = useSession();
+     const [invoice, setInvoice] = useState(initialData);
+-    const [activeTab, setActiveTab] = useState<'items'>('items');
++    const [activeTab, setActiveTab] = useState<'items' | 'emailLogs'>('items');
+     const [copied, setCopied] = useState(false);
+     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+     const [paymentData, setPaymentData] = useState({ amount: 0, method: 'BANK_TRANSFER', notes: '' });
+@@ -413,6 +414,28 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
+                                     </span>
+                                 </button>
+                             ))}
++                            <button
++                                onClick={() => setActiveTab('emailLogs')}
++                                style={{
++                                    display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '1rem 1.25rem',
++                                    fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer',
++                                    backgroundColor: 'transparent',
++                                    border: 'none',
++                                    borderBottom: activeTab === 'emailLogs' ? '2px solid #4f46e5' : '2px solid transparent',
++                                    color: activeTab === 'emailLogs' ? '#4f46e5' : '#64748b',
++                                    transition: 'all 0.2s'
++                                }}
++                            >
++                                <Mail size={16} />
++                                Lß╗ïch Sß╗¡ Email
++                                <span style={{
++                                    backgroundColor: activeTab === 'emailLogs' ? '#e0e7ff' : '#f1f5f9',
++                                    color: activeTab === 'emailLogs' ? '#4f46e5' : '#64748b',
++                                    padding: '0.125rem 0.5rem', borderRadius: '1rem', fontSize: '0.75rem', fontWeight: 600
++                                }}>
++                                    {invoice.emailLogs?.length || 0}
++                                </span>
++                            </button>
+                         </div>
+ 
+                         <div style={{ padding: '1.5rem' }}>
+@@ -446,359 +469,363 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
+                                             ))}
+                                         </tbody>
+                                     </table>
++                                </div>
++                            )}
+ 
+-                                    {/* Totals Box */}
+-                                    <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
+-                                        <div style={{ width: '320px', backgroundColor: '#f8fafc', borderRadius: '0.75rem', padding: '1.5rem', border: '1px solid #e2e8f0' }}>
+-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', fontSize: '0.875rem', color: '#475569' }}>
+-                                                <span>Tß╗òng tiß╗ün h├áng:</span>
+-                                                <span style={{ fontWeight: 500, color: '#0f172a' }}>{formatMoney(invoice.subTotal)}</span>
+-                                            </div>
+-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', fontSize: '0.875rem', color: '#475569' }}>
+-                                                <span>Thuß║┐ GTGT ({invoice.items?.[0]?.taxRate || 0}%):</span>
+-                                                <span style={{ fontWeight: 500, color: '#0f172a' }}>{formatMoney(invoice.taxAmount)}</span>
+-                                            </div>
+-                                            <div style={{ height: '1px', backgroundColor: '#cbd5e1', margin: '1rem 0' }}></div>
+-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+-                                                <span style={{ fontWeight: 600, color: '#0f172a' }}>Tß╗òng H├│a ─É╞ín:</span>
+-                                                <span style={{ fontSize: '1.25rem', fontWeight: 700, color: '#e11d48' }}>{formatMoney(invoice.totalAmount)}</span>
+-                                            </div>
+-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', fontSize: '0.875rem' }}>
+-                                                <span style={{ color: '#475569' }}>─É├ú Thu Tr╞░ß╗¢c ─É├│:</span>
+-                                                <span style={{ fontWeight: 600, color: '#059669' }}>{formatMoney(invoice.paidAmount || 0)}</span>
+-                                            </div>
+-                                            <div style={{ borderTop: '2px dashed #cbd5e1', paddingTop: '0.75rem', marginTop: '0.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+-                                                <span style={{ fontWeight: 700, color: '#0f172a' }}>C├▓n Phß║úi Thu:</span>
+-                                                <span style={{ fontSize: '1.25rem', fontWeight: 800, color: remainingAmount > 0 ? '#e11d48' : '#059669' }}>{formatMoney(remainingAmount)}</span>
+-                                            </div>
+-                                        </div>
++                            {activeTab === 'emailLogs' && (
++                                <EmailLogTable emailLogs={invoice.emailLogs || []} />
++                            )}
++
++                            {/* Totals Box */}
++                            <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
++                                <div style={{ width: '320px', backgroundColor: '#f8fafc', borderRadius: '0.75rem', padding: '1.5rem', border: '1px solid #e2e8f0' }}>
++                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', fontSize: '0.875rem', color: '#475569' }}>
++                                        <span>Tß╗òng tiß╗ün h├áng:</span>
++                                        <span style={{ fontWeight: 500, color: '#0f172a' }}>{formatMoney(invoice.subTotal)}</span>
++                                    </div>
++                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', fontSize: '0.875rem', color: '#475569' }}>
++                                        <span>Thuß║┐ GTGT ({invoice.items?.[0]?.taxRate || 0}%):</span>
++                                        <span style={{ fontWeight: 500, color: '#0f172a' }}>{formatMoney(invoice.taxAmount)}</span>
++                                    </div>
++                                    <div style={{ height: '1px', backgroundColor: '#cbd5e1', margin: '1rem 0' }}></div>
++                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
++                                        <span style={{ fontWeight: 600, color: '#0f172a' }}>Tß╗òng H├│a ─É╞ín:</span>
++                                        <span style={{ fontSize: '1.25rem', fontWeight: 700, color: '#e11d48' }}>{formatMoney(invoice.totalAmount)}</span>
++                                    </div>
++                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', fontSize: '0.875rem' }}>
++                                        <span style={{ color: '#475569' }}>─É├ú Thu Tr╞░ß╗¢c ─É├│:</span>
++                                        <span style={{ fontWeight: 600, color: '#059669' }}>{formatMoney(invoice.paidAmount || 0)}</span>
++                                    </div>
++                                    <div style={{ borderTop: '2px dashed #cbd5e1', paddingTop: '0.75rem', marginTop: '0.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
++                                        <span style={{ fontWeight: 700, color: '#0f172a' }}>C├▓n Phß║úi Thu:</span>
++                                        <span style={{ fontSize: '1.25rem', fontWeight: 800, color: remainingAmount > 0 ? '#e11d48' : '#059669' }}>{formatMoney(remainingAmount)}</span>
+                                     </div>
+                                 </div>
+-                            )}
++                            </div>
+                         </div>
+                     </div>
+                 </div>
++            </div>
+ 
+-                {/* Right Column: Related Tasks and History */}
+-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
++            {/* Right Column: Related Tasks and History */}
++            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+ 
+-                    {/* Invoice Notes Panel */}
+-                    <SalesInvoiceNotes
+-                        invoiceId={invoice.id}
+-                        notes={invoice.invoiceNotes || []}
+-                        currentUserId={session?.user?.id || ''}
+-                        currentUserRole={session?.user?.role || ''}
+-                    />
++                {/* Invoice Notes Panel */}
++                <SalesInvoiceNotes
++                    invoiceId={invoice.id}
++                    notes={invoice.invoiceNotes || []}
++                    currentUserId={session?.user?.id || ''}
++                    currentUserRole={session?.user?.role || ''}
++                />
+ 
+-                    {/* Task Panel */}
+-                    <div>
+-                        <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#0f172a', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+-                            <CheckSquare size={18} /> C├┤ng viß╗çc & Phß╗æi hß╗úp
+-                        </h2>
+-                        <TaskPanel
+-                            initialTasks={invoice.tasks || []}
+-                            users={users || []}
+-                            entityType="SALES_INVOICE"
+-                            entityId={invoice.id}
+-                        />
+-                    </div>
++                {/* Task Panel */}
++                <div>
++                    <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#0f172a', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
++                        <CheckSquare size={18} /> C├┤ng viß╗çc & Phß╗æi hß╗úp
++                    </h2>
++                    <TaskPanel
++                        initialTasks={invoice.tasks || []}
++                        users={users || []}
++                        entityType="SALES_INVOICE"
++                        entityId={invoice.id}
++                    />
++                </div>
+ 
+-                    {/* Invoice History Panel */}
+-                    <div>
+-                        <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#0f172a', margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+-                            <History size={18} /> Lß╗ïch Sß╗¡ H├│a ─É╞ín
+-                        </h2>
+-                        <div style={{ backgroundColor: 'white', borderRadius: '0.75rem', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+-
+-                            {/* 1. Related Order / Quote */}
+-                            {invoice.order && (
+-                                <div style={{ padding: '1.25rem', borderBottom: '1px solid #e2e8f0' }}>
+-                                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>Tß╗½ ─É╞ín H├áng / B├ío Gi├í</div>
+-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+-                                        <div style={{ width: '2rem', height: '2rem', borderRadius: '50%', backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+-                                            <ShoppingCart size={14} color="#475569" />
+-                                        </div>
+-                                        <div>
+-                                            <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#0f172a' }}>{invoice.order.code}</div>
+-                                            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Ng├áy tß║ío: {formatDate(invoice.order.date)}</div>
+-                                        </div>
+-                                        <Link href={`/sales/orders/${invoice.order.id}`} style={{ marginLeft: 'auto', color: '#3b82f6' }}>
+-                                            <ArrowRight size={16} />
+-                                        </Link>
++                {/* Invoice History Panel */}
++                <div>
++                    <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#0f172a', margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
++                        <History size={18} /> Lß╗ïch Sß╗¡ H├│a ─É╞ín
++                    </h2>
++                    <div style={{ backgroundColor: 'white', borderRadius: '0.75rem', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
++
++                        {/* 1. Related Order / Quote */}
++                        {invoice.order && (
++                            <div style={{ padding: '1.25rem', borderBottom: '1px solid #e2e8f0' }}>
++                                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>Tß╗½ ─É╞ín H├áng / B├ío Gi├í</div>
++                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
++                                    <div style={{ width: '2rem', height: '2rem', borderRadius: '50%', backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
++                                        <ShoppingCart size={14} color="#475569" />
+                                     </div>
+-                                </div>
+-                            )}
+-
+-                            {/* 2. Payment History */}
+-                            {invoice.allocations && invoice.allocations.length > 0 && (
+-                                <div style={{ padding: '1.25rem', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
+-                                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>Lß╗ïch Sß╗¡ Thanh To├ín</div>
+-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+-                                        {invoice.allocations.map((alloc: any, index: number) => (
+-                                            <div key={index} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+-                                                <div style={{ width: '2rem', height: '2rem', borderRadius: '50%', backgroundColor: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+-                                                    <span style={{ color: '#16a34a', fontSize: '1rem', fontWeight: 'bold' }}>$</span>
+-                                                </div>
+-                                                <div style={{ flex: 1 }}>
+-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+-                                                        <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#0f172a' }}>{alloc.payment?.code || 'Phiß║┐u Thu'}</span>
+-                                                        <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#16a34a' }}>+ {formatMoney(alloc.amount)}</span>
+-                                                    </div>
+-                                                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.125rem' }}>
+-                                                        {formatDate(alloc.payment?.date)} ΓÇó {alloc.payment?.paymentMethod === 'BANK_TRANSFER' ? 'Chuyß╗ân khoß║ún' : alloc.payment?.paymentMethod === 'CREDIT_CARD' ? 'Thß║╗' : 'Tiß╗ün mß║╖t'}
+-                                                    </div>
+-                                                </div>
+-                                            </div>
+-                                        ))}
++                                    <div>
++                                        <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#0f172a' }}>{invoice.order.code}</div>
++                                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Ng├áy tß║ío: {formatDate(invoice.order.date)}</div>
+                                     </div>
++                                    <Link href={`/sales/orders/${invoice.order.id}`} style={{ marginLeft: 'auto', color: '#3b82f6' }}>
++                                        <ArrowRight size={16} />
++                                    </Link>
+                                 </div>
+-                            )}
+-
+-                            {/* 3. Activity Log (Tasks context) */}
+-                            <div style={{ padding: '1.25rem' }}>
+-                                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>Nhß║¡t K├╜ Hoß║ít ─Éß╗Öng</div>
+-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+-                                    {invoice.activityLogs && invoice.activityLogs.length > 0 ? (
+-                                        invoice.activityLogs.map((log: any, index: number) => (
+-                                            <div key={index} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+-                                                <div style={{ marginTop: '0.125rem' }}>
+-                                                    {log.action === 'CREATED' || log.action === 'Tß║áO_H├ôA_─É╞áN' ? <Clock size={16} color="#94a3b8" /> :
+-                                                        log.action === 'UPDATED' || log.action === 'Cß║¼P_NHß║¼T' ? <Edit size={16} color="#f59e0b" /> :
+-                                                            log.action === 'STATUS_CHANGED' || log.action === 'Cß║¼P_NHß║¼T_TRß║áNG_TH├üI' || log.action === 'APPROVED' ? <CheckCircle2 size={16} color="#10b981" /> :
+-                                                                <Activity size={16} color="#64748b" />}
++                            </div>
++                        )}
++
++                        {/* 2. Payment History */}
++                        {invoice.allocations && invoice.allocations.length > 0 && (
++                            <div style={{ padding: '1.25rem', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
++                                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>Lß╗ïch Sß╗¡ Thanh To├ín</div>
++                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
++                                    {invoice.allocations.map((alloc: any, index: number) => (
++                                        <div key={index} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
++                                            <div style={{ width: '2rem', height: '2rem', borderRadius: '50%', backgroundColor: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
++                                                <span style={{ color: '#16a34a', fontSize: '1rem', fontWeight: 'bold' }}>$</span>
++                                            </div>
++                                            <div style={{ flex: 1 }}>
++                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
++                                                    <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#0f172a' }}>{alloc.payment?.code || 'Phiß║┐u Thu'}</span>
++                                                    <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#16a34a' }}>+ {formatMoney(alloc.amount)}</span>
+                                                 </div>
+-                                                <div>
+-                                                    <div style={{ fontSize: '0.875rem', color: '#334155' }}>
+-                                                        {log.action === 'CREATED' ? `H├│a ─æ╞ín ─æ╞░ß╗úc tß║ío bß╗ƒi ` :
+-                                                            log.action === 'Tß║áO_H├ôA_─É╞áN' ? `H├│a ─æ╞ín ─æ╞░ß╗úc tß║ío bß╗ƒi ` :
+-                                                                log.action === 'UPDATED' ? `H├│a ─æ╞ín ─æ╞░ß╗úc cß║¡p nhß║¡t bß╗ƒi ` :
+-                                                                    log.action === 'Cß║¼P_NHß║¼T' ? `H├│a ─æ╞ín ─æ╞░ß╗úc cß║¡p nhß║¡t bß╗ƒi ` :
+-                                                                        log.action === 'STATUS_CHANGED' ? `Trß║íng th├íi thay ─æß╗òi bß╗ƒi ` :
+-                                                                            log.action === 'Cß║¼P_NHß║¼T_TRß║áNG_TH├üI' ? `Trß║íng th├íi thay ─æß╗òi bß╗ƒi ` :
+-                                                                                log.action === 'APPROVED' ? `H├│a ─æ╞ín ─æ╞░ß╗úc duyß╗çt bß╗ƒi ` :
+-                                                                                    `Thao t├íc bß╗ƒi `}
+-                                                        <span style={{ fontWeight: 600 }}>{log.user?.name || log.userId || 'Hß╗ç thß╗æng'}</span>
+-                                                    </div>
+-                                                    {log.details && (
+-                                                        <div style={{ fontSize: '0.875rem', color: '#475569', marginTop: '0.125rem' }}>
+-                                                            {(() => {
+-                                                                try {
+-                                                                    const parsed = JSON.parse(log.details);
+-                                                                    if (parsed.type === 'UPDATE_DIFF') {
+-                                                                        return (
+-                                                                            <div>
+-                                                                                <div>{parsed.summary}</div>
+-                                                                                <button
+-                                                                                    onClick={() => setDiffModal({ isOpen: true, changes: parsed.changes })}
+-                                                                                    style={{ fontSize: '0.75rem', color: '#3b82f6', background: 'none', border: 'none', padding: 0, cursor: 'pointer', marginTop: '0.25rem', textDecoration: 'underline' }}
+-                                                                                >
+-                                                                                    Xem chi tiß║┐t thay ─æß╗òi
+-                                                                                </button>
+-                                                                            </div>
+-                                                                        );
+-                                                                    }
+-                                                                } catch (e) {
+-                                                                    return log.details;
+-                                                                }
+-                                                                return log.details;
+-                                                            })()}
+-                                                        </div>
+-                                                    )}
+-                                                    <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.25rem' }}>{formatDate(log.createdAt)}</div>
++                                                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.125rem' }}>
++                                                    {formatDate(alloc.payment?.date)} ΓÇó {alloc.payment?.paymentMethod === 'BANK_TRANSFER' ? 'Chuyß╗ân khoß║ún' : alloc.payment?.paymentMethod === 'CREDIT_CARD' ? 'Thß║╗' : 'Tiß╗ün mß║╖t'}
+                                                 </div>
+                                             </div>
+-                                        ))
+-                                    ) : (
+-                                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
++                                        </div>
++                                    ))}
++                                </div>
++                            </div>
++                        )}
++
++                        {/* 3. Activity Log (Tasks context) */}
++                        <div style={{ padding: '1.25rem' }}>
++                            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>Nhß║¡t K├╜ Hoß║ít ─Éß╗Öng</div>
++                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
++                                {invoice.activityLogs && invoice.activityLogs.length > 0 ? (
++                                    invoice.activityLogs.map((log: any, index: number) => (
++                                        <div key={index} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                                             <div style={{ marginTop: '0.125rem' }}>
+-                                                <Clock size={16} color="#94a3b8" />
++                                                {log.action === 'CREATED' || log.action === 'Tß║áO_H├ôA_─É╞áN' ? <Clock size={16} color="#94a3b8" /> :
++                                                    log.action === 'UPDATED' || log.action === 'Cß║¼P_NHß║¼T' ? <Edit size={16} color="#f59e0b" /> :
++                                                        log.action === 'STATUS_CHANGED' || log.action === 'Cß║¼P_NHß║¼T_TRß║áNG_TH├üI' || log.action === 'APPROVED' ? <CheckCircle2 size={16} color="#10b981" /> :
++                                                            <Activity size={16} color="#64748b" />}
+                                             </div>
+                                             <div>
+-                                                <div style={{ fontSize: '0.875rem', color: '#334155' }}>H├│a ─æ╞ín ─æ╞░ß╗úc tß║ío bß╗ƒi <span style={{ fontWeight: 600 }}>{invoice.creator?.name || 'Hß╗ç thß╗æng'}</span></div>
+-                                                <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{formatDate(invoice.createdAt)}</div>
++                                                <div style={{ fontSize: '0.875rem', color: '#334155' }}>
++                                                    {log.action === 'CREATED' ? `H├│a ─æ╞ín ─æ╞░ß╗úc tß║ío bß╗ƒi ` :
++                                                        log.action === 'Tß║áO_H├ôA_─É╞áN' ? `H├│a ─æ╞ín ─æ╞░ß╗úc tß║ío bß╗ƒi ` :
++                                                            log.action === 'UPDATED' ? `H├│a ─æ╞ín ─æ╞░ß╗úc cß║¡p nhß║¡t bß╗ƒi ` :
++                                                                log.action === 'Cß║¼P_NHß║¼T' ? `H├│a ─æ╞ín ─æ╞░ß╗úc cß║¡p nhß║¡t bß╗ƒi ` :
++                                                                    log.action === 'STATUS_CHANGED' ? `Trß║íng th├íi thay ─æß╗òi bß╗ƒi ` :
++                                                                        log.action === 'Cß║¼P_NHß║¼T_TRß║áNG_TH├üI' ? `Trß║íng th├íi thay ─æß╗òi bß╗ƒi ` :
++                                                                            log.action === 'APPROVED' ? `H├│a ─æ╞ín ─æ╞░ß╗úc duyß╗çt bß╗ƒi ` :
++                                                                                `Thao t├íc bß╗ƒi `}
++                                                    <span style={{ fontWeight: 600 }}>{log.user?.name || log.userId || 'Hß╗ç thß╗æng'}</span>
++                                                </div>
++                                                {log.details && (
++                                                    <div style={{ fontSize: '0.875rem', color: '#475569', marginTop: '0.125rem' }}>
++                                                        {(() => {
++                                                            try {
++                                                                const parsed = JSON.parse(log.details);
++                                                                if (parsed.type === 'UPDATE_DIFF') {
++                                                                    return (
++                                                                        <div>
++                                                                            <div>{parsed.summary}</div>
++                                                                            <button
++                                                                                onClick={() => setDiffModal({ isOpen: true, changes: parsed.changes })}
++                                                                                style={{ fontSize: '0.75rem', color: '#3b82f6', background: 'none', border: 'none', padding: 0, cursor: 'pointer', marginTop: '0.25rem', textDecoration: 'underline' }}
++                                                                            >
++                                                                                Xem chi tiß║┐t thay ─æß╗òi
++                                                                            </button>
++                                                                        </div>
++                                                                    );
++                                                                }
++                                                            } catch (e) {
++                                                                return log.details;
++                                                            }
++                                                            return log.details;
++                                                        })()}
++                                                    </div>
++                                                )}
++                                                <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.25rem' }}>{formatDate(log.createdAt)}</div>
+                                             </div>
+                                         </div>
+-                                    )}
+-                                </div>
++                                    ))
++                                ) : (
++                                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
++                                        <div style={{ marginTop: '0.125rem' }}>
++                                            <Clock size={16} color="#94a3b8" />
++                                        </div>
++                                        <div>
++                                            <div style={{ fontSize: '0.875rem', color: '#334155' }}>H├│a ─æ╞ín ─æ╞░ß╗úc tß║ío bß╗ƒi <span style={{ fontWeight: 600 }}>{invoice.creator?.name || 'Hß╗ç thß╗æng'}</span></div>
++                                            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{formatDate(invoice.createdAt)}</div>
++                                        </div>
++                                    </div>
++                                )}
+                             </div>
+-
+                         </div>
++
+                     </div>
++                </div>
+ 
+ 
++            </div>
++
++            <Modal isOpen={diffModal.isOpen} onClose={() => setDiffModal({ ...diffModal, isOpen: false })} title="Chi Tiß║┐t Cß║¡p Nhß║¡t">
++                <div style={{ padding: '0.5rem', maxHeight: '50vh', overflowY: 'auto' }}>
++                    <ul style={{ paddingLeft: '1.25rem', color: '#334155', fontSize: '0.9375rem', lineHeight: '1.6', margin: 0 }}>
++                        {diffModal.changes.map((change, i) => (
++                            <li key={i} style={{ marginBottom: '0.5rem' }}>{change}</li>
++                        ))}
++                    </ul>
+                 </div>
++            </Modal>
+ 
+-                <Modal isOpen={diffModal.isOpen} onClose={() => setDiffModal({ ...diffModal, isOpen: false })} title="Chi Tiß║┐t Cß║¡p Nhß║¡t">
+-                    <div style={{ padding: '0.5rem', maxHeight: '50vh', overflowY: 'auto' }}>
+-                        <ul style={{ paddingLeft: '1.25rem', color: '#334155', fontSize: '0.9375rem', lineHeight: '1.6', margin: 0 }}>
+-                            {diffModal.changes.map((change, i) => (
+-                                <li key={i} style={{ marginBottom: '0.5rem' }}>{change}</li>
+-                            ))}
+-                        </ul>
+-                    </div>
+-                </Modal>
+-
+-                <Modal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} title="Thu Tiß╗ün H├│a ─É╞ín">
+-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', padding: '0.5rem' }}>
+-                        {/* Summary Card */}
+-                        <div style={{ backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0' }}>
+-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+-                                <span style={{ color: '#475569', fontSize: '0.875rem', fontWeight: 500 }}>Tß╗òng H├│a ─É╞ín:</span>
+-                                <span style={{ fontWeight: 600, color: '#1e293b' }}>{formatMoney(invoice.totalAmount)}</span>
+-                            </div>
+-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+-                                <span style={{ color: '#475569', fontSize: '0.875rem', fontWeight: 500 }}>─É├ú Thu Tr╞░ß╗¢c ─É├│:</span>
+-                                <span style={{ fontWeight: 600, color: '#059669' }}>{formatMoney(invoice.paidAmount)}</span>
+-                            </div>
+-                            <div style={{ height: '1px', backgroundColor: '#e2e8f0', width: '100%', marginBottom: '1rem' }}></div>
+-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+-                                <span style={{ color: '#334155', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.025em', fontSize: '0.875rem' }}>C├▓n Phß║úi Thu:</span>
+-                                <span style={{ fontWeight: 700, color: '#e11d48', fontSize: '1.25rem' }}>{formatMoney(remainingAmount)}</span>
+-                            </div>
++            <Modal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} title="Thu Tiß╗ün H├│a ─É╞ín">
++                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', padding: '0.5rem' }}>
++                    {/* Summary Card */}
++                    <div style={{ backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0' }}>
++                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
++                            <span style={{ color: '#475569', fontSize: '0.875rem', fontWeight: 500 }}>Tß╗òng H├│a ─É╞ín:</span>
++                            <span style={{ fontWeight: 600, color: '#1e293b' }}>{formatMoney(invoice.totalAmount)}</span>
++                        </div>
++                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
++                            <span style={{ color: '#475569', fontSize: '0.875rem', fontWeight: 500 }}>─É├ú Thu Tr╞░ß╗¢c ─É├│:</span>
++                            <span style={{ fontWeight: 600, color: '#059669' }}>{formatMoney(invoice.paidAmount)}</span>
++                        </div>
++                        <div style={{ height: '1px', backgroundColor: '#e2e8f0', width: '100%', marginBottom: '1rem' }}></div>
++                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
++                            <span style={{ color: '#334155', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.025em', fontSize: '0.875rem' }}>C├▓n Phß║úi Thu:</span>
++                            <span style={{ fontWeight: 700, color: '#e11d48', fontSize: '1.25rem' }}>{formatMoney(remainingAmount)}</span>
+                         </div>
++                    </div>
+ 
+-                        {/* Inputs */}
+-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+-                            <div>
+-                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#334155', marginBottom: '0.375rem' }}>Sß╗æ tiß╗ün thß╗▒c thu (VND)</label>
+-                                <input
+-                                    type="number"
+-                                    min="1"
+-                                    max={remainingAmount}
+-                                    style={{ width: '100%', padding: '0.625rem 0.75rem', fontSize: '1.125rem', fontWeight: 500, color: '#1e293b', border: '1px solid #cbd5e1', borderRadius: '0.5rem', outline: 'none', transition: 'border-color 0.2s', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+-                                    onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+-                                    onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+-                                    value={paymentData.amount}
+-                                    onChange={(e) => setPaymentData({ ...paymentData, amount: parseFloat(e.target.value) || 0 })}
+-                                />
+-                            </div>
++                    {/* Inputs */}
++                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
++                        <div>
++                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#334155', marginBottom: '0.375rem' }}>Sß╗æ tiß╗ün thß╗▒c thu (VND)</label>
++                            <input
++                                type="number"
++                                min="1"
++                                max={remainingAmount}
++                                style={{ width: '100%', padding: '0.625rem 0.75rem', fontSize: '1.125rem', fontWeight: 500, color: '#1e293b', border: '1px solid #cbd5e1', borderRadius: '0.5rem', outline: 'none', transition: 'border-color 0.2s', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
++                                onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
++                                onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
++                                value={paymentData.amount}
++                                onChange={(e) => setPaymentData({ ...paymentData, amount: parseFloat(e.target.value) || 0 })}
++                            />
++                        </div>
+ 
+-                            <div>
+-                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#334155', marginBottom: '0.375rem' }}>Ph╞░╞íng thß╗⌐c thanh to├ín</label>
+-                                <div style={{ position: 'relative' }}>
+-                                    <select
+-                                        style={{ width: '100%', padding: '0.625rem 2.5rem 0.625rem 0.75rem', color: '#1e293b', border: '1px solid #cbd5e1', borderRadius: '0.5rem', appearance: 'none', backgroundColor: 'white', outline: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+-                                        value={paymentData.method}
+-                                        onChange={(e) => setPaymentData({ ...paymentData, method: e.target.value })}
+-                                    >
+-                                        <option value="CASH">Tiß╗ün mß║╖t</option>
+-                                        <option value="BANK_TRANSFER">Chuyß╗ân khoß║ún</option>
+-                                        <option value="CREDIT_CARD">Thß║╗ T├¡n Dß╗Ñng / Ghi Nß╗ú</option>
+-                                    </select>
+-                                    <div style={{ pointerEvents: 'none', position: 'absolute', inset: '0 0 0 auto', display: 'flex', alignItems: 'center', padding: '0 0.75rem', color: '#64748b' }}>
+-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{ width: '1rem', height: '1rem' }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+-                                    </div>
++                        <div>
++                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#334155', marginBottom: '0.375rem' }}>Ph╞░╞íng thß╗⌐c thanh to├ín</label>
++                            <div style={{ position: 'relative' }}>
++                                <select
++                                    style={{ width: '100%', padding: '0.625rem 2.5rem 0.625rem 0.75rem', color: '#1e293b', border: '1px solid #cbd5e1', borderRadius: '0.5rem', appearance: 'none', backgroundColor: 'white', outline: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
++                                    value={paymentData.method}
++                                    onChange={(e) => setPaymentData({ ...paymentData, method: e.target.value })}
++                                >
++                                    <option value="CASH">Tiß╗ün mß║╖t</option>
++                                    <option value="BANK_TRANSFER">Chuyß╗ân khoß║ún</option>
++                                    <option value="CREDIT_CARD">Thß║╗ T├¡n Dß╗Ñng / Ghi Nß╗ú</option>
++                                </select>
++                                <div style={{ pointerEvents: 'none', position: 'absolute', inset: '0 0 0 auto', display: 'flex', alignItems: 'center', padding: '0 0.75rem', color: '#64748b' }}>
++                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{ width: '1rem', height: '1rem' }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                                 </div>
+                             </div>
+-
+-                            <div>
+-                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#334155', marginBottom: '0.375rem' }}>Diß╗àn giß║úi / Ghi ch├║</label>
+-                                <input
+-                                    type="text"
+-                                    style={{ width: '100%', padding: '0.625rem 0.75rem', color: '#1e293b', border: '1px solid #cbd5e1', borderRadius: '0.5rem', outline: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+-                                    onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+-                                    onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+-                                    value={paymentData.notes}
+-                                    onChange={(e) => setPaymentData({ ...paymentData, notes: e.target.value })}
+-                                    placeholder="Ghi ch├║ th├¬m vß╗ü giao dß╗ïch n├áy..."
+-                                />
+-                            </div>
+                         </div>
+ 
+-                        {/* Actions */}
+-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid #f1f5f9' }}>
+-                            <button
+-                                type="button"
+-                                onClick={() => setIsPaymentModalOpen(false)}
+-                                style={{ padding: '0.625rem 1.25rem', border: '1px solid #cbd5e1', color: '#334155', borderRadius: '0.5rem', backgroundColor: 'white', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+-                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
+-                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+-                            >
+-                                Hß╗ºy bß╗Å
+-                            </button>
+-                            <button
+-                                type="button"
+-                                onClick={handleSubmitPayment}
+-                                style={{ padding: '0.625rem 1.25rem', border: 'none', color: 'white', borderRadius: '0.5rem', backgroundColor: '#2563eb', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+-                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
+-                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+-                            >
+-                                X├íc nhß║¡n Thu & Tß║ío Phiß║┐u
+-                            </button>
++                        <div>
++                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#334155', marginBottom: '0.375rem' }}>Diß╗àn giß║úi / Ghi ch├║</label>
++                            <input
++                                type="text"
++                                style={{ width: '100%', padding: '0.625rem 0.75rem', color: '#1e293b', border: '1px solid #cbd5e1', borderRadius: '0.5rem', outline: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
++                                onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
++                                onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
++                                value={paymentData.notes}
++                                onChange={(e) => setPaymentData({ ...paymentData, notes: e.target.value })}
++                                placeholder="Ghi ch├║ th├¬m vß╗ü giao dß╗ïch n├áy..."
++                            />
+                         </div>
+                     </div>
+-                </Modal>
+-
+-                {/* Action Confirm Modal */}
+-                <Modal isOpen={!!actionModal?.isOpen} onClose={() => !isActioning && setActionModal(null)} title={actionModal?.title || 'X├íc nhß║¡n'}>
+-                    <div style={{ padding: '1.5rem' }}>
+-                        <div style={{ display: 'flex', gap: '1rem' }}>
+-                            {actionModal?.icon && (
+-                                <div style={{ flexShrink: 0, marginTop: '0.25rem' }}>
+-                                    {actionModal.icon}
+-                                </div>
+-                            )}
+-                            <div style={{ flex: 1, color: 'var(--text-main)', fontSize: '0.9375rem', lineHeight: '1.6' }}>
+-                                {actionModal?.message}
++
++                    {/* Actions */}
++                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid #f1f5f9' }}>
++                        <button
++                            type="button"
++                            onClick={() => setIsPaymentModalOpen(false)}
++                            style={{ padding: '0.625rem 1.25rem', border: '1px solid #cbd5e1', color: '#334155', borderRadius: '0.5rem', backgroundColor: 'white', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
++                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
++                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
++                        >
++                            Hß╗ºy bß╗Å
++                        </button>
++                        <button
++                            type="button"
++                            onClick={handleSubmitPayment}
++                            style={{ padding: '0.625rem 1.25rem', border: 'none', color: 'white', borderRadius: '0.5rem', backgroundColor: '#2563eb', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
++                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
++                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
++                        >
++                            X├íc nhß║¡n Thu & Tß║ío Phiß║┐u
++                        </button>
++                    </div>
++                </div>
++            </Modal>
++
++            {/* Action Confirm Modal */}
++            <Modal isOpen={!!actionModal?.isOpen} onClose={() => !isActioning && setActionModal(null)} title={actionModal?.title || 'X├íc nhß║¡n'}>
++                <div style={{ padding: '1.5rem' }}>
++                    <div style={{ display: 'flex', gap: '1rem' }}>
++                        {actionModal?.icon && (
++                            <div style={{ flexShrink: 0, marginTop: '0.25rem' }}>
++                                {actionModal.icon}
+                             </div>
++                        )}
++                        <div style={{ flex: 1, color: 'var(--text-main)', fontSize: '0.9375rem', lineHeight: '1.6' }}>
++                            {actionModal?.message}
+                         </div>
++                    </div>
+ 
+-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '2rem', borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
+-                            <button onClick={() => setActionModal(null)} className="btn btn-secondary" disabled={isActioning}>
+-                                {actionModal?.cancelLabel || 'Hß╗ºy Bß╗Å'}
+-                            </button>
+-                            <button onClick={async () => {
+-                                if (!actionModal) return;
+-                                setIsActioning(true);
+-                                try {
+-                                    await actionModal.action();
+-                                } finally {
+-                                    setIsActioning(false);
+-                                    setActionModal(null);
+-                                }
+-                            }} className={`btn ${actionModal?.confirmVariant === 'danger' ? 'btn-danger' : 'btn-primary'}`}
+-                                style={actionModal?.confirmVariant === 'success' ? { backgroundColor: 'var(--success)' } :
+-                                    actionModal?.confirmVariant === 'warning' ? { backgroundColor: '#f59e0b' } : {}}
+-                                disabled={isActioning}>
+-                                {isActioning ? (
+-                                    <span style={{ display: 'flex', alignItems: 'center' }}>
+-                                        <span style={{ display: 'inline-block', width: '16px', height: '16px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite', marginRight: '8px' }}></span>
+-                                        ─Éang xß╗¡ l├╜...
+-                                    </span>
+-                                ) : (actionModal?.confirmLabel || 'X├íc Nhß║¡n')}
+-                            </button>
+-                        </div>
++                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '2rem', borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
++                        <button onClick={() => setActionModal(null)} className="btn btn-secondary" disabled={isActioning}>
++                            {actionModal?.cancelLabel || 'Hß╗ºy Bß╗Å'}
++                        </button>
++                        <button onClick={async () => {
++                            if (!actionModal) return;
++                            setIsActioning(true);
++                            try {
++                                await actionModal.action();
++                            } finally {
++                                setIsActioning(false);
++                                setActionModal(null);
++                            }
++                        }} className={`btn ${actionModal?.confirmVariant === 'danger' ? 'btn-danger' : 'btn-primary'}`}
++                            style={actionModal?.confirmVariant === 'success' ? { backgroundColor: 'var(--success)' } :
++                                actionModal?.confirmVariant === 'warning' ? { backgroundColor: '#f59e0b' } : {}}
++                            disabled={isActioning}>
++                            {isActioning ? (
++                                <span style={{ display: 'flex', alignItems: 'center' }}>
++                                    <span style={{ display: 'inline-block', width: '16px', height: '16px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite', marginRight: '8px' }}></span>
++                                    ─Éang xß╗¡ l├╜...
++                                </span>
++                            ) : (actionModal?.confirmLabel || 'X├íc Nhß║¡n')}
++                        </button>
+                     </div>
+-                </Modal>
+-
+-                <SendEmailModal
+-                    isOpen={isEmailModalOpen}
+-                    onClose={() => setIsEmailModalOpen(false)}
+-                    moduleType="INVOICE"
+-                    defaultToEmail={invoice.customer?.email || ''}
+-                    variablesData={{
+-                        customerName: invoice.customer?.name || '',
+-                        customerEmail: invoice.customer?.email || '',
+-                        senderName: invoice.creator?.name || '',
+-                        today: new Date().toLocaleDateString('vi-VN'),
+-                        code: invoice.code,
+-                        totalAmount: formatMoney(invoice.totalAmount),
+-                        link: `${window.location.origin}/public/sales/invoice/${invoice.id}`
+-                    }}
+-                    templates={emailTemplates || []}
+-                    printUrl={`${window.location.origin}/public/sales/invoice/${invoice.id}`}
+-                    documentName={`HoaDon_${invoice.code}.pdf`}
+-                    onSend={async (data) => {
+-                        const res = await sendInvoiceEmail(invoice.id, data.to, data.subject, data.htmlBody, data.attachmentName, data.attachmentBase64);
+-                        if (res.success) {
+-                            alert('─É├ú gß╗¡i email th├ánh c├┤ng!');
+-                            router.refresh();
+-                        } else {
+-                            throw new Error(res.error);
+-                        }
+-                    }}
+-                />
+-            </div>
++                </div>
++            </Modal>
++
++            <SendEmailModal
++                isOpen={isEmailModalOpen}
++                onClose={() => setIsEmailModalOpen(false)}
++                moduleType="INVOICE"
++                defaultToEmail={invoice.customer?.email || ''}
++                variablesData={{
++                    customerName: invoice.customer?.name || '',
++                    customerEmail: invoice.customer?.email || '',
++                    senderName: invoice.creator?.name || '',
++                    today: new Date().toLocaleDateString('vi-VN'),
++                    code: invoice.code,
++                    totalAmount: formatMoney(invoice.totalAmount),
++                    link: `${window.location.origin}/public/sales/invoice/${invoice.id}`
++                }}
++                templates={emailTemplates || []}
++                printUrl={`${window.location.origin}/public/sales/invoice/${invoice.id}`}
++                documentName={`HoaDon_${invoice.code}.pdf`}
++                onSend={async (data) => {
++                    const res = await sendInvoiceEmail(invoice.id, data.to, data.subject, data.htmlBody, data.attachmentName, data.attachmentBase64);
++                    if (res.success) {
++                        alert('─É├ú gß╗¡i email th├ánh c├┤ng!');
++                        router.refresh();
++                    } else {
++                        throw new Error(res.error);
++                    }
++                }}
++            />
+         </div>
+     );
+ }
+diff --git a/app/sales/invoices/[id]/page.tsx b/app/sales/invoices/[id]/page.tsx
+index c338171..7d0824c 100644
+--- a/app/sales/invoices/[id]/page.tsx
++++ b/app/sales/invoices/[id]/page.tsx
+@@ -41,6 +41,10 @@ export default async function SalesInvoiceDetailPage({ params }: { params: { id:
+             activityLogs: {
+                 include: { user: true },
+                 orderBy: { createdAt: 'desc' }
++            },
++            emailLogs: {
++                include: { sender: { select: { name: true } } },
++                orderBy: { createdAt: 'desc' }
+             }
+         }
+     });
+diff --git a/app/sales/leads/[id]/LeadDetailClient.tsx b/app/sales/leads/[id]/LeadDetailClient.tsx
+index 37c1221..426b1c1 100644
+--- a/app/sales/leads/[id]/LeadDetailClient.tsx
++++ b/app/sales/leads/[id]/LeadDetailClient.tsx
+@@ -10,6 +10,7 @@ import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
+ import { Modal } from '@/app/components/ui/Modal';
+ import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
+ import { TaskPanel } from '@/app/components/tasks/TaskPanel';
++import { EmailLogTable } from '@/app/components/ui/EmailLogTable';
+ 
+ const STATUSES = [
+     { id: 'NEW', label: 'Tiß║┐p nhß║¡n mß╗¢i', color: { bg: '#e0e7ff', text: '#3730a3', border: '#c7d2fe', light: '#a5b4fc', solid: '#4f46e5' } },
+@@ -68,6 +69,7 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [] }
+     const [loading, setLoading] = useState(false);
+     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
++    const [activeTab, setActiveTab] = useState<'info' | 'emailLogs'>('info');
+ 
+     // Convert states
+     const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
+@@ -282,75 +284,113 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [] }
+             {/* Left Col: Info & Tasks */}
+             <div style={{ ...styles.mainLayout, ...(window.innerWidth >= 1024 ? styles.mainLayoutDesktop : {}) }}>
+                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+-                    {/* C╞í bß║ún */}
+-                    <div style={styles.sectionCard}>
+-                        <h2 style={styles.sectionTitle}>
+-                            <Building2 size={20} color="#6366f1" /> Th├┤ng tin chung
+-                        </h2>
+-
+-                        <div style={styles.infoGrid}>
+-                            <div style={styles.infoGroup}>
+-                                <p style={styles.infoLabel}>C├┤ng ty / Tß╗ò chß╗⌐c</p>
+-                                <p style={styles.infoValue}>
+-                                    {lead.customer?.name || lead.company || 'ΓÇö'}
+-                                </p>
+-                            </div>
+-                            <div style={styles.infoGroup}>
+-                                <p style={styles.infoLabel}>Ng╞░ß╗¥i li├¬n hß╗ç</p>
+-                                <div style={styles.infoValue}>
+-                                    <User size={16} style={styles.infoIcon} />
+-                                    {lead.customer?.contactName || lead.contactName || 'ΓÇö'}
+-                                </div>
+-                            </div>
+-                            <div style={styles.infoGroup}>
+-                                <p style={styles.infoLabel}>Sß╗æ ─æiß╗çn thoß║íi</p>
+-                                <div style={styles.infoValue}>
+-                                    <Phone size={16} style={styles.infoIcon} />
+-                                    {lead.customer?.phone || lead.phone || 'ΓÇö'}
+-                                </div>
+-                            </div>
+-                            <div style={styles.infoGroup}>
+-                                <p style={styles.infoLabel}>Email</p>
+-                                <div style={styles.infoValue}>
+-                                    <Mail size={16} style={styles.infoIcon} />
+-                                    {lead.customer?.email || lead.email || 'ΓÇö'}
+-                                </div>
+-                            </div>
+-                            <div style={styles.infoGroup}>
+-                                <p style={styles.infoLabel}>Gi├í trß╗ï dß╗▒ kiß║┐n</p>
+-                                <div style={styles.infoValue}>
+-                                    <DollarSign size={16} style={{ color: '#059669' }} />
+-                                    <span style={{ color: '#059669', fontWeight: 'bold', fontSize: '18px' }}>{formatMoney(lead.estimatedValue)}</span>
+-                                </div>
+-                            </div>
+-                            <div style={styles.infoGroup}>
+-                                <p style={styles.infoLabel}>Ng├áy chß╗æt dß╗▒ kiß║┐n</p>
+-                                <div style={styles.infoValue}>
+-                                    <Calendar size={16} style={styles.infoIcon} />
+-                                    {lead.expectedCloseDate ? formatDate(lead.expectedCloseDate) : 'ΓÇö'}
+-                                </div>
+-                            </div>
+-                            <div style={styles.infoGroup}>
+-                                <p style={styles.infoLabel}>Nguß╗ôn kh├ích h├áng</p>
+-                                <div style={styles.infoValue}>
+-                                    <Tag size={16} style={styles.infoIcon} />
+-                                    {lead.source || 'ΓÇö'}
++                    {/* Tabs */}
++                    <div style={{ display: 'flex', backgroundColor: '#f1f5f9', padding: '4px', borderRadius: '12px', gap: '4px' }}>
++                        <button
++                            onClick={() => setActiveTab('info')}
++                            style={{
++                                flex: 1, padding: '10px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: '600',
++                                backgroundColor: activeTab === 'info' ? 'white' : 'transparent',
++                                color: activeTab === 'info' ? '#0f172a' : '#64748b',
++                                border: 'none', cursor: 'pointer',
++                                boxShadow: activeTab === 'info' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
++                                transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
++                            }}
++                        >
++                            <Building2 size={16} /> Th├┤ng tin chung
++                        </button>
++                        <button
++                            onClick={() => setActiveTab('emailLogs')}
++                            style={{
++                                flex: 1, padding: '10px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: '600',
++                                backgroundColor: activeTab === 'emailLogs' ? 'white' : 'transparent',
++                                color: activeTab === 'emailLogs' ? '#0f172a' : '#64748b',
++                                border: 'none', cursor: 'pointer',
++                                boxShadow: activeTab === 'emailLogs' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
++                                transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
++                            }}
++                        >
++                            <Mail size={16} /> Lß╗ïch sß╗¡ Email
++                            <span style={{ backgroundColor: activeTab === 'emailLogs' ? '#e0e7ff' : '#cbd5e1', color: activeTab === 'emailLogs' ? '#4f46e5' : '#475569', padding: '2px 8px', borderRadius: '99px', fontSize: '12px' }}>
++                                {lead.emailLogs?.length || 0}
++                            </span>
++                        </button>
++                    </div>
++
++                    {activeTab === 'info' ? (
++                        <>
++                            {/* C╞í bß║ún */}
++                            <div style={styles.sectionCard}>
++                                <h2 style={styles.sectionTitle}>
++                                    <Building2 size={20} color="#6366f1" /> Th├┤ng tin chung
++                                </h2>
++
++                                <div style={styles.infoGrid}>
++                                    <div style={styles.infoGroup}>
++                                        <p style={styles.infoLabel}>C├┤ng ty / Tß╗ò chß╗⌐c</p>
++                                        <p style={styles.infoValue}>
++                                            {lead.customer?.name || lead.company || 'ΓÇö'}
++                                        </p>
++                                    </div>
++                                    <div style={styles.infoGroup}>
++                                        <p style={styles.infoLabel}>Ng╞░ß╗¥i li├¬n hß╗ç</p>
++                                        <div style={styles.infoValue}>
++                                            <User size={16} style={styles.infoIcon} />
++                                            {lead.customer?.contactName || lead.contactName || 'ΓÇö'}
++                                        </div>
++                                    </div>
++                                    <div style={styles.infoGroup}>
++                                        <p style={styles.infoLabel}>Sß╗æ ─æiß╗çn thoß║íi</p>
++                                        <div style={styles.infoValue}>
++                                            <Phone size={16} style={styles.infoIcon} />
++                                            {lead.customer?.phone || lead.phone || 'ΓÇö'}
++                                        </div>
++                                    </div>
++                                    <div style={styles.infoGroup}>
++                                        <p style={styles.infoLabel}>Email</p>
++                                        <div style={styles.infoValue}>
++                                            <Mail size={16} style={styles.infoIcon} />
++                                            {lead.customer?.email || lead.email || 'ΓÇö'}
++                                        </div>
++                                    </div>
++                                    <div style={styles.infoGroup}>
++                                        <p style={styles.infoLabel}>Gi├í trß╗ï dß╗▒ kiß║┐n</p>
++                                        <div style={styles.infoValue}>
++                                            <DollarSign size={16} style={{ color: '#059669' }} />
++                                            <span style={{ color: '#059669', fontWeight: 'bold', fontSize: '18px' }}>{formatMoney(lead.estimatedValue)}</span>
++                                        </div>
++                                    </div>
++                                    <div style={styles.infoGroup}>
++                                        <p style={styles.infoLabel}>Ng├áy chß╗æt dß╗▒ kiß║┐n</p>
++                                        <div style={styles.infoValue}>
++                                            <Calendar size={16} style={styles.infoIcon} />
++                                            {lead.expectedCloseDate ? formatDate(lead.expectedCloseDate) : 'ΓÇö'}
++                                        </div>
++                                    </div>
++                                    <div style={styles.infoGroup}>
++                                        <p style={styles.infoLabel}>Nguß╗ôn kh├ích h├áng</p>
++                                        <div style={styles.infoValue}>
++                                            <Tag size={16} style={styles.infoIcon} />
++                                            {lead.source || 'ΓÇö'}
++                                        </div>
++                                    </div>
+                                 </div>
+-                            </div>
+-                        </div>
+ 
+-                        {lead.notes && (
+-                            <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #f1f5f9' }}>
+-                                <p style={{ ...styles.infoLabel, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+-                                    <FileText size={16} /> Ghi ch├║ nß╗Öi bß╗Ö
+-                                </p>
+-                                <p style={{ fontSize: '14px', color: '#475569', whiteSpace: 'pre-wrap', backgroundColor: '#fffbeb', padding: '16px', borderRadius: '12px', border: '1px solid #fef3c7', margin: 0 }}>
+-                                    {lead.notes}
+-                                </p>
++                                {lead.notes && (
++                                    <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #f1f5f9' }}>
++                                        <p style={{ ...styles.infoLabel, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
++                                            <FileText size={16} /> Ghi ch├║ nß╗Öi bß╗Ö
++                                        </p>
++                                        <p style={{ fontSize: '14px', color: '#475569', whiteSpace: 'pre-wrap', backgroundColor: '#fffbeb', padding: '16px', borderRadius: '12px', border: '1px solid #fef3c7', margin: 0 }}>
++                                            {lead.notes}
++                                        </p>
++                                    </div>
++                                )}
+                             </div>
+-                        )}
+-                    </div>
+-
++                        </>
++                    ) : (
++                        <EmailLogTable emailLogs={lead.emailLogs || []} />
++                    )}
+ 
+                 </div>
+ 
+diff --git a/app/sales/leads/actions.ts b/app/sales/leads/actions.ts
+index 46e3938..36e3462 100644
+--- a/app/sales/leads/actions.ts
++++ b/app/sales/leads/actions.ts
+@@ -61,6 +61,10 @@ export async function getLeadById(id: string) {
+                     orderBy: {
+                         createdAt: 'desc'
+                     }
++                },
++                EmailLog: {
++                    include: { sender: { select: { name: true } } },
++                    orderBy: { createdAt: 'desc' }
+                 }
+             }
+         });
+@@ -92,6 +96,9 @@ export async function createLead(data: {
+     const session = await getServerSession(authOptions);
+     if (!session?.user) throw new Error('Unauthorized');
+ 
++    if (data.email) data.email = data.email.trim();
++    if (!data.email) data.email = null;
++
+     try {
+         // Generate a code LEAD-YYYYMM-001
+         const date = new Date();
+@@ -150,7 +157,10 @@ export async function createLead(data: {
+         });
+ 
+         return result;
+-    } catch (error) {
++    } catch (error: any) {
++        if (error.code === 'P2002' && error.meta?.target?.includes('email')) {
++            throw new Error(`Cß║únh b├ío: Email "${data.email}" ─æ├ú tß╗ôn tß║íi trong hß╗ç thß╗æng.`);
++        }
+         console.error('Error creating lead:', error);
+         throw new Error('Kh├┤ng thß╗â tß║ío C╞í hß╗Öi b├ín h├áng');
+     }
+@@ -161,6 +171,9 @@ export async function updateLead(id: string, data: any) {
+     const session = await getServerSession(authOptions);
+     if (!session?.user) throw new Error('Unauthorized');
+ 
++    if (data.email) data.email = data.email.trim();
++    if (!data.email) data.email = null;
++
+     try {
+         const lead = await prisma.lead.update({
+             where: { id },
+@@ -190,7 +203,10 @@ export async function updateLead(id: string, data: any) {
+         });
+ 
+         return lead;
+-    } catch (error) {
++    } catch (error: any) {
++        if (error.code === 'P2002' && error.meta?.target?.includes('email')) {
++            throw new Error(`Cß║únh b├ío: Email "${data.email}" ─æ├ú tß╗ôn tß║íi trong hß╗ç thß╗æng.`);
++        }
+         console.error('Error updating lead:', error);
+         throw new Error('Kh├┤ng thß╗â cß║¡p nhß║¡t C╞í hß╗Öi b├ín h├áng');
+     }
+diff --git a/lib/mailer.ts b/lib/mailer.ts
+index aa77fe1..0c5af06 100644
+--- a/lib/mailer.ts
++++ b/lib/mailer.ts
+@@ -53,9 +53,23 @@ export async function sendEmailWithTracking(params: SendEmailParams) {
+     });
+ 
+     // 2. Inject Tracking Pixel into HTML body
+-    const trackingUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/email/track?id=${emailLog.trackingId}`;
+-    const trackingPixel = `<img src="${trackingUrl}" width="1" height="1" style="display:none;" />`;
+-    const finalHtml = `${htmlBody}${trackingPixel}`;
++    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
++    const trackingPixelUrl = `${appUrl}/api/email/track?id=${emailLog.trackingId}`;
++    const trackingPixel = `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none;" />`;
++
++    // Inject Click Tracking into Anchor tags (hrefs)
++    let processedHtml = htmlBody;
++    const urlRegex = /href=["']([^"']+)["']/g;
++    processedHtml = processedHtml.replace(urlRegex, (match, url) => {
++        // Skip mailto, tel, or internal non-http links
++        if (url.startsWith('http')) {
++            const clickUrl = `${appUrl}/api/email/click?id=${emailLog.trackingId}&url=${encodeURIComponent(url)}`;
++            return `href="${clickUrl}"`;
++        }
++        return match;
++    });
++
++    const finalHtml = `${processedHtml}${trackingPixel}`;
+ 
+     const fromName = config.SMTP_FROM_NAME || process.env.SMTP_FROM_NAME || 'ERP System';
+     const fromEmail = config.SMTP_FROM_EMAIL || config.SMTP_USER || process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER;
+@@ -63,8 +77,10 @@ export async function sendEmailWithTracking(params: SendEmailParams) {
+     // Handle Attachments
+     const attachments = [];
+     if (attachmentName && attachmentBase64) {
+-        // Strip out the data:application/pdf;base64, prefix if it's there
+-        const base64Data = attachmentBase64.replace(/^data:application\/pdf;base64,/, "");
++        let base64Data = attachmentBase64;
++        if (attachmentBase64.includes('base64,')) {
++            base64Data = attachmentBase64.split('base64,')[1];
++        }
+         attachments.push({
+             filename: attachmentName,
+             content: Buffer.from(base64Data, 'base64'),
+diff --git a/middleware.ts b/middleware.ts
+index f729f42..a3cc3fd 100644
+--- a/middleware.ts
++++ b/middleware.ts
+@@ -15,9 +15,9 @@ export default withAuth(
+     }
+ );
+ 
+-// Chß║╖n to├án bß╗Ö c├íc route ngoß║íi trß╗½ auth, _next (static files), api, login v├á public (in ß║Ñn)
++// Chß║╖n to├án bß╗Ö c├íc route ngoß║íi trß╗½ auth, _next (static files), api, login, forgot-password, reset-password v├á public (in ß║Ñn)
+ export const config = {
+     matcher: [
+-        "/((?!api/auth|_next/static|_next/image|favicon.ico|login|public|uploads).*)",
++        "/((?!api/auth|_next/static|_next/image|favicon.ico|login|forgot-password|reset-password|public|uploads).*)",
+     ],
+ };
+diff --git a/prisma/schema.prisma b/prisma/schema.prisma
+index d365892..46c89f7 100644
+--- a/prisma/schema.prisma
++++ b/prisma/schema.prisma
+@@ -100,7 +100,7 @@ model Notification {
+ model Customer {
+   id              String           @id @default(cuid())
+   name            String
+-  email           String?
++  email           String?          @unique
+   phone           String?
+   address         String?
+   taxCode         String?
+@@ -1106,7 +1106,7 @@ model Lead {
+   // Th├┤ng tin li├¬n hß╗ç (D├ánh cho Lead Mß╗ÜI ch╞░a l├á Kh├ích H├áng)
+   company     String? // T├¬n kh├ích h├áng / C├┤ng ty mß╗¢i
+   contactName String? // Ng╞░ß╗¥i li├¬n hß╗ç ch├¡nh mß╗¢i
+-  email       String?
++  email       String? @unique
+   phone       String?
+ 
+   // Li├¬n kß║┐t vß╗¢i Kh├ích H├áng HIß╗åN Tß║áI (Nß║┐u l├á c╞í hß╗Öi tß╗½ KH c┼⌐ b├ín th├¬m)

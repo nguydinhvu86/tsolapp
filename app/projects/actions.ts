@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { logActivity } from '@/app/tasks/actions'; // Reuse task activity logging
 import { sendEmailWithTracking } from '@/lib/mailer';
+import { createNotification } from '@/app/notifications/actions';
 
 export async function getProjects(filters?: any) {
     const session = await getServerSession(authOptions);
@@ -76,15 +77,13 @@ export async function createProject(data: any, creatorId: string) {
             if (user.id === creatorId) continue;
 
             // System Notification
-            await prisma.notification.create({
-                data: {
-                    userId: user.id,
-                    title: 'Dự án mới',
-                    message: `Bạn đã được giao tham gia dự án: ${newProject.title}`,
-                    link: `/projects/${newProject.id}`,
-                    type: 'INFO'
-                }
-            });
+            await createNotification(
+                user.id,
+                'Dự án mới',
+                `Bạn đã được giao tham gia dự án: ${newProject.title}`,
+                'INFO',
+                `/projects/${newProject.id}`
+            );
 
             // Email Notification
             if (user.email) {
@@ -153,15 +152,13 @@ export async function updateProject(id: string, data: any, userId: string) {
                 for (const user of addedUsers) {
                     if (user.id === userId) continue;
 
-                    await prisma.notification.create({
-                        data: {
-                            userId: user.id,
-                            title: 'Thêm vào dự án',
-                            message: `Bạn đã được thêm vào dự án: ${updated.title}`,
-                            link: `/projects/${updated.id}`,
-                            type: 'INFO'
-                        }
-                    });
+                    await createNotification(
+                        user.id,
+                        'Thêm vào dự án',
+                        `Bạn đã được thêm vào dự án: ${updated.title}`,
+                        'INFO',
+                        `/projects/${updated.id}`
+                    );
 
                     if (user.email) {
                         await sendEmailWithTracking({

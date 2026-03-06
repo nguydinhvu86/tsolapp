@@ -20,7 +20,11 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
         COMPANY_ADDRESS: initialSettings.COMPANY_ADDRESS || '',
         COMPANY_TAX: initialSettings.COMPANY_TAX || '',
         ESTIMATE_CODE_FORMAT: initialSettings.ESTIMATE_CODE_FORMAT || 'BG{SEQ}',
-        INVOICE_CODE_FORMAT: initialSettings.INVOICE_CODE_FORMAT || 'INV{SEQ}'
+        INVOICE_CODE_FORMAT: initialSettings.INVOICE_CODE_FORMAT || 'INV{SEQ}',
+        PUSHER_APP_ID: initialSettings.PUSHER_APP_ID || '',
+        PUSHER_KEY: initialSettings.PUSHER_KEY || '',
+        PUSHER_SECRET: initialSettings.PUSHER_SECRET || '',
+        PUSHER_CLUSTER: initialSettings.PUSHER_CLUSTER || ''
     });
 
     const [estStartSeq, setEstStartSeq] = useState(() => {
@@ -255,6 +259,42 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
                                 </strong>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: '0 0 1rem 0', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        Cấu hình Cảnh báo Thời gian thực (Pusher)
+                    </h3>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+                        Cấu hình dịch vụ Pusher để hỗ trợ đẩy thông báo ngay lập tức trên trình duyệt của người dùng mà không cần tải lại trang. Các thông tin này lấy từ tài khoản Pusher Channels của bạn.
+                    </p>
+                    <div className="grid grid-cols-2 gap-4">
+                        <Input
+                            label="Pusher App ID"
+                            value={formData.PUSHER_APP_ID}
+                            onChange={e => setFormData({ ...formData, PUSHER_APP_ID: e.target.value })}
+                            placeholder="Vd: 1234567"
+                        />
+                        <Input
+                            label="Pusher Cluster"
+                            value={formData.PUSHER_CLUSTER}
+                            onChange={e => setFormData({ ...formData, PUSHER_CLUSTER: e.target.value })}
+                            placeholder="Vd: ap1"
+                        />
+                        <Input
+                            label="Pusher Key"
+                            value={formData.PUSHER_KEY}
+                            onChange={e => setFormData({ ...formData, PUSHER_KEY: e.target.value })}
+                            placeholder="Vd: abcdef123456"
+                        />
+                        <Input
+                            label="Pusher Secret"
+                            type="password"
+                            value={formData.PUSHER_SECRET}
+                            onChange={e => setFormData({ ...formData, PUSHER_SECRET: e.target.value })}
+                            placeholder="Vd: ******"
+                        />
                     </div>
                 </div>
 

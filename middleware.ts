@@ -15,9 +15,9 @@ export default withAuth(
     }
 );
 
-// Chặn toàn bộ các route ngoại trừ auth, _next (static files), api, login và public (in ấn)
+// Chặn toàn bộ các route ngoại trừ auth, _next (static files), api, login, forgot-password, reset-password và public (in ấn)
 export const config = {
     matcher: [
-        "/((?!api/auth|_next/static|_next/image|favicon.ico|login|public|uploads).*)",
+        "/((?!api/auth|_next/static|_next/image|favicon.ico|login|forgot-password|reset-password|public|uploads).*)",
     ],
 };
