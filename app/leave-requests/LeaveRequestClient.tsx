@@ -3,6 +3,10 @@
 import React, { useState } from 'react';
 import { createLeaveRequest } from '@/app/hr/attendance/actions';
 import { Plus, Check, X, Clock } from 'lucide-react';
+import { Card } from '@/app/components/ui/Card';
+import { Table } from '@/app/components/ui/Table';
+import { Button } from '@/app/components/ui/Button';
+import { Input } from '@/app/components/ui/Input';
 import { Modal } from '@/app/components/ui/Modal';
 
 export default function LeaveRequestClient({ initialData }: { initialData: any[] }) {
@@ -41,77 +45,104 @@ export default function LeaveRequestClient({ initialData }: { initialData: any[]
     };
 
     return (
-        <div>
-            <div className="flex justify-end mb-4">
-                <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700">
-                    <Plus className="w-5 h-5" /> Tạo Đơn Mới
-                </button>
-            </div>
+        <div className="flex flex-col gap-6">
+            <Card>
+                <div className="flex justify-between items-center" style={{ marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                    <div className="flex items-center gap-3">
+                        <h2 style={{ fontSize: '1.125rem', fontWeight: 600, margin: 0 }}>Lịch Sử Đơn Từ</h2>
+                        <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)', background: 'var(--bg-muted)', padding: '0.125rem 0.5rem', borderRadius: '1rem' }}>
+                            {requests.length} đơn
+                        </span>
+                    </div>
+                    <Button onClick={() => setIsModalOpen(true)} className="gap-2">
+                        <Plus size={18} /> Tạo Đơn Mới
+                    </Button>
+                </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <table className="w-full text-left border-collapse">
+                <Table>
                     <thead>
-                        <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-medium text-sm">
-                            <th className="p-4">Loại Đơn</th>
-                            <th className="p-4">Từ Ngày</th>
-                            <th className="p-4">Đến Ngày</th>
-                            <th className="p-4">Lý do</th>
-                            <th className="p-4">Trạng Thái</th>
-                            <th className="p-4">Ngày Tạo</th>
+                        <tr>
+                            <th>Loại Đơn</th>
+                            <th>Từ Ngày</th>
+                            <th>Đến Ngày</th>
+                            <th>Lý do</th>
+                            <th style={{ width: '150px' }}>Trạng Thái</th>
+                            <th style={{ width: '120px' }}>Ngày Tạo</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody>
                         {requests.length === 0 ? (
-                            <tr><td colSpan={6} className="p-8 text-center text-slate-500">Chưa có đơn từ nào</td></tr>
+                            <tr>
+                                <td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
+                                    Chưa có đơn từ nào
+                                </td>
+                            </tr>
                         ) : requests.map(r => (
-                            <tr key={r.id} className="hover:bg-slate-50">
-                                <td className="p-4 font-medium text-slate-700">
+                            <tr key={r.id}>
+                                <td style={{ fontWeight: 500 }}>
                                     {r.type === 'SICK_LEAVE' ? 'Nghỉ Ốm' : r.type === 'UNPAID_LEAVE' ? 'Nghỉ Không Lương' : 'Nghỉ Phép Năm'}
                                 </td>
-                                <td className="p-4 text-slate-600">{new Date(r.startDate).toLocaleDateString('vi-VN')}</td>
-                                <td className="p-4 text-slate-600">{new Date(r.endDate).toLocaleDateString('vi-VN')}</td>
-                                <td className="p-4 text-slate-600 max-w-[200px] truncate" title={r.reason}>{r.reason}</td>
-                                <td className="p-4">
-                                    {r.status === 'PENDING' && <span className="inline-flex px-2 py-1 bg-amber-100 text-amber-700 font-bold text-xs rounded-full items-center gap-1"><Clock className="w-3 h-3" /> ĐANG CHỜ</span>}
-                                    {r.status === 'APPROVED' && <span className="inline-flex px-2 py-1 bg-emerald-100 text-emerald-700 font-bold text-xs rounded-full items-center gap-1"><Check className="w-3 h-3" /> ĐÃ DUYỆT</span>}
-                                    {r.status === 'REJECTED' && <span className="inline-flex px-2 py-1 bg-red-100 text-red-700 font-bold text-xs rounded-full items-center gap-1"><X className="w-3 h-3" /> TỪ CHỐI</span>}
+                                <td>{new Date(r.startDate).toLocaleDateString('vi-VN')}</td>
+                                <td>{new Date(r.endDate).toLocaleDateString('vi-VN')}</td>
+                                <td style={{ maxWidth: '300px' }}>
+                                    <div className="truncate" title={r.reason}>{r.reason}</div>
                                 </td>
-                                <td className="p-4 text-slate-500 text-sm">{new Date(r.createdAt).toLocaleDateString('vi-VN')}</td>
+                                <td>
+                                    {r.status === 'PENDING' && <span className="p-1 px-2 rounded-full text-xs font-medium bg-amber-100 text-amber-800">ĐANG CHỜ</span>}
+                                    {r.status === 'APPROVED' && <span className="p-1 px-2 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">ĐÃ DUYỆT</span>}
+                                    {r.status === 'REJECTED' && <span className="p-1 px-2 rounded-full text-xs font-medium bg-rose-100 text-rose-800">TỪ CHỐI</span>}
+                                </td>
+                                <td style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                                    {new Date(r.createdAt).toLocaleDateString('vi-VN')}
+                                </td>
                             </tr>
                         ))}
                     </tbody>
-                </table>
-            </div>
+                </Table>
+            </Card>
 
-            <Modal isOpen={isModalOpen} onClose={() => !isLoading && setIsModalOpen(false)} title="Tạo Đơn Xin Nghỉ" maxWidth="500px">
+            <Modal isOpen={isModalOpen} onClose={() => !isLoading && setIsModalOpen(false)} title="Tạo Đơn Xin Nghỉ">
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Loại nghỉ phép</label>
-                        <select value={type} onChange={e => setType(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
+                    <div className="flex flex-col gap-1.5">
+                        <label style={{ fontSize: '0.875rem', fontWeight: 500 }}>Loại nghỉ phép <span style={{ color: 'var(--danger)' }}>*</span></label>
+                        <select value={type} onChange={e => setType(e.target.value)} style={{ padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-primary)', outline: 'none' }}>
                             <option value="ANNUAL_LEAVE">Nghỉ Phép Năm</option>
                             <option value="SICK_LEAVE">Nghỉ Ốm Đau</option>
                             <option value="UNPAID_LEAVE">Nghỉ Không Lương</option>
                         </select>
                     </div>
+
                     <div className="flex gap-4">
                         <div className="flex-1">
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Từ ngày</label>
-                            <input type="date" required value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500" />
+                            <Input
+                                label="Từ ngày *"
+                                type="date"
+                                required
+                                value={startDate}
+                                onChange={e => setStartDate(e.target.value)}
+                            />
                         </div>
                         <div className="flex-1">
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Đến ngày</label>
-                            <input type="date" required value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500" />
+                            <Input
+                                label="Đến ngày *"
+                                type="date"
+                                required
+                                value={endDate}
+                                onChange={e => setEndDate(e.target.value)}
+                            />
                         </div>
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Lý do nghỉ</label>
-                        <textarea required value={reason} onChange={e => setReason(e.target.value)} rows={3} className="w-full p-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Trình bày lý do xin nghỉ..."></textarea>
+
+                    <div className="flex flex-col gap-1.5">
+                        <label style={{ fontSize: '0.875rem', fontWeight: 500 }}>Lý do nghỉ <span style={{ color: 'var(--danger)' }}>*</span></label>
+                        <textarea required value={reason} onChange={e => setReason(e.target.value)} rows={3} style={{ padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-primary)', outline: 'none', resize: 'vertical' }} placeholder="Trình bày lý do xin nghỉ chi tiết..."></textarea>
                     </div>
-                    <div className="flex gap-3 justify-end mt-4">
-                        <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-50">Hủy</button>
-                        <button type="submit" disabled={isLoading} className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-70">
-                            {isLoading ? 'Đang gửi...' : 'Gửi Đơn'}
-                        </button>
+
+                    <div className="flex gap-2" style={{ marginTop: '1rem', justifyContent: 'flex-end' }}>
+                        <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Hủy bỏ</Button>
+                        <Button type="submit" disabled={isLoading}>
+                            {isLoading ? 'Đang gửi duyệt...' : 'Gửi Đơn Xin Nghỉ'}
+                        </Button>
                     </div>
                 </form>
             </Modal>

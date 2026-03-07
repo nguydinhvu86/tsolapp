@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { LayoutDashboard, Users, FileText, Settings, FileSpreadsheet, FileCode, ChevronDown, ChevronRight, FileOutput, FilePlus2, FileStack, Mail, CheckSquare, Package, ShoppingCart, Target, GripVertical, Clock } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Settings, FileSpreadsheet, FileCode, ChevronDown, ChevronRight, FileOutput, FilePlus2, FileStack, Mail, CheckSquare, Package, ShoppingCart, Target, GripVertical, Clock, BookOpen } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -12,7 +12,8 @@ import { updateSidebarOrder } from './actions';
 const mainNavItems: any[] = [
     { name: 'Bảng Điều Khiển', href: '/dashboard', icon: LayoutDashboard, permission: 'VIEW_DASHBOARD' },
     { name: 'Dự Án (Projects)', href: '/projects', icon: Target, permission: 'TASKS_VIEW' },
-    { name: 'Công Việc (Tasks)', href: '/tasks', icon: CheckSquare, permission: 'TASKS_VIEW' },
+    { name: 'Công Việc & Giao Việc', href: '/tasks', icon: CheckSquare, permission: 'TASKS_VIEW' },
+    { name: 'Thư Viện & Đào Tạo', href: '/library', icon: BookOpen, permission: 'TASKS_VIEW' },
     {
         name: 'Quản Lý Văn Thư',
         icon: FileStack,

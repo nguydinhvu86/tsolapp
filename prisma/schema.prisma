@@ -81,11 +81,16 @@ model User {
   chatMessages     ChatMessage[]
 
   // HR & Attendance
-  shiftConfigId        String?
-  shiftConfig          ShiftConfig?       @relation("UserShiftConfig", fields: [shiftConfigId], references: [id], onDelete: SetNull)
-  attendances          AttendanceRecord[] @relation("UserAttendance")
-  leaveRequests        LeaveRequest[]     @relation("UserLeaveRequests")
-  approvedLeaveRequests LeaveRequest[]    @relation("ApprovedLeaveRequests")
+  shiftConfigId         String?
+  shiftConfig           ShiftConfig?       @relation("UserShiftConfig", fields: [shiftConfigId], references: [id], onDelete: SetNull)
+  attendances           AttendanceRecord[] @relation("UserAttendance")
+  leaveRequests         LeaveRequest[]     @relation("UserLeaveRequests")
+  approvedLeaveRequests LeaveRequest[]     @relation("ApprovedLeaveRequests")
+
+  // Library & Training (Knowledge Base)
+  createdDocuments Document[]        @relation("DocumentCreator")
+  documentComments DocumentComment[] @relation("DocumentCommenter")
+  documentNotes    DocumentNote[]    @relation("DocumentNoter")
 }
 
 model SystemSetting {
@@ -1164,17 +1169,17 @@ model Lead {
 }
 
 model LeadForm {
-  id             String   @id @default(cuid())
+  id             String  @id @default(cuid())
   title          String // Tên nội bộ, ví dụ: "Form Landing Page Máy Lọc Nước"
-  isActive       Boolean  @default(true)
-  source         String   @default("Website") // Nguồn khách hàng gán mặc định (Website, Zalo, Landing Page...)
+  isActive       Boolean @default(true)
+  source         String  @default("Website") // Nguồn khách hàng gán mặc định (Website, Zalo, Landing Page...)
   successMessage String? // Câu thông báo sau khi điền thành công
-  
-  assigneeId     String? // ID Nhân viên mặc định sẽ được nhận/assigned cho Lead này
-  assignee       User?    @relation("LeadFormAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
 
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  assigneeId String? // ID Nhân viên mặc định sẽ được nhận/assigned cho Lead này
+  assignee   User?   @relation("LeadFormAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model LeadActivityLog {
@@ -1231,10 +1236,10 @@ model EmailLog {
 // --- INTERNAL CHAT MODULE ---
 
 model ChatRoom {
-  id        String   @id @default(cuid())
-  name      String?  // Optional name for group chats
-  isGroup   Boolean  @default(false)
-  
+  id      String  @id @default(cuid())
+  name    String? // Optional name for group chats
+  isGroup Boolean @default(false)
+
   participants ChatParticipant[]
   messages     ChatMessage[]
 
@@ -1243,13 +1248,13 @@ model ChatRoom {
 }
 
 model ChatParticipant {
-  id        String   @id @default(cuid())
-  roomId    String
-  userId    String
-  lastRead  DateTime @default(now())
-  
-  room      ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id       String   @id @default(cuid())
+  roomId   String
+  userId   String
+  lastRead DateTime @default(now())
+
+  room ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1258,14 +1263,14 @@ model ChatParticipant {
 }
 
 model ChatMessage {
-  id        String   @id @default(cuid())
-  roomId    String
-  senderId  String
-  content       String   @db.Text
-  attachmentUrl String?  @db.Text
+  id            String  @id @default(cuid())
+  roomId        String
+  senderId      String
+  content       String  @db.Text
+  attachmentUrl String? @db.Text
 
-  room      ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  room   ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  sender User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1276,58 +1281,131 @@ model ChatMessage {
 // ==========================================
 
 model ShiftConfig {
-  id              String   @id @default(cuid())
-  name            String   // Tên ca làm việc
-  startTime       String   @default("08:00")
-  endTime         String   @default("17:00")
-  lunchStart      String   @default("12:00")
-  lunchEnd        String   @default("13:00")
-  lateThreshold   Int      @default(0) // Số phút cho phép đi muộn
-  earlyThreshold  Int      @default(0) // Số phút cho phép về sớm
-  isActive        Boolean  @default(true)
-  
-  users           User[]   @relation("UserShiftConfig")
+  id             String  @id @default(cuid())
+  name           String // Tên ca làm việc
+  startTime      String  @default("08:00")
+  endTime        String  @default("17:00")
+  lunchStart     String  @default("12:00")
+  lunchEnd       String  @default("13:00")
+  lateThreshold  Int     @default(0) // Số phút cho phép đi muộn
+  earlyThreshold Int     @default(0) // Số phút cho phép về sớm
+  isActive       Boolean @default(true)
+
+  users User[] @relation("UserShiftConfig")
 }
 
 model AttendanceRecord {
-  id              String   @id @default(cuid())
-  userId          String
-  user            User     @relation("UserAttendance", fields: [userId], references: [id], onDelete: Cascade)
-  
-  date            DateTime @db.Date // Ngày chấm công (chỉ lấy phần ngày, ko lấy giờ)
-  
-  checkInTime     DateTime? 
-  checkInPhotoUrl String?   
-  checkInLocation String?   
-  
-  checkOutTime    DateTime? 
-  checkOutPhotoUrl String?  
-  checkOutLocation String?  
-  
-  status          String    @default("PRESENT") // PRESENT, LATE, HALF_DAY, ABSENT
-  notes           String?   
-  
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation("UserAttendance", fields: [userId], references: [id], onDelete: Cascade)
+
+  date DateTime @db.Date // Ngày chấm công (chỉ lấy phần ngày, ko lấy giờ)
+
+  checkInTime     DateTime?
+  checkInPhotoUrl String?
+  checkInLocation String?
+
+  checkOutTime     DateTime?
+  checkOutPhotoUrl String?
+  checkOutLocation String?
+
+  status String  @default("PRESENT") // PRESENT, LATE, HALF_DAY, ABSENT
+  notes  String?
+
   totalWorkMinutes Int? // Tính bằng phút
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([userId, date]) // Mỗi nhân viên chỉ có 1 bản ghi chấm công mỗi ngày
 }
 
 model LeaveRequest {
-  id              String   @id @default(cuid())
-  userId          String
-  user            User     @relation("UserLeaveRequests", fields: [userId], references: [id])
-  type            String   // SICK_LEAVE, ANNUAL_LEAVE, UNPAID_LEAVE
-  startDate       DateTime
-  endDate         DateTime
-  reason          String
-  status          String   @default("PENDING") // PENDING, APPROVED, REJECTED
-  
-  approverId      String?  
-  approver        User?    @relation("ApprovedLeaveRequests", fields: [approverId], references: [id])
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation("UserLeaveRequests", fields: [userId], references: [id])
+  type      String // SICK_LEAVE, ANNUAL_LEAVE, UNPAID_LEAVE
+  startDate DateTime
+  endDate   DateTime
+  reason    String
+  status    String   @default("PENDING") // PENDING, APPROVED, REJECTED
+
+  approverId String?
+  approver   User?   @relation("ApprovedLeaveRequests", fields: [approverId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ==========================================
+// LIBRARY & TRAINING (KNOWLEDGE BASE) MODULE
+// ==========================================
+
+model DocumentCategory {
+  id          String             @id @default(cuid())
+  name        String
+  description String?            @db.Text
+  parentId    String?
+  parent      DocumentCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children    DocumentCategory[] @relation("CategoryHierarchy")
+
+  documents Document[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Document {
+  id          String  @id @default(cuid())
+  title       String
+  description String? @db.Text
+  fileUrl     String? @db.Text
+  fileType    String? // PDF, MP4, LINK, DOCX, v.v.
+  thumbnail   String? @db.Text // Ảnh bìa (bắt buộc với video)
+  size        Int? // Kích thước byte
+  isPublic    Boolean @default(true) // true: Ai cũng xem được
+
+  categoryId String?
+  category   DocumentCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  creatorId String
+  creator   User   @relation("DocumentCreator", fields: [creatorId], references: [id])
+
+  comments DocumentComment[]
+  notes    DocumentNote[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DocumentComment {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation("DocumentCommenter", fields: [userId], references: [id])
+
+  content String @db.Text
+
+  parentId String?
+  parent   DocumentComment?  @relation("DocumentCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  DocumentComment[] @relation("DocumentCommentReplies")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DocumentNote {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation("DocumentNoter", fields: [userId], references: [id])
+
+  content    String @db.Text // Ghi chú cá nhân (chỉ user đó xem được)
+  pageNumber Int? // Lưu vết trang số mấy (nếu đọc PDF)
+  videoTime  Int? // Lưu vết giây thứ mấy (nếu xem Video)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

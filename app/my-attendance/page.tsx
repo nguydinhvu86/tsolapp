@@ -2,6 +2,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { getMyAttendanceHistory } from "@/app/hr/attendance/actions";
 import { Clock, CheckCircle, AlertCircle, Calendar, Filter, MapPin } from "lucide-react";
+import { Card } from "@/app/components/ui/Card";
+import { Table } from "@/app/components/ui/Table";
 
 export const metadata = { title: "Lịch Sử Chấm Công" };
 
@@ -28,152 +30,130 @@ export default async function MyAttendancePage({
     const years = [year - 1, year, year + 1];
 
     return (
-        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 bg-slate-50/50 min-h-screen">
-            {/* Header Section */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
-                        <div className="bg-indigo-100 p-2.5 rounded-xl">
-                            <Calendar className="w-6 h-6 text-indigo-600" />
-                        </div>
-                        Bảng Công Của Tôi
-                    </h1>
-                    <p className="text-slate-500 mt-1.5 ml-12 text-sm">Theo dõi lịch sử chấm công và điểm danh hàng ngày</p>
-                </div>
+        <div className="flex flex-col gap-6">
+            <div className="flex justify-between items-center" style={{ flexWrap: 'wrap', gap: '1rem' }}>
+                <h1 style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Calendar size={24} style={{ color: 'var(--primary)' }} />
+                    Bảng Công Của Tôi
+                </h1>
 
-                <form className="flex items-center gap-3 bg-slate-50 p-2 rounded-xl border border-slate-100 w-full md:w-auto">
+                <form className="flex items-center gap-2" style={{ background: '#fff', padding: '0.25rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
                     <div className="flex items-center gap-2 pl-2">
-                        <Filter className="w-4 h-4 text-slate-400" />
+                        <Filter size={16} color="var(--text-muted)" />
                     </div>
-                    <select name="month" defaultValue={month} className="bg-transparent border-none text-sm font-medium text-slate-700 focus:ring-0 cursor-pointer pr-6 py-1.5 hover:text-indigo-600 transition-colors">
+                    <select name="month" defaultValue={month} style={{ border: 'none', background: 'transparent', outline: 'none', cursor: 'pointer', fontSize: '0.9375rem', color: 'var(--text-primary)' }}>
                         {months.map(m => (
                             <option key={m} value={m}>Tháng {m}</option>
                         ))}
                     </select>
-                    <div className="w-px h-5 bg-slate-200"></div>
-                    <select name="year" defaultValue={year} className="bg-transparent border-none text-sm font-medium text-slate-700 focus:ring-0 cursor-pointer pr-6 py-1.5 hover:text-indigo-600 transition-colors">
+                    <div style={{ width: '1px', height: '1.25rem', backgroundColor: 'var(--border)' }}></div>
+                    <select name="year" defaultValue={year} style={{ border: 'none', background: 'transparent', outline: 'none', cursor: 'pointer', fontSize: '0.9375rem', color: 'var(--text-primary)' }}>
                         {years.map(y => (
                             <option key={y} value={y}>{y}</option>
                         ))}
                     </select>
-                    <button type="submit" className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-all shadow-sm hover:shadow active:scale-95 ml-1">
+                    <button type="submit" style={{ background: 'var(--primary)', color: '#fff', border: 'none', padding: '0.375rem 1rem', borderRadius: 'calc(var(--radius) - 2px)', fontWeight: 500, cursor: 'pointer' }}>
                         Tra Cứu
                     </button>
                 </form>
             </div>
 
             {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white p-6 rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-200 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
-                    <div className="flex justify-between items-start mb-4">
-                        <div className="bg-emerald-100/50 p-3 rounded-xl">
-                            <CheckCircle className="w-6 h-6 text-emerald-600" />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+                <Card className="summary-card" style={{ padding: '1.25rem', border: '1px solid var(--border)' }}>
+                    <div className="flex items-center gap-3">
+                        <div style={{ padding: '0.75rem', borderRadius: 'var(--radius)', backgroundColor: '#d1fae5', color: '#059669' }}>
+                            <CheckCircle size={24} />
+                        </div>
+                        <div>
+                            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#064e3b', margin: 0 }}>Ngày Công Chuẩn</h3>
+                            <p style={{ fontSize: '0.875rem', color: '#10b981', margin: 0, marginTop: '4px' }}>{totalPresent} công</p>
                         </div>
                     </div>
-                    <div>
-                        <h3 className="text-slate-500 font-medium text-sm mb-1">Ngày Công Chuẩn</h3>
-                        <p className="text-4xl font-bold text-slate-800 tracking-tight">{totalPresent} <span className="text-base font-normal text-slate-400">công</span></p>
-                    </div>
-                </div>
+                </Card>
 
-                <div className="bg-white p-6 rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-200 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
-                    <div className="flex justify-between items-start mb-4">
-                        <div className="bg-amber-100/50 p-3 rounded-xl">
-                            <AlertCircle className="w-6 h-6 text-amber-600" />
+                <Card className="summary-card" style={{ padding: '1.25rem', border: '1px solid var(--border)' }}>
+                    <div className="flex items-center gap-3">
+                        <div style={{ padding: '0.75rem', borderRadius: 'var(--radius)', backgroundColor: '#fee2e2', color: '#dc2626' }}>
+                            <AlertCircle size={24} />
+                        </div>
+                        <div>
+                            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#7f1d1d', margin: 0 }}>Số Lần Đi Muộn</h3>
+                            <p style={{ fontSize: '0.875rem', color: '#dc2626', margin: 0, marginTop: '4px' }}>{totalLate} lần</p>
                         </div>
                     </div>
-                    <div>
-                        <h3 className="text-slate-500 font-medium text-sm mb-1">Số Lần Đi Muộn</h3>
-                        <p className="text-4xl font-bold text-slate-800 tracking-tight">{totalLate} <span className="text-base font-normal text-slate-400">lần</span></p>
-                    </div>
-                </div>
+                </Card>
 
-                <div className="bg-white p-6 rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-200 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
-                    <div className="flex justify-between items-start mb-4">
-                        <div className="bg-indigo-100/50 p-3 rounded-xl">
-                            <Clock className="w-6 h-6 text-indigo-600" />
+                <Card className="summary-card" style={{ padding: '1.25rem', border: '1px solid var(--border)' }}>
+                    <div className="flex items-center gap-3">
+                        <div style={{ padding: '0.75rem', borderRadius: 'var(--radius)', backgroundColor: '#fef3c7', color: '#d97706' }}>
+                            <Clock size={24} />
+                        </div>
+                        <div>
+                            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#78350f', margin: 0 }}>Nửa Buổi</h3>
+                            <p style={{ fontSize: '0.875rem', color: '#d97706', margin: 0, marginTop: '4px' }}>{totalHalfDay} buổi</p>
                         </div>
                     </div>
-                    <div>
-                        <h3 className="text-slate-500 font-medium text-sm mb-1">Nửa Buổi</h3>
-                        <p className="text-4xl font-bold text-slate-800 tracking-tight">{totalHalfDay} <span className="text-base font-normal text-slate-400">buổi</span></p>
-                    </div>
-                </div>
+                </Card>
             </div>
 
             {/* Attendance Table */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="p-6 border-b border-slate-100">
-                    <h2 className="text-lg font-bold text-slate-800">Chi Tiết Điểm Danh</h2>
+            <Card>
+                <div className="flex justify-between items-center" style={{ marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                    <h2 style={{ fontSize: '1.125rem', fontWeight: 600, margin: 0 }}>Chi Tiết Điểm Danh</h2>
                 </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-slate-50/80 border-b border-slate-100">
-                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-32">Ngày</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Trạng Thái</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Giờ Vào (In)</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Giờ Ra (Out)</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Vị Trí (Location)</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Ghi Chú</th>
+                <Table>
+                    <thead>
+                        <tr>
+                            <th>Ngày</th>
+                            <th>Trạng Thái</th>
+                            <th style={{ textAlign: 'center' }}>Giờ Vào (In)</th>
+                            <th style={{ textAlign: 'center' }}>Giờ Ra (Out)</th>
+                            <th>Vị Trí (Location)</th>
+                            <th>Ghi Chú</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {records.length === 0 ? (
+                            <tr>
+                                <td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
+                                    Không có dữ liệu điểm danh tháng này.
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            {records.length === 0 ? (
-                                <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
-                                        <div className="flex flex-col items-center gap-3">
-                                            <Calendar className="w-10 h-10 opacity-20" />
-                                            <p className="text-sm font-medium">Không có dữ liệu chấm công tháng này</p>
+                        ) : records.map(r => (
+                            <tr key={r.id}>
+                                <td>
+                                    <div style={{ fontWeight: 500 }}>{r.date.toLocaleDateString('vi-VN')}</div>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{r.date.toLocaleDateString('vi-VN', { weekday: 'short' })}</div>
+                                </td>
+                                <td>
+                                    {r.status === 'PRESENT' && <span className="p-1 px-2 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">ĐÚNG GIỜ</span>}
+                                    {r.status === 'LATE' && <span className="p-1 px-2 rounded-full text-xs font-medium bg-rose-100 text-rose-800">ĐI MUỘN</span>}
+                                    {r.status === 'HALF_DAY' && <span className="p-1 px-2 rounded-full text-xs font-medium bg-amber-100 text-amber-800">NỬA BUỔI</span>}
+                                    {r.status === 'ABSENT' && <span className="p-1 px-2 rounded-full text-xs font-medium bg-slate-100 text-slate-800">VẮNG MẶT</span>}
+                                </td>
+                                <td style={{ textAlign: 'center', fontFamily: 'monospace' }}>
+                                    {r.checkInTime ? r.checkInTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                                </td>
+                                <td style={{ textAlign: 'center', fontFamily: 'monospace' }}>
+                                    {r.checkOutTime ? r.checkOutTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                                </td>
+                                <td style={{ fontSize: '0.875rem' }}>
+                                    {(r.checkInLocation || r.checkOutLocation) ? (
+                                        <div className="flex flex-col gap-1 text-slate-600">
+                                            {r.checkInLocation && <div><MapPin size={12} className="inline mr-1 text-emerald-600" />{r.checkInLocation}</div>}
+                                            {r.checkOutLocation && <div><MapPin size={12} className="inline mr-1 text-rose-600" />{r.checkOutLocation}</div>}
                                         </div>
-                                    </td>
-                                </tr>
-                            ) : records.map(r => (
-                                <tr key={r.id} className="hover:bg-slate-50/80 transition-colors group">
-                                    <td className="px-6 py-4">
-                                        <div className="font-semibold text-slate-700">{r.date.toLocaleDateString('vi-VN')}</div>
-                                        <div className="text-xs text-slate-400 mt-0.5">{r.date.toLocaleDateString('vi-VN', { weekday: 'long' })}</div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        {r.status === 'PRESENT' && <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-medium text-xs rounded-lg shadow-sm"><CheckCircle className="w-3.5 h-3.5" /> ĐÚNG GIỜ</span>}
-                                        {r.status === 'LATE' && <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200/60 font-medium text-xs rounded-lg shadow-sm"><AlertCircle className="w-3.5 h-3.5" /> ĐI MUỘN</span>}
-                                        {r.status === 'HALF_DAY' && <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-sky-50 text-sky-700 border border-sky-200/60 font-medium text-xs rounded-lg shadow-sm"><Clock className="w-3.5 h-3.5" /> NỬA BUỔI</span>}
-                                        {r.status === 'ABSENT' && <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-rose-50 text-rose-700 border border-rose-200/60 font-medium text-xs rounded-lg shadow-sm">VẮNG MẶT</span>}
-                                    </td>
-                                    <td className="px-6 py-4 text-center">
-                                        <span className={`inline-block font-mono text-sm ${r.checkInTime ? 'text-indigo-600 font-semibold bg-indigo-50 px-2 py-1 rounded' : 'text-slate-300'}`}>
-                                            {r.checkInTime ? r.checkInTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-center">
-                                        <span className={`inline-block font-mono text-sm ${r.checkOutTime ? 'text-indigo-600 font-semibold bg-indigo-50 px-2 py-1 rounded' : 'text-slate-300'}`}>
-                                            {r.checkOutTime ? r.checkOutTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        {(r.checkInLocation || r.checkOutLocation) ? (
-                                            <div className="flex flex-col gap-1.5 text-xs text-slate-500">
-                                                {r.checkInLocation && <div className="flex items-start gap-1.5 group-hover:text-slate-700 transition-colors"><MapPin className="w-3.5 h-3.5 mt-0.5 text-emerald-500 shrink-0" /> <span className="line-clamp-1" title={r.checkInLocation}>In: {r.checkInLocation}</span></div>}
-                                                {r.checkOutLocation && <div className="flex items-start gap-1.5 group-hover:text-slate-700 transition-colors"><MapPin className="w-3.5 h-3.5 mt-0.5 text-rose-400 shrink-0" /> <span className="line-clamp-1" title={r.checkOutLocation}>Out: {r.checkOutLocation}</span></div>}
-                                            </div>
-                                        ) : (
-                                            <span className="text-slate-300 text-sm">-</span>
-                                        )}
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-slate-500">
-                                        <div className="max-w-[200px] truncate" title={r.notes || ''}>
-                                            {r.notes || <span className="text-slate-300">-</span>}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                                    ) : '-'}
+                                </td>
+                                <td style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                                    {r.notes || '-'}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </Table>
+            </Card>
         </div>
     );
 }
