@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { MessageCircle } from 'lucide-react';
 import { getUnreadCount } from '@/app/chat/actions';
+import { createPortal } from 'react-dom';
 import ChatWindow from './ChatWindow';
 
 export default function ChatWidget({ currentUser }: { currentUser: any }) {
@@ -76,15 +77,16 @@ export default function ChatWidget({ currentUser }: { currentUser: any }) {
                 )}
             </button>
 
-            {isOpen && (
+            {isOpen && typeof window !== 'undefined' && createPortal(
                 <div style={{
-                    position: 'absolute',
-                    top: 'calc(100% + 10px)',
-                    right: 0, // Align right with the button
-                    zIndex: 9999
+                    position: 'fixed',
+                    bottom: '24px',
+                    right: '24px',
+                    zIndex: 99999
                 }}>
                     <ChatWindow currentUser={currentUser} onClose={() => setIsOpen(false)} />
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

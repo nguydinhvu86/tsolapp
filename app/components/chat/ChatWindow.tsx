@@ -140,9 +140,9 @@ export default function ChatWindow({ currentUser, onClose }: { currentUser: any,
 
     return (
         <div style={{
-            width: '750px',
-            minWidth: '500px',
-            height: '600px',
+            width: '600px',
+            minWidth: '400px',
+            height: '560px',
             minHeight: '400px',
             backgroundColor: 'white',
             borderRadius: '12px',
@@ -155,7 +155,7 @@ export default function ChatWindow({ currentUser, onClose }: { currentUser: any,
         }}>
             {/* LEFT SIDEBAR - ROOMS */}
             <div style={{
-                width: '280px',
+                width: '240px',
                 borderRight: '1px solid #e2e8f0',
                 display: 'flex',
                 flexDirection: 'column',

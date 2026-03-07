@@ -9,6 +9,15 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSo
 import { CSS } from '@dnd-kit/utilities';
 import { updateSidebarOrder } from './actions';
 
+// Define the interface for Online User data
+interface OnlineUser {
+    id: string;
+    name: string;
+    avatar?: string;
+    lastActive: string;
+    os?: string;
+}
+
 const mainNavItems: any[] = [
     { name: 'Bảng Điều Khiển', href: '/dashboard', icon: LayoutDashboard, permission: 'VIEW_DASHBOARD' },
     { name: 'Dự Án (Projects)', href: '/projects', icon: Target, permission: 'TASKS_VIEW' },
@@ -82,7 +91,8 @@ const mainNavItems: any[] = [
             { name: 'Công Của Tôi', href: '/my-attendance' },
             { name: 'Đơn Nghỉ Phép', href: '/leave-requests' },
             { name: 'Bảng Công', href: '/hr/attendance', permission: 'SETTINGS_VIEW' }, // using SETTINGS_VIEW for admin/hr bypass for now
-            { name: 'Duyệt Đơn', href: '/hr/approvals', permission: 'SETTINGS_VIEW' }
+            { name: 'Duyệt Đơn', href: '/hr/approvals', permission: 'SETTINGS_VIEW' },
+            { name: 'Giám Sát (Ping)', href: '/hr/monitoring', permission: 'SETTINGS_VIEW' }
         ]
     },
     {
@@ -255,6 +265,7 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
 
     const [navItems, setNavItems] = useState(mainNavItems);
     const [isClient, setIsClient] = useState(false);
+    const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
 
     useEffect(() => {
         setIsClient(true);
@@ -274,6 +285,42 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
             }
         }
     }, [initialSidebarOrder]);
+
+    // Effect for handling Heartbeat Ping and Fetching Online Users
+    useEffect(() => {
+        if (!session?.user?.id) return;
+
+        let isMounted = true;
+
+        const performHeartbeatAndFetch = async () => {
+            try {
+                // 1. Ping heartbeat
+                await fetch('/api/users/heartbeat', { method: 'POST' });
+
+                // 2. Fetch online users list
+                if (isMounted) {
+                    const res = await fetch('/api/users/online');
+                    if (res.ok) {
+                        const data = await res.json();
+                        setOnlineUsers(data.users || []);
+                    }
+                }
+            } catch (error) {
+                console.error("Error in heartbeat/online fetch:", error);
+            }
+        };
+
+        // Run immediately
+        performHeartbeatAndFetch();
+
+        // Then run every 60 seconds
+        const interval = setInterval(performHeartbeatAndFetch, 60000);
+
+        return () => {
+            isMounted = false;
+            clearInterval(interval);
+        };
+    }, [session?.user?.id]);
 
     const toggleSubMenu = (name: string) => setOpenSubMenus(prev => ({ ...prev, [name]: !prev[name] }));
 
@@ -299,7 +346,7 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
     }
 
     return (
-        <aside className={`sidebar-container ${isOpen ? 'open' : ''}`}>
+        <aside className={`sidebar-container ${isOpen ? 'open' : ''}`} style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.5rem', borderBottom: '1px solid var(--border)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
                     {logoUrl ? (
@@ -346,6 +393,49 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
                     </DndContext>
                 )}
             </nav>
+
+            {/* Online Users Widget */}
+            {isClient && onlineUsers.length > 0 && (
+                <div style={{ padding: '1rem', borderTop: '1px solid var(--border)', marginTop: 'auto' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            Đang Online ({onlineUsers.length})
+                        </span>
+                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#22c55e', animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
+                            <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }`}</style>
+                        </div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        {onlineUsers.slice(0, 5).map(u => (
+                            <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} title={u.os ? `OS: ${u.os}` : ''}>
+                                <div style={{ position: 'relative' }}>
+                                    {u.avatar ? (
+                                        <img src={u.avatar} alt={u.name} style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} />
+                                    ) : (
+                                        <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: 'var(--bg-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <Users size={14} color="var(--text-muted)" />
+                                        </div>
+                                    )}
+                                    <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#22c55e', border: '2px solid white' }}></div>
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {u.name}
+                                    </div>
+                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                                        {u.id === session?.user?.id ? 'Bạn' : (u.os || 'Đang hoạt động')}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                        {onlineUsers.length > 5 && (
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '0.25rem' }}>
+                                +{onlineUsers.length - 5} người khác
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </aside>
     );
 }
