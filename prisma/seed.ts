@@ -91,7 +91,11 @@ async function main() {
             password: hashedAdminPassword,
             name: 'Nguyễn Văn Admin',
             role: 'ADMIN',
-            permissionGroupId: adminGroup.id
+            permissionGroupId: adminGroup.id,
+            permissions: '[]',
+            dashboardConfig: '[]',
+            sidebarOrder: '[]',
+            customerMenuOrder: '[]'
         },
     });
 
@@ -105,7 +109,11 @@ async function main() {
             password: hashedUserPassword,
             name: 'Trần Thị User',
             role: 'USER',
-            permissionGroupId: userGroup.id
+            permissionGroupId: userGroup.id,
+            permissions: '[]',
+            dashboardConfig: '[]',
+            sidebarOrder: '[]',
+            customerMenuOrder: '[]'
         },
     });
 

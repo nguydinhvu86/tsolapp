@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { triggerPusherEvent } from '@/lib/pusher-server';
 
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
@@ -21,6 +22,10 @@ export async function GET(request: NextRequest) {
                         openedAt: new Date(),
                     }
                 });
+
+                if (emailLog.senderId) {
+                    await triggerPusherEvent(`user-${emailLog.senderId}`, 'new-notification', { type: 'SILENT_REFRESH' });
+                }
             }
         } catch (error) {
             console.error('Error tracking email open:', error);

@@ -32,8 +32,8 @@ export function CustomerClient({ initialData }: { initialData: CustomerWithStats
     const [formData, setFormData] = useState({ name: '', email: '', phone: '', address: '', taxCode: '' });
 
     // Sort & Filter state
-    const [sortField, setSortField] = useState<keyof Customer>('name');
-    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+    const [sortField, setSortField] = useState<keyof Customer>('createdAt');
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
     const [searchTerm, setSearchTerm] = useState('');
     const [activeFilter, setActiveFilter] = useState<'ALL' | 'TOP_REVENUE_5' | 'RECENT_10' | 'RECENT_UPDATED'>('ALL');
 
@@ -123,7 +123,8 @@ export function CustomerClient({ initialData }: { initialData: CustomerWithStats
                 const res = await updateCustomer(editingId, formData);
                 setCustomers(customers.map(c => c.id === editingId ? res : c));
             } else {
-                await createCustomer(formData);
+                const newCustomer = await createCustomer(formData);
+                setCustomers([newCustomer, ...customers]);
                 router.refresh();
             }
             closeModal();

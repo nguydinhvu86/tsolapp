@@ -35,7 +35,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
     const [searchQuery, setSearchQuery] = useState('');
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
-    const [sortBy, setSortBy] = useState('date_desc');
+    const [sortBy, setSortBy] = useState('createdAt_desc');
 
     const handleSort = (key: string) => {
         if (sortBy === `${key}_desc`) {
@@ -315,7 +315,12 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         }
 
         if (res.success) {
-            // refresh
+            if (formData.id) {
+                setEstimates(estimates.map((e: any) => e.id === formData.id ? res.data : e));
+            } else {
+                setEstimates([res.data, ...estimates]);
+            }
+            setIsFormOpen(false);
             router.refresh();
         } else {
             alert('Lỗi: ' + res.error);
@@ -446,6 +451,8 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         }
 
         result.sort((a: any, b: any) => {
+            if (sortBy === 'createdAt_desc') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            if (sortBy === 'createdAt_asc') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
             if (sortBy === 'date_desc') return new Date(b.date).getTime() - new Date(a.date).getTime();
             if (sortBy === 'date_asc') return new Date(a.date).getTime() - new Date(b.date).getTime();
             if (sortBy === 'amount_desc') return b.totalAmount - a.totalAmount;
@@ -561,6 +568,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                             value={sortBy}
                             onChange={e => setSortBy(e.target.value)}
                         >
+                            <option value="createdAt_desc">Mới tạo nhất</option>
                             <option value="date_desc">Ngày (Mới nhất)</option>
                             <option value="date_asc">Ngày (Cũ nhất)</option>
                             <option value="amount_desc">Tổng Tiền (Cao xuống thấp)</option>

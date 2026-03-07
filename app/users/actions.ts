@@ -75,15 +75,21 @@ export async function createUser(data: CreateUserData) {
         throw new Error('Email đã tồn tại trong hệ thống!');
     }
 
+    const dataPayload: any = {
+        email: data.email,
+        name: data.name,
+        role: data.role || 'USER',
+        password: hashedPassword,
+        permissions: JSON.stringify(data.permissions || []),
+        isActive: true,
+    };
+
+    if (data.permissionGroupId) {
+        dataPayload.permissionGroupId = data.permissionGroupId;
+    }
+
     const newUser = await prisma.user.create({
-        data: {
-            email: data.email,
-            name: data.name,
-            role: data.role || 'USER',
-            password: hashedPassword,
-            permissionGroupId: data.permissionGroupId,
-            permissions: JSON.stringify(data.permissions || [])
-        }
+        data: dataPayload
     });
 
     revalidatePath('/users');
@@ -126,6 +132,8 @@ export async function updateUser(id: string, data: UpdateUserData) {
 
     if (data.permissionGroupId !== undefined) {
         updateData.permissionGroupId = data.permissionGroupId;
+    } else {
+        // Explicitly avoid passing undefined to Prisma
     }
 
     const updatedUser = await prisma.user.update({

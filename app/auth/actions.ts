@@ -144,7 +144,9 @@ export async function resetPassword(token: string, newPassword: string) {
             data: {
                 password: hashedPassword,
                 resetToken: null,
-                resetTokenExpiry: null
+                resetTokenExpiry: null,
+                twoFactorEnabled: false,
+                twoFactorSecret: null
             }
         });
 

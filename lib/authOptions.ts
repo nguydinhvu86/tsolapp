@@ -13,7 +13,7 @@ export const authOptions: NextAuthOptions = {
                 password: { label: "Mật khẩu", type: "password" },
                 token: { label: "Mã 2FA (nếu có)", type: "text" }
             },
-            async authorize(credentials) {
+            async authorize(credentials, req) {
                 if (!credentials?.email || !credentials?.password) {
                     throw new Error("Vui lòng nhập đầy đủ email và mật khẩu");
                 }
@@ -25,6 +25,10 @@ export const authOptions: NextAuthOptions = {
 
                 if (!user || !user.password) {
                     throw new Error("Tài khoản không tồn tại");
+                }
+
+                if (!user.isActive) {
+                    throw new Error("Tài khoản đã bị vô hiệu hóa. Vui lòng liên hệ Admin.");
                 }
 
                 const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
@@ -51,6 +55,45 @@ export const authOptions: NextAuthOptions = {
                 const userPerms = JSON.parse(user.permissions || "[]");
                 const groupPerms = user.permissionGroup ? JSON.parse(user.permissionGroup.permissions || "[]") : [];
                 const mergedPerms = Array.from(new Set([...userPerms, ...groupPerms]));
+
+                // Xác định thiết bị & IP
+                const userAgent = (req?.headers as any)?.['user-agent'] || 'Bị ẩn/Không xác định';
+                let platform = 'Khác';
+                if (userAgent.includes('Windows')) platform = 'Windows';
+                else if (userAgent.includes('Macintosh')) platform = 'MacOS';
+                else if (userAgent.includes('Android')) platform = 'Android';
+                else if (userAgent.includes('iPhone') || userAgent.includes('iPad')) platform = 'iOS';
+
+                let browser = 'Khác';
+                if (userAgent.includes('Chrome')) browser = 'Chrome';
+                else if (userAgent.includes('Safari')) browser = 'Safari';
+                else if (userAgent.includes('Firefox')) browser = 'Firefox';
+                else if (userAgent.includes('Edge')) browser = 'Edge';
+
+                const deviceStr = `${platform} - ${browser}`;
+                const ipAddress = (req?.headers as any)?.['x-forwarded-for'] || '127.0.0.1';
+
+                // Lưu lịch sử đăng nhập & cập nhật lastLoginAt
+                try {
+                    await prisma.user.update({
+                        where: { id: user.id },
+                        data: {
+                            lastLoginAt: new Date(),
+                            currentPlatform: deviceStr
+                        }
+                    });
+
+                    await (prisma as any).loginLog.create({
+                        data: {
+                            userId: user.id,
+                            ipAddress,
+                            userAgent,
+                            platform: deviceStr
+                        }
+                    });
+                } catch (e) {
+                    console.error("Lỗi ghi log đăng nhập", e);
+                }
 
                 return {
                     id: user.id,
@@ -94,6 +137,11 @@ export const authOptions: NextAuthOptions = {
                         const userPerms = JSON.parse(dbUser.permissions || "[]");
                         const groupPerms = dbUser.permissionGroup ? JSON.parse(dbUser.permissionGroup.permissions || "[]") : [];
                         token.permissions = Array.from(new Set([...userPerms, ...groupPerms]));
+
+                        // If user is deactivated during active session, invalidate them
+                        if (!dbUser.isActive) {
+                            token.id = "";
+                        }
                     } else {
                         // User was deleted or database reset, invalidate session ID
                         token.id = "";

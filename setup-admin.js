@@ -16,6 +16,10 @@ async function main() {
             name: 'Admin User',
             password: password,
             role: 'ADMIN',
+            permissions: '[]',
+            dashboardConfig: '[]',
+            sidebarOrder: '[]',
+            customerMenuOrder: '[]'
         },
     });
     console.log('✅ Admin user ready:', user.email);
