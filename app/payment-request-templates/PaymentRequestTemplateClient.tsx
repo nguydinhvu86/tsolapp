@@ -60,7 +60,7 @@ export function PaymentRequestTemplateClient({ initialData }: { initialData: Pay
     };
 
     const handleDelete = async (id: string) => {
-        if (confirm('Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n xÃ³a máº«u Ä‘á» nghá»‹ nÃ y?')) {
+        if (confirm('Bạn có chắc chắn muốn xóa mẫu đề nghị này?')) {
             await deletePaymentRequestTemplate(id);
             router.refresh();
         }
@@ -68,7 +68,7 @@ export function PaymentRequestTemplateClient({ initialData }: { initialData: Pay
 
     const handleCopy = async (template: PaymentRequestTemplate) => {
         const t = template as any;
-        if (confirm(`Báº¡n cÃ³ muá»‘n táº¡o báº£n sao cá»§a máº«u "${template.name}"?`)) {
+        if (confirm(`Bạn có muốn tạo bản sao của mẫu "${template.name}"?`)) {
             await createPaymentRequestTemplate({
                 name: template.name + ' (Copy)',
                 description: template.description || '',
@@ -82,24 +82,24 @@ export function PaymentRequestTemplateClient({ initialData }: { initialData: Pay
     return (
         <Card>
             <div className="flex justify-between items-center" style={{ marginBottom: '1.5rem' }}>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Cáº¥u hÃ¬nh Máº«u Äá» Nghá»‹</h2>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Cấu hình Mẫu Đề Nghị</h2>
                 <Button onClick={() => openModal()} className="gap-2">
-                    <Plus size={18} /> ThÃªm máº«u má»›i
+                    <Plus size={18} /> Thêm mẫu mới
                 </Button>
             </div>
 
             <Table>
                 <thead>
                     <tr>
-                        <th>TÃªn Máº«u</th>
-                        <th>MÃ´ táº£</th>
-                        <th>NgÃ y táº¡o</th>
-                        <th style={{ width: '100px' }}>Thao tÃ¡c</th>
+                        <th>Tên Mẫu</th>
+                        <th>Mô tả</th>
+                        <th>Ngày tạo</th>
+                        <th style={{ width: '100px' }}>Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
                     {initialData.length === 0 ? (
-                        <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>ChÆ°a cÃ³ máº«u Ä‘á» nghá»‹ nÃ o</td></tr>
+                        <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Chưa có mẫu đề nghị nào</td></tr>
                     ) : initialData.map(template => (
                         <tr key={template.id}>
                             <td style={{ fontWeight: 500 }}>{template.name}</td>
@@ -107,13 +107,13 @@ export function PaymentRequestTemplateClient({ initialData }: { initialData: Pay
                             <td style={{ color: 'var(--text-muted)' }} suppressHydrationWarning>{formatDate(new Date(template.createdAt))}</td>
                             <td>
                                 <div className="flex gap-2">
-                                    <button onClick={() => openModal(template)} style={{ color: 'var(--text-muted)' }} title="Sá»­a">
+                                    <button onClick={() => openModal(template)} style={{ color: 'var(--text-muted)' }} title="Sửa">
                                         <Edit size={18} />
                                     </button>
-                                    <button onClick={() => handleCopy(template)} style={{ color: 'var(--success, #16a34a)' }} title="Sao chÃ©p (NhÃ¢n báº£n)">
+                                    <button onClick={() => handleCopy(template)} style={{ color: 'var(--success, #16a34a)' }} title="Sao chép (Nhân bản)">
                                         <Copy size={18} />
                                     </button>
-                                    <button onClick={() => handleDelete(template.id)} style={{ color: 'var(--danger)' }} title="XÃ³a">
+                                    <button onClick={() => handleDelete(template.id)} style={{ color: 'var(--danger)' }} title="Xóa">
                                         <Trash2 size={18} />
                                     </button>
                                 </div>
@@ -123,33 +123,33 @@ export function PaymentRequestTemplateClient({ initialData }: { initialData: Pay
                 </tbody>
             </Table>
 
-            <Modal isOpen={isModalOpen} onClose={closeModal} title={editingId ? 'Sá»­a máº«u Ä‘á» nghá»‹' : 'ThÃªm máº«u má»›i'} maxWidth={formData.editorType === 'DRAG_DROP' ? '1400px' : '1000px'}>
+            <Modal isOpen={isModalOpen} onClose={closeModal} title={editingId ? 'Sửa mẫu đề nghị' : 'Thêm mẫu mới'} maxWidth={formData.editorType === 'DRAG_DROP' ? '1400px' : '1000px'}>
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     <Input
-                        label="TÃªn máº«u Ä‘á» nghá»‹ *"
+                        label="Tên mẫu đề nghị *"
                         required
                         value={formData.name}
                         onChange={e => setFormData({ ...formData, name: e.target.value })}
                     />
                     <Input
-                        label="MÃ´ táº£ ngáº¯n gá»n"
+                        label="Mô tả ngắn gọn"
                         value={formData.description}
                         onChange={e => setFormData({ ...formData, description: e.target.value })}
                     />
                     <div className="flex flex-col gap-2">
-                        <label style={{ fontWeight: 500, fontSize: '0.875rem' }}>Ná»™i dung máº«u Ä‘á» nghá»‹ *</label>
+                        <label style={{ fontWeight: 500, fontSize: '0.875rem' }}>Nội dung mẫu đề nghị *</label>
                         <TemplateVariablesGuide />
 
                         <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '0.75rem', borderRadius: '4px', fontSize: '0.875rem' }}>
                             <p style={{ margin: 0, color: '#166534' }}>
-                                <strong>ðŸ’¡ Máº¹o thiáº¿t káº¿ Máº«u Äá» Nghá»‹:</strong><br />
-                                Há»‡ thá»‘ng há»— trá»£ tÃ­nh nÄƒng <strong>Báº£ng tÃ­nh Äá»™ng (Mini-Excel)</strong>. Äá»ƒ chÃ¨n má»™t báº£ng tÃ­nh cho phÃ©p nháº­p liá»‡u vÃ  tá»± Ä‘á»™ng nhÃ¢n <strong style={{ color: 'var(--danger)' }}>Sá»‘ lÆ°á»£ng Ã— ÄÆ¡n giÃ¡ = ThÃ nh tiá»n</strong>, báº¡n chá»‰ cáº§n gÃµ chÃ­nh xÃ¡c dÃ²ng chá»¯ nÃ y vÃ o vá»‹ trÃ­ mong muá»‘n:
+                                <strong>💡 Mẹo thiết kế Mẫu Đề Nghị:</strong><br />
+                                Hệ thống hỗ trợ tính năng <strong>Bảng tính Động (Mini-Excel)</strong>. Để chèn một bảng tính cho phép nhập liệu và tự động nhân <strong style={{ color: 'var(--danger)' }}>Số lượng × Đơn giá = Thành tiền</strong>, bạn chỉ cần gõ chính xác dòng chữ này vào vị trí mong muốn:
                             </p>
                             <code style={{ background: '#dcfce3', color: '#15803d', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '1rem', fontWeight: 'bold', display: 'inline-block', marginTop: '0.5rem' }}>
                                 {'{{TABLE_THIETBI}}'}
                             </code>
                             <p style={{ margin: '0.5rem 0 0 0', color: '#166534', fontSize: '0.8125rem' }}>
-                                (LÆ°u Ã½: Báº¡n cÅ©ng cÃ³ thá»ƒ dÃ¹ng cÃ¡c biáº¿n chá»¯ Ä‘Æ¡n giáº£n nhÆ° <code>{'{{TEN_KHACH_HANG}}'}</code> Ä‘á»ƒ há»‡ thá»‘ng tá»± Ä‘iá»n tÃªn ngÆ°á»i mua).
+                                (Lưu ý: Bạn cũng có thể dùng các biến chữ đơn giản như <code>{'{{TEN_KHACH_HANG}}'}</code> để hệ thống tự điền tên người mua).
                             </p>
                         </div>
 
@@ -166,7 +166,7 @@ export function PaymentRequestTemplateClient({ initialData }: { initialData: Pay
                                     transition: 'all 0.2s'
                                 }}
                             >
-                                TrÃ¬nh soáº¡n tháº£o cÆ¡ báº£n (Rich Text)
+                                Trình soạn thảo cơ bản (Rich Text)
                             </button>
                             <button
                                 type="button"
@@ -180,7 +180,7 @@ export function PaymentRequestTemplateClient({ initialData }: { initialData: Pay
                                     transition: 'all 0.2s'
                                 }}
                             >
-                                âš¡ Thiáº¿t káº¿ máº«u KÃ©o & Tháº£ (Pro)
+                                ⚡ Thiết kế mẫu Kéo & Thả (Pro)
                             </button>
                         </div>
 
@@ -188,7 +188,7 @@ export function PaymentRequestTemplateClient({ initialData }: { initialData: Pay
                             <RichTextEditor
                                 value={formData.content}
                                 onChange={val => setFormData({ ...formData, content: val })}
-                                placeholder="Cá»˜NG HOÃ€ XÃƒ Há»˜I CHá»¦ NGHÄ¨A VIá»†T NAM..."
+                                placeholder="CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM..."
                             />
                         ) : (
                             <TemplateBuilder
@@ -202,8 +202,8 @@ export function PaymentRequestTemplateClient({ initialData }: { initialData: Pay
                         )}
                     </div>
                     <div className="flex gap-2" style={{ marginTop: '1rem', justifyContent: 'flex-end' }}>
-                        <Button type="button" variant="secondary" onClick={closeModal}>Há»§y</Button>
-                        <Button type="submit">LÆ°u láº¡i</Button>
+                        <Button type="button" variant="secondary" onClick={closeModal}>Hủy</Button>
+                        <Button type="submit">Lưu lại</Button>
                     </div>
                 </form>
             </Modal>

@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import { prisma } from './prisma';
+import { triggerPusherEvent } from './pusher-server';
 
 interface SendEmailParams {
     to: string;
@@ -37,12 +38,32 @@ export async function sendEmailWithTracking(params: SendEmailParams) {
         tls: config.SMTP_IGNORE_TLS === 'true' ? { rejectUnauthorized: false } : undefined
     });
 
-    // 1. Create EmailLog in database first to get the trackingId
+    const trackingId = require('crypto').randomUUID();
+
+    // 1. Prepare Tracking HTML first
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'https://inside.tsol.vn';
+    const trackingPixelUrl = `${appUrl}/api/email/track?id=${trackingId}`;
+    const trackingPixel = `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none;" />`;
+
+    let processedHtml = htmlBody;
+    const urlRegex = /href=["']([^"']+)["']/g;
+    processedHtml = processedHtml.replace(urlRegex, (match, url) => {
+        if (url.startsWith('http')) {
+            const clickUrl = `${appUrl}/api/email/click?id=${trackingId}&url=${encodeURIComponent(url)}`;
+            return `href="${clickUrl}"`;
+        }
+        return match;
+    });
+
+    const finalHtml = `${processedHtml}${trackingPixel}`;
+
+    // 2. Create EmailLog in database with the exact finalHtml and generated trackingId
     const emailLog = await (prisma as any).emailLog.create({
         data: {
+            trackingId: trackingId,
             toEmail: to,
             subject,
-            body: htmlBody, // Might want to sanitize or store raw
+            body: finalHtml,
             status: 'SENT',
             senderId,
             customerId,
@@ -52,24 +73,9 @@ export async function sendEmailWithTracking(params: SendEmailParams) {
         }
     });
 
-    // 2. Inject Tracking Pixel into HTML body
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const trackingPixelUrl = `${appUrl}/api/email/track?id=${emailLog.trackingId}`;
-    const trackingPixel = `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none;" />`;
-
-    // Inject Click Tracking into Anchor tags (hrefs)
-    let processedHtml = htmlBody;
-    const urlRegex = /href=["']([^"']+)["']/g;
-    processedHtml = processedHtml.replace(urlRegex, (match, url) => {
-        // Skip mailto, tel, or internal non-http links
-        if (url.startsWith('http')) {
-            const clickUrl = `${appUrl}/api/email/click?id=${emailLog.trackingId}&url=${encodeURIComponent(url)}`;
-            return `href="${clickUrl}"`;
-        }
-        return match;
-    });
-
-    const finalHtml = `${processedHtml}${trackingPixel}`;
+    if (senderId) {
+        await triggerPusherEvent(`user-${senderId}`, 'new-notification', { type: 'SILENT_REFRESH' });
+    }
 
     const fromName = config.SMTP_FROM_NAME || process.env.SMTP_FROM_NAME || 'ERP System';
     const fromEmail = config.SMTP_FROM_EMAIL || config.SMTP_USER || process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER;

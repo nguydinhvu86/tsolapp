@@ -36,7 +36,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
     const [searchQuery, setSearchQuery] = useState('');
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
-    const [sortBy, setSortBy] = useState('date_desc');
+    const [sortBy, setSortBy] = useState('createdAt_desc');
 
     const handleSort = (key: string) => {
         if (sortBy === `${key}_desc`) {
@@ -362,6 +362,12 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         }
 
         if (res.success) {
+            if (formData.id) {
+                setInvoices(invoices.map((inv: any) => inv.id === formData.id ? res.data : inv));
+            } else {
+                setInvoices([res.data, ...invoices]);
+            }
+            setIsFormOpen(false);
             router.refresh();
         } else {
             alert('Lỗi: ' + res.error);
@@ -400,6 +406,12 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
 
                     if (approveRes.success) {
                         alert('Đã Lưu Hóa Đơn và Xuất Kho thành công!');
+                        if (formData.id) {
+                            setInvoices(invoices.map((inv: any) => inv.id === formData.id ? approveRes.data : inv));
+                        } else {
+                            setInvoices([approveRes.data, ...invoices]);
+                        }
+                        setIsFormOpen(false);
                         router.refresh();
                     } else {
                         alert('Lưu Hóa Đơn thành công nhưng lỗi khi Xuất Kho: ' + approveRes.error);
@@ -598,6 +610,8 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         }
 
         result.sort((a: any, b: any) => {
+            if (sortBy === 'createdAt_desc') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            if (sortBy === 'createdAt_asc') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
             if (sortBy === 'date_desc') return new Date(b.date).getTime() - new Date(a.date).getTime();
             if (sortBy === 'date_asc') return new Date(a.date).getTime() - new Date(b.date).getTime();
             if (sortBy === 'amount_desc') return b.totalAmount - a.totalAmount;
@@ -713,6 +727,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                         value={sortBy}
                         onChange={e => setSortBy(e.target.value)}
                     >
+                        <option value="createdAt_desc">Mới tạo nhất</option>
                         <option value="date_desc">Ngày (Mới nhất)</option>
                         <option value="date_asc">Ngày (Cũ nhất)</option>
                         <option value="amount_desc">Tổng Tiền (Cao xuống thấp)</option>

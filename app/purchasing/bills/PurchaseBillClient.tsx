@@ -14,7 +14,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
     const [statusFilter, setStatusFilter] = useState('ALL');
 
     // Sort logic
-    const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>({ key: 'date', direction: 'desc' });
+    const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>({ key: 'createdAt', direction: 'desc' });
 
     const supplierFormOptions = [{ value: '', label: '-- Chọn Nhà Cung Cấp --' }, ...suppliers.map((s: any) => ({ value: s.id, label: s.name }))];
     const warehouseOptions = [{ value: '', label: '-- Chọn Kho --' }, ...warehouses.map((w: any) => ({ value: w.id, label: w.name }))];
@@ -438,7 +438,11 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                 _count: { items: billItems.length }
             };
 
-            setBills([newBillUi, ...bills]);
+            if ((formData as any).id) {
+                setBills(bills.map((b: any) => b.id === newBillUi.id ? newBillUi : b));
+            } else {
+                setBills([newBillUi, ...bills]);
+            }
             setIsCreateModalOpen(false);
         } catch (error) {
             console.error(error);

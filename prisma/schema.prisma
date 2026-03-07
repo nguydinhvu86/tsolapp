@@ -11,7 +11,7 @@ model PermissionGroup {
   id          String   @id @default(cuid())
   name        String   @unique
   description String?  @db.Text
-  permissions String   @default("[]") @db.Text // JSON string of granted permissions for the group
+  permissions String   @db.Text // JSON string of granted permissions for the group
   isSystem    Boolean  @default(false) // True for default groups (User, Manager, Admin)
   users       User[]
   createdAt   DateTime @default(now())
@@ -27,14 +27,19 @@ model User {
   name                  String?
   avatar                String? // Đường dẫn ảnh đại diện
   role                  String                 @default("USER") // ADMIN or USER
-  permissions           String                 @default("[]") @db.Text // JSON string of granted permissions (legacy, to be deprecated or kept as overrides)
-  dashboardConfig       String                 @default("[]") @db.Text // JSON string for Dashboard customized layout
-  sidebarOrder          String                 @default("[]") @db.Text // JSON string for custom Sidebar menu ordering
-  customerMenuOrder     String                 @default("[]") @db.Text // JSON for custom Customer Menu ordering
+  permissions           String                 @db.Text // JSON string of granted permissions (legacy, to be deprecated or kept as overrides)
+  dashboardConfig       String                 @db.Text // JSON string for Dashboard customized layout
+  sidebarOrder          String                 @db.Text // JSON string for custom Sidebar menu ordering
+  customerMenuOrder     String                 @db.Text // JSON for custom Customer Menu ordering
   permissionGroupId     String?
   permissionGroup       PermissionGroup?       @relation(fields: [permissionGroupId], references: [id])
   twoFactorSecret       String? // Khóa bí mật 2FA
   twoFactorEnabled      Boolean                @default(false) // Trạng thái 2FA
+  isActive              Boolean                @default(true) // Trạng thái khóa tài khoản
+  lastLoginAt           DateTime?              // Thời gian đăng nhập gần nhất
+  lastActiveAt          DateTime?              // Thời gian có hoạt động (ping) trên hệ thống gần nhất
+  currentPlatform       String?                // Thông tin thiết bị/trình duyệt đăng nhập gần nhất
+  loginLogs             LoginLog[]             @relation("UserLoginLogs")
   createdTasks          Task[]                 @relation("TaskCreator")
   completedTasks        Task[]                 @relation("TaskCompleter")
   assignedTasks         TaskAssignee[]
@@ -1408,4 +1413,15 @@ model DocumentNote {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model LoginLog {
+  id          String   @id @default(cuid())
+  userId      String
+  ipAddress   String?
+  userAgent   String?  @db.Text
+  platform    String?  // Thông tin OS/Browser sau khi phân tích
+  loginAt     DateTime @default(now())
+
+  user        User     @relation("UserLoginLogs", fields: [userId], references: [id], onDelete: Cascade)
 }

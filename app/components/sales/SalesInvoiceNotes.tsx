@@ -19,18 +19,22 @@ export function SalesInvoiceNotes({ invoiceId, notes, currentUserId, currentUser
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const [attachments, setAttachments] = useState<{ url: string, name: string }[]>([]);
 
     const displayNotes = notes?.slice(0, 5) || [];
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!content.trim()) return;
+        if (!content.trim() && attachments.length === 0) return;
 
         setIsSubmitting(true);
         try {
-            const res = await createSalesInvoiceNote(invoiceId, content.trim());
+            const attachmentStr = attachments.length > 0 ? JSON.stringify(attachments) : undefined;
+            const res = await createSalesInvoiceNote(invoiceId, content.trim(), attachmentStr);
             if (res.success) {
                 setContent('');
+                setAttachments([]);
             } else {
                 alert('Lỗi: ' + res.error);
             }
@@ -73,21 +77,68 @@ export function SalesInvoiceNotes({ invoiceId, notes, currentUserId, currentUser
                             style={{ width: '100%', minHeight: '60px', border: 'none', backgroundColor: 'transparent', resize: 'vertical', outline: 'none', fontSize: '0.875rem', color: '#1e293b', fontFamily: 'inherit' }}
                         />
                         <div style={{ position: 'absolute', bottom: '0.75rem', left: '0.75rem', right: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                <button type="button" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '0.375rem', backgroundColor: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer' }} title="Đính kèm file (Sắp có)">
-                                    <Paperclip size={16} />
-                                </button>
+                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                <div style={{ position: 'relative' }}>
+                                    <input
+                                        type="file"
+                                        multiple
+                                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
+                                        disabled={isUploading}
+                                        onChange={async (e) => {
+                                            const files = e.target.files;
+                                            if (!files || files.length === 0) return;
+                                            setIsUploading(true);
+                                            try {
+                                                const newAttachments = [...attachments];
+                                                for (let i = 0; i < files.length; i++) {
+                                                    const formData = new FormData();
+                                                    formData.append('file', files[i]);
+                                                    const res = await fetch('/api/upload', { method: 'POST', body: formData });
+                                                    if (!res.ok) throw new Error('Upload failed');
+                                                    const data = await res.json();
+                                                    newAttachments.push({ url: data.url, name: files[i].name });
+                                                }
+                                                setAttachments(newAttachments);
+                                            } catch (err) {
+                                                alert('Lỗi tải tệp tin');
+                                            } finally {
+                                                setIsUploading(false);
+                                                e.target.value = '';
+                                            }
+                                        }}
+                                        title="Đính kèm tài liệu"
+                                    />
+                                    <button type="button" disabled={isUploading} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '0.375rem', backgroundColor: 'transparent', border: 'none', color: isUploading ? '#cbd5e1' : '#64748b', cursor: isUploading ? 'not-allowed' : 'pointer' }} title="Đính kèm file">
+                                        <Paperclip size={16} />
+                                    </button>
+                                </div>
+                                {isUploading && <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Đang tải...</span>}
                             </div>
                             <button
                                 type="submit"
-                                disabled={isSubmitting || !content.trim()}
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', padding: '0.375rem 1rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: content.trim() && !isSubmitting ? '#2563eb' : '#94a3b8', color: 'white', border: 'none', cursor: content.trim() && !isSubmitting ? 'pointer' : 'not-allowed', transition: 'background-color 0.2s' }}
+                                disabled={isSubmitting || (!content.trim() && attachments.length === 0) || isUploading}
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', padding: '0.375rem 1rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: ((content.trim() || attachments.length > 0) && !isSubmitting && !isUploading) ? '#2563eb' : '#94a3b8', color: 'white', border: 'none', cursor: ((content.trim() || attachments.length > 0) && !isSubmitting && !isUploading) ? 'pointer' : 'not-allowed', transition: 'background-color 0.2s' }}
                             >
                                 {isSubmitting ? 'Đang lưu...' : <><Send size={14} /> Gửi Ý Kiến</>}
                             </button>
                         </div>
                     </div>
                 </form>
+
+                {/* Pending Attachments List */}
+                {attachments.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                        {attachments.map((att, idx) => (
+                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.25rem 0.5rem', backgroundColor: '#e0e7ff', border: '1px solid #c7d2fe', borderRadius: '0.375rem', fontSize: '0.75rem', color: '#4338ca' }}>
+                                <FileText size={12} />
+                                <span style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{att.name}</span>
+                                <button type="button" onClick={() => setAttachments(attachments.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Trash2 size={12} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
 
                 {/* Notes List */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -127,13 +178,31 @@ export function SalesInvoiceNotes({ invoiceId, notes, currentUserId, currentUser
                                     <div style={{ fontSize: '0.9375rem', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
                                         {note.content}
                                     </div>
-                                    {note.attachment && (
-                                        <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #cbd5e1' }}>
-                                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.375rem 0.5rem', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '0.375rem', fontSize: '0.75rem', color: '#4f46e5' }}>
-                                                <Paperclip size={12} /> Có đính kèm tệp
-                                            </div>
-                                        </div>
-                                    )}
+                                    {note.attachment && (() => {
+                                        try {
+                                            const parsed = JSON.parse(note.attachment);
+                                            if (Array.isArray(parsed) && parsed.length > 0) {
+                                                return (
+                                                    <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #cbd5e1', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                                        {parsed.map((att: any, idx: number) => (
+                                                            <a key={idx} href={att.url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', padding: '0.375rem 0.5rem', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '0.375rem', fontSize: '0.75rem', color: '#4f46e5', textDecoration: 'none', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }} onMouseEnter={(e) => e.currentTarget.style.borderColor = '#c7d2fe'} onMouseLeave={(e) => e.currentTarget.style.borderColor = '#e2e8f0'}>
+                                                                <FileText size={12} /> {att.name || 'Tài liệu đính kèm'}
+                                                            </a>
+                                                        ))}
+                                                    </div>
+                                                );
+                                            }
+                                        } catch (e) {
+                                            return (
+                                                <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #cbd5e1' }}>
+                                                    <a href={note.attachment} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', padding: '0.375rem 0.5rem', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '0.375rem', fontSize: '0.75rem', color: '#4f46e5', textDecoration: 'none' }}>
+                                                        <FileText size={12} /> Xem đính kèm
+                                                    </a>
+                                                </div>
+                                            );
+                                        }
+                                        return null;
+                                    })()}
                                 </div>
                             </div>
                         ))
@@ -184,13 +253,31 @@ export function SalesInvoiceNotes({ invoiceId, notes, currentUserId, currentUser
                                     <div style={{ fontSize: '0.9375rem', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
                                         {note.content}
                                     </div>
-                                    {note.attachment && (
-                                        <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #cbd5e1' }}>
-                                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.375rem 0.5rem', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '0.375rem', fontSize: '0.75rem', color: '#4f46e5' }}>
-                                                <Paperclip size={12} /> Có đính kèm tệp
-                                            </div>
-                                        </div>
-                                    )}
+                                    {note.attachment && (() => {
+                                        try {
+                                            const parsed = JSON.parse(note.attachment);
+                                            if (Array.isArray(parsed) && parsed.length > 0) {
+                                                return (
+                                                    <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #cbd5e1', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                                        {parsed.map((att: any, idx: number) => (
+                                                            <a key={idx} href={att.url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', padding: '0.375rem 0.5rem', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '0.375rem', fontSize: '0.75rem', color: '#4f46e5', textDecoration: 'none', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }} onMouseEnter={(e) => e.currentTarget.style.borderColor = '#c7d2fe'} onMouseLeave={(e) => e.currentTarget.style.borderColor = '#e2e8f0'}>
+                                                                <FileText size={12} /> {att.name || 'Tài liệu đính kèm'}
+                                                            </a>
+                                                        ))}
+                                                    </div>
+                                                );
+                                            }
+                                        } catch (e) {
+                                            return (
+                                                <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #cbd5e1' }}>
+                                                    <a href={note.attachment} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', padding: '0.375rem 0.5rem', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '0.375rem', fontSize: '0.75rem', color: '#4f46e5', textDecoration: 'none' }}>
+                                                        <FileText size={12} /> Xem đính kèm
+                                                    </a>
+                                                </div>
+                                            );
+                                        }
+                                        return null;
+                                    })()}
                                 </div>
                             </div>
                         ))}
