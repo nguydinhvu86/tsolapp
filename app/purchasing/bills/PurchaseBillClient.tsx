@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Plus, Search, Eye, Trash2, Calendar, FileText, FileDown, CheckCircle, ArrowUpDown, Edit2 } from 'lucide-react';
+import { Plus, Search, Eye, Trash2, Calendar, FileText, FileDown, CheckCircle, ArrowUpDown, Edit2, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { createPurchaseBill, approvePurchaseBill, deletePurchaseBill, updatePurchaseBill, cancelPurchaseBill } from '@/app/purchasing/actions';
@@ -738,10 +738,10 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                             {bill.status === 'APPROVED' && (
                                                 <button
                                                     onClick={() => handleCancel(bill.id, bill.code)}
-                                                    className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded inline-block"
+                                                    className="p-1.5 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded inline-block"
                                                     title="Hủy Hóa Đơn & Nhập Kho"
                                                 >
-                                                    <Trash2 size={18} />
+                                                    <XCircle size={18} />
                                                 </button>
                                             )}
                                         </div>
