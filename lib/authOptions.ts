@@ -155,8 +155,12 @@ export const authOptions: NextAuthOptions = {
                         const upgradedPerms = new Set<string>();
                         for (const p of rawPerms) {
                             if (p.endsWith('_VIEW')) {
-                                upgradedPerms.add(p + '_ALL');
-                                upgradedPerms.add(p + '_OWN');
+                                const base = p.replace('_VIEW', '');
+                                // Only grant legacy VIEW_ALL access if the role hasn't been reconfigured with granular controls yet
+                                if (!rawPerms.includes(`${base}_VIEW_ALL`) && !rawPerms.includes(`${base}_VIEW_OWN`)) {
+                                    upgradedPerms.add(`${base}_VIEW_ALL`);
+                                    upgradedPerms.add(`${base}_VIEW_OWN`);
+                                }
                             } else {
                                 upgradedPerms.add(p);
                             }
