@@ -17,7 +17,20 @@ export async function getDashboardStats(userId?: string, employeeId?: string) {
         const hanFilter = buildViewFilter(currentUserId, perms, 'HANDOVERS', 'creatorId');
         const payFilter = buildViewFilter(currentUserId, perms, 'PAYMENTS', 'creatorId');
         const disFilter = buildViewFilter(currentUserId, perms, 'DISPATCHES', 'creatorId');
-        const cusFilter = buildViewFilter(currentUserId, perms, 'CUSTOMERS', 'creatorId');
+        let cusFilter: any = buildViewFilter(currentUserId, perms, 'CUSTOMERS', 'creatorId');
+        if (cusFilter.creatorId) {
+            cusFilter = {
+                OR: [
+                    { activityLogs: { some: { userId: currentUserId } } },
+                    { quotes: { some: { creatorId: currentUserId } } },
+                    { contracts: { some: { creatorId: currentUserId } } },
+                    { leads: { some: { creatorId: currentUserId } } },
+                    { salesInvoices: { some: { OR: [{ creatorId: currentUserId }, { salespersonId: currentUserId }] } } },
+                    { salesEstimates: { some: { OR: [{ creatorId: currentUserId }, { salespersonId: currentUserId }] } } },
+                    { salesOrders: { some: { OR: [{ creatorId: currentUserId }, { salespersonId: currentUserId }] } } }
+                ]
+            };
+        }
         const poFilter = buildViewFilter(currentUserId, perms, 'PURCHASE_ORDERS', 'creatorId');
         const invFilter = buildViewFilter(currentUserId, perms, 'SALES_INVOICES', 'creatorId');
 
