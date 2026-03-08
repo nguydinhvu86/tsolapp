@@ -3,10 +3,10 @@ import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, CreditCard, Clock, Plus, Trash2, FileDown, ExternalLink, Copy } from 'lucide-react';
+import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, CreditCard, Clock, Plus, Trash2, FileDown, ExternalLink, Copy, XCircle } from 'lucide-react';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import Link from 'next/link';
-import { uploadPurchaseBillDocument } from '@/app/purchasing/actions';
+import { uploadPurchaseBillDocument, cancelPurchaseBill } from '@/app/purchasing/actions';
 
 export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, tasks: any[], users: any[] }) {
     const router = useRouter();
@@ -15,7 +15,22 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
     // Document State
     const [localBill, setLocalBill] = useState(bill);
     const [isUploading, setIsUploading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [copied, setCopied] = useState(false);
+
+    const handleCancel = async () => {
+        if (confirm(`Bạn có chắc chắn muốn HỦY Hóa Đơn ${localBill.code}?\n\nHành động này sẽ:\n- Hủy phiếu Nhập Kho tương ứng\n- Giảm lại công nợ NCC.\n\nLưu ý: Không thể hủy nếu hóa đơn đã có thanh toán.`)) {
+            setIsSubmitting(true);
+            try {
+                const updated = await cancelPurchaseBill(localBill.id);
+                setLocalBill(updated);
+            } catch (error: any) {
+                alert(error.message || "Hủy thất bại. Hóa đơn có thể đã có thanh toán.");
+            } finally {
+                setIsSubmitting(false);
+            }
+        }
+    };
 
     const handleCopyPublicLink = () => {
         const publicUrl = `${window.location.origin}/public/purchasing/bills/${bill.id}`;
@@ -98,6 +113,16 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
                     >
                         <ExternalLink size={16} /> Xem Bản In
                     </Link>
+                    {localBill.status === 'APPROVED' && (
+                        <button
+                            onClick={handleCancel}
+                            disabled={isSubmitting}
+                            className="btn btn-secondary"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: 'white', color: '#ea580c', border: '1px solid #fdba74', cursor: isSubmitting ? 'not-allowed' : 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                        >
+                            <XCircle size={16} /> {isSubmitting ? 'Đang xử lý...' : 'Hủy Hóa Đơn'}
+                        </button>
+                    )}
                     {bill.totalAmount > bill.paidAmount && (
                         <button
                             className="btn btn-primary"
