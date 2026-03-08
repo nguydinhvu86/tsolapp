@@ -462,66 +462,66 @@ export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices
                                                         {widgetId === 'kpi_cards' && (
                                                             /* KPI Cards */
                                                             <div className="gap-4 mb-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
-                                                                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 relative overflow-hidden flex flex-col border-l-4 border-l-primary flex-1 min-w-[200px]">
+                                                                <div className="stat-card stat-card-purple flex-1 min-w-[200px]">
                                                                     <div className="flex justify-between items-start mb-2">
-                                                                        <span className="text-gray-500 text-sm font-semibold uppercase tracking-wide">Doanh Thu Tháng</span>
-                                                                        <div className="bg-primary/10 text-primary p-2 rounded-xl flex items-center justify-center">
+                                                                        <span className="stat-title text-sm font-semibold uppercase tracking-wide">Doanh Thu Tháng</span>
+                                                                        <div className="stat-icon p-2 rounded-xl flex items-center justify-center">
                                                                             <DollarSign size={20} strokeWidth={2.5} />
                                                                         </div>
                                                                     </div>
-                                                                    <div className="flex flex-col mt-auto">
-                                                                        <span className="text-gray-900 text-3xl font-bold mb-1 truncate" title={formatMoney(revenueThisMonth)}>{formatMoney(revenueThisMonth)}</span>
+                                                                    <div className="stat-info">
+                                                                        <span className="stat-value text-3xl font-bold mb-1 truncate" title={formatMoney(revenueThisMonth)}>{formatMoney(revenueThisMonth)}</span>
                                                                         <div className="text-[12px] font-medium mt-1" style={{ color: isRevenueUp ? '#10b981' : '#ef4444' }}>
                                                                             <span className="font-bold">{isRevenueUp ? '↑' : '↓'} {Math.abs(revenueGrowth).toFixed(1)}%</span>
-                                                                            <span className="text-gray-500 opacity-80" style={{ color: 'inherit' }}> so với tháng trước</span>
+                                                                            <span className="text-purple-700 opacity-80" style={{ color: 'inherit' }}> so với tháng trước</span>
                                                                         </div>
                                                                     </div>
                                                                 </div>
 
-                                                                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 relative overflow-hidden flex flex-col border-l-4 border-l-amber-500 flex-1 min-w-[200px]">
+                                                                <div className="stat-card stat-card-amber flex-1 min-w-[200px]">
                                                                     <div className="flex justify-between items-start mb-2">
-                                                                        <span className="text-gray-500 text-sm font-semibold uppercase tracking-wide">Hóa Đơn Phát Hành</span>
-                                                                        <div className="bg-amber-100 text-amber-600 p-2 rounded-xl flex items-center justify-center">
+                                                                        <span className="stat-title text-sm font-semibold uppercase tracking-wide">Hóa Đơn Phát Hành</span>
+                                                                        <div className="stat-icon p-2 rounded-xl flex items-center justify-center">
                                                                             <Receipt size={20} strokeWidth={2.5} />
                                                                         </div>
                                                                     </div>
-                                                                    <div className="flex flex-col mt-auto">
-                                                                        <span className="text-gray-900 text-3xl font-bold mb-1">{invoicesThisMonth}</span>
+                                                                    <div className="stat-info">
+                                                                        <span className="stat-value text-3xl font-bold mb-1">{invoicesThisMonth}</span>
                                                                         <div className="text-[12px] font-medium mt-1" style={{ color: isInvoiceUp ? '#10b981' : '#ef4444' }}>
                                                                             <span className="font-bold">{isInvoiceUp ? '↑' : '↓'} {Math.abs(invoiceGrowth).toFixed(1)}%</span>
-                                                                            <span className="text-gray-500 opacity-80" style={{ color: 'inherit' }}> so với tháng trước</span>
+                                                                            <span className="text-amber-700 opacity-80" style={{ color: 'inherit' }}> so với tháng trước</span>
                                                                         </div>
                                                                     </div>
                                                                 </div>
 
-                                                                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 relative overflow-hidden flex flex-col border-l-4 border-l-blue-500 flex-1 min-w-[200px]">
+                                                                <div className="stat-card stat-card-blue flex-1 min-w-[200px]">
                                                                     <div className="flex justify-between items-start mb-2">
-                                                                        <span className="text-gray-500 text-sm font-semibold uppercase tracking-wide">Tiền Đã Thu</span>
-                                                                        <div className="bg-blue-100 text-blue-600 p-2 rounded-xl flex items-center justify-center">
+                                                                        <span className="stat-title text-sm font-semibold uppercase tracking-wide">Tiền Đã Thu</span>
+                                                                        <div className="stat-icon p-2 rounded-xl flex items-center justify-center">
                                                                             <CreditCard size={20} strokeWidth={2.5} />
                                                                         </div>
                                                                     </div>
-                                                                    <div className="flex flex-col mt-auto">
-                                                                        <span className="text-gray-900 text-3xl font-bold mb-1 truncate" title={formatMoney(paymentsThisMonth)}>{formatMoney(paymentsThisMonth)}</span>
+                                                                    <div className="stat-info">
+                                                                        <span className="stat-value text-3xl font-bold mb-1 truncate" title={formatMoney(paymentsThisMonth)}>{formatMoney(paymentsThisMonth)}</span>
                                                                         <div className="text-[12px] font-medium mt-1" style={{ color: isPaymentUp ? '#10b981' : '#ef4444' }}>
                                                                             <span className="font-bold">{isPaymentUp ? '↑' : '↓'} {Math.abs(paymentGrowth).toFixed(1)}%</span>
-                                                                            <span className="text-gray-500 opacity-80" style={{ color: 'inherit' }}> so với tháng trước</span>
+                                                                            <span className="text-blue-700 opacity-80" style={{ color: 'inherit' }}> so với tháng trước</span>
                                                                         </div>
                                                                     </div>
                                                                 </div>
 
-                                                                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 relative overflow-hidden flex flex-col border-l-4 border-l-emerald-500 flex-1 min-w-[200px]">
+                                                                <div className="stat-card stat-card-green flex-1 min-w-[200px]">
                                                                     <div className="flex justify-between items-start mb-2">
-                                                                        <span className="text-gray-500 text-sm font-semibold uppercase tracking-wide" style={{ color: '#059669' }}>Công Nợ Phải Thu</span>
-                                                                        <div className="bg-emerald-100 text-emerald-600 p-2 rounded-xl flex items-center justify-center">
+                                                                        <span className="stat-title text-sm font-semibold uppercase tracking-wide" style={{ color: '#059669' }}>Công Nợ Phải Thu</span>
+                                                                        <div className="stat-icon p-2 rounded-xl flex items-center justify-center">
                                                                             <Briefcase size={20} strokeWidth={2.5} />
                                                                         </div>
                                                                     </div>
-                                                                    <div className="flex flex-col mt-auto">
-                                                                        <span className="text-3xl font-bold mb-1 truncate" style={{ color: '#059669' }} title={formatMoney(debtThisMonth)}>{formatMoney(debtThisMonth)}</span>
+                                                                    <div className="stat-info">
+                                                                        <span className="stat-value text-3xl font-bold mb-1 truncate" style={{ color: '#059669' }} title={formatMoney(debtThisMonth)}>{formatMoney(debtThisMonth)}</span>
                                                                         <div className="text-[12px] font-medium mt-1" style={{ color: isDebtUp ? '#ef4444' : '#10b981' }}>
                                                                             <span className="font-bold">{isDebtUp ? '↑' : '↓'} {Math.abs(debtGrowth).toFixed(1)}%</span>
-                                                                            <span className="text-gray-500 opacity-80" style={{ color: 'inherit' }}> so với tháng trước</span>
+                                                                            <span className="text-green-700 opacity-80" style={{ color: 'inherit' }}> so với tháng trước</span>
                                                                         </div>
                                                                     </div>
                                                                 </div>
