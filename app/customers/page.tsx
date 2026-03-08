@@ -24,7 +24,6 @@ export default async function CustomersPage({ searchParams }: { searchParams: { 
 
     const customerFilter = effectiveEmployeeId ? {
         OR: [
-            { creatorId: effectiveEmployeeId },
             {
                 salesInvoices: {
                     some: {
@@ -54,16 +53,12 @@ export default async function CustomersPage({ searchParams }: { searchParams: { 
             orderBy: { createdAt: 'desc' },
             select: {
                 id: true,
-                customerCode: true,
                 name: true,
-                phone: true,
                 email: true,
+                phone: true,
                 address: true,
                 taxCode: true,
-                type: true,
-                industry: true,
-                status: true,
-                creatorId: true,
+                totalDebt: true,
                 createdAt: true,
                 updatedAt: true,
                 salesInvoices: {
