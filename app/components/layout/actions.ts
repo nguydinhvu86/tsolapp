@@ -74,7 +74,8 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
             suppliers.forEach((s: any) => results.push({ id: s.id, type: 'SUPPLIER', title: s.name, subtitle: `${s.code} ${s.phone ? '- ' + s.phone : ''}`, link: `/suppliers/${s.id}` }));
         }
 
-        const estFilter = buildViewFilter(userId, perms, 'SALES_ESTIMATES', 'creatorId');
+        let estFilter: any = buildViewFilter(userId, perms, 'SALES_ESTIMATES', 'creatorId');
+        if (estFilter.creatorId) estFilter = { OR: [{ creatorId: userId }, { salespersonId: userId }] };
         if (estFilter.id !== 'UNAUTHORIZED_NO_ACCESS') {
             const estimates = await prisma.salesEstimate.findMany({
                 where: {
@@ -95,7 +96,8 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
             estimates.forEach((e: any) => results.push({ id: e.id, type: 'SALES_ESTIMATE', title: `BG (ERP): ${e.code}`, subtitle: e.customer.name, badge: e.status, date: e.date.toISOString(), link: `/sales/estimates/${e.id}` }));
         }
 
-        const orderFilter = buildViewFilter(userId, perms, 'SALES_ORDERS', 'creatorId');
+        let orderFilter: any = buildViewFilter(userId, perms, 'SALES_ORDERS', 'creatorId');
+        // SalesOrder does NOT have salespersonId in schema! So we just use creatorId as is.
         if (orderFilter.id !== 'UNAUTHORIZED_NO_ACCESS') {
             const orders = await prisma.salesOrder.findMany({
                 where: {
@@ -115,7 +117,8 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
             orders.forEach((o: any) => results.push({ id: o.id, type: 'SALES_ORDER', title: `Đơn Hàng: ${o.code}`, subtitle: o.customer.name, badge: o.status, date: o.date.toISOString(), link: `/sales/orders/${o.id}` }));
         }
 
-        const invFilter = buildViewFilter(userId, perms, 'SALES_INVOICES', 'creatorId');
+        let invFilter: any = buildViewFilter(userId, perms, 'SALES_INVOICES', 'creatorId');
+        if (invFilter.creatorId) invFilter = { OR: [{ creatorId: userId }, { salespersonId: userId }] };
         if (invFilter.id !== 'UNAUTHORIZED_NO_ACCESS') {
             const invoices = await prisma.salesInvoice.findMany({
                 where: {
