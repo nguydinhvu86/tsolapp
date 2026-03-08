@@ -16,7 +16,7 @@ import { formatMoney } from '@/lib/utils/formatters';
 
 export type CustomerWithStats = Customer & { revenue?: number, lastActivityAt?: Date | string };
 
-export function CustomerClient({ initialData }: { initialData: CustomerWithStats[] }) {
+export function CustomerClient({ initialData, users, isAdminOrManager }: { initialData: CustomerWithStats[], users?: any[], isAdminOrManager?: boolean }) {
     const router = useRouter();
     const { data: session } = useSession();
     const permissions = session?.user?.permissions || [];
@@ -219,11 +219,38 @@ export function CustomerClient({ initialData }: { initialData: CustomerWithStats
                             onChange={e => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    {canCreate && (
-                        <Button onClick={() => openModal()} className="gap-2">
-                            <Plus size={18} /> Thêm khách hàng
-                        </Button>
-                    )}
+
+                    <div className="flex gap-3 items-center">
+                        {isAdminOrManager && users && users.length > 0 && (
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm text-gray-500 font-medium whitespace-nowrap">Lọc nhân viên:</span>
+                                <select
+                                    className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 outline-none focus:border-blue-500"
+                                    defaultValue={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('employeeId') || '' : ''}
+                                    onChange={(e) => {
+                                        const newEmployeeId = e.target.value;
+                                        const params = new URLSearchParams(window.location.search);
+                                        if (newEmployeeId) {
+                                            params.set('employeeId', newEmployeeId);
+                                        } else {
+                                            params.delete('employeeId');
+                                        }
+                                        window.location.href = `/customers?${params.toString()}`;
+                                    }}
+                                >
+                                    <option value="">Tất cả nhân viên</option>
+                                    {users.map((u: any) => (
+                                        <option key={u.id} value={u.id}>{u.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+                        {canCreate && (
+                            <Button onClick={() => openModal()} className="gap-2">
+                                <Plus size={18} /> Thêm khách hàng
+                            </Button>
+                        )}
+                    </div>
                 </div>
 
                 <Table>
