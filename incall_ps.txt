@@ -1,0 +1,11 @@
+USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+incall   2232775  0.0  0.1  17108  8308 ?        Ss   Mar07   0:00 /lib/systemd/systemd --user
+incall   2232777  0.0  0.0 170656  1456 ?        S    Mar07   0:00 (sd-pam)
+incall   2234860  0.0  0.6 713504 54780 ?        Ssl  Mar07   0:08 PM2 v6.0.14: God Daemon (/home/incall/.pm2)
+incall   2327716  0.0  0.6 698912 55332 ?        Ssl  12:13   0:00 npm run start
+incall   2327728  0.5  2.3 32901532 190764 ?     Sl   12:13   1:24 next-server (v14.2.35)
+incall   2348716  0.0  0.0  17320  7924 ?        S    16:38   0:00 sshd: incall@pts/0
+incall   2348717  0.1  0.1  12700  9404 pts/0    Ss+  16:38   0:00 -bash
+incall   2349179  0.0  0.1  17316  8268 ?        S    16:39   0:00 sshd: incall@notty
+incall   2349180  0.0  0.0   7372  3672 ?        Ss   16:39   0:00 bash -c ps xu > /tmp/incall_ps.txt && cat /tmp/incall_ps.txt
+incall   2349181  0.0  0.0  10072  3456 ?        R    16:39   0:00 ps xu
