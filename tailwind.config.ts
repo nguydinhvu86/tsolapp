@@ -7,6 +7,9 @@ const config: Config = {
         "./app/**/*.{js,ts,jsx,tsx,mdx}",
     ],
     corePlugins: {
+        // ⛔ CRITICAL: DO NOT SET preflight = true ⛔
+        // True will inject Tailwind's CSS reset, instantly breaking all Legacy UI 
+        // components such as layouts and tables in globals.css. Leave this false!
         preflight: false,
     },
     theme: {

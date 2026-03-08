@@ -1,3 +1,16 @@
+/* 
+=============================================================================
+⛔ WARNING: DO NOT REMOVE THIS FILE OR CONVERT IT TO PURE TAILWIND ⛔
+
+This file contains the "Legacy Custom CSS" for the core ERP layout 
+(Dashboard, Customers, Settings, Sidebar, Layout grids). 
+If you remove these generic classes (e.g. `stat-card`, `btn-primary`, 
+`.main-wrapper`), THE ENTIRE PLATFORM UI WILL BREAK.
+
+> See `CSS-ARCHITECTURE-GUIDE.md` in the root folder for details.
+=============================================================================
+*/
+
 @tailwind utilities;
 
 :root {
