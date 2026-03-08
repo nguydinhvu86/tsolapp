@@ -268,9 +268,29 @@ export async function updateSalesInvoiceStatus(id: string, newStatus: string) {
     }
 }
 
-export async function getSalesInvoices() {
+export async function getSalesInvoices(employeeId?: string) {
     try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) return [];
+
+        const isAdminOrManager = session.user.role === 'ADMIN' || session.user.role === 'MANAGER';
+        let effectiveEmployeeId: string | undefined = undefined;
+
+        if (!isAdminOrManager) {
+            effectiveEmployeeId = session.user.id;
+        } else if (employeeId) {
+            effectiveEmployeeId = employeeId;
+        }
+
+        const whereClause = effectiveEmployeeId ? {
+            OR: [
+                { creatorId: effectiveEmployeeId },
+                { salespersonId: effectiveEmployeeId }
+            ]
+        } : {};
+
         return await prisma.salesInvoice.findMany({
+            where: whereClause,
             include: {
                 customer: true,
                 order: true,

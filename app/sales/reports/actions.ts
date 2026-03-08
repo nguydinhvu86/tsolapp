@@ -1,11 +1,45 @@
 'use server'
 
 import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/authOptions';
 
-export async function getSalesReportData() {
+export async function getSalesReportData(employeeId?: string) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) return { customers: [], invoices: [], payments: [], expenses: [], estimates: [] };
+
+    const isAdminOrManager = session.user.role === 'ADMIN' || session.user.role === 'MANAGER';
+    let effectiveEmployeeId: string | undefined = undefined;
+
+    if (!isAdminOrManager) {
+        effectiveEmployeeId = session.user.id;
+    } else if (employeeId) {
+        effectiveEmployeeId = employeeId;
+    }
+
     const today = new Date();
     // Default to fetch data for the current year to avoid massive payload right away
     const firstDayOfYear = new Date(today.getFullYear(), 0, 1);
+
+    const salesFilter = effectiveEmployeeId ? {
+        OR: [
+            { creatorId: effectiveEmployeeId },
+            { salespersonId: effectiveEmployeeId }
+        ]
+    } : {};
+
+    const paymentFilter = effectiveEmployeeId ? {
+        allocations: {
+            some: {
+                invoice: {
+                    OR: [
+                        { creatorId: effectiveEmployeeId },
+                        { salespersonId: effectiveEmployeeId }
+                    ]
+                }
+            }
+        }
+    } : {};
 
     // Fetch Customers
     const customers = await prisma.customer.findMany({
@@ -23,7 +57,8 @@ export async function getSalesReportData() {
     const invoices = await prisma.salesInvoice.findMany({
         where: {
             date: { gte: firstDayOfYear },
-            status: { notIn: ['DRAFT', 'CANCELLED'] }
+            status: { notIn: ['DRAFT', 'CANCELLED'] },
+            ...salesFilter
         },
         include: {
             customer: true,
@@ -37,7 +72,8 @@ export async function getSalesReportData() {
     // Fetch Payments
     const payments = await prisma.salesPayment.findMany({
         where: {
-            date: { gte: firstDayOfYear }
+            date: { gte: firstDayOfYear },
+            ...paymentFilter
         },
         include: {
             customer: true,
@@ -46,10 +82,13 @@ export async function getSalesReportData() {
         orderBy: { date: 'desc' }
     });
 
-    // Fetch Expenses
+    // Fetch Expenses - Expenses are company wide, but if we need to filter them by creator:
+    const expenseFilter = effectiveEmployeeId ? { creatorId: effectiveEmployeeId } : {};
+
     const expenses = await prisma.expense.findMany({
         where: {
-            date: { gte: firstDayOfYear }
+            date: { gte: firstDayOfYear },
+            ...expenseFilter
         },
         include: {
             category: true,
@@ -62,7 +101,8 @@ export async function getSalesReportData() {
     // Fetch Estimates
     const estimates = await prisma.salesEstimate.findMany({
         where: {
-            date: { gte: firstDayOfYear }
+            date: { gte: firstDayOfYear },
+            ...salesFilter
         },
         include: {
             customer: true

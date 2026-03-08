@@ -12,7 +12,7 @@ import { formatMoney, formatDate } from '@/lib/utils/formatters';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
-export function SalesReportClient({ invoices, payments, expenses, customers, estimates = [] }: { invoices: any[], payments: any[], expenses: any[], customers: any[], estimates?: any[] }) {
+export function SalesReportClient({ invoices, payments, expenses, customers, estimates = [], users, isAdminOrManager }: { invoices: any[], payments: any[], expenses: any[], customers: any[], estimates?: any[], users?: any[], isAdminOrManager?: boolean }) {
     const today = new Date();
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
@@ -363,11 +363,37 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
                     <h1 className="text-xl font-bold mb-1">Báo Cáo Phân Tích Bán Hàng</h1>
                     <p className="text-gray-500 text-sm">Theo dõi hiệu suất kinh doanh, doanh thu và công nợ</p>
                 </div>
-                <div className="filter-group">
-                    <Calendar size={16} className="text-gray-400" />
-                    <input type="date" className="filter-input" value={startDate} onChange={e => setStartDate(e.target.value)} />
-                    <span className="text-gray-400 font-bold">→</span>
-                    <input type="date" className="filter-input" value={endDate} onChange={e => setEndDate(e.target.value)} />
+                <div className="flex gap-4 items-center">
+                    {isAdminOrManager && users && users.length > 0 && (
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-500 font-medium whitespace-nowrap">Lọc nhân viên:</span>
+                            <select
+                                className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 outline-none focus:border-blue-500"
+                                defaultValue={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('employeeId') || '' : ''}
+                                onChange={(e) => {
+                                    const newEmployeeId = e.target.value;
+                                    const params = new URLSearchParams(window.location.search);
+                                    if (newEmployeeId) {
+                                        params.set('employeeId', newEmployeeId);
+                                    } else {
+                                        params.delete('employeeId');
+                                    }
+                                    window.location.href = `/sales/reports?${params.toString()}`;
+                                }}
+                            >
+                                <option value="">Tất cả nhân viên</option>
+                                {users.map((u: any) => (
+                                    <option key={u.id} value={u.id}>{u.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+                    <div className="filter-group">
+                        <Calendar size={16} className="text-gray-400" />
+                        <input type="date" className="filter-input" value={startDate} onChange={e => setStartDate(e.target.value)} />
+                        <span className="text-gray-400 font-bold">→</span>
+                        <input type="date" className="filter-input" value={endDate} onChange={e => setEndDate(e.target.value)} />
+                    </div>
                 </div>
             </div>
 

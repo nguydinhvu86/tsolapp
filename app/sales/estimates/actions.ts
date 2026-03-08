@@ -296,9 +296,29 @@ export async function updateSalesEstimate(id: string, formData: any) {
     }
 }
 
-export async function getSalesEstimates() {
+export async function getSalesEstimates(employeeId?: string) {
     try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) return [];
+
+        const isAdminOrManager = session.user.role === 'ADMIN' || session.user.role === 'MANAGER';
+        let effectiveEmployeeId: string | undefined = undefined;
+
+        if (!isAdminOrManager) {
+            effectiveEmployeeId = session.user.id;
+        } else if (employeeId) {
+            effectiveEmployeeId = employeeId;
+        }
+
+        const whereClause = effectiveEmployeeId ? {
+            OR: [
+                { creatorId: effectiveEmployeeId },
+                { salespersonId: effectiveEmployeeId }
+            ]
+        } : {};
+
         return await prisma.salesEstimate.findMany({
+            where: whereClause,
             include: {
                 customer: true,
                 creator: true,

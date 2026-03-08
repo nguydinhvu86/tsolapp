@@ -10,7 +10,7 @@ import SalesInvoiceClient from './SalesInvoiceClient';
 export default async function SalesInvoicesPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
     const session = await getServerSession(authOptions);
     const [invoices, customers, products, orders, nextCode, users] = await Promise.all([
-        getSalesInvoices(),
+        getSalesInvoices(typeof searchParams?.employeeId === 'string' ? searchParams.employeeId : undefined),
         getCustomers(),
         getProducts(),
         getSalesOrders(),
@@ -33,6 +33,7 @@ export default async function SalesInvoicesPage({ searchParams }: { searchParams
                 currentUserId={session?.user?.id}
                 initialAction={searchParams?.action}
                 initialCustomerId={searchParams?.customerId}
+                isAdminOrManager={session?.user?.role === 'ADMIN' || session?.user?.role === 'MANAGER'}
             />
         </div>
     );
