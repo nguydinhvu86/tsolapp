@@ -34,6 +34,9 @@ export default async function SalesEstimatesPage({ searchParams }: { searchParam
             <h1 className="text-2xl font-bold mb-6 text-gray-800">
                 Quản Lý Báo Giá Bán Hàng (ERP)
             </h1>
+            <div className="text-xs bg-gray-100 p-2 text-red-600 mb-4 whitespace-pre-wrap max-h-[100px] overflow-auto">
+                DEBUG PERMISSIONS ({session?.user?.name}): {JSON.stringify(session?.user?.permissions, null, 2)}
+            </div>
             <SalesEstimateClient
                 initialEstimates={estimates}
                 customers={customers}
