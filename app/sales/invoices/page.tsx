@@ -2,15 +2,20 @@ import { getSalesInvoices, getNextInvoiceCode } from './actions';
 import { getCustomers } from '@/app/customers/actions';
 import { getProducts } from '@/app/inventory/actions';
 import { getSalesOrders } from '@/app/sales/orders/actions';
+import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/authOptions';
 import SalesInvoiceClient from './SalesInvoiceClient';
 
 export default async function SalesInvoicesPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
-    const [invoices, customers, products, orders, nextCode] = await Promise.all([
+    const session = await getServerSession(authOptions);
+    const [invoices, customers, products, orders, nextCode, users] = await Promise.all([
         getSalesInvoices(),
         getCustomers(),
         getProducts(),
         getSalesOrders(),
-        getNextInvoiceCode()
+        getNextInvoiceCode(),
+        prisma.user.findMany({ select: { id: true, name: true, avatar: true }, orderBy: { name: 'asc' } })
     ]);
 
     return (
@@ -24,6 +29,8 @@ export default async function SalesInvoicesPage({ searchParams }: { searchParams
                 products={products.filter((p: any) => p.isActive)}
                 orders={orders}
                 nextCode={nextCode}
+                users={users}
+                currentUserId={session?.user?.id}
                 initialAction={searchParams?.action}
                 initialCustomerId={searchParams?.customerId}
             />

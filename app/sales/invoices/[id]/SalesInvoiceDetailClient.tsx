@@ -344,11 +344,16 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                                 </div>
                                 <div>
                                     <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: '#0f172a' }}>Thông tin chung</h3>
-                                    {invoice.creator && (
-                                        <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.25rem' }}>
-                                            <User size={14} /> Tạo bởi: {invoice.creator.name}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.25rem' }}>
+                                        {invoice.creator && (
+                                            <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                                <User size={14} /> Lập bởi: {invoice.creator.name}
+                                            </p>
+                                        )}
+                                        <p style={{ margin: 0, fontSize: '0.875rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                            <User size={14} /> Người bán: {invoice.salesperson?.name || invoice.creator?.name || '---'}
                                         </p>
-                                    )}
+                                    </div>
                                 </div>
                             </div>
                             <div style={{ textAlign: 'right' }}>
@@ -806,7 +811,7 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                     variablesData={{
                         customerName: invoice.customer?.name || '',
                         customerEmail: invoice.customer?.email || '',
-                        senderName: invoice.creator?.name || '',
+                        senderName: invoice.salesperson?.name || invoice.creator?.name || '',
                         today: new Date().toLocaleDateString('vi-VN'),
                         code: invoice.code,
                         totalAmount: formatMoney(invoice.totalAmount),

@@ -124,6 +124,7 @@ export async function submitSalesEstimate(creatorId: string, formData: any) {
                 taxAmount: formData.taxAmount,
                 totalAmount: formData.totalAmount,
                 creatorId: actualCreatorId,
+                salespersonId: formData.salespersonId || actualCreatorId,
                 leadId: formData.leadId || null,
                 items: {
                     create: formData.items.map((item: any) => ({
@@ -181,6 +182,13 @@ export async function updateSalesEstimate(id: string, formData: any) {
         if (oldEstimate.customerId !== formData.customerId) {
             const newCustomer = await prisma.customer.findUnique({ where: { id: formData.customerId } });
             changes.push(`Đổi Khách hàng từ **${oldEstimate.customer?.name}** sang **${newCustomer?.name}**`);
+        }
+
+        // So sánh người báo giá
+        if (oldEstimate.salespersonId !== formData.salespersonId) {
+            const oldSalesperson = oldEstimate.salespersonId ? await prisma.user.findUnique({ where: { id: oldEstimate.salespersonId } }) : null;
+            const newSalesperson = formData.salespersonId ? await prisma.user.findUnique({ where: { id: formData.salespersonId } }) : null;
+            changes.push(`Đổi Người báo giá từ **${oldSalesperson?.name || 'Không có'}** sang **${newSalesperson?.name || 'Không có'}**`);
         }
 
         // So sánh ngày
@@ -257,6 +265,7 @@ export async function updateSalesEstimate(id: string, formData: any) {
                 subTotal: formData.subTotal,
                 taxAmount: formData.taxAmount,
                 totalAmount: formData.totalAmount,
+                salespersonId: formData.salespersonId || null,
                 leadId: formData.leadId || null,
                 items: {
                     deleteMany: {},
@@ -293,6 +302,7 @@ export async function getSalesEstimates() {
             include: {
                 customer: true,
                 creator: true,
+                salesperson: true,
                 items: {
                     include: { product: true }
                 }
@@ -438,6 +448,7 @@ export async function convertEstimateToInvoice(estimateId: string) {
                     taxAmount: estimate.taxAmount,
                     totalAmount: estimate.totalAmount,
                     creatorId: actualCreatorId,
+                    salespersonId: estimate.salespersonId,
                     items: {
                         create: estimate.items.map((i: any) => ({
                             productId: i.productId,

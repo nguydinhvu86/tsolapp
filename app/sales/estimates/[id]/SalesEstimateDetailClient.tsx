@@ -209,7 +209,7 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                         <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#1e293b', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <FileText size={20} color="#6366f1" /> Thông tin chung
                         </h2>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1.5rem' }}>
                             <div>
                                 <p style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600, color: '#94a3b8', marginBottom: '0.25rem' }}>KHÁCH HÀNG</p>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -231,6 +231,13 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#334155', fontWeight: 500 }}>
                                     <User size={16} color="#64748b" />
                                     {estimate.creator?.name || '---'}
+                                </div>
+                            </div>
+                            <div>
+                                <p style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600, color: '#94a3b8', marginBottom: '0.25rem' }}>NGƯỜI BÁO GIÁ</p>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#334155', fontWeight: 500 }}>
+                                    <User size={16} color="#10b981" />
+                                    {estimate.salesperson?.name || estimate.creator?.name || '---'}
                                 </div>
                             </div>
                             <div>
@@ -492,7 +499,7 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                 variablesData={{
                     customerName: estimate.customer?.name || '',
                     customerEmail: estimate.customer?.email || '',
-                    senderName: estimate.creator?.name || '',
+                    senderName: estimate.salesperson?.name || estimate.creator?.name || '',
                     today: new Date().toLocaleDateString('vi-VN'),
                     code: estimate.code,
                     totalAmount: formatMoney(estimate.totalAmount),

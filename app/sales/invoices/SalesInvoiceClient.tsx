@@ -13,7 +13,7 @@ import { submitSalesInvoice, approveSalesInvoice, deleteSalesInvoice, updateSale
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { TagDisplay } from '@/app/components/ui/TagDisplay';
 
-export default function SalesInvoiceClient({ initialInvoices, customers, products, orders, nextCode, initialAction, initialCustomerId }: any) {
+export default function SalesInvoiceClient({ initialInvoices, customers, products, orders, nextCode, initialAction, initialCustomerId, users, currentUserId }: any) {
     const router = useRouter();
     const [invoices, setInvoices] = useState(initialInvoices);
     const [isFormOpen, setIsFormOpen] = useState(initialAction === 'new');
@@ -53,6 +53,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         code: nextCode,
         customerId: initialCustomerId || '',
         orderId: '',
+        salespersonId: currentUserId || '',
         date: new Date().toISOString().split('T')[0],
         dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         notes: '',
@@ -78,6 +79,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
             code: nextCode,
             customerId: '',
             orderId: '',
+            salespersonId: currentUserId || '',
             date: new Date().toISOString().split('T')[0],
             dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
             notes: '',
@@ -122,6 +124,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
             code: inv.code || '',
             customerId: inv.customerId || '',
             orderId: inv.orderId || '',
+            salespersonId: inv.salespersonId || inv.creatorId || currentUserId || '',
             date: inv.date ? new Date(inv.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
             dueDate: inv.dueDate ? new Date(inv.dueDate).toISOString().split('T')[0] : '',
             notes: inv.notes || '',
@@ -165,6 +168,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
             code: nextCode,
             customerId: inv.customerId || '',
             orderId: inv.orderId || '',
+            salespersonId: currentUserId || '',
             date: new Date().toISOString().split('T')[0],
             dueDate: inv.dueDate ? new Date(inv.dueDate).toISOString().split('T')[0] : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
             notes: inv.notes || '',
@@ -210,6 +214,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
             ...formData,
             orderId: order.id,
             customerId: order.customerId,
+            salespersonId: order.creatorId || currentUserId || '',
             items: mappedItems,
             subTotal: order.subTotal || 0,
             taxAmount: order.taxAmount || 0,
@@ -778,21 +783,32 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                         </div>
                         <div className="col-span-4 grid grid-cols-2 gap-x-4">
                             <div>
-                                <label className="block text-sm text-gray-600 mb-1">Ghi chú Hóa Đơn</label>
-                                <input
-                                    type="text" className="w-full border rounded p-2"
-                                    value={formData.notes || ''}
-                                    onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                                <label className="block text-sm text-gray-600 mb-1">Người Bán (Nhân viên HT)</label>
+                                <SearchableSelect
+                                    options={users?.map((u: any) => ({ value: u.id, label: u.name })) || []}
+                                    value={formData.salespersonId || ''}
+                                    onChange={val => setFormData({ ...formData, salespersonId: val })}
+                                    placeholder="-- Chọn Người --"
                                 />
                             </div>
-                            <div>
-                                <label className="block text-sm text-gray-600 mb-1">Thẻ Quản Lý (Tags)</label>
-                                <input
-                                    type="text" className="w-full border rounded p-2"
-                                    value={formData.tags || ''}
-                                    onChange={e => setFormData({ ...formData, tags: e.target.value })}
-                                    placeholder="VD: VIP, Đại lý, Bán buôn..."
-                                />
+                            <div className="grid grid-cols-2 gap-x-4">
+                                <div>
+                                    <label className="block text-sm text-gray-600 mb-1">Ghi chú Hóa Đơn</label>
+                                    <input
+                                        type="text" className="w-full border rounded p-2"
+                                        value={formData.notes || ''}
+                                        onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm text-gray-600 mb-1">Thẻ Quản Lý (Tags)</label>
+                                    <input
+                                        type="text" className="w-full border rounded p-2"
+                                        value={formData.tags || ''}
+                                        onChange={e => setFormData({ ...formData, tags: e.target.value })}
+                                        placeholder="VD: VIP, Đại lý..."
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -940,10 +956,12 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                         </th>
                         <th className="text-left font-medium text-gray-500 pb-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('date')}>
                             <div className="flex items-center gap-1">
-                                Ngày {sortBy === 'date_asc' ? <ChevronUp size={14} /> : sortBy === 'date_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
+                                Ngày <div className="text-xs text-gray-400 font-normal">(Tạo / Tới Hạn)</div>
+                                {sortBy === 'date_asc' ? <ChevronUp size={14} /> : sortBy === 'date_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
                             </div>
                         </th>
-                        <th className="text-left font-medium text-gray-500 pb-3">Khách Hàng</th>
+                        <th className="text-left font-medium text-gray-500 pb-3">Khách Hàng / ĐH</th>
+                        <th className="text-left font-medium text-gray-500 pb-3">Người Bán</th>
                         <th className="text-left font-medium text-gray-500 pb-3">Thẻ Quản Lý</th>
                         <th className="text-right font-medium text-gray-500 pb-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('amount')}>
                             <div className="flex items-center justify-end gap-1">
@@ -965,15 +983,39 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                 </Link>
                                 {inv.orderId && <span className="text-[10px] bg-blue-100 text-blue-600 px-1 rounded ml-1">Kế thừa</span>}
                             </td>
-                            <td className="py-3 text-gray-600" suppressHydrationWarning>{formatDate(new Date(inv.date))}</td>
+                            <td className="py-3">
+                                <div className="font-medium text-gray-900">{formatDate(inv.date)}</div>
+                                {inv.dueDate && (
+                                    <div className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                                        <Calendar size={12} /> HSD: {formatDate(inv.dueDate)}
+                                    </div>
+                                )}
+                            </td>
                             <td className="py-3">
                                 {inv.customerId ? (
-                                    <Link href={`/customers/${inv.customerId}`} className="font-medium text-gray-800 hover:text-primary hover:underline transition-colors block">
+                                    <Link href={`/customers/${inv.customerId}`} className="font-medium text-indigo-600 hover:text-indigo-800 transition-colors block">
                                         {inv.customer?.name}
                                     </Link>
                                 ) : (
-                                    inv.customer?.name
+                                    <span className="font-medium text-gray-800 block">{inv.customer?.name}</span>
                                 )}
+                                {inv.order && (
+                                    <Link href={`/sales/orders/${inv.order.id}`} className="text-xs text-blue-600 hover:underline mt-1 inline-flex items-center gap-1">
+                                        <LinkIcon size={10} /> SO: {inv.order.code}
+                                    </Link>
+                                )}
+                            </td>
+                            <td className="py-3">
+                                <div className="flex items-center gap-2">
+                                    {inv.salesperson?.avatarUrl ? (
+                                        <img src={inv.salesperson.avatarUrl} alt="Avatar" className="w-6 h-6 rounded-full object-cover" />
+                                    ) : (
+                                        <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600">
+                                            {(inv.salesperson?.name || inv.creator?.name || '?').charAt(0).toUpperCase()}
+                                        </div>
+                                    )}
+                                    <span className="text-sm font-medium text-slate-700">{inv.salesperson?.name || inv.creator?.name || 'Không rõ'}</span>
+                                </div>
                             </td>
                             <td className="py-3">
                                 <TagDisplay tagsString={inv.tags} />

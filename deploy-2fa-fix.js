@@ -4,34 +4,52 @@ const conn = new Client();
 const password = 'P@ssw0rdVu';
 
 conn.on('ready', () => {
-    console.log('Connected to server. Uploading updated actions.ts...');
+    console.log('Connected to server. Uploading 2FA fix files...');
     conn.sftp((err, sftp) => {
         if (err) throw err;
 
-        const localPath = 'C:/Users/admin/Documents/CONTRACT/app/auth/actions.ts';
-        const remotePath = '/www/wwwroot/inside.tsol.vn/tsolapp/app/auth/actions.ts';
+        const files = [
+            {
+                local: 'C:/Users/admin/Documents/CONTRACT/lib/authOptions.ts',
+                remote: '/www/wwwroot/inside.tsol.vn/tsolapp/lib/authOptions.ts'
+            },
+            {
+                local: 'C:/Users/admin/Documents/CONTRACT/app/api/users/2fa/verify/route.ts',
+                remote: '/www/wwwroot/inside.tsol.vn/tsolapp/app/api/users/2fa/verify/route.ts'
+            }
+        ];
 
-        sftp.fastPut(localPath, remotePath, (err) => {
-            if (err) throw err;
-            console.log('File uploaded. Starting build and restart...');
+        let uploaded = 0;
 
-            const cmd = `cd /www/wwwroot/inside.tsol.vn/tsolapp && export PATH=/www/server/nvm/versions/node/v24.14.0/bin:$PATH && npm run build && /www/server/nodejs/v14.17.6/bin/pm2 restart inside.tsol.vn`;
-
-            conn.exec(cmd, (err, stream) => {
+        files.forEach(file => {
+            sftp.fastPut(file.local, file.remote, (err) => {
                 if (err) throw err;
+                console.log(`Uploaded ${file.local}`);
+                uploaded++;
 
-                stream.on('data', (data) => {
-                    process.stdout.write(data.toString());
-                });
+                if (uploaded === files.length) {
+                    console.log('All files uploaded. Running build...');
 
-                stream.stderr.on('data', (data) => {
-                    process.stderr.write(data.toString());
-                });
+                    const cmd = `cd /www/wwwroot/inside.tsol.vn/tsolapp && ` +
+                        `export PATH=/www/server/nvm/versions/node/v24.14.0/bin:$PATH && ` +
+                        `rm -f /www/wwwroot/inside.tsol.vn/tsolapp/phase1_layout.tsx && ` +
+                        `rm -f /www/wwwroot/inside.tsol.vn/tsolapp/app/phase1_layout.tsx && ` +
+                        `npm run build && ` +
+                        `/www/server/nodejs/v14.17.6/bin/pm2 restart inside.tsol.vn`;
 
-                stream.on('close', (code) => {
-                    console.log(`\nDeployment finished with code ${code}`);
-                    conn.end();
-                });
+                    console.log('Executing:', cmd);
+                    conn.exec(cmd, (err, execStream) => {
+                        if (err) throw err;
+
+                        execStream.on('data', (data) => process.stdout.write(data.toString()));
+                        execStream.stderr.on('data', (data) => process.stderr.write(data.toString()));
+
+                        execStream.on('close', (code) => {
+                            console.log(`\nDeployment finished with code ${code}`);
+                            conn.end();
+                        });
+                    });
+                }
             });
         });
     });
