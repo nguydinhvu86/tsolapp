@@ -60,6 +60,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: { 
                 activityLogs: {
                     orderBy: { createdAt: 'desc' },
                     take: 1,
+                    select: { createdAt: true }
                 }
             }
         }),
