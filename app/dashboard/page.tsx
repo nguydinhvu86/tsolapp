@@ -6,10 +6,20 @@ import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
     const session = await getServerSession(authOptions);
     if (!session || !session.user || !session.user.id) {
         redirect('/login');
+    }
+
+    const employeeIdFromUrl = typeof searchParams?.employeeId === 'string' ? searchParams.employeeId : undefined;
+    const isAdminOrManager = session.user.role === 'ADMIN' || session.user.role === 'MANAGER';
+
+    let effectiveEmployeeId: string | undefined = undefined;
+    if (!isAdminOrManager) {
+        effectiveEmployeeId = session.user.id;
+    } else if (employeeIdFromUrl) {
+        effectiveEmployeeId = employeeIdFromUrl;
     }
 
     const now = new Date();
@@ -21,6 +31,26 @@ export default async function DashboardPage() {
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
 
+    const invoiceFilter = effectiveEmployeeId ? {
+        OR: [
+            { creatorId: effectiveEmployeeId },
+            { salespersonId: effectiveEmployeeId }
+        ]
+    } : {};
+
+    const paymentFilter = effectiveEmployeeId ? {
+        allocations: {
+            some: {
+                invoice: {
+                    OR: [
+                        { creatorId: effectiveEmployeeId },
+                        { salespersonId: effectiveEmployeeId }
+                    ]
+                }
+            }
+        }
+    } : {};
+
     // Tính Doanh Thu Tháng (Dựa trên Hóa Đơn Bán Hàng đã PHÁT HÀNH - ISSUED)
     const [
         currentMonthInvoices,
@@ -31,11 +61,13 @@ export default async function DashboardPage() {
         lastMonthPayments,
         currentMonthDebt,
         lastMonthDebt,
-        userTasks
+        userTasks,
+        users
     ] = await Promise.all([
         prisma.salesInvoice.aggregate({
             _sum: { totalAmount: true },
             where: {
+                ...invoiceFilter,
                 status: { notIn: ['DRAFT', 'CANCELLED'] },
                 date: { gte: currentMonthStart }
             }
@@ -43,6 +75,7 @@ export default async function DashboardPage() {
         prisma.salesInvoice.aggregate({
             _sum: { totalAmount: true },
             where: {
+                ...invoiceFilter,
                 status: { notIn: ['DRAFT', 'CANCELLED'] },
                 date: { gte: lastMonthStart, lte: lastMonthEnd }
             }
@@ -50,12 +83,14 @@ export default async function DashboardPage() {
         // Đếm số lượng Hóa Đơn Đã Phát Hành (Ghi nhận công nợ)
         prisma.salesInvoice.count({
             where: {
+                ...invoiceFilter,
                 date: { gte: currentMonthStart },
                 status: { notIn: ['DRAFT', 'CANCELLED'] }
             }
         }),
         prisma.salesInvoice.count({
             where: {
+                ...invoiceFilter,
                 date: { gte: lastMonthStart, lte: lastMonthEnd },
                 status: { notIn: ['DRAFT', 'CANCELLED'] }
             }
@@ -64,6 +99,7 @@ export default async function DashboardPage() {
         prisma.salesPayment.aggregate({
             _sum: { amount: true },
             where: {
+                ...paymentFilter,
                 date: { gte: currentMonthStart },
                 status: { notIn: ['CANCELLED'] }
             }
@@ -71,6 +107,7 @@ export default async function DashboardPage() {
         prisma.salesPayment.aggregate({
             _sum: { amount: true },
             where: {
+                ...paymentFilter,
                 date: { gte: lastMonthStart, lte: lastMonthEnd },
                 status: { notIn: ['CANCELLED'] }
             }
@@ -79,6 +116,7 @@ export default async function DashboardPage() {
         prisma.salesInvoice.aggregate({
             _sum: { totalAmount: true, paidAmount: true },
             where: {
+                ...invoiceFilter,
                 status: { notIn: ['DRAFT', 'CANCELLED', 'PAID'] },
                 dueDate: { gte: currentMonthStart, lte: now }
             }
@@ -87,6 +125,7 @@ export default async function DashboardPage() {
         prisma.salesInvoice.aggregate({
             _sum: { totalAmount: true, paidAmount: true },
             where: {
+                ...invoiceFilter,
                 status: { notIn: ['DRAFT', 'CANCELLED', 'PAID'] },
                 dueDate: { gte: lastMonthStart, lte: lastMonthEnd } // Tháng trước thì tất cả đều là quá khứ so với "now"
             }
@@ -107,7 +146,8 @@ export default async function DashboardPage() {
                 observers: { include: { user: { select: { id: true, name: true } } } },
                 customer: { select: { name: true } }
             }
-        })
+        }),
+        isAdminOrManager ? prisma.user.findMany({ select: { id: true, name: true, avatar: true }, orderBy: { name: 'asc' } }) : Promise.resolve([])
     ]);
 
     const revenueThisMonth = currentMonthInvoices._sum.totalAmount || 0;
@@ -147,7 +187,7 @@ export default async function DashboardPage() {
     });
 
     const { getDashboardStats, getDashboardConfig } = await import('@/app/dashboard/actions');
-    const stats = await getDashboardStats(session.user.id);
+    const stats = await getDashboardStats(effectiveEmployeeId || session.user.id);
     const rawConfig = await getDashboardConfig(session.user.id);
 
     return (
@@ -168,6 +208,9 @@ export default async function DashboardPage() {
                 quotes={stats?.chartDataSources?.quotes || []}
                 invoices={stats?.chartDataSources?.invoices || []}
                 savedConfig={rawConfig}
+                users={users}
+                isAdminOrManager={isAdminOrManager}
+                currentEmployeeId={employeeIdFromUrl || ''}
             />
         </div>
     );
