@@ -194,13 +194,13 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
 
     // --- Tab 4 & 5 (Filtered Documents) ---
     const displayBills = useMemo(() => {
-        let result = filteredBills;
+        let result = validFilteredBills;
         if (billSearch.trim()) {
             const query = billSearch.toLowerCase();
             result = result.filter(b => b.code?.toLowerCase().includes(query) || b.supplier?.name?.toLowerCase().includes(query));
         }
         return result;
-    }, [filteredBills, billSearch]);
+    }, [validFilteredBills, billSearch]);
 
     const displayOrders = useMemo(() => {
         let result = filteredOrders;
