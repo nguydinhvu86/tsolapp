@@ -21,6 +21,7 @@ export async function getCustomerWithRelations(id: string) {
         if (!viewAll && viewOwn) {
             authFilter = {
                 OR: [
+                    { activityLogs: { some: { userId: session.user.id } } },
                     { quotes: { some: { creatorId: session.user.id } } },
                     { contracts: { some: { creatorId: session.user.id } } },
                     { salesOrders: { some: { creatorId: session.user.id } } },

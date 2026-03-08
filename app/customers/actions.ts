@@ -80,10 +80,11 @@ export async function getCustomers() {
         return await prisma.customer.findMany({ orderBy: { name: 'asc' } });
     }
 
-    // Intrinsic Ownership: A user owns a customer if they created documents related to them
+    // Intrinsic Ownership: A user owns a customer if they created documents related to them or have activity logs
     return await prisma.customer.findMany({
         where: {
             OR: [
+                { activityLogs: { some: { userId: session.user.id } } },
                 { quotes: { some: { creatorId: session.user.id } } },
                 { contracts: { some: { creatorId: session.user.id } } },
                 { salesOrders: { some: { creatorId: session.user.id } } },
