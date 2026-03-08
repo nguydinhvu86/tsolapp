@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/authOptions";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import ExpenseClient from "./ExpenseClient";
+import { buildViewFilter } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,15 +18,16 @@ export default async function ExpensesPage() {
         redirect("/login");
     }
 
-    // Check permissions (assuming 'SALES_EXPENSES_VIEW' is needed or ADMIN)
     const permissions = session.user.permissions || [];
     const isAdmin = session.user.role === 'ADMIN';
+    const viewAll = permissions.includes('SALES_EXPENSES_VIEW_ALL');
+    const viewOwn = permissions.includes('SALES_EXPENSES_VIEW_OWN');
 
-    if (!isAdmin && !permissions.includes('SALES_EXPENSES_VIEW')) {
+    if (!isAdmin && !viewAll && !viewOwn) {
         redirect("/dashboard");
     }
 
-    const { expenses, categories, customers, suppliers } = await getInitialData();
+    const { expenses, categories, customers, suppliers } = await getInitialData(session.user.id, permissions, isAdmin);
 
     return (
         <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -45,9 +47,13 @@ export default async function ExpensesPage() {
     );
 }
 
-async function getInitialData() {
+async function getInitialData(userId: string, permissions: string[], isAdmin: boolean) {
     try {
+        const viewFilter = isAdmin ? {} : buildViewFilter(userId, permissions, 'SALES_EXPENSES', 'creatorId');
+        if (viewFilter.id === 'UNAUTHORIZED_NO_ACCESS') throw new Error("Unauthorized");
+
         const expenses = await prisma.expense.findMany({
+            where: viewFilter,
             include: {
                 category: true,
                 supplier: { select: { id: true, name: true } },

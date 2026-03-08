@@ -66,6 +66,13 @@ model User {
   SalesInvoiceNote         SalesInvoiceNote[]
   SalesInvoiceActivityLog  SalesInvoiceActivityLog[]
   CustomerNote             CustomerNote[]
+  
+  // Phase 7 Document Creators
+  quotes           Quote[]            @relation("QuoteCreator")
+  contracts        Contract[]         @relation("ContractCreator")
+  handovers        Handover[]         @relation("HandoverCreator")
+  paymentRequests  PaymentRequest[]   @relation("PaymentRequestCreator")
+  createdLeads     Lead[]             @relation("LeadCreator")
   CustomerActivityLog      CustomerActivityLog[]
   todos                    Todo[]
   createdEmailTemplates    EmailTemplate[]            @relation("EmailTemplateCreator")
@@ -219,6 +226,8 @@ model Contract {
   template   ContractTemplate   @relation(fields: [templateId], references: [id])
   appendices ContractAppendix[]
   tasks      Task[]
+  creatorId  String?
+  creator    User?              @relation("ContractCreator", fields: [creatorId], references: [id])
   createdAt  DateTime           @default(now())
   updatedAt  DateTime           @updatedAt
 }
@@ -271,6 +280,8 @@ model Quote {
   customer   Customer      @relation(fields: [customerId], references: [id])
   template   QuoteTemplate @relation(fields: [templateId], references: [id])
   tasks      Task[]
+  creatorId  String?
+  creator    User?         @relation("QuoteCreator", fields: [creatorId], references: [id])
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
 }
@@ -297,6 +308,8 @@ model Handover {
   customer   Customer         @relation(fields: [customerId], references: [id])
   template   HandoverTemplate @relation(fields: [templateId], references: [id])
   tasks      Task[]
+  creatorId  String?
+  creator    User?            @relation("HandoverCreator", fields: [creatorId], references: [id])
   createdAt  DateTime         @default(now())
   updatedAt  DateTime         @updatedAt
 }
@@ -323,6 +336,8 @@ model PaymentRequest {
   customer   Customer               @relation(fields: [customerId], references: [id])
   template   PaymentRequestTemplate @relation(fields: [templateId], references: [id])
   tasks      Task[]
+  creatorId  String?
+  creator    User?                  @relation("PaymentRequestCreator", fields: [creatorId], references: [id])
   createdAt  DateTime               @default(now())
   updatedAt  DateTime               @updatedAt
 }
@@ -1173,6 +1188,10 @@ model Lead {
   // Người phụ trách
   assignedToId String?
   assignedTo   User?   @relation("LeadAssignee", fields: [assignedToId], references: [id])
+  
+  // Người tạo
+  creatorId    String?
+  creator      User?   @relation("LeadCreator", fields: [creatorId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

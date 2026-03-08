@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { revalidatePath } from 'next/cache';
+import { buildViewFilter } from '@/lib/permissions';
 import { logCustomerActivity } from '@/lib/customerLogger';
 import { sendEmailWithTracking } from '@/lib/mailer';
 
@@ -17,9 +18,13 @@ async function getUser() {
 
 export async function getSalesPayments() {
     const session = await getServerSession(authOptions);
-    if (!session) throw new Error("Unauthorized");
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    const viewFilter = buildViewFilter(session.user.id, session.user.permissions as string[] || [], 'SALES_PAYMENTS', 'creatorId');
+    if (viewFilter.id === 'UNAUTHORIZED_NO_ACCESS') return [];
 
     return prisma.salesPayment.findMany({
+        where: viewFilter,
         include: {
             customer: true,
             creator: true,

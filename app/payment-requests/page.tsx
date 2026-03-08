@@ -1,13 +1,25 @@
 import { prisma } from '@/lib/prisma';
 import { PaymentRequestDashboardClient } from './PaymentRequestDashboardClient';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
+import { buildViewFilter } from '@/lib/permissions';
 
 export default async function PaymentRequestsPage({
     searchParams,
 }: {
     searchParams: { customerId?: string; templateId?: string; }
 }) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) return <div>Unauthorized</div>;
+    const permissions = session.user.permissions || [];
+
+    const viewFilter = buildViewFilter(session.user.id, permissions, 'PAYMENTS', 'creatorId');
+    if (viewFilter.id === 'UNAUTHORIZED_NO_ACCESS') {
+        return <div className="p-8 text-center text-red-500 font-bold">Bạn không có quyền truy cập trang này.</div>;
+    }
+
     // If there are search params, filter the results
-    const where: any = {};
+    const where: any = { ...viewFilter };
     if (searchParams.customerId) where.customerId = searchParams.customerId;
     if (searchParams.templateId) where.templateId = searchParams.templateId;
 

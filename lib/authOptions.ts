@@ -57,7 +57,18 @@ export const authOptions: NextAuthOptions = {
 
                 const userPerms = JSON.parse(user.permissions || "[]");
                 const groupPerms = user.permissionGroup ? JSON.parse(user.permissionGroup.permissions || "[]") : [];
-                const mergedPerms = Array.from(new Set([...userPerms, ...groupPerms]));
+
+                // Legacy Map: Convert _VIEW to _VIEW_ALL + _VIEW_OWN dynamically until DB is updated
+                const rawPerms = Array.from(new Set([...userPerms, ...groupPerms]));
+                const mergedPerms = new Set<string>();
+                for (const p of rawPerms) {
+                    if (p.endsWith('_VIEW')) {
+                        mergedPerms.add(p + '_ALL');
+                        mergedPerms.add(p + '_OWN');
+                    } else {
+                        mergedPerms.add(p);
+                    }
+                }
 
                 // Xác định thiết bị & IP
                 const userAgent = (req?.headers as any)?.['user-agent'] || 'Bị ẩn/Không xác định';
@@ -105,7 +116,7 @@ export const authOptions: NextAuthOptions = {
                     role: user.role,
                     avatar: user.avatar,
                     twoFactorEnabled: user.twoFactorEnabled,
-                    permissions: mergedPerms,
+                    permissions: Array.from(mergedPerms),
                 };
             }
         })
@@ -139,7 +150,18 @@ export const authOptions: NextAuthOptions = {
                         token.role = dbUser.role;
                         const userPerms = JSON.parse(dbUser.permissions || "[]");
                         const groupPerms = dbUser.permissionGroup ? JSON.parse(dbUser.permissionGroup.permissions || "[]") : [];
-                        token.permissions = Array.from(new Set([...userPerms, ...groupPerms]));
+                        const rawPerms = Array.from(new Set([...userPerms, ...groupPerms]));
+
+                        const upgradedPerms = new Set<string>();
+                        for (const p of rawPerms) {
+                            if (p.endsWith('_VIEW')) {
+                                upgradedPerms.add(p + '_ALL');
+                                upgradedPerms.add(p + '_OWN');
+                            } else {
+                                upgradedPerms.add(p);
+                            }
+                        }
+                        token.permissions = Array.from(upgradedPerms);
 
                         // If user is deactivated during active session, invalidate them
                         if (!dbUser.isActive) {

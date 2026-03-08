@@ -18,6 +18,15 @@ interface OnlineUser {
     os?: string;
 }
 
+const hasPermission = (permissions: string[], requiredPerm: string) => {
+    if (permissions.includes(requiredPerm)) return true;
+    if (requiredPerm.endsWith('_VIEW')) {
+        const base = requiredPerm.replace('_VIEW', '');
+        return permissions.includes(`${base}_VIEW_ALL`) || permissions.includes(`${base}_VIEW_OWN`);
+    }
+    return false;
+};
+
 const mainNavItems: any[] = [
     { name: 'Bảng Điều Khiển', href: '/dashboard', icon: LayoutDashboard, permission: 'VIEW_DASHBOARD' },
     { name: 'Dự Án (Projects)', href: '/projects', icon: Target, permission: 'TASKS_VIEW' },
@@ -120,11 +129,11 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
         zIndex: isDragging ? 99 : 1,
     };
 
-    if (!isAdmin && item.permission && !userPermissions.includes(item.permission)) return null;
+    if (!isAdmin && item.permission && !hasPermission(userPermissions, item.permission)) return null;
 
     let visibleChildren = item.children;
     if (item.children && !isAdmin) {
-        visibleChildren = item.children.filter((child: any) => !child.permission || userPermissions.includes(child.permission));
+        visibleChildren = item.children.filter((child: any) => !child.permission || hasPermission(userPermissions, child.permission));
         if (visibleChildren.length === 0) return null;
     }
 

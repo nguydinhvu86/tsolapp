@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { sendEmailWithTracking } from '@/lib/mailer';
+import { buildViewFilter } from '@/lib/permissions';
 import { getNextInvoiceCode } from '../invoices/actions';
 
 export async function sendOrderEmail(
@@ -172,18 +173,21 @@ export async function getSalesOrders(employeeId?: string) {
         const session = await getServerSession(authOptions);
         if (!session?.user?.id) return [];
 
-        const isAdminOrManager = session.user.role === 'ADMIN' || session.user.role === 'MANAGER';
-        let effectiveEmployeeId: string | undefined = undefined;
+        const permissions = session.user.permissions as string[] || [];
+        const viewAll = permissions.includes('SALES_ORDERS_VIEW_ALL');
+        const viewOwn = permissions.includes('SALES_ORDERS_VIEW_OWN');
 
-        if (!isAdminOrManager) {
-            effectiveEmployeeId = session.user.id;
-        } else if (employeeId) {
-            effectiveEmployeeId = employeeId;
+        if (!viewAll && !viewOwn) return [];
+
+        let whereClause: any = {};
+
+        if (viewAll) {
+            if (employeeId) {
+                whereClause = { creatorId: employeeId };
+            }
+        } else if (viewOwn) {
+            whereClause = { creatorId: session.user.id };
         }
-
-        const whereClause = effectiveEmployeeId ? {
-            creatorId: effectiveEmployeeId
-        } : {};
 
         return await prisma.salesOrder.findMany({
             where: whereClause,

@@ -10,7 +10,15 @@ export default async function TasksPage({
 }) {
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
-    const isAdmin = session?.user?.role === 'ADMIN';
+    if (!userId) return <div>Unauthorized</div>;
+    const permissions = session?.user?.permissions || [];
+
+    const viewAll = permissions.includes('TASKS_VIEW_ALL');
+    const viewOwn = permissions.includes('TASKS_VIEW_OWN');
+
+    if (!viewAll && !viewOwn) {
+        return <div className="p-8 text-center text-red-500 font-bold">Bạn không có quyền truy cập trang này.</div>;
+    }
 
     // Build filter map
     const where: any = {};
@@ -24,8 +32,8 @@ export default async function TasksPage({
         };
     }
 
-    // Admins see everything. Normal users see tasks they created, are assigned to, or are observing.
-    if (!isAdmin && userId) {
+    // Apply VIEW_OWN logic natively
+    if (!viewAll && viewOwn) {
         // Find tasks where user is assignee, creator, or observer
         where.OR = [
             { creatorId: userId },
