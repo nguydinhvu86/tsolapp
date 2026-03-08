@@ -30,7 +30,20 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
     const perms = (session.user.permissions as string[]) || [];
 
     try {
-        const custFilter = buildViewFilter(userId, perms, 'CUSTOMERS', 'creatorId');
+        let custFilter: any = buildViewFilter(userId, perms, 'CUSTOMERS', 'creatorId');
+        if (custFilter.creatorId) {
+            custFilter = {
+                OR: [
+                    { activityLogs: { some: { userId } } },
+                    { quotes: { some: { creatorId: userId } } },
+                    { contracts: { some: { creatorId: userId } } },
+                    { leads: { some: { creatorId: userId } } },
+                    { salesInvoices: { some: { OR: [{ creatorId: userId }, { salespersonId: userId }] } } },
+                    { salesEstimates: { some: { OR: [{ creatorId: userId }, { salespersonId: userId }] } } },
+                    { salesOrders: { some: { OR: [{ creatorId: userId }, { salespersonId: userId }] } } }
+                ]
+            };
+        }
         if (custFilter.id !== 'UNAUTHORIZED_NO_ACCESS') {
             const customers = await prisma.customer.findMany({
                 where: {
@@ -52,10 +65,10 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
             customers.forEach((c: any) => results.push({ id: c.id, type: 'CUSTOMER', title: c.name, subtitle: c.phone || 'Khách hàng', link: `/customers/${c.id}` }));
         }
 
-        const suppFilter = buildViewFilter(userId, perms, 'SUPPLIERS', 'creatorId');
+        const suppFilter = buildViewFilter(userId, perms, 'SUPPLIERS');
         if (suppFilter.id !== 'UNAUTHORIZED_NO_ACCESS') {
             const suppliers = await prisma.supplier.findMany({
-                where: { AND: [suppFilter, { OR: [{ name: { contains: search } }, { code: { contains: search } }, { phone: { contains: search } }] }] } as any,
+                where: { OR: [{ name: { contains: search } }, { code: { contains: search } }, { phone: { contains: search } }] },
                 take: limit, select: { id: true, name: true, code: true, phone: true }
             });
             suppliers.forEach((s: any) => results.push({ id: s.id, type: 'SUPPLIER', title: s.name, subtitle: `${s.code} ${s.phone ? '- ' + s.phone : ''}`, link: `/suppliers/${s.id}` }));
