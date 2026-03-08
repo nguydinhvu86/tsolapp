@@ -46,9 +46,12 @@ export async function getLeadById(id: string) {
     const session = await getServerSession(authOptions);
     if (!session?.user) throw new Error('Unauthorized');
 
+    const isAdminOrManager = session.user.role === 'ADMIN' || session.user.role === 'MANAGER';
+    const authFilter = !isAdminOrManager ? { OR: [{ creatorId: session.user.id }, { assignedToId: session.user.id }] } : {};
+
     try {
-        const lead = await prisma.lead.findUnique({
-            where: { id },
+        const lead = await prisma.lead.findFirst({
+            where: { id, ...authFilter },
             include: {
                 assignedTo: { select: { id: true, name: true, avatar: true } },
                 customer: { select: { id: true, name: true, phone: true, email: true } },

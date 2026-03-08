@@ -4,12 +4,27 @@ import { getCustomers } from '@/app/customers/actions';
 import { getProducts } from '@/app/inventory/actions';
 import { getTemplatesByModule } from '@/app/email-templates/actions';
 import SalesInvoiceDetailClient from './SalesInvoiceDetailClient';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/authOptions';
 
 export default async function SalesInvoiceDetailPage({ params }: { params: { id: string } }) {
     const { id } = params;
 
-    const invoice = await prisma.salesInvoice.findUnique({
-        where: { id },
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) return notFound();
+
+    const perms = (session.user.permissions as string[]) || [];
+    const isViewAll = perms.includes('SALES_INVOICES_VIEW_ALL');
+    const isViewOwn = perms.includes('SALES_INVOICES_VIEW_OWN');
+
+    if (!isViewAll && !isViewOwn) return notFound();
+
+    const authFilter = (!isViewAll && isViewOwn) ? {
+        OR: [{ creatorId: session.user.id }, { salespersonId: session.user.id }]
+    } : {};
+
+    const invoice = await prisma.salesInvoice.findFirst({
+        where: { id, ...authFilter },
         include: {
             customer: true,
             order: true,

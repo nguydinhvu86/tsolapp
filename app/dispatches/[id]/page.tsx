@@ -5,10 +5,19 @@ import { formatCurrencyInHtml } from '@/lib/utils';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/authOptions';
+import { buildViewFilter } from '@/lib/permissions';
 
 export default async function DispatchPrintView({ params }: { params: { id: string } }) {
-    const dispatch = await prisma.dispatch.findUnique({
-        where: { id: params.id },
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) return notFound();
+    const perms = (session.user.permissions as string[]) || [];
+    const viewFilter = buildViewFilter(session.user.id, perms, 'DISPATCHES', 'creatorId');
+    if (viewFilter.id === 'UNAUTHORIZED_NO_ACCESS') return notFound();
+
+    const dispatch = await prisma.dispatch.findFirst({
+        where: { id: params.id, ...viewFilter },
         include: { customer: true }
     });
 

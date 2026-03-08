@@ -177,9 +177,17 @@ export async function getExpenseById(id: string) {
         throw new Error('Unauthorized');
     }
 
+    const perms = (session.user.permissions as string[]) || [];
+    const isViewAll = perms.includes('SALES_EXPENSES_VIEW_ALL');
+    const isViewOwn = perms.includes('SALES_EXPENSES_VIEW_OWN');
+
+    if (!isViewAll && !isViewOwn) throw new Error('Unauthorized');
+
+    const authFilter = (!isViewAll && isViewOwn) ? { creatorId: session.user.id } : {};
+
     try {
-        const expense = await prisma.expense.findUnique({
-            where: { id },
+        const expense = await prisma.expense.findFirst({
+            where: { id, ...authFilter },
             include: {
                 category: true,
                 supplier: { select: { id: true, name: true, phone: true } },

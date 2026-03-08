@@ -4,17 +4,23 @@ import { authOptions } from '@/lib/authOptions';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { SupplierDetailClient } from './SupplierDetailClient';
+import { notFound } from 'next/navigation';
+import { buildViewFilter } from '@/lib/permissions';
 
 export default async function SupplierDetailPage({ params }: { params: { id: string } }) {
     const session = await getServerSession(authOptions);
 
-    if (!session) {
+    if (!session || !session.user) {
         redirect('/login');
     }
 
+    const perms = (session.user.permissions as string[]) || [];
+    const viewFilter = buildViewFilter(session.user.id, perms, 'SUPPLIERS', 'creatorId');
+    if (viewFilter.id === 'UNAUTHORIZED_NO_ACCESS') return notFound();
+
     // Fetch supplier with related data
-    const supplier = await prisma.supplier.findUnique({
-        where: { id: params.id },
+    const supplier = await prisma.supplier.findFirst({
+        where: { id: params.id, ...viewFilter },
         include: {
             products: {
                 include: { product: true }
