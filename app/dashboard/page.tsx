@@ -133,9 +133,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
         prisma.task.findMany({
             where: {
                 OR: [
-                    { assignees: { some: { userId: session.user.id } } },
-                    { observers: { some: { userId: session.user.id } } },
-                    { creatorId: session.user.id }
+                    { assignees: { some: { userId: effectiveEmployeeId || session.user.id } } },
+                    { observers: { some: { userId: effectiveEmployeeId || session.user.id } } },
+                    { creatorId: effectiveEmployeeId || session.user.id }
                 ],
                 status: { notIn: ['DONE', 'CANCELLED'] }
             },
@@ -187,7 +187,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
     });
 
     const { getDashboardStats, getDashboardConfig } = await import('@/app/dashboard/actions');
-    const stats = await getDashboardStats(effectiveEmployeeId || session.user.id);
+    const stats = await getDashboardStats(session.user.id, effectiveEmployeeId);
     const rawConfig = await getDashboardConfig(session.user.id);
 
     return (
