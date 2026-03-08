@@ -42,40 +42,40 @@ export default async function TasksPage({
         ];
     }
 
-    const tasks = await prisma.task.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        include: {
-            creator: { select: { id: true, name: true, avatar: true } },
-            assignees: { include: { user: { select: { id: true, name: true, avatar: true } } } },
-            observers: { include: { user: { select: { id: true, name: true, avatar: true } } } },
-            checklists: {
-                orderBy: { createdAt: 'asc' },
-                include: { completedBy: { select: { id: true, name: true } } }
-            },
-            comments: {
-                orderBy: { createdAt: 'desc' },
-                include: { user: { select: { id: true, name: true, avatar: true } } }
-            },
-            attachments: { include: { uploadedBy: { select: { id: true, name: true } } } },
-            activityLogs: {
-                orderBy: { createdAt: 'desc' },
-                include: { user: { select: { id: true, name: true } } }
-            },
-            customer: { select: { id: true, name: true } },
-            contract: { select: { id: true, title: true } },
-            quote: { select: { id: true, title: true } },
-            handover: { select: { id: true, title: true } },
-            paymentReq: { select: { id: true, title: true } },
-            dispatch: { select: { id: true, title: true } }
-        }
-    });
-
-    // We also need the user directory to assign tasks
-    const users = await prisma.user.findMany({
-        select: { id: true, name: true, email: true, avatar: true },
-        orderBy: { name: 'asc' }
-    });
+    // Optimize: Fetch everything in parallel and exclude heavy unneeded arrays (comments, attachments, logs)
+    const [tasks, users] = await Promise.all([
+        prisma.task.findMany({
+            where,
+            orderBy: { createdAt: 'desc' },
+            include: {
+                creator: { select: { id: true, name: true, avatar: true } },
+                assignees: { include: { user: { select: { id: true, name: true, avatar: true, email: true } } } },
+                observers: { include: { user: { select: { id: true, name: true, avatar: true } } } },
+                checklists: { select: { isCompleted: true } }, // Only need completeness for progress bar
+                customer: { select: { id: true, name: true } },
+                contract: { select: { id: true, title: true } },
+                quote: { select: { id: true, title: true } },
+                handover: { select: { id: true, title: true } },
+                paymentReq: { select: { id: true, title: true } },
+                dispatch: { select: { id: true, title: true } },
+                lead: { select: { id: true, name: true } },
+                supplier: { select: { id: true, name: true } },
+                expense: { select: { id: true, code: true, description: true } },
+                appendix: { select: { id: true, title: true } },
+                purchaseOrder: { select: { id: true, code: true } },
+                purchaseBill: { select: { id: true, code: true } },
+                purchasePayment: { select: { id: true, code: true } },
+                salesOrder: { select: { id: true, code: true } },
+                salesInvoice: { select: { id: true, code: true } },
+                salesEstimate: { select: { id: true, code: true } },
+                salesPayment: { select: { id: true, code: true } }
+            }
+        }),
+        prisma.user.findMany({
+            select: { id: true, name: true, email: true, avatar: true },
+            orderBy: { name: 'asc' }
+        })
+    ]);
 
     return (
         <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
