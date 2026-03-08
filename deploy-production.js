@@ -8,7 +8,7 @@ conn.on('ready', () => {
 
     const cmd = `cd /www/wwwroot/inside.tsol.vn/tsolapp && ` +
         `git fetch --all && ` +
-        `git reset --hard origin/feature/chat-monitoring-ui && ` +
+        `git reset --hard origin/main && ` +
         `export PATH=/www/server/nvm/versions/node/v24.14.0/bin:$PATH && ` +
         `npm run build && ` +
         `/www/server/nodejs/v14.17.6/bin/pm2 restart inside.tsol.vn`;
