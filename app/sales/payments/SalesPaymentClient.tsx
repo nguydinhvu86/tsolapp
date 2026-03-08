@@ -256,10 +256,26 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
         });
     };
 
-    const customerFormOptions = customers.map((c: any) => ({
-        value: c.id,
-        label: `${c.code ? c.code + ' - ' : ''}${c.name} (Nợ: ${formatMoney(c.totalDebt)})`
-    }));
+    const customerFormOptions = useMemo(() => {
+        return customers.map((c: any) => {
+            // Find all valid unpaid invoices for this customer
+            const customerUnpaidVars = unpaidInvoices.filter((inv: any) =>
+                inv.customerId === c.id &&
+                inv.status !== 'DRAFT' &&
+                inv.status !== 'CANCELLED'
+            );
+
+            // Calculate exact debt from these invoices: SUM(totalAmount - paidAmount)
+            const exactDebt = customerUnpaidVars.reduce((sum: number, inv: any) => {
+                return sum + (inv.totalAmount - inv.paidAmount);
+            }, 0);
+
+            return {
+                value: c.id,
+                label: `${c.code ? c.code + ' - ' : ''}${c.name} ${exactDebt > 0 ? `(Nợ: ${formatMoney(exactDebt)})` : '(Không nợ)'}`
+            };
+        });
+    }, [customers, unpaidInvoices]);
 
     return (
         <div className="p-8">
