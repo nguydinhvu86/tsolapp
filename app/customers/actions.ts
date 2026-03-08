@@ -67,7 +67,31 @@ export async function deleteCustomer(id: string) {
 }
 
 export async function getCustomers() {
-    return await prisma.customer.findMany({ orderBy: { name: 'asc' } });
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) return [];
+
+    const permissions = session.user.permissions as string[] || [];
+    const viewAll = permissions.includes('CUSTOMERS_VIEW_ALL');
+    const viewOwn = permissions.includes('CUSTOMERS_VIEW_OWN');
+
+    if (!viewAll && !viewOwn) return [];
+
+    if (viewAll) {
+        return await prisma.customer.findMany({ orderBy: { name: 'asc' } });
+    }
+
+    // Intrinsic Ownership: A user owns a customer if they created documents related to them
+    return await prisma.customer.findMany({
+        where: {
+            OR: [
+                { quotes: { some: { creatorId: session.user.id } } },
+                { contracts: { some: { creatorId: session.user.id } } },
+                { salesOrders: { some: { creatorId: session.user.id } } },
+                { leads: { some: { creatorId: session.user.id } } }
+            ]
+        },
+        orderBy: { name: 'asc' }
+    });
 }
 
 export async function sendDebtConfirmationEmail(customerId: string, to: string, subject: string, htmlBody: string) {

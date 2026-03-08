@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { logCustomerActivity } from '@/lib/customerLogger';
+import { buildViewFilter } from '@/lib/permissions';
 import { sendEmailWithTracking } from '@/lib/mailer';
 
 export async function sendInvoiceEmail(
@@ -273,21 +274,31 @@ export async function getSalesInvoices(employeeId?: string) {
         const session = await getServerSession(authOptions);
         if (!session?.user?.id) return [];
 
-        const isAdminOrManager = session.user.role === 'ADMIN' || session.user.role === 'MANAGER';
-        let effectiveEmployeeId: string | undefined = undefined;
+        const permissions = session.user.permissions as string[] || [];
+        const viewAll = permissions.includes('SALES_INVOICES_VIEW_ALL');
+        const viewOwn = permissions.includes('SALES_INVOICES_VIEW_OWN');
 
-        if (!isAdminOrManager) {
-            effectiveEmployeeId = session.user.id;
-        } else if (employeeId) {
-            effectiveEmployeeId = employeeId;
+        if (!viewAll && !viewOwn) return [];
+
+        let whereClause: any = {};
+
+        if (viewAll) {
+            if (employeeId) {
+                whereClause = {
+                    OR: [
+                        { creatorId: employeeId },
+                        { salespersonId: employeeId }
+                    ]
+                };
+            }
+        } else if (viewOwn) {
+            whereClause = {
+                OR: [
+                    { creatorId: session.user.id },
+                    { salespersonId: session.user.id }
+                ]
+            };
         }
-
-        const whereClause = effectiveEmployeeId ? {
-            OR: [
-                { creatorId: effectiveEmployeeId },
-                { salespersonId: effectiveEmployeeId }
-            ]
-        } : {};
 
         return await prisma.salesInvoice.findMany({
             where: whereClause,

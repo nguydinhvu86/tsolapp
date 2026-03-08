@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { revalidatePath } from 'next/cache';
 import { sendEmailWithTracking } from '@/lib/mailer';
+import { buildViewFilter } from '@/lib/permissions';
 
 async function getUser() {
     const session = await getServerSession(authOptions);
@@ -131,9 +132,13 @@ export async function deleteSupplier(id: string) {
 
 export async function getPurchaseOrders() {
     const session = await getServerSession(authOptions);
-    if (!session) throw new Error("Unauthorized");
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    const viewFilter = buildViewFilter(session.user.id, session.user.permissions as string[] || [], 'PURCHASE_ORDERS', 'creatorId');
+    if (viewFilter.id === 'UNAUTHORIZED_NO_ACCESS') return [];
 
     return prisma.purchaseOrder.findMany({
+        where: viewFilter,
         include: {
             supplier: true,
             creator: true,
@@ -266,9 +271,13 @@ export async function deletePurchaseOrder(id: string) {
 
 export async function getPurchaseBills() {
     const session = await getServerSession(authOptions);
-    if (!session) throw new Error("Unauthorized");
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    const viewFilter = buildViewFilter(session.user.id, session.user.permissions as string[] || [], 'PURCHASE_BILLS', 'creatorId');
+    if (viewFilter.id === 'UNAUTHORIZED_NO_ACCESS') return [];
 
     return prisma.purchaseBill.findMany({
+        where: viewFilter,
         include: {
             supplier: true,
             creator: true,
@@ -566,9 +575,13 @@ export async function cancelPurchaseBill(id: string) {
 
 export async function getPurchasePayments() {
     const session = await getServerSession(authOptions);
-    if (!session) throw new Error("Unauthorized");
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    const viewFilter = buildViewFilter(session.user.id, session.user.permissions as string[] || [], 'PURCHASE_PAYMENTS', 'creatorId');
+    if (viewFilter.id === 'UNAUTHORIZED_NO_ACCESS') return [];
 
     return prisma.purchasePayment.findMany({
+        where: viewFilter,
         include: {
             supplier: true,
             creator: true,

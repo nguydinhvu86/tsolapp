@@ -12,7 +12,10 @@ export default async function EmailTemplatesPage() {
     }
 
     // Only Admins or Managers should access this config page
-    if (session.user.role !== 'ADMIN' && !session.user.permissions?.includes('TEMPLATES_VIEW')) {
+    const perms = session.user.permissions || [];
+    const hasAccess = session.user.role === 'ADMIN' || perms.includes('TEMPLATES_VIEW_ALL') || perms.includes('TEMPLATES_VIEW_OWN');
+
+    if (!hasAccess) {
         redirect("/unauthorized"); // Or some generic error page
     }
 

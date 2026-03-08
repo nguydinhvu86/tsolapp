@@ -24,7 +24,8 @@ export const RESOURCES = [
 ] as const;
 
 export const ACTIONS = [
-    { id: 'VIEW', name: 'Xem' },
+    { id: 'VIEW_ALL', name: 'Xem Toàn Bộ' },
+    { id: 'VIEW_OWN', name: 'Xem Của Tôi' },
     { id: 'CREATE', name: 'Thêm mới' },
     { id: 'EDIT', name: 'Sửa' },
     { id: 'DELETE', name: 'Xóa' }
@@ -52,4 +53,21 @@ export class PermissionHelper {
         }
         return perms;
     }
+}
+
+// Helper to quickly apply View All / View Own matrix
+export function buildViewFilter(
+    userId: string,
+    permissions: string[],
+    resource: ResourceId,
+    creatorField: string = 'creatorId'
+) {
+    if (permissions.includes(`${resource}_VIEW_ALL`)) {
+        return {}; // Can view everything
+    }
+    if (permissions.includes(`${resource}_VIEW_OWN`)) {
+        return { [creatorField]: userId }; // Can only view own
+    }
+    // If no view permission
+    return { id: 'UNAUTHORIZED_NO_ACCESS' };
 }
