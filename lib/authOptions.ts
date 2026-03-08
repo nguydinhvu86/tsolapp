@@ -39,14 +39,15 @@ export const authOptions: NextAuthOptions = {
 
                 // Check 2FA if enabled
                 if (user.twoFactorEnabled) {
-                    if (!credentials.token) {
+                    const providedToken = credentials.token?.trim() === "undefined" || !credentials.token?.trim() ? "" : credentials.token.trim();
+                    if (!providedToken) {
                         throw new Error("2FA_REQUIRED");
                     }
                     // Set window to 10 (tolerates +/- 5 minutes clock drift)
                     authenticator.options = { window: 10 };
 
                     const isValidToken = authenticator.verify({
-                        token: credentials.token,
+                        token: providedToken,
                         secret: user.twoFactorSecret!
                     });
 
