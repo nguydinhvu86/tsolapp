@@ -3,13 +3,18 @@ import { notFound } from 'next/navigation';
 import { PurchasePaymentDetailClient } from './PurchasePaymentDetailClient';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
+import { buildViewFilter } from '@/lib/permissions';
 
 export default async function PurchasePaymentDetailPage({ params }: { params: { id: string } }) {
     const session = await getServerSession(authOptions);
-    if (!session) return null;
+    if (!session || !session.user) return null;
 
-    const payment = await prisma.purchasePayment.findUnique({
-        where: { id: params.id },
+    const perms = (session.user.permissions as string[]) || [];
+    const viewFilter = buildViewFilter(session.user.id, perms, 'PURCHASE_PAYMENTS', 'creatorId');
+    if (viewFilter.id === 'UNAUTHORIZED_NO_ACCESS') return notFound();
+
+    const payment = await prisma.purchasePayment.findFirst({
+        where: { id: params.id, ...viewFilter },
         include: {
             supplier: true,
             allocations: {

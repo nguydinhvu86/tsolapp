@@ -3,10 +3,19 @@ import { notFound } from 'next/navigation';
 import { PrintButton } from '@/app/components/ui/PrintButton';
 import { formatCurrencyInHtml } from '@/lib/utils';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/authOptions';
+import { buildViewFilter } from '@/lib/permissions';
 
 export default async function PaymentRequestPrintPage({ params }: { params: { id: string } }) {
-    const paymentRequest = await prisma.paymentRequest.findUnique({
-        where: { id: params.id },
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) return notFound();
+    const perms = (session.user.permissions as string[]) || [];
+    const viewFilter = buildViewFilter(session.user.id, perms, 'PAYMENTS', 'creatorId');
+    if (viewFilter.id === 'UNAUTHORIZED_NO_ACCESS') return notFound();
+
+    const paymentRequest = await prisma.paymentRequest.findFirst({
+        where: { id: params.id, ...viewFilter },
         include: {
             customer: true,
             template: true,

@@ -2,10 +2,18 @@ import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import { ContractDetailClient } from './ContractDetailClient';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/authOptions';
+import { buildViewFilter } from '@/lib/permissions';
 
 export default async function ContractDetailPage({ params }: { params: { id: string } }) {
-    const contract = await prisma.contract.findUnique({
-        where: { id: params.id },
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) return notFound();
+    const viewFilter = buildViewFilter(session.user.id, session.user.permissions as string[], 'CONTRACTS', 'creatorId');
+    if (viewFilter.id === 'UNAUTHORIZED_NO_ACCESS') return notFound();
+
+    const contract = await prisma.contract.findFirst({
+        where: { id: params.id, ...viewFilter },
         include: {
             appendices: {
                 orderBy: { createdAt: 'desc' }

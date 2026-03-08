@@ -8,8 +8,29 @@ import { logCustomerActivity } from "@/lib/customerLogger";
 
 export async function getCustomerWithRelations(id: string) {
     try {
-        const customer = await prisma.customer.findUnique({
-            where: { id },
+        const session = await getServerSession(authOptions);
+        if (!session || !session.user) return null;
+
+        const permissions = (session.user.permissions as string[]) || [];
+        const viewAll = permissions.includes('CUSTOMERS_VIEW_ALL');
+        const viewOwn = permissions.includes('CUSTOMERS_VIEW_OWN');
+
+        if (!viewAll && !viewOwn) return null;
+
+        let authFilter: any = {};
+        if (!viewAll && viewOwn) {
+            authFilter = {
+                OR: [
+                    { quotes: { some: { creatorId: session.user.id } } },
+                    { contracts: { some: { creatorId: session.user.id } } },
+                    { salesOrders: { some: { creatorId: session.user.id } } },
+                    { leads: { some: { creatorId: session.user.id } } }
+                ]
+            };
+        }
+
+        const customer = await prisma.customer.findFirst({
+            where: { id, ...authFilter },
             include: {
                 contacts: true,
                 quotes: {

@@ -4,13 +4,18 @@ import { PurchaseOrderDetailClient } from './PurchaseOrderDetailClient';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { getTemplatesByModule } from '@/app/email-templates/actions';
+import { buildViewFilter } from '@/lib/permissions';
 
 export default async function PurchaseOrderDetailPage({ params }: { params: { id: string } }) {
     const session = await getServerSession(authOptions);
-    if (!session) return null;
+    if (!session || !session.user) return null;
 
-    const order = await prisma.purchaseOrder.findUnique({
-        where: { id: params.id },
+    const perms = (session.user.permissions as string[]) || [];
+    const viewFilter = buildViewFilter(session.user.id, perms, 'PURCHASE_ORDERS', 'creatorId');
+    if (viewFilter.id === 'UNAUTHORIZED_NO_ACCESS') return notFound();
+
+    const order = await prisma.purchaseOrder.findFirst({
+        where: { id: params.id, ...viewFilter },
         include: {
             supplier: true,
             items: {

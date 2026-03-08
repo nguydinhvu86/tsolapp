@@ -8,7 +8,11 @@ import { getTemplatesByModule } from '@/app/email-templates/actions';
 export default async function TaskDetailPage({ params }: { params: { id: string } }) {
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
-    const isAdmin = session?.user?.role === 'ADMIN';
+    const perms = (session?.user?.permissions as string[]) || [];
+    const isViewAll = perms.includes('TASKS_VIEW_ALL');
+    const isViewOwn = perms.includes('TASKS_VIEW_OWN');
+
+    if (!isViewAll && !isViewOwn) return notFound();
 
     const task = await prisma.task.findUnique({
         where: { id: params.id },
@@ -48,8 +52,8 @@ export default async function TaskDetailPage({ params }: { params: { id: string 
 
     if (!task) return notFound();
 
-    // Security check: If not admin, verify user is creator, assignee, or observer
-    if (!isAdmin && userId) {
+    // Security check: If not View All, verify user is creator, assignee, or observer
+    if (!isViewAll && userId) {
         const isRelated = task.creatorId === userId ||
             task.assignees.some((a: any) => a.userId === userId) ||
             task.observers.some((o: any) => o.userId === userId);

@@ -6,7 +6,14 @@ import { notFound, redirect } from 'next/navigation';
 
 export default async function ProjectDetailPage({ params }: { params: { id: string } }) {
     const session = await getServerSession(authOptions);
-    if (!session) redirect('/login');
+    if (!session || !session.user) redirect('/login');
+
+    const userId = session.user.id;
+    const perms = (session.user.permissions as string[]) || [];
+    const isViewAll = perms.includes('TASKS_VIEW_ALL');
+    const isViewOwn = perms.includes('TASKS_VIEW_OWN');
+
+    if (!isViewAll && !isViewOwn) notFound();
 
     const project = await (prisma.task as any).findFirst({
         where: { id: params.id, isProject: true },
@@ -59,6 +66,19 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
     });
 
     if (!project) notFound();
+
+    if (!isViewAll && isViewOwn && userId) {
+        const isRelated = project.creatorId === userId ||
+            project.assignees.some((a: any) => a.userId === userId) ||
+            project.observers?.some((o: any) => o.userId === userId) ||
+            project.childTasks?.some((ct: any) =>
+                ct.creatorId === userId ||
+                ct.assignees.some((a: any) => a.userId === userId) ||
+                ct.observers?.some((o: any) => o.userId === userId)
+            );
+
+        if (!isRelated) notFound();
+    }
 
     const users = await prisma.user.findMany({
         select: { id: true, name: true, email: true, avatar: true },

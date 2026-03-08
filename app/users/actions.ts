@@ -82,6 +82,9 @@ export async function createUser(data: CreateUserData) {
         password: hashedPassword,
         permissions: JSON.stringify(data.permissions || []),
         isActive: true,
+        dashboardConfig: "{}",
+        sidebarOrder: "[]",
+        customerMenuOrder: "[]"
     };
 
     if (data.permissionGroupId) {

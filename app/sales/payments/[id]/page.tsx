@@ -7,10 +7,18 @@ import { getTemplatesByModule } from '@/app/email-templates/actions';
 
 export default async function SalesPaymentDetailPage({ params }: { params: { id: string } }) {
     const session = await getServerSession(authOptions);
-    if (!session) return null;
+    if (!session || !session.user) return null;
 
-    const payment = await prisma.salesPayment.findUnique({
-        where: { id: params.id },
+    const perms = (session.user.permissions as string[]) || [];
+    const isViewAll = perms.includes('SALES_PAYMENTS_VIEW_ALL');
+    const isViewOwn = perms.includes('SALES_PAYMENTS_VIEW_OWN');
+
+    if (!isViewAll && !isViewOwn) return notFound();
+
+    const authFilter = (!isViewAll && isViewOwn) ? { creatorId: session.user.id } : {};
+
+    const payment = await prisma.salesPayment.findFirst({
+        where: { id: params.id, ...authFilter },
         include: {
             customer: true,
             allocations: {

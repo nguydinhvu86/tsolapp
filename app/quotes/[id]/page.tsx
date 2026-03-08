@@ -3,10 +3,18 @@ import { notFound } from 'next/navigation';
 import { PrintButton } from '@/app/components/ui/PrintButton';
 import { formatCurrencyInHtml } from '@/lib/utils';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/authOptions';
+import { buildViewFilter } from '@/lib/permissions';
 
 export default async function QuotePrintPage({ params }: { params: { id: string } }) {
-    const quote = await prisma.quote.findUnique({
-        where: { id: params.id },
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) return notFound();
+    const viewFilter = buildViewFilter(session.user.id, session.user.permissions as string[], 'QUOTES', 'creatorId');
+    if (viewFilter.id === 'UNAUTHORIZED_NO_ACCESS') return notFound();
+
+    const quote = await prisma.quote.findFirst({
+        where: { id: params.id, ...viewFilter },
         include: {
             customer: true,
             template: true,
