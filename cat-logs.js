@@ -3,8 +3,8 @@ const conn = new Client();
 const password = 'P@ssw0rdVu';
 
 conn.on('ready', () => {
-    console.log('Fetching logs...');
-    const cmd = `/www/server/nodejs/v14.17.6/bin/pm2 logs inside.tsol.vn --err --lines 50 --nostream > /www/wwwroot/inside.tsol.vn/tsolapp/pm2-errors.txt`;
+    console.log('Downloading logs...');
+    const cmd = `cat ~/.pm2/logs/inside.tsol.vn-error.log | tail -n 150`;
     conn.exec(cmd, (err, stream) => {
         if (err) throw err;
         stream.on('close', (code, signal) => {

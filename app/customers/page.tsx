@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { CustomerClient } from './CustomerClient';
 
+export const dynamic = 'force-dynamic';
+
 export default async function CustomersPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
     const session = await getServerSession(authOptions);
     if (!session || !session.user || !session.user.id) {
@@ -50,7 +52,20 @@ export default async function CustomersPage({ searchParams }: { searchParams: { 
         prisma.customer.findMany({
             where: customerFilter,
             orderBy: { createdAt: 'desc' },
-            include: {
+            select: {
+                id: true,
+                customerCode: true,
+                name: true,
+                phone: true,
+                email: true,
+                address: true,
+                taxCode: true,
+                type: true,
+                industry: true,
+                status: true,
+                creatorId: true,
+                createdAt: true,
+                updatedAt: true,
                 salesInvoices: {
                     select: {
                         status: true,
@@ -66,6 +81,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: { 
         }),
         isAdminOrManager ? prisma.user.findMany({ select: { id: true, name: true, avatar: true }, orderBy: { name: 'asc' } }) : Promise.resolve([])
     ]);
+
     const customersWithStats = rawCustomers.map((c: any) => {
         // Calculate revenue from valid invoices
         const revenue = c.salesInvoices.reduce((sum: number, inv: any) => {
@@ -85,8 +101,10 @@ export default async function CustomersPage({ searchParams }: { searchParams: { 
 
         return {
             ...rest,
+            createdAt: rest.createdAt ? rest.createdAt.toISOString() : null,
+            updatedAt: rest.updatedAt ? rest.updatedAt.toISOString() : null,
             revenue,
-            lastActivityAt
+            lastActivityAt: lastActivityAt ? new Date(lastActivityAt).toISOString() : null
         };
     });
 
