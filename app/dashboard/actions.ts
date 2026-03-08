@@ -2,9 +2,25 @@
 
 import { prisma } from '@/lib/prisma';
 import { Quote, Contract, Handover, PaymentRequest, ContractAppendix, Dispatch } from '@prisma/client';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
+import { buildViewFilter } from '@/lib/permissions';
 
 export async function getDashboardStats(userId?: string, employeeId?: string) {
     try {
+        const session = await getServerSession(authOptions);
+        const perms = session?.user?.permissions || [];
+        const currentUserId = session?.user?.id || userId || '';
+
+        const estFilter = buildViewFilter(currentUserId, perms, 'SALES_ESTIMATES', 'creatorId');
+        const conFilter = buildViewFilter(currentUserId, perms, 'CONTRACTS', 'creatorId');
+        const hanFilter = buildViewFilter(currentUserId, perms, 'HANDOVERS', 'creatorId');
+        const payFilter = buildViewFilter(currentUserId, perms, 'PAYMENTS', 'creatorId');
+        const disFilter = buildViewFilter(currentUserId, perms, 'DISPATCHES', 'creatorId');
+        const cusFilter = buildViewFilter(currentUserId, perms, 'CUSTOMERS', 'creatorId');
+        const poFilter = buildViewFilter(currentUserId, perms, 'PURCHASE_ORDERS', 'creatorId');
+        const invFilter = buildViewFilter(currentUserId, perms, 'SALES_INVOICES', 'creatorId');
+
         const [
             estimates,
             contracts,
@@ -17,23 +33,23 @@ export async function getDashboardStats(userId?: string, employeeId?: string) {
             purchaseOrders,
             salesInvoices
         ] = await Promise.all([
-            prisma.salesEstimate.findMany({
+            estFilter.id === 'UNAUTHORIZED_NO_ACCESS' ? Promise.resolve([]) : prisma.salesEstimate.findMany({
                 select: { id: true, status: true, validUntil: true, date: true, createdAt: true, customer: { select: { name: true } }, code: true, totalAmount: true },
-                where: employeeId ? { OR: [{ creatorId: employeeId }, { salespersonId: employeeId }] } : {},
+                where: { AND: [estFilter as any, employeeId ? { OR: [{ creatorId: employeeId }, { salespersonId: employeeId }] } : {}] },
                 orderBy: { createdAt: 'desc' },
                 take: 500
             }),
-            prisma.contract.findMany({ select: { id: true, status: true, createdAt: true, customer: { select: { name: true } }, title: true }, orderBy: { createdAt: 'desc' }, take: 200 }),
-            prisma.handover.findMany({ select: { id: true, status: true, createdAt: true, customer: { select: { name: true } }, title: true }, orderBy: { createdAt: 'desc' }, take: 100 }),
-            prisma.paymentRequest.findMany({ select: { id: true, status: true, createdAt: true, customer: { select: { name: true } }, title: true }, orderBy: { createdAt: 'desc' }, take: 100 }),
-            prisma.contractAppendix.findMany({ select: { id: true, status: true, createdAt: true, contract: { select: { title: true } }, title: true }, orderBy: { createdAt: 'desc' }, take: 100 }),
-            prisma.dispatch.findMany({ select: { id: true, status: true, createdAt: true, customer: { select: { name: true } }, title: true }, orderBy: { createdAt: 'desc' }, take: 100 }),
-            prisma.customer.findMany({ select: { id: true, name: true, createdAt: true, taxCode: true, phone: true }, orderBy: { createdAt: 'desc' }, take: 10 }),
+            conFilter.id === 'UNAUTHORIZED_NO_ACCESS' ? Promise.resolve([]) : prisma.contract.findMany({ select: { id: true, status: true, createdAt: true, customer: { select: { name: true } }, title: true }, where: conFilter as any, orderBy: { createdAt: 'desc' }, take: 200 }),
+            hanFilter.id === 'UNAUTHORIZED_NO_ACCESS' ? Promise.resolve([]) : prisma.handover.findMany({ select: { id: true, status: true, createdAt: true, customer: { select: { name: true } }, title: true }, where: hanFilter as any, orderBy: { createdAt: 'desc' }, take: 100 }),
+            payFilter.id === 'UNAUTHORIZED_NO_ACCESS' ? Promise.resolve([]) : prisma.paymentRequest.findMany({ select: { id: true, status: true, createdAt: true, customer: { select: { name: true } }, title: true }, where: payFilter as any, orderBy: { createdAt: 'desc' }, take: 100 }),
+            conFilter.id === 'UNAUTHORIZED_NO_ACCESS' ? Promise.resolve([]) : prisma.contractAppendix.findMany({ select: { id: true, status: true, createdAt: true, contract: { select: { title: true } }, title: true }, where: { contract: conFilter as any }, orderBy: { createdAt: 'desc' }, take: 100 }),
+            disFilter.id === 'UNAUTHORIZED_NO_ACCESS' ? Promise.resolve([]) : prisma.dispatch.findMany({ select: { id: true, status: true, createdAt: true, customer: { select: { name: true } }, title: true }, where: disFilter as any, orderBy: { createdAt: 'desc' }, take: 100 }),
+            cusFilter.id === 'UNAUTHORIZED_NO_ACCESS' ? Promise.resolve([]) : prisma.customer.findMany({ select: { id: true, name: true, createdAt: true, taxCode: true, phone: true }, where: cusFilter as any, orderBy: { createdAt: 'desc' }, take: 10 }),
             userId ? prisma.task.findMany({ where: { OR: [{ assignees: { some: { userId: userId } } }, { creatorId: userId }], status: { not: 'COMPLETED' } }, orderBy: { dueDate: 'asc' }, take: 10, select: { id: true, title: true, dueDate: true, priority: true } }) : Promise.resolve([]),
-            prisma.purchaseOrder.findMany({ select: { id: true, status: true, totalAmount: true, createdAt: true, supplier: { select: { name: true } } }, orderBy: { createdAt: 'desc' }, take: 500 }),
-            prisma.salesInvoice.findMany({
+            poFilter.id === 'UNAUTHORIZED_NO_ACCESS' ? Promise.resolve([]) : prisma.purchaseOrder.findMany({ select: { id: true, status: true, totalAmount: true, createdAt: true, supplier: { select: { name: true } } }, where: poFilter as any, orderBy: { createdAt: 'desc' }, take: 500 }),
+            invFilter.id === 'UNAUTHORIZED_NO_ACCESS' ? Promise.resolve([]) : prisma.salesInvoice.findMany({
                 select: { id: true, status: true, totalAmount: true, paidAmount: true, createdAt: true, date: true, dueDate: true, code: true, customer: { select: { name: true } } },
-                where: employeeId ? { OR: [{ creatorId: employeeId }, { salespersonId: employeeId }] } : {},
+                where: { AND: [invFilter as any, employeeId ? { OR: [{ creatorId: employeeId }, { salespersonId: employeeId }] } : {}] },
                 orderBy: { createdAt: 'desc' },
                 take: 1000
             })

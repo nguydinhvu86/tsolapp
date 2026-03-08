@@ -14,16 +14,25 @@ export async function getTasks(filters?: any) {
 
     let whereClause: any = {};
 
+    const viewFilter = buildViewFilter(userId || '', session?.user?.permissions || [], 'TASKS', 'creatorId');
+
     // Base Privacy Filter
     if (!isAdmin && userId) {
-        whereClause = {
-            OR: [
-                { isPublic: true },
-                { creatorId: userId },
-                { assignees: { some: { userId: userId } } },
-                { observers: { some: { userId: userId } } }
-            ]
-        };
+        if (viewFilter.id === 'UNAUTHORIZED_NO_ACCESS') {
+            whereClause = { id: 'UNAUTHORIZED_NO_ACCESS' };
+        } else if (Object.keys(viewFilter).length > 0) {
+            // viewFilter returned something like { creatorId: userId }
+            // For tasks, VIEW_OWN means you can see if you created it OR are assigned OR observing OR it's public
+            whereClause = {
+                OR: [
+                    { isPublic: true },
+                    { creatorId: userId },
+                    { assignees: { some: { userId: userId } } },
+                    { observers: { some: { userId: userId } } }
+                ]
+            };
+        }
+        // If viewFilter is empty {}, it means VIEW_ALL, so whereClause stays {}
     }
 
     // Optionally apply filters in future iterations
@@ -601,43 +610,90 @@ export async function updateTaskLinks(taskId: string, linkData: { customerId?: s
     revalidatePath(`/tasks/${taskId}`);
 }
 
+import { buildViewFilter, ResourceId } from '@/lib/permissions';
+
 export async function searchEntities(type: string, query: string = '') {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user || !(session.user as any).id) return [];
+
+    const perms = (session.user as any).permissions || [];
+    const userId = (session.user as any).id;
+
     const q = query.toLowerCase();
+
+    const getRes = (resName: ResourceId) => {
+        const filter = buildViewFilter(userId, perms, resName, 'creatorId');
+        return filter.id === 'UNAUTHORIZED_NO_ACCESS' ? null : filter;
+    };
+
     switch (type) {
-        case 'CUSTOMER':
-            return prisma.customer.findMany({ where: { name: { contains: q } }, take: 5, select: { id: true, name: true } });
-        case 'CONTRACT':
-            return prisma.contract.findMany({ where: { title: { contains: q } }, take: 5, select: { id: true, title: true } });
-        case 'QUOTE':
-            return prisma.quote.findMany({ where: { title: { contains: q } }, take: 5, select: { id: true, title: true } });
-        case 'HANDOVER':
-            return prisma.handover.findMany({ where: { title: { contains: q } }, take: 5, select: { id: true, title: true } });
-        case 'PAYMENT_REQ':
-            return prisma.paymentRequest.findMany({ where: { title: { contains: q } }, take: 5, select: { id: true, title: true } });
-        case 'DISPATCH':
-            return prisma.dispatch.findMany({ where: { title: { contains: q } }, take: 5, select: { id: true, title: true } });
-        case 'SALES_ORDER':
-            return prisma.salesOrder.findMany({ where: { code: { contains: q } }, take: 5, select: { id: true, code: true } });
-        case 'SALES_INVOICE':
-            return prisma.salesInvoice.findMany({ where: { code: { contains: q } }, take: 5, select: { id: true, code: true } });
-        case 'SALES_ESTIMATE':
-            return prisma.salesEstimate.findMany({ where: { code: { contains: q } }, take: 5, select: { id: true, code: true } });
-        case 'SALES_PAYMENT':
-            return prisma.salesPayment.findMany({ where: { code: { contains: q } }, take: 5, select: { id: true, code: true } });
-        case 'LEAD':
+        case 'CUSTOMER': {
+            const f = getRes('CUSTOMERS');
+            return f ? prisma.customer.findMany({ where: { AND: [f as any, { name: { contains: q } }] }, take: 5, select: { id: true, name: true } }) : [];
+        }
+        case 'CONTRACT': {
+            const f = getRes('CONTRACTS');
+            return f ? prisma.contract.findMany({ where: { AND: [f as any, { title: { contains: q } }] }, take: 5, select: { id: true, title: true } }) : [];
+        }
+        case 'QUOTE': {
+            const f = getRes('QUOTES');
+            return f ? prisma.quote.findMany({ where: { AND: [f as any, { title: { contains: q } }] }, take: 5, select: { id: true, title: true } }) : [];
+        }
+        case 'HANDOVER': {
+            const f = getRes('HANDOVERS');
+            return f ? prisma.handover.findMany({ where: { AND: [f as any, { title: { contains: q } }] }, take: 5, select: { id: true, title: true } }) : [];
+        }
+        case 'PAYMENT_REQ': {
+            const f = getRes('PAYMENTS');
+            return f ? prisma.paymentRequest.findMany({ where: { AND: [f as any, { title: { contains: q } }] }, take: 5, select: { id: true, title: true } }) : [];
+        }
+        case 'DISPATCH': {
+            const f = getRes('DISPATCHES');
+            return f ? prisma.dispatch.findMany({ where: { AND: [f as any, { title: { contains: q } }] }, take: 5, select: { id: true, title: true } }) : [];
+        }
+        case 'SALES_ORDER': {
+            const f = getRes('SALES_ORDERS');
+            return f ? prisma.salesOrder.findMany({ where: { AND: [f as any, { code: { contains: q } }] }, take: 5, select: { id: true, code: true } }) : [];
+        }
+        case 'SALES_INVOICE': {
+            const f = getRes('SALES_INVOICES');
+            return f ? prisma.salesInvoice.findMany({ where: { AND: [f as any, { code: { contains: q } }] }, take: 5, select: { id: true, code: true } }) : [];
+        }
+        case 'SALES_ESTIMATE': {
+            const f = getRes('SALES_ESTIMATES');
+            return f ? prisma.salesEstimate.findMany({ where: { AND: [f as any, { code: { contains: q } }] }, take: 5, select: { id: true, code: true } }) : [];
+        }
+        case 'SALES_PAYMENT': {
+            const f = getRes('SALES_PAYMENTS');
+            return f ? prisma.salesPayment.findMany({ where: { AND: [f as any, { code: { contains: q } }] }, take: 5, select: { id: true, code: true } }) : [];
+        }
+        case 'LEAD': {
             return prisma.lead.findMany({ where: { OR: [{ code: { contains: q } }, { name: { contains: q } }] }, take: 5, select: { id: true, name: true, code: true } });
-        case 'APPENDIX':
-            return prisma.contractAppendix.findMany({ where: { title: { contains: q } }, take: 5, select: { id: true, title: true } });
-        case 'SUPPLIER':
-            return prisma.supplier.findMany({ where: { OR: [{ code: { contains: q } }, { name: { contains: q } }] }, take: 5, select: { id: true, name: true, code: true } });
-        case 'EXPENSE':
-            return prisma.expense.findMany({ where: { OR: [{ code: { contains: q } }, { description: { contains: q } }] }, take: 5, select: { id: true, description: true, code: true } });
-        case 'PURCHASE_ORDER':
-            return prisma.purchaseOrder.findMany({ where: { code: { contains: q } }, take: 5, select: { id: true, code: true } });
-        case 'PURCHASE_BILL':
-            return prisma.purchaseBill.findMany({ where: { code: { contains: q } }, take: 5, select: { id: true, code: true } });
-        case 'PURCHASE_PAYMENT':
-            return prisma.purchasePayment.findMany({ where: { code: { contains: q } }, take: 5, select: { id: true, code: true } });
+        }
+        case 'APPENDIX': {
+            const f = getRes('CONTRACTS');
+            return f ? prisma.contractAppendix.findMany({ where: { AND: [{ contract: f as any }, { title: { contains: q } }] }, take: 5, select: { id: true, title: true } }) : [];
+        }
+        case 'SUPPLIER': {
+            const f = getRes('SUPPLIERS');
+            return f ? prisma.supplier.findMany({ where: { AND: [f as any, { OR: [{ code: { contains: q } }, { name: { contains: q } }] }] }, take: 5, select: { id: true, name: true, code: true } }) : [];
+        }
+        case 'EXPENSE': {
+            const f = getRes('SALES_EXPENSES');
+            return f ? prisma.expense.findMany({ where: { AND: [f as any, { OR: [{ code: { contains: q } }, { description: { contains: q } }] }] }, take: 5, select: { id: true, description: true, code: true } }) : [];
+        }
+        case 'PURCHASE_ORDER': {
+            const f = getRes('PURCHASE_ORDERS');
+            return f ? prisma.purchaseOrder.findMany({ where: { AND: [f as any, { code: { contains: q } }] }, take: 5, select: { id: true, code: true } }) : [];
+        }
+        case 'PURCHASE_BILL': {
+            const f = getRes('PURCHASE_BILLS');
+            return f ? prisma.purchaseBill.findMany({ where: { AND: [f as any, { code: { contains: q } }] }, take: 5, select: { id: true, code: true } }) : [];
+        }
+        case 'PURCHASE_PAYMENT': {
+            const f = getRes('PURCHASE_PAYMENTS');
+            return f ? prisma.purchasePayment.findMany({ where: { AND: [f as any, { code: { contains: q } }] }, take: 5, select: { id: true, code: true } }) : [];
+        }
         default:
             return [];
     }

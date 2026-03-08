@@ -23,12 +23,17 @@ export default function LoginPage() {
         setError('');
 
         try {
-            const res = await signIn('credentials', {
+            const payload: any = {
                 redirect: false,
                 email,
                 password,
-                token: token || undefined,
-            });
+            };
+
+            if (token) {
+                payload.token = token;
+            }
+
+            const res = await signIn('credentials', payload);
 
             if (res?.error) {
                 if (res.error === '2FA_REQUIRED') {
