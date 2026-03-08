@@ -53,17 +53,26 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
     const filteredOrders = useMemo(() => filterByDate(orders), [orders, startDate, endDate]);
 
     // --- Tab 1: Overview Data ---
-    const totalPurchases = filteredBills.reduce((sum, b) => sum + b.totalAmount, 0);
-    const totalPayments = filteredPayments.reduce((sum, p) => sum + p.amount, 0);
-    const totalDebt = suppliers.reduce((sum, s) => sum + s.totalDebt, 0);
+    const validFilteredBills = useMemo(() => filteredBills.filter(b => !['DRAFT', 'CANCELLED'].includes(b.status)), [filteredBills]);
+
+    const totalPurchases = validFilteredBills.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+    const totalPayments = filteredPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+
+    // Compute total debt dynamically from all valid bills and payments per supplier
+    const totalDebt = suppliers.reduce((sum, s) => {
+        const validSupplierBills = s.bills ? s.bills.filter((b: any) => !['DRAFT', 'CANCELLED'].includes(b.status)) : [];
+        const exactPurchases = validSupplierBills.reduce((acc: number, bill: any) => acc + (bill.totalAmount || 0), 0);
+        const exactPayments = validSupplierBills.reduce((acc: number, bill: any) => acc + (bill.paidAmount || 0), 0);
+        return sum + (exactPurchases - exactPayments);
+    }, 0);
 
     const timelineData = useMemo(() => {
         const dataMap = new Map();
 
-        filteredBills.forEach(b => {
+        validFilteredBills.forEach(b => {
             const dateStr = new Date(b.date).toISOString().split('T')[0];
             if (!dataMap.has(dateStr)) dataMap.set(dateStr, { date: dateStr, 'Mua Hàng': 0, 'Thanh Toán': 0 });
-            dataMap.get(dateStr)['Mua Hàng'] += b.totalAmount;
+            dataMap.get(dateStr)['Mua Hàng'] += (b.totalAmount || 0);
         });
 
         filteredPayments.forEach(p => {
@@ -85,19 +94,23 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
         const map = new Map();
 
         suppliers.forEach(s => {
+            const validSupplierBills = s.bills ? s.bills.filter((b: any) => !['DRAFT', 'CANCELLED'].includes(b.status)) : [];
+            const exactPurchases = validSupplierBills.reduce((acc: number, bill: any) => acc + (bill.totalAmount || 0), 0);
+            const exactPayments = validSupplierBills.reduce((acc: number, bill: any) => acc + (bill.paidAmount || 0), 0);
+
             map.set(s.id, {
                 id: s.id,
                 code: s.code,
                 name: s.name,
                 totalPurchased: 0,
                 totalPaid: 0,
-                currentDebt: s.totalDebt
+                currentDebt: exactPurchases - exactPayments
             });
         });
 
-        filteredBills.forEach(b => {
+        validFilteredBills.forEach(b => {
             if (b.supplierId && map.has(b.supplierId)) {
-                map.get(b.supplierId).totalPurchased += b.totalAmount;
+                map.get(b.supplierId).totalPurchased += (b.totalAmount || 0);
             }
         });
 
@@ -134,7 +147,7 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
     const productReportData = useMemo(() => {
         const map = new Map();
 
-        filteredBills.forEach(bill => {
+        validFilteredBills.forEach(bill => {
             if (bill.items && Array.isArray(bill.items)) {
                 bill.items.forEach((item: any) => {
                     const prodId = item.productId;

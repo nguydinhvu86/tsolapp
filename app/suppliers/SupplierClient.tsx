@@ -34,7 +34,19 @@ export function SupplierClient({ initialSuppliers }: { initialSuppliers: any[] }
 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const filteredSuppliers = suppliers.filter(s =>
+    const computedSuppliers = React.useMemo(() => {
+        return suppliers.map(s => {
+            const validBills = s.bills ? s.bills.filter((b: any) => !['DRAFT', 'CANCELLED'].includes(b.status)) : [];
+            const exactPurchases = validBills.reduce((acc: number, b: any) => acc + (b.totalAmount || 0), 0);
+            const exactPayments = (s.payments || []).reduce((acc: number, p: any) => acc + (p.amount || 0), 0);
+            return {
+                ...s,
+                computedDebt: exactPurchases - exactPayments
+            };
+        });
+    }, [suppliers]);
+
+    const filteredSuppliers = computedSuppliers.filter(s =>
         s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (s.code && s.code.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (s.phone && s.phone.includes(searchQuery))
@@ -44,8 +56,8 @@ export function SupplierClient({ initialSuppliers }: { initialSuppliers: any[] }
         let sortableItems = [...filteredSuppliers];
         if (sortConfig !== null) {
             sortableItems.sort((a, b) => {
-                let aVal = a[sortConfig.key];
-                let bVal = b[sortConfig.key];
+                let aVal = sortConfig.key === 'totalDebt' ? a.computedDebt : a[sortConfig.key];
+                let bVal = sortConfig.key === 'totalDebt' ? b.computedDebt : b[sortConfig.key];
 
                 // Handle nulls/undefined
                 if (aVal === null || aVal === undefined) aVal = '';
@@ -104,7 +116,7 @@ export function SupplierClient({ initialSuppliers }: { initialSuppliers: any[] }
         try {
             if (editingSupplier) {
                 const updated = await updateSupplier(editingSupplier.id, formData);
-                setSuppliers(suppliers.map(s => s.id === updated.id ? { ...updated, totalDebt: s.totalDebt } : s));
+                setSuppliers(suppliers.map(s => s.id === updated.id ? { ...updated, bills: s.bills, payments: s.payments } : s));
                 setEditingSupplier(null);
             } else {
                 const created = await createSupplier(formData);
@@ -169,7 +181,7 @@ export function SupplierClient({ initialSuppliers }: { initialSuppliers: any[] }
                         <div className="stat-info">
                             <span className="stat-title">Tổng Công Nợ</span>
                             <span className="stat-value">
-                                {formatMoney(suppliers.reduce((sum, s) => sum + (s.totalDebt || 0), 0))}
+                                {formatMoney(computedSuppliers.reduce((sum, s) => sum + (s.computedDebt || 0), 0))}
                             </span>
                         </div>
                     </div>
@@ -219,8 +231,8 @@ export function SupplierClient({ initialSuppliers }: { initialSuppliers: any[] }
                                         {supplier.email && <div className="flex items-center gap-1"><Mail size={14} /> {supplier.email}</div>}
                                     </td>
                                     <td className="text-right">
-                                        <span className={`font-semibold ${supplier.totalDebt > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
-                                            {formatMoney(supplier.totalDebt || 0)}
+                                        <span className={`font-semibold ${supplier.computedDebt > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
+                                            {formatMoney(supplier.computedDebt || 0)}
                                         </span>
                                     </td>
                                     <td>
@@ -490,7 +502,7 @@ export function SupplierClient({ initialSuppliers }: { initialSuppliers: any[] }
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fef2f2', border: '1px solid #fca5a5', padding: '1rem', borderRadius: '8px', marginTop: '1.5rem' }}>
                                     <span style={{ fontWeight: 600, color: '#991b1b' }}>Tổng Công Nợ:</span>
-                                    <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#dc2626' }}>{formatMoney(viewingSupplier.totalDebt || 0)}</span>
+                                    <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#dc2626' }}>{formatMoney(viewingSupplier.computedDebt || 0)}</span>
                                 </div>
                             </div>
                             <div style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', background: 'var(--surface)' }}>

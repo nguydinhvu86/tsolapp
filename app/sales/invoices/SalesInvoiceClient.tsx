@@ -1012,8 +1012,8 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                             <td className="py-3">
                                 <div className="font-medium text-gray-900">{formatDate(inv.date)}</div>
                                 {inv.dueDate && (
-                                    <div className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                                        <Calendar size={12} /> HSD: {formatDate(inv.dueDate)}
+                                    <div className="flex items-center gap-1 text-xs text-red-500 mt-1" title="Hạn thanh toán">
+                                        <Calendar size={12} /> HTT: {formatDate(inv.dueDate)}
                                     </div>
                                 )}
                             </td>

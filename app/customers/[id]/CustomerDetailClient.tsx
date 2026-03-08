@@ -43,6 +43,14 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
         !['PAID', 'CANCELLED', 'DRAFT'].includes(i.status)
     ).length || 0;
 
+    // Dynamically calculate exact debt ignoring CANCELLED and DRAFT invoices
+    const validInvoices = customer.salesInvoices ? customer.salesInvoices.filter((i: any) => !['CANCELLED', 'DRAFT'].includes(i.status)) : [];
+
+    const exactSales = validInvoices.reduce((sum: number, inv: any) => sum + (Number(inv.totalAmount) || 0), 0);
+    const exactPayments = validInvoices.reduce((sum: number, inv: any) => sum + (Number(inv.paidAmount) || 0), 0);
+
+    const computedDebt = exactSales - exactPayments;
+
     const tabs = [
         { id: 'contacts', name: 'Người Liên Hệ', count: customer.contacts?.length || 0, icon: Users },
         { id: 'leads', name: 'Cơ hội Bán hàng', count: customer.leads?.length || 0, icon: Target },
@@ -171,7 +179,7 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                 <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(220, 38, 38, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#dc2626' }}><HandCoins size={16} /></div>
                                 <div>
                                     <p style={{ margin: 0, fontSize: '0.75rem', fontWeight: 600, color: '#dc2626', textTransform: 'uppercase' }}>Tổng Dư Nợ Hóa Đơn</p>
-                                    <p style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#dc2626' }}>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(customer.totalDebt || 0)}</p>
+                                    <p style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#dc2626' }}>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(computedDebt)}</p>
                                 </div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -496,7 +504,7 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                 variablesData={{
                     customerName: customer.name,
                     customerEmail: customer.email || '',
-                    totalDebt: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(customer.totalDebt || 0),
+                    totalDebt: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(computedDebt),
                 }}
                 onSend={async (emailData) => {
                     const res = await sendDebtConfirmationEmail(customer.id, emailData.to, emailData.subject, emailData.htmlBody);

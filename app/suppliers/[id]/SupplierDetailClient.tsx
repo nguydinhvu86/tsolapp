@@ -17,6 +17,13 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks }
     const [supplier, setSupplier] = useState(initialSupplier);
     const [activeTab, setActiveTab] = useState('orders');
 
+    const validBills = React.useMemo(() => supplier.bills ? supplier.bills.filter((b: any) => !['DRAFT', 'CANCELLED'].includes(b.status)) : [], [supplier.bills]);
+    const computedDebt = React.useMemo(() => {
+        const exactPurchases = validBills.reduce((acc: number, bill: any) => acc + (bill.totalAmount || 0), 0);
+        const exactPayments = (supplier.payments || []).reduce((acc: number, pay: any) => acc + (pay.amount || 0), 0);
+        return exactPurchases - exactPayments;
+    }, [validBills, supplier.payments]);
+
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
@@ -57,7 +64,7 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks }
         setIsSubmitting(true);
         try {
             const updated = await updateSupplier(supplier.id, formData);
-            setSupplier({ ...updated, orders: supplier.orders, bills: supplier.bills, payments: supplier.payments, totalDebt: supplier.totalDebt });
+            setSupplier({ ...updated, orders: supplier.orders, bills: supplier.bills, payments: supplier.payments });
             setIsEditModalOpen(false);
         } catch (error) {
             console.error(error);
@@ -313,7 +320,7 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks }
                                             <FileDown size={18} /> <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>Tổng Giá Trị Hóa Đơn</span>
                                         </div>
                                         <span style={{ display: 'block', fontSize: '1.5rem', fontWeight: 'bold', color: '#0f172a' }}>
-                                            {formatMoney(supplier.bills?.reduce((sum: number, bill: any) => sum + bill.totalAmount, 0) || 0)}
+                                            {formatMoney(validBills.reduce((sum: number, bill: any) => sum + (bill.totalAmount || 0), 0))}
                                         </span>
                                     </div>
                                     <div style={{ padding: '1.5rem', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '0.5rem' }}>
@@ -329,7 +336,7 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks }
                                             <DollarSign size={18} /> <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>Công Nợ Hiện Tại</span>
                                         </div>
                                         <span style={{ display: 'block', fontSize: '1.5rem', fontWeight: 'bold', color: '#dc2626' }}>
-                                            {formatMoney(supplier.totalDebt)}
+                                            {formatMoney(computedDebt)}
                                         </span>
                                     </div>
                                 </div>

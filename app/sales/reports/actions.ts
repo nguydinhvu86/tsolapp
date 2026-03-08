@@ -42,14 +42,34 @@ export async function getSalesReportData(employeeId?: string) {
     } : {};
 
     // Fetch Customers
+    // If there's an employee filter, we need to find customers who belong to that employee's invoices or estimates
+    const customerFilter = effectiveEmployeeId ? {
+        OR: [
+            { salesInvoices: { some: { OR: [{ creatorId: effectiveEmployeeId }, { salespersonId: effectiveEmployeeId }] } } },
+            { salesEstimates: { some: { OR: [{ creatorId: effectiveEmployeeId }, { salespersonId: effectiveEmployeeId }] } } }
+        ]
+    } : {};
+
     const customers = await prisma.customer.findMany({
+        where: customerFilter,
         select: {
             id: true,
             name: true,
             email: true,
             phone: true,
             taxCode: true,
-            totalDebt: true
+            totalDebt: true,
+            salesInvoices: {
+                where: {
+                    status: { notIn: ['DRAFT', 'CANCELLED'] },
+                    ...salesFilter
+                },
+                select: { totalAmount: true }
+            },
+            salesPayments: {
+                where: paymentFilter,
+                select: { amount: true }
+            }
         }
     });
 

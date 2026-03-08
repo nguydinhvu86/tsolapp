@@ -55,7 +55,12 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
     // --- Tab 1: Overview Data ---
     const totalSales = filteredInvoices.reduce((sum, b) => sum + b.totalAmount, 0);
     const totalPayments = filteredPayments.reduce((sum, p) => sum + p.amount, 0);
-    const totalDebt = customers.reduce((sum, c) => sum + c.totalDebt, 0);
+    const totalDebt = customers.reduce((sum, c) => {
+        const validInvoices = c.salesInvoices ? c.salesInvoices.filter((i: any) => !['CANCELLED', 'DRAFT'].includes(i.status)) : [];
+        const exactSales = validInvoices.reduce((s: number, inv: any) => s + (Number(inv.totalAmount) || 0), 0);
+        const exactPayments = validInvoices.reduce((s: number, inv: any) => s + (Number(inv.paidAmount) || 0), 0);
+        return sum + (exactSales - exactPayments);
+    }, 0);
     const totalExpenses = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
 
     const timelineData = useMemo(() => {
@@ -96,13 +101,19 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
         const employeeId = searchParams?.get('employeeId');
 
         customers.forEach(currentCustomer => {
+            // Determine exact debt dynamically by summing all valid invoices minus payments
+            const validInvoices = currentCustomer.salesInvoices ? currentCustomer.salesInvoices.filter((i: any) => !['CANCELLED', 'DRAFT'].includes(i.status)) : [];
+            const exactSales = validInvoices.reduce((sum: number, inv: any) => sum + (Number(inv.totalAmount) || 0), 0);
+            const exactPayments = validInvoices.reduce((sum: number, inv: any) => sum + (Number(inv.paidAmount) || 0), 0);
+            const exactDebt = exactSales - exactPayments;
+
             map.set(currentCustomer.id, {
                 id: currentCustomer.id,
                 code: currentCustomer.taxCode || 'N/A',
                 name: currentCustomer.name,
                 totalPurchased: 0,
                 totalPaid: 0,
-                currentDebt: currentCustomer.totalDebt
+                currentDebt: exactDebt
             });
         });
 
