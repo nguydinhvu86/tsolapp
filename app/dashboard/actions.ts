@@ -3,7 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { Quote, Contract, Handover, PaymentRequest, ContractAppendix, Dispatch } from '@prisma/client';
 
-export async function getDashboardStats(userId?: string) {
+export async function getDashboardStats(userId?: string, employeeId?: string) {
     try {
         const [
             estimates,
@@ -17,7 +17,12 @@ export async function getDashboardStats(userId?: string) {
             purchaseOrders,
             salesInvoices
         ] = await Promise.all([
-            prisma.salesEstimate.findMany({ select: { id: true, status: true, validUntil: true, date: true, createdAt: true, customer: { select: { name: true } }, code: true, totalAmount: true }, orderBy: { createdAt: 'desc' }, take: 500 }),
+            prisma.salesEstimate.findMany({
+                select: { id: true, status: true, validUntil: true, date: true, createdAt: true, customer: { select: { name: true } }, code: true, totalAmount: true },
+                where: employeeId ? { OR: [{ creatorId: employeeId }, { salespersonId: employeeId }] } : {},
+                orderBy: { createdAt: 'desc' },
+                take: 500
+            }),
             prisma.contract.findMany({ select: { id: true, status: true, createdAt: true, customer: { select: { name: true } }, title: true }, orderBy: { createdAt: 'desc' }, take: 200 }),
             prisma.handover.findMany({ select: { id: true, status: true, createdAt: true, customer: { select: { name: true } }, title: true }, orderBy: { createdAt: 'desc' }, take: 100 }),
             prisma.paymentRequest.findMany({ select: { id: true, status: true, createdAt: true, customer: { select: { name: true } }, title: true }, orderBy: { createdAt: 'desc' }, take: 100 }),
@@ -26,7 +31,12 @@ export async function getDashboardStats(userId?: string) {
             prisma.customer.findMany({ select: { id: true, name: true, createdAt: true, taxCode: true, phone: true }, orderBy: { createdAt: 'desc' }, take: 10 }),
             userId ? prisma.task.findMany({ where: { OR: [{ assignees: { some: { userId: userId } } }, { creatorId: userId }], status: { not: 'COMPLETED' } }, orderBy: { dueDate: 'asc' }, take: 10, select: { id: true, title: true, dueDate: true, priority: true } }) : Promise.resolve([]),
             prisma.purchaseOrder.findMany({ select: { id: true, status: true, totalAmount: true, createdAt: true, supplier: { select: { name: true } } }, orderBy: { createdAt: 'desc' }, take: 500 }),
-            prisma.salesInvoice.findMany({ select: { id: true, status: true, totalAmount: true, paidAmount: true, createdAt: true, date: true, dueDate: true, code: true, customer: { select: { name: true } } }, orderBy: { createdAt: 'desc' }, take: 1000 })
+            prisma.salesInvoice.findMany({
+                select: { id: true, status: true, totalAmount: true, paidAmount: true, createdAt: true, date: true, dueDate: true, code: true, customer: { select: { name: true } } },
+                where: employeeId ? { OR: [{ creatorId: employeeId }, { salespersonId: employeeId }] } : {},
+                orderBy: { createdAt: 'desc' },
+                take: 1000
+            })
         ]);
 
         // Financial Aggregations
@@ -43,7 +53,21 @@ export async function getDashboardStats(userId?: string) {
             allExpenses
         ] = await Promise.all([
             prisma.salesPayment.findMany({
-                where: { date: { gte: startOfYear, lte: endOfYear } },
+                where: {
+                    date: { gte: startOfYear, lte: endOfYear },
+                    ...(employeeId ? {
+                        allocations: {
+                            some: {
+                                invoice: {
+                                    OR: [
+                                        { creatorId: employeeId },
+                                        { salespersonId: employeeId }
+                                    ]
+                                }
+                            }
+                        }
+                    } : {})
+                },
                 select: { amount: true, date: true }
             }),
             prisma.purchasePayment.findMany({

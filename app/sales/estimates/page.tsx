@@ -10,7 +10,7 @@ import SalesEstimateClient from './SalesEstimateClient';
 export default async function SalesEstimatesPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
     const session = await getServerSession(authOptions);
     const [estimates, customers, products, leads, nextCode, users] = await Promise.all([
-        getSalesEstimates(),
+        getSalesEstimates(typeof searchParams?.employeeId === 'string' ? searchParams.employeeId : undefined),
         getCustomers(),
         getProducts(),
         getLeads(),
@@ -34,6 +34,7 @@ export default async function SalesEstimatesPage({ searchParams }: { searchParam
                 initialAction={searchParams?.action}
                 initialCustomerId={searchParams?.customerId}
                 initialLeadId={searchParams?.leadId}
+                isAdminOrManager={session?.user?.role === 'ADMIN' || session?.user?.role === 'MANAGER'}
             />
         </div>
     );

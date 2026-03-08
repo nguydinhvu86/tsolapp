@@ -13,7 +13,7 @@ import { submitSalesInvoice, approveSalesInvoice, deleteSalesInvoice, updateSale
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { TagDisplay } from '@/app/components/ui/TagDisplay';
 
-export default function SalesInvoiceClient({ initialInvoices, customers, products, orders, nextCode, initialAction, initialCustomerId, users, currentUserId }: any) {
+export default function SalesInvoiceClient({ initialInvoices, customers, products, orders, nextCode, initialAction, initialCustomerId, users, currentUserId, isAdminOrManager }: any) {
     const router = useRouter();
     const [invoices, setInvoices] = useState(initialInvoices);
     const [isFormOpen, setIsFormOpen] = useState(initialAction === 'new');
@@ -663,10 +663,36 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         <Card className="p-6">
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-semibold">Danh sách Hóa Đơn (Phải Thu)</h2>
-                <Button onClick={() => isFormOpen ? setIsFormOpen(false) : handleOpenCreate()} className="flex items-center gap-2">
-                    {isFormOpen ? <X size={16} /> : <Plus size={16} />}
-                    {isFormOpen ? 'Hủy' : 'Tạo Hóa Đơn'}
-                </Button>
+                <div className="flex items-center gap-3">
+                    {isAdminOrManager && users && users.length > 0 && (
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-500 font-medium">Lọc nhân viên:</span>
+                            <select
+                                className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 outline-none focus:border-blue-500"
+                                defaultValue={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('employeeId') || '' : ''}
+                                onChange={(e) => {
+                                    const newEmployeeId = e.target.value;
+                                    const params = new URLSearchParams(window.location.search);
+                                    if (newEmployeeId) {
+                                        params.set('employeeId', newEmployeeId);
+                                    } else {
+                                        params.delete('employeeId');
+                                    }
+                                    router.push(`/sales/invoices?${params.toString()}`);
+                                }}
+                            >
+                                <option value="">Tất cả nhân viên</option>
+                                {users.map((u: any) => (
+                                    <option key={u.id} value={u.id}>{u.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+                    <Button onClick={() => isFormOpen ? setIsFormOpen(false) : handleOpenCreate()} className="flex items-center gap-2">
+                        {isFormOpen ? <X size={16} /> : <Plus size={16} />}
+                        {isFormOpen ? 'Hủy' : 'Tạo Hóa Đơn'}
+                    </Button>
+                </div>
             </div>
 
             <style dangerouslySetInnerHTML={{ __html: premiumCSS }} />

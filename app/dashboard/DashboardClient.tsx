@@ -297,7 +297,13 @@ function TodoListWidget() {
 import { useRouter } from 'next/navigation';
 import { AddEventModal } from './AddEventModal';
 
-export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices = [], savedConfig = "[]" }: { kpiData?: any, userTasks?: any[], quotes?: any[], invoices?: any[], savedConfig?: string }) {
+export function DashboardClient({
+    kpiData, userTasks = [], quotes = [], invoices = [], savedConfig = "[]",
+    users = [], currentEmployeeId = "", isAdminOrManager = false
+}: {
+    kpiData?: any, userTasks?: any[], quotes?: any[], invoices?: any[], savedConfig?: string,
+    users?: any[], currentEmployeeId?: string, isAdminOrManager?: boolean
+}) {
     const router = useRouter();
     const [tasks, setTasks] = useState<any[]>(userTasks);
 
@@ -426,12 +432,38 @@ export function DashboardClient({ kpiData, userTasks = [], quotes = [], invoices
                         <h2 className="text-3xl font-bold text-gray-800 tracking-tight">Bảng Điều Khiển</h2>
                         <p className="text-gray-600 mt-1">Tổng quan hoạt động doanh nghiệp</p>
                     </div>
-                    <button
-                        onClick={() => setIsCustomizeMode(!isCustomizeMode)}
-                        className={`px-4 py-2 rounded-xl font-medium text-sm transition-colors border ${isCustomizeMode ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
-                    >
-                        {isCustomizeMode ? 'Hoàn tất Tùy chỉnh ✓' : 'Tùy chỉnh Giao diện ⚙️'}
-                    </button>
+                    <div className="flex items-center gap-3">
+                        {isAdminOrManager && users && users.length > 0 && (
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm text-gray-500 font-medium">Hiển thị theo:</span>
+                                <select
+                                    className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                    value={currentEmployeeId || ''}
+                                    onChange={(e) => {
+                                        const newEmployeeId = e.target.value;
+                                        const params = new URLSearchParams(window.location.search);
+                                        if (newEmployeeId) {
+                                            params.set('employeeId', newEmployeeId);
+                                        } else {
+                                            params.delete('employeeId');
+                                        }
+                                        router.push(`/dashboard?${params.toString()}`);
+                                    }}
+                                >
+                                    <option value="">Tất cả nhân viên (Công ty)</option>
+                                    {users.map(u => (
+                                        <option key={u.id} value={u.id}>{u.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+                        <button
+                            onClick={() => setIsCustomizeMode(!isCustomizeMode)}
+                            className={`px-4 py-2 rounded-xl font-medium text-sm transition-colors border flex-shrink-0 ${isCustomizeMode ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                        >
+                            {isCustomizeMode ? 'Hoàn tất Tùy chỉnh ✓' : 'Tùy chỉnh Giao diện ⚙️'}
+                        </button>
+                    </div>
                 </div>
 
                 {isMounted ? (
