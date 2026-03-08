@@ -2,15 +2,20 @@ import { getSalesEstimates, getNextEstimateCode } from './actions';
 import { getCustomers } from '@/app/customers/actions';
 import { getProducts } from '@/app/inventory/actions';
 import { getLeads } from '@/app/sales/leads/actions';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/authOptions';
+import { prisma } from '@/lib/prisma';
 import SalesEstimateClient from './SalesEstimateClient';
 
 export default async function SalesEstimatesPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
-    const [estimates, customers, products, nextCode, leads] = await Promise.all([
+    const session = await getServerSession(authOptions);
+    const [estimates, customers, products, leads, nextCode, users] = await Promise.all([
         getSalesEstimates(),
         getCustomers(),
         getProducts(),
+        getLeads(),
         getNextEstimateCode(),
-        getLeads()
+        prisma.user.findMany({ select: { id: true, name: true, avatar: true }, orderBy: { name: 'asc' } })
     ]);
 
     return (
@@ -23,6 +28,8 @@ export default async function SalesEstimatesPage({ searchParams }: { searchParam
                 customers={customers}
                 products={products.filter((p: any) => p.isActive)}
                 leads={leads}
+                users={users}
+                currentUserId={session?.user?.id}
                 nextCode={nextCode}
                 initialAction={searchParams?.action}
                 initialCustomerId={searchParams?.customerId}

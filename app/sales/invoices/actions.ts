@@ -87,6 +87,7 @@ export async function submitSalesInvoice(creatorId: string, formData: any) {
                 taxAmount: formData.taxAmount,
                 totalAmount: formData.totalAmount,
                 creatorId: actualCreatorId,
+                salespersonId: formData.salespersonId || actualCreatorId,
                 items: {
                     create: formData.items.map((item: any) => ({
                         productId: item.productId || null,
@@ -162,6 +163,7 @@ export async function updateSalesInvoice(id: string, formData: any) {
                 subTotal: formData.subTotal,
                 taxAmount: formData.taxAmount,
                 totalAmount: formData.totalAmount,
+                salespersonId: formData.salespersonId || null,
                 items: {
                     deleteMany: {},
                     create: formData.items.map((item: any) => ({
@@ -182,6 +184,12 @@ export async function updateSalesInvoice(id: string, formData: any) {
         const changes: string[] = [];
         if (existingInvoice.totalAmount !== formData.totalAmount) {
             changes.push(`Tổng tiền: ${existingInvoice.totalAmount.toLocaleString('vi-VN')} đ ➔ ${formData.totalAmount.toLocaleString('vi-VN')} đ`);
+        }
+
+        if (existingInvoice.salespersonId !== formData.salespersonId) {
+            const oldUser = existingInvoice.salespersonId ? await prisma.user.findUnique({ where: { id: existingInvoice.salespersonId } }) : null;
+            const newUser = formData.salespersonId ? await prisma.user.findUnique({ where: { id: formData.salespersonId } }) : null;
+            changes.push(`Đổi Người bán từ **${oldUser?.name || 'Không có'}** sang **${newUser?.name || 'Không có'}**`);
         }
 
         const oldItemsStr = existingInvoice.items.map((i: any) => `${i.productId || i.customName}:${i.quantity}:${i.unitPrice}`).sort().join(',');
@@ -267,6 +275,7 @@ export async function getSalesInvoices() {
                 customer: true,
                 order: true,
                 creator: true,
+                salesperson: true,
                 items: {
                     include: { product: true }
                 }

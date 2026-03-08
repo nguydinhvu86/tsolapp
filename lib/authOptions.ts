@@ -42,6 +42,9 @@ export const authOptions: NextAuthOptions = {
                     if (!credentials.token) {
                         throw new Error("2FA_REQUIRED");
                     }
+                    // Set window to 10 (tolerates +/- 5 minutes clock drift)
+                    authenticator.options = { window: 10 };
+
                     const isValidToken = authenticator.verify({
                         token: credentials.token,
                         secret: user.twoFactorSecret!

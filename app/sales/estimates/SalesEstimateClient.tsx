@@ -13,7 +13,7 @@ import { submitSalesEstimate, updateSalesEstimateStatus, deleteSalesEstimate, up
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { TagDisplay } from '@/app/components/ui/TagDisplay';
 
-export default function SalesEstimateClient({ initialEstimates, customers, products, leads, nextCode, initialAction, initialCustomerId, initialLeadId }: any) {
+export default function SalesEstimateClient({ initialEstimates, customers, products, leads, nextCode, initialAction, initialCustomerId, initialLeadId, users, currentUserId }: any) {
     const router = useRouter();
     const [estimates, setEstimates] = useState(initialEstimates);
     const [isFormOpen, setIsFormOpen] = useState(initialAction === 'new');
@@ -49,6 +49,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         code: nextCode,
         customerId: initialCustomerId || '',
         leadId: initialLeadId || '',
+        salespersonId: currentUserId || '',
         date: new Date().toISOString().split('T')[0],
         validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         notes: '',
@@ -65,6 +66,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
             code: nextCode, // Assume nextCode persists or is updated elsewhere
             customerId: '',
             leadId: '',
+            salespersonId: currentUserId || '',
             date: new Date().toISOString().split('T')[0],
             validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
             notes: '',
@@ -104,6 +106,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
             code: est.code || '',
             customerId: est.customerId || '',
             leadId: est.leadId || '',
+            salespersonId: est.salespersonId || est.creatorId || currentUserId || '',
             date: est.date ? new Date(est.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
             validUntil: est.validUntil ? new Date(est.validUntil).toISOString().split('T')[0] : '',
             notes: est.notes || '',
@@ -146,6 +149,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         setFormData({
             code: nextCode,
             customerId: est.customerId || '',
+            salespersonId: currentUserId || '',
             date: new Date().toISOString().split('T')[0],
             validUntil: est.validUntil ? new Date(est.validUntil).toISOString().split('T')[0] : '',
             notes: est.notes || '',
@@ -589,10 +593,12 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                             </th>
                             <th className="text-left font-medium text-gray-500 pb-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('date')}>
                                 <div className="flex items-center gap-1">
-                                    Ngày {sortBy === 'date_asc' ? <ChevronUp size={14} /> : sortBy === 'date_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
+                                    Ngày <div className="text-xs text-gray-400 font-normal">(Tạo / Hết Hạn)</div>
+                                    {sortBy === 'date_asc' ? <ChevronUp size={14} /> : sortBy === 'date_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
                                 </div>
                             </th>
                             <th className="text-left font-medium text-gray-500 pb-3">Khách Hàng</th>
+                            <th className="text-left font-medium text-gray-500 pb-3">Người Báo Giá</th>
                             <th className="text-left font-medium text-gray-500 pb-3">Thẻ Quản Lý</th>
                             <th className="text-right font-medium text-gray-500 pb-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('amount')}>
                                 <div className="flex items-center justify-end gap-1">
@@ -614,6 +620,13 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                 </td>
                                 <td className="py-3 text-gray-600" suppressHydrationWarning>{formatDate(new Date(est.date))}</td>
                                 <td className="py-3">
+                                    {est.validUntil && (
+                                        <div className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                                            <Calendar size={12} /> HSD: {formatDate(est.validUntil)}
+                                        </div>
+                                    )}
+                                </td>
+                                <td className="py-3">
                                     {est.customerId ? (
                                         <Link href={`/customers/${est.customerId}`} className="font-medium text-gray-800 hover:text-primary hover:underline transition-colors block">
                                             {est.customer?.name}
@@ -621,6 +634,18 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                     ) : (
                                         est.customer?.name
                                     )}
+                                </td>
+                                <td className="py-3">
+                                    <div className="flex items-center gap-2">
+                                        {est.salesperson?.avatarUrl ? (
+                                            <img src={est.salesperson.avatarUrl} alt="Avatar" className="w-6 h-6 rounded-full object-cover" />
+                                        ) : (
+                                            <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600">
+                                                {(est.salesperson?.name || est.creator?.name || '?').charAt(0).toUpperCase()}
+                                            </div>
+                                        )}
+                                        <span className="text-sm font-medium text-slate-700">{est.salesperson?.name || est.creator?.name || 'Không rõ'}</span>
+                                    </div>
                                 </td>
                                 <td className="py-3">
                                     <TagDisplay tagsString={est.tags} />
@@ -743,21 +768,32 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                     placeholder="-- Chọn Cơ Hội --"
                                 />
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Ngày Báo Giá</label>
-                                <input
-                                    type="date" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white"
-                                    value={formData.date}
-                                    onChange={e => setFormData({ ...formData, date: e.target.value })}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Hiệu Lực Đến</label>
-                                <input
-                                    type="date" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white"
-                                    value={formData.validUntil}
-                                    onChange={e => setFormData({ ...formData, validUntil: e.target.value })}
-                                />
+                            <div className="col-span-2 grid grid-cols-3 gap-x-5">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Ngày Báo Giá</label>
+                                    <input
+                                        type="date" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white"
+                                        value={formData.date}
+                                        onChange={e => setFormData({ ...formData, date: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Hiệu Lực Đến</label>
+                                    <input
+                                        type="date" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white"
+                                        value={formData.validUntil}
+                                        onChange={e => setFormData({ ...formData, validUntil: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Người Báo Giá</label>
+                                    <SearchableSelect
+                                        options={users?.map((u: any) => ({ value: u.id, label: u.name })) || []}
+                                        value={formData.salespersonId}
+                                        onChange={val => setFormData({ ...formData, salespersonId: val })}
+                                        placeholder="-- Chọn Người --"
+                                    />
+                                </div>
                             </div>
                             <div className="col-span-2 grid grid-cols-2 gap-x-5">
                                 <div>

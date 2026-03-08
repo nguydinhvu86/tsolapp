@@ -92,10 +92,14 @@ model User {
   leaveRequests         LeaveRequest[]     @relation("UserLeaveRequests")
   approvedLeaveRequests LeaveRequest[]     @relation("ApprovedLeaveRequests")
 
-  // Library & Training (Knowledge Base)
-  createdDocuments Document[]        @relation("DocumentCreator")
-  documentComments DocumentComment[] @relation("DocumentCommenter")
-  documentNotes    DocumentNote[]    @relation("DocumentNoter")
+  // Documents (Library/Knowledge Base)
+  documents     Document[]        @relation("DocumentCreator")
+  docComments   DocumentComment[] @relation("DocumentCommenter")
+  docNotes      DocumentNote[]    @relation("DocumentNoter")
+
+  // Salesperson relations
+  salespersonEstimates SalesEstimate[] @relation("EstimateSalesperson")
+  salespersonInvoices  SalesInvoice[]  @relation("InvoiceSalesperson")
 }
 
 model SystemSetting {
@@ -859,6 +863,9 @@ model SalesEstimate {
   creatorId String
   creator   User   @relation("EstimateCreator", fields: [creatorId], references: [id])
 
+  salespersonId String?
+  salesperson   User?   @relation("EstimateSalesperson", fields: [salespersonId], references: [id])
+
   items        SalesEstimateItem[]
   activityLogs SalesEstimateActivityLog[]
   tasks        Task[]
@@ -965,6 +972,9 @@ model SalesInvoice {
 
   creatorId String
   creator   User   @relation("SalesInvoiceCreator", fields: [creatorId], references: [id])
+
+  salespersonId String?
+  salesperson   User?   @relation("InvoiceSalesperson", fields: [salespersonId], references: [id])
 
   items        SalesInvoiceItem[]
   allocations  SalesPaymentAllocation[]

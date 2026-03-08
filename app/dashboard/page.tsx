@@ -29,6 +29,8 @@ export default async function DashboardPage() {
         lastMonthInvoiceCount,
         currentMonthPayments,
         lastMonthPayments,
+        currentMonthDebt,
+        lastMonthDebt,
         userTasks
     ] = await Promise.all([
         prisma.salesInvoice.aggregate({
@@ -62,13 +64,31 @@ export default async function DashboardPage() {
         prisma.salesPayment.aggregate({
             _sum: { amount: true },
             where: {
-                date: { gte: currentMonthStart }
+                date: { gte: currentMonthStart },
+                status: { notIn: ['CANCELLED'] }
             }
         }),
         prisma.salesPayment.aggregate({
             _sum: { amount: true },
             where: {
-                date: { gte: lastMonthStart, lte: lastMonthEnd }
+                date: { gte: lastMonthStart, lte: lastMonthEnd },
+                status: { notIn: ['CANCELLED'] }
+            }
+        }),
+        // Công nợ phải thu: Chỉ tính các hóa đơn đã quá hạn hoặc tới hạn hôm nay (tính từ đầu tháng đến hiện tại)
+        prisma.salesInvoice.aggregate({
+            _sum: { totalAmount: true, paidAmount: true },
+            where: {
+                status: { notIn: ['DRAFT', 'CANCELLED', 'PAID'] },
+                dueDate: { gte: currentMonthStart, lte: now }
+            }
+        }),
+        // Công nợ phải thu kỳ trước: Chỉ tính các hóa đơn đã quá hạn hoặc tới hạn trong tháng trước
+        prisma.salesInvoice.aggregate({
+            _sum: { totalAmount: true, paidAmount: true },
+            where: {
+                status: { notIn: ['DRAFT', 'CANCELLED', 'PAID'] },
+                dueDate: { gte: lastMonthStart, lte: lastMonthEnd } // Tháng trước thì tất cả đều là quá khứ so với "now"
             }
         }),
         prisma.task.findMany({
@@ -96,8 +116,8 @@ export default async function DashboardPage() {
     const paymentsThisMonth = currentMonthPayments._sum.amount || 0;
     const paymentsLastMonth = lastMonthPayments._sum.amount || 0;
 
-    const debtThisMonth = Math.max(0, revenueThisMonth - paymentsThisMonth);
-    const debtLastMonth = Math.max(0, revenueLastMonth - paymentsLastMonth);
+    const debtThisMonth = (currentMonthDebt._sum.totalAmount || 0) - (currentMonthDebt._sum.paidAmount || 0);
+    const debtLastMonth = (lastMonthDebt._sum.totalAmount || 0) - (lastMonthDebt._sum.paidAmount || 0);
 
     // Lọc bỏ bớt các công việc định kỳ trong tương lai (chỉ giữ lại 1 việc gần nhất chưa xong của mỗi chuỗi)
     const activeRecurringIds = new Set<string>();

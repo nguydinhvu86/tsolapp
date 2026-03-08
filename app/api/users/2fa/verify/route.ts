@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
         }
 
+        authenticator.options = { window: 10 };
         const isValid = authenticator.verify({ token, secret });
 
         if (!isValid) {
