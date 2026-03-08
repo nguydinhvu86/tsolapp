@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Plus, Search, Eye, Trash2, Calendar, FileText, FileDown, CheckCircle, ArrowUpDown, Edit2 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { createPurchaseBill, approvePurchaseBill, deletePurchaseBill, updatePurchaseBill } from '@/app/purchasing/actions';
+import { createPurchaseBill, approvePurchaseBill, deletePurchaseBill, updatePurchaseBill, cancelPurchaseBill } from '@/app/purchasing/actions';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { TagDisplay } from '@/app/components/ui/TagDisplay';
 
@@ -393,6 +393,20 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
         }
     };
 
+    const handleCancel = async (id: string, code: string) => {
+        if (confirm(`Bạn có chắc chắn muốn HỦY Hóa Đơn ${code}?\n\nHành động này sẽ:\n- Hủy phiếu Nhập Kho tương ứng\n- Giảm lại công nợ NCC.\n\nLưu ý: Không thể hủy nếu hóa đơn đã có thanh toán.`)) {
+            setIsSubmitting(true);
+            try {
+                const updated = await cancelPurchaseBill(id);
+                setBills(bills.map(b => b.id === updated.id ? { ...b, status: updated.status, notes: updated.notes } : b));
+            } catch (error: any) {
+                alert(error.message || "Hủy thất bại. Hóa đơn có thể đã có thanh toán.");
+            } finally {
+                setIsSubmitting(false);
+            }
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -477,6 +491,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
             case 'APPROVED': return <span className="px-2 py-1 rounded bg-blue-100 text-blue-700 text-xs font-medium">Đã Duyệt (Nợ)</span>;
             case 'PARTIAL_PAID': return <span className="px-2 py-1 rounded bg-amber-100 text-amber-700 text-xs font-medium">Thanh toán 1 phần</span>;
             case 'PAID': return <span className="px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-medium">Đã Thanh Toán</span>;
+            case 'CANCELLED': return <span className="px-2 py-1 rounded bg-red-100 text-red-700 text-xs font-medium line-through">Đã Hủy</span>;
             default: return <span className="px-2 py-1 rounded bg-gray-100 text-gray-700 text-xs font-medium">{status}</span>;
         }
     };
@@ -719,6 +734,15 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                                         <Trash2 size={18} />
                                                     </button>
                                                 </>
+                                            )}
+                                            {bill.status === 'APPROVED' && (
+                                                <button
+                                                    onClick={() => handleCancel(bill.id, bill.code)}
+                                                    className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded inline-block"
+                                                    title="Hủy Hóa Đơn & Nhập Kho"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
                                             )}
                                         </div>
                                     </td>

@@ -3,6 +3,8 @@ import { CustomerDetailClient } from './CustomerDetailClient';
 import { prisma } from '@/lib/prisma';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 
+export const dynamic = 'force-dynamic';
+
 import { getTemplatesByModule } from '@/app/email-templates/actions';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";

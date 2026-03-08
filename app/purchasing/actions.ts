@@ -23,7 +23,15 @@ export async function getSuppliers() {
     if (!session) throw new Error("Unauthorized");
 
     return prisma.supplier.findMany({
-        orderBy: { updatedAt: 'desc' }
+        orderBy: { updatedAt: 'desc' },
+        include: {
+            bills: {
+                where: {
+                    status: { notIn: ['DRAFT', 'CANCELLED'] } // Need this for dynamic debt
+                }
+            },
+            payments: true
+        }
     });
 }
 
@@ -44,13 +52,11 @@ export async function getSupplier(id: string) {
             },
             bills: {
                 include: { creator: true },
-                orderBy: { date: 'desc' },
-                take: 10
+                orderBy: { date: 'desc' }
             },
             payments: {
                 include: { creator: true },
-                orderBy: { date: 'desc' },
-                take: 10
+                orderBy: { date: 'desc' }
             }
         }
     });
@@ -482,6 +488,76 @@ export async function deletePurchaseBill(id: string) {
 
     revalidatePath('/purchasing/bills');
     return true;
+}
+
+export async function cancelPurchaseBill(id: string) {
+    const user = await getUser();
+
+    return prisma.$transaction(async (tx: any) => {
+        const bill = await tx.purchaseBill.findUnique({
+            where: { id },
+            include: { items: true, allocations: true, supplier: true }
+        });
+
+        if (!bill) throw new Error("Không tìm thấy hóa đơn này");
+        if (bill.status === 'CANCELLED') throw new Error("Hóa đơn đã bị hủy từ trước");
+        if (bill.status === 'PAID' || bill.status === 'PARTIAL_PAID') {
+            throw new Error("Hóa đơn đang có phiếu chi thanh toán. Vui lòng hủy phiếu chi liên quan trước khi hủy hóa đơn.");
+        }
+        if (bill.allocations && bill.allocations.length > 0) {
+            throw new Error("Hóa đơn này đã được phân bổ thanh toán. Vui lòng gỡ hoặc hủy phiếu thu trước.");
+        }
+
+        if (bill.status === 'APPROVED') {
+            // Find related inventory transaction
+            const invTxCode = `IN-${bill.code}`;
+            const invTx = await tx.inventoryTransaction.findUnique({
+                where: { code: invTxCode },
+                include: { items: true }
+            });
+
+            if (invTx && invTx.status === 'COMPLETED') {
+                // Revert inventory quantities
+                for (const item of invTx.items) {
+                    const inventory = await tx.inventory.findUnique({
+                        where: {
+                            productId_warehouseId: {
+                                productId: item.productId,
+                                warehouseId: invTx.toWarehouseId
+                            }
+                        }
+                    });
+
+                    if (inventory && inventory.quantity >= item.quantity) {
+                        await tx.inventory.update({
+                            where: { id: inventory.id },
+                            data: { quantity: inventory.quantity - item.quantity }
+                        });
+                    }
+                }
+                // Mark inventory transaction as cancelled
+                await tx.inventoryTransaction.update({
+                    where: { id: invTx.id },
+                    data: { status: 'CANCELLED', notes: `${invTx.notes || ''} (Đã hủy do hủy hóa đơn mua hàng)` }
+                });
+            }
+
+            // Reverse Supplier Debt
+            await tx.supplier.update({
+                where: { id: bill.supplierId },
+                data: { totalDebt: Math.max(0, bill.supplier.totalDebt - bill.totalAmount) }
+            });
+        }
+
+        // Add an activity log or just update status
+        const updatedBill = await tx.purchaseBill.update({
+            where: { id },
+            data: { status: 'CANCELLED', notes: `${bill.notes || ''}\n[Đã hủy bởi ${user.name}]`.trim() }
+        });
+
+        revalidatePath('/purchasing/bills');
+        return updatedBill;
+    });
 }
 
 // ---------------------------------------------------------------------------

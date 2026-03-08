@@ -187,7 +187,7 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
     };
 
     const handleDelete = async (id: string, code: string) => {
-        if (confirm(`Bạn có chắc chắn muốn xóa Phiếu Chi ${code}? hành động này không thể hoàn tác.`)) {
+        if (confirm(`Bạn có chắc chắn muốn HỦY/XÓA Phiếu Chi ${code}?\n\nHành động này không thể hoàn tác và sẽ hoàn lại công nợ tương ứng cho các Hóa đơn đã phân bổ.`)) {
             try {
                 await deletePurchasePayment(id);
                 setPayments(payments.filter(p => p.id !== id));
@@ -360,7 +360,7 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                                             <button
                                                 onClick={() => handleDelete(payment.id, payment.code)}
                                                 className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded inline-block"
-                                                title="Xóa"
+                                                title="Hủy / Xóa"
                                             >
                                                 <Trash2 size={18} />
                                             </button>

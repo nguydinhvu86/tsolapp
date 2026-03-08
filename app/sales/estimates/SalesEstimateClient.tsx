@@ -678,11 +678,11 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                         {est.code}
                                     </Link>
                                 </td>
-                                <td className="py-3 text-gray-600" suppressHydrationWarning>{formatDate(new Date(est.date))}</td>
                                 <td className="py-3">
+                                    <div className="text-gray-600 font-medium" suppressHydrationWarning>{formatDate(new Date(est.date))}</div>
                                     {est.validUntil && (
-                                        <div className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                                            <Calendar size={12} /> HSD: {formatDate(est.validUntil)}
+                                        <div className="text-xs text-red-500 mt-1 flex items-center gap-1" title="Hạn Báo Giá">
+                                            <Calendar size={12} /> HBG: {formatDate(est.validUntil)}
                                         </div>
                                     )}
                                 </td>
