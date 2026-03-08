@@ -18,7 +18,7 @@ const STATUSES = [
     { id: 'LOST', label: 'Thất bại', color: { bg: '#fee2e2', text: '#991b1b', border: '#fecaca', colBg: '#fef2f2' }, badgeClass: 'badge-danger' }
 ];
 
-export function LeadsClient({ leads, customers, users }: { leads: any[], customers: any[], users: any[] }) {
+export function LeadsClient({ leads, customers, users, isAdminOrManager }: { leads: any[], customers: any[], users: any[], isAdminOrManager?: boolean }) {
     const router = useRouter();
     const [viewMode, setViewMode] = useState<'kanban' | 'table'>('table');
     const [searchTerm, setSearchTerm] = useState('');
@@ -320,6 +320,31 @@ export function LeadsClient({ leads, customers, users }: { leads: any[], custome
                         title="Đến ngày"
                     />
                 </div>
+
+                {/* Employee Filter */}
+                {isAdminOrManager && users && users.length > 0 && (
+                    <div className="shrink-0 min-w-[200px]">
+                        <select
+                            className="h-[40px] w-full px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-700 outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+                            defaultValue={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('employeeId') || '' : ''}
+                            onChange={(e) => {
+                                const newEmployeeId = e.target.value;
+                                const params = new URLSearchParams(window.location.search);
+                                if (newEmployeeId) {
+                                    params.set('employeeId', newEmployeeId);
+                                } else {
+                                    params.delete('employeeId');
+                                }
+                                window.location.href = `/sales/leads?${params.toString()}`;
+                            }}
+                        >
+                            <option value="">Lọc theo: Tất cả nhân viên</option>
+                            {users.map((u: any) => (
+                                <option key={u.id} value={u.id}>{u.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
 
                 {/* Sort By Dropdown */}
                 <div className="shrink-0 min-w-[170px]">

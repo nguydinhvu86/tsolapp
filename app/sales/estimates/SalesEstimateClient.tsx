@@ -574,11 +574,20 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                             onChange={e => setSearchQuery(e.target.value)}
                         />
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Calendar size={16} className="text-gray-400" />
+                    {/* Create Button */}
+                    <div className="shrink-0">
+                        <button onClick={handleOpenCreate} className="btn-primary w-full sm:w-auto mt-4 sm:mt-0 font-semibold h-[40px] px-6 text-[13px] shadow-sm flex items-center justify-center transition-all hover:-translate-y-0.5" title="Tạo mới Báo giá">
+                            <Plus size={16} className="mr-2 shrink-0" />
+                            Tạo Báo Giá
+                        </button>
+                    </div>
+
+                    {/* Date Filter */}
+                    <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+                        <Calendar size={16} className="text-gray-400 hidden sm:block" />
                         <input
                             type="date"
-                            className="border border-slate-300 px-3 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 bg-white"
+                            className="h-[40px] flex-1 sm:w-auto px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-700 outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                             value={dateFrom}
                             onChange={e => setDateFrom(e.target.value)}
                             title="Từ ngày"
@@ -586,12 +595,37 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                         <span className="text-gray-400">-</span>
                         <input
                             type="date"
-                            className="border border-slate-300 px-3 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 bg-white"
+                            className="h-[40px] flex-1 sm:w-auto px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-700 outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                             value={dateTo}
                             onChange={e => setDateTo(e.target.value)}
                             title="Đến ngày"
                         />
                     </div>
+
+                    {/* Employee Filter */}
+                    {isAdminOrManager && users && users.length > 0 && (
+                        <div className="shrink-0 min-w-[200px] w-full sm:w-auto">
+                            <select
+                                className="h-[40px] w-full px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-700 outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+                                defaultValue={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('employeeId') || '' : ''}
+                                onChange={(e) => {
+                                    const newEmployeeId = e.target.value;
+                                    const params = new URLSearchParams(window.location.search);
+                                    if (newEmployeeId) {
+                                        params.set('employeeId', newEmployeeId);
+                                    } else {
+                                        params.delete('employeeId');
+                                    }
+                                    window.location.href = `/sales/estimates?${params.toString()}`;
+                                }}
+                            >
+                                <option value="">Lọc theo: Tất cả nhân viên</option>
+                                {users.map((u: any) => (
+                                    <option key={u.id} value={u.id}>{u.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
                     <div className="flex items-center gap-2 min-w-[200px]">
                         <select
                             className="border border-slate-300 px-3 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 w-full bg-white cursor-pointer"

@@ -2,14 +2,27 @@ import { getSalesOrders, getNextOrderCode } from './actions';
 import { getCustomers } from '@/app/customers/actions';
 import { getProducts } from '@/app/inventory/actions';
 import SalesOrderClient from './SalesOrderClient';
+import { getServerSession } from 'next-auth';
+import { authOptions } from "@/lib/authOptions";
+
+export const dynamic = 'force-dynamic';
 
 export default async function SalesOrdersPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
+    const session = await getServerSession(authOptions);
+    const isAdminOrManager = session?.user?.role === 'ADMIN' || session?.user?.role === 'MANAGER';
+
+    const employeeId = typeof searchParams?.employeeId === 'string' ? searchParams.employeeId : undefined;
+
+    // Pass employeeId to the action to apply RBAC filtering
     const [orders, customers, products, nextCode] = await Promise.all([
-        getSalesOrders(),
+        getSalesOrders(employeeId),
         getCustomers(),
         getProducts(),
         getNextOrderCode()
     ]);
+
+    const { prisma } = await import('@/lib/prisma');
+    const users = await prisma.user.findMany({ select: { id: true, name: true, avatar: true } });
 
     return (
         <div className="p-6">
@@ -21,8 +34,11 @@ export default async function SalesOrdersPage({ searchParams }: { searchParams: 
                 customers={customers}
                 products={products.filter((p: any) => p.isActive)}
                 nextCode={nextCode}
-                initialAction={searchParams?.action}
-                initialCustomerId={searchParams?.customerId}
+                initialAction={typeof searchParams?.action === 'string' ? searchParams.action : undefined}
+                initialCustomerId={typeof searchParams?.customerId === 'string' ? searchParams.customerId : undefined}
+                users={users}
+                currentUserId={session?.user?.id}
+                isAdminOrManager={isAdminOrManager}
             />
         </div>
     );

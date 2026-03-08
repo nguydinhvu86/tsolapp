@@ -12,7 +12,7 @@ import { submitSalesOrder, updateSalesOrderStatus, deleteSalesOrder, updateSales
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import Link from 'next/link';
 
-export default function SalesOrderClient({ initialOrders, customers, products, nextCode, initialAction, initialCustomerId }: any) {
+export default function SalesOrderClient({ initialOrders, customers, products, nextCode, initialAction, initialCustomerId, users, currentUserId, isAdminOrManager }: any) {
     const router = useRouter();
     const [orders, setOrders] = useState(initialOrders);
     const [isFormOpen, setIsFormOpen] = useState(initialAction === 'new');
@@ -448,6 +448,32 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                             title="Đến ngày"
                         />
                     </div>
+
+                    {/* Employee Filter */}
+                    {isAdminOrManager && users && users.length > 0 && (
+                        <div className="shrink-0 min-w-[200px] w-full sm:w-auto">
+                            <select
+                                className="h-[40px] w-full px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-700 outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+                                defaultValue={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('employeeId') || '' : ''}
+                                onChange={(e) => {
+                                    const newEmployeeId = e.target.value;
+                                    const params = new URLSearchParams(window.location.search);
+                                    if (newEmployeeId) {
+                                        params.set('employeeId', newEmployeeId);
+                                    } else {
+                                        params.delete('employeeId');
+                                    }
+                                    window.location.href = `/sales/orders?${params.toString()}`;
+                                }}
+                            >
+                                <option value="">Lọc theo: Tất cả nhân viên</option>
+                                {users.map((u: any) => (
+                                    <option key={u.id} value={u.id}>{u.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
                     <div className="flex items-center gap-2 min-w-[200px]">
                         <select
                             className="border border-slate-300 px-3 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 w-full bg-white cursor-pointer"
