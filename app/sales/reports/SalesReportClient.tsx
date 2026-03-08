@@ -91,6 +91,10 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
     const customerReportData = useMemo(() => {
         const map = new Map();
 
+        // Extract employeeId from URL if present
+        const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+        const employeeId = searchParams?.get('employeeId');
+
         customers.forEach(currentCustomer => {
             map.set(currentCustomer.id, {
                 id: currentCustomer.id,
@@ -115,7 +119,15 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
         });
 
         let result = Array.from(map.values())
-            .filter(c => c.totalPurchased > 0 || c.totalPaid > 0 || c.currentDebt > 0)
+            .filter(c => {
+                // If filtering by a specific employee, ONLY show customers that have actual transactions (purchases/payments) with this employee.
+                // Otherwise, it would list EVERY customer with a debt in the database.
+                if (employeeId) {
+                    return c.totalPurchased > 0 || c.totalPaid > 0;
+                }
+                // Default: show if there's any activity OR any outstanding debt
+                return c.totalPurchased > 0 || c.totalPaid > 0 || c.currentDebt > 0;
+            })
             .sort((a, b) => b.totalPurchased - a.totalPurchased);
 
         if (customerSearch.trim()) {

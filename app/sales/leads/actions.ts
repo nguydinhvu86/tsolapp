@@ -6,12 +6,26 @@ import { authOptions } from "@/lib/authOptions";
 import { sendEmailWithTracking } from '@/lib/mailer';
 
 // 1. Get List of Leads
-export async function getLeads() {
+export async function getLeads(employeeId?: string) {
     const session = await getServerSession(authOptions);
-    if (!session?.user) throw new Error('Unauthorized');
+    if (!session?.user?.id) throw new Error('Unauthorized');
+
+    const isAdminOrManager = session.user.role === 'ADMIN' || session.user.role === 'MANAGER';
+    let effectiveEmployeeId: string | undefined = undefined;
+
+    if (!isAdminOrManager) {
+        effectiveEmployeeId = session.user.id;
+    } else if (employeeId) {
+        effectiveEmployeeId = employeeId;
+    }
+
+    const whereClause = effectiveEmployeeId ? {
+        assignedToId: effectiveEmployeeId
+    } : {};
 
     try {
         const leads = await prisma.lead.findMany({
+            where: whereClause,
             include: {
                 assignedTo: { select: { id: true, name: true, avatar: true } },
                 customer: { select: { id: true, name: true, email: true, phone: true } }

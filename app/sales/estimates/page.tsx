@@ -6,14 +6,25 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { prisma } from '@/lib/prisma';
 import SalesEstimateClient from './SalesEstimateClient';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+    title: 'Báo Giá Kinh Doanh | ContractMgr',
+};
+
+export const dynamic = 'force-dynamic';
 
 export default async function SalesEstimatesPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
     const session = await getServerSession(authOptions);
+
+    // Accept URL parameter for filtering
+    const employeeId = typeof searchParams?.employeeId === 'string' ? searchParams.employeeId : undefined;
+
     const [estimates, customers, products, leads, nextCode, users] = await Promise.all([
-        getSalesEstimates(typeof searchParams?.employeeId === 'string' ? searchParams.employeeId : undefined),
+        getSalesEstimates(employeeId),
         getCustomers(),
         getProducts(),
-        getLeads(),
+        getLeads(employeeId),
         getNextEstimateCode(),
         prisma.user.findMany({ select: { id: true, name: true, avatar: true }, orderBy: { name: 'asc' } })
     ]);
@@ -31,9 +42,9 @@ export default async function SalesEstimatesPage({ searchParams }: { searchParam
                 users={users}
                 currentUserId={session?.user?.id}
                 nextCode={nextCode}
-                initialAction={searchParams?.action}
-                initialCustomerId={searchParams?.customerId}
-                initialLeadId={searchParams?.leadId}
+                initialAction={typeof searchParams?.action === 'string' ? searchParams.action : undefined}
+                initialCustomerId={typeof searchParams?.customerId === 'string' ? searchParams.customerId : undefined}
+                initialLeadId={typeof searchParams?.leadId === 'string' ? searchParams.leadId : undefined}
                 isAdminOrManager={session?.user?.role === 'ADMIN' || session?.user?.role === 'MANAGER'}
             />
         </div>
