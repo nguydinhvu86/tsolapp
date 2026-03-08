@@ -51,10 +51,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: { 
             {
                 salesOrders: {
                     some: {
-                        OR: [
-                            { creatorId: effectiveEmployeeId },
-                            { salespersonId: effectiveEmployeeId }
-                        ]
+                        creatorId: effectiveEmployeeId
                     }
                 }
             }
