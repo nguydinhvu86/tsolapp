@@ -11,16 +11,17 @@ import { Modal } from '@/app/components/ui/Modal';
 import { Input } from '@/app/components/ui/Input';
 import { SalesInvoiceNotes } from '@/app/components/sales/SalesInvoiceNotes';
 import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
-import { sendInvoiceEmail } from '../actions';
+import { sendInvoiceEmail, assignSalesInvoiceManagers, removeSalesInvoiceManager } from '../actions';
 import { useSession } from 'next-auth/react';
-import { Mail } from 'lucide-react';
+import { Mail, UserCheck } from 'lucide-react';
+import { DocumentManagersPanel } from '@/app/components/shared/DocumentManagersPanel';
 import { EmailLogTable } from '@/app/components/ui/EmailLogTable';
 
 export default function SalesInvoiceDetailClient({ initialData, customers, products, users, emailTemplates }: any) {
     const router = useRouter();
     const { data: session } = useSession();
     const [invoice, setInvoice] = useState(initialData);
-    const [activeTab, setActiveTab] = useState<'items' | 'emailLogs'>('items');
+    const [activeTab, setActiveTab] = useState<'items' | 'emailLogs' | 'managers'>('items');
     const [copied, setCopied] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [paymentData, setPaymentData] = useState({ amount: 0, method: 'BANK_TRANSFER', notes: '' });
@@ -441,6 +442,28 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                                     {invoice.emailLogs?.length || 0}
                                 </span>
                             </button>
+                            <button
+                                onClick={() => setActiveTab('managers')}
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '1rem 1.25rem',
+                                    fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer',
+                                    backgroundColor: 'transparent',
+                                    border: 'none',
+                                    borderBottom: activeTab === 'managers' ? '2px solid #4f46e5' : '2px solid transparent',
+                                    color: activeTab === 'managers' ? '#4f46e5' : '#64748b',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                <UserCheck size={16} />
+                                Người Phụ Trách
+                                <span style={{
+                                    backgroundColor: activeTab === 'managers' ? '#e0e7ff' : '#f1f5f9',
+                                    color: activeTab === 'managers' ? '#4f46e5' : '#64748b',
+                                    padding: '0.125rem 0.5rem', borderRadius: '1rem', fontSize: '0.75rem', fontWeight: 600
+                                }}>
+                                    {invoice.managers?.length || 0}
+                                </span>
+                            </button>
                         </div>
 
                         <div style={{ padding: '1.5rem' }}>
@@ -506,6 +529,17 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
 
                             {activeTab === 'emailLogs' && (
                                 <EmailLogTable emailLogs={invoice.emailLogs || []} />
+                            )}
+
+                            {activeTab === 'managers' && (
+                                <DocumentManagersPanel
+                                    documentId={invoice.id}
+                                    managers={invoice.managers || []}
+                                    users={users || []}
+                                    currentUserRole={session?.user?.role || 'USER'}
+                                    onAssign={assignSalesInvoiceManagers}
+                                    onRemove={removeSalesInvoiceManager}
+                                />
                             )}
                         </div>
                     </div>

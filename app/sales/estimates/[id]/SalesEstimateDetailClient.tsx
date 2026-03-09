@@ -10,14 +10,17 @@ import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import { Modal } from '@/app/components/ui/Modal';
 import { SalesEstimateActivityLog } from '@/app/components/sales/SalesEstimateActivityLog';
 import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
-import { sendEstimateEmail } from '../actions';
-import { Mail } from 'lucide-react';
+import { sendEstimateEmail, assignSalesEstimateManagers, removeSalesEstimateManager } from '../actions';
+import { Mail, UserCheck } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { DocumentManagersPanel } from '@/app/components/shared/DocumentManagersPanel';
 import { EmailLogTable } from '@/app/components/ui/EmailLogTable';
 
 export default function SalesEstimateDetailClient({ initialData, customers, products, users, emailTemplates }: any) {
     const router = useRouter();
+    const { data: session } = useSession();
     const [estimate, setEstimate] = useState(initialData);
-    const [activeTab, setActiveTab] = useState<'items' | 'emailLogs'>('items');
+    const [activeTab, setActiveTab] = useState<'items' | 'emailLogs' | 'managers'>('items');
     const [copied, setCopied] = useState(false);
     const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
     const [isConverting, setIsConverting] = useState(false);
@@ -282,6 +285,19 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                                     {estimate.emailLogs?.length || 0}
                                 </span>
                             </button>
+                            <button
+                                onClick={() => setActiveTab('managers')}
+                                style={{
+                                    flex: 1, padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                                    backgroundColor: 'transparent', border: 'none', borderBottom: activeTab === 'managers' ? '2px solid #6366f1' : '2px solid transparent',
+                                    color: activeTab === 'managers' ? '#4f46e5' : '#64748b', fontWeight: activeTab === 'managers' ? 600 : 500, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.2s'
+                                }}
+                            >
+                                <UserCheck size={16} /> Người Phụ Trách
+                                <span style={{ backgroundColor: activeTab === 'managers' ? '#e0e7ff' : '#f1f5f9', color: activeTab === 'managers' ? '#4f46e5' : '#64748b', padding: '0.1rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 600 }}>
+                                    {estimate.managers?.length || 0}
+                                </span>
+                            </button>
                         </div>
 
                         <div style={{ padding: '1.5rem' }}>
@@ -338,6 +354,17 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
 
                             {activeTab === 'emailLogs' && (
                                 <EmailLogTable emailLogs={estimate.emailLogs || []} />
+                            )}
+
+                            {activeTab === 'managers' && (
+                                <DocumentManagersPanel
+                                    documentId={estimate.id}
+                                    managers={estimate.managers || []}
+                                    users={users || []}
+                                    currentUserRole={session?.user?.role || 'USER'}
+                                    onAssign={assignSalesEstimateManagers}
+                                    onRemove={removeSalesEstimateManager}
+                                />
                             )}
 
                         </div>

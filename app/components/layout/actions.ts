@@ -39,8 +39,8 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
                     { quotes: { some: { creatorId: userId } } },
                     { contracts: { some: { creatorId: userId } } },
                     { leads: { some: { creatorId: userId } } },
-                    { salesInvoices: { some: { OR: [{ creatorId: userId }, { salespersonId: userId }] } } },
-                    { salesEstimates: { some: { OR: [{ creatorId: userId }, { salespersonId: userId }] } } },
+                    { salesInvoices: { some: { OR: [{ creatorId: userId }, { salespersonId: userId }, { managers: { some: { id: userId } } }] } } },
+                    { salesEstimates: { some: { OR: [{ creatorId: userId }, { salespersonId: userId }, { managers: { some: { id: userId } } }] } } },
                     { salesOrders: { some: { creatorId: userId } } }
                 ]
             };
@@ -76,7 +76,7 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
         }
 
         let estFilter: any = buildViewFilter(userId, perms, 'SALES_ESTIMATES', 'creatorId');
-        if (estFilter.creatorId) estFilter = { OR: [{ creatorId: userId }, { salespersonId: userId }] };
+        if (estFilter.creatorId) estFilter = { OR: [{ creatorId: userId }, { salespersonId: userId }, { managers: { some: { id: userId } } }] };
         if (estFilter.id !== 'UNAUTHORIZED_NO_ACCESS') {
             const estimates = await prisma.salesEstimate.findMany({
                 where: {
@@ -119,7 +119,7 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
         }
 
         let invFilter: any = buildViewFilter(userId, perms, 'SALES_INVOICES', 'creatorId');
-        if (invFilter.creatorId) invFilter = { OR: [{ creatorId: userId }, { salespersonId: userId }] };
+        if (invFilter.creatorId) invFilter = { OR: [{ creatorId: userId }, { salespersonId: userId }, { managers: { some: { id: userId } } }] };
         if (invFilter.id !== 'UNAUTHORIZED_NO_ACCESS') {
             const invoices = await prisma.salesInvoice.findMany({
                 where: {

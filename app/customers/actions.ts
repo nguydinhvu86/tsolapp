@@ -88,7 +88,8 @@ export async function getCustomers() {
                 { quotes: { some: { creatorId: session.user.id } } },
                 { contracts: { some: { creatorId: session.user.id } } },
                 { salesOrders: { some: { creatorId: session.user.id } } },
-                { leads: { some: { creatorId: session.user.id } } }
+                { leads: { some: { creatorId: session.user.id } } },
+                { managers: { some: { id: session.user.id } } }
             ]
         },
         orderBy: { name: 'asc' }

@@ -15,15 +15,11 @@ export default async function SalesEstimateDetailPage({ params }: { params: { id
     if (!session || !session.user) return notFound();
 
     const perms = (session.user.permissions as string[]) || [];
-    const viewFilter = buildViewFilter(session.user.id, perms, 'SALES_ESTIMATES', 'creatorId');
+    const viewFilter = buildViewFilter(session.user.id, perms, 'SALES_ESTIMATES', 'creatorId', true);
     if (viewFilter.id === 'UNAUTHORIZED_NO_ACCESS') return notFound();
 
-    // Sales Estimates explicitly check both creatorId and salespersonId in the list API, mirroring that here:
-    const isViewOwn = !perms.includes('SALES_ESTIMATES_VIEW_ALL') && perms.includes('SALES_ESTIMATES_VIEW_OWN');
-    const authFilter = isViewOwn ? { OR: [{ creatorId: session.user.id }, { salespersonId: session.user.id }] } : {};
-
     const estimate = await prisma.salesEstimate.findFirst({
-        where: { id, ...authFilter },
+        where: { id, ...viewFilter },
         include: {
             customer: true,
             creator: { select: { id: true, name: true, email: true } },
@@ -49,7 +45,8 @@ export default async function SalesEstimateDetailPage({ params }: { params: { id
                     observers: { include: { user: true } }
                 },
                 orderBy: { createdAt: 'desc' }
-            }
+            },
+            managers: true
         }
     });
 

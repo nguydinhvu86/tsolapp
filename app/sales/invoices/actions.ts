@@ -295,7 +295,8 @@ export async function getSalesInvoices(employeeId?: string) {
             whereClause = {
                 OR: [
                     { creatorId: session.user.id },
-                    { salespersonId: session.user.id }
+                    { salespersonId: session.user.id },
+                    { managers: { some: { id: session.user.id } } }
                 ]
             };
         }
@@ -828,4 +829,30 @@ export async function deleteSalesInvoiceNote(noteId: string) {
         console.error("Lỗi khi xóa ghi chú:", error);
         return { success: false, error: error.message };
     }
+}
+
+export async function assignSalesInvoiceManagers(invoiceId: string, userIds: string[]) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) throw new Error("Unauthorized");
+
+    const doc = await prisma.salesInvoice.update({
+        where: { id: invoiceId },
+        data: { managers: { connect: userIds.map(id => ({ id })) } }
+    });
+
+    revalidatePath(`/sales/invoices/${invoiceId}`);
+    return doc;
+}
+
+export async function removeSalesInvoiceManager(invoiceId: string, userId: string) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) throw new Error("Unauthorized");
+
+    const doc = await prisma.salesInvoice.update({
+        where: { id: invoiceId },
+        data: { managers: { disconnect: { id: userId } } }
+    });
+
+    revalidatePath(`/sales/invoices/${invoiceId}`);
+    return doc;
 }

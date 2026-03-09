@@ -116,9 +116,9 @@ export function HeaderAttendance() {
 
             let res;
             if (actionType === 'IN') {
-                res = await checkIn({ photoUrl: "Đã chụp ảnh (Base64 Hidden)", location, notes: "App-Check-in" });
+                res = await checkIn({ photoUrl, location, notes: "App-Check-in" });
             } else {
-                res = await checkOut({ photoUrl: "Đã chụp ảnh (Base64 Hidden)", location, notes: "App-Check-out" });
+                res = await checkOut({ photoUrl, location, notes: "App-Check-out" });
             }
 
             if (res.success) {

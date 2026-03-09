@@ -41,6 +41,9 @@ model User {
   currentPlatform       String?                // Thông tin thiết bị/trình duyệt đăng nhập gần nhất
   loginLogs             LoginLog[]             @relation("UserLoginLogs")
   managedCustomers      Customer[]             @relation("CustomerManagers")
+  managedSalesEstimates SalesEstimate[]        @relation("SalesEstimateManagers")
+  managedSalesInvoices  SalesInvoice[]         @relation("SalesInvoiceManagers")
+  managedDispatches     Dispatch[]             @relation("DispatchManagers")
   createdTasks          Task[]                 @relation("TaskCreator")
   completedTasks        Task[]                 @relation("TaskCompleter")
   assignedTasks         TaskAssignee[]
@@ -154,6 +157,7 @@ model Customer {
   salesPayments  SalesPayment[]
   expenses       Expense[]
   leads          Lead[]
+  leadSources    LeadSource[]
 
   notes        CustomerNote[]
   activityLogs CustomerActivityLog[]
@@ -366,6 +370,7 @@ model Dispatch {
   customer   Customer         @relation(fields: [customerId], references: [id])
   template   DispatchTemplate @relation(fields: [templateId], references: [id])
   tasks      Task[]
+  managers   User[]           @relation("DispatchManagers")
   createdAt  DateTime         @default(now())
   updatedAt  DateTime         @updatedAt
 }
@@ -886,6 +891,7 @@ model SalesEstimate {
   items        SalesEstimateItem[]
   activityLogs SalesEstimateActivityLog[]
   tasks        Task[]
+  managers     User[]                     @relation("SalesEstimateManagers")
 
   leadId String?
   lead   Lead?   @relation(fields: [leadId], references: [id], onDelete: SetNull)
@@ -999,6 +1005,7 @@ model SalesInvoice {
   invoiceNotes SalesInvoiceNote[]
   activityLogs SalesInvoiceActivityLog[]
   emailLogs    EmailLog[]
+  managers     User[]                    @relation("SalesInvoiceManagers")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1180,7 +1187,10 @@ model Lead {
   customerId String?
   customer   Customer? @relation(fields: [customerId], references: [id])
 
-  source String? // Nguồn khách hàng (Website, Tự tìm, Giới thiệu, Facebook...)
+  source   String? // Nguồn khách hàng dạng Text (lưu lại cho tương thích ngược)
+  sourceId String?
+  sourceEntity LeadSource? @relation(fields: [sourceId], references: [id])
+
   status String  @default("NEW") // Trạng thái Kanban: NEW, CONTACTED, QUALIFIED, PROPOSAL, WON, LOST
 
   estimatedValue    Float?    @default(0) // Giá trị ước tính
@@ -1202,6 +1212,21 @@ model Lead {
   tasks          Task[] // Công việc liên quan (gọi điện, hẹn gặp...)
   EmailLog       EmailLog[]
   salesEstimates SalesEstimate[]
+}
+
+model LeadSource {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?  @db.Text
+  isActive    Boolean  @default(true)
+  
+  customerId  String?
+  customer    Customer? @relation(fields: [customerId], references: [id])
+
+  leads       Lead[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model LeadForm {
@@ -1338,11 +1363,11 @@ model AttendanceRecord {
   date DateTime @db.Date // Ngày chấm công (chỉ lấy phần ngày, ko lấy giờ)
 
   checkInTime     DateTime?
-  checkInPhotoUrl String?
+  checkInPhotoUrl String? @db.LongText
   checkInLocation String?
 
   checkOutTime     DateTime?
-  checkOutPhotoUrl String?
+  checkOutPhotoUrl String? @db.LongText
   checkOutLocation String?
 
   status String  @default("PRESENT") // PRESENT, LATE, HALF_DAY, ABSENT
@@ -1364,10 +1389,12 @@ model LeaveRequest {
   startDate DateTime
   endDate   DateTime
   reason    String
+  imageUrl  String?  @db.LongText
   status    String   @default("PENDING") // PENDING, APPROVED, REJECTED
 
-  approverId String?
-  approver   User?   @relation("ApprovedLeaveRequests", fields: [approverId], references: [id])
+  approverId   String?
+  approver     User?   @relation("ApprovedLeaveRequests", fields: [approverId], references: [id])
+  approverNote String? @db.Text
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

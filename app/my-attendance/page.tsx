@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { getMyAttendanceHistory } from "@/app/hr/attendance/actions";
-import { Clock, CheckCircle, AlertCircle, Calendar, Filter, MapPin } from "lucide-react";
+import { Clock, CheckCircle, AlertCircle, Calendar, Filter, MapPin, Image as ImageIcon } from "lucide-react";
 import { Card } from "@/app/components/ui/Card";
 import { Table } from "@/app/components/ui/Table";
 
@@ -110,13 +110,14 @@ export default async function MyAttendancePage({
                             <th style={{ textAlign: 'center' }}>Giờ Vào (In)</th>
                             <th style={{ textAlign: 'center' }}>Giờ Ra (Out)</th>
                             <th>Vị Trí (Location)</th>
+                            <th style={{ textAlign: 'center' }}>Ảnh Xác Minh</th>
                             <th>Ghi Chú</th>
                         </tr>
                     </thead>
                     <tbody>
                         {records.length === 0 ? (
                             <tr>
-                                <td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
+                                <td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
                                     Không có dữ liệu điểm danh tháng này.
                                 </td>
                             </tr>
@@ -145,6 +146,21 @@ export default async function MyAttendancePage({
                                             {r.checkOutLocation && <div><MapPin size={12} className="inline mr-1 text-rose-600" />{r.checkOutLocation}</div>}
                                         </div>
                                     ) : '-'}
+                                </td>
+                                <td style={{ textAlign: 'center' }}>
+                                    <div className="flex flex-col items-center gap-2">
+                                        {r.checkInPhotoUrl && (
+                                            <a href={r.checkInPhotoUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-700 font-medium bg-emerald-50 px-2 py-1 rounded border border-emerald-100 transition-colors" title="Xem ảnh Check-in">
+                                                <ImageIcon size={14} /> In
+                                            </a>
+                                        )}
+                                        {r.checkOutPhotoUrl && (
+                                            <a href={r.checkOutPhotoUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-rose-600 hover:text-rose-700 font-medium bg-rose-50 px-2 py-1 rounded border border-rose-100 transition-colors" title="Xem ảnh Check-out">
+                                                <ImageIcon size={14} /> Out
+                                            </a>
+                                        )}
+                                        {(!r.checkInPhotoUrl && !r.checkOutPhotoUrl) && <span className="text-slate-300">-</span>}
+                                    </div>
                                 </td>
                                 <td style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
                                     {r.notes || '-'}

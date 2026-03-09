@@ -60,12 +60,21 @@ export function buildViewFilter(
     userId: string,
     permissions: string[],
     resource: ResourceId,
-    creatorField: string = 'creatorId'
+    creatorField: string = 'creatorId',
+    includeManagers: boolean = false
 ) {
     if (permissions.includes(`${resource}_VIEW_ALL`)) {
         return {}; // Can view everything
     }
     if (permissions.includes(`${resource}_VIEW_OWN`)) {
+        if (includeManagers) {
+            return {
+                OR: [
+                    { [creatorField]: userId },
+                    { managers: { some: { id: userId } } }
+                ]
+            };
+        }
         return { [creatorField]: userId }; // Can only view own
     }
     // If no view permission
