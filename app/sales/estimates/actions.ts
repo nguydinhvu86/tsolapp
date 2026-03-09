@@ -323,7 +323,8 @@ export async function getSalesEstimates(employeeId?: string) {
             whereClause = {
                 OR: [
                     { creatorId: session.user.id },
-                    { salespersonId: session.user.id }
+                    { salespersonId: session.user.id },
+                    { managers: { some: { id: session.user.id } } }
                 ]
             };
         }
@@ -620,4 +621,31 @@ export async function convertEstimateToOrder(estimateId: string) {
         console.error("Lỗi khi chuyển thành Đơn Đặt Hàng:", error);
         return { success: false, error: error.message };
     }
+}
+
+export async function assignSalesEstimateManagers(estimateId: string, userIds: string[]) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) throw new Error("Unauthorized");
+
+    const doc = await prisma.salesEstimate.update({
+        where: { id: estimateId },
+        data: { managers: { connect: userIds.map(id => ({ id })) } }
+    });
+
+    // Log activity optional
+    revalidatePath(`/sales/estimates/${estimateId}`);
+    return doc;
+}
+
+export async function removeSalesEstimateManager(estimateId: string, userId: string) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) throw new Error("Unauthorized");
+
+    const doc = await prisma.salesEstimate.update({
+        where: { id: estimateId },
+        data: { managers: { disconnect: { id: userId } } }
+    });
+
+    revalidatePath(`/sales/estimates/${estimateId}`);
+    return doc;
 }

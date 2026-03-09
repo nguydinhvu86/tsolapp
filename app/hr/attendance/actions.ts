@@ -97,6 +97,11 @@ export async function checkIn(data: { photoUrl?: string, location?: string, note
         throw new Error("Bạn đã Check In hôm nay rồi.");
     }
 
+    const userCheck = await prisma.user.findUnique({ where: { id: session.user.id } });
+    if (!userCheck) {
+        throw new Error(`Phiên đăng nhập không hợp lệ hoặc tài khoản không tồn tại (ID: ${session.user.id}). Vui lòng đăng xuất và đăng nhập lại.`);
+    }
+
     const shift = await getEffectiveShift(session.user.id);
     const shiftStartMins = parseTimeToMinutes(shift.startTime);
     const currentMins = now.getHours() * 60 + now.getMinutes();
@@ -120,6 +125,7 @@ export async function checkIn(data: { photoUrl?: string, location?: string, note
                 }
             });
         } else {
+            console.log("DEBUG CheckIn User ID:", session.user.id);
             record = await prisma.attendanceRecord.create({
                 data: {
                     userId: session.user.id,
@@ -276,7 +282,7 @@ export async function getMyAttendanceHistory(month: number, year: number) {
                 lte: endDate
             }
         },
-        orderBy: { date: 'asc' }
+        orderBy: { date: 'desc' }
     });
 }
 
@@ -284,7 +290,7 @@ export async function getMyAttendanceHistory(month: number, year: number) {
 // LEAVE REQUESTS
 // ===================================
 
-export async function createLeaveRequest(data: { type: string, startDate: Date, endDate: Date, reason: string }) {
+export async function createLeaveRequest(data: { type: string, startDate: Date, endDate: Date, reason: string, imageUrl?: string }) {
     const session = await getServerSession(authOptions);
     if (!session || !session.user) throw new Error("Unauthorized");
 
@@ -296,6 +302,7 @@ export async function createLeaveRequest(data: { type: string, startDate: Date, 
                 startDate: data.startDate,
                 endDate: data.endDate,
                 reason: data.reason,
+                imageUrl: data.imageUrl,
                 status: 'PENDING'
             }
         });
@@ -355,8 +362,42 @@ export async function getMyLeaveRequests() {
 
     return await prisma.leaveRequest.findMany({
         where: { userId: session.user.id },
+        include: {
+            approver: {
+                select: { name: true }
+            }
+        },
         orderBy: { createdAt: 'desc' }
     });
+}
+
+export async function updateLeaveRequest(id: string, data: { type?: string, startDate?: Date, endDate?: Date, reason?: string, imageUrl?: string }) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) throw new Error("Unauthorized");
+
+    const existing = await prisma.leaveRequest.findUnique({ where: { id } });
+    if (!existing) throw new Error("Không tìm thấy đơn.");
+    if (existing.userId !== session.user.id) throw new Error("Không có quyền chỉnh sửa đơn của người khác.");
+    if (existing.status !== 'PENDING') throw new Error("Chỉ có thể chỉnh sửa đơn đang chờ duyệt.");
+
+    try {
+        const leave = await prisma.leaveRequest.update({
+            where: { id },
+            data: {
+                type: data.type !== undefined ? data.type : existing.type,
+                startDate: data.startDate !== undefined ? data.startDate : existing.startDate,
+                endDate: data.endDate !== undefined ? data.endDate : existing.endDate,
+                reason: data.reason !== undefined ? data.reason : existing.reason,
+                imageUrl: data.imageUrl !== undefined ? data.imageUrl : existing.imageUrl,
+            }
+        });
+
+        revalidatePath('/leave-requests');
+        revalidatePath('/hr/approvals');
+        return { success: true, data: leave };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
 }
 
 // HR Actions
@@ -377,14 +418,26 @@ export async function getPendingLeaveRequests() {
     });
 }
 
-export async function resolveLeaveRequest(id: string, action: 'APPROVE' | 'REJECT') {
+export async function getAllLeaveRequestsForHR() {
+    await checkHR();
+    return await prisma.leaveRequest.findMany({
+        include: {
+            user: { select: { name: true, email: true, role: true } },
+            approver: { select: { name: true } }
+        },
+        orderBy: { createdAt: 'desc' }
+    });
+}
+
+export async function resolveLeaveRequest(id: string, action: 'APPROVE' | 'REJECT', note?: string) {
     const me = await checkHR();
     try {
         const leave = await prisma.leaveRequest.update({
             where: { id },
             data: {
                 status: action === 'APPROVE' ? 'APPROVED' : 'REJECTED',
-                approverId: me.id
+                approverId: me.id,
+                approverNote: note || null
             },
             include: { user: true }
         });
@@ -395,10 +448,12 @@ export async function resolveLeaveRequest(id: string, action: 'APPROVE' | 'REJEC
         const statusLabel = action === 'APPROVE' ? 'ĐƯỢC DUYỆT' : 'BỊ TỪ CHỐI';
         const typeLabels: Record<string, string> = { SICK_LEAVE: 'Nghỉ Ốm', ANNUAL_LEAVE: 'Phép Năm', UNPAID_LEAVE: 'Nghỉ Không Lương' };
 
+        const noteText = note ? ` Lời nhắn: "${note}"` : '';
+
         await createNotification(
             leave.user.id,
             "Kết quả duyệt đơn nghỉ phép",
-            `Đơn xin ${typeLabels[leave.type] || leave.type} của bạn đã ${statusLabel} bởi ${me.name}.`,
+            `Đơn xin ${typeLabels[leave.type] || leave.type} của bạn đã ${statusLabel} bởi ${me.name}.${noteText}`,
             action === 'APPROVE' ? "SUCCESS" : "ERROR",
             "/leave-requests"
         ).catch(console.error);
@@ -413,7 +468,8 @@ export async function resolveLeaveRequest(id: string, action: 'APPROVE' | 'REJEC
                     <p style="margin: 0 0 10px 0;"><strong>Loại Đơn:</strong> <span style="color: #4f46e5;">${typeLabels[leave.type] || leave.type}</span></p>
                     <p style="margin: 0 0 10px 0;"><strong>Thời gian:</strong> Từ ${leave.startDate.toLocaleDateString('vi-VN')} đến ${leave.endDate.toLocaleDateString('vi-VN')}</p>
                     <p style="margin: 0 0 10px 0;"><strong>Người duyệt đơn:</strong> ${me.name}</p>
-                    <p style="margin: 0;"><strong>Trạng thái:</strong> <strong style="color: ${action === 'APPROVE' ? '#16a34a' : '#ea580c'};">${statusLabel}</strong></p>
+                    <p style="margin: 0 0 10px 0;"><strong>Trạng thái:</strong> <strong style="color: ${action === 'APPROVE' ? '#16a34a' : '#ea580c'};">${statusLabel}</strong></p>
+                    ${note ? `<p style="margin: 0;"><strong>Ghi chú từ HR:</strong> <span style="font-style: italic; color: #475569;">"${note}"</span></p>` : ''}
                 </div>
             </div>
             `;

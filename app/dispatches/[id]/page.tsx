@@ -8,17 +8,19 @@ import { ArrowLeft } from 'lucide-react';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { buildViewFilter } from '@/lib/permissions';
+import { DocumentManagersPanel } from '@/app/components/shared/DocumentManagersPanel';
+import { assignDispatchManagers, removeDispatchManager } from '../actions';
 
 export default async function DispatchPrintView({ params }: { params: { id: string } }) {
     const session = await getServerSession(authOptions);
     if (!session || !session.user) return notFound();
     const perms = (session.user.permissions as string[]) || [];
-    const viewFilter = buildViewFilter(session.user.id, perms, 'DISPATCHES', 'creatorId');
+    const viewFilter = buildViewFilter(session.user.id, perms, 'DISPATCHES', 'creatorId', true);
     if (viewFilter.id === 'UNAUTHORIZED_NO_ACCESS') return notFound();
 
     const dispatch = await prisma.dispatch.findFirst({
         where: { id: params.id, ...viewFilter },
-        include: { customer: true }
+        include: { customer: true, managers: true }
     });
 
     if (!dispatch) return notFound();
@@ -102,7 +104,17 @@ export default async function DispatchPrintView({ params }: { params: { id: stri
 
                     {/* Right Area: Task Panel */}
                     <div className="no-print" style={{ position: 'sticky', top: '1rem' }}>
-                        <TaskPanel initialTasks={tasks} users={users} entityType="DISPATCH" entityId={params.id} />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                            <DocumentManagersPanel
+                                documentId={params.id}
+                                managers={dispatch.managers || []}
+                                users={users || []}
+                                currentUserRole={session?.user?.role || 'USER'}
+                                onAssign={assignDispatchManagers}
+                                onRemove={removeDispatchManager}
+                            />
+                            <TaskPanel initialTasks={tasks} users={users} entityType="DISPATCH" entityId={params.id} />
+                        </div>
                     </div>
                 </div> {/* End Grid */}
             </div> {/* End 1200px max-width */}

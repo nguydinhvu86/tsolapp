@@ -142,6 +142,17 @@ export async function createLead(data: {
             }
             const finalCode = `${prefix}${nextSequence}`;
 
+            let sourceId: string | null = null;
+            if (data.source && data.source.trim() !== '') {
+                const sourceName = data.source.trim();
+                const leadSource = await tx.leadSource.upsert({
+                    where: { name: sourceName },
+                    update: {},
+                    create: { name: sourceName }
+                });
+                sourceId = leadSource.id;
+            }
+
             const newLead = await tx.lead.create({
                 data: {
                     code: finalCode,
@@ -151,7 +162,8 @@ export async function createLead(data: {
                     email: data.email,
                     phone: data.phone,
                     customerId: data.customerId,
-                    source: data.source,
+                    source: data.source, // Keep text version for backward compatibility
+                    sourceId: sourceId,
                     status: data.status,
                     estimatedValue: data.estimatedValue,
                     expectedCloseDate: data.expectedCloseDate,
@@ -192,6 +204,17 @@ export async function updateLead(id: string, data: any) {
     if (!data.email) data.email = null;
 
     try {
+        let sourceId: string | null = null;
+        if (data.source && data.source.trim() !== '') {
+            const sourceName = data.source.trim();
+            const leadSource = await prisma.leadSource.upsert({
+                where: { name: sourceName },
+                update: {},
+                create: { name: sourceName }
+            });
+            sourceId = leadSource.id;
+        }
+
         const lead = await prisma.lead.update({
             where: { id },
             data: {
@@ -201,7 +224,8 @@ export async function updateLead(id: string, data: any) {
                 email: data.email,
                 phone: data.phone,
                 customerId: data.customerId,
-                source: data.source,
+                source: data.source, // Keep text version
+                sourceId: sourceId,
                 estimatedValue: data.estimatedValue,
                 expectedCloseDate: data.expectedCloseDate,
                 notes: data.notes,

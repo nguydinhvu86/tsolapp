@@ -22,11 +22,12 @@ export async function getDashboardStats(userId?: string, employeeId?: string) {
             cusFilter = {
                 OR: [
                     { activityLogs: { some: { userId: currentUserId } } },
+                    { managers: { some: { id: currentUserId } } },
                     { quotes: { some: { creatorId: currentUserId } } },
                     { contracts: { some: { creatorId: currentUserId } } },
                     { leads: { some: { creatorId: currentUserId } } },
-                    { salesInvoices: { some: { OR: [{ creatorId: currentUserId }, { salespersonId: currentUserId }] } } },
-                    { salesEstimates: { some: { OR: [{ creatorId: currentUserId }, { salespersonId: currentUserId }] } } },
+                    { salesInvoices: { some: { OR: [{ creatorId: currentUserId }, { salespersonId: currentUserId }, { managers: { some: { id: currentUserId } } }] } } },
+                    { salesEstimates: { some: { OR: [{ creatorId: currentUserId }, { salespersonId: currentUserId }, { managers: { some: { id: currentUserId } } }] } } },
                     { salesOrders: { some: { OR: [{ creatorId: currentUserId }, { salespersonId: currentUserId }] } } }
                 ]
             };
@@ -48,7 +49,7 @@ export async function getDashboardStats(userId?: string, employeeId?: string) {
         ] = await Promise.all([
             estFilter.id === 'UNAUTHORIZED_NO_ACCESS' ? Promise.resolve([]) : prisma.salesEstimate.findMany({
                 select: { id: true, status: true, validUntil: true, date: true, createdAt: true, customer: { select: { name: true } }, code: true, totalAmount: true },
-                where: { AND: [estFilter as any, employeeId ? { OR: [{ creatorId: employeeId }, { salespersonId: employeeId }] } : {}] },
+                where: { AND: [estFilter as any, employeeId ? { OR: [{ creatorId: employeeId }, { salespersonId: employeeId }, { managers: { some: { id: employeeId } } }] } : {}] },
                 orderBy: { createdAt: 'desc' },
                 take: 500
             }),
@@ -62,7 +63,7 @@ export async function getDashboardStats(userId?: string, employeeId?: string) {
             poFilter.id === 'UNAUTHORIZED_NO_ACCESS' ? Promise.resolve([]) : prisma.purchaseOrder.findMany({ select: { id: true, status: true, totalAmount: true, createdAt: true, supplier: { select: { name: true } } }, where: poFilter as any, orderBy: { createdAt: 'desc' }, take: 500 }),
             invFilter.id === 'UNAUTHORIZED_NO_ACCESS' ? Promise.resolve([]) : prisma.salesInvoice.findMany({
                 select: { id: true, status: true, totalAmount: true, paidAmount: true, createdAt: true, date: true, dueDate: true, code: true, customer: { select: { name: true } } },
-                where: { AND: [invFilter as any, employeeId ? { OR: [{ creatorId: employeeId }, { salespersonId: employeeId }] } : {}] },
+                where: { AND: [invFilter as any, employeeId ? { OR: [{ creatorId: employeeId }, { salespersonId: employeeId }, { managers: { some: { id: employeeId } } }] } : {}] },
                 orderBy: { createdAt: 'desc' },
                 take: 1000
             })
@@ -90,7 +91,8 @@ export async function getDashboardStats(userId?: string, employeeId?: string) {
                                 invoice: {
                                     OR: [
                                         { creatorId: employeeId },
-                                        { salespersonId: employeeId }
+                                        { salespersonId: employeeId },
+                                        { managers: { some: { id: employeeId } } }
                                     ]
                                 }
                             }

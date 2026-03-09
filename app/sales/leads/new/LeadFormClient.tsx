@@ -45,7 +45,7 @@ const STATUSES = [
     { id: 'LOST', label: 'Thất bại' }
 ];
 
-export function LeadFormClient({ customers, users, initialData }: { customers: any[], users: any[], initialData?: any }) {
+export function LeadFormClient({ customers, users, sources = [], initialData, currentUserId }: { customers: any[], users: any[], sources?: string[], initialData?: any, currentUserId?: string }) {
     const router = useRouter();
     // Move useSearchParams logic strictly outside to another component if necessary, or just use window.location here since it's a client component.
     // However, since it's a client component, `useSearchParams` is fine.
@@ -68,7 +68,7 @@ export function LeadFormClient({ customers, users, initialData }: { customers: a
         estimatedValue: initialData?.estimatedValue || 0,
         expectedCloseDate: initialData?.expectedCloseDate ? new Date(initialData.expectedCloseDate).toISOString().split('T')[0] : '',
         notes: initialData?.notes || '',
-        assignedToId: initialData?.assignedToId || ''
+        assignedToId: initialData?.assignedToId || currentUserId || ''
     });
 
     const [loading, setLoading] = useState(false);
@@ -217,11 +217,15 @@ export function LeadFormClient({ customers, users, initialData }: { customers: a
                                 <input
                                     type="text"
                                     name="source"
+                                    list="source-list"
                                     value={formData.source}
                                     onChange={handleChange}
                                     placeholder="Facebook, Web, Giới thiệu..."
                                     style={styles.inputNoIcon}
                                 />
+                                <datalist id="source-list">
+                                    {sources.map(s => <option key={s} value={s} />)}
+                                </datalist>
                             </div>
 
                             <div style={styles.formGroup}>

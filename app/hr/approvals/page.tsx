@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
-import { getPendingLeaveRequests } from "@/app/hr/attendance/actions";
+import { getAllLeaveRequestsForHR } from "@/app/hr/attendance/actions";
 import HrApprovalClient from "./HrApprovalClient";
 import { CheckSquare } from "lucide-react";
 
@@ -10,7 +10,7 @@ export default async function HrApprovalsPage() {
     const session = await getServerSession(authOptions);
     if (!session?.user || !['ADMIN', 'HR'].includes(session.user.role)) return <div>Unauthorized</div>;
 
-    const pendingRequests = await getPendingLeaveRequests();
+    const allRequests = await getAllLeaveRequestsForHR();
 
     return (
         <div className="flex flex-col gap-6">
@@ -21,7 +21,7 @@ export default async function HrApprovalsPage() {
                 </h1>
             </div>
 
-            <HrApprovalClient initialData={pendingRequests} />
+            <HrApprovalClient initialData={allRequests} />
         </div>
     );
 }
