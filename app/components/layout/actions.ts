@@ -40,7 +40,7 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
                     { leads: { some: { creatorId: userId } } },
                     { salesInvoices: { some: { OR: [{ creatorId: userId }, { salespersonId: userId }] } } },
                     { salesEstimates: { some: { OR: [{ creatorId: userId }, { salespersonId: userId }] } } },
-                    { salesOrders: { some: { OR: [{ creatorId: userId }, { salespersonId: userId }] } } }
+                    { salesOrders: { some: { creatorId: userId } } }
                 ]
             };
         }
