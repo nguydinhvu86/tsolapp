@@ -145,6 +145,72 @@ export async function saveCustomerMenuOrder(userId: string, menuOrderJson: strin
 }
 
 // ==========================================
+// Customer Managers Actions
+// ==========================================
+
+export async function assignCustomerManagers(customerId: string, userIds: string[]) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    try {
+        const customer = await prisma.customer.update({
+            where: { id: customerId },
+            data: {
+                managers: {
+                    connect: userIds.map(id => ({ id }))
+                }
+            },
+            include: { managers: { select: { id: true, name: true } } }
+        });
+
+        await logCustomerActivity(
+            customerId,
+            session.user.id,
+            'CẬP_NHẬT_NGƯỜI_PHỤ_TRÁCH',
+            `Đã thêm ${userIds.length} người phụ trách mới cho khách hàng.`
+        );
+
+        revalidatePath(`/customers/${customerId}`);
+        revalidatePath('/customers');
+        return customer;
+    } catch (error: any) {
+        console.error("Lỗi khi thêm người phụ trách:", error);
+        throw new Error("Không thể thêm người phụ trách. Vui lòng thử lại.");
+    }
+}
+
+export async function removeCustomerManager(customerId: string, userId: string) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    try {
+        const userToRemove = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+        const customer = await prisma.customer.update({
+            where: { id: customerId },
+            data: {
+                managers: {
+                    disconnect: { id: userId }
+                }
+            }
+        });
+
+        await logCustomerActivity(
+            customerId,
+            session.user.id,
+            'CẬP_NHẬT_NGƯỜI_PHỤ_TRÁCH',
+            `Đã xóa người phụ trách ${userToRemove?.name || userId} khỏi khách hàng.`
+        );
+
+        revalidatePath(`/customers/${customerId}`);
+        revalidatePath('/customers');
+        return customer;
+    } catch (error: any) {
+        console.error("Lỗi khi xóa người phụ trách:", error);
+        throw new Error("Không thể xóa người phụ trách. Vui lòng thử lại.");
+    }
+}
+
+// ==========================================
 // Customer Contacts Actions
 // ==========================================
 

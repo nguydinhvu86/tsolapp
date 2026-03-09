@@ -40,6 +40,7 @@ model User {
   lastActiveAt          DateTime?              // Thời gian có hoạt động (ping) trên hệ thống gần nhất
   currentPlatform       String?                // Thông tin thiết bị/trình duyệt đăng nhập gần nhất
   loginLogs             LoginLog[]             @relation("UserLoginLogs")
+  managedCustomers      Customer[]             @relation("CustomerManagers")
   createdTasks          Task[]                 @relation("TaskCreator")
   completedTasks        Task[]                 @relation("TaskCompleter")
   assignedTasks         TaskAssignee[]
@@ -158,6 +159,7 @@ model Customer {
   activityLogs CustomerActivityLog[]
   emailLogs    EmailLog[]
   contacts     CustomerContact[] // Relation to CustomerContact model
+  managers     User[]            @relation("CustomerManagers")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

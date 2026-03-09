@@ -22,10 +22,13 @@ export async function getCustomerWithRelations(id: string) {
             authFilter = {
                 OR: [
                     { activityLogs: { some: { userId: session.user.id } } },
+                    { managers: { some: { id: session.user.id } } },
                     { quotes: { some: { creatorId: session.user.id } } },
                     { contracts: { some: { creatorId: session.user.id } } },
                     { salesOrders: { some: { creatorId: session.user.id } } },
-                    { leads: { some: { creatorId: session.user.id } } }
+                    { leads: { some: { creatorId: session.user.id } } },
+                    { salesEstimates: { some: { OR: [{ creatorId: session.user.id }, { salespersonId: session.user.id }] } } },
+                    { salesInvoices: { some: { OR: [{ creatorId: session.user.id }, { salespersonId: session.user.id }] } } }
                 ]
             };
         }
@@ -33,6 +36,7 @@ export async function getCustomerWithRelations(id: string) {
         const customer = await prisma.customer.findFirst({
             where: { id, ...authFilter },
             include: {
+                managers: { select: { id: true, name: true, avatar: true } },
                 contacts: true,
                 quotes: {
                     orderBy: { createdAt: 'desc' }

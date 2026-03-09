@@ -13,6 +13,7 @@ import { TagDisplay } from '@/app/components/ui/TagDisplay';
 import { CustomerStatementPanel } from '@/app/components/customers/CustomerStatementPanel';
 import { CustomerNotesPanel } from '@/app/components/customers/CustomerNotesPanel';
 import { CustomerContactsPanel } from '@/app/components/customers/CustomerContactsPanel';
+import { CustomerManagersPanel } from '@/app/components/customers/CustomerManagersPanel';
 import { CustomerHistoryTimeline } from '@/app/components/customers/CustomerHistoryTimeline';
 import { useSession } from 'next-auth/react';
 import { sendDebtConfirmationEmail, saveCustomerMenuOrder } from '../actions';
@@ -193,6 +194,13 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                     </div>
                 </div>
             </Card>
+
+            <CustomerManagersPanel
+                customerId={customer.id}
+                managers={customer.managers || []}
+                users={users}
+                currentUserRole={currentUserRole}
+            />
 
             {/* 3 Columns Grid: Sidebar, Content Area, TaskPanel */}
             <div style={{ display: 'grid', gridTemplateColumns: '260px minmax(0, 1fr) 350px', gap: '1.5rem', alignItems: 'start' }}>
