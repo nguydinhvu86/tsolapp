@@ -35,6 +35,7 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
             custFilter = {
                 OR: [
                     { activityLogs: { some: { userId } } },
+                    { managers: { some: { id: userId } } },
                     { quotes: { some: { creatorId: userId } } },
                     { contracts: { some: { creatorId: userId } } },
                     { leads: { some: { creatorId: userId } } },

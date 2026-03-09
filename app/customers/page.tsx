@@ -25,6 +25,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: { 
     const customerFilter = effectiveEmployeeId ? {
         OR: [
             { activityLogs: { some: { userId: effectiveEmployeeId } } },
+            { managers: { some: { id: effectiveEmployeeId } } },
             { quotes: { some: { creatorId: effectiveEmployeeId } } },
             { contracts: { some: { creatorId: effectiveEmployeeId } } },
             { leads: { some: { creatorId: effectiveEmployeeId } } },
