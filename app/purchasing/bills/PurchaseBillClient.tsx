@@ -53,8 +53,11 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
     const [useInventoryDescription, setUseInventoryDescription] = useState(true);
 
     const searchParams = useSearchParams();
+    const hasOpenedFromUrl = React.useRef(false);
 
     React.useEffect(() => {
+        if (hasOpenedFromUrl.current) return;
+
         const supplierId = searchParams.get('supplierId');
         const orderId = searchParams.get('orderId');
 
@@ -76,10 +79,12 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                 }
 
                 setIsCreateModalOpen(true);
+                hasOpenedFromUrl.current = true;
             }
         } else if (supplierId) {
             setFormData(prev => ({ ...prev, supplierId }));
             setIsCreateModalOpen(true);
+            hasOpenedFromUrl.current = true;
         }
     }, [searchParams, orders]);
 
