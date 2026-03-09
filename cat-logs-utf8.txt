@@ -1,0 +1,151 @@
+﻿Downloading logs...
+                salespersonId: "cmmhvndog0001dv8d743ch8lv"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  orderBy: {
+    createdAt: "desc"
+  },
+  take: 10
+}
+
+Unknown argument `salespersonId`. Available options are marked with ?.
+    at wn (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/library.js:29:1363)
+    at $n.handleRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/library.js:121:6958)
+    at $n.handleAndLogRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async Promise.all (index 6)
+    at async i (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/dashboard/page.js:78:48529)
+    at async c (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/dashboard/page.js:78:57109) {
+  clientVersion: '5.22.0'
+}
+Dashboard stats error PrismaClientValidationError: 
+Invalid `prisma.customer.findMany()` invocation:
+
+{
+  select: {
+    id: true,
+    name: true,
+    createdAt: true,
+    taxCode: true,
+    phone: true
+  },
+  where: {
+    OR: [
+      {
+        activityLogs: {
+          some: {
+            userId: "cmmhvndog0001dv8d743ch8lv"
+          }
+        }
+      },
+      {
+        managers: {
+          some: {
+            id: "cmmhvndog0001dv8d743ch8lv"
+          }
+        }
+      },
+      {
+        quotes: {
+          some: {
+            creatorId: "cmmhvndog0001dv8d743ch8lv"
+          }
+        }
+      },
+      {
+        contracts: {
+          some: {
+            creatorId: "cmmhvndog0001dv8d743ch8lv"
+          }
+        }
+      },
+      {
+        leads: {
+          some: {
+            creatorId: "cmmhvndog0001dv8d743ch8lv"
+          }
+        }
+      },
+      {
+        salesInvoices: {
+          some: {
+            OR: [
+              {
+                creatorId: "cmmhvndog0001dv8d743ch8lv"
+              },
+              {
+                salespersonId: "cmmhvndog0001dv8d743ch8lv"
+              },
+              {
+                managers: {
+                  some: {
+                    id: "cmmhvndog0001dv8d743ch8lv"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        salesEstimates: {
+          some: {
+            OR: [
+              {
+                creatorId: "cmmhvndog0001dv8d743ch8lv"
+              },
+              {
+                salespersonId: "cmmhvndog0001dv8d743ch8lv"
+              },
+              {
+                managers: {
+                  some: {
+                    id: "cmmhvndog0001dv8d743ch8lv"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        salesOrders: {
+          some: {
+            OR: [
+              {
+                creatorId: "cmmhvndog0001dv8d743ch8lv"
+              },
+              {
+                salespersonId: "cmmhvndog0001dv8d743ch8lv"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  orderBy: {
+    createdAt: "desc"
+  },
+  take: 10
+}
+
+Unknown argument `salespersonId`. Available options are marked with ?.
+    at wn (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/library.js:29:1363)
+    at $n.handleRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/library.js:121:6958)
+    at $n.handleAndLogRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async Promise.all (index 6)
+    at async i (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/dashboard/page.js:78:48529)
+    at async c (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/dashboard/page.js:78:57109) {
+  clientVersion: '5.22.0'
+}
+(node:2412789) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)

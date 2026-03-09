@@ -28,7 +28,7 @@ export async function getDashboardStats(userId?: string, employeeId?: string) {
                     { leads: { some: { creatorId: currentUserId } } },
                     { salesInvoices: { some: { OR: [{ creatorId: currentUserId }, { salespersonId: currentUserId }, { managers: { some: { id: currentUserId } } }] } } },
                     { salesEstimates: { some: { OR: [{ creatorId: currentUserId }, { salespersonId: currentUserId }, { managers: { some: { id: currentUserId } } }] } } },
-                    { salesOrders: { some: { OR: [{ creatorId: currentUserId }, { salespersonId: currentUserId }] } } }
+                    { salesOrders: { some: { creatorId: currentUserId } } }
                 ]
             };
         }
