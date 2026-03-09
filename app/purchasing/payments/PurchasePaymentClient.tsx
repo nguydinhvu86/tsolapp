@@ -63,12 +63,16 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const searchParams = useSearchParams();
+    const hasOpenedFromUrl = React.useRef(false);
 
     React.useEffect(() => {
+        if (hasOpenedFromUrl.current) return;
+
         const supplierId = searchParams.get('supplierId');
         if (supplierId) {
             handleSupplierChange(supplierId);
             setIsCreateModalOpen(true);
+            hasOpenedFromUrl.current = true;
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchParams]);
