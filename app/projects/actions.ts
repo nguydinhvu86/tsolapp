@@ -14,10 +14,9 @@ export async function getProjects(filters?: any) {
 
     let whereClause: any = { isProject: true };
 
-    // Base Privacy Filter (same as tasks)
+    // Base Privacy Filter (same as tasks but strictly for assigned/involved users)
     if (!isAdmin && userId) {
         whereClause.OR = [
-            { isPublic: true },
             { creatorId: userId },
             { assignees: { some: { userId: userId } } },
             { observers: { some: { userId: userId } } }

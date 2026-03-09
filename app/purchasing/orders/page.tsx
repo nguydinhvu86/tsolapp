@@ -12,7 +12,7 @@ export default async function PurchaseOrdersPage() {
     const suppliers = await getSuppliers();
     const products = await prisma.product.findMany({
         where: { isActive: true },
-        select: { id: true, name: true, sku: true, unit: true, importPrice: true }
+        select: { id: true, name: true, sku: true, unit: true, importPrice: true, taxRate: true, description: true }
     });
 
     return <PurchaseOrderClient initialOrders={orders as any[]} suppliers={suppliers} products={products} />;

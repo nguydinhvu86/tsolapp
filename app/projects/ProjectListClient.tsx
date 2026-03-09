@@ -57,6 +57,7 @@ export function ProjectListClient({ initialProjects, users, customers = [] }: { 
     // Filter State
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL');
+    const [assigneeFilter, setAssigneeFilter] = useState('ALL');
 
     const customerOptions = [
         { value: '', label: '-- Không chọn --' },
@@ -76,9 +77,10 @@ export function ProjectListClient({ initialProjects, users, customers = [] }: { 
         return initialProjects.filter(p => {
             const matchesSearch = (p.title || '').toLowerCase().includes(searchQuery.toLowerCase()) || (p.description || '').toLowerCase().includes(searchQuery.toLowerCase());
             const matchesStatus = statusFilter === 'ALL' || p.status === statusFilter;
-            return matchesSearch && matchesStatus;
+            const matchesAssignee = assigneeFilter === 'ALL' || p.assignees?.some((a: any) => a.userId === assigneeFilter);
+            return matchesSearch && matchesStatus && matchesAssignee;
         });
-    }, [initialProjects, searchQuery, statusFilter]);
+    }, [initialProjects, searchQuery, statusFilter, assigneeFilter]);
 
     const sortedProjects = React.useMemo(() => {
         if (!sortField) return filteredProjects;
@@ -273,6 +275,17 @@ export function ProjectListClient({ initialProjects, users, customers = [] }: { 
                             style={{ padding: '0.55rem 1rem', borderRadius: '8px', border: '1px solid var(--border)', width: '260px', outline: 'none', fontSize: '0.85rem' }}
                         />
                     </div>
+                    <select
+                        value={assigneeFilter}
+                        onChange={e => setAssigneeFilter(e.target.value)}
+                        style={{ padding: '0.55rem 0.75rem', borderRadius: '8px', border: '1px solid var(--border)', outline: 'none', fontSize: '0.85rem', backgroundColor: 'white' }}
+                    >
+                        <option value="ALL">Tất cả người dùng</option>
+                        {users.map(u => (
+                            <option key={u.id} value={u.id}>{u.name || u.email}</option>
+                        ))}
+                    </select>
+
                     <select
                         value={statusFilter}
                         onChange={e => setStatusFilter(e.target.value)}
