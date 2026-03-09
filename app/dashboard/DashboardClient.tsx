@@ -562,7 +562,7 @@ export function DashboardClient({
 
                                                         {widgetId === 'my_work_todo' && (
                                                             /* My Work & Todo Row */
-                                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', marginBottom: '1rem', alignItems: 'flex-start' }}>
+                                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', marginBottom: '1rem', alignItems: 'stretch' }}>
                                                                 {/* Vùng 1: Công việc của tôi */}
                                                                 <div style={{ flex: '3 1 500px', minWidth: 0 }} className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col">
                                                                     <div className="flex items-center justify-between mb-4">
