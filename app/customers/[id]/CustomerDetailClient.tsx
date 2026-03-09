@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Table } from '@/app/components/ui/Table';
 import { Button } from '@/app/components/ui/Button';
-import { ArrowLeft, User, Users, Mail, Phone, MapPin, Building2, FileSpreadsheet, FileText, FileOutput, FilePlus2, Eye, Edit, FileStack, Plus, ShoppingCart, SearchCode, Ticket, HandCoins, Search, Target } from 'lucide-react';
+import { ArrowLeft, User, Users, Mail, Phone, MapPin, Building2, FileSpreadsheet, FileText, FileOutput, FilePlus2, Eye, Edit, FileStack, Plus, ShoppingCart, SearchCode, Ticket, HandCoins, Search, Target, UserCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
@@ -26,7 +26,7 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
     const { data: session } = useSession();
     const currentUserRole = session?.user?.role || 'USER';
     const currentUserId = session?.user?.id || '';
-    const [activeTab, setActiveTab] = useState<'documents' | 'statement' | 'quotes' | 'contracts' | 'handovers' | 'payments' | 'appendices' | 'dispatches' | 'salesEstimates' | 'salesOrders' | 'salesInvoices' | 'salesPayments' | 'leads' | 'emailLogs' | 'contacts'>('leads');
+    const [activeTab, setActiveTab] = useState<'documents' | 'statement' | 'quotes' | 'contracts' | 'handovers' | 'payments' | 'appendices' | 'dispatches' | 'salesEstimates' | 'salesOrders' | 'salesInvoices' | 'salesPayments' | 'leads' | 'emailLogs' | 'contacts' | 'managers'>('leads');
     const [searchQuery, setSearchQuery] = useState('');
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
@@ -67,6 +67,7 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
         { id: 'dispatches', name: 'Công Văn', count: customer.dispatches?.length || 0, icon: Mail },
         { id: 'handovers', name: 'Bàn Giao', count: customer.handovers.length, icon: FileOutput },
         { id: 'payments', name: 'Đề Nghị TT', count: customer.paymentRequests.length, icon: FilePlus2 },
+        { id: 'managers', name: 'Người Phụ Trách', count: customer.managers?.length || 0, icon: UserCheck },
         { id: 'emailLogs', name: 'Lịch Sử Email', count: customer.emailLogs?.length || 0, icon: Mail },
     ];
 
@@ -194,13 +195,6 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                     </div>
                 </div>
             </Card>
-
-            <CustomerManagersPanel
-                customerId={customer.id}
-                managers={customer.managers || []}
-                users={users}
-                currentUserRole={currentUserRole}
-            />
 
             {/* 3 Columns Grid: Sidebar, Content Area, TaskPanel */}
             <div style={{ display: 'grid', gridTemplateColumns: '260px minmax(0, 1fr) 350px', gap: '1.5rem', alignItems: 'start' }}>
@@ -372,7 +366,14 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                     </div>
 
                     {/* Content Logic */}
-                    {activeTab === 'documents' ? (
+                    {activeTab === 'managers' ? (
+                        <CustomerManagersPanel
+                            customerId={customer.id}
+                            managers={customer.managers || []}
+                            users={users}
+                            currentUserRole={currentUserRole}
+                        />
+                    ) : activeTab === 'documents' ? (
                         <CustomerNotesPanel
                             customerId={customer.id}
                             notes={customer.notes || []}
