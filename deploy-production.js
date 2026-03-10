@@ -8,7 +8,7 @@ conn.on('ready', () => {
 
     const cmd = `cd /www/wwwroot/inside.tsol.vn/tsolapp && ` +
         `git fetch --all && ` +
-        `git reset --hard origin/main && ` +
+        `git reset --hard origin/feature/chat-monitoring-ui && ` +
         `export PATH=/www/server/nvm/versions/node/v24.14.0/bin:$PATH && ` +
         `npx prisma db push --accept-data-loss && ` +
         `npx prisma generate && ` +
