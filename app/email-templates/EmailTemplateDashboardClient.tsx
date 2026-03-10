@@ -44,7 +44,7 @@ export default function EmailTemplateDashboardClient({ initialTemplates }: { ini
     }
 
     return (
-        <div style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto', width: '100%', minHeight: '100vh', background: '#f8fafc' }}>
+        <div style={{ padding: '2rem', maxWidth: '100%', margin: '0 auto', width: '100%', minHeight: '100vh', background: '#f8fafc' }}>
             {/* Header Section */}
             <div className="page-header" style={{ marginBottom: '2rem' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>

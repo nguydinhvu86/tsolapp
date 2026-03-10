@@ -74,7 +74,7 @@ export default function EmailTemplateFormClient({
                 borderBottom: '1px solid #e2e8f0',
                 padding: '1rem 0'
             }}>
-                <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ maxWidth: '100%', margin: '0 auto', padding: '0 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <Link
                             href="/email-templates"
@@ -113,7 +113,7 @@ export default function EmailTemplateFormClient({
                 </div>
             </div>
 
-            <div style={{ maxWidth: '1400px', margin: '2rem auto 0 auto', padding: '0 2rem' }}>
+            <div style={{ maxWidth: '100%', margin: '2rem auto 0 auto', padding: '0 2rem' }}>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem' }}>
 
                     {/* Main Editor Section */}
