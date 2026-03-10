@@ -49,13 +49,19 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
     // Derived states
     const confirmedOrders = orders.filter((o: any) => o.status === 'CONFIRMED' || o.status === 'COMPLETED');
 
+    // Handle timezone offset to get correct local date string (YYYY-MM-DD)
+    const getLocalDateStr = (d: Date) => {
+        const offset = d.getTimezoneOffset() * 60000;
+        return new Date(d.getTime() - offset).toISOString().split('T')[0];
+    };
+
     const [formData, setFormData] = useState<any>({
         code: nextCode,
         customerId: initialCustomerId || '',
         orderId: '',
         salespersonId: currentUserId || '',
-        date: new Date().toISOString().split('T')[0],
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        date: getLocalDateStr(new Date()),
+        dueDate: getLocalDateStr(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
         notes: '',
         status: 'DRAFT',
         tags: '',
@@ -80,8 +86,8 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
             customerId: '',
             orderId: '',
             salespersonId: currentUserId || '',
-            date: new Date().toISOString().split('T')[0],
-            dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            date: getLocalDateStr(new Date()),
+            dueDate: getLocalDateStr(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
             notes: '',
             status: 'DRAFT',
             tags: '',
@@ -125,8 +131,8 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
             customerId: inv.customerId || '',
             orderId: inv.orderId || '',
             salespersonId: inv.salespersonId || inv.creatorId || currentUserId || '',
-            date: inv.date ? new Date(inv.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-            dueDate: inv.dueDate ? new Date(inv.dueDate).toISOString().split('T')[0] : '',
+            date: inv.date ? getLocalDateStr(new Date(inv.date)) : getLocalDateStr(new Date()),
+            dueDate: inv.dueDate ? getLocalDateStr(new Date(inv.dueDate)) : '',
             notes: inv.notes || '',
             status: inv.status || 'DRAFT',
             tags: inv.tags || '',
@@ -169,8 +175,8 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
             customerId: inv.customerId || '',
             orderId: inv.orderId || '',
             salespersonId: currentUserId || '',
-            date: new Date().toISOString().split('T')[0],
-            dueDate: inv.dueDate ? new Date(inv.dueDate).toISOString().split('T')[0] : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            date: getLocalDateStr(new Date()),
+            dueDate: inv.dueDate ? getLocalDateStr(new Date(inv.dueDate)) : getLocalDateStr(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
             notes: inv.notes || '',
             status: 'DRAFT',
             tags: inv.tags || '',
@@ -851,8 +857,8 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                 <span>Nhập tự do ngoài hệ thống</span>
                             </label>
                         </div>
-                        <div className="flex gap-2 items-end mb-4">
-                            <div className="flex-1">
+                        <div className="flex flex-wrap gap-2 items-end mb-4">
+                            <div className="flex-1 min-w-[250px]">
                                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Tên Sản Phẩm</label>
                                 {!isCustomProduct ? (
                                     <SearchableSelect
@@ -866,16 +872,16 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                 )}
                             </div>
                             {isCustomProduct && (
-                                <div className="w-24">
+                                <div className="w-24 shrink-0">
                                     <label className="block text-sm font-medium text-gray-700 mb-1.5">ĐVT</label>
                                     <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white text-center" placeholder="Đơn vị" value={customUnit} onChange={e => setCustomUnit(e.target.value)} />
                                 </div>
                             )}
-                            <div className="w-24">
+                            <div className="w-24 shrink-0">
                                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Đơn giá</label>
                                 <input type="number" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" value={price} onChange={e => setPrice(Number(e.target.value))} />
                             </div>
-                            <div className="w-20">
+                            <div className="w-20 shrink-0">
                                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Thuế %</label>
                                 {isCustomProduct ? (
                                     <input type="number" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-center text-gray-900 bg-white" value={customTaxRate} onChange={e => setCustomTaxRate(Number(e.target.value))} />
@@ -883,11 +889,11 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                     <input type="text" className="w-full border border-gray-200 rounded-lg p-2.5 bg-slate-50 text-center text-gray-500 font-medium cursor-not-allowed" value={`${products.find((p: any) => p.id === selectedProduct)?.taxRate || 0}`} disabled />
                                 )}
                             </div>
-                            <div className="w-16">
+                            <div className="w-16 shrink-0">
                                 <label className="block text-sm font-medium text-gray-700 mb-1.5">SL</label>
                                 <input type="number" min="1" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-center text-gray-900 bg-white" value={qty} onChange={e => setQty(Number(e.target.value))} />
                             </div>
-                            <Button onClick={handleAddItem} variant="secondary" className="mb-[2px] h-[46px] px-4 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 shadow-sm font-semibold rounded-lg">Thêm</Button>
+                            <Button onClick={handleAddItem} variant="secondary" className="shrink-0 mb-[2px] h-[46px] px-4 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 shadow-sm font-semibold rounded-lg">Thêm</Button>
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1.5">Chi tiết Kỹ Thuật / Ghi chú cho khách hàng <span className="text-gray-400 font-normal">(In dưới tên SP)</span></label>
@@ -901,7 +907,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                     <span>Tự nhập mô tả</span>
                                 </label>
                             </div>
-                            <textarea rows={2} className={`w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all resize-none text-sm ${useInventoryDescription && !isCustomProduct ? 'bg-slate-50 text-gray-500' : 'text-gray-900 bg-white'}`} placeholder="Ghi chú thêm thông số, tính năng cho sản phẩm này..." value={customDescription} onChange={e => setCustomDescription(e.target.value)} disabled={useInventoryDescription && !isCustomProduct}></textarea>
+                            <textarea rows={2} className={`w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all resize-none text-sm text-gray-900 bg-white`} placeholder="Ghi chú thêm thông số, tính năng cho sản phẩm này..." value={customDescription} onChange={e => setCustomDescription(e.target.value)}></textarea>
                         </div>
                     </div>
 

@@ -34,7 +34,52 @@ export default async function PublicPurchaseOrderPage({ params }: { params: { id
 
 
     return (
-        <div style={{ minHeight: '100vh', backgroundColor: '#e2e8f0', padding: '2rem 0', display: 'flex', justifyContent: 'center' }}>
+        <div className="print-wrapper" style={{ minHeight: '100vh', backgroundColor: '#e2e8f0', padding: '2rem 0', display: 'flex', justifyContent: 'center' }}>
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                @media print {
+                    @page {
+                        margin: 15mm;
+                        size: A4;
+                    }
+                    body, html {
+                        height: auto !important;
+                        overflow: visible !important;
+                        background-color: white !important;
+                    }
+                    body * {
+                        visibility: hidden;
+                    }
+                    .print-wrapper {
+                        position: absolute !important;
+                        top: 0 !important;
+                        left: 0 !important;
+                        width: 100% !important;
+                        height: auto !important;
+                        overflow: visible !important;
+                        background-color: white !important;
+                        padding: 0 !important;
+                        display: block !important;
+                    }
+                    .print-wrapper, .print-wrapper * {
+                        visibility: visible;
+                    }
+                    .a4-document {
+                        position: static !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        box-shadow: none !important;
+                        width: 100% !important;
+                        max-width: none !important;
+                    }
+                    .no-print {
+                        display: none !important;
+                    }
+                    tfoot {
+                        display: table-row-group !important;
+                    }
+                }
+            `}} />
             <PrintButton label="In Đơn Hàng" />
 
             <div className="a4-document" style={{
@@ -81,7 +126,7 @@ export default async function PublicPurchaseOrderPage({ params }: { params: { id
                         {order.supplier?.address && <div><strong>Địa chỉ:</strong> {order.supplier?.address}</div>}
                         {order.supplier?.phone && <div><strong>Điện thoại:</strong> {order.supplier?.phone}</div>}
                     </div>
-                    <div style={{ flex: 1, paddingLeft: '1rem' }}>
+                    <div style={{ flex: 1, paddingLeft: '1rem', textAlign: 'right' }}>
                         <h3 style={{ fontSize: '1rem', fontWeight: 700, borderBottom: '1px dotted #ccc', display: 'inline-block', paddingBottom: '0.25rem', marginBottom: '0.75rem' }}>THÔNG TIN ĐƠN HÀNG</h3>
                         <div><strong>Ngày đặt hàng:</strong> {formatDate(order.date)}</div>
                         <div><strong>Người lập:</strong> {order.creator?.name || '---'}</div>

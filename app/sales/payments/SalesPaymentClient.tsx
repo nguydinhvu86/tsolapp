@@ -25,11 +25,17 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
     const [actionModal, setActionModal] = useState<{ isOpen: boolean, title: string, message: React.ReactNode, action: () => Promise<void> } | null>(null);
     const [isActioning, setIsActioning] = useState(false);
 
+    // Handle timezone offset to get correct local date string (YYYY-MM-DD)
+    const getLocalDateStr = (d: Date) => {
+        const offset = d.getTimezoneOffset() * 60000;
+        return new Date(d.getTime() - offset).toISOString().split('T')[0];
+    };
+
     // Create form state
     const [formData, setFormData] = useState({
         code: `PT-${Date.now().toString().slice(-6)}`,
         customerId: initialCustomerId || '',
-        date: new Date().toISOString().split('T')[0],
+        date: getLocalDateStr(new Date()),
         amount: 0,
         paymentMethod: 'BANK_TRANSFER',
         reference: '',
@@ -191,7 +197,7 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
             setFormData({
                 code: `PT-${Date.now().toString().slice(-6)}`,
                 customerId: '',
-                date: new Date().toISOString().split('T')[0],
+                date: getLocalDateStr(new Date()),
                 amount: 0,
                 paymentMethod: 'BANK_TRANSFER',
                 reference: '',

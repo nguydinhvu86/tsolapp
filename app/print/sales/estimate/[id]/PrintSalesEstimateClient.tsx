@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
-import { Printer, ArrowLeft } from 'lucide-react';
+import { Printer, ArrowLeft, Download } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function PrintSalesEstimateClient({ estimate, settings }: any) {
@@ -11,6 +11,14 @@ export default function PrintSalesEstimateClient({ estimate, settings }: any) {
 
     const handlePrint = () => {
         window.print();
+    };
+
+    const handleExportPDF = () => {
+        alert("Lưu ý để có file PDF sắc nét:\n\nKhi hộp thoại In xuất hiện, hãy chọn Máy in (Destination) là 'Lưu dưới dạng PDF' (Save as PDF). Tính năng này sẽ giúp file PDF của bạn giữ nguyên định dạng giấy khổ A4 và rõ nét 100% ở định dạng chữ (Vector), không bị mờ nhòe như định dạng ảnh.");
+        const originalTitle = document.title;
+        document.title = `Bao_Gia_${estimate.code}`;
+        window.print();
+        document.title = originalTitle;
     };
 
     // Lock body scroll when this page is open to prevent underlying layout scrolling
@@ -22,7 +30,7 @@ export default function PrintSalesEstimateClient({ estimate, settings }: any) {
     }, []);
 
     return (
-        <div style={{
+        <div className="print-wrapper" style={{
             position: 'fixed',
             top: 0,
             left: 0,
@@ -39,24 +47,38 @@ export default function PrintSalesEstimateClient({ estimate, settings }: any) {
                         margin: 15mm;
                         size: A4;
                     }
+                    body, html {
+                        height: auto !important;
+                        overflow: visible !important;
+                    }
                     body * {
                         visibility: hidden;
                     }
-                    .print-container, .print-container * {
+                    .print-wrapper {
+                        position: absolute !important;
+                        top: 0 !important;
+                        left: 0 !important;
+                        width: 100% !important;
+                        height: auto !important;
+                        overflow: visible !important;
+                        background-color: white !important;
+                    }
+                    .print-wrapper, .print-wrapper * {
                         visibility: visible;
                     }
                     .print-container {
-                        position: absolute;
-                        left: 0;
-                        top: 0;
-                        width: 100%;
+                        position: static !important;
                         margin: 0 !important;
                         padding: 0 !important;
                         box-shadow: none !important;
-                        background-color: white !important;
+                        width: 100% !important;
+                        max-width: none !important;
                     }
                     .no-print {
                         display: none !important;
+                    }
+                    tfoot {
+                        display: table-row-group !important;
                     }
                 }
             `}</style>
@@ -73,13 +95,22 @@ export default function PrintSalesEstimateClient({ estimate, settings }: any) {
                 }}>
                     <ArrowLeft size={18} /> Quay Lại
                 </button>
-                <button onClick={handlePrint} style={{
-                    display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#3b82f6',
-                    border: 'none', color: 'white', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600,
-                    padding: '0.6rem 1.2rem', borderRadius: '6px'
-                }}>
-                    <Printer size={18} /> In Báo Giá (Ctrl + P)
-                </button>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                    <button onClick={handleExportPDF} style={{
+                        display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#10b981',
+                        border: 'none', color: 'white', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600,
+                        padding: '0.6rem 1.2rem', borderRadius: '6px'
+                    }}>
+                        <Download size={18} /> Xuất PDF (Sắc nét)
+                    </button>
+                    <button onClick={handlePrint} style={{
+                        display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#3b82f6',
+                        border: 'none', color: 'white', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600,
+                        padding: '0.6rem 1.2rem', borderRadius: '6px'
+                    }}>
+                        <Printer size={18} /> In Báo Giá (Ctrl + P)
+                    </button>
+                </div>
             </div>
 
             {/* A4 Paper Container */}
@@ -128,7 +159,7 @@ export default function PrintSalesEstimateClient({ estimate, settings }: any) {
                         {estimate.customer?.address && <div><strong>Địa chỉ:</strong> {estimate.customer?.address}</div>}
                         {estimate.customer?.phone && <div><strong>Điện thoại:</strong> {estimate.customer?.phone}</div>}
                     </div>
-                    <div style={{ flex: 1, paddingLeft: '1rem' }}>
+                    <div style={{ flex: 1, paddingLeft: '1rem', textAlign: 'right' }}>
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 700, borderBottom: '1px dotted #ccc', display: 'inline-block', marginBottom: '0.5rem' }}>ĐIỀU KIỆN BÁO GIÁ</h3>
                         <div><strong>Hiệu lực đến:</strong> {formatDate(estimate.validUntil) || '---'}</div>
                         <div><strong>Người lập:</strong> {estimate.creator?.name || '---'}</div>

@@ -115,6 +115,10 @@ export async function submitSalesOrder(creatorId: string, formData: any) {
                         totalPrice: item.totalPrice
                     }))
                 }
+            },
+            include: {
+                customer: true,
+                creator: true
             }
         });
 
@@ -157,6 +161,10 @@ export async function updateSalesOrder(id: string, formData: any) {
                         totalPrice: item.totalPrice
                     }))
                 }
+            },
+            include: {
+                customer: true,
+                creator: true
             }
         });
 

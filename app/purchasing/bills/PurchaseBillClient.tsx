@@ -959,8 +959,8 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                                 <span>Nhập tự do ngoài hệ thống</span>
                                             </label>
                                         </div>
-                                        <div className="flex flex-wrap lg:flex-nowrap gap-3 items-end mb-4">
-                                            <div className="flex-1 min-w-[200px]">
+                                        <div className="flex flex-wrap gap-3 items-end mb-4">
+                                            <div className="flex-1 min-w-[250px]">
                                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Tên Sản Phẩm</label>
                                                 {!isCustomProduct ? (
                                                     <SearchableSelect
@@ -974,16 +974,16 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                                 )}
                                             </div>
                                             {isCustomProduct && (
-                                                <div className="w-24">
+                                                <div className="w-24 shrink-0">
                                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">ĐVT</label>
                                                     <input type="text" className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 text-center" placeholder="Đơn vị" value={customUnit} onChange={e => setCustomUnit(e.target.value)} />
                                                 </div>
                                             )}
-                                            <div className="w-28">
+                                            <div className="w-28 shrink-0">
                                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Đơn giá nhập</label>
                                                 <input type="number" className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700" value={price} onChange={e => setPrice(Number(e.target.value))} />
                                             </div>
-                                            <div className="w-20">
+                                            <div className="w-20 shrink-0">
                                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Thuế %</label>
                                                 {isCustomProduct ? (
                                                     <input type="number" className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-center text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700" value={customTaxRate} onChange={e => setCustomTaxRate(Number(e.target.value))} />
@@ -991,11 +991,11 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                                     <input type="text" className="w-full border border-gray-200 dark:border-gray-600 rounded-lg p-2.5 bg-slate-50 dark:bg-gray-800 text-center text-gray-500 dark:text-gray-400 font-medium cursor-not-allowed" value={`${products.find((p: any) => p.id === selectedProduct)?.taxRate || 0}`} disabled />
                                                 )}
                                             </div>
-                                            <div className="w-20">
+                                            <div className="w-20 shrink-0">
                                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">SL</label>
                                                 <input type="number" min="1" className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-center text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700" value={qty} onChange={e => setQty(Number(e.target.value))} />
                                             </div>
-                                            <button type="button" onClick={handleAddItem} className="h-[46px] px-5 border border-primary text-primary bg-primary/10 hover:bg-primary/20 shadow-sm font-semibold rounded-lg flex items-center justify-center transition-colors">Thêm</button>
+                                            <button type="button" onClick={handleAddItem} className="shrink-0 mb-[2px] h-[46px] px-6 border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 shadow-sm font-semibold rounded-lg dark:border-primary/50 dark:text-primary-light">Thêm</button>
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Ghi chú SP nhập <span className="text-gray-400 font-normal">(In trên luân chuyển)</span></label>
@@ -1009,7 +1009,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                                     <span>Tự nhập ghi chú</span>
                                                 </label>
                                             </div>
-                                            <textarea rows={2} className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-none text-sm ${useInventoryDescription && !isCustomProduct ? 'bg-slate-50 dark:bg-gray-800 text-gray-500' : 'text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700'}`} placeholder="Ghi chú thêm thông số, tính năng cho sản phẩm này..." value={customDescription} onChange={e => setCustomDescription(e.target.value)} disabled={useInventoryDescription && !isCustomProduct}></textarea>
+                                            <textarea rows={2} className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-none text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700`} placeholder="Ghi chú thêm thông số, tính năng cho sản phẩm này..." value={customDescription} onChange={e => setCustomDescription(e.target.value)}></textarea>
                                         </div>
                                     </div>
 

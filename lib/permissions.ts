@@ -62,7 +62,7 @@ export function buildViewFilter(
     resource: ResourceId,
     creatorField: string = 'creatorId',
     includeManagers: boolean = false
-) {
+): any {
     if (permissions.includes(`${resource}_VIEW_ALL`)) {
         return {}; // Can view everything
     }

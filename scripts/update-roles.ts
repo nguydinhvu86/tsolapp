@@ -14,7 +14,7 @@ async function main() {
     // Manager gets VIEW, CREATE, EDIT on everything, plus dashboard
     const managerPerms = [PermissionHelper.VIEW_DASHBOARD];
     RESOURCES.forEach(r => {
-        managerPerms.push(PermissionHelper.generateCode(r.id, 'VIEW'));
+        managerPerms.push(PermissionHelper.generateCode(r.id, 'VIEW_OWN'));
         managerPerms.push(PermissionHelper.generateCode(r.id, 'CREATE'));
         managerPerms.push(PermissionHelper.generateCode(r.id, 'EDIT'));
     });
@@ -22,7 +22,7 @@ async function main() {
     // User gets only VIEW and dashboard
     const userPerms = [PermissionHelper.VIEW_DASHBOARD];
     RESOURCES.forEach(r => {
-        userPerms.push(PermissionHelper.generateCode(r.id, 'VIEW'));
+        userPerms.push(PermissionHelper.generateCode(r.id, 'VIEW_OWN'));
     });
 
     // Update Admin
