@@ -238,7 +238,6 @@ export default function PrintSalesEstimateClient({ estimate, settings }: any) {
                         <strong style={{ display: 'block', fontSize: '1.1rem' }}>ĐẠI DIỆN KHÁCH HÀNG</strong>
                         <i style={{ fontSize: '0.9rem', color: '#64748b' }}>(Ký và ghi rõ họ tên)</i>
                         <div style={{ height: '100px' }}></div>
-                        <strong>{estimate.customer?.name}</strong>
                     </div>
                     <div style={{ textAlign: 'center' }}>
                         <strong style={{ display: 'block', fontSize: '1.1rem' }}>NGƯỜI LẬP BÁO GIÁ</strong>
