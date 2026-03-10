@@ -19,10 +19,23 @@ export function HeaderAttendance() {
 
     useEffect(() => {
         loadData();
+
+        // Đồng bộ hóa trạng thái khi người dùng mở lại tab hoặc thiết bị khác
+        const handleFocus = () => loadData(true);
+        window.addEventListener('focus', handleFocus);
+
+        // Tự động kiểm tra lại mỗi phút để đảm bảo không bị Out Of Sync
+        const intervalId = setInterval(() => loadData(true), 60000);
+
+        return () => {
+            window.removeEventListener('focus', handleFocus);
+            clearInterval(intervalId);
+        };
     }, []);
 
-    const loadData = async () => {
+    const loadData = async (silent = false) => {
         try {
+            if (!silent) setIsLoading(true);
             const data = await getTodayAttendance();
             setRecord(data);
         } catch (e) {
@@ -150,9 +163,8 @@ export function HeaderAttendance() {
                 {(!hasCheckedIn || hasCheckedOut) && (
                     <button
                         onClick={() => openModal('IN')}
-                        disabled={hasCheckedOut}
-                        title={hasCheckedOut ? "Đã hoàn thành công việc hôm nay!" : "Chấm công vào làm"}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${hasCheckedOut ? 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100'}`}
+                        title="Chấm công vào làm"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100"
                     >
                         <LogIn className="w-4 h-4" /> Check In
                     </button>
@@ -168,8 +180,9 @@ export function HeaderAttendance() {
                     </button>
                 )}
 
+                {/* We can still keep the CheckCircle just for visual completion if they checked out at least once, but shrink it */}
                 {hasCheckedOut && (
-                    <div title="Đã hoàn thành điểm danh" className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
+                    <div title="Đã có ca làm việc hoàn thành" className="hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
                         <CheckCircle className="w-4 h-4" />
                     </div>
                 )}

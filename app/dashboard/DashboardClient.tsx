@@ -426,7 +426,7 @@ export function DashboardClient({
 
     return (
         <div className="bg-gray-50/50 min-h-screen p-4 xl:p-8 pt-4 xl:pt-6">
-            <div className="max-w-[1400px] mx-auto space-y-8 pb-10">
+            <div className="w-full mx-auto space-y-8 pb-10">
                 <div className="flex items-center justify-between mb-2 -mx-2">
                     <div>
                         <h2 className="text-3xl font-bold text-gray-800 tracking-tight">Bảng Điều Khiển</h2>
