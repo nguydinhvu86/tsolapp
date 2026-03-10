@@ -72,9 +72,9 @@ export default async function AppendixPrintView({ params }: { params: { id: stri
                               main { padding: 0 !important; margin: 0 !important; max-width: 100% !important; overflow: visible !important; display: block !important; }
                               
                               .print-wrapper {
-                                position: static !important;
-                                top: auto !important;
-                                left: auto !important;
+                                position: absolute !important;
+                                top: 0 !important;
+                                left: 0 !important;
                                 width: 100% !important;
                                 height: auto !important;
                                 overflow: visible !important;
@@ -82,6 +82,7 @@ export default async function AppendixPrintView({ params }: { params: { id: stri
                                 background: white !important;
                                 padding: 0 !important;
                                 margin: 0 !important;
+                                z-index: 9999 !important;
                               }
 
                               /* Force exact A4 dimensions */
