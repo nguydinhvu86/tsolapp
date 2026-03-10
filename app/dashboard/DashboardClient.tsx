@@ -526,34 +526,34 @@ export function DashboardClient({
                                                                     </div>
                                                                 </div>
 
-                                                                <div className="stat-card stat-card-blue flex-1 min-w-[200px]">
+                                                                <div className="stat-card stat-card-green flex-1 min-w-[200px]">
                                                                     <div className="flex justify-between items-start mb-2">
-                                                                        <span className="stat-title text-sm font-semibold uppercase tracking-wide">Tiền Đã Thu</span>
+                                                                        <span className="stat-title text-sm font-semibold uppercase tracking-wide" style={{ color: '#059669' }}>Tiền Đã Thu</span>
                                                                         <div className="stat-icon p-2 rounded-xl flex items-center justify-center">
                                                                             <CreditCard size={20} strokeWidth={2.5} />
                                                                         </div>
                                                                     </div>
                                                                     <div className="stat-info">
-                                                                        <span className="stat-value text-3xl font-bold mb-1 truncate" title={formatMoney(paymentsThisMonth)}>{formatMoney(paymentsThisMonth)}</span>
+                                                                        <span className="stat-value text-3xl font-bold mb-1 truncate" style={{ color: '#059669' }} title={formatMoney(paymentsThisMonth)}>{formatMoney(paymentsThisMonth)}</span>
                                                                         <div className="text-[12px] font-medium mt-1" style={{ color: isPaymentUp ? '#10b981' : '#ef4444' }}>
                                                                             <span className="font-bold">{isPaymentUp ? '↑' : '↓'} {Math.abs(paymentGrowth).toFixed(1)}%</span>
-                                                                            <span className="text-blue-700 opacity-80" style={{ color: 'inherit' }}> so với tháng trước</span>
+                                                                            <span className="text-green-700 opacity-80" style={{ color: 'inherit' }}> so với tháng trước</span>
                                                                         </div>
                                                                     </div>
                                                                 </div>
 
-                                                                <div className="stat-card stat-card-green flex-1 min-w-[200px]">
+                                                                <div className="stat-card stat-card-blue flex-1 min-w-[200px]">
                                                                     <div className="flex justify-between items-start mb-2">
-                                                                        <span className="stat-title text-sm font-semibold uppercase tracking-wide" style={{ color: '#059669' }}>Công Nợ Phải Thu</span>
+                                                                        <span className="stat-title text-sm font-semibold uppercase tracking-wide">Công Nợ Phải Thu</span>
                                                                         <div className="stat-icon p-2 rounded-xl flex items-center justify-center">
                                                                             <Briefcase size={20} strokeWidth={2.5} />
                                                                         </div>
                                                                     </div>
                                                                     <div className="stat-info">
-                                                                        <span className="stat-value text-3xl font-bold mb-1 truncate" style={{ color: '#059669' }} title={formatMoney(debtThisMonth)}>{formatMoney(debtThisMonth)}</span>
+                                                                        <span className="stat-value text-3xl font-bold mb-1 truncate" title={formatMoney(debtThisMonth)}>{formatMoney(debtThisMonth)}</span>
                                                                         <div className="text-[12px] font-medium mt-1" style={{ color: isDebtUp ? '#ef4444' : '#10b981' }}>
                                                                             <span className="font-bold">{isDebtUp ? '↑' : '↓'} {Math.abs(debtGrowth).toFixed(1)}%</span>
-                                                                            <span className="text-green-700 opacity-80" style={{ color: 'inherit' }}> so với tháng trước</span>
+                                                                            <span className="text-blue-700 opacity-80" style={{ color: 'inherit' }}> so với tháng trước</span>
                                                                         </div>
                                                                     </div>
                                                                 </div>
