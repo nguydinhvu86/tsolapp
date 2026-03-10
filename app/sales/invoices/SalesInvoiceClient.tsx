@@ -858,7 +858,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                             </label>
                         </div>
                         <div className="flex flex-wrap gap-2 items-end mb-4">
-                            <div className="flex-1 min-w-[250px]">
+                            <div className="flex-1 min-w-[150px]">
                                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Tên Sản Phẩm</label>
                                 {!isCustomProduct ? (
                                     <SearchableSelect

@@ -897,7 +897,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                 </label>
                             </div>
                             <div className="flex gap-3 items-end mb-4">
-                                <div className="flex-1">
+                                <div className="flex-1 min-w-0">
                                     <label className="block text-sm font-medium text-gray-700 mb-1.5">Tên Sản Phẩm</label>
                                     {!isCustomProduct ? (
                                         <SearchableSelect
