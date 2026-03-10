@@ -50,6 +50,7 @@ export default function PrintSalesInvoiceClient({ invoice, companyInfo }: any) {
                     body, html {
                         height: auto !important;
                         overflow: visible !important;
+                        display: block !important;
                     }
                     body * {
                         visibility: hidden;
@@ -62,6 +63,7 @@ export default function PrintSalesInvoiceClient({ invoice, companyInfo }: any) {
                         height: auto !important;
                         overflow: visible !important;
                         background-color: white !important;
+                        display: block !important;
                     }
                     .print-wrapper, .print-wrapper * {
                         visibility: visible;
@@ -77,6 +79,9 @@ export default function PrintSalesInvoiceClient({ invoice, companyInfo }: any) {
                     .no-print {
                         display: none !important;
                     }
+                    table { page-break-inside: auto; }
+                    tr    { page-break-inside: avoid; page-break-after: auto; }
+                    thead { display: table-header-group; }
                     tfoot {
                         display: table-row-group !important;
                     }

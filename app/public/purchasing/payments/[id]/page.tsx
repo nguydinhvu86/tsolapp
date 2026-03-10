@@ -46,6 +46,7 @@ export default async function PublicPurchasePaymentPage({ params }: { params: { 
                         height: auto !important;
                         overflow: visible !important;
                         background-color: white !important;
+                        display: block !important;
                     }
                     body * {
                         visibility: hidden;
@@ -75,6 +76,9 @@ export default async function PublicPurchasePaymentPage({ params }: { params: { 
                     .no-print {
                         display: none !important;
                     }
+                    table { page-break-inside: auto; }
+                    tr    { page-break-inside: avoid; page-break-after: auto; }
+                    thead { display: table-header-group; }
                     tfoot {
                         display: table-row-group !important;
                     }
