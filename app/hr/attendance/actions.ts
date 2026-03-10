@@ -3,7 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, unstable_noStore as noStore } from 'next/cache';
 import { createNotification } from '@/app/notifications/actions';
 import { sendEmailWithTracking } from '@/lib/mailer';
 
@@ -65,11 +65,14 @@ async function getEffectiveShift(userId: string) {
 }
 
 export async function getTodayAttendance() {
+    noStore();
     const session = await getServerSession(authOptions);
     if (!session || !session.user) return null;
 
-    const todayDate = new Date();
-    todayDate.setHours(0, 0, 0, 0);
+    // Force Vietnam Timezone to avoid GMT+0 day shift
+    const nowStr = new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
+    const nowVn = new Date(nowStr);
+    const todayDate = new Date(Date.UTC(nowVn.getFullYear(), nowVn.getMonth(), nowVn.getDate(), 0, 0, 0, 0));
 
     return await prisma.attendanceRecord.findUnique({
         where: {
@@ -85,16 +88,17 @@ export async function checkIn(data: { photoUrl?: string, location?: string, note
     const session = await getServerSession(authOptions);
     if (!session || !session.user) throw new Error("Unauthorized");
 
-    const todayDate = new Date();
-    todayDate.setHours(0, 0, 0, 0);
-    const now = new Date();
+    const nowStr = new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
+    const nowVn = new Date(nowStr);
+    const todayDate = new Date(Date.UTC(nowVn.getFullYear(), nowVn.getMonth(), nowVn.getDate(), 0, 0, 0, 0));
+    const now = new Date(); // Keep UTC for checkInTime storage, but date is forced to VNT context
 
     const existing = await prisma.attendanceRecord.findUnique({
         where: { userId_date: { userId: session.user.id, date: todayDate } }
     });
 
-    if (existing?.checkInTime) {
-        throw new Error("Bạn đã Check In hôm nay rồi.");
+    if (existing?.checkInTime && !existing?.checkOutTime) {
+        throw new Error("Bạn đã Check In hôm nay rồi và chưa Check Out.");
     }
 
     const userCheck = await prisma.user.findUnique({ where: { id: session.user.id } });
@@ -118,9 +122,12 @@ export async function checkIn(data: { photoUrl?: string, location?: string, note
                 where: { id: existing.id },
                 data: {
                     checkInTime: now,
+                    checkOutTime: null, // Reset checkOutTime for a new session
                     checkInPhotoUrl: data.photoUrl,
                     checkInLocation: data.location,
-                    notes: data.notes ? (existing.notes ? existing.notes + ' | ' + data.notes : data.notes) : existing.notes,
+                    checkOutPhotoUrl: null, // Reset previous checkOutPhotoUrl
+                    checkOutLocation: null, // Reset previous checkOutLocation
+                    notes: data.notes ? (existing.notes ? existing.notes + ' | C/IN-Lại: ' + data.notes : data.notes) : existing.notes,
                     status: status !== 'PRESENT' ? status : existing.status // Keep LATE if already set
                 }
             });
@@ -186,8 +193,9 @@ export async function checkOut(data: { photoUrl?: string, location?: string, not
     const session = await getServerSession(authOptions);
     if (!session || !session.user) throw new Error("Unauthorized");
 
-    const todayDate = new Date();
-    todayDate.setHours(0, 0, 0, 0);
+    const nowStr = new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
+    const nowVn = new Date(nowStr);
+    const todayDate = new Date(Date.UTC(nowVn.getFullYear(), nowVn.getMonth(), nowVn.getDate(), 0, 0, 0, 0));
     const now = new Date();
 
     const existing = await prisma.attendanceRecord.findUnique({
@@ -199,7 +207,9 @@ export async function checkOut(data: { photoUrl?: string, location?: string, not
     }
 
     const shift = await getEffectiveShift(session.user.id);
-    const totalMins = calculateWorkMinutes(existing.checkInTime, now, shift);
+    const sessionMins = calculateWorkMinutes(existing.checkInTime, now, shift);
+    const previousTotalMins = existing.totalWorkMinutes || 0;
+    const newTotalMins = previousTotalMins + sessionMins;
 
     // Check early leave
     const shiftEndMins = parseTimeToMinutes(shift.endTime);
@@ -217,8 +227,8 @@ export async function checkOut(data: { photoUrl?: string, location?: string, not
                 checkOutTime: now,
                 checkOutPhotoUrl: data.photoUrl,
                 checkOutLocation: data.location,
-                notes: data.notes ? (existing.notes ? existing.notes + ' | ' + data.notes : data.notes) : existing.notes,
-                totalWorkMinutes: totalMins,
+                notes: data.notes ? (existing.notes ? existing.notes + ' | C/OUT-Lại: ' + data.notes : data.notes) : existing.notes,
+                totalWorkMinutes: newTotalMins,
                 status: status
             }
         });
@@ -229,7 +239,7 @@ export async function checkOut(data: { photoUrl?: string, location?: string, not
         await createNotification(
             session.user.id,
             "Ghi nhận Check-out",
-            `Bạn đã CHECK-OUT lúc ${now.toLocaleTimeString('vi-VN')}. Tổng thời gian làm việc: ${Math.floor(totalMins / 60)}h ${totalMins % 60}m.`,
+            `Bạn đã CHECK-OUT lúc ${now.toLocaleTimeString('vi-VN')}. Tổng thời gian làm việc hôm nay: ${Math.floor(newTotalMins / 60)}h ${newTotalMins % 60}m.`,
             'SUCCESS',
             '/my-attendance'
         ).catch(console.error);
@@ -244,10 +254,11 @@ export async function checkOut(data: { photoUrl?: string, location?: string, not
                 <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
                     <tr><td style="padding: 10px; border-bottom: 1px solid #e5e7eb; color: #6b7280;">Giờ Vào (In)</td><td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">${existing.checkInTime.toLocaleTimeString('vi-VN')}</td></tr>
                     <tr><td style="padding: 10px; border-bottom: 1px solid #e5e7eb; color: #6b7280;">Giờ Ra (Out)</td><td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">${now.toLocaleTimeString('vi-VN')}</td></tr>
-                    <tr><td style="padding: 10px; border-bottom: 1px solid #e5e7eb; color: #6b7280;">Tổng thời gian hợp lệ</td><td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-weight: bold; color: #4f46e5;">${Math.floor(totalMins / 60)} giờ ${totalMins % 60} phút</td></tr>
+                    <tr><td style="padding: 10px; border-bottom: 1px solid #e5e7eb; color: #6b7280;">Phiên cập nhật</td><td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-weight: bold; color: #4f46e5;">+${Math.floor(sessionMins / 60)} giờ ${sessionMins % 60} phút</td></tr>
+                    <tr><td style="padding: 10px; border-bottom: 1px solid #e5e7eb; color: #6b7280;">Tổng thời gian hợp lệ hôm nay</td><td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-weight: bold; color: #b91c1c;">${Math.floor(newTotalMins / 60)} giờ ${newTotalMins % 60} phút</td></tr>
                 </table>
                 <p style="color: #6b7280; font-size: 13px;">Khớp định vị GPS: ${data.location || 'Bị tắt'}</p>
-                <p style="margin-top: 30px; font-size: 14px; color: #9ca3af;">Công sức của bạn đã trọn vẹn, hãy nghỉ ngơi thoải mái nhé! <br/>Hẹn gặp lại bạn vào ngày mai.</p>
+                <p style="margin-top: 30px; font-size: 14px; color: #9ca3af;">Công sức của bạn đã trọn vẹn, hãy nghỉ ngơi thoải mái nhé! <br/>Hẹn gặp lại bạn sớm.</p>
             </div>
             `;
             await sendEmailWithTracking({
