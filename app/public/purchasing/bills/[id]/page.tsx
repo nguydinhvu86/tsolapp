@@ -213,7 +213,6 @@ export default async function PublicPurchaseBillPage({ params }: { params: { id:
                         <strong style={{ display: 'block', fontSize: '1rem' }}>NGƯỜI GIAO HÀNG / BÊN BÁN</strong>
                         <i style={{ fontSize: '0.85rem', color: '#64748b' }}>(Ký và ghi rõ họ tên)</i>
                         <div style={{ height: '100px' }}></div>
-                        <strong>{bill.supplier?.name}</strong>
                     </div>
                     <div style={{ textAlign: 'center' }}>
                         <strong style={{ display: 'block', fontSize: '1rem' }}>NGƯỜI NHẬN / KẾ TOÁN</strong>

@@ -235,10 +235,9 @@ export default function PrintSalesInvoiceClient({ invoice, companyInfo }: any) {
                 {/* Signatures */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 2rem', marginTop: '4rem' }}>
                     <div style={{ textAlign: 'center' }}>
-                        <strong style={{ display: 'block', fontSize: '1.1rem' }}>NGƯỜI NHẬN HÀNG</strong>
+                        <strong style={{ display: 'block', fontSize: '1.1rem' }}>NGƯỜI MUA HÀNG</strong>
                         <i style={{ fontSize: '0.9rem', color: '#64748b' }}>(Ký và ghi rõ họ tên)</i>
                         <div style={{ height: '100px' }}></div>
-                        <strong>{invoice.customer?.name}</strong>
                     </div>
                     <div style={{ textAlign: 'center' }}>
                         <strong style={{ display: 'block', fontSize: '1.1rem' }}>NGƯỜI LẬP BIỂU</strong>

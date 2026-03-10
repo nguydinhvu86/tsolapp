@@ -185,6 +185,7 @@ export default async function PublicPurchasePaymentPage({ params }: { params: { 
                         <strong style={{ display: 'block', fontSize: '1rem' }}>NGƯỜI LẬP PHIẾU</strong>
                         <i style={{ fontSize: '0.85rem', color: '#64748b' }}>(Ký và ghi rõ họ tên)</i>
                         <div style={{ height: '100px' }}></div>
+                        {/* Removed: <strong>{payment.supplier?.name}</strong> */}
                         <strong>{payment.creator?.name}</strong>
                     </div>
                     <div style={{ textAlign: 'center' }}>
