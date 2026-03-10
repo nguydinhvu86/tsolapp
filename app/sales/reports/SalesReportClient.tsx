@@ -377,7 +377,7 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
     };
 
     return (
-        <div className="p-6 max-w-7xl mx-auto">
+        <div className="p-6 w-full mx-auto">
             <style>{premiumStyles}</style>
 
             {/* Header */}

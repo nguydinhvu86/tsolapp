@@ -22,7 +22,7 @@ const STATUSES = [
 ];
 
 const styles = {
-    pageContainer: { padding: '24px', maxWidth: '1400px', margin: '0 auto', display: 'flex', flexDirection: 'column' as const, gap: '24px', boxSizing: 'border-box' as const, fontFamily: 'Inter, sans-serif' },
+    pageContainer: { padding: '24px', maxWidth: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column' as const, gap: '24px', boxSizing: 'border-box' as const, fontFamily: 'Inter, sans-serif' },
     headerCard: {
         display: 'flex', flexWrap: 'wrap' as const, justifyContent: 'space-between', alignItems: 'center', gap: '16px',
         backgroundColor: 'white', padding: '20px 24px', borderRadius: '16px', boxShadow: '0 2px 10px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9'

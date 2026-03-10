@@ -16,7 +16,7 @@ export default async function ExpenseDetailPage({ params }: { params: { id: stri
     }
 
     return (
-        <div className="p-6 max-w-7xl mx-auto flex flex-col gap-6">
+        <div className="p-6 w-full mx-auto flex flex-col gap-6">
             <ExpenseDetailClient initialData={expense} />
         </div>
     );

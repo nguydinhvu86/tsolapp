@@ -84,7 +84,7 @@ export default function SalesOrderDetailClient({ initialData, customers, product
     ] as const;
 
     return (
-        <div style={{ padding: '0', maxWidth: '1400px', margin: '0 auto', fontFamily: 'Inter, sans-serif' }}>
+        <div style={{ padding: '0', maxWidth: '100%', margin: '0 auto', fontFamily: 'Inter, sans-serif' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <button
