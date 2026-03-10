@@ -674,7 +674,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                                 </label>
                             </div>
                             <div className="flex flex-wrap gap-3 items-end mb-4">
-                                <div className="flex-1 min-w-[250px]">
+                                <div className="flex-1 min-w-[150px]">
                                     <label className="block text-sm font-medium text-gray-700 mb-1.5">Tên Sản Phẩm</label>
                                     {!isCustomProduct ? (
                                         <SearchableSelect

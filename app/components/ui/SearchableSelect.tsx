@@ -65,15 +65,21 @@ export function SearchableSelect({
                     borderColor: isOpen ? 'var(--primary)' : 'var(--border)'
                 }}
             >
-                <span style={{
+                <div style={{
                     color: selectedOption ? 'var(--text-main)' : 'var(--text-muted)',
                     whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    fontSize: '0.875rem'
-                }}>
+                    overflowX: 'auto',
+                    fontSize: '0.875rem',
+                    flex: 1,
+                    minWidth: 0,
+                    marginRight: '8px',
+                    scrollbarWidth: 'thin',
+                    paddingBottom: '2px' // So scrollbar doesn't clip
+                }}
+                    className="custom-scrollbar"
+                >
                     {selectedOption ? selectedOption.label : placeholder}
-                </span>
+                </div>
                 <ChevronDown size={16} color="var(--text-muted)" style={{ flexShrink: 0, marginLeft: '0.5rem', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
             </div>
 
