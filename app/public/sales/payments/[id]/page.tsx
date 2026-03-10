@@ -76,12 +76,12 @@ export default async function PublicSalesPaymentPage({ params }: { params: { id:
                     .no-print {
                         display: none !important;
                     }
-                    table { page-break-inside: auto; border-collapse: collapse; }
+                    table { page-break-inside: auto; border-collapse: collapse; width: 100%; }
                     tr    { page-break-inside: avoid; page-break-after: auto; }
                     td, th { page-break-inside: avoid; }
-                    thead { display: table-header-group; margin-top: 20px; }
+                    thead { display: table-header-group; }
                     tfoot {
-                        display: table-row-group !important;
+                        display: table-row-group;
                     }
                 }
             `}} />
