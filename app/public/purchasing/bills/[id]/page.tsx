@@ -53,9 +53,9 @@ export default async function PublicPurchaseBillPage({ params }: { params: { id:
                         visibility: hidden;
                     }
                     .print-wrapper {
-                        position: absolute !important;
-                        top: 0 !important;
-                        left: 0 !important;
+                        position: static !important;
+                        top: auto !important;
+                        left: auto !important;
                         width: 100% !important;
                         height: auto !important;
                         overflow: visible !important;
@@ -78,8 +78,8 @@ export default async function PublicPurchaseBillPage({ params }: { params: { id:
                         display: none !important;
                     }
                     table { page-break-inside: auto; border-collapse: collapse; width: 100%; }
-                    tr    { page-break-inside: avoid; page-break-after: auto; }
-                    td, th { page-break-inside: avoid; }
+                    tr    { page-break-inside: auto; page-break-after: auto; }
+                    td, th { page-break-inside: auto; }
                     thead { display: table-header-group; }
                     tfoot {
                         display: table-row-group;
