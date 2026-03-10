@@ -17,7 +17,7 @@ export type ExpenseWithDetails = Expense & {
     category: ExpenseCategory;
     supplier?: { id: string, name: string } | null;
     customer?: { id: string, name: string } | null;
-    creator: { name: string | null; email: string };
+    creator?: { name: string | null; email: string | null } | null;
 };
 
 export default function ExpenseClient({

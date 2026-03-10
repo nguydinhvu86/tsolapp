@@ -36,7 +36,6 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
     const [sortBy, setSortBy] = useState('createdAt_desc');
-
     const handleSort = (key: string) => {
         if (sortBy === `${key}_desc`) {
             setSortBy(`${key}_asc`);
@@ -45,13 +44,19 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         }
     };
 
+    // Handle timezone offset to get correct local date string (YYYY-MM-DD)
+    const getLocalDateStr = (d: Date) => {
+        const offset = d.getTimezoneOffset() * 60000;
+        return new Date(d.getTime() - offset).toISOString().split('T')[0];
+    };
+
     const [formData, setFormData] = useState<any>({
         code: nextCode,
         customerId: initialCustomerId || '',
         leadId: initialLeadId || '',
         salespersonId: currentUserId || '',
-        date: new Date().toISOString().split('T')[0],
-        validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        date: getLocalDateStr(new Date()),
+        validUntil: getLocalDateStr(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
         notes: '',
         status: 'DRAFT',
         tags: '',
@@ -67,8 +72,8 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
             customerId: '',
             leadId: '',
             salespersonId: currentUserId || '',
-            date: new Date().toISOString().split('T')[0],
-            validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            date: getLocalDateStr(new Date()),
+            validUntil: getLocalDateStr(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
             notes: '',
             status: 'DRAFT',
             tags: '',
@@ -107,8 +112,8 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
             customerId: est.customerId || '',
             leadId: est.leadId || '',
             salespersonId: est.salespersonId || est.creatorId || currentUserId || '',
-            date: est.date ? new Date(est.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-            validUntil: est.validUntil ? new Date(est.validUntil).toISOString().split('T')[0] : '',
+            date: est.date ? getLocalDateStr(new Date(est.date)) : getLocalDateStr(new Date()),
+            validUntil: est.validUntil ? getLocalDateStr(new Date(est.validUntil)) : '',
             notes: est.notes || '',
             status: est.status || 'DRAFT',
             tags: est.tags || '',
@@ -150,8 +155,8 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
             code: nextCode,
             customerId: est.customerId || '',
             salespersonId: currentUserId || '',
-            date: new Date().toISOString().split('T')[0],
-            validUntil: est.validUntil ? new Date(est.validUntil).toISOString().split('T')[0] : '',
+            date: getLocalDateStr(new Date()),
+            validUntil: est.validUntil ? getLocalDateStr(new Date(est.validUntil)) : '',
             notes: est.notes || '',
             status: 'DRAFT',
             tags: est.tags || '',

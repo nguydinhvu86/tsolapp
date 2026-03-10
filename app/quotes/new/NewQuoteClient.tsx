@@ -114,9 +114,19 @@ export function NewQuoteClient({ templates, customers, products, preselectedCust
             return;
         }
 
+        // Handle timezone offset to get correct local date string (DD/MM/YYYY)
+        const getLocalDateFormatted = (d: Date) => {
+            const offset = d.getTimezoneOffset() * 60000;
+            const localDate = new Date(d.getTime() - offset);
+            const day = String(localDate.getUTCDate()).padStart(2, '0');
+            const month = String(localDate.getUTCMonth() + 1).padStart(2, '0');
+            const year = localDate.getUTCFullYear();
+            return `${day}/${month}/${year}`;
+        };
+
         try {
             await createQuote({
-                title: `Báo giá - ${selectedCustomer.name} - ${new Date().toLocaleDateString('vi-VN')}`,
+                title: `Báo giá - ${selectedCustomer.name} - ${getLocalDateFormatted(new Date())}`,
                 content: previewContent,
                 variables: JSON.stringify(variables),
                 customerId: selectedCustomer.id,

@@ -244,6 +244,10 @@ export async function updatePurchaseOrder(id: string, data: any) {
                     };
                 })
             }
+        },
+        include: {
+            supplier: true,
+            creator: true
         }
     });
 
@@ -478,6 +482,10 @@ export async function updatePurchaseBill(id: string, data: any) {
                     };
                 })
             }
+        },
+        include: {
+            supplier: true,
+            creator: true
         }
     });
 

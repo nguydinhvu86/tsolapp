@@ -140,6 +140,11 @@ export async function submitSalesEstimate(creatorId: string, formData: any) {
                         totalPrice: item.totalPrice
                     }))
                 }
+            },
+            include: {
+                customer: true,
+                creator: true,
+                salesperson: true
             }
         });
 
@@ -192,9 +197,15 @@ export async function updateSalesEstimate(id: string, formData: any) {
             changes.push(`Đổi Người báo giá từ **${oldSalesperson?.name || 'Không có'}** sang **${newSalesperson?.name || 'Không có'}**`);
         }
 
+        // Handle timezone offset to get correct local date string (YYYY-MM-DD)
+        const getLocalDateStr = (d: Date) => {
+            const offset = d.getTimezoneOffset() * 60000;
+            return new Date(d.getTime() - offset).toISOString().split('T')[0];
+        };
+
         // So sánh ngày
-        const oldDateStr = oldEstimate.date.toISOString().split('T')[0];
-        const newDateStr = new Date(formData.date).toISOString().split('T')[0];
+        const oldDateStr = getLocalDateStr(oldEstimate.date);
+        const newDateStr = getLocalDateStr(new Date(formData.date));
         if (oldDateStr !== newDateStr) {
             const fmtOld = formatDate(oldEstimate.date);
             const fmtNew = formatDate(new Date(formData.date));
@@ -202,8 +213,8 @@ export async function updateSalesEstimate(id: string, formData: any) {
         }
 
         // So sánh ngày hết hạn
-        const oldValidStr = oldEstimate.validUntil ? oldEstimate.validUntil.toISOString().split('T')[0] : null;
-        const newValidStr = formData.validUntil ? new Date(formData.validUntil).toISOString().split('T')[0] : null;
+        const oldValidStr = oldEstimate.validUntil ? getLocalDateStr(oldEstimate.validUntil) : null;
+        const newValidStr = formData.validUntil ? getLocalDateStr(new Date(formData.validUntil)) : null;
         if (oldValidStr !== newValidStr) {
             const fmtOld = oldEstimate.validUntil ? formatDate(oldEstimate.validUntil) : 'Không có';
             const fmtNew = formData.validUntil ? formatDate(new Date(formData.validUntil)) : 'Không có';
@@ -282,6 +293,11 @@ export async function updateSalesEstimate(id: string, formData: any) {
                         totalPrice: item.totalPrice
                     }))
                 }
+            },
+            include: {
+                customer: true,
+                creator: true,
+                salesperson: true
             }
         });
 
@@ -472,6 +488,7 @@ export async function convertEstimateToInvoice(estimateId: string) {
                 data: {
                     code: nextCode,
                     date: new Date(),
+                    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
                     status: "DRAFT",
                     notes: `Tạo từ Báo giá ${estimate.code}`,
                     tags: estimate.tags,

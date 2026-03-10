@@ -34,7 +34,52 @@ export default async function PublicSalesInvoicePage({ params }: { params: { id:
 
 
     return (
-        <div style={{ minHeight: '100vh', backgroundColor: '#e2e8f0', padding: '2rem 0', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div className="print-wrapper" style={{ minHeight: '100vh', backgroundColor: '#e2e8f0', padding: '2rem 0', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                @media print {
+                    @page {
+                        margin: 15mm;
+                        size: A4;
+                    }
+                    body, html {
+                        height: auto !important;
+                        overflow: visible !important;
+                        background-color: white !important;
+                    }
+                    body * {
+                        visibility: hidden;
+                    }
+                    .print-wrapper {
+                        position: absolute !important;
+                        top: 0 !important;
+                        left: 0 !important;
+                        width: 100% !important;
+                        height: auto !important;
+                        overflow: visible !important;
+                        background-color: white !important;
+                        padding: 0 !important;
+                        display: block !important;
+                    }
+                    .print-wrapper, .print-wrapper * {
+                        visibility: visible;
+                    }
+                    .a4-document {
+                        position: static !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        box-shadow: none !important;
+                        width: 100% !important;
+                        max-width: none !important;
+                    }
+                    .no-print {
+                        display: none !important;
+                    }
+                    tfoot {
+                        display: table-row-group !important;
+                    }
+                }
+            `}} />
             <PrintButton label="In Hóa Đơn / PDF" />
 
             <div className="a4-document" style={{
@@ -80,7 +125,7 @@ export default async function PublicSalesInvoicePage({ params }: { params: { id:
                         {invoice.customer?.address && <div><strong>Địa chỉ:</strong> {invoice.customer?.address}</div>}
                         {invoice.customer?.phone && <div><strong>Điện thoại:</strong> {invoice.customer?.phone}</div>}
                     </div>
-                    <div style={{ flex: 1, paddingLeft: '1rem' }}>
+                    <div style={{ flex: 1, paddingLeft: '1rem', textAlign: 'right' }}>
                         <h3 style={{ fontSize: '1rem', fontWeight: 700, borderBottom: '1px solid #e2e8f0', display: 'inline-block', paddingBottom: '0.25rem', marginBottom: '0.75rem' }}>ĐIỀU KIỆN & THANH TOÁN</h3>
                         <div><strong>Hạn thanh toán:</strong> {formatDate(invoice.dueDate) || '---'}</div>
                         <div><strong>Người lập:</strong> {invoice.creator?.name || '---'}</div>
