@@ -79,10 +79,13 @@ export default function PrintSalesEstimateClient({ estimate, settings }: any) {
                     .no-print {
                         display: none !important;
                     }
-                    table { page-break-inside: auto; }
+                    table { page-break-inside: auto; border-collapse: collapse; }
                     tr    { page-break-inside: avoid; page-break-after: auto; }
-                    thead { display: table-header-group; }
+                    td, th { page-break-inside: avoid; }
+                    thead { display: table-header-group; margin-top: 20px; }
                     tfoot {
+                        display: table-row-group !important;
+                    }
                         display: table-row-group !important;
                     }
                 }

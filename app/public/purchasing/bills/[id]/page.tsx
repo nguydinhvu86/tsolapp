@@ -35,7 +35,7 @@ export default async function PublicPurchaseBillPage({ params }: { params: { id:
 
 
     return (
-        <div className="print-wrapper" style={{ minHeight: '100vh', backgroundColor: '#e2e8f0', padding: '2rem 0', display: 'flex', justifyContent: 'center' }}>
+        <div className="print-wrapper" style={{ minHeight: '100vh', backgroundColor: '#e2e8f0', padding: '2rem 1rem', margin: '0 auto', maxWidth: '210mm' }}>
             <style dangerouslySetInnerHTML={{
                 __html: `
                 @media print {
@@ -77,9 +77,10 @@ export default async function PublicPurchaseBillPage({ params }: { params: { id:
                     .no-print {
                         display: none !important;
                     }
-                    table { page-break-inside: auto; }
+                    table { page-break-inside: auto; border-collapse: collapse; }
                     tr    { page-break-inside: avoid; page-break-after: auto; }
-                    thead { display: table-header-group; }
+                    td, th { page-break-inside: avoid; }
+                    thead { display: table-header-group; margin-top: 20px; }
                     tfoot {
                         display: table-row-group !important;
                     }
