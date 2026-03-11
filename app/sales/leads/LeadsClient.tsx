@@ -22,7 +22,7 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
     const router = useRouter();
     const [viewMode, setViewMode] = useState<'kanban' | 'table'>('table');
     const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState('ALL');
+    const [statusFilter, setStatusFilter] = useState('ACTIVE');
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
     const [sortBy, setSortBy] = useState('date_desc');
@@ -45,7 +45,9 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
 
     const filteredLeads = useMemo(() => {
         let filtered = localLeads;
-        if (statusFilter !== 'ALL') {
+        if (statusFilter === 'ACTIVE') {
+            filtered = filtered.filter(l => !['WON', 'LOST'].includes(l.status));
+        } else if (statusFilter !== 'ALL') {
             filtered = filtered.filter(l => l.status === statusFilter);
         }
 
@@ -91,12 +93,17 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
     }, [filteredLeads]);
 
     const stats = useMemo(() => {
-        const counts = { ALL: 0, NEW: 0, CONTACTED: 0, QUALIFIED: 0, PROPOSAL: 0, WON: 0, LOST: 0 };
-        const amounts = { ALL: 0, NEW: 0, CONTACTED: 0, QUALIFIED: 0, PROPOSAL: 0, WON: 0, LOST: 0 };
+        const counts = { ALL: 0, ACTIVE: 0, NEW: 0, CONTACTED: 0, QUALIFIED: 0, PROPOSAL: 0, WON: 0, LOST: 0 };
+        const amounts = { ALL: 0, ACTIVE: 0, NEW: 0, CONTACTED: 0, QUALIFIED: 0, PROPOSAL: 0, WON: 0, LOST: 0 };
 
         localLeads.forEach(l => {
             counts.ALL++;
             amounts.ALL += (l.estimatedValue || 0);
+
+            if (!['WON', 'LOST'].includes(l.status)) {
+                counts.ACTIVE++;
+                amounts.ACTIVE += (l.estimatedValue || 0);
+            }
 
             if (counts[l.status as keyof typeof counts] !== undefined) {
                 counts[l.status as keyof typeof counts]++;
@@ -108,7 +115,7 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
     }, [localLeads]);
 
     const statsCards = [
-        { id: 'ALL', label: 'Tất Cả', count: stats.counts.ALL, amount: stats.amounts.ALL, colorClass: 'stat-card-purple', icon: List },
+        { id: 'ACTIVE', label: 'Đang Xử Lý', count: stats.counts.ACTIVE, amount: stats.amounts.ACTIVE, colorClass: 'stat-card-purple', icon: List },
         { id: 'NEW', label: 'Tiếp Nhận Mới', count: stats.counts.NEW, amount: stats.amounts.NEW, colorClass: 'stat-card-emerald', icon: Calendar },
         { id: 'CONTACTED', label: 'Đã Liên Hệ', count: stats.counts.CONTACTED, amount: stats.amounts.CONTACTED, colorClass: 'stat-card-blue', icon: Phone },
         { id: 'QUALIFIED', label: 'Đánh Giá', count: stats.counts.QUALIFIED, amount: stats.amounts.QUALIFIED, colorClass: 'stat-card-amber', icon: Search },
@@ -346,6 +353,23 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
                     </div>
                 )}
 
+                {/* Status Filter */}
+                <div className="shrink-0 min-w-[200px]">
+                    <select
+                        className="h-[40px] w-full px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-700 outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+                        value={statusFilter}
+                        onChange={e => setStatusFilter(e.target.value)}
+                    >
+                        <option value="ACTIVE">Đang xử lý (Ẩn Chốt/Rớt)</option>
+                        <option value="ALL">Tất cả trạng thái</option>
+                        <optgroup label="Từng trạng thái cụ thể">
+                            {STATUSES.map(s => (
+                                <option key={s.id} value={s.id}>{s.label}</option>
+                            ))}
+                        </optgroup>
+                    </select>
+                </div>
+
                 {/* Sort By Dropdown */}
                 <div className="shrink-0 min-w-[170px]">
                     <select
@@ -367,10 +391,14 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
             {viewMode === 'kanban' && (
                 <div className="w-full overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm" style={{ minHeight: '600px' }}>
                     <div className="flex h-full min-h-[600px]" style={{ minWidth: '100%' }}>
-                        {STATUSES.map((status, index) => (
+                        {STATUSES.filter(s => {
+                            if (statusFilter === 'ACTIVE') return !['WON', 'LOST'].includes(s.id);
+                            if (statusFilter !== 'ALL') return s.id === statusFilter;
+                            return true;
+                        }).map((status, index, arr) => (
                             <div
                                 key={status.id}
-                                className={`flex flex-col flex-1 min-w-[250px] shrink-0 transition-colors duration-200 ${index < STATUSES.length - 1 ? 'border-r border-gray-200' : ''}`}
+                                className={`flex flex-col flex-1 min-w-[250px] shrink-0 transition-colors duration-200 ${index < arr.length - 1 ? 'border-r border-gray-200' : ''}`}
                                 style={{ backgroundColor: status.color.colBg }}
                                 onDragOver={handleDragOver}
                                 onDrop={(e) => handleDrop(e, status.id)}
