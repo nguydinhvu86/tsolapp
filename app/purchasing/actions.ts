@@ -195,7 +195,7 @@ export async function createPurchaseOrder(data: any) {
                     const isExternal = item.productId === 'EXTERNAL';
                     return {
                         productId: isExternal ? null : item.productId,
-                        productName: isExternal ? item.productName : null,
+                        productName: isExternal ? item.productName || item.customName : null,
                         quantity: item.quantity,
                         unitPrice: item.unitPrice,
                         taxRate: item.taxRate || 0,
@@ -235,7 +235,7 @@ export async function updatePurchaseOrder(id: string, data: any) {
                     const isExternal = item.productId === 'EXTERNAL' || !item.productId;
                     return {
                         productId: isExternal ? null : item.productId,
-                        productName: isExternal ? item.productName : null,
+                        productName: isExternal ? item.productName || item.customName : null,
                         quantity: item.quantity,
                         unitPrice: item.unitPrice,
                         taxRate: item.taxRate || 0,
@@ -344,7 +344,7 @@ export async function createPurchaseBill(data: any) {
                     const isExternal = item.productId === 'EXTERNAL' || !item.productId;
                     return {
                         productId: isExternal ? null : item.productId,
-                        productName: isExternal ? item.productName : null,
+                        productName: isExternal ? item.productName || item.customName : null,
                         quantity: item.quantity,
                         unitPrice: item.unitPrice,
                         taxRate: item.taxRate || 0,
@@ -473,7 +473,7 @@ export async function updatePurchaseBill(id: string, data: any) {
                     const isExternal = item.productId === 'EXTERNAL' || !item.productId;
                     return {
                         productId: isExternal ? null : item.productId,
-                        productName: isExternal ? item.productName : null,
+                        productName: isExternal ? item.productName || item.customName : null,
                         quantity: item.quantity,
                         unitPrice: item.unitPrice,
                         taxRate: item.taxRate || 0,
