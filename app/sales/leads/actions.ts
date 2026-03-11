@@ -28,6 +28,7 @@ export async function getLeads(employeeId?: string) {
             where: whereClause,
             include: {
                 assignedTo: { select: { id: true, name: true, avatar: true } },
+                assignees: { include: { user: { select: { name: true, avatar: true } } } } as any,
                 customer: { select: { id: true, name: true, email: true, phone: true } }
             },
             orderBy: {
@@ -54,6 +55,7 @@ export async function getLeadById(id: string) {
             where: { id, ...authFilter },
             include: {
                 assignedTo: { select: { id: true, name: true, avatar: true } },
+                assignees: { include: { user: { select: { name: true, avatar: true } } } } as any,
                 customer: { select: { id: true, name: true, phone: true, email: true } },
                 activityLogs: {
                     include: {
@@ -172,6 +174,16 @@ export async function createLead(data: {
                 }
             });
 
+            // Tao LeadAssignee ban dau
+            if (newLead.assignedToId) {
+                await tx.leadAssignee.create({
+                    data: {
+                        leadId: newLead.id,
+                        userId: newLead.assignedToId
+                    }
+                });
+            }
+
             // Tao Activity Log
             await tx.leadActivityLog.create({
                 data: {
@@ -279,6 +291,60 @@ export async function updateLeadStatus(id: string, status: string) {
     } catch (error) {
         console.error('Error updating lead status:', error);
         throw new Error('Không thể cập nhật trạng thái Cơ hội bán hàng');
+    }
+}
+
+// 5.5 Update Assignees
+export async function updateLeadAssignees(id: string, assigneeIds: string[]) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) throw new Error('Unauthorized');
+
+    try {
+        const result = await prisma.$transaction(async (tx) => {
+            // Xóa hết assignees cũ
+            await tx.leadAssignee.deleteMany({
+                where: { leadId: id }
+            });
+
+            // Thêm mới list assignees
+            if (assigneeIds && assigneeIds.length > 0) {
+                await tx.leadAssignee.createMany({
+                    data: assigneeIds.map(userId => ({
+                        leadId: id,
+                        userId
+                    }))
+                });
+            }
+
+            // Lấy id của người đầu tiên làm assignedToId chính (để backwards compat và hiển thị chính)
+            const mainAssignedToId = assigneeIds.length > 0 ? assigneeIds[0] : null;
+
+            const updatedLead = await tx.lead.update({
+                where: { id },
+                data: { assignedToId: mainAssignedToId },
+                include: { assignees: { include: { user: { select: { name: true } } } } } as any
+            });
+
+            const assigneeNames = (updatedLead as any).assignees.map((a: any) => a.user.name).join(', ');
+
+            await tx.leadActivityLog.create({
+                data: {
+                    leadId: id,
+                    userId: session.user.id,
+                    action: "CẬP_NHẬT_PHỤ_TRÁCH",
+                    details: assigneeIds.length > 0
+                        ? `Đã cập nhật người phụ trách: ${assigneeNames}`
+                        : "Đã xóa toàn bộ người phụ trách"
+                }
+            });
+
+            return updatedLead;
+        });
+
+        return result;
+    } catch (error) {
+        console.error('Error updating lead assignees:', error);
+        throw new Error('Không thể cập nhật người phụ trách');
     }
 }
 
