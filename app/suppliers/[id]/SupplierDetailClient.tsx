@@ -110,7 +110,7 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks }
     };
 
     return (
-        <div style={{ padding: '2rem', maxWidth: '1440px', margin: '0 auto', backgroundColor: '#f8fafc', minHeight: 'calc(100vh - 64px)' }}>
+        <div style={{ padding: '2rem', maxWidth: '100%', margin: '0 auto', backgroundColor: '#f8fafc', minHeight: 'calc(100vh - 64px)' }}>
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
