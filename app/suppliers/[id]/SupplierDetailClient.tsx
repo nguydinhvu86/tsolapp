@@ -6,11 +6,12 @@ import Link from 'next/link';
 import {
     ArrowLeft, Building, Phone, Mail, FileText,
     ShoppingCart, FileDown, Wallet, DollarSign,
-    CheckSquare, MapPin, Search, Edit2
+    CheckSquare, MapPin, Search, Edit2, FileSpreadsheet
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import { updateSupplier } from '@/app/purchasing/actions';
+import { SupplierStatementPanel } from '@/app/components/suppliers/SupplierStatementPanel';
 
 export function SupplierDetailClient({ supplier: initialSupplier, users, tasks }: { supplier: any, users: any[], tasks: any[] }) {
     const router = useRouter();
@@ -84,6 +85,7 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks }
         { id: 'bills', label: 'Hóa Đơn', count: supplier.bills?.length || 0, icon: <FileDown size={16} /> },
         { id: 'payments', label: 'Thanh Toán', count: supplier.payments?.length || 0, icon: <Wallet size={16} /> },
         { id: 'debt', label: 'Tổng Công Nợ', count: null, icon: <DollarSign size={16} /> },
+        { id: 'statement', label: 'Sao Kê Công Nợ', count: '-', icon: <FileSpreadsheet size={16} /> },
     ];
 
     const getStatusBadge = (status: string, type: 'order' | 'bill') => {
@@ -339,6 +341,12 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks }
                                             {formatMoney(computedDebt)}
                                         </span>
                                     </div>
+                                </div>
+                            )}
+
+                            {activeTab === 'statement' && (
+                                <div style={{ paddingTop: '1rem' }}>
+                                    <SupplierStatementPanel supplierId={supplier.id} supplierName={supplier.name} />
                                 </div>
                             )}
 
