@@ -39,7 +39,7 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
     const allTemplates = [...debtTemplates, ...generalTemplates];
 
     return (
-        <div style={{ padding: '1.5rem', maxWidth: '1600px', margin: '0 auto' }}>
+        <div style={{ padding: '1.5rem', maxWidth: '100%', margin: '0 auto' }}>
             <CustomerDetailClient customer={customer} tasks={tasks} users={users} emailTemplates={allTemplates} savedMenuOrder={savedMenuOrder} />
         </div>
     );
