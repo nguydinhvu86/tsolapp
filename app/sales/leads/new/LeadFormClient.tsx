@@ -8,7 +8,7 @@ import { createLead, updateLead } from '../actions';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 
 const styles = {
-    container: { padding: '24px', maxWidth: '1200px', margin: '0 auto', paddingBottom: '96px', boxSizing: 'border-box' as const },
+    container: { padding: '24px', width: '100%', margin: '0', paddingBottom: '96px', boxSizing: 'border-box' as const },
     header: { display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' },
     backBtn: { padding: '8px', borderRadius: '50%', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' },
     title: { fontSize: '24px', fontWeight: 'bold', color: 'var(--text-main)', margin: 0 },
