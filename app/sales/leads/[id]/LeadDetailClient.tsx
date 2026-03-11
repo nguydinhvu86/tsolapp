@@ -5,12 +5,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Edit, Trash2, CheckCircle, RefreshCcw, Building2, User, Phone, Mail, DollarSign, Calendar, Tag, FileText, CheckSquare, Plus, Paperclip, Send, Link as LinkIcon } from 'lucide-react';
 import { formatMoney, formatDate, formatDateTime } from '@/lib/utils/formatters';
-import { updateLeadStatus, deleteLead, convertLeadToCustomer, connectLeadToExistingCustomer, addLeadActivityLog, sendLeadEmail } from '../actions';
+import { updateLeadStatus, deleteLead, convertLeadToCustomer, connectLeadToExistingCustomer, addLeadActivityLog, sendLeadEmail, updateLeadAssignees } from '../actions';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { Modal } from '@/app/components/ui/Modal';
 import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import { EmailLogTable } from '@/app/components/ui/EmailLogTable';
+import { LeadComments } from './comments/LeadComments';
 
 const STATUSES = [
     { id: 'NEW', label: 'Tiếp nhận mới', color: { bg: '#e0e7ff', text: '#3730a3', border: '#c7d2fe', light: '#a5b4fc', solid: '#4f46e5' } },
@@ -83,6 +84,26 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [] }
     const [isUploading, setIsUploading] = useState(false);
     const [attachments, setAttachments] = useState<{ url: string, name: string }[]>([]);
     const [activityLogs, setActivityLogs] = useState(lead.activityLogs || []);
+
+    // Assignee Modal State
+    const [isAssigneeModalOpen, setIsAssigneeModalOpen] = useState(false);
+    const [editAssignees, setEditAssignees] = useState<string[]>(
+        lead.assignees?.map((a: any) => a.userId) || (lead.assignedToId ? [lead.assignedToId] : [])
+    );
+    const [isSavingAssignees, setIsSavingAssignees] = useState(false);
+
+    const handleSaveAssignees = async () => {
+        setIsSavingAssignees(true);
+        try {
+            await updateLeadAssignees(lead.id, editAssignees);
+            setIsAssigneeModalOpen(false);
+            router.refresh();
+        } catch (err: any) {
+            alert(err.message || 'Lỗi cập nhật người phụ trách');
+        } finally {
+            setIsSavingAssignees(false);
+        }
+    };
 
     const handleAddNote = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -195,7 +216,27 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [] }
                                 </span>
                             )}
                         </div>
-                        <p style={styles.subtitle}>Mã KH: <span style={{ fontWeight: '700' }}>{lead.code}</span> • Phụ trách: {lead.assignedTo?.name || 'Chưa gán'}</p>
+                        <div style={{ ...styles.subtitle, display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            <span>Mã KH: <span style={{ fontWeight: '700' }}>{lead.code}</span></span>
+                            <span>•</span>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                Phụ trách:
+                                {lead.assignees && lead.assignees.length > 0 ? (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        {lead.assignees.map((a: any) => (
+                                            <div key={a.userId} style={{ padding: '2px 8px', backgroundColor: '#e2e8f0', color: '#475569', borderRadius: '12px', fontSize: '12px', fontWeight: '600' }} title={a.user?.name}>
+                                                {a.user?.name}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <span>{lead.assignedTo?.name || 'Chưa gán'}</span>
+                                )}
+                                <button onClick={() => setIsAssigneeModalOpen(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3b82f6', display: 'flex', alignItems: 'center', padding: '4px' }} title="Sửa người phụ trách">
+                                    <Edit size={14} />
+                                </button>
+                            </span>
+                        </div>
                     </div>
                 </div>
 
@@ -391,6 +432,9 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [] }
                     ) : (
                         <EmailLogTable emailLogs={lead.emailLogs || []} />
                     )}
+
+                    {/* Comments Section */}
+                    <LeadComments leadId={lead.id} initialComments={lead.comments} users={users} />
 
                 </div>
 
@@ -708,7 +752,7 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [] }
                     phone: lead.phone || lead.customer?.phone || '---',
                     email: lead.email || lead.customer?.email || '---',
                     source: lead.source || '---',
-                    assignedTo: lead.assignedTo?.name || '---',
+                    assignedTo: lead.assignees ? lead.assignees.map((a: any) => a.user?.name).join(', ') : (lead.assignedTo?.name || '---'),
                     status: currentStatus.label,
                     link: typeof window !== 'undefined' ? `${window.location.origin}/sales/leads/${lead.id}` : ''
                 }}
@@ -718,6 +762,38 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [] }
                     else alert("Lỗi khi gửi email: " + res?.error);
                 }}
             />
+
+            {/* Edit Assignees Modal */}
+            <Modal isOpen={isAssigneeModalOpen} onClose={() => setIsAssigneeModalOpen(false)} title="Chỉnh sửa người phụ trách">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', paddingTop: '1rem' }}>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Người phụ trách</label>
+                        <select
+                            multiple
+                            value={editAssignees}
+                            onChange={e => {
+                                const options = Array.from(e.target.selectedOptions);
+                                setEditAssignees(options.map(o => o.value));
+                            }}
+                            style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #e2e8f0', minHeight: '120px' }}
+                        >
+                            {users.map(u => (
+                                <option key={u.id} value={u.id}>{u.name || u.email}</option>
+                            ))}
+                        </select>
+                        <small style={{ color: '#64748b', display: 'block', marginTop: '4px' }}>Bấm <kbd>Ctrl</kbd> hoặc kéo thả để chọn nhiều người.</small>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
+                        <button onClick={() => setIsAssigneeModalOpen(false)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', color: '#475569', cursor: 'pointer', fontWeight: 600 }}>
+                            Hủy
+                        </button>
+                        <button onClick={handleSaveAssignees} disabled={isSavingAssignees} style={{ padding: '8px 16px', borderRadius: '6px', border: 'none', backgroundColor: '#2563eb', color: 'white', cursor: isSavingAssignees ? 'not-allowed' : 'pointer', fontWeight: 600 }}>
+                            {isSavingAssignees ? 'Đang lưu...' : 'Lưu Thay Đổi'}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 }

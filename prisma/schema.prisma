@@ -91,6 +91,8 @@ model User {
   assignedLeads   Lead[]            @relation("LeadAssignee")
   leadForms       LeadForm[]        @relation("LeadFormAssignee")
   LeadActivityLog LeadActivityLog[]
+  leadAssignees   LeadAssignee[]
+  leadComments    LeadComment[]
 
   // Internal Chat
   chatParticipants ChatParticipant[]
@@ -1201,6 +1203,12 @@ model Lead {
   assignedToId String?
   assignedTo   User?   @relation("LeadAssignee", fields: [assignedToId], references: [id])
   
+  // Danh sách Người phụ trách chung (nhiều người)
+  assignees LeadAssignee[]
+
+  // Thảo luận/Bình luận
+  comments  LeadComment[]
+
   // Người tạo
   creatorId    String?
   creator      User?   @relation("LeadCreator", fields: [creatorId], references: [id])
@@ -1212,6 +1220,30 @@ model Lead {
   tasks          Task[] // Công việc liên quan (gọi điện, hẹn gặp...)
   EmailLog       EmailLog[]
   salesEstimates SalesEstimate[]
+}
+
+model LeadAssignee {
+  leadId String
+  userId String
+  lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([leadId, userId])
+}
+
+model LeadComment {
+  id      String @id @default(cuid())
+  content String @db.LongText
+  leadId  String
+  userId  String
+  lead    Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  images String? @db.LongText
+  files  String? @db.LongText
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model LeadSource {
