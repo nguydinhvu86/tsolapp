@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Table } from '@/app/components/ui/Table';
 import { Button } from '@/app/components/ui/Button';
-import { Printer, Calendar, Search } from 'lucide-react';
+import { Printer, Calendar, Search, ExternalLink } from 'lucide-react';
+import Link from 'next/link';
 import { getSupplierStatement, SupplierStatementSummary, SupplierStatementTransaction } from '../../suppliers/[id]/statement/actions';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 
@@ -198,7 +199,11 @@ export function SupplierStatementPanel({ supplierId, supplierName }: SupplierSta
                                             }}>
                                                 {tx.type === 'BILL' ? 'HĐ' : 'TT'}
                                             </span>
-                                            {tx.code}
+                                            <Link href={tx.type === 'BILL' ? `/purchasing/bills/${tx.id}` : `/purchasing/payments/${tx.id}`}
+                                                className="text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 w-max">
+                                                {tx.code}
+                                                <ExternalLink size={12} className="print-hide" />
+                                            </Link>
                                         </td>
                                         <td>{tx.description}</td>
                                         <td style={{ textAlign: 'right', color: '#ef4444', fontWeight: tx.debit > 0 ? 500 : 400 }}>
