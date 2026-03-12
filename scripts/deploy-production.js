@@ -1,7 +1,7 @@
 const { Client } = require('ssh2');
 const conn = new Client();
 
-const BRANCH = 'feature/chat-monitoring-ui';
+const BRANCH = 'main';
 const DIRECTORY = '/www/wwwroot/inside.tsol.vn/tsolapp';
 
 conn.on('ready', () => {
