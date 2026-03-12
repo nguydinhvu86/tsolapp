@@ -129,12 +129,13 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
                         </button>
                     )}
                     {bill.totalAmount > bill.paidAmount && (
-                        <button
+                        <Link
+                            href={`/purchasing/payments?supplierId=${bill.supplierId}`}
                             className="btn btn-primary"
                             style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.25rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#10b981', color: 'white', border: 'none', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
                         >
                             <CreditCard size={18} /> Tạo lệnh Chi tiền
-                        </button>
+                        </Link>
                     )}
                 </div>
             </div>
