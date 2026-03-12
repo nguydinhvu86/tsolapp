@@ -582,8 +582,8 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
 
         return {
             ALL: {
-                count: baseFilteredInvoices.length,
-                amount: baseFilteredInvoices.reduce((sum: number, i: any) => sum + (i.totalAmount || 0), 0)
+                count: baseFilteredInvoices.filter((i: any) => i.status !== 'CANCELLED').length,
+                amount: baseFilteredInvoices.filter((i: any) => i.status !== 'CANCELLED').reduce((sum: number, i: any) => sum + (i.totalAmount || 0), 0)
             },
             DRAFT: {
                 count: baseFilteredInvoices.filter((i: any) => i.status === 'DRAFT').length,
