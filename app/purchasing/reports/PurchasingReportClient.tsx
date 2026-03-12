@@ -9,6 +9,7 @@ import {
 import { Calendar, TrendingUp, DollarSign, Users, Package, FileText, CreditCard, Search, ArrowUpRight, Activity, Download, Printer } from 'lucide-react';
 import Link from 'next/link';
 import { exportToExcel, exportToPDF } from '@/lib/utils/export';
+import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
@@ -336,6 +337,12 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
         return null;
     };
 
+    const supplierPag = usePagination(supplierReportData);
+    const productPag = usePagination(productReportData);
+    const billPag = usePagination(displayBills);
+    const orderPag = usePagination(displayOrders);
+    const paymentPag = usePagination(displayPayments);
+
     return (
         <div className="p-6 w-full mx-auto">
             <style>{premiumStyles}</style>
@@ -518,7 +525,7 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {supplierReportData.map(s => (
+                                    {supplierPag.paginatedItems.map(s => (
                                         <tr key={s.id}>
                                             <td className="font-medium text-gray-500">
                                                 <Link href={`/suppliers/${s.id}`} className="hover:text-primary hover:underline transition-colors block">
@@ -535,7 +542,7 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
                                             <td className="text-right font-bold text-danger">{formatMoney(s.currentDebt)}</td>
                                         </tr>
                                     ))}
-                                    {supplierReportData.length === 0 && (
+                                    {supplierPag.paginatedItems.length === 0 && (
                                         <tr><td colSpan={5} className="text-center p-8 text-gray-500">Không tìm thấy nhà cung cấp nào.</td></tr>
                                     )}
                                 </tbody>
@@ -556,6 +563,7 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
                                     </tfoot>
                                 )}
                             </table>
+                            <Pagination {...supplierPag.paginationProps} />
                         </div>
                     </div>
                 </div>
@@ -599,7 +607,7 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {productReportData.map(p => (
+                                    {productPag.paginatedItems.map(p => (
                                         <tr key={p.id}>
                                             <td className="font-medium text-gray-500">
                                                 <Link href={`/products/${p.id}`} className="hover:text-primary hover:underline transition-colors block">
@@ -617,7 +625,7 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
                                             <td className="text-right font-bold">{formatMoney(p.totalValue)}</td>
                                         </tr>
                                     ))}
-                                    {productReportData.length === 0 && (
+                                    {productPag.paginatedItems.length === 0 && (
                                         <tr><td colSpan={6} className="text-center p-8 text-gray-500">Chưa có sản phẩm nào.</td></tr>
                                     )}
                                 </tbody>
@@ -636,6 +644,7 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
                                     </tfoot>
                                 )}
                             </table>
+                            <Pagination {...productPag.paginationProps} />
                         </div>
                     </div>
 
@@ -698,7 +707,7 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
                                 </tr>
                             </thead>
                             <tbody>
-                                {displayBills.map(b => (
+                                {billPag.paginatedItems.map(b => (
                                     <tr key={b.id}>
                                         <td>
                                             <Link href={`/purchasing/bills/${b.id}`} className="font-bold hover:text-primary hover:underline transition-colors block">
@@ -725,7 +734,7 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
                                         </td>
                                     </tr>
                                 ))}
-                                {displayBills.length === 0 && <tr><td colSpan={4} className="text-center p-8 text-gray-500">Không có hóa đơn.</td></tr>}
+                                {billPag.paginatedItems.length === 0 && <tr><td colSpan={4} className="text-center p-8 text-gray-500">Không có hóa đơn.</td></tr>}
                             </tbody>
                             {displayBills.length > 0 && (
                                 <tfoot style={{ position: 'sticky', bottom: 0, backgroundColor: 'var(--surface)', borderTop: '2px solid var(--border)' }}>
@@ -741,6 +750,7 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
                                 </tfoot>
                             )}
                         </table>
+                        <Pagination {...billPag.paginationProps} />
                     </div>
                 </div>
             )}
@@ -788,7 +798,7 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
                                 </tr>
                             </thead>
                             <tbody>
-                                {displayOrders.map(o => (
+                                {orderPag.paginatedItems.map(o => (
                                     <tr key={o.id}>
                                         <td>
                                             <div className="font-bold">{o.code}</div>
@@ -804,7 +814,7 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
                                         <td className="text-right font-bold">{formatMoney(o.totalAmount)}</td>
                                     </tr>
                                 ))}
-                                {displayOrders.length === 0 && <tr><td colSpan={4} className="text-center p-8 text-gray-500">Không có đơn đặt hàng.</td></tr>}
+                                {orderPag.paginatedItems.length === 0 && <tr><td colSpan={4} className="text-center p-8 text-gray-500">Không có đơn đặt hàng.</td></tr>}
                             </tbody>
                             {displayOrders.length > 0 && (
                                 <tfoot style={{ position: 'sticky', bottom: 0, backgroundColor: 'var(--surface)', borderTop: '2px solid var(--border)' }}>
@@ -817,6 +827,7 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
                                 </tfoot>
                             )}
                         </table>
+                        <Pagination {...orderPag.paginationProps} />
                     </div>
                 </div>
             )}
@@ -867,7 +878,7 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
                                 </tr>
                             </thead>
                             <tbody>
-                                {displayPayments.map(p => (
+                                {paymentPag.paginatedItems.map(p => (
                                     <tr key={p.id}>
                                         <td className="font-bold">{p.code}</td>
                                         <td className="text-sm font-medium">{formatDate(p.date)}</td>
@@ -891,7 +902,7 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
                                         <td className="text-right font-bold text-success text-lg">{formatMoney(p.amount)}</td>
                                     </tr>
                                 ))}
-                                {displayPayments.length === 0 && <tr><td colSpan={6} className="text-center p-8 text-gray-500">Không có giao dịch thanh toán.</td></tr>}
+                                {paymentPag.paginatedItems.length === 0 && <tr><td colSpan={6} className="text-center p-8 text-gray-500">Không có giao dịch thanh toán.</td></tr>}
                             </tbody>
                             {displayPayments.length > 0 && (
                                 <tfoot style={{ position: 'sticky', bottom: 0, backgroundColor: 'var(--surface)', borderTop: '2px solid var(--border)' }}>
@@ -904,6 +915,7 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
                                 </tfoot>
                             )}
                         </table>
+                        <Pagination {...paymentPag.paginationProps} />
                     </div>
                 </div>
             )
@@ -914,7 +926,7 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
 
 function EmptyState({ message }: { message: string }) {
     return (
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.6 }}>
+        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.6, pointerEvents: 'none' }}>
             <Activity size={32} className="mb-2 text-gray-400" />
             <p className="text-sm text-gray-500 font-medium">{message}</p>
         </div>

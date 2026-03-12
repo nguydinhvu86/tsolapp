@@ -345,7 +345,7 @@ export async function getSalesEstimates(employeeId?: string) {
             };
         }
 
-        return await prisma.salesEstimate.findMany({
+        const estimates = await prisma.salesEstimate.findMany({
             where: whereClause,
             include: {
                 customer: true,
@@ -360,6 +360,30 @@ export async function getSalesEstimates(employeeId?: string) {
                 { id: 'desc' }
             ]
         });
+
+        // Lazy evaluate EXPIRED status
+        const todayAtMidnight = new Date();
+        todayAtMidnight.setHours(0, 0, 0, 0);
+
+        const expiredEstimateIds = estimates
+            .filter(e => e.status === 'SENT' && e.validUntil && new Date(e.validUntil).setHours(0, 0, 0, 0) < todayAtMidnight.getTime())
+            .map(e => e.id);
+
+        if (expiredEstimateIds.length > 0) {
+            await prisma.salesEstimate.updateMany({
+                where: { id: { in: expiredEstimateIds } },
+                data: { status: 'EXPIRED' }
+            });
+
+            // Mutate loaded array immediately
+            for (const est of estimates) {
+                if (expiredEstimateIds.includes(est.id)) {
+                    est.status = 'EXPIRED';
+                }
+            }
+        }
+
+        return estimates;
     } catch (error) {
         console.error("Lỗi khi lấy danh sách Báo Giá:", error);
         return [];

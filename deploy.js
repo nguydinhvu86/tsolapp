@@ -2,11 +2,11 @@ const { Client } = require('ssh2');
 
 const conn = new Client();
 conn.on('ready', () => {
-    // AAPanel requires Node 24 for prisma and next build
-    const deployCmd = `cd /www/wwwroot/erp.tsol.vn && export PATH=/www/server/nvm/versions/node/v24.14.0/bin:$PATH && ` +
-        `git pull origin main && ` +
+    // Deploying to inside.tsol.vn/tsolapp on 124.158.9.5
+    const deployCmd = `cd /www/wwwroot/inside.tsol.vn/tsolapp && export PATH=/www/server/nvm/versions/node/v24.14.0/bin:$PATH && ` +
+        `git fetch origin && git reset --hard origin/main && ` +
         `npm run build && ` +
-        `/www/server/nvm/versions/node/v24.14.0/bin/node /www/server/nvm/versions/node/v24.14.0/bin/pm2 restart erp-tsol`;
+        `npx pm2 reload all`;
 
     conn.exec(deployCmd, (err2, stream2) => {
         stream2.on('data', d => process.stdout.write(d.toString()));
@@ -15,14 +15,14 @@ conn.on('ready', () => {
             if (code !== 0) {
                 console.error(`Command failed with exit code ${code}`);
             } else {
-                console.log("Deployed successfully on remote server");
+                console.log("Deployed successfully on remote server 124.158.9.5");
             }
             conn.end();
         });
     });
 }).connect({
-    host: '192.168.10.40',
+    host: '124.158.9.5',
     port: 22,
-    username: 'root1',
-    password: ''
+    username: 'incall',
+    password: 'P@ssw0rdVu'
 });

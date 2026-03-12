@@ -6,6 +6,7 @@ import { ContractTemplate } from '@prisma/client';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Table } from '@/app/components/ui/Table';
+import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { Modal } from '@/app/components/ui/Modal';
 import { Input } from '@/app/components/ui/Input';
 import { RichTextEditor } from '@/app/components/ui/RichTextEditor';
@@ -29,6 +30,8 @@ export function TemplateClient({ initialData }: { initialData: ContractTemplate[
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [formData, setFormData] = useState({ name: '', description: '', content: '', editorType: 'RICH_TEXT' });
+
+    const { paginatedItems, paginationProps } = usePagination(initialData, 25);
 
     const openModal = (template?: ContractTemplate) => {
         if (template) {
@@ -104,9 +107,9 @@ export function TemplateClient({ initialData }: { initialData: ContractTemplate[
                     </tr>
                 </thead>
                 <tbody>
-                    {initialData.length === 0 ? (
+                    {paginatedItems.length === 0 ? (
                         <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Chưa có mẫu hợp đồng nào</td></tr>
-                    ) : initialData.map(template => (
+                    ) : paginatedItems.map(template => (
                         <tr key={template.id}>
                             <td style={{ fontWeight: 500 }}>{template.name}</td>
                             <td style={{ color: 'var(--text-muted)' }}>{template.description || '-'}</td>
@@ -134,6 +137,7 @@ export function TemplateClient({ initialData }: { initialData: ContractTemplate[
                     ))}
                 </tbody>
             </Table>
+            <Pagination {...paginationProps} />
 
             <Modal isOpen={isModalOpen} onClose={closeModal} title={editingId ? 'Sửa mẫu hợp đồng' : 'Thêm mẫu mới'} maxWidth={formData.editorType === 'DRAG_DROP' ? '1400px' : '1000px'}>
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">

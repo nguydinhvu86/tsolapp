@@ -6,6 +6,7 @@ import { Customer } from '@prisma/client';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Table } from '@/app/components/ui/Table';
+import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { Modal } from '@/app/components/ui/Modal';
 import { Input } from '@/app/components/ui/Input';
 import { createCustomer, updateCustomer, deleteCustomer } from './actions';
@@ -93,6 +94,8 @@ export function CustomerClient({ initialData, users, isAdminOrManager }: { initi
 
         return result;
     }, [customers, searchTerm, activeFilter, sortField, sortOrder]);
+
+    const { paginatedItems, paginationProps } = usePagination(filteredAndSortedCustomers, 25);
 
     const openModal = (customer?: Customer) => {
         if (customer) {
@@ -272,9 +275,9 @@ export function CustomerClient({ initialData, users, isAdminOrManager }: { initi
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredAndSortedCustomers.length === 0 ? (
+                        {paginatedItems.length === 0 ? (
                             <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Chưa có dữ liệu phù hợp</td></tr>
-                        ) : filteredAndSortedCustomers.map(customer => (
+                        ) : paginatedItems.map(customer => (
                             <tr key={customer.id}>
                                 <td style={{ fontWeight: 600 }}>
                                     <Link
@@ -311,6 +314,7 @@ export function CustomerClient({ initialData, users, isAdminOrManager }: { initi
                         ))}
                     </tbody>
                 </Table>
+                <Pagination {...paginationProps} />
 
                 <Modal isOpen={isModalOpen} onClose={closeModal} title={editingId ? 'Sửa khách hàng' : 'Thêm khách hàng'}>
                     <form onSubmit={handleSubmit} className="flex flex-col gap-4">

@@ -8,12 +8,17 @@ import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
 import { sendPurchaseOrderEmail } from '../../actions';
 import Link from 'next/link';
+import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 
 export function PurchaseOrderDetailClient({ order, tasks, users, emailTemplates = [] }: { order: any, tasks: any[], users: any[], emailTemplates?: any[] }) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'items' | 'bills' | 'tasks'>('items');
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
     const [copied, setCopied] = useState(false);
+
+    // Pagination hooks
+    const itemsPag = usePagination(order.items || []);
+    const billsPag = usePagination(order.bills || []);
 
     const handleCopyPublicLink = () => {
         const publicUrl = `${window.location.origin}/public/purchasing/orders/${order.id}`;
@@ -195,10 +200,10 @@ export function PurchaseOrderDetailClient({ order, tasks, users, emailTemplates 
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {order.items?.length === 0 ? (
-                                                <tr><td colSpan={4} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Chưa có sản phẩm nào.</td></tr>
+                                            {itemsPag.paginatedItems.length === 0 ? (
+                                                <tr><td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Chưa có sản phẩm nào.</td></tr>
                                             ) : (
-                                                order.items?.map((item: any) => (
+                                                itemsPag.paginatedItems.map((item: any) => (
                                                     <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                                         <td style={{ padding: '1rem', fontWeight: 500, color: '#1e293b' }}>
                                                             {item.product?.name || item.productName || 'Sản phẩm không xác định'}
@@ -229,6 +234,7 @@ export function PurchaseOrderDetailClient({ order, tasks, users, emailTemplates 
                                             )}
                                         </tbody>
                                     </table>
+                                    <Pagination {...itemsPag.paginationProps} />
                                 </div>
                             )}
 
@@ -248,10 +254,10 @@ export function PurchaseOrderDetailClient({ order, tasks, users, emailTemplates 
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {order.bills?.length === 0 ? (
+                                            {billsPag.paginatedItems.length === 0 ? (
                                                 <tr><td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Chưa có Hóa đơn / Phiếu nhập kho nào được tạo.</td></tr>
                                             ) : (
-                                                order.bills?.map((bill: any) => (
+                                                billsPag.paginatedItems.map((bill: any) => (
                                                     <tr key={bill.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                                         <td style={{ padding: '1rem', fontWeight: 600, color: '#1e293b' }}>{bill.code}</td>
                                                         <td style={{ padding: '1rem', color: '#475569' }}>{bill.supplierInvoice || '--'}</td>
@@ -267,6 +273,7 @@ export function PurchaseOrderDetailClient({ order, tasks, users, emailTemplates 
                                             )}
                                         </tbody>
                                     </table>
+                                    <Pagination {...billsPag.paginationProps} />
                                 </div>
                             )}
 
@@ -305,7 +312,7 @@ export function PurchaseOrderDetailClient({ order, tasks, users, emailTemplates 
                     notes: order.notes || '',
                     link: typeof window !== 'undefined' ? `${window.location.origin}/public/purchasing/orders/${order.id}` : ''
                 }}
-                onSend={async (emailData) => {
+                onSend={async (emailData: any) => {
                     const res = await sendPurchaseOrderEmail(order.id, emailData.to, emailData.subject, emailData.htmlBody);
                     if (res?.success) alert("Đã gửi email đơn mua hàng thành công!");
                     else alert("Lỗi khi gửi email: " + res?.error);

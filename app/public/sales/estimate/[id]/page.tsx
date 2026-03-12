@@ -18,6 +18,18 @@ export default async function PublicSalesEstimatePage({ params }: { params: { id
         notFound();
     }
 
+    // Lazy evaluate EXPIRED status
+    const todayAtMidnight = new Date();
+    todayAtMidnight.setHours(0, 0, 0, 0);
+
+    if (estimate.status === 'SENT' && estimate.validUntil && new Date(estimate.validUntil).setHours(0, 0, 0, 0) < todayAtMidnight.getTime()) {
+        await prisma.salesEstimate.update({
+            where: { id: estimate.id },
+            data: { status: 'EXPIRED' }
+        });
+        estimate.status = 'EXPIRED';
+    }
+
     const settings = await prisma.systemSetting.findMany({
         where: { key: { in: ['COMPANY_FULL_NAME', 'COMPANY_NAME', 'COMPANY_ADDRESS', 'COMPANY_LOGO', 'COMPANY_PHONE', 'COMPANY_EMAIL', 'COMPANY_TAX'] } }
     });
@@ -138,7 +150,8 @@ export default async function PublicSalesEstimatePage({ params }: { params: { id
                             estimate.status === 'DRAFT' ? 'Bản Dự Thảo' :
                                 estimate.status === 'SENT' ? 'Đã Gửi KH' :
                                     estimate.status === 'ACCEPTED' ? 'Đã Phê Duyệt' :
-                                        estimate.status === 'REJECTED' ? 'Từ Chối' : estimate.status
+                                        estimate.status === 'REJECTED' ? 'Từ Chối' :
+                                            estimate.status === 'EXPIRED' ? 'Hết Hiệu Lực' : estimate.status
                         }</div>
                     </div>
                 </div>
