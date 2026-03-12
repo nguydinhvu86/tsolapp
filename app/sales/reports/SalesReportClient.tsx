@@ -25,6 +25,7 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
     const [customerSearch, setCustomerSearch] = useState('');
     const [productSearch, setProductSearch] = useState('');
     const [invoiceSearch, setInvoiceSearch] = useState('');
+    const [invoiceStatus, setInvoiceStatus] = useState('ALL');
     const [expenseSearch, setExpenseSearch] = useState('');
     const [expenseCategory, setExpenseCategory] = useState('ALL');
     const [estimateSearch, setEstimateSearch] = useState('');
@@ -210,6 +211,27 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
         return [...top5, { name: 'Khác', value: others }];
     }, [productReportData]);
 
+    const getInvoiceStatusBadge = (inv: any) => {
+        if (inv.status === 'CANCELLED') return <span className="status-badge badge-danger">Đã Hủy</span>;
+        if (inv.status === 'PAID') return <span className="status-badge badge-success">Đã Thanh Toán</span>;
+        if (inv.status === 'DRAFT') return <span className="status-badge badge-neutral">Dự Thảo</span>;
+
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        if (inv.dueDate) {
+            const due = new Date(inv.dueDate);
+            due.setHours(0, 0, 0, 0);
+            if (due < now && (inv.totalAmount - (inv.paidAmount || 0)) > 0) {
+                return <span className="status-badge badge-danger">Quá Hạn</span>;
+            }
+        }
+
+        if (inv.status === 'PARTIAL_PAID') return <span className="status-badge badge-warning">Thu Một Phần</span>;
+        if (inv.status === 'ISSUED') return <span className="status-badge badge-info">Ghi Nhận Nợ</span>;
+
+        return <span className="status-badge badge-neutral">{inv.status}</span>;
+    };
+
     // --- Tab 4 & 5 (Filtered Documents) ---
     const displayInvoices = useMemo(() => {
         let result = filteredInvoices;
@@ -217,8 +239,23 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
             const query = invoiceSearch.toLowerCase();
             result = result.filter(b => b.code?.toLowerCase().includes(query) || b.customer?.name?.toLowerCase().includes(query));
         }
+
+        if (invoiceStatus !== 'ALL') {
+            if (invoiceStatus === 'OVERDUE') {
+                const now = new Date();
+                now.setHours(0, 0, 0, 0);
+                result = result.filter((i: any) => i.status !== 'PAID' && i.status !== 'CANCELLED' && i.status !== 'DRAFT' && i.dueDate && new Date(i.dueDate) < now && (i.totalAmount - (i.paidAmount || 0)) > 0);
+            } else if (invoiceStatus === 'DUE_SOON') {
+                const now = new Date();
+                now.setHours(0, 0, 0, 0);
+                result = result.filter((i: any) => i.status !== 'PAID' && i.status !== 'CANCELLED' && i.status !== 'DRAFT' && i.dueDate && new Date(i.dueDate) >= now && (i.totalAmount - (i.paidAmount || 0)) > 0);
+            } else {
+                result = result.filter((i: any) => i.status === invoiceStatus);
+            }
+        }
+
         return result;
-    }, [filteredInvoices, invoiceSearch]);
+    }, [filteredInvoices, invoiceSearch, invoiceStatus]);
 
     const displayExpenses = useMemo(() => {
         let result = filteredExpenses;
@@ -935,6 +972,16 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
                     <div className="search-card" style={{ padding: '1.25rem', marginBottom: 0, borderBottom: '1px solid var(--border)' }}>
                         <h3 className="font-bold text-lg"><FileText size={18} className="inline mr-2 text-primary" /> Hóa Đơn Bán Hàng</h3>
                         <div className="flex gap-2 items-center">
+                            <select className="input" style={{ width: '150px', padding: '0.4rem' }} value={invoiceStatus} onChange={e => setInvoiceStatus(e.target.value)}>
+                                <option value="ALL">Mọi Tình Trạng</option>
+                                <option value="DRAFT">Dự Thảo</option>
+                                <option value="ISSUED">Ghi Nhận Nợ</option>
+                                <option value="PARTIAL_PAID">Thu Một Phần</option>
+                                <option value="PAID">Đã Thanh Toán</option>
+                                <option value="OVERDUE">Quá Hạn</option>
+                                <option value="DUE_SOON">Sắp Tới Hạn</option>
+                                <option value="CANCELLED">Đã Hủy</option>
+                            </select>
                             <div className="search-input-wrapper">
                                 <Search size={16} className="search-icon" />
                                 <input type="text" placeholder="Tìm mã xuất, Khách hàng..." value={invoiceSearch} onChange={e => setInvoiceSearch(e.target.value)} className="input" />
@@ -959,6 +1006,7 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
                                 <tr>
                                     <th>Mã / Ngày</th>
                                     <th>Khách Hàng</th>
+                                    <th className="text-center">Trạng Thái</th>
                                     <th className="text-right">Doanh Thu</th>
                                     <th className="text-right">Tình Trạng Thu</th>
                                 </tr>
@@ -979,6 +1027,9 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
                                                 <span>{b.customer?.name}</span>
                                             )}
                                         </td>
+                                        <td className="text-center">
+                                            {getInvoiceStatusBadge(b)}
+                                        </td>
                                         <td className="text-right font-bold text-primary">{formatMoney(b.totalAmount)}</td>
                                         <td className="text-right">
                                             {b.totalAmount > b.paidAmount ? (
@@ -989,12 +1040,12 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
                                         </td>
                                     </tr>
                                 ))}
-                                {invoicePag.paginatedItems.length === 0 && <tr><td colSpan={4} className="text-center p-8 text-gray-500">Không có hóa đơn xuất bán.</td></tr>}
+                                {invoicePag.paginatedItems.length === 0 && <tr><td colSpan={5} className="text-center p-8 text-gray-500">Không có hóa đơn xuất bán.</td></tr>}
                             </tbody>
                             {displayInvoices.length > 0 && (
                                 <tfoot style={{ position: 'sticky', bottom: 0, backgroundColor: 'var(--surface)', borderTop: '2px solid var(--border)' }}>
                                     <tr>
-                                        <td colSpan={2} className="text-right font-bold text-gray-700">TỔNG CỘNG ({displayInvoices.length}):</td>
+                                        <td colSpan={3} className="text-right font-bold text-gray-700">TỔNG CỘNG ({displayInvoices.length}):</td>
                                         <td className="text-right font-bold text-primary">
                                             {formatMoney(displayInvoices.reduce((sum, b) => sum + (b.totalAmount || 0), 0))}
                                         </td>
