@@ -11,6 +11,7 @@ export async function getDashboardStats(userId?: string, employeeId?: string) {
         const session = await getServerSession(authOptions);
         const perms = session?.user?.permissions || [];
         const currentUserId = session?.user?.id || userId || '';
+        const isAdminOrManager = session?.user?.role === 'ADMIN' || session?.user?.role === 'MANAGER';
 
         const estFilter = buildViewFilter(currentUserId, perms, 'SALES_ESTIMATES', 'creatorId');
         const conFilter = buildViewFilter(currentUserId, perms, 'CONTRACTS', 'creatorId');
@@ -35,6 +36,8 @@ export async function getDashboardStats(userId?: string, employeeId?: string) {
         const poFilter = buildViewFilter(currentUserId, perms, 'PURCHASE_ORDERS', 'creatorId');
         const invFilter = buildViewFilter(currentUserId, perms, 'SALES_INVOICES', 'creatorId');
 
+        const leadFilter = !isAdminOrManager ? { OR: [{ creatorId: currentUserId }, { assignedToId: currentUserId }, { assignees: { some: { userId: currentUserId } } }] } : {};
+
         const [
             estimates,
             contracts,
@@ -45,7 +48,8 @@ export async function getDashboardStats(userId?: string, employeeId?: string) {
             customers,
             myTasks,
             purchaseOrders,
-            salesInvoices
+            salesInvoices,
+            leads
         ] = await Promise.all([
             estFilter.id === 'UNAUTHORIZED_NO_ACCESS' ? Promise.resolve([]) : prisma.salesEstimate.findMany({
                 select: { id: true, status: true, validUntil: true, date: true, createdAt: true, customer: { select: { name: true } }, code: true, totalAmount: true },
@@ -64,6 +68,18 @@ export async function getDashboardStats(userId?: string, employeeId?: string) {
             invFilter.id === 'UNAUTHORIZED_NO_ACCESS' ? Promise.resolve([]) : prisma.salesInvoice.findMany({
                 select: { id: true, status: true, totalAmount: true, paidAmount: true, createdAt: true, date: true, dueDate: true, code: true, customer: { select: { name: true } } },
                 where: { AND: [invFilter as any, employeeId ? { OR: [{ creatorId: employeeId }, { salespersonId: employeeId }, { managers: { some: { id: employeeId } } }] } : {}] },
+                orderBy: { createdAt: 'desc' },
+                take: 1000
+            }),
+            prisma.lead.findMany({
+                select: { id: true, code: true, name: true, company: true, contactName: true, status: true, estimatedValue: true, createdAt: true },
+                where: employeeId ? {
+                    OR: [
+                        { creatorId: employeeId },
+                        { assignedToId: employeeId },
+                        { assignees: { some: { userId: employeeId } } }
+                    ]
+                } : leadFilter,
                 orderBy: { createdAt: 'desc' },
                 take: 1000
             })
@@ -208,7 +224,8 @@ export async function getDashboardStats(userId?: string, employeeId?: string) {
             chartDataSources: {
                 quotes: estimates,
                 contracts: contracts,
-                invoices: salesInvoices
+                invoices: salesInvoices,
+                leads: leads
             }
         };
     } catch (e) {

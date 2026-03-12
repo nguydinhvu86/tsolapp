@@ -240,12 +240,16 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks }
                                         {supplier.orders?.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>Không có dữ liệu.</td></tr>}
                                         {supplier.orders?.map((order: any) => (
                                             <tr key={order.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                                                <td style={{ padding: '1rem 0', fontWeight: 500, color: '#6b7280' }}>{order.code}</td>
-                                                <td style={{ padding: '1rem 0', fontWeight: 500, color: '#111827' }}>Đơn hàng {order.code} - {formatMoney(order.totalAmount)}</td>
+                                                <td style={{ padding: '1rem 0', fontWeight: 500 }}>
+                                                    <Link href={`/purchasing/orders/${order.id}`} className="hover:text-primary transition-colors text-gray-500">{order.code}</Link>
+                                                </td>
+                                                <td style={{ padding: '1rem 0', fontWeight: 500 }}>
+                                                    <Link href={`/purchasing/orders/${order.id}`} className="hover:text-primary transition-colors text-gray-900">Đơn hàng {order.code} - {formatMoney(order.totalAmount)}</Link>
+                                                </td>
                                                 <td style={{ padding: '1rem 0' }}>{getStatusBadge(order.status, 'order')}</td>
                                                 <td style={{ padding: '1rem 0', color: '#4b5563' }}>{formatDate(order.date)}</td>
                                                 <td style={{ padding: '1rem 0', textAlign: 'right' }}>
-                                                    <Link href={`/purchasing/orders`} style={{ display: 'inline-block', border: 'none', background: '#e0e7ff', color: '#4f46e5', padding: '0.4rem 0.6rem', borderRadius: '0.25rem', cursor: 'pointer' }}>
+                                                    <Link href={`/purchasing/orders/${order.id}`} style={{ display: 'inline-block', border: 'none', background: '#e0e7ff', color: '#4f46e5', padding: '0.4rem 0.6rem', borderRadius: '0.25rem', cursor: 'pointer' }}>
                                                         <Search size={16} />
                                                     </Link>
                                                 </td>
@@ -262,20 +266,46 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks }
                                             <th style={{ padding: '1rem 0', fontWeight: 600 }}>Mã HS</th>
                                             <th style={{ padding: '1rem 0', fontWeight: 600 }}>Tiêu đề</th>
                                             <th style={{ padding: '1rem 0', fontWeight: 600 }}>Trạng thái</th>
+                                            <th style={{ padding: '1rem 0', fontWeight: 600 }}>Tag hệ thống</th>
                                             <th style={{ padding: '1rem 0', fontWeight: 600 }}>Ngày tạo</th>
                                             <th style={{ padding: '1rem 0', fontWeight: 600, textAlign: 'right' }}>Thao tác</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {supplier.bills?.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>Không có dữ liệu.</td></tr>}
+                                        {supplier.bills?.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>Không có dữ liệu.</td></tr>}
                                         {supplier.bills?.map((bill: any) => (
                                             <tr key={bill.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                                                <td style={{ padding: '1rem 0', fontWeight: 500, color: '#6b7280' }}>{bill.code}</td>
-                                                <td style={{ padding: '1rem 0', fontWeight: 500, color: '#111827' }}>Hóa đơn {bill.supplierInvoice || bill.code} - {formatMoney(bill.totalAmount)}</td>
+                                                <td style={{ padding: '1rem 0', fontWeight: 500 }}>
+                                                    <Link href={`/purchasing/bills/${bill.id}`} className="hover:text-primary transition-colors text-gray-500">{bill.code}</Link>
+                                                </td>
+                                                <td style={{ padding: '1rem 0', fontWeight: 500 }}>
+                                                    <Link href={`/purchasing/bills/${bill.id}`} className="hover:text-primary transition-colors text-gray-900">Hóa đơn {bill.supplierInvoice || bill.code} - {formatMoney(bill.totalAmount)}</Link>
+                                                </td>
                                                 <td style={{ padding: '1rem 0' }}>{getStatusBadge(bill.status, 'bill')}</td>
+                                                <td style={{ padding: '1rem 0' }}>
+                                                    {bill.sysTags && bill.sysTags.length > 0 ? (
+                                                        <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
+                                                            {bill.sysTags.map((tag: string, i: number) => (
+                                                                <span key={i} style={{
+                                                                    padding: '0.125rem 0.5rem',
+                                                                    fontSize: '0.7rem',
+                                                                    backgroundColor: '#f1f5f9',
+                                                                    color: '#475569',
+                                                                    borderRadius: '0.25rem',
+                                                                    border: '1px solid #e2e8f0',
+                                                                    fontWeight: 500
+                                                                }}>
+                                                                    {tag}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>--</span>
+                                                    )}
+                                                </td>
                                                 <td style={{ padding: '1rem 0', color: '#4b5563' }}>{formatDate(bill.date)}</td>
                                                 <td style={{ padding: '1rem 0', textAlign: 'right' }}>
-                                                    <Link href={`/purchasing/bills`} style={{ display: 'inline-block', border: 'none', background: '#e0e7ff', color: '#4f46e5', padding: '0.4rem 0.6rem', borderRadius: '0.25rem', cursor: 'pointer' }}>
+                                                    <Link href={`/purchasing/bills/${bill.id}`} style={{ display: 'inline-block', border: 'none', background: '#e0e7ff', color: '#4f46e5', padding: '0.4rem 0.6rem', borderRadius: '0.25rem', cursor: 'pointer' }}>
                                                         <Search size={16} />
                                                     </Link>
                                                 </td>
@@ -300,12 +330,16 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks }
                                         {supplier.payments?.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>Không có dữ liệu.</td></tr>}
                                         {supplier.payments?.map((payment: any) => (
                                             <tr key={payment.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                                                <td style={{ padding: '1rem 0', fontWeight: 500, color: '#6b7280' }}>{payment.code}</td>
-                                                <td style={{ padding: '1rem 0', fontWeight: 500, color: '#111827' }}>Phiếu chi {payment.code}</td>
+                                                <td style={{ padding: '1rem 0', fontWeight: 500 }}>
+                                                    <Link href={`/purchasing/payments/${payment.id}`} className="hover:text-primary transition-colors text-gray-500">{payment.code}</Link>
+                                                </td>
+                                                <td style={{ padding: '1rem 0', fontWeight: 500 }}>
+                                                    <Link href={`/purchasing/payments/${payment.id}`} className="hover:text-primary transition-colors text-gray-900">Phiếu chi {payment.code}</Link>
+                                                </td>
                                                 <td style={{ padding: '1rem 0', fontWeight: 600, color: '#16a34a' }}>{formatMoney(payment.amount)}</td>
                                                 <td style={{ padding: '1rem 0', color: '#4b5563' }}>{formatDate(payment.date)}</td>
                                                 <td style={{ padding: '1rem 0', textAlign: 'right' }}>
-                                                    <Link href={`/purchasing/payments`} style={{ display: 'inline-block', border: 'none', background: '#e0e7ff', color: '#4f46e5', padding: '0.4rem 0.6rem', borderRadius: '0.25rem', cursor: 'pointer' }}>
+                                                    <Link href={`/purchasing/payments/${payment.id}`} style={{ display: 'inline-block', border: 'none', background: '#e0e7ff', color: '#4f46e5', padding: '0.4rem 0.6rem', borderRadius: '0.25rem', cursor: 'pointer' }}>
                                                         <Search size={16} />
                                                     </Link>
                                                 </td>
