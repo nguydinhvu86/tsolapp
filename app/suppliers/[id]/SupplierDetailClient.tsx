@@ -266,7 +266,7 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks }
                                             <th style={{ padding: '1rem 0', fontWeight: 600 }}>Mã HS</th>
                                             <th style={{ padding: '1rem 0', fontWeight: 600 }}>Tiêu đề</th>
                                             <th style={{ padding: '1rem 0', fontWeight: 600 }}>Trạng thái</th>
-                                            <th style={{ padding: '1rem 0', fontWeight: 600 }}>Tag hệ thống</th>
+                                            <th style={{ padding: '1rem 0', fontWeight: 600 }}>Thẻ Quản Lý</th>
                                             <th style={{ padding: '1rem 0', fontWeight: 600 }}>Ngày tạo</th>
                                             <th style={{ padding: '1rem 0', fontWeight: 600, textAlign: 'right' }}>Thao tác</th>
                                         </tr>
@@ -283,9 +283,9 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks }
                                                 </td>
                                                 <td style={{ padding: '1rem 0' }}>{getStatusBadge(bill.status, 'bill')}</td>
                                                 <td style={{ padding: '1rem 0' }}>
-                                                    {bill.sysTags && bill.sysTags.length > 0 ? (
+                                                    {bill.tags ? (
                                                         <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
-                                                            {bill.sysTags.map((tag: string, i: number) => (
+                                                            {bill.tags.split(',').map((tag: string, i: number) => (
                                                                 <span key={i} style={{
                                                                     padding: '0.125rem 0.5rem',
                                                                     fontSize: '0.7rem',
@@ -295,7 +295,7 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks }
                                                                     border: '1px solid #e2e8f0',
                                                                     fontWeight: 500
                                                                 }}>
-                                                                    {tag}
+                                                                    {tag.trim()}
                                                                 </span>
                                                             ))}
                                                         </div>
