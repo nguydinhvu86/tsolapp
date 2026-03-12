@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { createPurchasePayment, deletePurchasePayment } from '@/app/purchasing/actions';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
+import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 
 export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills }: { initialPayments: any[], suppliers: any[], unpaidBills: any[] }) {
     const router = useRouter();
@@ -118,6 +119,8 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
         }
         setSortConfig({ key, direction });
     };
+
+    const { paginatedItems, paginationProps } = usePagination(sortedPayments);
 
     // Supplier's unpaid bills
     const supplierBills = useMemo(() => {
@@ -318,14 +321,14 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                         </tr>
                     </thead>
                     <tbody>
-                        {sortedPayments.length === 0 ? (
+                        {paginatedItems.length === 0 ? (
                             <tr>
                                 <td colSpan={5} className="p-8 text-center text-gray-500">
                                     Không tìm thấy giao dịch thanh toán nào
                                 </td>
                             </tr>
                         ) : (
-                            sortedPayments.map((payment) => (
+                            paginatedItems.map((payment) => (
                                 <tr key={payment.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
                                     <td className="p-4 text-sm font-bold text-gray-900 dark:text-gray-100">
                                         <Link href={`/purchasing/payments/${payment.id}`} className="hover:text-primary hover:underline">
@@ -375,6 +378,7 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                         )}
                     </tbody>
                 </table>
+                <Pagination {...paginationProps} />
             </div>
 
             {/* View Payment Modal */}

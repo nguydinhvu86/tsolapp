@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Table } from '@/app/components/ui/Table';
+import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { Button } from '@/app/components/ui/Button';
 import { Package, Search, History, FileSpreadsheet, Printer } from 'lucide-react';
 import { getStockLedger, getTransactionReport, getInOutBalanceReport } from '../report-actions';
@@ -71,6 +72,11 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
     const totalAssetValue = filteredValuation.reduce((acc, curr) => acc + curr.totalValue, 0);
 
     const formatMoney = (v: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v);
+
+    const { paginatedItems: paginatedValuation, paginationProps: valuationProps } = usePagination(filteredValuation, 25);
+    const { paginatedItems: paginatedLedger, paginationProps: ledgerProps } = usePagination(ledgerData, 25);
+    const { paginatedItems: paginatedTxn, paginationProps: txnProps } = usePagination(txnData, 25);
+    const { paginatedItems: paginatedIob, paginationProps: iobProps } = usePagination(iobData, 25);
 
     // Valuation Chart Data
     const valuationChartData = React.useMemo(() => {
@@ -428,7 +434,7 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filteredValuation.map(v => {
+                                    {paginatedValuation.map(v => {
                                         const isLow = v.qty <= (v.minStockLevel || 0);
                                         return (
                                             <tr key={v.id}>
@@ -464,6 +470,7 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
                                     </tfoot>
                                 )}
                             </Table>
+                            <Pagination {...valuationProps} />
                         </div>
                     </div>
                 )}
@@ -525,7 +532,7 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {ledgerData.map((row, idx) => (
+                                        {paginatedLedger.map((row, idx) => (
                                             <tr key={idx} style={{ backgroundColor: row.change === 0 ? '#f9fafb' : 'transparent' }}>
                                                 <td style={{ whiteSpace: 'nowrap' }}>{formatDate(row.date)}</td>
                                                 <td style={{ fontWeight: 600, color: 'var(--primary)' }}>
@@ -543,6 +550,7 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
                                         ))}
                                     </tbody>
                                 </Table>
+                                <Pagination {...ledgerProps} />
                             </div>
                         )}
                         {ledgerData.length === 0 && !isLoadingLedger && ledgerProduct && (
@@ -635,7 +643,7 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {txnData.map(t => (
+                                        {paginatedTxn.map(t => (
                                             <tr key={t.id}>
                                                 <td>{formatDate(t.date)}</td>
                                                 <td style={{ fontWeight: 600, color: 'var(--primary)' }}>
@@ -656,6 +664,7 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
                                         ))}
                                     </tbody>
                                 </Table>
+                                <Pagination {...txnProps} />
                             </div>
                         )}
                     </div>
@@ -733,7 +742,7 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {iobData.map((row, idx) => (
+                                        {paginatedIob.map((row, idx) => (
                                             <tr key={idx}>
                                                 <td style={{ fontWeight: 600, color: 'var(--text-muted)' }}>{row.sku}</td>
                                                 <td style={{ fontWeight: 500 }}>{row.name}</td>
@@ -766,6 +775,7 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
                                         </tfoot>
                                     )}
                                 </Table>
+                                <Pagination {...iobProps} />
                             </div>
                         )}
                     </div>

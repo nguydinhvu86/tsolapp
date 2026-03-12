@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/app/components/ui/Card';
 import { Table } from '@/app/components/ui/Table';
+import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
@@ -390,6 +391,8 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
         return result;
     }, [baseFilteredOrders, statusFilter, sortBy]);
 
+    const { paginatedItems, paginationProps } = usePagination(filteredOrders, 25);
+
     return (
         <>
             <Card className="p-6">
@@ -522,7 +525,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredOrders.map((o: any) => (
+                        {paginatedItems.map((o: any) => (
                             <tr key={o.id} className="border-t border-gray-100">
                                 <td className="py-3 items-center gap-2 flex">
                                     <PackageCheck size={16} className="text-blue-500" />
@@ -592,7 +595,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                                 </td>
                             </tr>
                         ))}
-                        {filteredOrders.length === 0 && (
+                        {paginatedItems.length === 0 && (
                             <tr><td colSpan={6} className="py-8 text-center text-gray-500">Chưa có đơn đặt hàng nào khớp bộ lọc</td></tr>
                         )}
                     </tbody>
@@ -608,6 +611,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                         </tr>
                     </tfoot>
                 </Table>
+                <Pagination {...paginationProps} />
             </Card >
 
             <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title={formData.id ? "Sửa Đơn Đặt Hàng" : "Tạo Đơn Đặt Hàng Mới"} maxWidth="1000px">

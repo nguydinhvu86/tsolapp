@@ -7,6 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import { createPurchaseBill, approvePurchaseBill, deletePurchaseBill, updatePurchaseBill, cancelPurchaseBill } from '@/app/purchasing/actions';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { TagDisplay } from '@/app/components/ui/TagDisplay';
+import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 
 export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses, products }: { initialBills: any[], suppliers: any[], orders: any[], warehouses: any[], products: any[] }) {
     const [bills, setBills] = useState(initialBills);
@@ -167,6 +168,8 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
         }
         setSortConfig({ key, direction });
     };
+
+    const { paginatedItems, paginationProps } = usePagination(sortedBills);
 
     const formatMoney = (amount: number) => {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
@@ -675,14 +678,14 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                         </tr>
                     </thead>
                     <tbody>
-                        {sortedBills.length === 0 ? (
+                        {paginatedItems.length === 0 ? (
                             <tr>
                                 <td colSpan={6} className="p-8 text-center text-gray-500">
                                     Không tìm thấy hóa đơn nào
                                 </td>
                             </tr>
                         ) : (
-                            sortedBills.map((bill) => (
+                            paginatedItems.map((bill) => (
                                 <tr key={bill.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
                                     <td className="p-4 text-sm font-bold text-gray-900 dark:text-gray-100">
                                         <Link href={`/purchasing/bills/${bill.id}`} className="hover:text-primary hover:underline">
@@ -756,6 +759,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                         )}
                     </tbody>
                 </table>
+                <Pagination {...paginationProps} />
             </div>
 
             {/* Approve Modal */}

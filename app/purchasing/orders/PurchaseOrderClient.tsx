@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { createPurchaseOrder, deletePurchaseOrder, updatePurchaseOrder } from '@/app/purchasing/actions';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
+import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 
 export function PurchaseOrderClient({ initialOrders, suppliers, products }: { initialOrders: any[], suppliers: any[], products: any[] }) {
     const [orders, setOrders] = useState(initialOrders);
@@ -122,6 +123,8 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
         }
         setSortConfig({ key, direction });
     };
+
+    const { paginatedItems, paginationProps } = usePagination(sortedOrders);
 
     const formatMoney = (amount: number) => {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
@@ -465,14 +468,14 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                         </tr>
                     </thead>
                     <tbody>
-                        {sortedOrders.length === 0 ? (
+                        {paginatedItems.length === 0 ? (
                             <tr>
                                 <td colSpan={6} className="p-8 text-center text-gray-500">
                                     Không tìm thấy đơn đặt hàng nào
                                 </td>
                             </tr>
                         ) : (
-                            sortedOrders.map((order) => (
+                            paginatedItems.map((order) => (
                                 <tr key={order.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                                     <td className="p-4 text-sm font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">
                                         <Link href={`/purchasing/orders/${order.id}`} className="hover:text-primary hover:underline">
@@ -532,6 +535,7 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                         )}
                     </tbody>
                 </table>
+                <Pagination {...paginationProps} />
             </div>
 
             {/* Create PO Modal */}

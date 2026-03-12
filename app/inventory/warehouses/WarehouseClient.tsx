@@ -5,6 +5,7 @@ import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/Input';
 import { Table } from '@/app/components/ui/Table';
+import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { Plus, Edit, Home } from 'lucide-react';
 import { createWarehouse, updateWarehouse } from '../actions';
 import { useRouter } from 'next/navigation';
@@ -18,6 +19,8 @@ export default function WarehouseClient({ initialWarehouses }: { initialWarehous
     const [name, setName] = useState('');
     const [location, setLocation] = useState('');
     const [isDefault, setIsDefault] = useState(false);
+
+    const { paginatedItems, paginationProps } = usePagination(initialWarehouses, 25);
 
     const openCreateModal = () => {
         setEditingNode(null);
@@ -74,7 +77,7 @@ export default function WarehouseClient({ initialWarehouses }: { initialWarehous
                         </tr>
                     </thead>
                     <tbody>
-                        {initialWarehouses.length > 0 ? initialWarehouses.map((w) => (
+                        {paginatedItems.length > 0 ? paginatedItems.map((w) => (
                             <tr key={w.id}>
                                 <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>{w.name}</td>
                                 <td style={{ color: 'var(--text-muted)' }}>{w.location || '-'}</td>
@@ -105,6 +108,7 @@ export default function WarehouseClient({ initialWarehouses }: { initialWarehous
                         )}
                     </tbody>
                 </Table>
+                <Pagination {...paginationProps} />
             </div>
 
             {/* Modal */}

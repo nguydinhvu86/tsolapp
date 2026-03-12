@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { createTask, updateTaskStatus, deleteTask, searchEntities, updateTask } from './actions';
 import Link from 'next/link';
+import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 
 export function TaskDashboardClient({ initialTasks, users, parentProjectId, parentProject }: { initialTasks: any[], users: any[], parentProjectId?: string, parentProject?: any }) {
     const router = useRouter();
@@ -265,6 +266,8 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
             }
         });
     }, [filteredTasks, sortField, sortDirection]);
+
+    const { paginatedItems, paginationProps } = usePagination(sortedTasks, 20);
 
     // Derived progress
     const renderProgress = (task: any) => {
@@ -670,7 +673,7 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                             </tr>
                         </thead>
                         <tbody>
-                            {sortedTasks.map((task) => {
+                            {paginatedItems.map((task: any) => {
                                 const assigneesNames = task.assignees?.map((a: any) => a.user.name || a.user.email).join(', ') || 'Chưa gán';
                                 const isDueSoon = task.dueDate && new Date(task.dueDate).getTime() - new Date().getTime() < 86400000 && task.status !== 'DONE';
 
@@ -775,6 +778,7 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                             )}
                         </tbody>
                     </Table>
+                    <Pagination {...paginationProps} />
                 </div>
             </Card >
 
