@@ -9,7 +9,7 @@ import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
-import { Plus, Edit2, Trash2, Save, X, Printer, Search, Calendar, PackageCheck, Eye, Download, LinkIcon, CheckCircle2, FileSearch, LayoutList, FileText, ChevronUp, ChevronDown, Undo2, XCircle, AlertTriangle, Info, ShieldAlert, Copy } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Printer, Search, Calendar, PackageCheck, Eye, Download, LinkIcon, CheckCircle2, FileSearch, LayoutList, FileText, ChevronUp, ChevronDown, Undo2, XCircle, AlertTriangle, Info, ShieldAlert, Copy, Clock } from 'lucide-react';
 import { submitSalesInvoice, approveSalesInvoice, deleteSalesInvoice, updateSalesInvoice, cancelSalesInvoice, updateSalesInvoiceStatus, restoreSalesInvoice } from './actions';
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { TagDisplay } from '@/app/components/ui/TagDisplay';
@@ -33,7 +33,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
     const [isActioning, setIsActioning] = useState(false);
 
     // Filters & Sort
-    const [statusFilter, setStatusFilter] = useState('ALL');
+    const [statusFilter, setStatusFilter] = useState(typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('filter') || 'ALL' : 'ALL');
     const [searchQuery, setSearchQuery] = useState('');
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
@@ -577,6 +577,9 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
     }, [invoices, searchQuery, dateFrom, dateTo]);
 
     const stats = useMemo(() => {
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+
         return {
             ALL: {
                 count: baseFilteredInvoices.length,
@@ -601,6 +604,14 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
             CANCELLED: {
                 count: baseFilteredInvoices.filter((i: any) => i.status === 'CANCELLED').length,
                 amount: baseFilteredInvoices.filter((i: any) => i.status === 'CANCELLED').reduce((sum: number, i: any) => sum + (i.totalAmount || 0), 0)
+            },
+            OVERDUE: {
+                count: baseFilteredInvoices.filter((i: any) => i.status !== 'PAID' && i.status !== 'CANCELLED' && i.status !== 'DRAFT' && i.dueDate && new Date(i.dueDate) < now && (i.totalAmount - (i.paidAmount || 0)) > 0).length,
+                amount: baseFilteredInvoices.filter((i: any) => i.status !== 'PAID' && i.status !== 'CANCELLED' && i.status !== 'DRAFT' && i.dueDate && new Date(i.dueDate) < now && (i.totalAmount - (i.paidAmount || 0)) > 0).reduce((sum: number, i: any) => sum + (i.totalAmount - (i.paidAmount || 0)), 0)
+            },
+            DUE_SOON: {
+                count: baseFilteredInvoices.filter((i: any) => i.status !== 'PAID' && i.status !== 'CANCELLED' && i.status !== 'DRAFT' && i.dueDate && new Date(i.dueDate) >= now && (i.totalAmount - (i.paidAmount || 0)) > 0).length,
+                amount: baseFilteredInvoices.filter((i: any) => i.status !== 'PAID' && i.status !== 'CANCELLED' && i.status !== 'DRAFT' && i.dueDate && new Date(i.dueDate) >= now && (i.totalAmount - (i.paidAmount || 0)) > 0).reduce((sum: number, i: any) => sum + (i.totalAmount - (i.paidAmount || 0)), 0)
             }
         };
     }, [baseFilteredInvoices]);
@@ -608,17 +619,28 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
     const statsCards = [
         { id: 'ALL', label: 'Tất Cả', count: stats.ALL.count, amount: stats.ALL.amount, colorClass: 'stat-card-purple', icon: LayoutList },
         { id: 'DRAFT', label: 'Dự Thảo', count: stats.DRAFT.count, amount: stats.DRAFT.amount, colorClass: 'stat-card-amber', icon: FileText },
-        { id: 'ISSUED', label: 'Ghi Nhận Nợ / Xuất Kho', count: stats.ISSUED.count, amount: stats.ISSUED.amount, colorClass: 'stat-card-blue', icon: PackageCheck },
+        { id: 'ISSUED', label: 'Ghi Nhận Nợ', count: stats.ISSUED.count, amount: stats.ISSUED.amount, colorClass: 'stat-card-blue', icon: PackageCheck },
         { id: 'PARTIAL_PAID', label: 'Đã Thu Một Phần', count: stats.PARTIAL_PAID.count, amount: stats.PARTIAL_PAID.amount, colorClass: 'stat-card-green', icon: CheckCircle2 },
         { id: 'PAID', label: 'Hoàn Tất Thu', count: stats.PAID.count, amount: stats.PAID.amount, colorClass: 'stat-card-green', icon: CheckCircle2 },
-        { id: 'CANCELLED', label: 'Đã Hủy', count: stats.CANCELLED.count, amount: stats.CANCELLED.amount, colorClass: 'stat-card-red', icon: X },
+        { id: 'OVERDUE', label: 'Quá Hạn', count: stats.OVERDUE.count, amount: stats.OVERDUE.amount, colorClass: 'stat-card-red', icon: AlertTriangle },
+        { id: 'DUE_SOON', label: 'Tới Hạn', count: stats.DUE_SOON.count, amount: stats.DUE_SOON.amount, colorClass: 'stat-card-amber', icon: Clock },
     ];
 
     const filteredInvoices = useMemo(() => {
         let result = baseFilteredInvoices;
 
         if (statusFilter !== 'ALL') {
-            result = result.filter((i: any) => i.status === statusFilter);
+            if (statusFilter === 'OVERDUE') {
+                const now = new Date();
+                now.setHours(0, 0, 0, 0);
+                result = result.filter((i: any) => i.status !== 'PAID' && i.status !== 'CANCELLED' && i.status !== 'DRAFT' && i.dueDate && new Date(i.dueDate) < now && (i.totalAmount - (i.paidAmount || 0)) > 0);
+            } else if (statusFilter === 'DUE_SOON') {
+                const now = new Date();
+                now.setHours(0, 0, 0, 0);
+                result = result.filter((i: any) => i.status !== 'PAID' && i.status !== 'CANCELLED' && i.status !== 'DRAFT' && i.dueDate && new Date(i.dueDate) >= now && (i.totalAmount - (i.paidAmount || 0)) > 0);
+            } else {
+                result = result.filter((i: any) => i.status === statusFilter);
+            }
         }
 
         result.sort((a: any, b: any) => {

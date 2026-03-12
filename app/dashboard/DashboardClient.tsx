@@ -294,6 +294,103 @@ function TodoListWidget() {
     );
 }
 
+function InvoiceStatusWidget({ invoices }: { invoices: any[] }) {
+    const [activeTab, setActiveTab] = useState<'OVERDUE' | 'DUE_SOON'>('OVERDUE');
+
+    // Normalize now to start of day for accurate comparison
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    const activeInvoices = invoices.filter(inv => inv.status !== 'PAID' && inv.status !== 'CANCELLED' && inv.status !== 'DRAFT');
+
+    const overdueInvoices = activeInvoices.filter(inv => {
+        if (!inv.dueDate) return false;
+        const due = new Date(inv.dueDate);
+        due.setHours(0, 0, 0, 0);
+        return due < now && (inv.totalAmount - (inv.paidAmount || 0)) > 0;
+    }).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+
+    const dueSoonInvoices = activeInvoices.filter(inv => {
+        if (!inv.dueDate) return false;
+        const due = new Date(inv.dueDate);
+        due.setHours(0, 0, 0, 0);
+        return due >= now && (inv.totalAmount - (inv.paidAmount || 0)) > 0;
+    }).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+
+    const displayInvoices = activeTab === 'OVERDUE' ? overdueInvoices : dueSoonInvoices;
+
+    return (
+        <div className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col h-full" style={{ minHeight: '430px', maxHeight: '460px' }}>
+            <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-3">
+                <h3 className="text-lg font-semibold text-gray-800">Tình Hình Hóa Đơn</h3>
+                <a href={`/sales/invoices?filter=${activeTab}`} className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 transition-colors text-right">
+                    Xem tất cả <span style={{ fontSize: '10px' }}>▶</span>
+                </a>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex gap-2 mb-5">
+                <button
+                    className={`flex-1 py-2 px-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 ${activeTab === 'OVERDUE' ? 'bg-red-50 text-red-700 shadow-sm border border-red-100' : 'bg-gray-50 text-gray-500 hover:bg-gray-100 border border-transparent'}`}
+                    onClick={() => setActiveTab('OVERDUE')}
+                >
+                    Quá Hạn
+                    <span className={`px-1.5 py-0.5 rounded-md text-[11px] font-bold ${activeTab === 'OVERDUE' ? 'bg-red-200 text-red-800' : 'bg-gray-200 text-gray-600'}`}>{overdueInvoices.length}</span>
+                </button>
+                <button
+                    className={`flex-1 py-2 px-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 ${activeTab === 'DUE_SOON' ? 'bg-orange-50 text-orange-700 shadow-sm border border-orange-100' : 'bg-gray-50 text-gray-500 hover:bg-gray-100 border border-transparent'}`}
+                    onClick={() => setActiveTab('DUE_SOON')}
+                >
+                    Sắp Tới Hạn
+                    <span className={`px-1.5 py-0.5 rounded-md text-[11px] font-bold ${activeTab === 'DUE_SOON' ? 'bg-orange-200 text-orange-800' : 'bg-gray-200 text-gray-600'}`}>{dueSoonInvoices.length}</span>
+                </button>
+            </div>
+
+            {/* List */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-1" style={{ maxHeight: '350px' }}>
+                {displayInvoices.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-gray-400 text-sm h-full">
+                        <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mb-3">
+                            <CheckCircle2 size={28} className="text-emerald-400" />
+                        </div>
+                        <span className="text-center px-4 font-medium text-gray-500">Tuyệt vời! Không có hóa đơn {activeTab === 'OVERDUE' ? 'quá hạn' : 'sắp tới hạn'}.</span>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {displayInvoices.map(inv => (
+                            <div key={inv.id} className="p-4 border border-gray-100 rounded-xl hover:shadow-md hover:border-blue-100 transition-all duration-200 bg-white group flex flex-col gap-3 relative overflow-hidden">
+                                {/* Left accent border */}
+                                <div className={`absolute left-0 top-0 bottom-0 w-1 ${activeTab === 'OVERDUE' ? 'bg-red-500' : 'bg-orange-500'}`}></div>
+
+                                <div className="flex justify-between items-start pl-1">
+                                    <div className="flex flex-col gap-1.5">
+                                        <a href={`/sales/invoices/${inv.id}`} className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors text-sm" title={inv.code}>
+                                            {inv.code}
+                                        </a>
+                                        <div className="text-[13px] text-gray-500 flex items-center gap-1.5 truncate max-w-[180px]" title={inv.customer?.name}>
+                                            <Users size={12} className="text-gray-400 shrink-0" />
+                                            <span className="truncate">{inv.customer?.name}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col items-end shrink-0">
+                                        <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-md tracking-wider ${activeTab === 'OVERDUE' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-orange-50 text-orange-600 border border-orange-100'}`}>
+                                            {formatDate(new Date(inv.dueDate))}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="flex justify-between items-end mt-1 pt-3 border-t border-gray-50 pl-1">
+                                    <span className="text-[12px] text-gray-500 font-medium">Cần thu</span>
+                                    <span className={`font-black text-sm ${activeTab === 'OVERDUE' ? 'text-red-600' : 'text-orange-600'}`}>{formatMoney(inv.totalAmount - (inv.paidAmount || 0))}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+}
+
 import { useRouter } from 'next/navigation';
 import { AddEventModal } from './AddEventModal';
 
@@ -562,191 +659,203 @@ export function DashboardClient({
 
                                                         {widgetId === 'my_work_todo' && (
                                                             /* My Work & Todo Row */
-                                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', marginBottom: '1rem', alignItems: 'stretch' }}>
+                                                            <div className="flex flex-col xl:flex-row gap-6 w-full mb-6 items-stretch">
                                                                 {/* Vùng 1: Công việc của tôi */}
-                                                                <div style={{ flex: '3 1 500px', minWidth: 0 }} className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col">
-                                                                    <div className="flex items-center justify-between mb-4">
-                                                                        <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                                                                            <Briefcase size={20} className="text-blue-500" />
-                                                                            Công việc của tôi
-                                                                        </h3>
-                                                                        <span className="text-sm font-medium bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full">{tasks.length} việc</span>
-                                                                    </div>
-
-                                                                    {tasks.length === 0 ? (
-                                                                        <div className="flex-1 flex flex-col items-center justify-center text-gray-400 bg-gray-50/50 rounded-lg border border-dashed border-gray-200 p-8">
-                                                                            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
-                                                                                <Briefcase size={24} className="text-gray-200" />
-                                                                            </div>
-                                                                            <p className="font-medium text-gray-500">Chưa có công việc nào</p>
-                                                                            <p className="text-sm mt-1 text-center max-w-sm">
-                                                                                Các công việc bạn được giao phụ trách hoặc theo dõi sẽ hiển thị tại đây.
-                                                                            </p>
+                                                                <div className="w-full xl:w-[65%] flex flex-col">
+                                                                    <div className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col h-full">
+                                                                        <div className="flex items-center justify-between mb-4">
+                                                                            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                                                                <Briefcase size={20} className="text-blue-500" />
+                                                                                Công việc của tôi
+                                                                            </h3>
+                                                                            <span className="text-sm font-medium bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full">{tasks.length} việc</span>
                                                                         </div>
-                                                                    ) : (
-                                                                        <div className="table-wrapper custom-scrollbar" style={{ flex: 1, maxHeight: '320px', overflowY: 'auto' }}>
-                                                                            <table style={{ minWidth: '100%' }}>
-                                                                                <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
-                                                                                    <tr>
-                                                                                        <th>Tên công việc</th>
-                                                                                        <th>Mức độ</th>
-                                                                                        <th>Hạn chót</th>
-                                                                                        <th>Liên quan</th>
-                                                                                        <th>Tình trạng</th>
-                                                                                    </tr>
-                                                                                </thead>
-                                                                                <tbody>
-                                                                                    {tasks.map((task: any) => {
-                                                                                        const relatedEntityName = task.customer?.name || task.contract?.code || task.salesInvoice?.code || task.salesOrder?.code || '';
-                                                                                        const isDueSoon = task.dueDate && new Date(task.dueDate).getTime() - new Date().getTime() < 86400000 && task.status !== 'DONE';
 
-                                                                                        return (
-                                                                                            <tr key={task.id}>
-                                                                                                <td>
-                                                                                                    <div style={{ fontWeight: 500, color: isDueSoon ? 'var(--danger)' : 'var(--text-main)', display: 'flex', alignItems: 'center' }}>
-                                                                                                        <a href={`/tasks/${task.id}`} className="text-blue-600 hover:underline">
-                                                                                                            {task.title}
-                                                                                                        </a>
-                                                                                                    </div>
-                                                                                                </td>
-                                                                                                <td>
-                                                                                                    <span style={{
-                                                                                                        padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600,
-                                                                                                        backgroundColor: task.priority === 'URGENT' ? 'var(--danger)' : (task.priority === 'HIGH' ? 'var(--warning)' : '#e2e8f0'),
-                                                                                                        color: task.priority === 'URGENT' || task.priority === 'HIGH' ? '#fff' : '#000'
-                                                                                                    }}>
-                                                                                                        {task.priority === 'MEDIUM' ? 'TRUNG BÌNH' : task.priority === 'HIGH' ? 'CAO' : task.priority === 'URGENT' ? 'GẤP' : 'THẤP'}
-                                                                                                    </span>
-                                                                                                </td>
-                                                                                                <td style={{ color: isDueSoon ? 'var(--danger)' : 'inherit' }}>
-                                                                                                    {task.dueDate ? formatDate(new Date(task.dueDate)) : '-'}
-                                                                                                </td>
-                                                                                                <td>
-                                                                                                    {relatedEntityName ? (
-                                                                                                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{relatedEntityName}</span>
-                                                                                                    ) : (
-                                                                                                        <span style={{ color: 'var(--text-muted)' }}>-</span>
-                                                                                                    )}
-                                                                                                </td>
-                                                                                                <td>
-                                                                                                    <select
-                                                                                                        value={task.status}
-                                                                                                        onChange={async (e) => {
-                                                                                                            const newStatus = e.target.value;
-                                                                                                            const previousStatus = task.status;
+                                                                        {tasks.length === 0 ? (
+                                                                            <div className="flex-1 flex flex-col items-center justify-center text-gray-400 bg-gray-50/50 rounded-lg border border-dashed border-gray-200 p-8">
+                                                                                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
+                                                                                    <Briefcase size={24} className="text-gray-200" />
+                                                                                </div>
+                                                                                <p className="font-medium text-gray-500">Chưa có công việc nào</p>
+                                                                                <p className="text-sm mt-1 text-center max-w-sm">
+                                                                                    Các công việc bạn được giao phụ trách hoặc theo dõi sẽ hiển thị tại đây.
+                                                                                </p>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <div className="table-wrapper custom-scrollbar" style={{ flex: 1, maxHeight: '320px', overflowY: 'auto' }}>
+                                                                                <table style={{ minWidth: '100%' }}>
+                                                                                    <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+                                                                                        <tr>
+                                                                                            <th>Tên công việc</th>
+                                                                                            <th>Mức độ</th>
+                                                                                            <th>Hạn chót</th>
+                                                                                            <th>Liên quan</th>
+                                                                                            <th>Tình trạng</th>
+                                                                                        </tr>
+                                                                                    </thead>
+                                                                                    <tbody>
+                                                                                        {tasks.map((task: any) => {
+                                                                                            const relatedEntityName = task.customer?.name || task.contract?.code || task.salesInvoice?.code || task.salesOrder?.code || '';
+                                                                                            const isDueSoon = task.dueDate && new Date(task.dueDate).getTime() - new Date().getTime() < 86400000 && task.status !== 'DONE';
 
-                                                                                                            // Optimistic update
-                                                                                                            setTasks((prev: any[]) => prev.map((t: any) =>
-                                                                                                                t.id === task.id ? { ...t, status: newStatus } : t
-                                                                                                            ));
+                                                                                            return (
+                                                                                                <tr key={task.id}>
+                                                                                                    <td>
+                                                                                                        <div style={{ fontWeight: 500, color: isDueSoon ? 'var(--danger)' : 'var(--text-main)', display: 'flex', alignItems: 'center' }}>
+                                                                                                            <a href={`/tasks/${task.id}`} className="text-blue-600 hover:underline">
+                                                                                                                {task.title}
+                                                                                                            </a>
+                                                                                                        </div>
+                                                                                                    </td>
+                                                                                                    <td>
+                                                                                                        <span style={{
+                                                                                                            padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600,
+                                                                                                            backgroundColor: task.priority === 'URGENT' ? 'var(--danger)' : (task.priority === 'HIGH' ? 'var(--warning)' : '#e2e8f0'),
+                                                                                                            color: task.priority === 'URGENT' || task.priority === 'HIGH' ? '#fff' : '#000'
+                                                                                                        }}>
+                                                                                                            {task.priority === 'MEDIUM' ? 'TRUNG BÌNH' : task.priority === 'HIGH' ? 'CAO' : task.priority === 'URGENT' ? 'GẤP' : 'THẤP'}
+                                                                                                        </span>
+                                                                                                    </td>
+                                                                                                    <td style={{ color: isDueSoon ? 'var(--danger)' : 'inherit' }}>
+                                                                                                        {task.dueDate ? formatDate(new Date(task.dueDate)) : '-'}
+                                                                                                    </td>
+                                                                                                    <td>
+                                                                                                        {relatedEntityName ? (
+                                                                                                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{relatedEntityName}</span>
+                                                                                                        ) : (
+                                                                                                            <span style={{ color: 'var(--text-muted)' }}>-</span>
+                                                                                                        )}
+                                                                                                    </td>
+                                                                                                    <td>
+                                                                                                        <select
+                                                                                                            value={task.status}
+                                                                                                            onChange={async (e) => {
+                                                                                                                const newStatus = e.target.value;
+                                                                                                                const previousStatus = task.status;
 
-                                                                                                            try {
-                                                                                                                const { updateDashboardTaskStatus } = await import('@/app/dashboard/actions');
-                                                                                                                const res = await updateDashboardTaskStatus(task.id, newStatus);
-                                                                                                                if (!res || !res.success) {
-                                                                                                                    // Revert if error
+                                                                                                                // Optimistic update
+                                                                                                                setTasks((prev: any[]) => prev.map((t: any) =>
+                                                                                                                    t.id === task.id ? { ...t, status: newStatus } : t
+                                                                                                                ));
+
+                                                                                                                try {
+                                                                                                                    const { updateDashboardTaskStatus } = await import('@/app/dashboard/actions');
+                                                                                                                    const res = await updateDashboardTaskStatus(task.id, newStatus);
+                                                                                                                    if (!res || !res.success) {
+                                                                                                                        // Revert if error
+                                                                                                                        setTasks((prev: any[]) => prev.map((t: any) =>
+                                                                                                                            t.id === task.id ? { ...t, status: previousStatus } : t
+                                                                                                                        ));
+                                                                                                                    } else {
+                                                                                                                        router.refresh();
+                                                                                                                    }
+                                                                                                                } catch (error) {
+                                                                                                                    console.error("Failed to update status", error);
                                                                                                                     setTasks((prev: any[]) => prev.map((t: any) =>
                                                                                                                         t.id === task.id ? { ...t, status: previousStatus } : t
                                                                                                                     ));
-                                                                                                                } else {
-                                                                                                                    router.refresh();
                                                                                                                 }
-                                                                                                            } catch (error) {
-                                                                                                                console.error("Failed to update status", error);
-                                                                                                                setTasks((prev: any[]) => prev.map((t: any) =>
-                                                                                                                    t.id === task.id ? { ...t, status: previousStatus } : t
-                                                                                                                ));
-                                                                                                            }
-                                                                                                        }}
-                                                                                                        style={{
-                                                                                                            padding: '4px 8px', borderRadius: 'var(--radius)',
-                                                                                                            border: '1px solid var(--border)', fontSize: '0.85rem',
-                                                                                                            backgroundColor: 'transparent', cursor: 'pointer'
-                                                                                                        }}
-                                                                                                    >
-                                                                                                        <option value="TODO">Cần Làm</option>
-                                                                                                        <option value="IN_PROGRESS">Đang Xử Lý</option>
-                                                                                                        <option value="REVIEW">Chờ Duyệt</option>
-                                                                                                        <option value="DONE">Hoàn Thành</option>
-                                                                                                    </select>
-                                                                                                </td>
-                                                                                            </tr>
-                                                                                        )
-                                                                                    })}
-                                                                                </tbody>
-                                                                            </table>
-                                                                        </div>
-                                                                    )}
+                                                                                                            }}
+                                                                                                            style={{
+                                                                                                                padding: '4px 8px', borderRadius: 'var(--radius)',
+                                                                                                                border: '1px solid var(--border)', fontSize: '0.85rem',
+                                                                                                                backgroundColor: 'transparent', cursor: 'pointer'
+                                                                                                            }}
+                                                                                                        >
+                                                                                                            <option value="TODO">Cần Làm</option>
+                                                                                                            <option value="IN_PROGRESS">Đang Xử Lý</option>
+                                                                                                            <option value="REVIEW">Chờ Duyệt</option>
+                                                                                                            <option value="DONE">Hoàn Thành</option>
+                                                                                                        </select>
+                                                                                                    </td>
+                                                                                                </tr>
+                                                                                            )
+                                                                                        })}
+                                                                                    </tbody>
+                                                                                </table>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
 
                                                                 {/* Vùng 2: Công việc cần làm */}
-                                                                <div style={{ flex: '1 1 300px', minWidth: 0 }} className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col">
-                                                                    <TodoListWidget />
+                                                                <div className="w-full xl:w-[35%] flex flex-col">
+                                                                    <div className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col h-full">
+                                                                        <TodoListWidget />
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         )}
 
                                                         {widgetId === 'cash_flow_chart' && (
-                                                            /* Cash Flow Chart */
-                                                            <div className="w-full">
-                                                                <div className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm">
-                                                                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Lưu Chuyển Tiền Tệ Năm {new Date().getFullYear()}</h3>
-                                                                    <div style={{ height: '350px', width: '100%', marginLeft: '-15px' }}>
-                                                                        <ResponsiveContainer width="100%" height="100%">
-                                                                            <AreaChart data={kpiData?.cashFlow || []} margin={{ top: 10, right: 10, left: 20, bottom: 0 }}>
-                                                                                <defs>
-                                                                                    <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-                                                                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
-                                                                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
-                                                                                    </linearGradient>
-                                                                                    <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
-                                                                                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4} />
-                                                                                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.0} />
-                                                                                    </linearGradient>
-                                                                                    <linearGradient id="colorSupplier" x1="0" y1="0" x2="0" y2="1">
-                                                                                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.4} />
-                                                                                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0.0} />
-                                                                                    </linearGradient>
-                                                                                </defs>
-                                                                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 13 }} dy={10} />
-                                                                                <YAxis
-                                                                                    axisLine={false}
-                                                                                    tickLine={false}
-                                                                                    tick={{ fill: '#9ca3af', fontSize: 13 }}
-                                                                                    dx={-10}
-                                                                                    tickFormatter={(value) => {
-                                                                                        if (value >= 1000000000) return `${(value / 1000000000).toFixed(1)}T`;
-                                                                                        if (value >= 1000000) return `${(value / 1000000).toFixed(0)}Tr`;
-                                                                                        return value;
-                                                                                    }}
-                                                                                />
-                                                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                                                                                <Tooltip
-                                                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                                                                    formatter={(value: any, name: any) => {
-                                                                                        let label = '';
-                                                                                        if (name === 'income') label = 'Tổng Thu';
-                                                                                        if (name === 'expense') label = 'Tổng Chi';
-                                                                                        if (name === 'supplierPayment') label = 'Trả NCC';
-                                                                                        return [new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(value) || 0), label];
-                                                                                    }}
-                                                                                />
-                                                                                <Legend
-                                                                                    verticalAlign="top"
-                                                                                    height={36}
-                                                                                    formatter={(value) => {
-                                                                                        if (value === 'income') return 'Tổng Thu';
-                                                                                        if (value === 'expense') return 'Lương / Chi Phí';
-                                                                                        if (value === 'supplierPayment') return 'Thanh Toán NCC';
-                                                                                        return value;
-                                                                                    }}
-                                                                                />
-                                                                                <Area type="monotone" dataKey="income" name="income" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorIncome)" />
-                                                                                <Area type="monotone" dataKey="expense" name="expense" stroke="#f59e0b" strokeWidth={3} fillOpacity={1} fill="url(#colorExpense)" />
-                                                                                <Area type="monotone" dataKey="supplierPayment" name="supplierPayment" stroke="#ef4444" strokeWidth={3} fillOpacity={1} fill="url(#colorSupplier)" />
-                                                                            </AreaChart>
-                                                                        </ResponsiveContainer>
+                                                            /* Cash Flow Chart & Invoice Status */
+                                                            <div className="flex flex-col xl:flex-row gap-6 w-full mb-2">
+                                                                {/* Cash Flow Chart - Left Column */}
+                                                                <div className="w-full xl:w-[65%]">
+                                                                    <div className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm h-full flex flex-col">
+                                                                        <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-100 pb-3">Lưu Chuyển Tiền Tệ Năm {new Date().getFullYear()}</h3>
+                                                                        <div className="flex-1 min-h-[350px]" style={{ width: '100%', marginLeft: '-15px' }}>
+                                                                            <ResponsiveContainer width="100%" height="100%">
+                                                                                <AreaChart data={kpiData?.cashFlow || []} margin={{ top: 10, right: 10, left: 20, bottom: 0 }}>
+                                                                                    <defs>
+                                                                                        <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+                                                                                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                                                                                            <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+                                                                                        </linearGradient>
+                                                                                        <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
+                                                                                            <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4} />
+                                                                                            <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.0} />
+                                                                                        </linearGradient>
+                                                                                        <linearGradient id="colorSupplier" x1="0" y1="0" x2="0" y2="1">
+                                                                                            <stop offset="5%" stopColor="#ef4444" stopOpacity={0.4} />
+                                                                                            <stop offset="95%" stopColor="#ef4444" stopOpacity={0.0} />
+                                                                                        </linearGradient>
+                                                                                    </defs>
+                                                                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 13 }} dy={10} />
+                                                                                    <YAxis
+                                                                                        axisLine={false}
+                                                                                        tickLine={false}
+                                                                                        tick={{ fill: '#9ca3af', fontSize: 13 }}
+                                                                                        dx={-10}
+                                                                                        tickFormatter={(value) => {
+                                                                                            if (value >= 1000000000) return `${(value / 1000000000).toFixed(1)}T`;
+                                                                                            if (value >= 1000000) return `${(value / 1000000).toFixed(0)}Tr`;
+                                                                                            return value;
+                                                                                        }}
+                                                                                    />
+                                                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                                                                                    <Tooltip
+                                                                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                                                        formatter={(value: any, name: any) => {
+                                                                                            let label = '';
+                                                                                            if (name === 'income') label = 'Tổng Thu';
+                                                                                            if (name === 'expense') label = 'Lương / Chi Phí';
+                                                                                            if (name === 'supplierPayment') label = 'Trả NCC';
+                                                                                            return [new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(value) || 0), label];
+                                                                                        }}
+                                                                                    />
+                                                                                    <Legend
+                                                                                        verticalAlign="top"
+                                                                                        height={36}
+                                                                                        formatter={(value) => {
+                                                                                            if (value === 'income') return 'Tổng Thu';
+                                                                                            if (value === 'expense') return 'Lương / Chi Phí';
+                                                                                            if (value === 'supplierPayment') return 'Thanh Toán NCC';
+                                                                                            return value;
+                                                                                        }}
+                                                                                    />
+                                                                                    <Area type="monotone" dataKey="income" name="income" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorIncome)" />
+                                                                                    <Area type="monotone" dataKey="expense" name="expense" stroke="#f59e0b" strokeWidth={3} fillOpacity={1} fill="url(#colorExpense)" />
+                                                                                    <Area type="monotone" dataKey="supplierPayment" name="supplierPayment" stroke="#ef4444" strokeWidth={3} fillOpacity={1} fill="url(#colorSupplier)" />
+                                                                                </AreaChart>
+                                                                            </ResponsiveContainer>
+                                                                        </div>
                                                                     </div>
+                                                                </div>
+
+                                                                {/* Invoice Status - Right Column */}
+                                                                <div className="w-full xl:w-[35%]">
+                                                                    <InvoiceStatusWidget invoices={invoices || []} />
                                                                 </div>
                                                             </div>
                                                         )}
