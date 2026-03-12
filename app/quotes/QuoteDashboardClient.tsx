@@ -157,6 +157,19 @@ export function QuoteDashboardClient({ initialData }: { initialData: QuoteWithRe
         return 0;
     });
 
+    // --- Pagination Logic ---
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 15;
+    const totalPages = Math.ceil(sortedData.length / itemsPerPage);
+
+    // Reset page to 1 when filters or sorting changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, statusFilter, sortField, sortOrder]);
+
+    const paginatedData = sortedData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    // ------------------------
+
     const handleDelete = async (id: string) => {
         if (confirm('Bạn có chắc chắn muốn xóa báo giá này?')) {
             setQuotesData(prev => prev.filter(q => q.id !== id)); // Optimistic UI
@@ -368,7 +381,7 @@ export function QuoteDashboardClient({ initialData }: { initialData: QuoteWithRe
                     <tbody>
                         {sortedData.length === 0 ? (
                             <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Chưa có báo giá nào</td></tr>
-                        ) : sortedData.map(q => (
+                        ) : paginatedData.map(q => (
                             <tr key={q.id}>
                                 <td style={{ fontWeight: 500 }}>
                                     <Link href={`/quotes/${q.id}`} className="text-blue-600 hover:underline">
@@ -429,6 +442,59 @@ export function QuoteDashboardClient({ initialData }: { initialData: QuoteWithRe
                         ))}
                     </tbody>
                 </Table>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-between mt-6 px-2">
+                        <div className="text-sm text-gray-500">
+                            Hiển thị từ <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> đến <span className="font-medium">{Math.min(currentPage * itemsPerPage, sortedData.length)}</span> trong tổng số <span className="font-medium">{sortedData.length}</span> báo giá
+                        </div>
+                        <div className="flex gap-1">
+                            <Button
+                                variant="secondary"
+                                className="px-3 py-1.5 h-auto text-sm bg-white"
+                                disabled={currentPage === 1}
+                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            >
+                                Trước
+                            </Button>
+
+                            {/* Simple page numbers mapping if under 7 pages, otherwise abbreviate */}
+                            {Array.from({ length: totalPages }).map((_, i) => {
+                                const page = i + 1;
+                                // Basic logic to show fewer pages if very large
+                                if (totalPages > 7) {
+                                    if (page !== 1 && page !== totalPages && Math.abs(page - currentPage) > 1) {
+                                        if (page === 2 || page === totalPages - 1) {
+                                            return <span key={page} className="px-2 py-1 select-none text-gray-400">...</span>;
+                                        }
+                                        return null;
+                                    }
+                                }
+
+                                return (
+                                    <Button
+                                        key={page}
+                                        variant={currentPage === page ? "primary" : "secondary"}
+                                        className={`w-8 h-8 p-0 flex items-center justify-center text-sm ${currentPage !== page ? 'bg-white' : ''}`}
+                                        onClick={() => setCurrentPage(page)}
+                                    >
+                                        {page}
+                                    </Button>
+                                )
+                            })}
+
+                            <Button
+                                variant="secondary"
+                                className="px-3 py-1.5 h-auto text-sm bg-white"
+                                disabled={currentPage === totalPages}
+                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            >
+                                Sau
+                            </Button>
+                        </div>
+                    </div>
+                )}
 
                 <Modal
                     isOpen={!!editingQuote}
