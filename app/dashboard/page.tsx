@@ -207,6 +207,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
                 userTasks={filteredUserTasks}
                 quotes={stats?.chartDataSources?.quotes || []}
                 invoices={stats?.chartDataSources?.invoices || []}
+                leads={stats?.chartDataSources?.leads || []}
                 savedConfig={rawConfig}
                 users={users}
                 isAdminOrManager={isAdminOrManager}

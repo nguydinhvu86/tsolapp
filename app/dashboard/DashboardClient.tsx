@@ -11,7 +11,7 @@ import { Modal } from '@/app/components/ui/Modal';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 
 // Set up default layout array
-const DEFAULT_LAYOUT = ['kpi_cards', 'my_work_todo', 'cash_flow_chart', 'dashboard_calendar'];
+const DEFAULT_LAYOUT = ['kpi_cards', 'my_work_todo', 'my_leads_status', 'cash_flow_chart', 'dashboard_calendar'];
 
 // Mock data for charts
 const revenueData = [
@@ -395,10 +395,10 @@ import { useRouter } from 'next/navigation';
 import { AddEventModal } from './AddEventModal';
 
 export function DashboardClient({
-    kpiData, userTasks = [], quotes = [], invoices = [], savedConfig = "[]",
+    kpiData, userTasks = [], quotes = [], invoices = [], leads = [], savedConfig = "[]",
     users = [], currentEmployeeId = "", isAdminOrManager = false
 }: {
-    kpiData?: any, userTasks?: any[], quotes?: any[], invoices?: any[], savedConfig?: string,
+    kpiData?: any, userTasks?: any[], quotes?: any[], invoices?: any[], leads?: any[], savedConfig?: string,
     users?: any[], currentEmployeeId?: string, isAdminOrManager?: boolean
 }) {
     const router = useRouter();
@@ -426,6 +426,17 @@ export function DashboardClient({
                         migrated.push(item);
                     }
                 }
+
+                // Ensure my_leads_status is present
+                if (!migrated.includes('my_leads_status')) {
+                    const myWorkIndex = migrated.indexOf('my_work_todo');
+                    if (myWorkIndex !== -1) {
+                        migrated.splice(myWorkIndex + 1, 0, 'my_leads_status');
+                    } else {
+                        migrated.push('my_leads_status');
+                    }
+                }
+
                 return migrated;
             }
         } catch (e) {
@@ -782,6 +793,177 @@ export function DashboardClient({
                                                                 <div className="w-full xl:w-[35%] flex flex-col">
                                                                     <div className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col h-full">
                                                                         <TodoListWidget />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {widgetId === 'my_leads_status' && (
+                                                            /* My Leads Row */
+                                                            <div className="flex flex-col xl:flex-row gap-6 w-full mb-6 items-stretch">
+                                                                {/* Vùng 1: Thông tin Lead của tôi */}
+                                                                <div className="w-full xl:w-[65%] flex flex-col">
+                                                                    <div className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col h-full">
+                                                                        <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
+                                                                            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                                                                <Users size={20} className="text-blue-500" />
+                                                                                Thông tin Lead của tôi
+                                                                            </h3>
+                                                                            <a href="/sales/leads" className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 transition-colors">
+                                                                                Xem tất cả <span style={{ fontSize: '10px' }}>▶</span>
+                                                                            </a>
+                                                                        </div>
+
+                                                                        {leads.length === 0 ? (
+                                                                            <div className="flex-1 flex flex-col items-center justify-center text-gray-400 bg-gray-50/50 rounded-lg border border-dashed border-gray-200 p-8 h-full min-h-[250px]">
+                                                                                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
+                                                                                    <Users size={24} className="text-gray-200" />
+                                                                                </div>
+                                                                                <p className="font-medium text-gray-500">Chưa có Lead nào</p>
+                                                                                <p className="text-sm mt-1 text-center max-w-sm">
+                                                                                    Bạn chưa quản lý Cơ hội bán hàng nào.
+                                                                                </p>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <div className="table-wrapper custom-scrollbar" style={{ flex: 1, maxHeight: '350px', overflowY: 'auto' }}>
+                                                                                <table style={{ minWidth: '100%' }}>
+                                                                                    <thead style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#f9fafb' }}>
+                                                                                        <tr>
+                                                                                            <th className="text-left font-semibold text-gray-600 py-3 px-4 border-b border-gray-100">Mã Lead</th>
+                                                                                            <th className="text-left font-semibold text-gray-600 py-3 px-4 border-b border-gray-100">Tên Cơ Hội</th>
+                                                                                            <th className="text-right font-semibold text-gray-600 py-3 px-4 border-b border-gray-100">Giá trị</th>
+                                                                                            <th className="text-center font-semibold text-gray-600 py-3 px-4 border-b border-gray-100">Trạng thái</th>
+                                                                                        </tr>
+                                                                                    </thead>
+                                                                                    <tbody>
+                                                                                        {leads.slice(0, 5).map((lead: any) => {
+                                                                                            const statusColors: any = {
+                                                                                                'NEW': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-100' },
+                                                                                                'CONTACTED': { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-100' },
+                                                                                                'QUALIFIED': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-100' },
+                                                                                                'PROPOSAL': { bg: 'bg-pink-50', text: 'text-pink-700', border: 'border-pink-100' },
+                                                                                                'WON': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-100' },
+                                                                                                'LOST': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-100' }
+                                                                                            };
+                                                                                            const statusLabels: any = {
+                                                                                                'NEW': 'Mới', 'CONTACTED': 'Đã liên hệ', 'QUALIFIED': 'Đã xác định',
+                                                                                                'PROPOSAL': 'Đã báo giá', 'WON': 'Thành công', 'LOST': 'Thất bại'
+                                                                                            };
+
+                                                                                            const sc = statusColors[lead.status] || statusColors['NEW'];
+                                                                                            const label = statusLabels[lead.status] || lead.status;
+                                                                                            return (
+                                                                                                <tr key={lead.id} className="hover:bg-gray-50/50 transition-colors group">
+                                                                                                    <td className="py-3 px-4 border-b border-gray-50">
+                                                                                                        <a href={`/sales/leads/${lead.id}`} className="text-sm font-semibold text-blue-600 group-hover:underline">
+                                                                                                            {lead.code}
+                                                                                                        </a>
+                                                                                                    </td>
+                                                                                                    <td className="py-3 px-4 border-b border-gray-50">
+                                                                                                        <div className="text-sm font-medium text-gray-800 line-clamp-1" title={lead.name}>
+                                                                                                            {lead.name}
+                                                                                                        </div>
+                                                                                                    </td>
+                                                                                                    <td className="py-3 px-4 border-b border-gray-50 text-right">
+                                                                                                        <span className="text-sm font-bold text-gray-700">
+                                                                                                            {formatMoney(lead.estimatedValue || 0)}
+                                                                                                        </span>
+                                                                                                    </td>
+                                                                                                    <td className="py-3 px-4 border-b border-gray-50 text-center">
+                                                                                                        <span className={`px-2.5 py-1 text-xs font-bold rounded-lg border ${sc.bg} ${sc.text} ${sc.border}`}>
+                                                                                                            {label}
+                                                                                                        </span>
+                                                                                                    </td>
+                                                                                                </tr>
+                                                                                            )
+                                                                                        })}
+                                                                                    </tbody>
+                                                                                </table>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Vùng 2: Biểu đồ trạng thái Lead */}
+                                                                <div className="w-full xl:w-[35%] flex flex-col">
+                                                                    <div className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col h-full min-h-[300px]">
+                                                                        <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-100 pb-3">Thống kê trạng thái Leads</h3>
+
+                                                                        {leads.length === 0 ? (
+                                                                            <div className="flex-1 flex items-center justify-center text-gray-400">
+                                                                                Chưa có dữ liệu thống kê
+                                                                            </div>
+                                                                        ) : (
+                                                                            <div className="flex-1 min-h-[250px] w-full mt-2 relative">
+                                                                                <ResponsiveContainer width="100%" height="100%">
+                                                                                    <PieChart>
+                                                                                        <Pie
+                                                                                            data={(() => {
+                                                                                                const statusCounts: Record<string, number> = {};
+                                                                                                leads.forEach((l: any) => {
+                                                                                                    statusCounts[l.status] = (statusCounts[l.status] || 0) + 1;
+                                                                                                });
+                                                                                                const PIE_COLORS: Record<string, string> = {
+                                                                                                    'NEW': '#3b82f6', 'CONTACTED': '#6366f1',
+                                                                                                    'QUALIFIED': '#f59e0b', 'PROPOSAL': '#ec4899',
+                                                                                                    'WON': '#10b981', 'LOST': '#ef4444'
+                                                                                                };
+                                                                                                const PIE_LABELS: Record<string, string> = {
+                                                                                                    'NEW': 'Mới', 'CONTACTED': 'Đã liên hệ', 'QUALIFIED': 'Đã xác định',
+                                                                                                    'PROPOSAL': 'Đã báo giá', 'WON': 'Thành công', 'LOST': 'Thất bại'
+                                                                                                };
+                                                                                                return Object.entries(statusCounts).map(([status, count]) => ({
+                                                                                                    name: PIE_LABELS[status] || status,
+                                                                                                    value: count,
+                                                                                                    color: PIE_COLORS[status] || '#9ca3af'
+                                                                                                })).sort((a, b) => b.value - a.value);
+                                                                                            })()}
+                                                                                            cx="50%"
+                                                                                            cy="45%"
+                                                                                            innerRadius={65}
+                                                                                            outerRadius={85}
+                                                                                            paddingAngle={5}
+                                                                                            dataKey="value"
+                                                                                            stroke="none"
+                                                                                        >
+                                                                                            {(() => {
+                                                                                                const statusCounts: Record<string, number> = {};
+                                                                                                leads.forEach((l: any) => {
+                                                                                                    statusCounts[l.status] = (statusCounts[l.status] || 0) + 1;
+                                                                                                });
+                                                                                                const PIE_COLORS: Record<string, string> = {
+                                                                                                    'NEW': '#3b82f6', 'CONTACTED': '#6366f1',
+                                                                                                    'QUALIFIED': '#f59e0b', 'PROPOSAL': '#ec4899',
+                                                                                                    'WON': '#10b981', 'LOST': '#ef4444'
+                                                                                                };
+                                                                                                const ordered = Object.entries(statusCounts).sort((a, b) => b[1] - a[1]);
+                                                                                                return ordered.map((entry, index) => (
+                                                                                                    <Cell key={`cell-${index}`} fill={PIE_COLORS[entry[0]] || '#9ca3af'} />
+                                                                                                ))
+                                                                                            })()}
+                                                                                        </Pie>
+                                                                                        <Tooltip
+                                                                                            formatter={(value: any) => [`${value} Leads`, 'Số lượng']}
+                                                                                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)' }}
+                                                                                        />
+                                                                                        <Legend
+                                                                                            verticalAlign="bottom"
+                                                                                            height={36}
+                                                                                            iconType="circle"
+                                                                                            wrapperStyle={{
+                                                                                                paddingTop: '20px',
+                                                                                                fontSize: '12px',
+                                                                                                fontWeight: 500
+                                                                                            }}
+                                                                                        />
+                                                                                    </PieChart>
+                                                                                </ResponsiveContainer>
+                                                                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none" style={{ marginTop: '-36px' }}>
+                                                                                    <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-0.5">Tổng leads</span>
+                                                                                    <span className="text-3xl font-black text-gray-800">{leads.length}</span>
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
                                                                 </div>
                                                             </div>
