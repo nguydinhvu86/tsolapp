@@ -7,6 +7,7 @@ import { ArrowLeft, Calendar, FileText, CheckSquare, Building, CreditCard, Link 
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import Link from 'next/link';
 import { uploadPurchasePaymentDocument } from '@/app/purchasing/actions';
+import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 
 export function PurchasePaymentDetailClient({ payment, tasks, users }: { payment: any, tasks: any[], users: any[] }) {
     const router = useRouter();
@@ -14,6 +15,9 @@ export function PurchasePaymentDetailClient({ payment, tasks, users }: { payment
     const [isUploading, setIsUploading] = useState(false);
     const [localPayment, setLocalPayment] = useState(payment);
     const [copied, setCopied] = useState(false);
+
+    // Pagination hooks
+    const allocationsPag = usePagination(localPayment.allocations || []);
 
     const handleCopyPublicLink = () => {
         const publicUrl = `${window.location.origin}/public/purchasing/payments/${payment.id}`;
@@ -181,10 +185,10 @@ export function PurchasePaymentDetailClient({ payment, tasks, users }: { payment
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {localPayment.allocations?.length === 0 ? (
+                                            {allocationsPag.paginatedItems.length === 0 ? (
                                                 <tr><td colSpan={3} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Dữ liệu cấn trừ trống (Tiền thừa / Nợ trước).</td></tr>
                                             ) : (
-                                                localPayment.allocations?.map((allocation: any) => (
+                                                allocationsPag.paginatedItems.map((allocation: any) => (
                                                     <tr key={allocation.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                                         <td style={{ padding: '1rem' }}>
                                                             <Link href={`/purchasing/bills/${allocation.bill?.id}`} style={{ fontWeight: 600, color: '#4f46e5', textDecoration: 'none' }} className="hover:underline">
@@ -214,6 +218,7 @@ export function PurchasePaymentDetailClient({ payment, tasks, users }: { payment
                                             </tfoot>
                                         )}
                                     </table>
+                                    <Pagination {...allocationsPag.paginationProps} />
                                 </div>
                             )}
 

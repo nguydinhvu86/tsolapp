@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card } from '@/app/components/ui/Card';
 import { Table } from '@/app/components/ui/Table';
+import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
@@ -635,6 +636,8 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         return result;
     }, [baseFilteredInvoices, statusFilter, sortBy]);
 
+    const { paginatedItems, paginationProps } = usePagination(filteredInvoices, 25);
+
     const premiumCSS = `
         .status-badge {
             display: inline-flex;
@@ -1006,17 +1009,17 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                     </tr>
                 </thead>
                 <tbody>
-                    {filteredInvoices.map((inv: any) => (
+                    {paginatedItems.map((inv: any) => (
                         <tr key={inv.id} className="border-t border-gray-100">
                             <td className="py-3 items-center gap-2 flex">
-                                <FileText size={16} className="text-primary/70" />
-                                <Link href={`/sales/invoices/${inv.id}`} className="font-semibold text-gray-800 hover:text-primary hover:underline transition-colors block">
+                                <FileText size={16} className={`text-primary/70 ${inv.dueDate && new Date(inv.dueDate).getTime() < new Date().setHours(0, 0, 0, 0) && !['DRAFT', 'PAID', 'CANCELLED'].includes(inv.status) ? 'text-red-500' : ''}`} />
+                                <Link href={`/sales/invoices/${inv.id}`} className={`font-semibold hover:text-primary hover:underline transition-colors block ${inv.dueDate && new Date(inv.dueDate).getTime() < new Date().setHours(0, 0, 0, 0) && !['DRAFT', 'PAID', 'CANCELLED'].includes(inv.status) ? 'text-red-600' : 'text-gray-800'}`}>
                                     {inv.code}
                                 </Link>
                                 {inv.orderId && <span className="text-[10px] bg-blue-100 text-blue-600 px-1 rounded ml-1">Kế thừa</span>}
                             </td>
                             <td className="py-3">
-                                <div className="font-medium text-gray-900">{formatDate(inv.date)}</div>
+                                <div className={`font-medium ${inv.dueDate && new Date(inv.dueDate).getTime() < new Date().setHours(0, 0, 0, 0) && !['DRAFT', 'PAID', 'CANCELLED'].includes(inv.status) ? 'text-red-600' : 'text-gray-900'}`}>{formatDate(inv.date)}</div>
                                 {inv.dueDate && (
                                     <div className="flex items-center gap-1 text-xs text-red-500 mt-1" title="Hạn thanh toán">
                                         <Calendar size={12} /> HTT: {formatDate(inv.dueDate)}
@@ -1055,24 +1058,29 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                             <td className="py-3 text-right font-bold text-gray-800">{formatMoney(inv.totalAmount)}</td>
                             <td className="py-3 text-right text-green-600 font-medium">{formatMoney(inv.paidAmount)}</td>
                             <td className="py-3 text-center">
-                                <select
-                                    className={`status-badge status-select appearance-none ${inv.status === 'ISSUED' ? 'badge-info' :
-                                        inv.status === 'PARTIAL_PAID' ? 'badge-warning' :
-                                            inv.status === 'PAID' ? 'badge-success' :
-                                                inv.status === 'CANCELLED' ? 'badge-danger' :
-                                                    'badge-neutral'
-                                        }`}
-                                    value={inv.status}
-                                    onChange={(e) => handleStatusChange(inv.id, e.target.value)}
-                                    title={inv.status === 'CANCELLED' ? "Hóa đơn đã phân hủy" : "Nhấn để đổi trạng thái"}
-                                    disabled={inv.status === 'CANCELLED'}
-                                >
-                                    <option value="DRAFT" className="bg-white text-gray-900">Bản Dự Thảo</option>
-                                    <option value="ISSUED" className="bg-white text-gray-900">Ghi Nhận Nợ / Xuất Kho</option>
-                                    <option value="PARTIAL_PAID" className="bg-white text-gray-900">Đã Thu Một Phần</option>
-                                    <option value="PAID" className="bg-white text-gray-900">Hoàn Tất Thu</option>
-                                    {inv.status === 'CANCELLED' && <option value="CANCELLED" className="bg-white text-gray-900">Đã Hủy</option>}
-                                </select>
+                                <div className="flex flex-col items-center gap-1">
+                                    <select
+                                        className={`status-badge status-select appearance-none ${inv.status === 'ISSUED' ? 'badge-info' :
+                                            inv.status === 'PARTIAL_PAID' ? 'badge-warning' :
+                                                inv.status === 'PAID' ? 'badge-success' :
+                                                    inv.status === 'CANCELLED' ? 'badge-danger' :
+                                                        'badge-neutral'
+                                            } ${inv.dueDate && new Date(inv.dueDate).getTime() < new Date().setHours(0, 0, 0, 0) && !['DRAFT', 'PAID', 'CANCELLED'].includes(inv.status) ? 'border-red-500 shadow-[0_0_0_1px_rgba(239,68,68,1)]' : ''}`}
+                                        value={inv.status}
+                                        onChange={(e) => handleStatusChange(inv.id, e.target.value)}
+                                        title={inv.status === 'CANCELLED' ? "Hóa đơn đã phân hủy" : "Nhấn để đổi trạng thái"}
+                                        disabled={inv.status === 'CANCELLED'}
+                                    >
+                                        <option value="DRAFT" className="bg-white text-gray-900">Bản Dự Thảo</option>
+                                        <option value="ISSUED" className="bg-white text-gray-900">Ghi Nhận Nợ / Xuất Kho</option>
+                                        <option value="PARTIAL_PAID" className="bg-white text-gray-900">Đã Thu Một Phần</option>
+                                        <option value="PAID" className="bg-white text-gray-900">Hoàn Tất Thu</option>
+                                        {inv.status === 'CANCELLED' && <option value="CANCELLED" className="bg-white text-gray-900">Đã Hủy</option>}
+                                    </select>
+                                    {inv.dueDate && new Date(inv.dueDate).getTime() < new Date().setHours(0, 0, 0, 0) && !['DRAFT', 'PAID', 'CANCELLED'].includes(inv.status) && (
+                                        <span className="text-[10px] font-bold text-white bg-red-600 px-1.5 py-0.5 rounded-sm uppercase tracking-wider animate-pulse" title="Hóa đơn đã quá hạn thanh toán">Quá Hạn</span>
+                                    )}
+                                </div>
                             </td>
                             <td className="py-3 text-right">
                                 <div className="flex justify-end gap-2 items-center">
@@ -1117,11 +1125,12 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                             </td>
                         </tr>
                     ))}
-                    {filteredInvoices.length === 0 && (
+                    {paginatedItems.length === 0 && (
                         <tr><td colSpan={7} className="py-8 text-center text-gray-500">Chưa có hóa đơn nào phù hợp với bộ lọc</td></tr>
                     )}
                 </tbody>
             </Table>
+            <Pagination {...paginationProps} />
 
             {/* Generic Action Modal */}
             <Modal isOpen={!!actionModal?.isOpen} onClose={() => !isActioning && setActionModal(null)} title={actionModal?.title || 'Xác nhận'}>

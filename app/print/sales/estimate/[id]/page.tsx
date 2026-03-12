@@ -24,6 +24,18 @@ export default async function PrintSalesEstimatePage({ params }: { params: { id:
         notFound();
     }
 
+    // Lazy evaluate EXPIRED status
+    const todayAtMidnight = new Date();
+    todayAtMidnight.setHours(0, 0, 0, 0);
+
+    if (estimate.status === 'SENT' && estimate.validUntil && new Date(estimate.validUntil).setHours(0, 0, 0, 0) < todayAtMidnight.getTime()) {
+        await prisma.salesEstimate.update({
+            where: { id: estimate.id },
+            data: { status: 'EXPIRED' }
+        });
+        estimate.status = 'EXPIRED';
+    }
+
     const settings = await prisma.systemSetting.findMany({
         where: {
             key: {

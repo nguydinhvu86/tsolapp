@@ -7,6 +7,7 @@ import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, Cre
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import Link from 'next/link';
 import { uploadPurchaseBillDocument, cancelPurchaseBill } from '@/app/purchasing/actions';
+import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 
 export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, tasks: any[], users: any[] }) {
     const router = useRouter();
@@ -17,6 +18,10 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
     const [isUploading, setIsUploading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [copied, setCopied] = useState(false);
+
+    // Pagination hooks
+    const itemsPag = usePagination(bill.items || []);
+    const allocationsPag = usePagination(bill.allocations || []);
 
     const handleCancel = async () => {
         if (confirm(`Bạn có chắc chắn muốn HỦY Hóa Đơn ${localBill.code}?\n\nHành động này sẽ:\n- Hủy phiếu Nhập Kho tương ứng\n- Giảm lại công nợ NCC.\n\nLưu ý: Không thể hủy nếu hóa đơn đã có thanh toán.`)) {
@@ -235,10 +240,10 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {bill.items?.length === 0 ? (
-                                                <tr><td colSpan={4} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Chưa có sản phẩm nào được nhập kho.</td></tr>
+                                            {itemsPag.paginatedItems.length === 0 ? (
+                                                <tr><td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Chưa có sản phẩm nào được nhập kho.</td></tr>
                                             ) : (
-                                                bill.items?.map((item: any) => (
+                                                itemsPag.paginatedItems.map((item: any) => (
                                                     <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                                         <td style={{ padding: '1rem', fontWeight: 500, color: '#1e293b' }}>
                                                             {item.product?.name || item.productName || 'Sản phẩm không xác định'}
@@ -269,6 +274,7 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
                                             )}
                                         </tbody>
                                     </table>
+                                    <Pagination {...itemsPag.paginationProps} />
                                 </div>
                             )}
 
@@ -287,10 +293,10 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {bill.allocations?.length === 0 ? (
+                                            {allocationsPag.paginatedItems.length === 0 ? (
                                                 <tr><td colSpan={4} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Chưa có thanh toán nào được thực hiện cho hóa đơn này.</td></tr>
                                             ) : (
-                                                bill.allocations?.map((allocation: any) => (
+                                                allocationsPag.paginatedItems.map((allocation: any) => (
                                                     <tr key={allocation.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                                         <td style={{ padding: '1rem' }}>
                                                             <Link href={`/purchasing/payments/${allocation.payment?.id}`} style={{ fontWeight: 600, color: '#4f46e5', textDecoration: 'none' }} className="hover:underline">

@@ -8,6 +8,7 @@ import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { updateLeadStatus } from './actions';
 import { Card } from '@/app/components/ui/Card';
 import { Table } from '@/app/components/ui/Table';
+import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 
 const STATUSES = [
     { id: 'NEW', label: 'Tiếp nhận mới', color: { bg: '#e0e7ff', text: '#3730a3', border: '#c7d2fe', colBg: '#f8fafc' }, badgeClass: 'badge-purple' },
@@ -91,6 +92,8 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
         });
         return grouped;
     }, [filteredLeads]);
+
+    const { paginatedItems: tableLeads, paginationProps } = usePagination(filteredLeads, 25);
 
     const stats = useMemo(() => {
         const counts = { ALL: 0, ACTIVE: 0, NEW: 0, CONTACTED: 0, QUALIFIED: 0, PROPOSAL: 0, WON: 0, LOST: 0 };
@@ -493,7 +496,7 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredLeads.map(lead => {
+                            {tableLeads.map(lead => {
                                 const statusObj = STATUSES.find(s => s.id === lead.status) || STATUSES[0];
                                 return (
                                     <tr
@@ -551,13 +554,14 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
                             })}
                             {filteredLeads.length === 0 && (
                                 <tr>
-                                    <td colSpan={6} className="py-12 text-center text-gray-500 bg-slate-50 border border-dashed border-gray-200 mt-4 rounded-xl">
+                                    <td colSpan={7} className="py-12 text-center text-gray-500 bg-slate-50 border border-dashed border-gray-200 mt-4 rounded-xl">
                                         Không tìm thấy cơ hội bán hàng nào phù hợp với bộ lọc.
                                     </td>
                                 </tr>
                             )}
                         </tbody>
                     </Table>
+                    <Pagination {...paginationProps} />
                 </div>
             )}
         </Card>

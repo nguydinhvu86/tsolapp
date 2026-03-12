@@ -5,6 +5,7 @@ import { Expense, ExpenseCategory } from '@prisma/client';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Table } from '@/app/components/ui/Table';
+import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { Modal } from '@/app/components/ui/Modal';
 import { Input } from '@/app/components/ui/Input';
 import { createExpense, updateExpense, deleteExpense, createExpenseCategory } from './actions';
@@ -105,6 +106,8 @@ export default function ExpenseClient({
 
         return result;
     }, [expenses, searchTerm, sortField, sortOrder]);
+
+    const { paginatedItems, paginationProps } = usePagination(filteredExpenses, 25);
 
     const openModal = (expense?: ExpenseWithDetails) => {
         if (expense) {
@@ -267,9 +270,9 @@ export default function ExpenseClient({
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredExpenses.length === 0 ? (
+                        {paginatedItems.length === 0 ? (
                             <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Chưa có dữ liệu chi phí</td></tr>
-                        ) : filteredExpenses.map(expense => (
+                        ) : paginatedItems.map(expense => (
                             <tr key={expense.id}>
                                 <td>
                                     <Link
@@ -324,6 +327,7 @@ export default function ExpenseClient({
                         ))}
                     </tbody>
                 </Table>
+                <Pagination {...paginationProps} />
 
                 {/* Expense Entry Modal */}
                 <Modal isOpen={isModalOpen} onClose={closeModal} title={editingId ? 'Sửa khoản chi' : 'Thêm khoản chi mới'}>

@@ -9,6 +9,7 @@ import { Calendar, TrendingUp, DollarSign, Users, Package, FileText, CreditCard,
 import Link from 'next/link';
 import { exportToExcel, exportToPDF } from '@/lib/utils/export';
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
+import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
@@ -264,6 +265,14 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
         }
         return result;
     }, [filteredPayments, paymentSearch, paymentMethod]);
+
+    // Pagination hooks
+    const customerPag = usePagination(customerReportData);
+    const productPag = usePagination(productReportData);
+    const estimatePag = usePagination(displayEstimates);
+    const expensePag = usePagination(displayExpenses);
+    const invoicePag = usePagination(displayInvoices);
+    const paymentPag = usePagination(displayPayments);
 
 
     // Custom Premium Styles
@@ -613,7 +622,7 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {customerReportData.map(c => (
+                                    {customerPag.paginatedItems.map(c => (
                                         <tr key={c.id}>
                                             <td className="font-medium text-gray-500">
                                                 <Link href={`/customers/${c.id}`} className="hover:text-primary hover:underline transition-colors block">
@@ -630,7 +639,7 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
                                             <td className="text-right font-bold text-danger">{formatMoney(c.currentDebt)}</td>
                                         </tr>
                                     ))}
-                                    {customerReportData.length === 0 && (
+                                    {customerPag.paginatedItems.length === 0 && (
                                         <tr><td colSpan={5} className="text-center p-8 text-gray-500">Không tìm thấy khách hàng nào.</td></tr>
                                     )}
                                 </tbody>
@@ -651,6 +660,7 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
                                     </tfoot>
                                 )}
                             </table>
+                            <Pagination {...customerPag.paginationProps} />
                         </div>
                     </div>
                 </div>
@@ -694,7 +704,7 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {productReportData.map(p => (
+                                    {productPag.paginatedItems.map(p => (
                                         <tr key={p.id}>
                                             <td className="font-medium text-gray-500">
                                                 <Link href={`/products/${p.id}`} className="hover:text-primary hover:underline transition-colors block">
@@ -712,7 +722,7 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
                                             <td className="text-right font-bold">{formatMoney(p.totalValue)}</td>
                                         </tr>
                                     ))}
-                                    {productReportData.length === 0 && (
+                                    {productPag.paginatedItems.length === 0 && (
                                         <tr><td colSpan={6} className="text-center p-8 text-gray-500">Chưa tiêu thụ sản phẩm nào.</td></tr>
                                     )}
                                 </tbody>
@@ -731,6 +741,7 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
                                     </tfoot>
                                 )}
                             </table>
+                            <Pagination {...productPag.paginationProps} />
                         </div>
                     </div>
 
@@ -802,7 +813,7 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
                                 </tr>
                             </thead>
                             <tbody>
-                                {displayEstimates.map(e => (
+                                {estimatePag.paginatedItems.map(e => (
                                     <tr key={e.id}>
                                         <td>
                                             <Link href={`/sales/estimates/${e.id}`} className="font-bold hover:text-primary hover:underline transition-colors block">{e.code}</Link>
@@ -818,7 +829,7 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
                                         <td className="text-right font-bold">{formatMoney(e.totalAmount)}</td>
                                     </tr>
                                 ))}
-                                {displayEstimates.length === 0 && <tr><td colSpan={4} className="text-center p-8 text-gray-500">Không có báo giá.</td></tr>}
+                                {estimatePag.paginatedItems.length === 0 && <tr><td colSpan={4} className="text-center p-8 text-gray-500">Không có báo giá.</td></tr>}
                             </tbody>
                             {displayEstimates.length > 0 && (
                                 <tfoot style={{ position: 'sticky', bottom: 0, backgroundColor: 'var(--surface)', borderTop: '2px solid var(--border)' }}>
@@ -831,6 +842,7 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
                                 </tfoot>
                             )}
                         </table>
+                        <Pagination {...estimatePag.paginationProps} />
                     </div>
                 </div>
             )}
@@ -876,7 +888,7 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
                                 </tr>
                             </thead>
                             <tbody>
-                                {displayExpenses.map(e => (
+                                {expensePag.paginatedItems.map(e => (
                                     <tr key={e.id}>
                                         <td>
                                             <Link href={`/sales/expenses/${e.id}`} className="font-bold hover:text-primary hover:underline transition-colors block">{e.code}</Link>
@@ -899,7 +911,7 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
                                         <td className="text-right font-bold text-danger">{formatMoney(e.amount)}</td>
                                     </tr>
                                 ))}
-                                {displayExpenses.length === 0 && <tr><td colSpan={4} className="text-center p-8 text-gray-500">Chưa có khoản chi phí nào.</td></tr>}
+                                {expensePag.paginatedItems.length === 0 && <tr><td colSpan={4} className="text-center p-8 text-gray-500">Chưa có khoản chi phí nào.</td></tr>}
                             </tbody>
                             {displayExpenses.length > 0 && (
                                 <tfoot style={{ position: 'sticky', bottom: 0, backgroundColor: 'var(--surface)', borderTop: '2px solid var(--border)' }}>
@@ -912,6 +924,7 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
                                 </tfoot>
                             )}
                         </table>
+                        <Pagination {...expensePag.paginationProps} />
                     </div>
                 </div>
             )}
@@ -951,7 +964,7 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
                                 </tr>
                             </thead>
                             <tbody>
-                                {displayInvoices.map(b => (
+                                {invoicePag.paginatedItems.map(b => (
                                     <tr key={b.id}>
                                         <td>
                                             <Link href={`/sales/invoices/${b.id}`} className="font-bold hover:text-primary hover:underline transition-colors block">{b.code}</Link>
@@ -976,7 +989,7 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
                                         </td>
                                     </tr>
                                 ))}
-                                {displayInvoices.length === 0 && <tr><td colSpan={4} className="text-center p-8 text-gray-500">Không có hóa đơn xuất bán.</td></tr>}
+                                {invoicePag.paginatedItems.length === 0 && <tr><td colSpan={4} className="text-center p-8 text-gray-500">Không có hóa đơn xuất bán.</td></tr>}
                             </tbody>
                             {displayInvoices.length > 0 && (
                                 <tfoot style={{ position: 'sticky', bottom: 0, backgroundColor: 'var(--surface)', borderTop: '2px solid var(--border)' }}>
@@ -992,6 +1005,7 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
                                 </tfoot>
                             )}
                         </table>
+                        <Pagination {...invoicePag.paginationProps} />
                     </div>
                 </div>
             )}
@@ -1037,7 +1051,7 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
                                 </tr>
                             </thead>
                             <tbody>
-                                {displayPayments.map(p => (
+                                {paymentPag.paginatedItems.map(p => (
                                     <tr key={p.id}>
                                         <td>
                                             <Link href={`/sales/payments/${p.id}`} className="font-bold hover:text-primary hover:underline transition-colors block">{p.code}</Link>
@@ -1052,7 +1066,7 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
                                         <td className="text-right font-bold text-success">{formatMoney(p.amount)}</td>
                                     </tr>
                                 ))}
-                                {displayPayments.length === 0 && <tr><td colSpan={4} className="text-center p-8 text-gray-500">Không có giao dịch thu.</td></tr>}
+                                {paymentPag.paginatedItems.length === 0 && <tr><td colSpan={4} className="text-center p-8 text-gray-500">Không có giao dịch thu.</td></tr>}
                             </tbody>
                             {displayPayments.length > 0 && (
                                 <tfoot style={{ position: 'sticky', bottom: 0, backgroundColor: 'var(--surface)', borderTop: '2px solid var(--border)' }}>
@@ -1065,6 +1079,7 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
                                 </tfoot>
                             )}
                         </table>
+                        <Pagination {...paymentPag.paginationProps} />
                     </div>
                 </div>
             )}

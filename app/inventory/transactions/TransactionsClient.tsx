@@ -5,6 +5,7 @@ import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/Input';
 import { Table } from '@/app/components/ui/Table';
+import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { Plus, Search, Eye, Trash2, FileSpreadsheet } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { deleteTransaction } from '../transaction-actions';
@@ -22,6 +23,8 @@ export default function TransactionsClient({ initialTransactions }: { initialTra
         const matchStatus = statusFilter ? t.status === statusFilter : true;
         return matchSearch && matchType && matchStatus;
     });
+
+    const { paginatedItems, paginationProps } = usePagination(filtered, 25);
 
     const formatDate = (d: string | Date) => {
         return new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(d));
@@ -148,7 +151,7 @@ export default function TransactionsClient({ initialTransactions }: { initialTra
                         </tr>
                     </thead>
                     <tbody>
-                        {filtered.length > 0 ? filtered.map((t) => {
+                        {paginatedItems.length > 0 ? paginatedItems.map((t) => {
                             const typeObj = getTypeColor(t.type);
                             const statusObj = getStatusColor(t.status);
 
@@ -196,6 +199,7 @@ export default function TransactionsClient({ initialTransactions }: { initialTra
                         )}
                     </tbody>
                 </Table>
+                <Pagination {...paginationProps} />
             </div>
         </Card >
     );
