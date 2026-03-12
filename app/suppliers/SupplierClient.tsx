@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Plus, Search, Eye, Edit2, Trash2, Phone, Mail, Building, ArrowUpDown } from 'lucide-react';
 import Link from 'next/link';
 import { createSupplier, updateSupplier, deleteSupplier } from '@/app/purchasing/actions';
+import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 
 export function SupplierClient({ initialSuppliers }: { initialSuppliers: any[] }) {
     const [suppliers, setSuppliers] = useState(initialSuppliers);
@@ -74,6 +75,8 @@ export function SupplierClient({ initialSuppliers }: { initialSuppliers: any[] }
         }
         return sortableItems;
     }, [filteredSuppliers, sortConfig]);
+
+    const { paginatedItems, paginationProps } = usePagination(sortedSuppliers, 15);
 
     const requestSort = (key: string) => {
         let direction: 'asc' | 'desc' = 'asc';
@@ -207,14 +210,14 @@ export function SupplierClient({ initialSuppliers }: { initialSuppliers: any[] }
                         </tr>
                     </thead>
                     <tbody>
-                        {sortedSuppliers.length === 0 ? (
+                        {paginatedItems.length === 0 ? (
                             <tr>
                                 <td colSpan={5} className="text-center text-gray-500 py-8">
                                     Không tìm thấy nhà cung cấp nào
                                 </td>
                             </tr>
                         ) : (
-                            sortedSuppliers.map((supplier) => (
+                            paginatedItems.map((supplier) => (
                                 <tr key={supplier.id}>
                                     <td className="font-medium text-gray-900 dark:text-gray-100">
                                         {supplier.code}
@@ -253,6 +256,7 @@ export function SupplierClient({ initialSuppliers }: { initialSuppliers: any[] }
                         )}
                     </tbody>
                 </table>
+                <Pagination {...paginationProps} />
             </div>
 
             {/* Create/Edit Modal */}

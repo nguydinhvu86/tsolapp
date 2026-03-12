@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card } from '@/app/components/ui/Card';
 import { Table } from '@/app/components/ui/Table';
+import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
@@ -420,8 +421,12 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                 amount: baseFilteredEstimates.filter((e: any) => e.status === 'DRAFT').reduce((sum: number, e: any) => sum + (e.totalAmount || 0), 0)
             },
             SENT: {
-                count: baseFilteredEstimates.filter((e: any) => e.status === 'SENT').length,
-                amount: baseFilteredEstimates.filter((e: any) => e.status === 'SENT').reduce((sum: number, e: any) => sum + (e.totalAmount || 0), 0)
+                count: baseFilteredEstimates.filter((e: any) => e.status === 'SENT' && (!e.validUntil || new Date(e.validUntil).setHours(0, 0, 0, 0) >= new Date().setHours(0, 0, 0, 0))).length,
+                amount: baseFilteredEstimates.filter((e: any) => e.status === 'SENT' && (!e.validUntil || new Date(e.validUntil).setHours(0, 0, 0, 0) >= new Date().setHours(0, 0, 0, 0))).reduce((sum: number, e: any) => sum + (e.totalAmount || 0), 0)
+            },
+            EXPIRED: {
+                count: baseFilteredEstimates.filter((e: any) => e.status === 'SENT' && e.validUntil && new Date(e.validUntil).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0)).length,
+                amount: baseFilteredEstimates.filter((e: any) => e.status === 'SENT' && e.validUntil && new Date(e.validUntil).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0)).reduce((sum: number, e: any) => sum + (e.totalAmount || 0), 0)
             },
             ACCEPTED: {
                 count: baseFilteredEstimates.filter((e: any) => e.status === 'ACCEPTED').length,
@@ -446,6 +451,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         { id: 'ALL', label: 'Tất Cả', count: stats.ALL.count, amount: stats.ALL.amount, colorClass: 'stat-card-purple', icon: LayoutList },
         { id: 'DRAFT', label: 'Bản Dự Thảo', count: stats.DRAFT.count, amount: stats.DRAFT.amount, colorClass: 'stat-card-amber', icon: FileText },
         { id: 'SENT', label: 'Đã Gửi KH', count: stats.SENT.count, amount: stats.SENT.amount, colorClass: 'stat-card-blue', icon: FolderClock },
+        { id: 'EXPIRED', label: 'Hết Hiệu Lực', count: stats.EXPIRED.count, amount: stats.EXPIRED.amount, colorClass: 'stat-card-gray', icon: XCircle },
         { id: 'ACCEPTED', label: 'Khách Chốt', count: stats.ACCEPTED.count, amount: stats.ACCEPTED.amount, colorClass: 'stat-card-green', icon: CheckCircle2 },
         { id: 'ORDERED', label: 'Đã Lên Đơn', count: stats.ORDERED.count, amount: stats.ORDERED.amount, colorClass: 'stat-card-indigo', icon: ShoppingCart },
         { id: 'INVOICED', label: 'Đã Hóa Đơn', count: stats.INVOICED.count, amount: stats.INVOICED.amount, colorClass: 'stat-card-emerald', icon: FileText },
@@ -456,7 +462,13 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         let result = baseFilteredEstimates;
 
         if (statusFilter !== 'ALL') {
-            result = result.filter((e: any) => e.status === statusFilter);
+            if (statusFilter === 'SENT') {
+                result = result.filter((e: any) => e.status === 'SENT' && (!e.validUntil || new Date(e.validUntil).setHours(0, 0, 0, 0) >= new Date().setHours(0, 0, 0, 0)));
+            } else if (statusFilter === 'EXPIRED') {
+                result = result.filter((e: any) => e.status === 'SENT' && e.validUntil && new Date(e.validUntil).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0));
+            } else {
+                result = result.filter((e: any) => e.status === statusFilter);
+            }
         }
 
         result.sort((a: any, b: any) => {
@@ -474,6 +486,8 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         return result;
     }, [baseFilteredEstimates, statusFilter, sortBy]);
 
+    const { paginatedItems, paginationProps } = usePagination(filteredEstimates, 25);
+
     const premiumCSS = `
         .status-badge {
             display: inline-flex;
@@ -490,6 +504,10 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         .badge-info { background: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; }
         .badge-danger { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
         .badge-purple { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
+        .badge-expired { background: #f3f4f6; color: #6b7280; border: 1px solid #d1d5db; text-decoration: line-through; }
+        .stat-card-gray { background-color: #f3f4f6; color: #4b5563; border-color: #e5e7eb; }
+        .stat-card-gray .stat-icon { background-color: #e5e7eb; color: #6b7280; }
+        .stat-card-gray:hover { border-color: #d1d5db; background-color: #e5e7eb; }
         
         .status-select {
             appearance: none;
@@ -675,124 +693,134 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredEstimates.map((est: any) => (
-                            <tr key={est.id} className="border-t border-gray-100">
-                                <td className="py-3 items-center gap-2 flex">
-                                    <FileText size={16} className="text-primary/70" />
-                                    <Link href={`/sales/estimates/${est.id}`} className="font-semibold text-gray-800 hover:text-primary hover:underline transition-colors block">
-                                        {est.code}
-                                    </Link>
-                                </td>
-                                <td className="py-3">
-                                    <div className="text-gray-600 font-medium" suppressHydrationWarning>{formatDate(new Date(est.date))}</div>
-                                    {est.validUntil && (
-                                        <div className="text-xs text-red-500 mt-1 flex items-center gap-1" title="Hạn Báo Giá">
-                                            <Calendar size={12} /> HBG: {formatDate(est.validUntil)}
-                                        </div>
-                                    )}
-                                </td>
-                                <td className="py-3">
-                                    {est.customerId ? (
-                                        <Link href={`/customers/${est.customerId}`} className="font-medium text-gray-800 hover:text-primary hover:underline transition-colors block">
-                                            {est.customer?.name}
+                        {paginatedItems.map((est: any) => {
+                            const isExpired = est.status === 'EXPIRED';
+                            return (
+                                <tr key={est.id} className={`border-t border-gray-100 ${isExpired ? 'bg-gray-50/50' : ''}`}>
+                                    <td className="py-3 items-center gap-2 flex">
+                                        <FileText size={16} className={`text-primary/70 ${isExpired ? 'text-gray-400' : ''}`} />
+                                        <Link href={`/sales/estimates/${est.id}`} className={`font-semibold hover:text-primary hover:underline transition-colors block ${isExpired ? 'text-gray-500' : 'text-gray-800'}`}>
+                                            {est.code}
                                         </Link>
-                                    ) : (
-                                        est.customer?.name
-                                    )}
-                                </td>
-                                <td className="py-3">
-                                    <div className="flex items-center gap-2">
-                                        {est.salesperson?.avatarUrl ? (
-                                            <img src={est.salesperson.avatarUrl} alt="Avatar" className="w-6 h-6 rounded-full object-cover" />
-                                        ) : (
-                                            <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600">
-                                                {(est.salesperson?.name || est.creator?.name || '?').charAt(0).toUpperCase()}
+                                    </td>
+                                    <td className="py-3">
+                                        <div className={`font-medium ${isExpired ? 'text-gray-500' : 'text-gray-600'}`} suppressHydrationWarning>{formatDate(new Date(est.date))}</div>
+                                        {est.validUntil && (
+                                            <div className={`text-xs mt-1 flex items-center gap-1 ${isExpired ? 'text-red-600 font-semibold' : 'text-red-500'}`} title="Hạn Báo Giá">
+                                                <Calendar size={12} /> HBG: {formatDate(est.validUntil)}
                                             </div>
                                         )}
-                                        <span className="text-sm font-medium text-slate-700">{est.salesperson?.name || est.creator?.name || 'Không rõ'}</span>
-                                    </div>
-                                </td>
-                                <td className="py-3">
-                                    <TagDisplay tagsString={est.tags} />
-                                </td>
-                                <td className="py-3 text-right font-bold text-gray-800">{formatMoney(est.totalAmount)}</td>
-                                <td className="py-3 text-center">
-                                    <select
-                                        className={`status-badge status-select appearance-none ${est.status === 'SENT' ? 'badge-info' :
-                                            est.status === 'ACCEPTED' ? 'badge-success' :
-                                                est.status === 'ORDERED' ? 'badge-purple' :
-                                                    est.status === 'INVOICED' ? 'badge-success' :
-                                                        est.status === 'REJECTED' ? 'badge-danger' :
-                                                            'badge-warning'
-                                            }`}
-                                        value={est.status}
-                                        onChange={(e) => handleStatusChange(est.id, e.target.value)}
-                                        title="Nhấn để đổi trạng thái"
-                                    >
-                                        <option value="DRAFT" className="bg-white text-gray-900">Bản Dự Thảo</option>
-                                        <option value="SENT" className="bg-white text-gray-900">Đã Gửi KH</option>
-                                        <option value="ACCEPTED" className="bg-white text-gray-900">Khách Chốt</option>
-                                        <option value="ORDERED" className="bg-white text-gray-900">Đã Lên Đơn</option>
-                                        <option value="INVOICED" className="bg-white text-gray-900">Đã Hóa Đơn</option>
-                                        <option value="REJECTED" className="bg-white text-gray-900">Từ Chối</option>
-                                    </select>
-                                </td>
-                                <td className="py-3 text-right">
-                                    <div className="flex justify-end items-center gap-2">
-                                        <div className="flex items-center gap-1 mr-1">
-                                            {est.status === 'DRAFT' && (
-                                                <button onClick={() => handleEdit(est)} title="Chỉnh sửa" className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors">
-                                                    <Edit2 size={15} />
-                                                </button>
+                                    </td>
+                                    <td className="py-3">
+                                        {est.customerId ? (
+                                            <Link href={`/customers/${est.customerId}`} className="font-medium text-gray-800 hover:text-primary hover:underline transition-colors block">
+                                                {est.customer?.name}
+                                            </Link>
+                                        ) : (
+                                            est.customer?.name
+                                        )}
+                                    </td>
+                                    <td className="py-3">
+                                        <div className="flex items-center gap-2">
+                                            {est.salesperson?.avatarUrl ? (
+                                                <img src={est.salesperson.avatarUrl} alt="Avatar" className="w-6 h-6 rounded-full object-cover" />
+                                            ) : (
+                                                <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600">
+                                                    {(est.salesperson?.name || est.creator?.name || '?').charAt(0).toUpperCase()}
+                                                </div>
                                             )}
-                                            <button onClick={() => handleCopy(est)} title="Copy Báo Giá" className="p-2 text-slate-500 hover:text-green-600 hover:bg-green-50 transition-colors">
-                                                <Copy size={15} />
-                                            </button>
-                                            <Link href={`/sales/estimates/${est.id}`} title="Xem chi tiết" className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors block">
-                                                <Eye size={15} />
-                                            </Link>
-                                            <Link href={`/print/sales/estimate/${est.id}`} target="_blank" title="Tải PDF / In ấn" className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors block">
-                                                <Download size={15} />
-                                            </Link>
-                                            <Link href={`/public/sales/estimate/${est.id}`} target="_blank" title="Link xem Public" className="p-2 text-slate-500 hover:text-teal-600 hover:bg-teal-50 transition-colors block">
-                                                <LinkIcon size={15} />
-                                            </Link>
-                                            <button onClick={() => handleDelete(est.id)} className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors" title="Xóa">
-                                                <Trash2 size={15} />
-                                            </button>
+                                            <span className="text-sm font-medium text-slate-700">{est.salesperson?.name || est.creator?.name || 'Không rõ'}</span>
                                         </div>
+                                    </td>
+                                    <td className="py-3">
+                                        <TagDisplay tagsString={est.tags} />
+                                    </td>
+                                    <td className="py-3 text-right font-bold text-gray-800">{formatMoney(est.totalAmount)}</td>
+                                    <td className="py-3 text-center">
+                                        <div className="flex flex-col items-center gap-1">
+                                            <select
+                                                className={`status-badge status-select appearance-none ${est.status === 'SENT' ? 'badge-info' :
+                                                    est.status === 'ACCEPTED' ? 'badge-success' :
+                                                        est.status === 'ORDERED' ? 'badge-purple' :
+                                                            est.status === 'INVOICED' ? 'badge-success' :
+                                                                est.status === 'REJECTED' ? 'badge-danger' :
+                                                                    est.status === 'EXPIRED' ? 'badge-expired cursor-not-allowed text-center' :
+                                                                        'badge-warning'
+                                                    }`}
+                                                value={est.status}
+                                                onChange={(e) => handleStatusChange(est.id, e.target.value)}
+                                                title="Nhấn để đổi trạng thái"
+                                                disabled={est.status === 'EXPIRED'}
+                                                style={est.status === 'EXPIRED' ? { width: '130px', paddingRight: '10px', backgroundImage: 'none' } : {}}
+                                            >
+                                                <option value="DRAFT" className="bg-white text-gray-900">Bản Dự Thảo</option>
+                                                <option value="SENT" className="bg-white text-gray-900">Đã Gửi KH</option>
+                                                <option value="ACCEPTED" className="bg-white text-gray-900">Khách Chốt</option>
+                                                <option value="ORDERED" className="bg-white text-gray-900">Đã Lên Đơn</option>
+                                                <option value="INVOICED" className="bg-white text-gray-900">Đã Hóa Đơn</option>
+                                                <option value="REJECTED" className="bg-white text-gray-900">Từ Chối</option>
+                                                {est.status === 'EXPIRED' && <option value="EXPIRED" className="bg-white text-gray-900">Hết Hiệu Lực</option>}
+                                            </select>
+                                        </div>
+                                    </td>
+                                    <td className="py-3 text-right">
+                                        <div className="flex justify-end items-center gap-2">
+                                            <div className="flex items-center gap-1 mr-1">
+                                                {est.status === 'DRAFT' && (
+                                                    <button onClick={() => handleEdit(est)} title="Chỉnh sửa" className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                                                        <Edit2 size={15} />
+                                                    </button>
+                                                )}
+                                                <button onClick={() => handleCopy(est)} title="Copy Báo Giá" className="p-2 text-slate-500 hover:text-green-600 hover:bg-green-50 transition-colors">
+                                                    <Copy size={15} />
+                                                </button>
+                                                <Link href={`/sales/estimates/${est.id}`} title="Xem chi tiết" className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors block">
+                                                    <Eye size={15} />
+                                                </Link>
+                                                <Link href={`/print/sales/estimate/${est.id}`} target="_blank" title="Tải PDF / In ấn" className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors block">
+                                                    <Download size={15} />
+                                                </Link>
+                                                <Link href={`/public/sales/estimate/${est.id}`} target="_blank" title="Link xem Public" className="p-2 text-slate-500 hover:text-teal-600 hover:bg-teal-50 transition-colors block">
+                                                    <LinkIcon size={15} />
+                                                </Link>
+                                                <button onClick={() => handleDelete(est.id)} className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors" title="Xóa">
+                                                    <Trash2 size={15} />
+                                                </button>
+                                            </div>
 
-                                        {est.status === 'DRAFT' && (
-                                            <Button variant="secondary" onClick={() => handleStatusChange(est.id, 'SENT')} title="Ghi nhận Đã Gửi" className="px-3 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-300 py-1.5 text-xs font-semibold flex-shrink-0 shadow-sm transition-all rounded-md">
-                                                Gửi KH
-                                            </Button>
-                                        )}
-                                        {est.status === 'SENT' && (
-                                            <Button variant="secondary" onClick={() => handleStatusChange(est.id, 'ACCEPTED')} className="text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title="Đánh dấu Chốt đơn">
-                                                <Check size={14} className="mr-1.5 inline-block" /> Chốt
-                                            </Button>
-                                        )}
-                                        {(est.status === 'DRAFT' || est.status === 'SENT' || est.status === 'ACCEPTED') && (
-                                            <>
-                                                <Button variant="secondary" onClick={() => setConvertOrderModalId(est.id)} className="text-indigo-700 bg-indigo-50 border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title="Tạo Đơn Hàng Tự Động">
-                                                    <ArrowRightLeft size={14} className="mr-1.5 inline-block" /> Lên Đơn Hàng
+                                            {est.status === 'DRAFT' && (
+                                                <Button variant="secondary" onClick={() => handleStatusChange(est.id, 'SENT')} title="Ghi nhận Đã Gửi" className="px-3 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-300 py-1.5 text-xs font-semibold flex-shrink-0 shadow-sm transition-all rounded-md">
+                                                    Gửi KH
                                                 </Button>
-                                                <Button variant="secondary" onClick={() => setConvertModalId(est.id)} className="text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title="Tạo Hóa Đơn Tự Động">
-                                                    <ArrowRightLeft size={14} className="mr-1.5 inline-block" /> Lên Hóa Đơn
+                                            )}
+                                            {est.status === 'SENT' && (
+                                                <Button variant="secondary" onClick={() => handleStatusChange(est.id, 'ACCEPTED')} className="text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title="Đánh dấu Chốt đơn">
+                                                    <Check size={14} className="mr-1.5 inline-block" /> Chốt
                                                 </Button>
-                                            </>
-                                        )}
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                        {filteredEstimates.length === 0 && (
+                                            )}
+                                            {(est.status === 'DRAFT' || est.status === 'SENT' || est.status === 'ACCEPTED') && (
+                                                <>
+                                                    <Button variant="secondary" onClick={() => setConvertOrderModalId(est.id)} className="text-indigo-700 bg-indigo-50 border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title="Tạo Đơn Hàng Tự Động">
+                                                        <ArrowRightLeft size={14} className="mr-1.5 inline-block" /> Lên Đơn Hàng
+                                                    </Button>
+                                                    <Button variant="secondary" onClick={() => setConvertModalId(est.id)} className="text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title="Tạo Hóa Đơn Tự Động">
+                                                        <ArrowRightLeft size={14} className="mr-1.5 inline-block" /> Lên Hóa Đơn
+                                                    </Button>
+                                                </>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            )
+                        })}
+                        {paginatedItems.length === 0 && (
                             <tr><td colSpan={6} className="py-8 text-center text-gray-500">
                                 {estimates.length === 0 ? 'Chưa có bảng báo giá ERP nào' : 'Không có báo giá nào khớp với trạng thái này'}
                             </td></tr>
                         )}
                     </tbody>
                 </Table>
+                <Pagination {...paginationProps} />
             </Card>
 
             <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title={formData.id ? "Sửa Báo Giá ERP" : "Tạo Báo Giá ERP"} maxWidth="1000px">

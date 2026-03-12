@@ -5,6 +5,7 @@ import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/Input';
 import { Table } from '@/app/components/ui/Table';
+import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { Plus, Search, Edit, Trash2, Package, Layers } from 'lucide-react';
 import { createProduct, updateProduct, deleteProduct, createProductGroup, updateProductGroup, deleteProductGroup } from '../actions';
 import { useRouter } from 'next/navigation';
@@ -43,6 +44,8 @@ export default function ProductClient({ initialProducts, warehouses = [], produc
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.sku.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    const { paginatedItems, paginationProps } = usePagination(filtered, 25);
 
     const openCreateModal = () => {
         setEditingProduct(null);
@@ -259,7 +262,7 @@ export default function ProductClient({ initialProducts, warehouses = [], produc
                         </tr>
                     </thead>
                     <tbody>
-                        {filtered.length > 0 ? filtered.map((p) => {
+                        {paginatedItems.length > 0 ? paginatedItems.map((p) => {
                             let displayedStock = 0;
                             if (selectedWarehouseId) {
                                 const currentInv = p.inventories?.find((i: any) => i.warehouseId === selectedWarehouseId);
@@ -320,13 +323,14 @@ export default function ProductClient({ initialProducts, warehouses = [], produc
                             )
                         }) : (
                             <tr>
-                                <td colSpan={7} style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
+                                <td colSpan={8} style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
                                     Không tìm thấy sản phẩm/dịch vụ nào.
                                 </td>
                             </tr>
                         )}
                     </tbody>
                 </Table>
+                <Pagination {...paginationProps} />
             </div>
 
             {/* Modal */}
