@@ -173,10 +173,10 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                 if (!activeRecurringIds.has(task.id)) return false;
             }
 
-            if (filterStatus === 'ALL') return task.status !== 'DONE';
+            if (filterStatus === 'ALL') return task.status !== 'DONE' && task.status !== 'CANCELLED';
 
             // Core Statuses (also matched by the top cards)
-            if (['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE'].includes(filterStatus)) {
+            if (['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE', 'PAUSED', 'CANCELLED'].includes(filterStatus)) {
                 return task.status === filterStatus;
             }
 
@@ -568,7 +568,7 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
 
                                 {/* Group: Status */}
                                 <div style={{ padding: '4px 16px', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Trạng Thái</div>
-                                {[{ id: 'TODO', label: 'Cần làm' }, { id: 'IN_PROGRESS', label: 'Đang làm' }, { id: 'REVIEW', label: 'Chờ duyệt' }, { id: 'DONE', label: 'Hoàn thành' }].map(item => (
+                                {[{ id: 'TODO', label: 'Cần làm' }, { id: 'IN_PROGRESS', label: 'Đang làm' }, { id: 'REVIEW', label: 'Chờ duyệt' }, { id: 'DONE', label: 'Hoàn thành' }, { id: 'PAUSED', label: 'Tạm ngưng' }, { id: 'CANCELLED', label: 'Đã hủy' }].map(item => (
                                     <div
                                         key={item.id}
                                         onClick={() => { setFilterStatus(item.id); setIsFilterMenuOpen(false); }}
@@ -678,7 +678,7 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                                 const isDueSoon = task.dueDate && new Date(task.dueDate).getTime() - new Date().getTime() < 86400000 && task.status !== 'DONE';
 
                                 return (
-                                    <tr key={task.id}>
+                                    <tr key={task.id} style={{ backgroundColor: task.status === 'PAUSED' ? '#fef08a' : 'transparent' }}>
                                         <td>
                                             <div style={{ fontWeight: 500, color: isDueSoon ? 'var(--danger)' : 'var(--text-main)', display: 'flex', alignItems: 'center' }}>
                                                 <Link href={`/tasks/${task.id}`} className="text-blue-600 hover:underline">
@@ -744,6 +744,7 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                                                 <option value="IN_PROGRESS">Đang Xử Lý</option>
                                                 <option value="REVIEW">Chờ Duyệt</option>
                                                 <option value="DONE">Hoàn Thành</option>
+                                                <option value="PAUSED">Tạm Ngưng</option>
                                                 <option value="CANCELLED">Đã Hủy</option>
                                             </select>
                                         </td>

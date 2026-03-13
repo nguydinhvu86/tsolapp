@@ -383,7 +383,7 @@ model Task {
   id                String    @id @default(cuid())
   title             String
   description       String?   @db.Text
-  status            String    @default("TODO") // TODO, IN_PROGRESS, REVIEW, DONE, CANCELLED
+  status            String    @default("TODO") // TODO, IN_PROGRESS, REVIEW, DONE, CANCELLED, PAUSED
   priority          String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
   dueDate           DateTime?
   isPublic          Boolean   @default(true) // true: Public, false: Private
