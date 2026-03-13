@@ -677,8 +677,14 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                                 const assigneesNames = task.assignees?.map((a: any) => a.user.name || a.user.email).join(', ') || 'Chưa gán';
                                 const isDueSoon = task.dueDate && new Date(task.dueDate).getTime() - new Date().getTime() < 86400000 && task.status !== 'DONE';
 
+                                let rowClass = '';
+                                if (task.status !== 'DONE' && task.status !== 'PAUSED' && task.status !== 'CANCELLED') {
+                                    if (task.priority === 'URGENT') rowClass = 'animate-priority-urgent-bg';
+                                    else if (task.priority === 'HIGH') rowClass = 'animate-priority-high-bg';
+                                }
+
                                 return (
-                                    <tr key={task.id} style={{ backgroundColor: task.status === 'PAUSED' ? '#fef08a' : 'transparent' }}>
+                                    <tr key={task.id} style={{ backgroundColor: task.status === 'PAUSED' ? '#fef08a' : 'transparent' }} className={`transition-colors ${rowClass}`}>
                                         <td>
                                             <div style={{ fontWeight: 500, color: isDueSoon ? 'var(--danger)' : 'var(--text-main)', display: 'flex', alignItems: 'center' }}>
                                                 <Link href={`/tasks/${task.id}`} className="text-blue-600 hover:underline">

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
-import { ChevronLeft, CheckCircle2, Circle, MessageSquare, Clock, Plus, Trash2, User as UserIcon, Edit2, Info, Mail, Paperclip, Image as ImageIcon, X, FileIcon, Download, Type, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, CheckCircle2, Circle, MessageSquare, Clock, Plus, Trash2, User as UserIcon, Edit2, Info, Mail, Paperclip, Image as ImageIcon, X, FileIcon, Download, Type, AlertTriangle, AlertOctagon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { updateTaskStatus, addChecklist, toggleChecklist, addComment, updateTask, editChecklist, deleteChecklist, sendTaskEmail, uploadTaskAttachment, deleteTaskAttachment } from '../actions';
@@ -568,6 +568,26 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                             Công việc này được tạo theo chu kỳ tự động lặp lại từ gốc:{' '}
                             <Link href={`/tasks/${task.parentTask.id}`} style={{ fontWeight: 600, textDecoration: 'underline' }}>{task.parentTask.title}</Link>
                         </span>
+                    </div>
+                )}
+
+                {task.priority === 'URGENT' && task.status !== 'DONE' && task.status !== 'CANCELLED' && (
+                    <div className="animate-priority-urgent-bg" style={{ border: '2px solid #ef4444', borderRadius: 'var(--radius)', padding: '1rem', display: 'flex', alignItems: 'center', gap: '1rem', color: '#991b1b', boxShadow: '0 0 15px rgba(239, 68, 68, 0.5)' }}>
+                        <AlertOctagon size={28} />
+                        <div>
+                            <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800 }}>KHẨN CẤP QUAN TRỌNG</h3>
+                            <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600 }}>Đây là công việc cực kỳ quan trọng. Hãy luôn lưu ý để thực hiện đúng và đủ.</p>
+                        </div>
+                    </div>
+                )}
+
+                {task.priority === 'HIGH' && task.status !== 'DONE' && task.status !== 'CANCELLED' && (
+                    <div className="animate-priority-high-bg" style={{ border: '1px solid #4ade80', borderRadius: 'var(--radius)', padding: '1rem', display: 'flex', alignItems: 'center', gap: '1rem', color: '#166534' }}>
+                        <AlertTriangle size={24} />
+                        <div>
+                            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>Ưu Tiên Cao</h3>
+                            <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600 }}>Đây là công việc được ưu tiên cao, vui lòng thực hiện.</p>
+                        </div>
                     </div>
                 )}
 

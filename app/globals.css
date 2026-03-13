@@ -1010,3 +1010,40 @@ table {
         transform: scale(1);
     }
 }
+
+/* Priority Animations for Tasks */
+@keyframes priority-high-bg-blink {
+
+    0%,
+    100% {
+        background-color: #dcfce3 !important;
+    }
+
+    50% {
+        background-color: #86efac !important;
+    }
+}
+
+.animate-priority-high-bg {
+    animation: priority-high-bg-blink 2s ease-in-out infinite;
+}
+
+@keyframes priority-urgent-bg-blink {
+
+    0%,
+    100% {
+        background-color: #fee2e2 !important;
+    }
+
+    33% {
+        background-color: #fef08a !important;
+    }
+
+    66% {
+        background-color: #dcfce3 !important;
+    }
+}
+
+.animate-priority-urgent-bg {
+    animation: priority-urgent-bg-blink 1.5s linear infinite;
+}
