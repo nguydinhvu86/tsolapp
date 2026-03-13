@@ -276,9 +276,16 @@ export async function updateLead(id: string, data: any) {
 export async function updateLeadStatus(id: string, status: string) {
     const session = await getServerSession(authOptions);
     if (!session?.user) throw new Error('Unauthorized');
+    const userId = session.user.id;
 
     try {
-        const oldLead = await prisma.lead.findUnique({ where: { id } });
+        const oldLead = await prisma.lead.findUnique({
+            where: { id },
+            include: {
+                assignees: true,
+                assignedTo: true
+            }
+        });
 
         const lead = await prisma.lead.update({
             where: { id },
@@ -293,6 +300,88 @@ export async function updateLeadStatus(id: string, status: string) {
                 details: `Đổi trạng thái từ ${oldLead?.status} sang ${status}`
             }
         });
+
+        // --- NOTIFICATION & EMAIL LOGIC ---
+        if (oldLead && oldLead.status !== status) {
+            const statusMap: Record<string, string> = {
+                'NEW': 'Mới',
+                'CONTACTING': 'Đang liên hệ',
+                'EVALUATION': 'Đang đánh giá',
+                'NEGOTIATION': 'Đang đàm phán',
+                'CLOSED_WON': 'Thành công',
+                'CLOSED_LOST': 'Thất bại'
+            };
+            const statusText = statusMap[status] || status;
+            const oldStatusText = statusMap[oldLead.status] || oldLead.status;
+
+            const creator = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+
+            // Identify people to notify: assignedTo and all assignees
+            const usersToNotify = new Set<string>();
+            if (oldLead.assignedToId && oldLead.assignedToId !== userId) {
+                usersToNotify.add(oldLead.assignedToId);
+            }
+            if (oldLead.assignees) {
+                oldLead.assignees.forEach((a: any) => { if (a.userId !== userId) usersToNotify.add(a.userId); });
+            }
+
+            if (usersToNotify.size > 0) {
+                const { createManyNotifications } = await import('@/app/notifications/actions');
+
+                // 1. Create In-App Notifications
+                const notifications = Array.from(usersToNotify).map(uId => ({
+                    userId: uId,
+                    title: 'Trạng thái cơ hội bán hàng thay đổi',
+                    message: `${creator?.name || 'Ai đó'} đã chuyển trạng thái cơ hội "${oldLead.name}" từ [${oldStatusText}] sang [${statusText}].`,
+                    type: 'INFO',
+                    link: `/sales/leads/${id}`
+                }));
+                await createManyNotifications(notifications);
+
+                // 2. Send Emails
+                const { getTemplatesByModule } = await import('@/app/email-templates/actions');
+                const templates = await getTemplatesByModule('LEAD');
+                let template = templates[0];
+                const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+                const users = await prisma.user.findMany({ where: { id: { in: Array.from(usersToNotify) } } });
+
+                for (const u of users) {
+                    if (!u.email) continue;
+                    let subject = `Cập nhật trạng thái Cơ hội bán hàng: ${oldLead.name}`;
+                    let htmlBody = `<p>Cơ hội bán hàng <strong>${oldLead.name}</strong> vừa được chuyển trạng thái sang: <strong>${statusText}</strong>.</p>
+            <p>Người thực hiện: ${creator?.name || 'Hệ thống'}</p>
+            <p><a href="${baseUrl}/sales/leads/${id}">Xem chi tiết cơ hội</a></p>`;
+
+                    if (template) {
+                        subject = template.subject || subject;
+                        htmlBody = template.body || htmlBody;
+
+                        const variables: Record<string, string> = {
+                            '{{leadName}}': oldLead.name,
+                            '{{leadCode}}': oldLead.code,
+                            '{{company}}': oldLead.company || 'Không có',
+                            '{{estimatedValue}}': oldLead.estimatedValue ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(oldLead.estimatedValue) : '0 ₫',
+                            '{{expectedCloseDate}}': oldLead.expectedCloseDate ? new Date(oldLead.expectedCloseDate).toLocaleDateString('vi-VN') : 'Không có',
+                            '{{assignerName}}': creator?.name || 'Hệ thống',
+                            '{{assigneeName}}': u.name || u.email || 'Bạn',
+                            '{{link}}': `${baseUrl}/sales/leads/${id}`
+                        };
+
+                        for (const [key, value] of Object.entries(variables)) {
+                            const regexKey = key.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+                            subject = subject.replace(new RegExp(regexKey, 'g'), value);
+                            htmlBody = htmlBody.replace(new RegExp(regexKey, 'g'), value);
+                        }
+                    }
+
+                    await sendEmailWithTracking({
+                        to: u.email, subject, htmlBody, senderId: userId
+                    });
+                }
+            }
+        }
+        // ----------------------------------
 
         return lead;
     } catch (error) {
