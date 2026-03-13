@@ -15,8 +15,14 @@ export async function getLeadComments(leadId: string) {
                         id: true,
                         name: true,
                         avatar: true,
+                        email: true,
                     },
                 },
+                reactions: {
+                    include: {
+                        user: { select: { id: true, name: true, email: true } }
+                    }
+                }
             },
             orderBy: { createdAt: 'desc' },
         });
@@ -27,7 +33,7 @@ export async function getLeadComments(leadId: string) {
     }
 }
 
-export async function createLeadComment(leadId: string, content: string, images?: string, files?: string) {
+export async function createLeadComment(leadId: string, content: string, parentId?: string, images?: string, files?: string) {
     try {
         const session = await getServerSession(authOptions);
         if (!session?.user?.id) throw new Error("Chưa đăng nhập");
@@ -42,6 +48,7 @@ export async function createLeadComment(leadId: string, content: string, images?
                 content: content || "",
                 leadId,
                 userId: userId,
+                parentId: parentId || null,
                 images,
                 files,
             },
@@ -51,14 +58,18 @@ export async function createLeadComment(leadId: string, content: string, images?
                         id: true,
                         name: true,
                         avatar: true,
+                        email: true
                     },
                 },
+                reactions: true
             },
         });
 
         // Ghi log hoạt động
         let logMessage = `Đã thêm bình luận mới.`;
-        if (images || files) {
+        if (parentId) {
+            logMessage = `Đã trả lời bình luận.`;
+        } else if (images || files) {
             logMessage = `Đã tải lên tệp đính kèm mới.`;
         }
         await prisma.leadActivityLog.create({
@@ -114,5 +125,40 @@ export async function deleteLeadComment(commentId: string) {
     } catch (error: any) {
         console.error("Lỗi xóa bình luận:", error);
         return { success: false, error: error.message || "Không thể xóa bình luận" };
+    }
+}
+
+export async function toggleLeadCommentReaction(commentId: string, emoji: string, userId: string) {
+    try {
+        const existing = await prisma.leadCommentReaction.findUnique({
+            where: {
+                commentId_userId_emoji: {
+                    commentId,
+                    userId,
+                    emoji
+                }
+            }
+        });
+
+        if (existing) {
+            await prisma.leadCommentReaction.delete({ where: { id: existing.id } });
+        } else {
+            await prisma.leadCommentReaction.create({
+                data: {
+                    commentId,
+                    userId,
+                    emoji
+                }
+            });
+        }
+
+        const comment = await prisma.leadComment.findUnique({ where: { id: commentId }, select: { leadId: true } });
+        if (comment) {
+            revalidatePath(`/sales/leads/${comment.leadId}`);
+        }
+        return { success: true };
+    } catch (error) {
+        console.error('Toggle reaction error:', error);
+        return { success: false };
     }
 }

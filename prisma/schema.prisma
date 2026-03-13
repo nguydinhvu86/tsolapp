@@ -36,9 +36,9 @@ model User {
   twoFactorSecret       String? // Khóa bí mật 2FA
   twoFactorEnabled      Boolean                @default(false) // Trạng thái 2FA
   isActive              Boolean                @default(true) // Trạng thái khóa tài khoản
-  lastLoginAt           DateTime?              // Thời gian đăng nhập gần nhất
-  lastActiveAt          DateTime?              // Thời gian có hoạt động (ping) trên hệ thống gần nhất
-  currentPlatform       String?                // Thông tin thiết bị/trình duyệt đăng nhập gần nhất
+  lastLoginAt           DateTime? // Thời gian đăng nhập gần nhất
+  lastActiveAt          DateTime? // Thời gian có hoạt động (ping) trên hệ thống gần nhất
+  currentPlatform       String? // Thông tin thiết bị/trình duyệt đăng nhập gần nhất
   loginLogs             LoginLog[]             @relation("UserLoginLogs")
   managedCustomers      Customer[]             @relation("CustomerManagers")
   managedSalesEstimates SalesEstimate[]        @relation("SalesEstimateManagers")
@@ -70,17 +70,17 @@ model User {
   SalesInvoiceNote         SalesInvoiceNote[]
   SalesInvoiceActivityLog  SalesInvoiceActivityLog[]
   CustomerNote             CustomerNote[]
-  
+
   // Phase 7 Document Creators
-  quotes           Quote[]            @relation("QuoteCreator")
-  contracts        Contract[]         @relation("ContractCreator")
-  handovers        Handover[]         @relation("HandoverCreator")
-  paymentRequests  PaymentRequest[]   @relation("PaymentRequestCreator")
-  createdLeads     Lead[]             @relation("LeadCreator")
-  CustomerActivityLog      CustomerActivityLog[]
-  todos                    Todo[]
-  createdEmailTemplates    EmailTemplate[]            @relation("EmailTemplateCreator")
-  sentEmails               EmailLog[]                 @relation("EmailSender")
+  quotes                Quote[]               @relation("QuoteCreator")
+  contracts             Contract[]            @relation("ContractCreator")
+  handovers             Handover[]            @relation("HandoverCreator")
+  paymentRequests       PaymentRequest[]      @relation("PaymentRequestCreator")
+  createdLeads          Lead[]                @relation("LeadCreator")
+  CustomerActivityLog   CustomerActivityLog[]
+  todos                 Todo[]
+  createdEmailTemplates EmailTemplate[]       @relation("EmailTemplateCreator")
+  sentEmails            EmailLog[]            @relation("EmailSender")
 
   // Expenses
   expenses           Expense[]            @relation("ExpenseCreator")
@@ -106,13 +106,14 @@ model User {
   approvedLeaveRequests LeaveRequest[]     @relation("ApprovedLeaveRequests")
 
   // Documents (Library/Knowledge Base)
-  documents     Document[]        @relation("DocumentCreator")
-  docComments   DocumentComment[] @relation("DocumentCommenter")
-  docNotes      DocumentNote[]    @relation("DocumentNoter")
+  documents   Document[]        @relation("DocumentCreator")
+  docComments DocumentComment[] @relation("DocumentCommenter")
+  docNotes    DocumentNote[]    @relation("DocumentNoter")
 
   // Salesperson relations
-  salespersonEstimates SalesEstimate[] @relation("EstimateSalesperson")
-  salespersonInvoices  SalesInvoice[]  @relation("InvoiceSalesperson")
+  salespersonEstimates SalesEstimate[]       @relation("EstimateSalesperson")
+  salespersonInvoices  SalesInvoice[]        @relation("InvoiceSalesperson")
+  LeadCommentReaction  LeadCommentReaction[]
 }
 
 model SystemSetting {
@@ -165,7 +166,7 @@ model Customer {
   activityLogs CustomerActivityLog[]
   emailLogs    EmailLog[]
   contacts     CustomerContact[] // Relation to CustomerContact model
-  managers     User[]            @relation("CustomerManagers")
+  managers     User[]                @relation("CustomerManagers")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1189,11 +1190,11 @@ model Lead {
   customerId String?
   customer   Customer? @relation(fields: [customerId], references: [id])
 
-  source   String? // Nguồn khách hàng dạng Text (lưu lại cho tương thích ngược)
-  sourceId String?
+  source       String? // Nguồn khách hàng dạng Text (lưu lại cho tương thích ngược)
+  sourceId     String?
   sourceEntity LeadSource? @relation(fields: [sourceId], references: [id])
 
-  status String  @default("NEW") // Trạng thái Kanban: NEW, CONTACTED, QUALIFIED, PROPOSAL, WON, LOST
+  status String @default("NEW") // Trạng thái Kanban: NEW, CONTACTED, QUALIFIED, PROPOSAL, WON, LOST
 
   estimatedValue    Float?    @default(0) // Giá trị ước tính
   expectedCloseDate DateTime? // Ngày dự kiến chốt hợp đồng/đơn hàng
@@ -1202,16 +1203,16 @@ model Lead {
   // Người phụ trách
   assignedToId String?
   assignedTo   User?   @relation("LeadAssignee", fields: [assignedToId], references: [id])
-  
+
   // Danh sách Người phụ trách chung (nhiều người)
   assignees LeadAssignee[]
 
   // Thảo luận/Bình luận
-  comments  LeadComment[]
+  comments LeadComment[]
 
   // Người tạo
-  creatorId    String?
-  creator      User?   @relation("LeadCreator", fields: [creatorId], references: [id])
+  creatorId String?
+  creator   User?   @relation("LeadCreator", fields: [creatorId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1239,6 +1240,12 @@ model LeadComment {
   lead    Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
   user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  parentId String?
+  parent   LeadComment?  @relation("LeadCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  LeadComment[] @relation("LeadCommentReplies")
+
+  reactions LeadCommentReaction[]
+
   images String? @db.LongText
   files  String? @db.LongText
 
@@ -1246,19 +1253,32 @@ model LeadComment {
   updatedAt DateTime @updatedAt
 }
 
+model LeadCommentReaction {
+  id        String      @id @default(cuid())
+  emoji     String
+  commentId String
+  userId    String
+  comment   LeadComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([commentId, userId, emoji])
+}
+
 model LeadSource {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  description String?  @db.Text
-  isActive    Boolean  @default(true)
-  
-  customerId  String?
-  customer    Customer? @relation(fields: [customerId], references: [id])
+  id          String  @id @default(cuid())
+  name        String  @unique
+  description String? @db.Text
+  isActive    Boolean @default(true)
 
-  leads       Lead[]
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  leads Lead[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model LeadForm {
@@ -1395,11 +1415,11 @@ model AttendanceRecord {
   date DateTime @db.Date // Ngày chấm công (chỉ lấy phần ngày, ko lấy giờ)
 
   checkInTime     DateTime?
-  checkInPhotoUrl String? @db.LongText
+  checkInPhotoUrl String?   @db.LongText
   checkInLocation String?
 
   checkOutTime     DateTime?
-  checkOutPhotoUrl String? @db.LongText
+  checkOutPhotoUrl String?   @db.LongText
   checkOutLocation String?
 
   status String  @default("PRESENT") // PRESENT, LATE, HALF_DAY, ABSENT
@@ -1506,12 +1526,12 @@ model DocumentNote {
 }
 
 model LoginLog {
-  id          String   @id @default(cuid())
-  userId      String
-  ipAddress   String?
-  userAgent   String?  @db.Text
-  platform    String?  // Thông tin OS/Browser sau khi phân tích
-  loginAt     DateTime @default(now())
+  id        String   @id @default(cuid())
+  userId    String
+  ipAddress String?
+  userAgent String?  @db.Text
+  platform  String? // Thông tin OS/Browser sau khi phân tích
+  loginAt   DateTime @default(now())
 
-  user        User     @relation("UserLoginLogs", fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation("UserLoginLogs", fields: [userId], references: [id], onDelete: Cascade)
 }
