@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Edit, Trash2, CheckCircle, RefreshCcw, Building2, User, Phone, Mail, DollarSign, Calendar, Tag, FileText, CheckSquare, Plus, Paperclip, Send, Link as LinkIcon } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, CheckCircle, RefreshCcw, Building2, User, Phone, Mail, DollarSign, Calendar, Tag, FileText, CheckSquare, Plus, Paperclip, Send, Link as LinkIcon, ImageIcon } from 'lucide-react';
 import { formatMoney, formatDate, formatDateTime } from '@/lib/utils/formatters';
 import { updateLeadStatus, deleteLead, convertLeadToCustomer, connectLeadToExistingCustomer, addLeadActivityLog, sendLeadEmail, updateLeadAssignees } from '../actions';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
@@ -83,6 +83,8 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [] }
     const [isSubmittingNote, setIsSubmittingNote] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [attachments, setAttachments] = useState<{ url: string, name: string }[]>([]);
+    const [noteImages, setNoteImages] = useState<{ url: string, name: string }[]>([]);
+    const [lightboxImage, setLightboxImage] = useState<string | null>(null);
     const [activityLogs, setActivityLogs] = useState(lead.activityLogs || []);
 
     // Assignee Modal State
@@ -107,25 +109,31 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [] }
 
     const handleAddNote = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!noteContent.trim() && attachments.length === 0) return;
+        if (!noteContent.trim() && attachments.length === 0 && noteImages.length === 0) return;
 
         setIsSubmittingNote(true);
         try {
             const hasText = noteContent.trim().length > 0;
             const hasFiles = attachments.length > 0;
+            const hasImages = noteImages.length > 0;
 
             let actionText = 'NOTE_ADDED';
-            if (hasFiles && !hasText) actionText = 'FILE_UPLOADED';
-            if (hasFiles && hasText) actionText = 'NOTE_AND_FILE_ADDED';
+            if ((hasFiles || hasImages) && !hasText) actionText = 'FILE_UPLOADED';
+            if ((hasFiles || hasImages) && hasText) actionText = 'NOTE_AND_FILE_ADDED';
 
             const attachmentStr = hasFiles ? JSON.stringify(attachments) : '';
-            const finalDetails = hasText ? (hasFiles ? `${noteContent}\n\nĐính kèm: ${attachmentStr}` : noteContent) : `Đã tải lên tệp: ${attachmentStr}`;
+            let finalDetails = hasText ? (hasFiles ? `${noteContent}\n\nĐính kèm: ${attachmentStr}` : noteContent) : `Đã tải lên tệp: ${attachmentStr}`;
+
+            if (hasImages) {
+                finalDetails += `||IMAGES:${JSON.stringify(noteImages)}`;
+            }
 
             const res = await addLeadActivityLog(lead.id, actionText, finalDetails);
             if (res.success && res.log) {
                 setActivityLogs([res.log, ...activityLogs]);
                 setNoteContent('');
                 setAttachments([]);
+                setNoteImages([]);
             } else {
                 alert(res.error || 'Có lỗi khi thêm ghi chú');
             }
@@ -198,6 +206,17 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [] }
 
     return (
         <div style={styles.pageContainer}>
+            {/* Lightbox */}
+            {lightboxImage && (
+                <div
+                    style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                    onClick={() => setLightboxImage(null)}
+                >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={lightboxImage} alt="Phóng to" style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain', borderRadius: '8px' }} />
+                </div>
+            )}
+
             {/* Header */}
             <div style={styles.headerCard}>
                 <div style={styles.headerLeft}>
@@ -498,46 +517,83 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [] }
                                 />
                                 <div style={{ position: 'absolute', bottom: '0.75rem', left: '0.75rem', right: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                        <div style={{ position: 'relative' }}>
-                                            <input
-                                                type="file"
-                                                multiple
-                                                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
-                                                disabled={isUploading}
-                                                onChange={async (e) => {
-                                                    const files = e.target.files;
-                                                    if (!files || files.length === 0) return;
-                                                    setIsUploading(true);
-                                                    try {
-                                                        const newAttachments = [...attachments];
-                                                        for (let i = 0; i < files.length; i++) {
-                                                            const formData = new FormData();
-                                                            formData.append('file', files[i]);
-                                                            const res = await fetch('/api/upload', { method: 'POST', body: formData });
-                                                            if (!res.ok) throw new Error('Upload failed');
-                                                            const data = await res.json();
-                                                            newAttachments.push({ url: data.url, name: files[i].name });
+                                        <div style={{ position: 'relative', display: 'flex', gap: '8px' }}>
+                                            <div style={{ position: 'relative' }}>
+                                                <input
+                                                    type="file"
+                                                    multiple
+                                                    accept="image/*"
+                                                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
+                                                    disabled={isUploading}
+                                                    onChange={async (e) => {
+                                                        const files = e.target.files;
+                                                        if (!files || files.length === 0) return;
+                                                        setIsUploading(true);
+                                                        try {
+                                                            const newImages = [...noteImages];
+                                                            for (let i = 0; i < files.length; i++) {
+                                                                const formData = new FormData();
+                                                                formData.append('file', files[i]);
+                                                                const res = await fetch('/api/upload', { method: 'POST', body: formData });
+                                                                if (!res.ok) throw new Error('Upload failed');
+                                                                const data = await res.json();
+                                                                newImages.push({ url: data.url, name: files[i].name });
+                                                            }
+                                                            setNoteImages(newImages);
+                                                        } catch (err) {
+                                                            alert('Lỗi tải hình ảnh');
+                                                        } finally {
+                                                            setIsUploading(false);
+                                                            e.target.value = '';
                                                         }
-                                                        setAttachments(newAttachments);
-                                                    } catch (err) {
-                                                        alert('Lỗi tải tệp tin');
-                                                    } finally {
-                                                        setIsUploading(false);
-                                                        e.target.value = '';
-                                                    }
-                                                }}
-                                                title="Đính kèm tài liệu"
-                                            />
-                                            <button type="button" disabled={isUploading} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '0.375rem', backgroundColor: 'transparent', border: 'none', color: isUploading ? '#cbd5e1' : '#64748b', cursor: isUploading ? 'not-allowed' : 'pointer' }} title="Đính kèm file">
-                                                <Paperclip size={16} />
-                                            </button>
+                                                    }}
+                                                    title="Thêm hình ảnh"
+                                                />
+                                                <button type="button" disabled={isUploading} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '0.375rem', backgroundColor: 'transparent', border: 'none', color: isUploading ? '#cbd5e1' : '#64748b', cursor: isUploading ? 'not-allowed' : 'pointer' }} title="Thêm hình ảnh" className="hover:bg-slate-200">
+                                                    <ImageIcon size={18} />
+                                                </button>
+                                            </div>
+                                            <div style={{ position: 'relative' }}>
+                                                <input
+                                                    type="file"
+                                                    multiple
+                                                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
+                                                    disabled={isUploading}
+                                                    onChange={async (e) => {
+                                                        const files = e.target.files;
+                                                        if (!files || files.length === 0) return;
+                                                        setIsUploading(true);
+                                                        try {
+                                                            const newAttachments = [...attachments];
+                                                            for (let i = 0; i < files.length; i++) {
+                                                                const formData = new FormData();
+                                                                formData.append('file', files[i]);
+                                                                const res = await fetch('/api/upload', { method: 'POST', body: formData });
+                                                                if (!res.ok) throw new Error('Upload failed');
+                                                                const data = await res.json();
+                                                                newAttachments.push({ url: data.url, name: files[i].name });
+                                                            }
+                                                            setAttachments(newAttachments);
+                                                        } catch (err) {
+                                                            alert('Lỗi tải tệp tin');
+                                                        } finally {
+                                                            setIsUploading(false);
+                                                            e.target.value = '';
+                                                        }
+                                                    }}
+                                                    title="Đính kèm tài liệu"
+                                                />
+                                                <button type="button" disabled={isUploading} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '0.375rem', backgroundColor: 'transparent', border: 'none', color: isUploading ? '#cbd5e1' : '#64748b', cursor: isUploading ? 'not-allowed' : 'pointer' }} title="Đính kèm file" className="hover:bg-slate-200">
+                                                    <Paperclip size={18} />
+                                                </button>
+                                            </div>
                                         </div>
                                         {isUploading && <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Đang tải...</span>}
                                     </div>
                                     <button
                                         type="submit"
-                                        disabled={isSubmittingNote || (!noteContent.trim() && attachments.length === 0) || isUploading}
-                                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', padding: '0.375rem 1rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: ((noteContent.trim() || attachments.length > 0) && !isSubmittingNote && !isUploading) ? '#2563eb' : '#94a3b8', color: 'white', border: 'none', cursor: ((noteContent.trim() || attachments.length > 0) && !isSubmittingNote && !isUploading) ? 'pointer' : 'not-allowed', transition: 'background-color 0.2s' }}
+                                        disabled={isSubmittingNote || (!noteContent.trim() && attachments.length === 0 && noteImages.length === 0) || isUploading}
+                                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', padding: '0.375rem 1rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: ((noteContent.trim() || attachments.length > 0 || noteImages.length > 0) && !isSubmittingNote && !isUploading) ? '#2563eb' : '#94a3b8', color: 'white', border: 'none', cursor: ((noteContent.trim() || attachments.length > 0 || noteImages.length > 0) && !isSubmittingNote && !isUploading) ? 'pointer' : 'not-allowed', transition: 'background-color 0.2s' }}
                                     >
                                         {isSubmittingNote ? 'Đang lưu...' : <><Send size={14} /> Lưu lại</>}
                                     </button>
@@ -546,10 +602,19 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [] }
                         </form>
 
                         {/* Pending Attachments List */}
-                        {attachments.length > 0 && (
+                        {(attachments.length > 0 || noteImages.length > 0) && (
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '12px' }}>
+                                {noteImages.map((img, idx) => (
+                                    <div key={`img-${idx}`} style={{ position: 'relative', width: '50px', height: '50px', borderRadius: '6px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img src={img.url} alt="Upload preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        <button onClick={() => setNoteImages(noteImages.filter((_, i) => i !== idx))} style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(0,0,0,0.5)', color: 'white', border: 'none', borderRadius: '50%', padding: '2px', cursor: 'pointer', display: 'flex' }}>
+                                            <Trash2 size={12} />
+                                        </button>
+                                    </div>
+                                ))}
                                 {attachments.map((att, idx) => (
-                                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.25rem 0.5rem', backgroundColor: '#e0e7ff', border: '1px solid #c7d2fe', borderRadius: '0.375rem', fontSize: '0.75rem', color: '#4338ca' }}>
+                                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.25rem 0.5rem', backgroundColor: '#e0e7ff', border: '1px solid #c7d2fe', borderRadius: '0.375rem', fontSize: '0.75rem', color: '#4338ca', height: 'max-content' }}>
                                         <FileText size={12} />
                                         <span style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{att.name}</span>
                                         <button type="button" onClick={() => setAttachments(attachments.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -573,14 +638,24 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [] }
                                 // Clean up formatting for display if handling custom JSON str logic 
                                 let displayDetails = log.details;
                                 let parsedFiles: any[] = [];
-                                if (log.details && log.details.includes('Đính kèm: [')) {
-                                    const parts = log.details.split('Đính kèm: ');
+                                let parsedImages: any[] = [];
+
+                                if (log.details && log.details.includes('||IMAGES:')) {
+                                    const parts = log.details.split('||IMAGES:');
+                                    displayDetails = parts[0];
+                                    try {
+                                        parsedImages = JSON.parse(parts[1]);
+                                    } catch (e) { }
+                                }
+
+                                if (displayDetails && displayDetails.includes('Đính kèm: [')) {
+                                    const parts = displayDetails.split('Đính kèm: ');
                                     displayDetails = parts[0].trim();
                                     try {
                                         parsedFiles = JSON.parse(parts[1]);
                                     } catch (e) { }
-                                } else if (log.details && log.details.startsWith('Đã tải lên tệp: [')) {
-                                    const parts = log.details.split('Đã tải lên tệp: ');
+                                } else if (displayDetails && displayDetails.startsWith('Đã tải lên tệp: [')) {
+                                    const parts = displayDetails.split('Đã tải lên tệp: ');
                                     displayDetails = '';
                                     try {
                                         parsedFiles = JSON.parse(parts[1]);
@@ -592,15 +667,23 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [] }
                                         <div style={{ width: '32px', height: '32px', flexShrink: 0, backgroundColor: '#e0e7ff', color: '#4f46e5', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px', zIndex: 10 }}>
                                             {log.user?.name ? log.user.name.charAt(0).toUpperCase() : '?'}
                                         </div>
-                                        <div style={{ flex: 1, paddingBottom: '16px' }}>
+                                        <div style={{ flex: 1, paddingBottom: '16px', minWidth: 0 }}>
                                             <p style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a', margin: '0 0 4px 0' }}>{actionText}</p>
                                             <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 8px 0' }}>{formatDateTime(log.createdAt)} • bởi {log.user?.name}</p>
 
-                                            {(displayDetails || parsedFiles.length > 0) && (
+                                            {(displayDetails || parsedFiles.length > 0 || parsedImages.length > 0) && (
                                                 <div style={{ fontSize: '14px', color: '#334155', backgroundColor: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', whiteSpace: 'pre-wrap' }}>
                                                     {displayDetails && <div>{displayDetails}</div>}
-                                                    {parsedFiles.length > 0 && (
+                                                    {parsedImages.length > 0 && (
                                                         <div style={{ marginTop: displayDetails ? '12px' : '0', paddingTop: displayDetails ? '12px' : '0', borderTop: displayDetails ? '1px solid #e2e8f0' : 'none', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                                            {parsedImages.map((img: any, idx: number) => (
+                                                                // eslint-disable-next-line @next/next/no-img-element
+                                                                <img key={`lg-img-${idx}`} src={img.url} alt={img.name || 'Image'} style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '6px', cursor: 'pointer', border: '1px solid #cbd5e1' }} onClick={() => setLightboxImage(img.url)} />
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                    {parsedFiles.length > 0 && (
+                                                        <div style={{ marginTop: (displayDetails || parsedImages.length > 0) ? '12px' : '0', paddingTop: (displayDetails || parsedImages.length > 0) ? '12px' : '0', borderTop: (displayDetails || parsedImages.length > 0) ? '1px solid #e2e8f0' : 'none', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                                                             {parsedFiles.map((att: any, idx: number) => (
                                                                 <a key={idx} href={att.url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 10px', backgroundColor: 'white', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', color: '#4f46e5', textDecoration: 'none', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }} onMouseEnter={(e) => e.currentTarget.style.borderColor = '#94a3b8'} onMouseLeave={(e) => e.currentTarget.style.borderColor = '#cbd5e1'}>
                                                                     <LinkIcon size={12} /> {att.name || 'Tài liệu đính kèm'}
