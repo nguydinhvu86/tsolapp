@@ -69,7 +69,34 @@ export function CustomerNotesPanel({ customerId, notes, currentUserId, currentUs
                         <textarea
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
-                            placeholder="Ghi chú sở thích khách hàng, tóm tắt cuộc gọi, lịch sử làm việc... hoặc tải tài liệu/hình ảnh lên (Sắp có)."
+                            onPaste={async (e) => {
+                                const items = e.clipboardData.items;
+                                for (let i = 0; i < items.length; i++) {
+                                    if (items[i].type.indexOf('image') !== -1) {
+                                        const file = items[i].getAsFile();
+                                        if (file) {
+                                            if (file.size > 5242880) {
+                                                alert(`File ảnh dán vào quá lớn (Tối đa 5MB)`);
+                                                return;
+                                            }
+                                            setIsUploading(true);
+                                            try {
+                                                const formData = new FormData();
+                                                formData.append('file', file);
+                                                const res = await fetch('/api/upload', { method: 'POST', body: formData });
+                                                if (!res.ok) throw new Error('Upload failed');
+                                                const data = await res.json();
+                                                setAttachments(prev => [...prev, { url: data.url, name: file.name || 'image.png' }]);
+                                            } catch (err) {
+                                                alert('Lỗi tải hình ảnh từ clipboard');
+                                            } finally {
+                                                setIsUploading(false);
+                                            }
+                                        }
+                                    }
+                                }
+                            }}
+                            placeholder="Ghi chú sở thích khách hàng, tóm tắt cuộc gọi, lịch sử làm việc... (Có thể dán trực tiếp ảnh ctrl+V)"
                             style={{ width: '100%', minHeight: '60px', border: 'none', backgroundColor: 'transparent', resize: 'vertical', outline: 'none', fontSize: '0.875rem', color: '#1e293b', fontFamily: 'inherit' }}
                         />
                         <div style={{ position: 'absolute', bottom: '0.75rem', left: '0.75rem', right: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -102,7 +129,7 @@ export function CustomerNotesPanel({ customerId, notes, currentUserId, currentUs
                                                 e.target.value = '';
                                             }
                                         }}
-                                        title="Đính kèm tài liệu"
+                                        title="Đính kèm tài liệu ảnh"
                                     />
                                     <button type="button" disabled={isUploading} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '0.375rem', backgroundColor: 'transparent', border: 'none', color: isUploading ? '#cbd5e1' : '#64748b', cursor: isUploading ? 'not-allowed' : 'pointer' }} title="Đính kèm file">
                                         <Paperclip size={16} />
@@ -124,15 +151,28 @@ export function CustomerNotesPanel({ customerId, notes, currentUserId, currentUs
                 {/* Pending Attachments List */}
                 {attachments.length > 0 && (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.5rem' }}>
-                        {attachments.map((att, idx) => (
-                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.25rem 0.5rem', backgroundColor: '#e0e7ff', border: '1px solid #c7d2fe', borderRadius: '0.375rem', fontSize: '0.75rem', color: '#4338ca' }}>
-                                <FileText size={12} />
-                                <span style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{att.name}</span>
-                                <button type="button" onClick={() => setAttachments(attachments.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Trash2 size={12} />
-                                </button>
-                            </div>
-                        ))}
+                        {attachments.map((att, idx) => {
+                            const isImage = att.url.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i) != null;
+                            if (isImage) {
+                                return (
+                                    <div key={idx} style={{ position: 'relative', width: '60px', height: '60px', borderRadius: '6px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+                                        <img src={att.url} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        <button onClick={() => setAttachments(attachments.filter((_, i) => i !== idx))} style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(0,0,0,0.5)', color: 'white', border: 'none', borderRadius: '50%', padding: '2px', cursor: 'pointer', display: 'flex' }}>
+                                            <Trash2 size={12} />
+                                        </button>
+                                    </div>
+                                );
+                            }
+                            return (
+                                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.25rem 0.5rem', backgroundColor: '#e0e7ff', border: '1px solid #c7d2fe', borderRadius: '0.375rem', fontSize: '0.75rem', color: '#4338ca' }}>
+                                    <FileText size={12} />
+                                    <span style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{att.name}</span>
+                                    <button type="button" onClick={() => setAttachments(attachments.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Trash2 size={12} />
+                                    </button>
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
 
