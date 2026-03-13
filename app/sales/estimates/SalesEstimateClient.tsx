@@ -13,6 +13,7 @@ import { Plus, Edit2, Trash2, Save, X, Printer, FileText, Search, Calendar, Fold
 import { submitSalesEstimate, updateSalesEstimateStatus, deleteSalesEstimate, updateSalesEstimate, convertEstimateToInvoice, convertEstimateToOrder } from './actions';
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { TagDisplay } from '@/app/components/ui/TagDisplay';
+import { AvatarImage } from '@/app/components/ui/AvatarImage';
 
 export default function SalesEstimateClient({ initialEstimates, customers, products, leads, nextCode, initialAction, initialCustomerId, initialLeadId, users, currentUserId, isAdminOrManager }: any) {
     const router = useRouter();
@@ -722,14 +723,14 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                     </td>
                                     <td className="py-3">
                                         <div className="flex items-center gap-2">
-                                            {est.salesperson?.avatarUrl ? (
-                                                <img src={est.salesperson.avatarUrl} alt="Avatar" className="w-6 h-6 rounded-full object-cover" />
-                                            ) : (
-                                                <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600">
-                                                    {(est.salesperson?.name || est.creator?.name || '?').charAt(0).toUpperCase()}
-                                                </div>
-                                            )}
-                                            <span className="text-sm font-medium text-slate-700">{est.salesperson?.name || est.creator?.name || 'Không rõ'}</span>
+                                            <AvatarImage
+                                                src={est.salesperson?.avatar}
+                                                name={est.salesperson?.name}
+                                                size={24}
+                                            />
+                                            <span className="text-sm font-medium text-slate-700 truncate" title={est.salesperson?.name || ''}>
+                                                {est.salesperson?.name || '(Chưa gán)'}
+                                            </span>
                                         </div>
                                     </td>
                                     <td className="py-3">

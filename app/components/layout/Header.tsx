@@ -8,6 +8,7 @@ import { NotificationBell } from '../ui/NotificationBell';
 import { GlobalSearch } from './GlobalSearch';
 import { HeaderAttendance } from '../hr/HeaderAttendance';
 import ChatWidget from '../chat/ChatWidget';
+import { AvatarImage } from '../ui/AvatarImage';
 
 export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
     const { data: session } = useSession();
@@ -47,23 +48,13 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
                 <HeaderAttendance />
                 <NotificationBell />
                 <Link href="/profile" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', cursor: 'pointer', padding: '0.5rem', borderRadius: '8px', transition: 'background 0.2s' }} className="hover:bg-slate-100">
-                    {session?.user?.avatar ? (
-                        <img src={session.user.avatar} alt="Avatar" style={{
-                            width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover',
-                            border: '1px solid rgba(79, 70, 229, 0.2)', boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-                        }} />
-                    ) : (
-                        <div style={{
-                            width: '40px', height: '40px', borderRadius: '50%',
-                            backgroundColor: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontWeight: '700', fontSize: '1rem',
-                            border: '1px solid rgba(79, 70, 229, 0.2)',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-                        }}>
-                            {session?.user?.name ? session.user.name[0].toUpperCase() : "U"}
-                        </div>
-                    )}
+                    <AvatarImage
+                        src={session?.user?.avatar}
+                        name={session?.user?.name}
+                        size={40}
+                        style={{ boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
+                        fallbackStyle={{ backgroundColor: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
+                    />
                 </Link>
 
                 <div

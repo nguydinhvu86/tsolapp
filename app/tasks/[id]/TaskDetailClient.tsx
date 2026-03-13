@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
-import { ChevronLeft, CheckCircle2, Circle, MessageSquare, Clock, Plus, Trash2, User as UserIcon, Edit2, Info, Mail, Paperclip, Image as ImageIcon, X, FileIcon, Download, Type } from 'lucide-react';
+import { ChevronLeft, CheckCircle2, Circle, MessageSquare, Clock, Plus, Trash2, User as UserIcon, Edit2, Info, Mail, Paperclip, Image as ImageIcon, X, FileIcon, Download, Type, AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { updateTaskStatus, addChecklist, toggleChecklist, addComment, updateTask, editChecklist, deleteChecklist, sendTaskEmail, uploadTaskAttachment, deleteTaskAttachment } from '../actions';
@@ -90,6 +90,12 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
     const [linkType, setLinkType] = useState('CUSTOMER');
     const [linkQuery, setLinkQuery] = useState('');
     const [linkResults, setLinkResults] = useState<any[]>([]);
+
+    const [pausedPopupDismissed, setPausedPopupDismissed] = useState(false);
+
+    React.useEffect(() => {
+        setPausedPopupDismissed(false);
+    }, [task.id]);
 
     // Quick search effect
     React.useEffect(() => {
@@ -565,6 +571,21 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                     </div>
                 )}
 
+                {task.status === 'PAUSED' && !pausedPopupDismissed && (
+                    <div className="animate-pulse" style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: 'var(--radius)', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#dc2626' }}>
+                            <AlertTriangle size={24} />
+                            <div>
+                                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>Công Việc Ngưng Thực Hiện</h3>
+                                <p style={{ margin: 0, fontSize: '0.9rem', color: '#b91c1c' }}>Công việc này đang bị tạm ngưng. Vui lòng liên hệ với BQL (Ban Quản Lý) để biết thêm giải pháp và lý do.</p>
+                            </div>
+                        </div>
+                        <Button variant="secondary" onClick={() => setPausedPopupDismissed(true)} style={{ color: '#dc2626', borderColor: '#fecaca', backgroundColor: 'white' }}>
+                            Đã Hiểu và Đóng
+                        </Button>
+                    </div>
+                )}
+
                 <Card>
                     <div style={{ padding: '1.5rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border)' }}>
@@ -598,6 +619,7 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                                     <option value="IN_PROGRESS">Đang Xử Lý</option>
                                     <option value="REVIEW">Chờ Duyệt</option>
                                     <option value="DONE">Hoàn Thành</option>
+                                    <option value="PAUSED">Tạm Ngưng</option>
                                     <option value="CANCELLED">Đã Hủy</option>
                                 </select>
                             </div>
