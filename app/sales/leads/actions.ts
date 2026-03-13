@@ -81,6 +81,13 @@ export async function getLeadById(id: string) {
                         createdAt: 'desc'
                     }
                 },
+                comments: {
+                    include: {
+                        user: { select: { id: true, name: true, avatar: true, email: true } },
+                        reactions: { include: { user: { select: { id: true, name: true, email: true } } } }
+                    },
+                    orderBy: { createdAt: 'desc' }
+                },
                 EmailLog: {
                     include: { sender: { select: { name: true } } },
                     orderBy: { createdAt: 'desc' }
