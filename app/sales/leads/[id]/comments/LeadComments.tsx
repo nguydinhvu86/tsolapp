@@ -60,6 +60,29 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
         setCommentImages(prev => prev.filter((_, i) => i !== index));
     };
 
+    const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+        const items = e.clipboardData.items;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+                const file = items[i].getAsFile();
+                if (file) {
+                    if (file.size > 5242880) {
+                        alert(`File ảnh dán vào quá lớn (Tối đa 5MB)`);
+                        return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        if (event.target?.result) {
+                            const url = event.target.result as string;
+                            setCommentImages(prev => [...prev, { url, file }]);
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+        }
+    };
+
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (!files || files.length === 0) return;
@@ -223,7 +246,8 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
                         }}
                         onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
                         onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
-                        placeholder={replyTo ? "Viết câu trả lời của bạn..." : "Thêm tin nhắn, trao đổi, thông tin về khách hàng này..."}
+                        onPaste={handlePaste}
+                        placeholder={replyTo ? "Viết câu trả lời của bạn (có thể dán ảnh trực tiếp)..." : "Thêm tin nhắn, trao đổi, thông tin về khách hàng này (có thể dán ảnh trực tiếp)..."}
                     />
                     <div style={{ position: 'absolute', bottom: '0.75rem', left: '0.75rem', display: 'flex', gap: '0.5rem' }}>
                         <label style={{ cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '6px' }} className="hover:bg-slate-200">

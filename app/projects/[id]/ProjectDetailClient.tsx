@@ -381,7 +381,34 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
                                         <textarea
                                             value={newComment}
                                             onChange={e => setNewComment(e.target.value)}
-                                            placeholder="Thêm thảo luận mới về dự án..."
+                                            onPaste={async (e) => {
+                                                const items = e.clipboardData.items;
+                                                for (let i = 0; i < items.length; i++) {
+                                                    if (items[i].type.indexOf('image') !== -1) {
+                                                        const file = items[i].getAsFile();
+                                                        if (file) {
+                                                            if (file.size > 5242880) {
+                                                                alert(`File ảnh dán vào quá lớn (Tối đa 5MB)`);
+                                                                return;
+                                                            }
+                                                            setIsSaving(true);
+                                                            try {
+                                                                const formData = new FormData();
+                                                                formData.append('file', file);
+                                                                const res = await fetch('/api/upload', { method: 'POST', body: formData });
+                                                                if (!res.ok) throw new Error('Upload failed');
+                                                                const data = await res.json();
+                                                                setNewComment(prev => prev + `\n<img src="${data.url}" alt="Pasted Image" style="max-width:100%; border-radius:8px; margin-top:8px;" />`);
+                                                            } catch (err) {
+                                                                alert('Lỗi tải hình ảnh từ clipboard');
+                                                            } finally {
+                                                                setIsSaving(false);
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }}
+                                            placeholder="Thêm thảo luận mới về dự án... (Có thể dán ảnh trực tiếp ctrl+V)"
                                             style={{ width: '100%', minHeight: '80px', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', resize: 'vertical', fontSize: '0.95rem', marginBottom: '0.5rem' }}
                                         />
                                         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
