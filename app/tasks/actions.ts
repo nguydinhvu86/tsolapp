@@ -400,8 +400,89 @@ export async function updateTask(id: string, data: any, userId: string) {
 }
 
 export async function updateTaskStatus(id: string, status: string, userId: string) {
+    const oldTask = await prisma.task.findUnique({
+        where: { id },
+        include: { assignees: true, observers: true }
+    });
+
     await prisma.task.update({ where: { id }, data: { status } });
     logActivity(id, userId, 'STATUS_CHANGED', JSON.stringify({ to: status }));
+
+    // --- NOTIFICATION & EMAIL LOGIC ---
+    if (oldTask && oldTask.status !== status) {
+        const statusMap: Record<string, string> = {
+            'TODO': 'Cần làm',
+            'IN_PROGRESS': 'Đang làm',
+            'REVIEW': 'Chờ duyệt',
+            'DONE': 'Hoàn thành',
+            'CANCELLED': 'Đã hủy'
+        };
+        const statusText = statusMap[status] || status;
+        const oldStatusText = statusMap[oldTask.status] || oldTask.status;
+
+        const creator = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+
+        // Identify people to notify: Assignees and Observers (exclude the person making the change)
+        const usersToNotify = new Set<string>();
+        if (oldTask.creatorId !== userId) usersToNotify.add(oldTask.creatorId);
+        oldTask.assignees.forEach(a => { if (a.userId !== userId) usersToNotify.add(a.userId); });
+        oldTask.observers.forEach(o => { if (o.userId !== userId) usersToNotify.add(o.userId); });
+
+        if (usersToNotify.size > 0) {
+            // 1. Create In-App Notifications
+            const notifications = Array.from(usersToNotify).map(uId => ({
+                userId: uId,
+                title: 'Trạng thái công việc thay đổi',
+                message: `${creator?.name || 'Ai đó'} đã chuyển trạng thái công việc "${oldTask.title}" từ [${oldStatusText}] sang [${statusText}].`,
+                type: 'INFO',
+                link: `/tasks/${id}`
+            }));
+            await createManyNotifications(notifications);
+
+            // 2. Send Emails
+            const { getTemplatesByModule } = await import('@/app/email-templates/actions');
+            const templates = await getTemplatesByModule('TASK');
+            let template = templates[0];
+            const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+            const users = await prisma.user.findMany({ where: { id: { in: Array.from(usersToNotify) } } });
+
+            for (const u of users) {
+                if (!u.email) continue;
+                let subject = `Cập nhật trạng thái công việc: ${oldTask.title}`;
+                let htmlBody = `<p>Công việc <strong>${oldTask.title}</strong> vừa được chuyển trạng thái sang: <strong>${statusText}</strong>.</p>
+        <p>Người thực hiện: ${creator?.name || 'Hệ thống'}</p>
+        <p><a href="${baseUrl}/tasks/${id}">Xem công việc</a></p>`;
+
+                if (template) {
+                    subject = template.subject || subject;
+                    htmlBody = template.body || htmlBody;
+
+                    const variables: Record<string, string> = {
+                        '{{taskTitle}}': oldTask.title,
+                        '{{taskDescription}}': oldTask.description || 'Không có mô tả',
+                        '{{dueDate}}': oldTask.dueDate ? formatDate(new Date(oldTask.dueDate)) : 'Không có hạn chót',
+                        '{{priority}}': oldTask.priority === 'URGENT' ? 'Khẩn cấp' : oldTask.priority === 'HIGH' ? 'Cao' : oldTask.priority === 'MEDIUM' ? 'Trung bình' : 'Thấp',
+                        '{{assignerName}}': creator?.name || 'Hệ thống',
+                        '{{assigneeName}}': u.name || u.email || 'Bạn',
+                        '{{link}}': `${baseUrl}/tasks/${id}`
+                    };
+
+                    for (const [key, value] of Object.entries(variables)) {
+                        const regexKey = key.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+                        subject = subject.replace(new RegExp(regexKey, 'g'), value);
+                        htmlBody = htmlBody.replace(new RegExp(regexKey, 'g'), value);
+                    }
+                }
+
+                await sendEmailWithTracking({
+                    to: u.email, subject, htmlBody, senderId: userId
+                });
+            }
+        }
+    }
+    // ----------------------------------
+
     revalidatePath('/tasks');
     revalidatePath(`/tasks/${id}`);
 }
