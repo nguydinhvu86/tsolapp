@@ -809,6 +809,26 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                                 <textarea
                                     value={newComment}
                                     onChange={handleEditorChange}
+                                    onPaste={async (e) => {
+                                        const items = e.clipboardData.items;
+                                        for (let i = 0; i < items.length; i++) {
+                                            if (items[i].type.indexOf('image') !== -1) {
+                                                const file = items[i].getAsFile();
+                                                if (file) {
+                                                    const reader = new FileReader();
+                                                    reader.onload = (event) => {
+                                                        if (event.target?.result) {
+                                                            setCommentImages(prev => [...prev, {
+                                                                file: file,
+                                                                url: event.target!.result as string
+                                                            }]);
+                                                        }
+                                                    };
+                                                    reader.readAsDataURL(file);
+                                                }
+                                            }
+                                        }
+                                    }}
                                     style={{
                                         width: '100%',
                                         minHeight: '100px',
@@ -829,9 +849,11 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                                         <input type="file" hidden multiple accept="image/*" onChange={handleCommentImageSelect} disabled={isSaving} />
                                     </label>
                                 </div>
+                            </div>
 
-                                {/* Mentions Dropdown */}
-                                {mentionQuery !== null && (
+                            {/* Mentions Dropdown */}
+                            {
+                                mentionQuery !== null && (
                                     <div style={{
                                         position: 'absolute', bottom: '100%', left: 0,
                                         width: '250px', maxHeight: '150px', overflowY: 'auto',
@@ -858,30 +880,29 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                                         )}
                                     </div>
                                 )}
-                            </div>
+                        </div>
 
-                            {/* Image Preview List */}
-                            {commentImages.length > 0 && (
-                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-                                    {commentImages.map((img, i) => (
-                                        <div key={i} style={{ position: 'relative', width: '60px', height: '60px', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border)' }}>
-                                            <img src={img.url} alt={`preview-${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                            <button
-                                                onClick={() => removeCommentImage(i)}
-                                                style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '0.7rem' }}
-                                            >
-                                                &times;
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                                <Button onClick={() => handleAddComment()} disabled={isSaving || (!newComment.trim() && commentImages.length === 0)}>
-                                    Gửi bình luận
-                                </Button>
+                        {/* Image Preview List */}
+                        {commentImages.length > 0 && (
+                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                                {commentImages.map((img, i) => (
+                                    <div key={i} style={{ position: 'relative', width: '60px', height: '60px', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border)' }}>
+                                        <img src={img.url} alt={`preview-${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        <button
+                                            onClick={() => removeCommentImage(i)}
+                                            style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '0.7rem' }}
+                                        >
+                                            &times;
+                                        </button>
+                                    </div>
+                                ))}
                             </div>
+                        )}
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+                            <Button onClick={() => handleAddComment()} disabled={isSaving || (!newComment.trim() && commentImages.length === 0)}>
+                                Gửi bình luận
+                            </Button>
                         </div>
                     </div>
                 </Card>
@@ -923,10 +944,10 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                             </div>
                         )}
                     </div>
-                </Card>
+                </Card >
 
                 {/* Documents & Notes */}
-                <Card>
+                < Card >
                     <div style={{ padding: '1.25rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                             <h4 style={{ margin: 0, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -1030,10 +1051,10 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                             </div>
                         )}
                     </div>
-                </Card>
+                </Card >
 
                 {/* People */}
-                <Card>
+                < Card >
                     <div style={{ padding: '1.25rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                             <h4 style={{ margin: 0, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -1089,10 +1110,10 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                             )}
                         </div>
                     </div>
-                </Card>
+                </Card >
 
                 {/* Activity Log KPI */}
-                <Card>
+                < Card >
                     <div style={{ padding: '1.25rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                             <h4 style={{ margin: 0, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -1153,76 +1174,78 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                             )}
                         </div>
                     </div>
-                </Card>
+                </Card >
 
-            </div>
+            </div >
 
             {/* Link Modal */}
-            {isLinkModalOpen && (
-                <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                    <div style={{ width: '400px', backgroundColor: 'var(--surface)', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-                        <h3 style={{ margin: '0 0 1rem 0' }}>Sửa đổi liên kết</h3>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-                            * Lưu ý: Mỗi thẻ công việc chỉ có thể gắn với 1 đối tượng duy nhất cho mỗi loại. Chọn mới sẽ ghi đè lên liên kết cũ.
-                        </p>
+            {
+                isLinkModalOpen && (
+                    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                        <div style={{ width: '400px', backgroundColor: 'var(--surface)', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+                            <h3 style={{ margin: '0 0 1rem 0' }}>Sửa đổi liên kết</h3>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+                                * Lưu ý: Mỗi thẻ công việc chỉ có thể gắn với 1 đối tượng duy nhất cho mỗi loại. Chọn mới sẽ ghi đè lên liên kết cũ.
+                            </p>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 500 }}>Loại liên kết</label>
-                                <select
-                                    value={linkType}
-                                    onChange={e => setLinkType(e.target.value)}
-                                    style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }}
-                                >
-                                    <option value="CUSTOMER">Khách hàng</option>
-                                    <option value="CONTRACT">Hợp đồng</option>
-                                    <option value="QUOTE">Báo giá</option>
-                                    <option value="HANDOVER">Biên bản bàn giao</option>
-                                    <option value="PAYMENT_REQ">Đề nghị thanh toán</option>
-                                    <option value="DISPATCH">Công văn</option>
-                                    <option value="SALES_ESTIMATE">Báo giá (Sales)</option>
-                                    <option value="SALES_ORDER">Đơn hàng</option>
-                                    <option value="SALES_INVOICE">Hóa đơn</option>
-                                    <option value="SALES_PAYMENT">Phiếu thu</option>
-                                    <option value="LEAD">Cơ hội bán hàng</option>
-                                </select>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 500 }}>Loại liên kết</label>
+                                    <select
+                                        value={linkType}
+                                        onChange={e => setLinkType(e.target.value)}
+                                        style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }}
+                                    >
+                                        <option value="CUSTOMER">Khách hàng</option>
+                                        <option value="CONTRACT">Hợp đồng</option>
+                                        <option value="QUOTE">Báo giá</option>
+                                        <option value="HANDOVER">Biên bản bàn giao</option>
+                                        <option value="PAYMENT_REQ">Đề nghị thanh toán</option>
+                                        <option value="DISPATCH">Công văn</option>
+                                        <option value="SALES_ESTIMATE">Báo giá (Sales)</option>
+                                        <option value="SALES_ORDER">Đơn hàng</option>
+                                        <option value="SALES_INVOICE">Hóa đơn</option>
+                                        <option value="SALES_PAYMENT">Phiếu thu</option>
+                                        <option value="LEAD">Cơ hội bán hàng</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 500 }}>Tìm kiếm</label>
+                                    <input
+                                        type="text"
+                                        value={linkQuery}
+                                        onChange={e => setLinkQuery(e.target.value)}
+                                        placeholder="Nhập từ khóa..."
+                                        style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }}
+                                    />
+                                </div>
+
+                                <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid var(--border)', borderRadius: '4px', marginTop: '0.5rem' }}>
+                                    {linkResults.length === 0 ? (
+                                        <div style={{ padding: '0.75rem', fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center' }}>Không tìm thấy kết quả</div>
+                                    ) : (
+                                        linkResults.map(res => (
+                                            <div
+                                                key={res.id}
+                                                onClick={() => handleSaveLink(res.id)}
+                                                style={{ padding: '0.75rem', borderBottom: '1px solid var(--border)', cursor: 'pointer', fontSize: '0.9rem' }}
+                                                className="hover:bg-gray-50 bg-white"
+                                            >
+                                                {res.title || res.name || res.code}
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
                             </div>
 
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 500 }}>Tìm kiếm</label>
-                                <input
-                                    type="text"
-                                    value={linkQuery}
-                                    onChange={e => setLinkQuery(e.target.value)}
-                                    placeholder="Nhập từ khóa..."
-                                    style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }}
-                                />
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem', gap: '0.75rem' }}>
+                                <Button variant="secondary" onClick={() => setIsLinkModalOpen(false)}>Hủy</Button>
                             </div>
-
-                            <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid var(--border)', borderRadius: '4px', marginTop: '0.5rem' }}>
-                                {linkResults.length === 0 ? (
-                                    <div style={{ padding: '0.75rem', fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center' }}>Không tìm thấy kết quả</div>
-                                ) : (
-                                    linkResults.map(res => (
-                                        <div
-                                            key={res.id}
-                                            onClick={() => handleSaveLink(res.id)}
-                                            style={{ padding: '0.75rem', borderBottom: '1px solid var(--border)', cursor: 'pointer', fontSize: '0.9rem' }}
-                                            className="hover:bg-gray-50 bg-white"
-                                        >
-                                            {res.title || res.name || res.code}
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                        </div>
-
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem', gap: '0.75rem' }}>
-                            <Button variant="secondary" onClick={() => setIsLinkModalOpen(false)}>Hủy</Button>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Edit Task Modal */}
             <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Chỉnh sửa chi tiết">
@@ -1326,17 +1349,19 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
             />
 
             {/* Lightbox Overlay */}
-            {lightboxImage && (
-                <div className="lightbox-overlay" onClick={() => setLightboxImage(null)}>
-                    <img src={lightboxImage} alt="Phóng to ảnh" className="lightbox-image" />
-                    <button
-                        onClick={() => setLightboxImage(null)}
-                        style={{ position: 'absolute', top: '20px', right: '30px', background: 'rgba(0,0,0,0.5)', border: 'none', color: '#fff', fontSize: '2rem', cursor: 'pointer', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                    >
-                        &times;
-                    </button>
-                </div>
-            )}
-        </div>
+            {
+                lightboxImage && (
+                    <div className="lightbox-overlay" onClick={() => setLightboxImage(null)}>
+                        <img src={lightboxImage} alt="Phóng to ảnh" className="lightbox-image" />
+                        <button
+                            onClick={() => setLightboxImage(null)}
+                            style={{ position: 'absolute', top: '20px', right: '30px', background: 'rgba(0,0,0,0.5)', border: 'none', color: '#fff', fontSize: '2rem', cursor: 'pointer', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                            &times;
+                        </button>
+                    </div>
+                )
+            }
+        </div >
     );
 }

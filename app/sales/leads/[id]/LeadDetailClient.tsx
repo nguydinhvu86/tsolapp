@@ -137,8 +137,42 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [] }
             } else {
                 alert(res.error || 'Có lỗi khi thêm ghi chú');
             }
+        } catch (error) {
+            console.error(error);
         } finally {
             setIsSubmittingNote(false);
+        }
+    };
+
+    const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+        const items = e.clipboardData.items;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+                const file = items[i].getAsFile();
+                if (file) {
+                    if (file.size > 5242880) {
+                        alert(`File ảnh dán vào quá lớn (Tối đa 5MB)`);
+                        return;
+                    }
+                    setIsUploading(true);
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    fetch('/api/upload', { method: 'POST', body: formData })
+                        .then(res => {
+                            if (!res.ok) throw new Error('Upload failed');
+                            return res.json();
+                        })
+                        .then(data => {
+                            setNoteImages(prev => [...prev, { url: data.url, name: file.name }]);
+                        })
+                        .catch(err => {
+                            alert('Lỗi tải hình ảnh từ clipboard');
+                        })
+                        .finally(() => {
+                            setIsUploading(false);
+                        });
+                }
+            }
         }
     };
 
@@ -512,7 +546,8 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [] }
                                 <textarea
                                     value={noteContent}
                                     onChange={(e) => setNoteContent(e.target.value)}
-                                    placeholder="Thêm các thông tin, trao đổi, đường dẫn hệ thống hoặc tải báo giá tham khảo..."
+                                    onPaste={handlePaste}
+                                    placeholder="Thêm các thông tin, trao đổi, đường dẫn hệ thống hoặc tải báo giá tham khảo (có thể dán ảnh trực tiếp)..."
                                     style={{ width: '100%', minHeight: '60px', border: 'none', backgroundColor: 'transparent', resize: 'vertical', outline: 'none', fontSize: '0.875rem', color: '#1e293b', fontFamily: 'inherit' }}
                                 />
                                 <div style={{ position: 'absolute', bottom: '0.75rem', left: '0.75rem', right: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
