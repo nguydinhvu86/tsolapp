@@ -572,7 +572,7 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                 )}
 
                 {task.priority === 'URGENT' && task.status !== 'DONE' && task.status !== 'CANCELLED' && (
-                    <div className="animate-priority-urgent-bg" style={{ border: '2px solid #ef4444', borderRadius: 'var(--radius)', padding: '1rem', display: 'flex', alignItems: 'center', gap: '1rem', color: '#991b1b', boxShadow: '0 0 15px rgba(239, 68, 68, 0.5)' }}>
+                    <div style={{ animation: 'priority-urgent-bg-blink 1.5s linear infinite', border: '2px solid #ef4444', borderRadius: 'var(--radius)', padding: '1rem', display: 'flex', alignItems: 'center', gap: '1rem', color: '#991b1b', boxShadow: '0 0 15px rgba(239, 68, 68, 0.5)' }}>
                         <AlertOctagon size={28} />
                         <div>
                             <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800 }}>KHẨN CẤP QUAN TRỌNG</h3>
@@ -582,7 +582,7 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                 )}
 
                 {task.priority === 'HIGH' && task.status !== 'DONE' && task.status !== 'CANCELLED' && (
-                    <div className="animate-priority-high-bg" style={{ border: '1px solid #4ade80', borderRadius: 'var(--radius)', padding: '1rem', display: 'flex', alignItems: 'center', gap: '1rem', color: '#166534' }}>
+                    <div style={{ animation: 'priority-high-bg-blink 2s ease-in-out infinite', border: '1px solid #4ade80', borderRadius: 'var(--radius)', padding: '1rem', display: 'flex', alignItems: 'center', gap: '1rem', color: '#166534' }}>
                         <AlertTriangle size={24} />
                         <div>
                             <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>Ưu Tiên Cao</h3>

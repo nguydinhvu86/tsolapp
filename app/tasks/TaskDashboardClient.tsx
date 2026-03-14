@@ -677,16 +677,23 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                                 const assigneesNames = task.assignees?.map((a: any) => a.user.name || a.user.email).join(', ') || 'Chưa gán';
                                 const isDueSoon = task.dueDate && new Date(task.dueDate).getTime() - new Date().getTime() < 86400000 && task.status !== 'DONE';
 
-                                let rowClass = '';
+                                let rowClass = 'transition-colors';
+                                let rowStyle: React.CSSProperties = {};
+
                                 if (task.status === 'PAUSED') {
-                                    rowClass = 'bg-yellow-200';
+                                    rowClass = 'transition-colors bg-yellow-200';
                                 } else if (task.status !== 'DONE' && task.status !== 'CANCELLED') {
-                                    if (task.priority === 'URGENT') rowClass = 'animate-priority-urgent-bg';
-                                    else if (task.priority === 'HIGH') rowClass = 'animate-priority-high-bg';
+                                    if (task.priority === 'URGENT') {
+                                        rowStyle = { animation: 'priority-urgent-bg-blink 1.5s linear infinite' };
+                                        rowClass = '';
+                                    } else if (task.priority === 'HIGH') {
+                                        rowStyle = { animation: 'priority-high-bg-blink 2s ease-in-out infinite' };
+                                        rowClass = '';
+                                    }
                                 }
 
                                 return (
-                                    <tr key={task.id} className={`transition-colors ${rowClass}`}>
+                                    <tr key={task.id} className={rowClass} style={rowStyle}>
                                         <td>
                                             <div style={{ fontWeight: 500, color: isDueSoon ? 'var(--danger)' : 'var(--text-main)', display: 'flex', alignItems: 'center' }}>
                                                 <Link href={`/tasks/${task.id}`} className="text-blue-600 hover:underline">
