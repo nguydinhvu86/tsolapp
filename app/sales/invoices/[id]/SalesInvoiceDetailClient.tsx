@@ -46,6 +46,9 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
     // Calculate remaining amount
     const remainingAmount = invoice.totalAmount - (invoice.paidAmount || 0);
 
+    // Calculate if overdue
+    const isOverdue = invoice.dueDate && new Date(invoice.dueDate).getTime() < new Date().getTime() && invoice.status !== 'PAID' && invoice.status !== 'CANCELLED' && remainingAmount > 0;
+
     useEffect(() => {
         setInvoice(initialData);
     }, [initialData]);
@@ -331,6 +334,16 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                     )}
                 </div>
             </div>
+
+            {isOverdue && (
+                <div className="animate-priority-urgent-bg" style={{ border: '2px solid #ef4444', borderRadius: 'var(--radius, 1rem)', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1.25rem', color: '#991b1b', boxShadow: '0 0 15px rgba(239, 68, 68, 0.4)', marginBottom: '2rem', backgroundColor: '#fef2f2', animation: 'priority-urgent-bg-blink 1.5s linear infinite' }}>
+                    <AlertTriangle size={32} />
+                    <div>
+                        <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>HÓA ĐƠN ĐÃ QUÁ HẠN THANH TOÁN</h3>
+                        <p style={{ margin: 0, fontSize: '1rem', fontWeight: 600, marginTop: '0.25rem' }}>Hóa đơn này đã quá hạn thanh toán ({formatDate(invoice.dueDate)}). Vui lòng ưu tiên xử lý và thu hồi công nợ.</p>
+                    </div>
+                </div>
+            )}
 
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 5fr) minmax(0, 3fr)', gap: '2rem' }}>
                 {/* Left Column: Details & Tabs */}
