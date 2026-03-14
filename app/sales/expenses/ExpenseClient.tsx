@@ -68,6 +68,16 @@ export default function ExpenseClient({
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
     const [searchTerm, setSearchTerm] = useState('');
 
+    React.useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('action') === 'new') {
+                openModal();
+                window.history.replaceState({}, '', '/sales/expenses');
+            }
+        }
+    }, []);
+
     const handleSort = (field: keyof ExpenseWithDetails) => {
         if (sortField === field) {
             setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');

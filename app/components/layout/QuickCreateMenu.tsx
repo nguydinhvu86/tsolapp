@@ -22,16 +22,15 @@ export function QuickCreateMenu() {
     const menuItems = [
         { label: 'Tạo Công Việc', href: '/tasks?action=new', icon: <CheckSquare size={16} /> },
         { label: 'Thêm Khách Hàng', href: '/customers?action=new', icon: <Users size={16} /> },
-        { label: 'Thêm Báo Giá', href: '/quotes/new', icon: <FileText size={16} /> },
+        { label: 'Thêm Báo Giá ERP', href: '/sales/estimates?action=new', icon: <FileText size={16} /> },
         { label: 'Thêm Lead', href: '/sales/leads/new', icon: <ExternalLink size={16} /> },
-        { label: 'Thêm Hóa Đơn (Bán)', href: '/sales/invoices/new', icon: <FileSpreadsheet size={16} /> },
-        { label: 'Thêm Sản Phẩm Mới', href: '/inventory/products', icon: <Box size={16} /> },
-        { label: 'Thêm Nhà Cung Cấp', href: '/suppliers', icon: <Building size={16} /> },
-        { label: 'Thêm Phiếu Mua Hàng', href: '/purchasing/orders/new', icon: <FileText size={16} /> },
-        { label: 'Thêm Hóa Đơn (Mua)', href: '/purchasing/bills', icon: <FileSpreadsheet size={16} /> },
-        { label: 'Thêm Thanh Toán NCC', href: '/purchasing/payments', icon: <CreditCard size={16} /> },
-        { label: 'Thêm Thu Tiền (Khách)', href: '/sales/receipts', icon: <Banknote size={16} /> },
-        { label: 'Thêm Chi Phí', href: '/sales/expenses', icon: <DollarSign size={16} /> },
+        { label: 'Thêm Hóa Đơn (Bán)', href: '/sales/invoices?action=new', icon: <FileSpreadsheet size={16} /> },
+        { label: 'Thêm Sản Phẩm Mới', href: '/inventory/products?action=new', icon: <Box size={16} /> },
+        { label: 'Thêm Nhà Cung Cấp', href: '/suppliers?action=new', icon: <Building size={16} /> },
+        { label: 'Thêm Hóa Đơn (Mua)', href: '/purchasing/bills?action=new', icon: <FileSpreadsheet size={16} /> },
+        { label: 'Thêm Thanh Toán NCC', href: '/purchasing/payments?action=new', icon: <CreditCard size={16} /> },
+        { label: 'Thêm Thu Tiền (Khách)', href: '/sales/payments?action=new', icon: <Banknote size={16} /> },
+        { label: 'Thêm Chi Phí', href: '/sales/expenses?action=new', icon: <DollarSign size={16} /> },
     ];
 
     return (

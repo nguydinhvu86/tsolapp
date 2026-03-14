@@ -40,6 +40,16 @@ export default function ProductClient({ initialProducts, warehouses = [], produc
     const [groupDesc, setGroupDesc] = useState('');
     const [isSavingGroup, setIsSavingGroup] = useState(false);
 
+    React.useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('action') === 'new') {
+                openCreateModal();
+                window.history.replaceState({}, '', '/inventory/products');
+            }
+        }
+    }, []);
+
     const filtered = initialProducts.filter(p =>
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.sku.toLowerCase().includes(searchTerm.toLowerCase())
