@@ -75,6 +75,16 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
         return generateDates();
     }, [isRecurring, dueDate, recurrenceFreq, recurrenceCount]);
 
+    React.useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('action') === 'new' && canCreate) {
+                setCreateModalOpen(true);
+                window.history.replaceState({}, '', '/tasks');
+            }
+        }
+    }, [canCreate]);
+
     // Link State
     const [linkType, setLinkType] = useState('');
     const [searchQuery, setSearchQuery] = useState('');

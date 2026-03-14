@@ -38,6 +38,17 @@ export function CustomerClient({ initialData, users, isAdminOrManager }: { initi
     const [searchTerm, setSearchTerm] = useState('');
     const [activeFilter, setActiveFilter] = useState<'ALL' | 'TOP_REVENUE_5' | 'RECENT_10' | 'RECENT_UPDATED'>('ALL');
 
+    React.useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('action') === 'new' && canCreate) {
+                // Must ensure we only open modal, openModal initializes state
+                setIsModalOpen(true);
+                window.history.replaceState({}, '', '/customers');
+            }
+        }
+    }, [canCreate]);
+
     const handleSort = (field: keyof Customer) => {
         if (sortField === field) {
             setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');

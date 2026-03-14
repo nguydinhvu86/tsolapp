@@ -20,8 +20,8 @@ export function QuickCreateMenu() {
     }, []);
 
     const menuItems = [
-        { label: 'Tạo Công Việc', href: '/tasks', icon: <CheckSquare size={16} /> },
-        { label: 'Thêm Khách Hàng', href: '/customers', icon: <Users size={16} /> },
+        { label: 'Tạo Công Việc', href: '/tasks?action=new', icon: <CheckSquare size={16} /> },
+        { label: 'Thêm Khách Hàng', href: '/customers?action=new', icon: <Users size={16} /> },
         { label: 'Thêm Báo Giá', href: '/quotes/new', icon: <FileText size={16} /> },
         { label: 'Thêm Lead', href: '/sales/leads/new', icon: <ExternalLink size={16} /> },
         { label: 'Thêm Hóa Đơn (Bán)', href: '/sales/invoices/new', icon: <FileSpreadsheet size={16} /> },
