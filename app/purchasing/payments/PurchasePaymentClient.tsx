@@ -70,10 +70,12 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
         if (hasOpenedFromUrl.current) return;
 
         const supplierId = searchParams.get('supplierId');
-        if (supplierId) {
-            handleSupplierChange(supplierId);
+        const action = searchParams.get('action');
+        if (supplierId || action === 'new') {
+            if (supplierId) handleSupplierChange(supplierId);
             setIsCreateModalOpen(true);
             hasOpenedFromUrl.current = true;
+            window.history.replaceState({}, '', '/purchasing/payments');
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchParams]);

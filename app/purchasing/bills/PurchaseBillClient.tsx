@@ -82,10 +82,11 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                 setIsCreateModalOpen(true);
                 hasOpenedFromUrl.current = true;
             }
-        } else if (supplierId) {
-            setFormData(prev => ({ ...prev, supplierId }));
+        } else if (supplierId || searchParams.get('action') === 'new') {
+            if (supplierId) setFormData(prev => ({ ...prev, supplierId }));
             setIsCreateModalOpen(true);
             hasOpenedFromUrl.current = true;
+            window.history.replaceState({}, '', '/purchasing/bills'); // clean url
         }
     }, [searchParams, orders]);
 

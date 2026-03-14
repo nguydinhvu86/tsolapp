@@ -35,6 +35,16 @@ export function SupplierClient({ initialSuppliers }: { initialSuppliers: any[] }
 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    React.useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('action') === 'new') {
+                handleOpenCreate();
+                window.history.replaceState({}, '', '/suppliers');
+            }
+        }
+    }, []);
+
     const computedSuppliers = React.useMemo(() => {
         return suppliers.map(s => {
             const validBills = s.bills ? s.bills.filter((b: any) => !['DRAFT', 'CANCELLED'].includes(b.status)) : [];
