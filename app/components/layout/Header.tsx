@@ -6,6 +6,7 @@ import { LogOut, Menu } from 'lucide-react';
 import Link from 'next/link';
 import { NotificationBell } from '../ui/NotificationBell';
 import { GlobalSearch } from './GlobalSearch';
+import { QuickCreateMenu } from './QuickCreateMenu';
 import { HeaderAttendance } from '../hr/HeaderAttendance';
 import ChatWidget from '../chat/ChatWidget';
 import { AvatarImage } from '../ui/AvatarImage';
@@ -35,7 +36,10 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
                     </button>
                 )}
 
-                <GlobalSearch />
+                <div className="flex items-center gap-2 flex-grow max-w-[500px]">
+                    <GlobalSearch />
+                    <QuickCreateMenu />
+                </div>
 
                 {/* Greeting on mobile */}
                 <div className="hidden sm:flex md:hidden flex-col ml-1">
