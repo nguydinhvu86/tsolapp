@@ -6,15 +6,22 @@ import { MainLayout } from './components/layout/MainLayout'
 import { getLayoutSettings, getSidebarOrder } from './components/layout/actions'
 import { PushNotificationListener } from './components/PushNotificationListener'
 
-export const metadata: Metadata = {
-    title: 'ERP System',
-    description: 'Manage and generate contracts easily',
-    manifest: '/manifest.json',
-    appleWebApp: {
-        capable: true,
-        statusBarStyle: 'default',
-        title: 'ERP System',
-    },
+export async function generateMetadata(): Promise<Metadata> {
+    const { name: brandName, logo: logoUrl } = await getLayoutSettings();
+    return {
+        title: 'ERP - Run Your Business',
+        description: 'Manage Your Business Easily And Efficiently',
+        manifest: '/manifest.json',
+        icons: {
+            icon: logoUrl || '/icons/icon-192x192.png',
+            apple: logoUrl || '/icons/icon-192x192.png',
+        },
+        appleWebApp: {
+            capable: true,
+            statusBarStyle: 'default',
+            title: brandName || 'ERP - Run Your Business',
+        },
+    };
 }
 
 export const viewport: Viewport = {
