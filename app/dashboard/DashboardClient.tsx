@@ -709,11 +709,22 @@ export function DashboardClient({
                                                                                             const relatedEntityName = task.customer?.name || task.contract?.code || task.salesInvoice?.code || task.salesOrder?.code || '';
                                                                                             const isDueSoon = task.dueDate && new Date(task.dueDate).getTime() - new Date().getTime() < 86400000 && task.status !== 'DONE';
 
+                                                                                            let rowClass = 'hover:bg-gray-50/50 transition-colors group';
+                                                                                            let rowStyle: React.CSSProperties = {};
+
+                                                                                            if (task.status !== 'DONE' && task.status !== 'CANCELLED') {
+                                                                                                if (task.priority === 'URGENT') {
+                                                                                                    rowStyle = { animation: 'priority-urgent-bg-blink 1.5s linear infinite' };
+                                                                                                } else if (task.priority === 'HIGH') {
+                                                                                                    rowStyle = { animation: 'priority-high-bg-blink 2s ease-in-out infinite' };
+                                                                                                }
+                                                                                            }
+
                                                                                             return (
-                                                                                                <tr key={task.id}>
+                                                                                                <tr key={task.id} className={rowClass} style={rowStyle}>
                                                                                                     <td>
                                                                                                         <div style={{ fontWeight: 500, color: isDueSoon ? 'var(--danger)' : 'var(--text-main)', display: 'flex', alignItems: 'center' }}>
-                                                                                                            <a href={`/tasks/${task.id}`} className="text-blue-600 hover:underline">
+                                                                                                            <a href={`/tasks/${task.id}`} className="text-blue-600 hover:underline text-sm truncate max-w-[200px]" title={task.title}>
                                                                                                                 {task.title}
                                                                                                             </a>
                                                                                                         </div>
