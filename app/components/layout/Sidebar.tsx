@@ -356,32 +356,156 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
 
     return (
         <aside className={`sidebar-container ${isOpen ? 'open' : ''}`} style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.5rem', borderBottom: '1px solid var(--border)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                    {logoUrl ? (
-                        <div className="sidebar-logo-container" style={{ width: '38px', height: '38px', borderRadius: '10px', overflow: 'hidden', flexShrink: 0, border: '1px solid var(--border)', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' }}>
-                            <img src={logoUrl} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            <>
+                <style>{`
+                    @keyframes sign-shine {
+                        0% { left: -100%; top: 0; }
+                        20% { left: 100%; top: 0; }
+                        100% { left: 100%; top: 0; }
+                    }
+                    @keyframes pulse-dot {
+                        0%, 100% { transform: scale(1); opacity: 0.8; }
+                        50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 8px #10b981; }
+                    }
+                    .tech-signboard {
+                        background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+                        border: 1px solid rgba(226, 232, 240, 0.8);
+                        box-shadow: 
+                            0 4px 15px -3px rgba(0, 0, 0, 0.05),
+                            0 2px 6px -2px rgba(0, 0, 0, 0.02),
+                            inset 0 2px 0 rgba(255, 255, 255, 0.9);
+                        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                    }
+                    .tech-signboard:hover {
+                        transform: translateY(-1px);
+                        box-shadow: 
+                            0 8px 20px -4px rgba(16, 185, 129, 0.15),
+                            0 4px 8px -3px rgba(59, 130, 246, 0.1),
+                            inset 0 2px 0 rgba(255, 255, 255, 1);
+                        border-color: rgba(16, 185, 129, 0.3);
+                    }
+                    .dark .tech-signboard {
+                        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+                        border: 1px solid rgba(51, 65, 85, 0.8);
+                        box-shadow: 
+                            0 4px 15px -3px rgba(0, 0, 0, 0.3),
+                            inset 0 1px 0 rgba(255, 255, 255, 0.05);
+                    }
+                    .dark .tech-signboard:hover {
+                        border-color: rgba(16, 185, 129, 0.4);
+                        box-shadow: 
+                            0 8px 20px -4px rgba(16, 185, 129, 0.2),
+                            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+                    }
+                    .brand-gradient-text {
+                        background: linear-gradient(90deg, #059669 0%, #0284c7 100%);
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                        background-clip: text;
+                    }
+                    .dark .brand-gradient-text {
+                        background: linear-gradient(90deg, #34d399 0%, #38bdf8 100%);
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                        background-clip: text;
+                    }
+                `}</style>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.2rem 1rem', borderBottom: '1px solid var(--border)', gap: '10px' }}>
+
+                    <div style={{ position: 'relative', flex: 1, minWidth: 0, cursor: 'pointer' }} className="group">
+                        <div className="tech-signboard" style={{
+                            display: 'flex', alignItems: 'center', gap: '12px',
+                            padding: '10px 14px 10px 10px',
+                            borderRadius: '14px',
+                            position: 'relative',
+                            overflow: 'hidden',
+                            width: '100%'
+                        }}>
+                            {/* Shimmer overlay */}
+                            <div style={{
+                                position: 'absolute',
+                                top: 0, bottom: 0, width: '40px',
+                                background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%)',
+                                transform: 'skewX(-20deg)',
+                                animation: 'sign-shine 4s ease-in-out infinite',
+                                pointerEvents: 'none',
+                                zIndex: 2
+                            }} className="dark:opacity-10"></div>
+
+                            {/* Logo */}
+                            {logoUrl ? (
+                                <div style={{
+                                    width: '42px', height: '42px', borderRadius: '10px',
+                                    overflow: 'hidden', flexShrink: 0, backgroundColor: '#fff',
+                                    padding: '3px',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.08), inset 0 1px 3px rgba(0,0,0,0.05)',
+                                    border: '1px solid #f1f5f9',
+                                    position: 'relative', zIndex: 1
+                                }}>
+                                    <img src={logoUrl} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                                </div>
+                            ) : (
+                                <div style={{
+                                    width: '42px', height: '42px', borderRadius: '10px',
+                                    background: 'linear-gradient(135deg, #10b981 0%, #0ea5e9 100%)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    color: 'white', flexShrink: 0,
+                                    boxShadow: '0 4px 12px rgba(14, 165, 233, 0.3)',
+                                    border: '1px solid rgba(255,255,255,0.2)',
+                                    position: 'relative', zIndex: 1
+                                }}>
+                                    <FileText size={22} strokeWidth={2.5} />
+                                </div>
+                            )}
+
+                            {/* Text Information */}
+                            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', zIndex: 1, overflow: 'hidden', flex: 1 }}>
+                                <span className="brand-gradient-text" style={{
+                                    fontSize: '1.25rem',
+                                    fontWeight: 900,
+                                    letterSpacing: '-0.03em',
+                                    lineHeight: '1.2',
+                                    textTransform: 'uppercase',
+                                    whiteSpace: 'nowrap',
+                                    textOverflow: 'ellipsis',
+                                    overflow: 'hidden',
+                                    display: 'block'
+                                }}>
+                                    {brandName}
+                                </span>
+                                <span style={{
+                                    fontSize: '0.65rem',
+                                    color: '#64748b',
+                                    fontWeight: 800,
+                                    letterSpacing: '0.12em',
+                                    textTransform: 'uppercase',
+                                    lineHeight: '1',
+                                    display: 'flex', alignItems: 'center', gap: '4px',
+                                    marginTop: '2px'
+                                }}>
+                                    <span style={{
+                                        width: '6px', height: '6px', borderRadius: '50%',
+                                        background: '#10b981', display: 'inline-block',
+                                        animation: 'pulse-dot 2s infinite'
+                                    }}></span>
+                                    ENTERPRISE SYSTEM
+                                </span>
+                            </div>
                         </div>
-                    ) : (
-                        <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'linear-gradient(135deg, var(--primary) 0%, #6366f1 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', flexShrink: 0, boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)', border: '1px solid rgba(255,255,255,0.15)' }}>
-                            <FileText size={20} strokeWidth={2.5} />
-                        </div>
+                    </div>
+
+                    {onClose && (
+                        <button
+                            onClick={onClose}
+                            className="show-on-mobile flex-shrink-0"
+                            style={{ padding: '0.5rem', borderRadius: 'var(--radius)', color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex' }}
+                            aria-label="Close menu"
+                        >
+                            <ChevronRight size={20} className="rotate-180" />
+                        </button>
                     )}
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '1.35rem', fontWeight: 900, letterSpacing: '-0.03em', color: 'var(--text-main)', lineHeight: '1', paddingTop: '2px', textTransform: 'uppercase' }}>
-                        {brandName}
-                    </span>
                 </div>
-                {onClose && (
-                    <button
-                        onClick={onClose}
-                        className="show-on-mobile"
-                        style={{ padding: '0.5rem', borderRadius: 'var(--radius)', color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}
-                        aria-label="Close menu"
-                    >
-                        <ChevronRight size={20} className="rotate-180" />
-                    </button>
-                )}
-            </div>
+            </>
             <nav style={{ padding: '1.25rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1, overflowY: 'auto' }}>
                 {isClient && (
                     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -404,47 +528,49 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
             </nav>
 
             {/* Online Users Widget */}
-            {isClient && onlineUsers.length > 0 && (
-                <div style={{ padding: '1rem', borderTop: '1px solid var(--border)', marginTop: 'auto' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                            Đang Online ({onlineUsers.length})
-                        </span>
-                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#22c55e', animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
-                            <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }`}</style>
+            {
+                isClient && onlineUsers.length > 0 && (
+                    <div style={{ padding: '1rem', borderTop: '1px solid var(--border)', marginTop: 'auto' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                Đang Online ({onlineUsers.length})
+                            </span>
+                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#22c55e', animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
+                                <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }`}</style>
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            {onlineUsers.slice(0, 5).map(u => (
+                                <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} title={u.os ? `OS: ${u.os}` : ''}>
+                                    <div style={{ position: 'relative' }}>
+                                        {u.avatar ? (
+                                            <img src={u.avatar} alt={u.name} style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} />
+                                        ) : (
+                                            <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: 'var(--bg-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <Users size={14} color="var(--text-muted)" />
+                                            </div>
+                                        )}
+                                        <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#22c55e', border: '2px solid white' }}></div>
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {u.name}
+                                        </div>
+                                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                                            {u.id === session?.user?.id ? 'Bạn' : (u.os || 'Đang hoạt động')}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            {onlineUsers.length > 5 && (
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '0.25rem' }}>
+                                    +{onlineUsers.length - 5} người khác
+                                </div>
+                            )}
                         </div>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        {onlineUsers.slice(0, 5).map(u => (
-                            <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} title={u.os ? `OS: ${u.os}` : ''}>
-                                <div style={{ position: 'relative' }}>
-                                    {u.avatar ? (
-                                        <img src={u.avatar} alt={u.name} style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} />
-                                    ) : (
-                                        <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: 'var(--bg-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <Users size={14} color="var(--text-muted)" />
-                                        </div>
-                                    )}
-                                    <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#22c55e', border: '2px solid white' }}></div>
-                                </div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                        {u.name}
-                                    </div>
-                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
-                                        {u.id === session?.user?.id ? 'Bạn' : (u.os || 'Đang hoạt động')}
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                        {onlineUsers.length > 5 && (
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '0.25rem' }}>
-                                +{onlineUsers.length - 5} người khác
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-        </aside>
+                )
+            }
+        </aside >
     );
 }
