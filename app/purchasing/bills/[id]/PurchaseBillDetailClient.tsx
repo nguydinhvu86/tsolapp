@@ -144,11 +144,11 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
             </div>
 
             {isOverdue && (
-                <div className="animate-priority-urgent-bg" style={{ border: '2px solid #ef4444', borderRadius: 'var(--radius, 1rem)', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1.25rem', color: '#991b1b', boxShadow: '0 0 15px rgba(239, 68, 68, 0.4)', marginBottom: '2rem', backgroundColor: '#fef2f2', animation: 'priority-urgent-bg-blink 1.5s linear infinite' }}>
-                    <AlertTriangle size={32} />
+                <div className="animate-overdue-bg" style={{ border: '1px solid #fde047', borderRadius: 'var(--radius, 1rem)', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1.25rem', color: '#854d0e', marginBottom: '2rem', backgroundColor: '#fefce8' }}>
+                    <AlertTriangle size={32} className="text-yellow-500" />
                     <div>
-                        <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>HÓA ĐƠN MUA HÀNG ĐÃ QUÁ HẠN</h3>
-                        <p style={{ margin: 0, fontSize: '1rem', fontWeight: 600, marginTop: '0.25rem' }}>Hóa đơn này đã quá hạn thanh toán cho Nhà Cung Cấp ({formatDate(localBill.dueDate)}). Vui lòng ưu tiên tạo Lệnh Chi và quyết toán.</p>
+                        <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700 }}>HÓA ĐƠN MUA HÀNG ĐÃ ĐẾN HẠN THANH TOÁN</h3>
+                        <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 500, marginTop: '0.25rem' }}>Hóa đơn này đã đến hạn thanh toán cho Nhà Cung Cấp ({formatDate(localBill.dueDate)}). Vui lòng ưu tiên tạo Lệnh Chi để quyết toán công nợ.</p>
                     </div>
                 </div>
             )}

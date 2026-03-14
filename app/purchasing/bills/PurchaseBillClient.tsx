@@ -687,7 +687,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                         ) : (
                             paginatedItems.map((bill) => {
                                 const isOverdue = bill.dueDate && new Date(bill.dueDate).getTime() < new Date().getTime() && bill.status !== 'PAID' && bill.status !== 'CANCELLED' && (bill.totalAmount - (bill.paidAmount || 0)) > 0;
-                                const trStyle: React.CSSProperties = isOverdue ? { animation: 'priority-urgent-bg-blink 1.5s linear infinite' } : {};
+                                const trStyle: React.CSSProperties = isOverdue ? { animation: 'overdue-bg-blink 2.5s ease-in-out infinite' } : {};
 
                                 return (
                                     <tr key={bill.id} style={trStyle} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
