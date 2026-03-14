@@ -3,7 +3,7 @@ import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, CreditCard, Clock, Plus, Trash2, FileDown, ExternalLink, Copy, XCircle } from 'lucide-react';
+import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, CreditCard, Clock, Plus, Trash2, FileDown, ExternalLink, Copy, XCircle, AlertTriangle } from 'lucide-react';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import Link from 'next/link';
 import { uploadPurchaseBillDocument, cancelPurchaseBill } from '@/app/purchasing/actions';
@@ -57,6 +57,9 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
     const formatMoney = (amount: number) => {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
     };
+
+    const remainingAmount = localBill.totalAmount - (localBill.paidAmount || 0);
+    const isOverdue = localBill.dueDate && new Date(localBill.dueDate).getTime() < new Date().getTime() && localBill.status !== 'PAID' && localBill.status !== 'CANCELLED' && remainingAmount > 0;
 
 
     const getStatusBadge = (status: string) => {
@@ -139,6 +142,16 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
                     )}
                 </div>
             </div>
+
+            {isOverdue && (
+                <div className="animate-priority-urgent-bg" style={{ border: '2px solid #ef4444', borderRadius: 'var(--radius, 1rem)', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1.25rem', color: '#991b1b', boxShadow: '0 0 15px rgba(239, 68, 68, 0.4)', marginBottom: '2rem', backgroundColor: '#fef2f2', animation: 'priority-urgent-bg-blink 1.5s linear infinite' }}>
+                    <AlertTriangle size={32} />
+                    <div>
+                        <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>HÓA ĐƠN MUA HÀNG ĐÃ QUÁ HẠN</h3>
+                        <p style={{ margin: 0, fontSize: '1rem', fontWeight: 600, marginTop: '0.25rem' }}>Hóa đơn này đã quá hạn thanh toán cho Nhà Cung Cấp ({formatDate(localBill.dueDate)}). Vui lòng ưu tiên tạo Lệnh Chi và quyết toán.</p>
+                    </div>
+                </div>
+            )}
 
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 5fr) minmax(0, 3fr)', gap: '2rem' }}>
                 {/* Left Column: Details & Tabs */}
