@@ -685,77 +685,82 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                 </td>
                             </tr>
                         ) : (
-                            paginatedItems.map((bill) => (
-                                <tr key={bill.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                                    <td className="p-4 text-sm font-bold text-gray-900 dark:text-gray-100">
-                                        <Link href={`/purchasing/bills/${bill.id}`} className="hover:text-primary hover:underline">
-                                            {bill.code}
-                                        </Link>
-                                    </td>
-                                    <td className="p-4 text-sm text-gray-600 dark:text-gray-300">{bill.supplierInvoice || '--'}</td>
-                                    <td className="p-4">
-                                        <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-1">
-                                            <Calendar size={13} /> {formatDate(bill.date)}
-                                        </div>
-                                        <Link href={`/suppliers/${bill.supplierId}`} className="font-semibold text-primary hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">
-                                            {bill.supplier?.name}
-                                        </Link>
-                                    </td>
-                                    <td className="p-4">
-                                        <TagDisplay tagsString={bill.tags} />
-                                    </td>
-                                    <td className="p-4 text-right">
-                                        <div className="font-semibold text-gray-900 dark:text-gray-100">{formatMoney(bill.totalAmount || 0)}</div>
-                                        {bill.paidAmount > 0 && <div className="text-xs text-green-600 mt-1">Đã trả: {formatMoney(bill.paidAmount)}</div>}
-                                    </td>
-                                    <td className="p-4 text-center">{getStatusBadge(bill.status)}</td>
-                                    <td className="p-4">
-                                        <div className="flex items-center justify-center gap-2">
-                                            <Link
-                                                href={`/purchasing/bills/${bill.id}`}
-                                                className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded inline-block"
-                                                title="Xem chi tiết"
-                                            >
-                                                <Eye size={18} />
+                            paginatedItems.map((bill) => {
+                                const isOverdue = bill.dueDate && new Date(bill.dueDate).getTime() < new Date().getTime() && bill.status !== 'PAID' && bill.status !== 'CANCELLED' && (bill.totalAmount - (bill.paidAmount || 0)) > 0;
+                                const trStyle: React.CSSProperties = isOverdue ? { animation: 'priority-urgent-bg-blink 1.5s linear infinite' } : {};
+
+                                return (
+                                    <tr key={bill.id} style={trStyle} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                                        <td className="p-4 text-sm font-bold text-gray-900 dark:text-gray-100">
+                                            <Link href={`/purchasing/bills/${bill.id}`} className="hover:text-primary hover:underline">
+                                                {bill.code}
                                             </Link>
-                                            {bill.status === 'DRAFT' && (
-                                                <>
-                                                    <button
-                                                        onClick={() => handleEdit(bill)}
-                                                        className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded inline-block"
-                                                        title="Sửa"
-                                                    >
-                                                        <Edit2 size={18} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => { setSelectedBill(bill); setIsApproveModalOpen(true); }}
-                                                        className="p-1.5 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded flex items-center gap-1 text-xs font-semibold px-2"
-                                                        title="Duyệt & Nhập Kho"
-                                                    >
-                                                        <CheckCircle size={16} /> Duyệt
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDelete(bill.id, bill.code)}
-                                                        className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded inline-block"
-                                                        title="Xóa"
-                                                    >
-                                                        <Trash2 size={18} />
-                                                    </button>
-                                                </>
-                                            )}
-                                            {bill.status === 'APPROVED' && (
-                                                <button
-                                                    onClick={() => handleCancel(bill.id, bill.code)}
-                                                    className="p-1.5 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded inline-block"
-                                                    title="Hủy Hóa Đơn & Nhập Kho"
+                                        </td>
+                                        <td className="p-4 text-sm text-gray-600 dark:text-gray-300">{bill.supplierInvoice || '--'}</td>
+                                        <td className="p-4">
+                                            <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-1">
+                                                <Calendar size={13} /> {formatDate(bill.date)}
+                                            </div>
+                                            <Link href={`/suppliers/${bill.supplierId}`} className="font-semibold text-primary hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">
+                                                {bill.supplier?.name}
+                                            </Link>
+                                        </td>
+                                        <td className="p-4">
+                                            <TagDisplay tagsString={bill.tags} />
+                                        </td>
+                                        <td className="p-4 text-right">
+                                            <div className="font-semibold text-gray-900 dark:text-gray-100">{formatMoney(bill.totalAmount || 0)}</div>
+                                            {bill.paidAmount > 0 && <div className="text-xs text-green-600 mt-1">Đã trả: {formatMoney(bill.paidAmount)}</div>}
+                                        </td>
+                                        <td className="p-4 text-center">{getStatusBadge(bill.status)}</td>
+                                        <td className="p-4">
+                                            <div className="flex items-center justify-center gap-2">
+                                                <Link
+                                                    href={`/purchasing/bills/${bill.id}`}
+                                                    className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded inline-block"
+                                                    title="Xem chi tiết"
                                                 >
-                                                    <XCircle size={18} />
-                                                </button>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))
+                                                    <Eye size={18} />
+                                                </Link>
+                                                {bill.status === 'DRAFT' && (
+                                                    <>
+                                                        <button
+                                                            onClick={() => handleEdit(bill)}
+                                                            className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded inline-block"
+                                                            title="Sửa"
+                                                        >
+                                                            <Edit2 size={18} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => { setSelectedBill(bill); setIsApproveModalOpen(true); }}
+                                                            className="p-1.5 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded flex items-center gap-1 text-xs font-semibold px-2"
+                                                            title="Duyệt & Nhập Kho"
+                                                        >
+                                                            <CheckCircle size={16} /> Duyệt
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDelete(bill.id, bill.code)}
+                                                            className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded inline-block"
+                                                            title="Xóa"
+                                                        >
+                                                            <Trash2 size={18} />
+                                                        </button>
+                                                    </>
+                                                )}
+                                                {bill.status === 'APPROVED' && (
+                                                    <button
+                                                        onClick={() => handleCancel(bill.id, bill.code)}
+                                                        className="p-1.5 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded inline-block"
+                                                        title="Hủy Hóa Đơn & Nhập Kho"
+                                                    >
+                                                        <XCircle size={18} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )
+                            })
                         )}
                     </tbody>
                 </table>
