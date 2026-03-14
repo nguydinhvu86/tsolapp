@@ -8,22 +8,47 @@ import { PushNotificationListener } from './components/PushNotificationListener'
 
 export async function generateMetadata(): Promise<Metadata> {
     const { name: brandName, logo: logoUrl } = await getLayoutSettings();
+    const title = 'ERP - Run Your Business';
+    const description = 'Manage Your Business Easily And Efficiently';
+    const finalLogo = logoUrl || '/icons/icon-192x192.png';
+
     return {
-        title: 'ERP - Run Your Business',
-        description: 'Manage Your Business Easily And Efficiently',
+        title,
+        description,
         manifest: '/manifest.json',
+        metadataBase: new URL('https://inside.tsol.vn'),
         icons: {
-            icon: logoUrl || '/icons/icon-192x192.png',
-            apple: logoUrl || '/icons/icon-192x192.png',
+            icon: finalLogo,
+            apple: finalLogo,
+        },
+        openGraph: {
+            title: brandName || title,
+            description,
+            url: 'https://inside.tsol.vn',
+            siteName: brandName || title,
+            images: [
+                {
+                    url: finalLogo,
+                    width: 512,
+                    height: 512,
+                },
+            ],
+            locale: 'vi_VN',
+            type: 'website',
+        },
+        twitter: {
+            card: 'summary',
+            title: brandName || title,
+            description,
+            images: [finalLogo],
         },
         appleWebApp: {
             capable: true,
             statusBarStyle: 'default',
-            title: brandName || 'ERP - Run Your Business',
+            title: brandName || title,
         },
     };
 }
-
 export const viewport: Viewport = {
     themeColor: '#4f46e5',
     width: 'device-width',
