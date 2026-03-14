@@ -1049,3 +1049,21 @@ tr.animate-priority-urgent-bg,
 div.animate-priority-urgent-bg {
     animation: priority-urgent-bg-blink 1.5s linear infinite !important;
 }
+
+@keyframes overdue-bg-blink {
+
+    0%,
+    100% {
+        background-color: transparent;
+    }
+
+    50% {
+        background-color: #fef9c3;
+        /* Tailwind yellow-100 */
+    }
+}
+
+tr.animate-overdue-bg,
+div.animate-overdue-bg {
+    animation: overdue-bg-blink 2.5s ease-in-out infinite !important;
+}
