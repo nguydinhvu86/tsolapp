@@ -26,21 +26,6 @@ const config: Config = {
             },
             boxShadow: {
                 sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-            },
-            keyframes: {
-                'priority-high-bg-blink': {
-                    '0%, 100%': { backgroundColor: '#dcfce3' },
-                    '50%': { backgroundColor: '#86efac' },
-                },
-                'priority-urgent-bg-blink': {
-                    '0%, 100%': { backgroundColor: '#fca5a5' },
-                    '33%': { backgroundColor: '#fef08a' },
-                    '66%': { backgroundColor: '#86efac' },
-                }
-            },
-            animation: {
-                'priority-high-bg': 'priority-high-bg-blink 2s ease-in-out infinite',
-                'priority-urgent-bg': 'priority-urgent-bg-blink 1.5s linear infinite',
             }
         },
     },
