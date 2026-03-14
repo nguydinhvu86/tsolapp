@@ -668,8 +668,14 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                             <th className="text-left font-medium text-gray-900 dark:text-gray-100">
                                 Thẻ Quản Lý
                             </th>
+                            <th onClick={() => requestSort('dueDate')} className="cursor-pointer hover:bg-gray-100 text-center">
+                                <div className="flex items-center justify-center gap-1">HTT <ArrowUpDown size={14} className="text-gray-400" /></div>
+                            </th>
                             <th onClick={() => requestSort('totalAmount')} className="cursor-pointer hover:bg-gray-100 text-right">
                                 <div className="flex items-center justify-end gap-1">Tổng Tiền <ArrowUpDown size={14} className="text-gray-400" /></div>
+                            </th>
+                            <th onClick={() => requestSort('paidAmount')} className="cursor-pointer hover:bg-gray-100 text-right">
+                                <div className="flex items-center justify-end gap-1">Đã Trả <ArrowUpDown size={14} className="text-gray-400" /></div>
                             </th>
                             <th onClick={() => requestSort('status')} className="cursor-pointer hover:bg-gray-100 text-center">
                                 <div className="flex items-center justify-center gap-1">Trạng Thái <ArrowUpDown size={14} className="text-gray-400" /></div>
@@ -708,9 +714,16 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                         <td className="p-4">
                                             <TagDisplay tagsString={bill.tags} />
                                         </td>
+                                        <td className="p-4 text-center">
+                                            <span style={{ color: isOverdue ? '#dc2626' : 'inherit', fontWeight: isOverdue ? 600 : 'normal' }}>
+                                                {bill.dueDate ? formatDate(bill.dueDate) : '--'}
+                                            </span>
+                                        </td>
                                         <td className="p-4 text-right">
                                             <div className="font-semibold text-gray-900 dark:text-gray-100">{formatMoney(bill.totalAmount || 0)}</div>
-                                            {bill.paidAmount > 0 && <div className="text-xs text-green-600 mt-1">Đã trả: {formatMoney(bill.paidAmount)}</div>}
+                                        </td>
+                                        <td className="p-4 text-right">
+                                            <div className="font-medium text-green-600 dark:text-green-500">{formatMoney(bill.paidAmount || 0)}</div>
                                         </td>
                                         <td className="p-4 text-center">{getStatusBadge(bill.status)}</td>
                                         <td className="p-4">
