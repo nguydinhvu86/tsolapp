@@ -9,18 +9,84 @@ import ChatWindow from './ChatWindow';
 export default function ChatWidget({ currentUser }: { currentUser: any }) {
     const [isOpen, setIsOpen] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
+    const prevUnreadCountRef = React.useRef(0);
+    const [showToast, setShowToast] = useState(false);
+
+    // Xin quyền Desktop Notification (chỉ chạy 1 lần)
+    useEffect(() => {
+        if (typeof window !== 'undefined' && 'Notification' in window) {
+            if (Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+    }, []);
 
     const fetchUnread = async () => {
         try {
             const count = await getUnreadCount();
             setUnreadCount(count);
+
+            // Kiểm tra có tin nhắn mới không
+            if (count > prevUnreadCountRef.current && prevUnreadCountRef.current !== 0) {
+                // Có tin nhắn mới tăng lên!
+                triggerNewMessageAlert();
+            }
+            prevUnreadCountRef.current = count;
         } catch (e) {
             console.error('Failed to fetch unread count', e);
         }
     };
 
+    const triggerNewMessageAlert = () => {
+        // 1. Hiện Toast
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 5000);
+
+        // 2. Phát Âm Thanh (Ding!)
+        playAudioChime();
+
+        // 3. Desktop Notification (Nếu được cho phép)
+        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+            new Notification('Tin nhắn mới', {
+                body: 'Bạn có tin nhắn chưa đọc trong hệ thống ERP.',
+                icon: '/icons/icon-192x192.png'
+            });
+        }
+    };
+
+    const playAudioChime = () => {
+        try {
+            // Sử dụng Web Audio API để tạo ra một tiếng 'Ding' đơn giản 
+            // tranh việc phải dùng file âm thanh rời phức tạp
+            const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(800, audioCtx.currentTime); // Note G5
+            oscillator.frequency.exponentialRampToValueAtTime(1100, audioCtx.currentTime + 0.1);
+
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(1, audioCtx.currentTime + 0.05);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + 0.5);
+        } catch (e) {
+            console.error('Lỗi phát âm thanh', e);
+        }
+    };
+
     useEffect(() => {
-        fetchUnread();
+        // Fetch ngay lần đầu để set prevUnreadCountRef (tránh báo tiếng ding khi mới vào trang)
+        getUnreadCount().then(c => {
+            setUnreadCount(c);
+            prevUnreadCountRef.current = c;
+        });
+
         const interval = setInterval(fetchUnread, 15000); // Poll every 15s for new unread status
         return () => clearInterval(interval);
     }, []);
@@ -76,6 +142,40 @@ export default function ChatWidget({ currentUser }: { currentUser: any }) {
                     </span>
                 )}
             </button>
+
+            {/* Toast Notification */}
+            {showToast && !isOpen && (
+                <div style={{
+                    position: 'absolute',
+                    bottom: '50px',
+                    right: '0',
+                    width: 'max-content',
+                    backgroundColor: 'white',
+                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                    border: '1px solid #e2e8f0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    animation: 'slide-up-fade 0.3s ease-out forwards',
+                    zIndex: 50
+                }}>
+                    <style>{`
+                        @keyframes slide-up-fade {
+                            0% { opacity: 0; transform: translateY(10px); }
+                            100% { opacity: 1; transform: translateY(0); }
+                        }
+                    `}</style>
+                    <div style={{ backgroundColor: '#eff6ff', padding: '8px', borderRadius: '50%', color: '#3b82f6' }}>
+                        <MessageCircle size={18} />
+                    </div>
+                    <div>
+                        <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#1e293b' }}>Tin nhắn mới</div>
+                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Bạn có tin nhắn chưa đọc!</div>
+                    </div>
+                </div>
+            )}
 
             {isOpen && typeof window !== 'undefined' && createPortal(
                 <div style={{
