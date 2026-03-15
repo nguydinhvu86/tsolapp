@@ -33,7 +33,27 @@ export function DocumentPreviewModal({ isOpen, onClose, fileUrl, fileName }: Doc
 
     // Helper to determine file type from URL or Name
     const getFileType = (url: string, name: string) => {
-        const extension = name.split('.').pop()?.toLowerCase() || url.split('.').pop()?.toLowerCase() || '';
+        let extension = name.split('.').pop()?.toLowerCase() || '';
+
+        // If name doesn't have an extension, try to get it from URL (excluding query params)
+        if (!extension || extension === name.toLowerCase()) {
+            try {
+                // Handle data URIs: data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,...
+                if (url.startsWith('data:')) {
+                    const mimeType = url.split(';')[0].split(':')[1];
+                    if (mimeType.includes('word')) return 'docx';
+                    if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) return 'xlsx';
+                    if (mimeType.includes('pdf')) return 'pdf';
+                    if (mimeType.includes('image')) return 'image';
+                    if (mimeType.includes('text')) return 'text';
+                }
+
+                const urlWithoutQuery = url.split('?')[0];
+                extension = urlWithoutQuery.split('.').pop()?.toLowerCase() || '';
+            } catch (e) {
+                // Ignore parsing errors
+            }
+        }
 
         if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(extension)) return 'image';
         if (['pdf'].includes(extension)) return 'pdf';
@@ -82,6 +102,23 @@ export function DocumentPreviewModal({ isOpen, onClose, fileUrl, fileName }: Doc
             case 'xlsx':
                 return <XlsxViewer fileUrl={fileUrl} />;
             case 'office': {
+                // If it's a base64 data URI, Google Docs Viewer will throw a 413 Payload Too Large error.
+                if (fileUrl.startsWith('data:')) {
+                    return (
+                        <div className="flex flex-col items-center justify-center w-full h-full bg-slate-50 text-slate-500 gap-4">
+                            <FileText size={48} className="text-slate-300" />
+                            <p className="text-sm">Không thể xem trước định dạng tệp này (Dữ liệu nội bộ).</p>
+                            <a
+                                href={fileUrl}
+                                download={fileName}
+                                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+                            >
+                                <Download size={16} /> Tải xuống tệp
+                            </a>
+                        </div>
+                    );
+                }
+
                 // Use Google Docs Viewer for other Office documents (PPT) as a fallback
                 const googleDocsUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`;
                 return (
