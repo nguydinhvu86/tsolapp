@@ -8,6 +8,7 @@ import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import Link from 'next/link';
 import { uploadPurchaseBillDocument, cancelPurchaseBill } from '@/app/purchasing/actions';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
+import { DocumentPreviewModal } from '@/app/components/ui/DocumentPreviewModal';
 
 export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, tasks: any[], users: any[] }) {
     const router = useRouter();
@@ -18,6 +19,7 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
     const [isUploading, setIsUploading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [previewDoc, setPreviewDoc] = useState<{ url: string, name: string } | null>(null);
 
     // Pagination hooks
     const itemsPag = usePagination(bill.items || []);
@@ -411,9 +413,9 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
                                                         <FileText size={18} />
                                                     </div>
                                                     <div style={{ overflow: 'hidden' }}>
-                                                        <a href={doc.url} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600, color: '#0f172a', textDecoration: 'none', display: 'block', marginBottom: '0.1rem', fontSize: '0.875rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} className="hover:text-blue-600" title={doc.name}>
+                                                        <button onClick={() => setPreviewDoc({ url: doc.url, name: doc.name || 'Tài liệu đính kèm' })} style={{ fontWeight: 600, color: '#0f172a', border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer', padding: 0, display: 'block', marginBottom: '0.1rem', fontSize: '0.875rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} className="hover:text-blue-600" title={doc.name}>
                                                             {doc.name}
-                                                        </a>
+                                                        </button>
                                                         <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
                                                             {formatDate(new Date(doc.uploadedAt))}
                                                         </span>
@@ -428,6 +430,15 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
                     </div>
                 </div>
             </div>
+
+            {previewDoc && (
+                <DocumentPreviewModal
+                    isOpen={!!previewDoc}
+                    onClose={() => setPreviewDoc(null)}
+                    fileUrl={previewDoc.url}
+                    fileName={previewDoc.name}
+                />
+            )}
         </div>
     );
 }

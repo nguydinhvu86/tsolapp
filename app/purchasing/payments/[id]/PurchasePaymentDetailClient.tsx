@@ -8,6 +8,7 @@ import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import Link from 'next/link';
 import { uploadPurchasePaymentDocument } from '@/app/purchasing/actions';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
+import { DocumentPreviewModal } from '@/app/components/ui/DocumentPreviewModal';
 
 export function PurchasePaymentDetailClient({ payment, tasks, users }: { payment: any, tasks: any[], users: any[] }) {
     const router = useRouter();
@@ -15,6 +16,7 @@ export function PurchasePaymentDetailClient({ payment, tasks, users }: { payment
     const [isUploading, setIsUploading] = useState(false);
     const [localPayment, setLocalPayment] = useState(payment);
     const [copied, setCopied] = useState(false);
+    const [previewDoc, setPreviewDoc] = useState<{ url: string, name: string } | null>(null);
 
     // Pagination hooks
     const allocationsPag = usePagination(localPayment.allocations || []);
@@ -265,7 +267,7 @@ export function PurchasePaymentDetailClient({ payment, tasks, users }: { payment
                                                         <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b' }}>{formatDate(doc.uploadedAt)}</p>
                                                     </div>
                                                 </div>
-                                                <a href={doc.url} target="_blank" rel="noreferrer" style={{ color: '#4f46e5', fontSize: '0.875rem', fontWeight: 500, textDecoration: 'none', padding: '0.25rem' }}>Xem</a>
+                                                <button onClick={() => setPreviewDoc({ url: doc.url, name: doc.name || 'Chứng từ' })} style={{ color: '#4f46e5', fontSize: '0.875rem', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem' }} className="hover:underline">Xem</button>
                                             </li>
                                         ))}
                                     </ul>
@@ -312,6 +314,15 @@ export function PurchasePaymentDetailClient({ payment, tasks, users }: { payment
                     </div>
                 </div>
             </div>
+
+            {previewDoc && (
+                <DocumentPreviewModal
+                    isOpen={!!previewDoc}
+                    onClose={() => setPreviewDoc(null)}
+                    fileUrl={previewDoc.url}
+                    fileName={previewDoc.name}
+                />
+            )}
         </div >
     );
 }

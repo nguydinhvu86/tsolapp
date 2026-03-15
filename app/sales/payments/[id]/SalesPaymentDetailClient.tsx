@@ -9,6 +9,7 @@ import { uploadSalesPaymentDocument, cancelSalesPayment, restoreSalesPayment, de
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
 import { Mail } from 'lucide-react';
+import { DocumentPreviewModal } from '@/app/components/ui/DocumentPreviewModal';
 
 export function SalesPaymentDetailClient({ payment, tasks, users, unpaidInvoices = [], emailTemplates = [] }: { payment: any, tasks: any[], users: any[], unpaidInvoices?: any[], emailTemplates?: any[] }) {
     const router = useRouter();
@@ -19,6 +20,7 @@ export function SalesPaymentDetailClient({ payment, tasks, users, unpaidInvoices
     const [copied, setCopied] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [previewDoc, setPreviewDoc] = useState<{ url: string, name: string } | null>(null);
 
     // Generic Action Modal State
     const [actionModal, setActionModal] = useState<{ isOpen: boolean, title: string, message: React.ReactNode, action: () => Promise<void> } | null>(null);
@@ -441,7 +443,7 @@ export function SalesPaymentDetailClient({ payment, tasks, users, unpaidInvoices
                                                         <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b' }}>{formatDate(doc.uploadedAt)}</p>
                                                     </div>
                                                 </div>
-                                                <a href={doc.url} target="_blank" rel="noreferrer" style={{ color: '#4f46e5', fontSize: '0.875rem', fontWeight: 500, textDecoration: 'none', padding: '0.25rem' }}>Xem</a>
+                                                <button onClick={() => setPreviewDoc({ url: doc.url, name: doc.name || 'Chứng từ' })} style={{ color: '#4f46e5', fontSize: '0.875rem', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem' }} className="hover:underline">Xem</button>
                                             </li>
                                         ))}
                                     </ul>
@@ -761,6 +763,15 @@ export function SalesPaymentDetailClient({ payment, tasks, users, unpaidInvoices
                     else alert("Lỗi khi gửi email: " + res?.error);
                 }}
             />
+
+            {previewDoc && (
+                <DocumentPreviewModal
+                    isOpen={!!previewDoc}
+                    onClose={() => setPreviewDoc(null)}
+                    fileUrl={previewDoc.url}
+                    fileName={previewDoc.name}
+                />
+            )}
         </div>
     );
 }
