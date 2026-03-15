@@ -147,7 +147,7 @@ export default function ChatWidget({ currentUser }: { currentUser: any }) {
             </button>
 
             {/* Toast Notification */}
-            {showToast && !isOpen && typeof window !== 'undefined' && createPortal(
+            {showToast && typeof window !== 'undefined' && createPortal(
                 <div style={{
                     position: 'fixed',
                     bottom: '80px',
