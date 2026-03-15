@@ -87,6 +87,7 @@ export default function ChatWidget({ currentUser }: { currentUser: any }) {
         if (!isOpen) {
             // When opening window, optimistically clear unread count since they'll read it
             setUnreadCount(0);
+            prevUnreadCountRef.current = 0;
 
             // browser policy requires user interaction before granting permission or audio
             if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
@@ -146,11 +147,11 @@ export default function ChatWidget({ currentUser }: { currentUser: any }) {
             </button>
 
             {/* Toast Notification */}
-            {showToast && !isOpen && (
+            {showToast && !isOpen && typeof window !== 'undefined' && createPortal(
                 <div style={{
-                    position: 'absolute',
-                    bottom: '50px',
-                    right: '0',
+                    position: 'fixed',
+                    bottom: '80px',
+                    right: '24px',
                     width: 'max-content',
                     backgroundColor: 'white',
                     padding: '12px 16px',
@@ -161,7 +162,7 @@ export default function ChatWidget({ currentUser }: { currentUser: any }) {
                     alignItems: 'center',
                     gap: '12px',
                     animation: 'slide-up-fade 0.3s ease-out forwards',
-                    zIndex: 50
+                    zIndex: 999999
                 }}>
                     <style>{`
                         @keyframes slide-up-fade {
@@ -176,7 +177,8 @@ export default function ChatWidget({ currentUser }: { currentUser: any }) {
                         <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#1e293b' }}>Tin nhắn mới</div>
                         <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Bạn có tin nhắn chưa đọc!</div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {isOpen && typeof window !== 'undefined' && createPortal(
