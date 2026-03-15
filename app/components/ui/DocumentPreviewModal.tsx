@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Download, X, FileText, Loader2, Maximize2, Minimize2 } from 'lucide-react';
+import DocxViewer from './DocxViewer';
+import XlsxViewer from './XlsxViewer';
 
 interface DocumentPreviewModalProps {
     isOpen: boolean;
@@ -35,7 +37,9 @@ export function DocumentPreviewModal({ isOpen, onClose, fileUrl, fileName }: Doc
 
         if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(extension)) return 'image';
         if (['pdf'].includes(extension)) return 'pdf';
-        if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(extension)) return 'office';
+        if (['doc', 'docx'].includes(extension)) return 'docx';
+        if (['xls', 'xlsx'].includes(extension)) return 'xlsx';
+        if (['ppt', 'pptx'].includes(extension)) return 'office';
         if (['txt', 'csv'].includes(extension)) return 'text';
 
         return 'unknown';
@@ -73,8 +77,12 @@ export function DocumentPreviewModal({ isOpen, onClose, fileUrl, fileName }: Doc
                         title={fileName}
                     />
                 );
+            case 'docx':
+                return <DocxViewer fileUrl={fileUrl} />;
+            case 'xlsx':
+                return <XlsxViewer fileUrl={fileUrl} />;
             case 'office': {
-                // Use Google Docs Viewer for Office documents as a fallback for <iframe> support
+                // Use Google Docs Viewer for other Office documents (PPT) as a fallback
                 const googleDocsUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`;
                 return (
                     <iframe
