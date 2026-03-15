@@ -9,17 +9,8 @@ import ChatWindow from './ChatWindow';
 export default function ChatWidget({ currentUser }: { currentUser: any }) {
     const [isOpen, setIsOpen] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
-    const prevUnreadCountRef = React.useRef(0);
+    const prevUnreadCountRef = React.useRef(-1);
     const [showToast, setShowToast] = useState(false);
-
-    // Xin quyền Desktop Notification (chỉ chạy 1 lần)
-    useEffect(() => {
-        if (typeof window !== 'undefined' && 'Notification' in window) {
-            if (Notification.permission === 'default') {
-                Notification.requestPermission();
-            }
-        }
-    }, []);
 
     const fetchUnread = async () => {
         try {
@@ -27,7 +18,7 @@ export default function ChatWidget({ currentUser }: { currentUser: any }) {
             setUnreadCount(count);
 
             // Kiểm tra có tin nhắn mới không
-            if (count > prevUnreadCountRef.current && prevUnreadCountRef.current !== 0) {
+            if (count > prevUnreadCountRef.current && prevUnreadCountRef.current !== -1) {
                 // Có tin nhắn mới tăng lên!
                 triggerNewMessageAlert();
             }
@@ -96,6 +87,17 @@ export default function ChatWidget({ currentUser }: { currentUser: any }) {
         if (!isOpen) {
             // When opening window, optimistically clear unread count since they'll read it
             setUnreadCount(0);
+
+            // browser policy requires user interaction before granting permission or audio
+            if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+            try {
+                const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+            } catch (e) { }
         }
     };
 
