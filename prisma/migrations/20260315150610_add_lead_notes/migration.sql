@@ -1,5 +1,5 @@
 -- AlterTable
-ALTER TABLE `leadcomment` ADD COLUMN `parentId` VARCHAR(191) NULL;
+ALTER TABLE `LeadComment` ADD COLUMN `parentId` VARCHAR(191) NULL;
 
 -- CreateTable
 CREATE TABLE `LeadNote` (
