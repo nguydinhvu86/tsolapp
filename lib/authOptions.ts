@@ -149,6 +149,8 @@ export const authOptions: NextAuthOptions = {
                     });
                     if (dbUser) {
                         token.role = dbUser.role;
+                        token.name = dbUser.name;
+                        token.avatar = dbUser.avatar;
                         const userPerms = JSON.parse(dbUser.permissions || "[]");
                         const groupPerms = dbUser.permissionGroup ? JSON.parse(dbUser.permissionGroup.permissions || "[]") : [];
                         const rawPerms = Array.from(new Set([...userPerms, ...groupPerms]));
@@ -187,6 +189,7 @@ export const authOptions: NextAuthOptions = {
             if (token && session.user) {
                 session.user.id = token.id as string;
                 session.user.role = token.role as string;
+                session.user.name = token.name as string | null | undefined;
                 session.user.avatar = token.avatar as string | null | undefined;
                 session.user.twoFactorEnabled = token.twoFactorEnabled as boolean | undefined;
                 session.user.permissions = (token.permissions as string[]) || [];
