@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { MessageSquare, Paperclip, Send, Trash2, User as UserIcon, FileText } from 'lucide-react';
 import { createCustomerNote, deleteCustomerNote } from '../../customers/[id]/actions';
+import { DocumentPreviewModal } from '@/app/components/ui/DocumentPreviewModal';
 
 interface CustomerNotesPanelProps {
     customerId: string;
@@ -19,6 +20,7 @@ export function CustomerNotesPanel({ customerId, notes, currentUserId, currentUs
     const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [attachments, setAttachments] = useState<{ url: string, name: string }[]>([]);
+    const [previewDoc, setPreviewDoc] = useState<{ url: string, name: string } | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -221,9 +223,9 @@ export function CustomerNotesPanel({ customerId, notes, currentUserId, currentUs
                                                 return (
                                                     <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #cbd5e1', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                                                         {parsed.map((att: any, idx: number) => (
-                                                            <a key={idx} href={att.url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', padding: '0.375rem 0.5rem', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '0.375rem', fontSize: '0.75rem', color: '#4f46e5', textDecoration: 'none', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }} onMouseEnter={(e) => e.currentTarget.style.borderColor = '#c7d2fe'} onMouseLeave={(e) => e.currentTarget.style.borderColor = '#e2e8f0'}>
+                                                            <button key={idx} onClick={() => setPreviewDoc({ url: att.url, name: att.name || 'Tài liệu đính kèm' })} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', padding: '0.375rem 0.5rem', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '0.375rem', fontSize: '0.75rem', color: '#4f46e5', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }} className="hover:border-indigo-200">
                                                                 <FileText size={12} /> {att.name || 'Tài liệu đính kèm'}
-                                                            </a>
+                                                            </button>
                                                         ))}
                                                     </div>
                                                 );
@@ -231,9 +233,9 @@ export function CustomerNotesPanel({ customerId, notes, currentUserId, currentUs
                                         } catch (e) {
                                             return (
                                                 <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #cbd5e1' }}>
-                                                    <a href={note.attachment} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', padding: '0.375rem 0.5rem', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '0.375rem', fontSize: '0.75rem', color: '#4f46e5', textDecoration: 'none' }}>
+                                                    <button onClick={() => setPreviewDoc({ url: note.attachment, name: 'Tài liệu đính kèm' })} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', padding: '0.375rem 0.5rem', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '0.375rem', fontSize: '0.75rem', color: '#4f46e5', cursor: 'pointer' }} className="hover:border-indigo-200">
                                                         <FileText size={12} /> Xem đính kèm
-                                                    </a>
+                                                    </button>
                                                 </div>
                                             );
                                         }
@@ -250,6 +252,15 @@ export function CustomerNotesPanel({ customerId, notes, currentUserId, currentUs
                     )}
                 </div>
             </div>
+
+            {previewDoc && (
+                <DocumentPreviewModal
+                    isOpen={!!previewDoc}
+                    onClose={() => setPreviewDoc(null)}
+                    fileUrl={previewDoc.url}
+                    fileName={previewDoc.name}
+                />
+            )}
         </div>
     );
 }

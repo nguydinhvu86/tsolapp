@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
+import { DocumentPreviewModal } from '@/app/components/ui/DocumentPreviewModal';
 import { toggleReaction, updateTaskLinks, searchEntities } from '../actions';
 
 const EMOJIS = ['👍', '❤️', '😂', '🎉', '👀'];
@@ -63,6 +64,7 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
 
     // Lightbox State
     const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+    const [previewDoc, setPreviewDoc] = useState<{ url: string, name: string } | null>(null);
 
     const handleCommentClick = (e: React.MouseEvent<HTMLDivElement>) => {
         const target = e.target as HTMLElement;
@@ -1069,9 +1071,17 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                                                     </div>
                                                 )}
                                                 <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                                                    <a href={doc.fileUrl} download={doc.fileName} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text)', textDecoration: 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} className="hover:text-primary transition-colors">
+                                                    <button
+                                                        onClick={() => setPreviewDoc({ url: doc.fileUrl, name: doc.fileName })}
+                                                        style={{
+                                                            fontSize: '0.85rem', fontWeight: 500, color: 'var(--text)',
+                                                            textAlign: 'left', background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                                                            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                                                        }}
+                                                        className="hover:text-primary transition-colors"
+                                                    >
                                                         {doc.fileName}
-                                                    </a>
+                                                    </button>
                                                     <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                                                         Bởi {doc.uploadedBy?.name || 'Hệ thống'} • {formatDistanceToNow(new Date(doc.createdAt), { addSuffix: true, locale: vi })}
                                                     </span>
@@ -1404,6 +1414,15 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                     </div>
                 )
             }
+
+            {previewDoc && (
+                <DocumentPreviewModal
+                    isOpen={!!previewDoc}
+                    onClose={() => setPreviewDoc(null)}
+                    fileUrl={previewDoc.url}
+                    fileName={previewDoc.name}
+                />
+            )}
         </div >
     );
 }

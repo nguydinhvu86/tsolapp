@@ -8,6 +8,7 @@ import { MessageSquare, ImageIcon, Paperclip, Send, Trash2 } from 'lucide-react'
 import { createLeadComment, deleteLeadComment, toggleLeadCommentReaction } from './actions';
 import { Button } from '@/app/components/ui/Button';
 import { useRouter } from 'next/navigation';
+import { DocumentPreviewModal } from '@/app/components/ui/DocumentPreviewModal';
 
 const EMOJIS = ['👍', '❤️', '😂', '🎉', '👀'];
 
@@ -25,6 +26,7 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
 
     // Lightbox State
     const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+    const [previewDoc, setPreviewDoc] = useState<{ url: string, name: string } | null>(null);
 
     React.useEffect(() => {
         setComments(initialComments);
@@ -219,81 +221,77 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
                 <span style={{ backgroundColor: '#e0e7ff', color: '#4f46e5', padding: '2px 8px', borderRadius: '99px', fontSize: '12px' }}>{comments.length}</span>
             </h3>
 
-            {/* Comment Form */}
-            <div style={{ backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '12px', border: replyTo ? '1px solid #3b82f6' : '1px solid #e2e8f0', marginBottom: '2rem', transition: 'all 0.2s' }}>
-                {replyTo && (
-                    <div style={{ marginBottom: '0.75rem', fontSize: '0.85rem', color: '#6366f1', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 }}>
-                        <MessageSquare size={14} /> Đang trả lời bình luận
-                        <button onClick={() => setReplyTo(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0 4px', fontSize: '0.85rem' }} className="hover:text-red-500">Hủy</button>
+            {/* Main Comment Form */}
+            {!replyTo && (
+                <div style={{ backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '2rem' }}>
+                    <div style={{ position: 'relative' }}>
+                        <textarea
+                            value={newComment}
+                            onChange={(e) => setNewComment(e.target.value)}
+                            style={{
+                                width: '100%',
+                                minHeight: '80px',
+                                padding: '0.75rem',
+                                paddingBottom: '2.5rem',
+                                borderRadius: '8px',
+                                border: '1px solid #cbd5e1',
+                                resize: 'vertical',
+                                fontSize: '0.95rem',
+                                lineHeight: 1.5,
+                                outline: 'none',
+                                fontFamily: 'inherit'
+                            }}
+                            onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                            onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+                            onPaste={handlePaste}
+                            placeholder="Thêm tin nhắn, trao đổi, thông tin về khách hàng này (có thể dán ảnh trực tiếp)..."
+                        />
+                        <div style={{ position: 'absolute', bottom: '0.75rem', left: '0.75rem', display: 'flex', gap: '0.5rem' }}>
+                            <label style={{ cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '6px' }} className="hover:bg-slate-200">
+                                <ImageIcon size={18} />
+                                <input type="file" hidden multiple accept="image/*" onChange={handleCommentImageSelect} disabled={isSaving} />
+                            </label>
+                            <label style={{ cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '6px' }} className="hover:bg-slate-200">
+                                <Paperclip size={18} />
+                                <input type="file" hidden multiple onChange={handleFileUpload} disabled={isSaving} />
+                            </label>
+                        </div>
+                        <div style={{ position: 'absolute', bottom: '0.75rem', right: '0.75rem' }}>
+                            <Button
+                                onClick={() => handleAddComment()}
+                                disabled={isSaving || (!newComment.trim() && attachments.length === 0 && commentImages.length === 0)}
+                                style={{ padding: '6px 16px', height: 'auto', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                            >
+                                {isSaving ? 'Đang gửi...' : <><Send size={14} /> Gửi</>}
+                            </Button>
+                        </div>
                     </div>
-                )}
-                <div style={{ position: 'relative' }}>
-                    <textarea
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        style={{
-                            width: '100%',
-                            minHeight: '80px',
-                            padding: '0.75rem',
-                            paddingBottom: '2.5rem',
-                            borderRadius: '8px',
-                            border: '1px solid #cbd5e1',
-                            resize: 'vertical',
-                            fontSize: '0.95rem',
-                            lineHeight: 1.5,
-                            outline: 'none',
-                            fontFamily: 'inherit'
-                        }}
-                        onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                        onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
-                        onPaste={handlePaste}
-                        placeholder={replyTo ? "Viết câu trả lời của bạn (có thể dán ảnh trực tiếp)..." : "Thêm tin nhắn, trao đổi, thông tin về khách hàng này (có thể dán ảnh trực tiếp)..."}
-                    />
-                    <div style={{ position: 'absolute', bottom: '0.75rem', left: '0.75rem', display: 'flex', gap: '0.5rem' }}>
-                        <label style={{ cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '6px' }} className="hover:bg-slate-200">
-                            <ImageIcon size={18} />
-                            <input type="file" hidden multiple accept="image/*" onChange={handleCommentImageSelect} disabled={isSaving} />
-                        </label>
-                        <label style={{ cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '6px' }} className="hover:bg-slate-200">
-                            <Paperclip size={18} />
-                            <input type="file" hidden multiple onChange={handleFileUpload} disabled={isSaving} />
-                        </label>
-                    </div>
-                    <div style={{ position: 'absolute', bottom: '0.75rem', right: '0.75rem' }}>
-                        <Button
-                            onClick={() => handleAddComment()}
-                            disabled={isSaving || (!newComment.trim() && attachments.length === 0 && commentImages.length === 0)}
-                            style={{ padding: '6px 16px', height: 'auto', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
-                        >
-                            {isSaving ? 'Đang gửi...' : <><Send size={14} /> Gửi</>}
-                        </Button>
-                    </div>
-                </div>
 
-                {/* Pending Items */}
-                {(attachments.length > 0 || commentImages.length > 0) && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '12px' }}>
-                        {commentImages.map((img, idx) => (
-                            <div key={`img-${idx}`} style={{ position: 'relative', width: '60px', height: '60px', borderRadius: '6px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={img.url} alt="Upload preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                <button onClick={() => removeCommentImage(idx)} style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(0,0,0,0.5)', color: 'white', border: 'none', borderRadius: '50%', padding: '2px', cursor: 'pointer', display: 'flex' }}>
-                                    <Trash2 size={12} />
-                                </button>
-                            </div>
-                        ))}
-                        {attachments.map((att, idx) => (
-                            <div key={`doc-${idx}`} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 8px', backgroundColor: '#e0e7ff', border: '1px solid #c7d2fe', borderRadius: '6px', fontSize: '12px', color: '#4338ca', height: 'max-content' }}>
-                                <Paperclip size={12} />
-                                <span style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{att.name || 'Tệp đính kèm'}</span>
-                                <button type="button" onClick={() => setAttachments(attachments.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6366f1', display: 'flex' }}>
-                                    <Trash2 size={12} />
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
+                    {/* Pending Items */}
+                    {(attachments.length > 0 || commentImages.length > 0) && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '12px' }}>
+                            {commentImages.map((img, idx) => (
+                                <div key={`img-${idx}`} style={{ position: 'relative', width: '60px', height: '60px', borderRadius: '6px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={img.url} alt="Upload preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <button onClick={() => removeCommentImage(idx)} style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(0,0,0,0.5)', color: 'white', border: 'none', borderRadius: '50%', padding: '2px', cursor: 'pointer', display: 'flex' }}>
+                                        <Trash2 size={12} />
+                                    </button>
+                                </div>
+                            ))}
+                            {attachments.map((att, idx) => (
+                                <div key={`doc-${idx}`} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 8px', backgroundColor: '#e0e7ff', border: '1px solid #c7d2fe', borderRadius: '6px', fontSize: '12px', color: '#4338ca', height: 'max-content' }}>
+                                    <Paperclip size={12} />
+                                    <span style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{att.name || 'Tệp đính kèm'}</span>
+                                    <button type="button" onClick={() => setAttachments(attachments.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6366f1', display: 'flex' }}>
+                                        <Trash2 size={12} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Comments List */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -347,9 +345,9 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
                                         {parsedFiles.length > 0 && (
                                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: c.content ? '8px' : '0' }}>
                                                 {parsedFiles.map((att, idx) => (
-                                                    <a key={idx} href={att.url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', backgroundColor: 'white', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '12px', color: '#4f46e5', textDecoration: 'none', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }} className="hover:border-indigo-300 hover:bg-indigo-50">
+                                                    <button key={idx} onClick={() => setPreviewDoc({ url: att.url, name: att.name || 'Tài liệu đính kèm' })} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', backgroundColor: 'white', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '12px', color: '#4f46e5', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }} className="hover:border-indigo-300 hover:bg-indigo-50">
                                                         <Paperclip size={12} style={{ color: '#6366f1' }} /> {att.name || 'Tài liệu đính kèm'}
-                                                    </a>
+                                                    </button>
                                                 ))}
                                             </div>
                                         )}
@@ -376,7 +374,15 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
                                                 ))}
 
                                                 {!isReply && (
-                                                    <button onClick={() => { setReplyTo(c.id); window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }} style={{ fontSize: '12px', color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500 }} className="hover:text-indigo-600">
+                                                    <button onClick={() => {
+                                                        // Reset form when clicking another reply
+                                                        if (replyTo !== c.id) {
+                                                            setNewComment('@' + (c.user?.name || 'Người dùng') + ' ');
+                                                            setAttachments([]);
+                                                            setCommentImages([]);
+                                                        }
+                                                        setReplyTo(c.id);
+                                                    }} style={{ fontSize: '12px', color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500 }} className="hover:text-indigo-600">
                                                         Trả lời
                                                     </button>
                                                 )}
@@ -388,6 +394,87 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
                                                 )}
                                             </div>
                                         </div>
+
+                                        {/* Inline Reply Form */}
+                                        {replyTo === c.id && !isReply && (
+                                            <div style={{ backgroundColor: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #3b82f6', marginTop: '12px', transition: 'all 0.2s', position: 'relative' }}>
+                                                <div style={{ position: 'relative' }}>
+                                                    <textarea
+                                                        value={newComment}
+                                                        onChange={(e) => setNewComment(e.target.value)}
+                                                        style={{
+                                                            width: '100%',
+                                                            minHeight: '80px',
+                                                            padding: '0.75rem',
+                                                            paddingBottom: '2.5rem',
+                                                            borderRadius: '8px',
+                                                            border: '1px solid #cbd5e1',
+                                                            resize: 'vertical',
+                                                            fontSize: '0.95rem',
+                                                            lineHeight: 1.5,
+                                                            outline: 'none',
+                                                            fontFamily: 'inherit'
+                                                        }}
+                                                        onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                                                        onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+                                                        onPaste={handlePaste}
+                                                        placeholder="Viết câu trả lời của bạn (có thể dán ảnh trực tiếp)..."
+                                                        autoFocus
+                                                    />
+                                                    <div style={{ position: 'absolute', bottom: '0.75rem', left: '0.75rem', display: 'flex', gap: '0.5rem' }}>
+                                                        <label style={{ cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '6px' }} className="hover:bg-slate-200">
+                                                            <ImageIcon size={18} />
+                                                            <input type="file" hidden multiple accept="image/*" onChange={handleCommentImageSelect} disabled={isSaving} />
+                                                        </label>
+                                                        <label style={{ cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '6px' }} className="hover:bg-slate-200">
+                                                            <Paperclip size={18} />
+                                                            <input type="file" hidden multiple onChange={handleFileUpload} disabled={isSaving} />
+                                                        </label>
+                                                    </div>
+                                                    <div style={{ position: 'absolute', bottom: '0.75rem', right: '0.75rem', display: 'flex', gap: '8px' }}>
+                                                        <Button
+                                                            variant="secondary"
+                                                            onClick={() => setReplyTo(null)}
+                                                            disabled={isSaving}
+                                                            style={{ padding: '6px 16px', height: 'auto', fontSize: '13px' }}
+                                                        >
+                                                            Hủy
+                                                        </Button>
+                                                        <Button
+                                                            onClick={() => handleAddComment()}
+                                                            disabled={isSaving || (!newComment.trim() && attachments.length === 0 && commentImages.length === 0)}
+                                                            style={{ padding: '6px 16px', height: 'auto', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                                                        >
+                                                            {isSaving ? 'Đang gửi...' : <><Send size={14} /> Gửi trả lời</>}
+                                                        </Button>
+                                                    </div>
+                                                </div>
+
+                                                {/* Pending Items in Reply */}
+                                                {(attachments.length > 0 || commentImages.length > 0) && (
+                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '12px' }}>
+                                                        {commentImages.map((img, idx) => (
+                                                            <div key={`img-${idx}`} style={{ position: 'relative', width: '60px', height: '60px', borderRadius: '6px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+                                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                                <img src={img.url} alt="Upload preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                                <button onClick={() => removeCommentImage(idx)} style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(0,0,0,0.5)', color: 'white', border: 'none', borderRadius: '50%', padding: '2px', cursor: 'pointer', display: 'flex' }}>
+                                                                    <Trash2 size={12} />
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                        {attachments.map((att, idx) => (
+                                                            <div key={`doc-${idx}`} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 8px', backgroundColor: '#e0e7ff', border: '1px solid #c7d2fe', borderRadius: '6px', fontSize: '12px', color: '#4338ca', height: 'max-content' }}>
+                                                                <Paperclip size={12} />
+                                                                <span style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{att.name || 'Tệp đính kèm'}</span>
+                                                                <button type="button" onClick={() => setAttachments(attachments.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6366f1', display: 'flex' }}>
+                                                                    <Trash2 size={12} />
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
 
                                         {/* Nested Replies */}
                                         {!isReply && replies.length > 0 && (
@@ -404,6 +491,15 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
                     })
                 )}
             </div>
+
+            {previewDoc && (
+                <DocumentPreviewModal
+                    isOpen={!!previewDoc}
+                    onClose={() => setPreviewDoc(null)}
+                    fileUrl={previewDoc.url}
+                    fileName={previewDoc.name}
+                />
+            )}
         </div>
     );
 }

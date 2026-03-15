@@ -12,6 +12,8 @@ import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import { EmailLogTable } from '@/app/components/ui/EmailLogTable';
 import { LeadComments } from './comments/LeadComments';
+import { DocumentPreviewModal } from '@/app/components/ui/DocumentPreviewModal';
+import { LeadNotes } from '@/app/components/sales/LeadNotes';
 
 const STATUSES = [
     { id: 'NEW', label: 'Tiếp nhận mới', color: { bg: '#e0e7ff', text: '#3730a3', border: '#c7d2fe', light: '#a5b4fc', solid: '#4f46e5' } },
@@ -65,7 +67,7 @@ const styles = {
     activityContent: { fontSize: '14px', color: '#475569', backgroundColor: 'white', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', marginTop: '12px' }
 };
 
-export function LeadDetailClient({ lead, customers, users, emailTemplates = [] }: { lead: any, customers: any[], users: any[], emailTemplates?: any[] }) {
+export function LeadDetailClient({ lead, customers, users, emailTemplates = [], currentUserId, currentUserRole }: { lead: any, customers: any[], users: any[], emailTemplates?: any[], currentUserId: string, currentUserRole: string }) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -78,12 +80,7 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [] }
     const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
     const [duplicateWarning, setDuplicateWarning] = useState<any>(null);
 
-    // Note Input State
-    const [noteContent, setNoteContent] = useState('');
-    const [isSubmittingNote, setIsSubmittingNote] = useState(false);
-    const [isUploading, setIsUploading] = useState(false);
-    const [attachments, setAttachments] = useState<{ url: string, name: string }[]>([]);
-    const [noteImages, setNoteImages] = useState<{ url: string, name: string }[]>([]);
+    // Note State
     const [lightboxImage, setLightboxImage] = useState<string | null>(null);
     const [activityLogs, setActivityLogs] = useState(lead.activityLogs || []);
 
@@ -93,6 +90,7 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [] }
         lead.assignees?.map((a: any) => a.userId) || (lead.assignedToId ? [lead.assignedToId] : [])
     );
     const [isSavingAssignees, setIsSavingAssignees] = useState(false);
+    const [previewDoc, setPreviewDoc] = useState<{ url: string, name: string } | null>(null);
 
     const handleSaveAssignees = async () => {
         setIsSavingAssignees(true);
@@ -107,74 +105,7 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [] }
         }
     };
 
-    const handleAddNote = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!noteContent.trim() && attachments.length === 0 && noteImages.length === 0) return;
 
-        setIsSubmittingNote(true);
-        try {
-            const hasText = noteContent.trim().length > 0;
-            const hasFiles = attachments.length > 0;
-            const hasImages = noteImages.length > 0;
-
-            let actionText = 'NOTE_ADDED';
-            if ((hasFiles || hasImages) && !hasText) actionText = 'FILE_UPLOADED';
-            if ((hasFiles || hasImages) && hasText) actionText = 'NOTE_AND_FILE_ADDED';
-
-            const attachmentStr = hasFiles ? JSON.stringify(attachments) : '';
-            let finalDetails = hasText ? (hasFiles ? `${noteContent}\n\nĐính kèm: ${attachmentStr}` : noteContent) : `Đã tải lên tệp: ${attachmentStr}`;
-
-            if (hasImages) {
-                finalDetails += `||IMAGES:${JSON.stringify(noteImages)}`;
-            }
-
-            const res = await addLeadActivityLog(lead.id, actionText, finalDetails);
-            if (res.success && res.log) {
-                setActivityLogs([res.log, ...activityLogs]);
-                setNoteContent('');
-                setAttachments([]);
-                setNoteImages([]);
-            } else {
-                alert(res.error || 'Có lỗi khi thêm ghi chú');
-            }
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setIsSubmittingNote(false);
-        }
-    };
-
-    const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
-        const items = e.clipboardData.items;
-        for (let i = 0; i < items.length; i++) {
-            if (items[i].type.indexOf('image') !== -1) {
-                const file = items[i].getAsFile();
-                if (file) {
-                    if (file.size > 5242880) {
-                        alert(`File ảnh dán vào quá lớn (Tối đa 5MB)`);
-                        return;
-                    }
-                    setIsUploading(true);
-                    const formData = new FormData();
-                    formData.append('file', file);
-                    fetch('/api/upload', { method: 'POST', body: formData })
-                        .then(res => {
-                            if (!res.ok) throw new Error('Upload failed');
-                            return res.json();
-                        })
-                        .then(data => {
-                            setNoteImages(prev => [...prev, { url: data.url, name: file.name }]);
-                        })
-                        .catch(err => {
-                            alert('Lỗi tải hình ảnh từ clipboard');
-                        })
-                        .finally(() => {
-                            setIsUploading(false);
-                        });
-                }
-            }
-        }
-    };
 
     const handleStatusChange = async (newStatus: string) => {
         if (lead.status === newStatus) return;
@@ -239,508 +170,353 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [] }
     const customerOptions = customers.map(c => ({ value: c.id, label: `${c.code ? c.code + ' - ' : ''}${c.name} ${c.phone ? `(${c.phone})` : ''}` }));
 
     return (
-        <div style={styles.pageContainer}>
-            {/* Lightbox */}
-            {lightboxImage && (
-                <div
-                    style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                    onClick={() => setLightboxImage(null)}
-                >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={lightboxImage} alt="Phóng to" style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain', borderRadius: '8px' }} />
-                </div>
-            )}
+        <>
+            <div style={styles.pageContainer}>
+                {/* Lightbox */}
+                {lightboxImage && (
+                    <div
+                        style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                        onClick={() => setLightboxImage(null)}
+                    >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={lightboxImage} alt="Phóng to" style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain', borderRadius: '8px' }} />
+                    </div>
+                )}
 
-            {/* Header */}
-            <div style={styles.headerCard}>
-                <div style={styles.headerLeft}>
-                    <Link href="/sales/leads" style={styles.backBtn}>
-                        <ArrowLeft size={20} />
-                    </Link>
-                    <div style={styles.titleArea}>
-                        <div style={styles.titleRow}>
-                            <h1 style={styles.pageTitle}>{lead.name}</h1>
-                            <span style={{ ...styles.statusBadge, backgroundColor: currentStatus.color.bg, color: currentStatus.color.text, border: `1px solid ${currentStatus.color.border}` }}>
-                                {currentStatus.label}
-                            </span>
-                            {lead.customerId && (
-                                <span style={styles.customerBadge}>
-                                    <CheckCircle size={14} /> Đã có KH
+                {/* Header */}
+                <div style={styles.headerCard}>
+                    <div style={styles.headerLeft}>
+                        <Link href="/sales/leads" style={styles.backBtn}>
+                            <ArrowLeft size={20} />
+                        </Link>
+                        <div style={styles.titleArea}>
+                            <div style={styles.titleRow}>
+                                <h1 style={styles.pageTitle}>{lead.name}</h1>
+                                <span style={{ ...styles.statusBadge, backgroundColor: currentStatus.color.bg, color: currentStatus.color.text, border: `1px solid ${currentStatus.color.border}` }}>
+                                    {currentStatus.label}
                                 </span>
-                            )}
-                        </div>
-                        <div style={{ ...styles.subtitle, display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                            <span>Mã KH: <span style={{ fontWeight: '700' }}>{lead.code}</span></span>
-                            <span>•</span>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                Phụ trách:
-                                {lead.assignees && lead.assignees.length > 0 ? (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        {lead.assignees.map((a: any) => (
-                                            <div key={a.userId} style={{ padding: '2px 8px', backgroundColor: '#e2e8f0', color: '#475569', borderRadius: '12px', fontSize: '12px', fontWeight: '600' }} title={a.user?.name}>
-                                                {a.user?.name}
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <span>{lead.assignedTo?.name || 'Chưa gán'}</span>
+                                {lead.customerId && (
+                                    <span style={styles.customerBadge}>
+                                        <CheckCircle size={14} /> Đã có KH
+                                    </span>
                                 )}
-                                <button onClick={() => setIsAssigneeModalOpen(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3b82f6', display: 'flex', alignItems: 'center', padding: '4px' }} title="Sửa người phụ trách">
-                                    <Edit size={14} />
-                                </button>
-                            </span>
+                            </div>
+                            <div style={{ ...styles.subtitle, display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                <span>Mã KH: <span style={{ fontWeight: '700' }}>{lead.code}</span></span>
+                                <span>•</span>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    Phụ trách:
+                                    {lead.assignees && lead.assignees.length > 0 ? (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            {lead.assignees.map((a: any) => (
+                                                <div key={a.userId} style={{ padding: '2px 8px', backgroundColor: '#e2e8f0', color: '#475569', borderRadius: '12px', fontSize: '12px', fontWeight: '600' }} title={a.user?.name}>
+                                                    {a.user?.name}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <span>{lead.assignedTo?.name || 'Chưa gán'}</span>
+                                    )}
+                                    <button onClick={() => setIsAssigneeModalOpen(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3b82f6', display: 'flex', alignItems: 'center', padding: '4px' }} title="Sửa người phụ trách">
+                                        <Edit size={14} />
+                                    </button>
+                                </span>
+                            </div>
                         </div>
+                    </div>
+
+                    <div style={styles.headerRight}>
+                        {!lead.customerId && (
+                            <button
+                                onClick={() => setIsConvertModalOpen(true)}
+                                style={styles.btnPrimary}
+                            >
+                                <RefreshCcw size={16} /> Chuyển thành Khách Hàng
+                            </button>
+                        )}
+                        {lead.customerId && (
+                            <Link href={`/customers/${lead.customerId}`} style={{ ...styles.btnSecondary, color: '#4f46e5', borderColor: '#c7d2fe', backgroundColor: '#e0e7ff' }}>
+                                <User size={16} /> Xem hồ sơ KH
+                            </Link>
+                        )}
+                        <Link href={`/sales/estimates?action=new&leadId=${lead.id}&customerId=${lead.customerId || ''}`} style={{ ...styles.btnSecondary, color: '#0ea5e9', borderColor: '#bae6fd', backgroundColor: '#f0f9ff' }} title="Tạo Báo Giá">
+                            <FileText size={16} /> Tạo Báo Giá
+                        </Link>
+                        <button
+                            onClick={() => setIsEmailModalOpen(true)}
+                            style={{ ...styles.btnSecondary, color: '#3b82f6', borderColor: '#bfdbfe', backgroundColor: '#eff6ff' }}
+                            title="Gửi Email Thông Báo"
+                        >
+                            <Mail size={16} /> Gửi Email
+                        </button>
+                        <Link href={`/sales/leads/${lead.id}/edit`} style={styles.btnSecondary}>
+                            <Edit size={16} /> Sửa
+                        </Link>
+                        <button
+                            onClick={() => setIsDeleteModalOpen(true)}
+                            style={styles.btnDanger}
+                        >
+                            <Trash2 size={16} />
+                        </button>
                     </div>
                 </div>
 
-                <div style={styles.headerRight}>
-                    {!lead.customerId && (
-                        <button
-                            onClick={() => setIsConvertModalOpen(true)}
-                            style={styles.btnPrimary}
-                        >
-                            <RefreshCcw size={16} /> Chuyển thành Khách Hàng
-                        </button>
-                    )}
-                    {lead.customerId && (
-                        <Link href={`/customers/${lead.customerId}`} style={{ ...styles.btnSecondary, color: '#4f46e5', borderColor: '#c7d2fe', backgroundColor: '#e0e7ff' }}>
-                            <User size={16} /> Xem hồ sơ KH
-                        </Link>
-                    )}
-                    <Link href={`/sales/estimates?action=new&leadId=${lead.id}&customerId=${lead.customerId || ''}`} style={{ ...styles.btnSecondary, color: '#0ea5e9', borderColor: '#bae6fd', backgroundColor: '#f0f9ff' }} title="Tạo Báo Giá">
-                        <FileText size={16} /> Tạo Báo Giá
-                    </Link>
-                    <button
-                        onClick={() => setIsEmailModalOpen(true)}
-                        style={{ ...styles.btnSecondary, color: '#3b82f6', borderColor: '#bfdbfe', backgroundColor: '#eff6ff' }}
-                        title="Gửi Email Thông Báo"
-                    >
-                        <Mail size={16} /> Gửi Email
-                    </button>
-                    <Link href={`/sales/leads/${lead.id}/edit`} style={styles.btnSecondary}>
-                        <Edit size={16} /> Sửa
-                    </Link>
-                    <button
-                        onClick={() => setIsDeleteModalOpen(true)}
-                        style={styles.btnDanger}
-                    >
-                        <Trash2 size={16} />
-                    </button>
+                {/* Pipeline Stage Bar */}
+                <div style={styles.pipelineCard}>
+                    <div style={styles.pipelineTrack} />
+                    <div style={styles.pipelineSteps}>
+                        {STATUSES.map((s, idx) => {
+                            const isCurrent = s.id === lead.status;
+                            const isPast = STATUSES.findIndex(x => x.id === lead.status) > idx;
+
+                            const btnStyles = {
+                                display: 'flex', flexDirection: 'column' as const, itemsCenter: 'center', gap: '8px',
+                                padding: '12px 16px', borderRadius: '12px', cursor: loading ? 'not-allowed' : 'pointer', border: 'none', background: 'transparent',
+                                transform: isCurrent ? 'scale(1.05)' : 'none', transition: 'all 0.2s', alignItems: 'center'
+                            };
+
+                            const circleStyles = {
+                                width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                border: `2px solid ${isCurrent ? s.color.solid : isPast ? s.color.light : '#e2e8f0'}`,
+                                backgroundColor: isCurrent ? s.color.solid : isPast ? s.color.bg : '#ffffff',
+                                color: isCurrent ? '#ffffff' : isPast ? s.color.solid : '#94a3b8',
+                                boxShadow: isCurrent ? '0 4px 12px rgba(0,0,0,0.1)' : 'none', zIndex: 2
+                            };
+
+                            return (
+                                <button
+                                    key={s.id}
+                                    disabled={loading}
+                                    onClick={() => handleStatusChange(s.id)}
+                                    style={btnStyles}
+                                >
+                                    <div style={circleStyles}>
+                                        {isPast || s.id === 'WON' ? <CheckCircle size={18} /> : <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'currentColor' }} />}
+                                    </div>
+                                    <span style={{
+                                        fontSize: '13px',
+                                        color: isCurrent ? s.color.solid : isPast ? '#475569' : '#94a3b8',
+                                        fontWeight: isCurrent ? '700' : '600',
+                                        whiteSpace: 'nowrap'
+                                    }}>
+                                        {s.label}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
-            </div>
 
-            {/* Pipeline Stage Bar */}
-            <div style={styles.pipelineCard}>
-                <div style={styles.pipelineTrack} />
-                <div style={styles.pipelineSteps}>
-                    {STATUSES.map((s, idx) => {
-                        const isCurrent = s.id === lead.status;
-                        const isPast = STATUSES.findIndex(x => x.id === lead.status) > idx;
-
-                        const btnStyles = {
-                            display: 'flex', flexDirection: 'column' as const, itemsCenter: 'center', gap: '8px',
-                            padding: '12px 16px', borderRadius: '12px', cursor: loading ? 'not-allowed' : 'pointer', border: 'none', background: 'transparent',
-                            transform: isCurrent ? 'scale(1.05)' : 'none', transition: 'all 0.2s', alignItems: 'center'
-                        };
-
-                        const circleStyles = {
-                            width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            border: `2px solid ${isCurrent ? s.color.solid : isPast ? s.color.light : '#e2e8f0'}`,
-                            backgroundColor: isCurrent ? s.color.solid : isPast ? s.color.bg : '#ffffff',
-                            color: isCurrent ? '#ffffff' : isPast ? s.color.solid : '#94a3b8',
-                            boxShadow: isCurrent ? '0 4px 12px rgba(0,0,0,0.1)' : 'none', zIndex: 2
-                        };
-
-                        return (
+                {/* Left Col: Info & Tasks */}
+                <div style={{ ...styles.mainLayout, ...(window.innerWidth >= 1024 ? styles.mainLayoutDesktop : {}) }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                        {/* Tabs */}
+                        <div style={{ display: 'flex', backgroundColor: '#f1f5f9', padding: '4px', borderRadius: '12px', gap: '4px' }}>
                             <button
-                                key={s.id}
-                                disabled={loading}
-                                onClick={() => handleStatusChange(s.id)}
-                                style={btnStyles}
+                                onClick={() => setActiveTab('info')}
+                                style={{
+                                    flex: 1, padding: '10px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: '600',
+                                    backgroundColor: activeTab === 'info' ? 'white' : 'transparent',
+                                    color: activeTab === 'info' ? '#0f172a' : '#64748b',
+                                    border: 'none', cursor: 'pointer',
+                                    boxShadow: activeTab === 'info' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                                    transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                                }}
                             >
-                                <div style={circleStyles}>
-                                    {isPast || s.id === 'WON' ? <CheckCircle size={18} /> : <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'currentColor' }} />}
-                                </div>
-                                <span style={{
-                                    fontSize: '13px',
-                                    color: isCurrent ? s.color.solid : isPast ? '#475569' : '#94a3b8',
-                                    fontWeight: isCurrent ? '700' : '600',
-                                    whiteSpace: 'nowrap'
-                                }}>
-                                    {s.label}
+                                <Building2 size={16} /> Thông tin chung
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('emailLogs')}
+                                style={{
+                                    flex: 1, padding: '10px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: '600',
+                                    backgroundColor: activeTab === 'emailLogs' ? 'white' : 'transparent',
+                                    color: activeTab === 'emailLogs' ? '#0f172a' : '#64748b',
+                                    border: 'none', cursor: 'pointer',
+                                    boxShadow: activeTab === 'emailLogs' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                                    transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                                }}
+                            >
+                                <Mail size={16} /> Lịch sử Email
+                                <span style={{ backgroundColor: activeTab === 'emailLogs' ? '#e0e7ff' : '#cbd5e1', color: activeTab === 'emailLogs' ? '#4f46e5' : '#475569', padding: '2px 8px', borderRadius: '99px', fontSize: '12px' }}>
+                                    {lead.emailLogs?.length || 0}
                                 </span>
                             </button>
-                        );
-                    })}
-                </div>
-            </div>
-
-            {/* Left Col: Info & Tasks */}
-            <div style={{ ...styles.mainLayout, ...(window.innerWidth >= 1024 ? styles.mainLayoutDesktop : {}) }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                    {/* Tabs */}
-                    <div style={{ display: 'flex', backgroundColor: '#f1f5f9', padding: '4px', borderRadius: '12px', gap: '4px' }}>
-                        <button
-                            onClick={() => setActiveTab('info')}
-                            style={{
-                                flex: 1, padding: '10px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: '600',
-                                backgroundColor: activeTab === 'info' ? 'white' : 'transparent',
-                                color: activeTab === 'info' ? '#0f172a' : '#64748b',
-                                border: 'none', cursor: 'pointer',
-                                boxShadow: activeTab === 'info' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                                transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
-                            }}
-                        >
-                            <Building2 size={16} /> Thông tin chung
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('emailLogs')}
-                            style={{
-                                flex: 1, padding: '10px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: '600',
-                                backgroundColor: activeTab === 'emailLogs' ? 'white' : 'transparent',
-                                color: activeTab === 'emailLogs' ? '#0f172a' : '#64748b',
-                                border: 'none', cursor: 'pointer',
-                                boxShadow: activeTab === 'emailLogs' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                                transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
-                            }}
-                        >
-                            <Mail size={16} /> Lịch sử Email
-                            <span style={{ backgroundColor: activeTab === 'emailLogs' ? '#e0e7ff' : '#cbd5e1', color: activeTab === 'emailLogs' ? '#4f46e5' : '#475569', padding: '2px 8px', borderRadius: '99px', fontSize: '12px' }}>
-                                {lead.emailLogs?.length || 0}
-                            </span>
-                        </button>
-                    </div>
-
-                    {activeTab === 'info' ? (
-                        <>
-                            {/* Cơ bản */}
-                            <div style={styles.sectionCard}>
-                                <h2 style={styles.sectionTitle}>
-                                    <Building2 size={20} color="#6366f1" /> Thông tin chung
-                                </h2>
-
-                                <div style={styles.infoGrid}>
-                                    <div style={styles.infoGroup}>
-                                        <p style={styles.infoLabel}>Công ty / Tổ chức</p>
-                                        <p style={styles.infoValue}>
-                                            {lead.customer?.name || lead.company || '—'}
-                                        </p>
-                                    </div>
-                                    <div style={styles.infoGroup}>
-                                        <p style={styles.infoLabel}>Người liên hệ</p>
-                                        <div style={styles.infoValue}>
-                                            <User size={16} style={styles.infoIcon} />
-                                            {lead.customer?.contactName || lead.contactName || '—'}
-                                        </div>
-                                    </div>
-                                    <div style={styles.infoGroup}>
-                                        <p style={styles.infoLabel}>Số điện thoại</p>
-                                        <div style={styles.infoValue}>
-                                            <Phone size={16} style={styles.infoIcon} />
-                                            {lead.customer?.phone || lead.phone || '—'}
-                                        </div>
-                                    </div>
-                                    <div style={styles.infoGroup}>
-                                        <p style={styles.infoLabel}>Email</p>
-                                        <div style={styles.infoValue}>
-                                            <Mail size={16} style={styles.infoIcon} />
-                                            {lead.customer?.email || lead.email || '—'}
-                                        </div>
-                                    </div>
-                                    <div style={styles.infoGroup}>
-                                        <p style={styles.infoLabel}>Giá trị dự kiến</p>
-                                        <div style={styles.infoValue}>
-                                            <DollarSign size={16} style={{ color: '#059669' }} />
-                                            <span style={{ color: '#059669', fontWeight: 'bold', fontSize: '18px' }}>{formatMoney(lead.estimatedValue)}</span>
-                                        </div>
-                                    </div>
-                                    <div style={styles.infoGroup}>
-                                        <p style={styles.infoLabel}>Ngày chốt dự kiến</p>
-                                        <div style={styles.infoValue}>
-                                            <Calendar size={16} style={styles.infoIcon} />
-                                            {lead.expectedCloseDate ? formatDate(lead.expectedCloseDate) : '—'}
-                                        </div>
-                                    </div>
-                                    <div style={styles.infoGroup}>
-                                        <p style={styles.infoLabel}>Nguồn khách hàng</p>
-                                        <div style={styles.infoValue}>
-                                            <Tag size={16} style={styles.infoIcon} />
-                                            {lead.source || '—'}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {lead.notes && (
-                                    <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #f1f5f9' }}>
-                                        <p style={{ ...styles.infoLabel, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                            <FileText size={16} /> Ghi chú nội bộ
-                                        </p>
-                                        <p style={{ fontSize: '14px', color: '#475569', whiteSpace: 'pre-wrap', backgroundColor: '#fffbeb', padding: '16px', borderRadius: '12px', border: '1px solid #fef3c7', margin: 0 }}>
-                                            {lead.notes}
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        </>
-                    ) : (
-                        <EmailLogTable emailLogs={lead.emailLogs || []} />
-                    )}
-
-                    {/* Comments Section */}
-                    <LeadComments leadId={lead.id} initialComments={lead.comments} users={users} />
-
-                </div>
-
-                {/* Right Col: Tasks & Activity Log */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', height: '100%' }}>
-
-                    {/* Tasks section */}
-                    <div style={{ height: '100%', maxHeight: '430px' }}>
-                        <TaskPanel
-                            initialTasks={lead.tasks || []}
-                            users={users || []}
-                            entityType="LEAD"
-                            entityId={lead.id}
-                            initialTitle={`Nhiệm vụ: Cơ hội ${lead.name}`}
-                        />
-                    </div>
-
-                    {/* Quotes section */}
-                    {lead.salesEstimates && lead.salesEstimates.length > 0 && (
-                        <div style={{ ...styles.sectionCard }}>
-                            <h2 style={{ ...styles.sectionTitle, borderBottom: 'none', paddingBottom: 0, marginBottom: '12px' }}>
-                                <FileText size={18} style={{ color: '#0ea5e9' }} /> Báo Giá Liên Quan
-                            </h2>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                {lead.salesEstimates.map((est: any) => (
-                                    <div key={est.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', border: '1px solid #f1f5f9', borderRadius: '12px', backgroundColor: '#f8fafc' }}>
-                                        <div>
-                                            <Link href={`/sales/estimates/${est.id}`} style={{ fontWeight: '600', color: '#3b82f6', textDecoration: 'none', fontSize: '14px' }}>
-                                                {est.code}
-                                            </Link>
-                                            <span style={{ fontSize: '13px', color: '#64748b', marginLeft: '8px' }}>
-                                                {formatDate(new Date(est.date))}
-                                            </span>
-                                        </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                            <span style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '14px' }}>
-                                                {formatMoney(est.totalAmount)}
-                                            </span>
-                                            <span style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '99px', fontWeight: '600', backgroundColor: est.status === 'DRAFT' ? '#f1f5f9' : est.status === 'ACCEPTED' ? '#dcfce7' : est.status === 'REJECTED' ? '#fee2e2' : '#e0e7ff', color: est.status === 'DRAFT' ? '#475569' : est.status === 'ACCEPTED' ? '#166534' : est.status === 'REJECTED' ? '#991b1b' : '#3730a3' }}>
-                                                {est.status === 'DRAFT' ? 'Bản Nháp' : est.status === 'ACCEPTED' ? 'Đã Chốt' : est.status === 'SENT' ? 'Đã Gửi' : est.status === 'INVOICED' ? 'Đã Hóa Đơn' : est.status === 'ORDERED' ? 'Đã Lên Đơn' : est.status === 'REJECTED' ? 'Từ Chối' : est.status}
-                                            </span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
                         </div>
-                    )}
 
-                    {/* Input System Link, Note, and Data Upload */}
-                    <div style={{ ...styles.sectionCard }}>
-                        <h2 style={{ ...styles.sectionTitle, marginBottom: '12px' }}>Ghi chú & Tải dữ liệu</h2>
-                        <form onSubmit={handleAddNote}>
-                            <div style={{ position: 'relative', borderRadius: '0.5rem', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', padding: '0.75rem', paddingBottom: '3rem', transition: 'all 0.2s', boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.05)' }}
-                                onFocus={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
-                                onBlur={(e) => e.currentTarget.style.borderColor = '#cbd5e1'}>
-                                <textarea
-                                    value={noteContent}
-                                    onChange={(e) => setNoteContent(e.target.value)}
-                                    onPaste={handlePaste}
-                                    placeholder="Thêm các thông tin, trao đổi, đường dẫn hệ thống hoặc tải báo giá tham khảo (có thể dán ảnh trực tiếp)..."
-                                    style={{ width: '100%', minHeight: '60px', border: 'none', backgroundColor: 'transparent', resize: 'vertical', outline: 'none', fontSize: '0.875rem', color: '#1e293b', fontFamily: 'inherit' }}
-                                />
-                                <div style={{ position: 'absolute', bottom: '0.75rem', left: '0.75rem', right: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                        <div style={{ position: 'relative', display: 'flex', gap: '8px' }}>
-                                            <div style={{ position: 'relative' }}>
-                                                <input
-                                                    type="file"
-                                                    multiple
-                                                    accept="image/*"
-                                                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
-                                                    disabled={isUploading}
-                                                    onChange={async (e) => {
-                                                        const files = e.target.files;
-                                                        if (!files || files.length === 0) return;
-                                                        setIsUploading(true);
-                                                        try {
-                                                            const newImages = [...noteImages];
-                                                            for (let i = 0; i < files.length; i++) {
-                                                                const formData = new FormData();
-                                                                formData.append('file', files[i]);
-                                                                const res = await fetch('/api/upload', { method: 'POST', body: formData });
-                                                                if (!res.ok) throw new Error('Upload failed');
-                                                                const data = await res.json();
-                                                                newImages.push({ url: data.url, name: files[i].name });
-                                                            }
-                                                            setNoteImages(newImages);
-                                                        } catch (err) {
-                                                            alert('Lỗi tải hình ảnh');
-                                                        } finally {
-                                                            setIsUploading(false);
-                                                            e.target.value = '';
-                                                        }
-                                                    }}
-                                                    title="Thêm hình ảnh"
-                                                />
-                                                <button type="button" disabled={isUploading} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '0.375rem', backgroundColor: 'transparent', border: 'none', color: isUploading ? '#cbd5e1' : '#64748b', cursor: isUploading ? 'not-allowed' : 'pointer' }} title="Thêm hình ảnh" className="hover:bg-slate-200">
-                                                    <ImageIcon size={18} />
-                                                </button>
-                                            </div>
-                                            <div style={{ position: 'relative' }}>
-                                                <input
-                                                    type="file"
-                                                    multiple
-                                                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
-                                                    disabled={isUploading}
-                                                    onChange={async (e) => {
-                                                        const files = e.target.files;
-                                                        if (!files || files.length === 0) return;
-                                                        setIsUploading(true);
-                                                        try {
-                                                            const newAttachments = [...attachments];
-                                                            for (let i = 0; i < files.length; i++) {
-                                                                const formData = new FormData();
-                                                                formData.append('file', files[i]);
-                                                                const res = await fetch('/api/upload', { method: 'POST', body: formData });
-                                                                if (!res.ok) throw new Error('Upload failed');
-                                                                const data = await res.json();
-                                                                newAttachments.push({ url: data.url, name: files[i].name });
-                                                            }
-                                                            setAttachments(newAttachments);
-                                                        } catch (err) {
-                                                            alert('Lỗi tải tệp tin');
-                                                        } finally {
-                                                            setIsUploading(false);
-                                                            e.target.value = '';
-                                                        }
-                                                    }}
-                                                    title="Đính kèm tài liệu"
-                                                />
-                                                <button type="button" disabled={isUploading} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '0.375rem', backgroundColor: 'transparent', border: 'none', color: isUploading ? '#cbd5e1' : '#64748b', cursor: isUploading ? 'not-allowed' : 'pointer' }} title="Đính kèm file" className="hover:bg-slate-200">
-                                                    <Paperclip size={18} />
-                                                </button>
+                        {activeTab === 'info' ? (
+                            <>
+                                {/* Cơ bản */}
+                                <div style={styles.sectionCard}>
+                                    <h2 style={styles.sectionTitle}>
+                                        <Building2 size={20} color="#6366f1" /> Thông tin chung
+                                    </h2>
+
+                                    <div style={styles.infoGrid}>
+                                        <div style={styles.infoGroup}>
+                                            <p style={styles.infoLabel}>Công ty / Tổ chức</p>
+                                            <p style={styles.infoValue}>
+                                                {lead.customer?.name || lead.company || '—'}
+                                            </p>
+                                        </div>
+                                        <div style={styles.infoGroup}>
+                                            <p style={styles.infoLabel}>Người liên hệ</p>
+                                            <div style={styles.infoValue}>
+                                                <User size={16} style={styles.infoIcon} />
+                                                {lead.customer?.contactName || lead.contactName || '—'}
                                             </div>
                                         </div>
-                                        {isUploading && <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Đang tải...</span>}
+                                        <div style={styles.infoGroup}>
+                                            <p style={styles.infoLabel}>Số điện thoại</p>
+                                            <div style={styles.infoValue}>
+                                                <Phone size={16} style={styles.infoIcon} />
+                                                {lead.customer?.phone || lead.phone || '—'}
+                                            </div>
+                                        </div>
+                                        <div style={styles.infoGroup}>
+                                            <p style={styles.infoLabel}>Email</p>
+                                            <div style={styles.infoValue}>
+                                                <Mail size={16} style={styles.infoIcon} />
+                                                {lead.customer?.email || lead.email || '—'}
+                                            </div>
+                                        </div>
+                                        <div style={styles.infoGroup}>
+                                            <p style={styles.infoLabel}>Giá trị dự kiến</p>
+                                            <div style={styles.infoValue}>
+                                                <DollarSign size={16} style={{ color: '#059669' }} />
+                                                <span style={{ color: '#059669', fontWeight: 'bold', fontSize: '18px' }}>{formatMoney(lead.estimatedValue)}</span>
+                                            </div>
+                                        </div>
+                                        <div style={styles.infoGroup}>
+                                            <p style={styles.infoLabel}>Ngày chốt dự kiến</p>
+                                            <div style={styles.infoValue}>
+                                                <Calendar size={16} style={styles.infoIcon} />
+                                                {lead.expectedCloseDate ? formatDate(lead.expectedCloseDate) : '—'}
+                                            </div>
+                                        </div>
+                                        <div style={styles.infoGroup}>
+                                            <p style={styles.infoLabel}>Nguồn khách hàng</p>
+                                            <div style={styles.infoValue}>
+                                                <Tag size={16} style={styles.infoIcon} />
+                                                {lead.source || '—'}
+                                            </div>
+                                        </div>
                                     </div>
-                                    <button
-                                        type="submit"
-                                        disabled={isSubmittingNote || (!noteContent.trim() && attachments.length === 0 && noteImages.length === 0) || isUploading}
-                                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', padding: '0.375rem 1rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: ((noteContent.trim() || attachments.length > 0 || noteImages.length > 0) && !isSubmittingNote && !isUploading) ? '#2563eb' : '#94a3b8', color: 'white', border: 'none', cursor: ((noteContent.trim() || attachments.length > 0 || noteImages.length > 0) && !isSubmittingNote && !isUploading) ? 'pointer' : 'not-allowed', transition: 'background-color 0.2s' }}
-                                    >
-                                        {isSubmittingNote ? 'Đang lưu...' : <><Send size={14} /> Lưu lại</>}
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
 
-                        {/* Pending Attachments List */}
-                        {(attachments.length > 0 || noteImages.length > 0) && (
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '12px' }}>
-                                {noteImages.map((img, idx) => (
-                                    <div key={`img-${idx}`} style={{ position: 'relative', width: '50px', height: '50px', borderRadius: '6px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img src={img.url} alt="Upload preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                        <button onClick={() => setNoteImages(noteImages.filter((_, i) => i !== idx))} style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(0,0,0,0.5)', color: 'white', border: 'none', borderRadius: '50%', padding: '2px', cursor: 'pointer', display: 'flex' }}>
-                                            <Trash2 size={12} />
-                                        </button>
-                                    </div>
-                                ))}
-                                {attachments.map((att, idx) => (
-                                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.25rem 0.5rem', backgroundColor: '#e0e7ff', border: '1px solid #c7d2fe', borderRadius: '0.375rem', fontSize: '0.75rem', color: '#4338ca', height: 'max-content' }}>
-                                        <FileText size={12} />
-                                        <span style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{att.name}</span>
-                                        <button type="button" onClick={() => setAttachments(attachments.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <Trash2 size={12} />
-                                        </button>
-                                    </div>
-                                ))}
+                                    {lead.notes && (
+                                        <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #f1f5f9' }}>
+                                            <p style={{ ...styles.infoLabel, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                                <FileText size={16} /> Ghi chú nội bộ
+                                            </p>
+                                            <p style={{ fontSize: '14px', color: '#475569', whiteSpace: 'pre-wrap', backgroundColor: '#fffbeb', padding: '16px', borderRadius: '12px', border: '1px solid #fef3c7', margin: 0 }}>
+                                                {lead.notes}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        ) : (
+                            <EmailLogTable emailLogs={lead.emailLogs || []} />
+                        )}
+
+                        {/* Comments Section */}
+                        <LeadComments leadId={lead.id} initialComments={lead.comments} users={users} />
+
+                    </div>
+
+                    {/* Right Col: Tasks & Activity Log */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', height: '100%' }}>
+
+                        {/* Tasks section */}
+                        <div style={{ maxHeight: '430px' }}>
+                            <TaskPanel
+                                initialTasks={lead.tasks || []}
+                                users={users || []}
+                                entityType="LEAD"
+                                entityId={lead.id}
+                                initialTitle={`Nhiệm vụ: Cơ hội ${lead.name}`}
+                            />
+                        </div>
+
+                        {/* Quotes section */}
+                        {lead.salesEstimates && lead.salesEstimates.length > 0 && (
+                            <div style={{ ...styles.sectionCard }}>
+                                <h2 style={{ ...styles.sectionTitle, borderBottom: 'none', paddingBottom: 0, marginBottom: '12px' }}>
+                                    <FileText size={18} style={{ color: '#0ea5e9' }} /> Báo Giá Liên Quan
+                                </h2>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    {lead.salesEstimates.map((est: any) => (
+                                        <div key={est.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', border: '1px solid #f1f5f9', borderRadius: '12px', backgroundColor: '#f8fafc' }}>
+                                            <div>
+                                                <Link href={`/sales/estimates/${est.id}`} style={{ fontWeight: '600', color: '#3b82f6', textDecoration: 'none', fontSize: '14px' }}>
+                                                    {est.code}
+                                                </Link>
+                                                <span style={{ fontSize: '13px', color: '#64748b', marginLeft: '8px' }}>
+                                                    {formatDate(new Date(est.date))}
+                                                </span>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                <span style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '14px' }}>
+                                                    {formatMoney(est.totalAmount)}
+                                                </span>
+                                                <span style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '99px', fontWeight: '600', backgroundColor: est.status === 'DRAFT' ? '#f1f5f9' : est.status === 'ACCEPTED' ? '#dcfce7' : est.status === 'REJECTED' ? '#fee2e2' : '#e0e7ff', color: est.status === 'DRAFT' ? '#475569' : est.status === 'ACCEPTED' ? '#166534' : est.status === 'REJECTED' ? '#991b1b' : '#3730a3' }}>
+                                                    {est.status === 'DRAFT' ? 'Bản Nháp' : est.status === 'ACCEPTED' ? 'Đã Chốt' : est.status === 'SENT' ? 'Đã Gửi' : est.status === 'INVOICED' ? 'Đã Hóa Đơn' : est.status === 'ORDERED' ? 'Đã Lên Đơn' : est.status === 'REJECTED' ? 'Từ Chối' : est.status}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         )}
-                    </div>
 
-                    <div style={{ ...styles.sectionCard, height: '100%', maxHeight: '400px', display: 'flex', flexDirection: 'column' }}>
-                        <h2 style={styles.sectionTitle}>Lịch sử hoạt động</h2>
-                        <div style={{ flex: 1, overflowY: 'auto' as const, paddingRight: '8px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            {activityLogs.map((log: any) => {
-                                let actionText = log.action;
-                                if (log.action === 'NOTE_ADDED') actionText = 'Đã thêm ghi chú';
-                                else if (log.action === 'FILE_UPLOADED') actionText = 'Đã tải lên tài liệu';
-                                else if (log.action === 'NOTE_AND_FILE_ADDED') actionText = 'Đã thêm ghi chú & tài liệu';
+                        {/* Lead Notes Component */}
+                        <LeadNotes leadId={lead.id} notes={lead.leadNotes || []} currentUserId={currentUserId} currentUserRole={currentUserRole} />
 
-                                // Clean up formatting for display if handling custom JSON str logic 
-                                let displayDetails = log.details;
-                                let parsedFiles: any[] = [];
-                                let parsedImages: any[] = [];
 
-                                if (log.details && log.details.includes('||IMAGES:')) {
-                                    const parts = log.details.split('||IMAGES:');
-                                    displayDetails = parts[0];
-                                    try {
-                                        parsedImages = JSON.parse(parts[1]);
-                                    } catch (e) { }
-                                }
 
-                                if (displayDetails && displayDetails.includes('Đính kèm: [')) {
-                                    const parts = displayDetails.split('Đính kèm: ');
-                                    displayDetails = parts[0].trim();
-                                    try {
-                                        parsedFiles = JSON.parse(parts[1]);
-                                    } catch (e) { }
-                                } else if (displayDetails && displayDetails.startsWith('Đã tải lên tệp: [')) {
-                                    const parts = displayDetails.split('Đã tải lên tệp: ');
-                                    displayDetails = '';
-                                    try {
-                                        parsedFiles = JSON.parse(parts[1]);
-                                    } catch (e) { }
-                                }
+                        <div style={{ ...styles.sectionCard, height: '100%', maxHeight: '400px', display: 'flex', flexDirection: 'column' }}>
+                            <h2 style={styles.sectionTitle}>Lịch sử hoạt động</h2>
+                            <div style={{ flex: 1, overflowY: 'auto' as const, paddingRight: '8px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                {(() => {
+                                    const sysLogs = activityLogs.filter((log: any) => !['NOTE_ADDED', 'FILE_UPLOADED', 'NOTE_AND_FILE_ADDED'].includes(log.action));
 
-                                return (
-                                    <div key={log.id} style={{ display: 'flex', gap: '12px', position: 'relative' }}>
-                                        <div style={{ width: '32px', height: '32px', flexShrink: 0, backgroundColor: '#e0e7ff', color: '#4f46e5', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px', zIndex: 10 }}>
-                                            {log.user?.name ? log.user.name.charAt(0).toUpperCase() : '?'}
-                                        </div>
-                                        <div style={{ flex: 1, paddingBottom: '16px', minWidth: 0 }}>
-                                            <p style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a', margin: '0 0 4px 0' }}>{actionText}</p>
-                                            <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 8px 0' }}>{formatDateTime(log.createdAt)} • bởi {log.user?.name}</p>
+                                    if (sysLogs.length === 0) {
+                                        return <p style={{ fontSize: '13px', color: '#64748b', fontStyle: 'italic' }}>Chưa có hoạt động hệ thống nào.</p>;
+                                    }
 
-                                            {(displayDetails || parsedFiles.length > 0 || parsedImages.length > 0) && (
-                                                <div style={{ fontSize: '14px', color: '#334155', backgroundColor: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', whiteSpace: 'pre-wrap' }}>
-                                                    {displayDetails && <div>{displayDetails}</div>}
-                                                    {parsedImages.length > 0 && (
-                                                        <div style={{ marginTop: displayDetails ? '12px' : '0', paddingTop: displayDetails ? '12px' : '0', borderTop: displayDetails ? '1px solid #e2e8f0' : 'none', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                                            {parsedImages.map((img: any, idx: number) => (
-                                                                // eslint-disable-next-line @next/next/no-img-element
-                                                                <img key={`lg-img-${idx}`} src={img.url} alt={img.name || 'Image'} style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '6px', cursor: 'pointer', border: '1px solid #cbd5e1' }} onClick={() => setLightboxImage(img.url)} />
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                    {parsedFiles.length > 0 && (
-                                                        <div style={{ marginTop: (displayDetails || parsedImages.length > 0) ? '12px' : '0', paddingTop: (displayDetails || parsedImages.length > 0) ? '12px' : '0', borderTop: (displayDetails || parsedImages.length > 0) ? '1px solid #e2e8f0' : 'none', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                                            {parsedFiles.map((att: any, idx: number) => (
-                                                                <a key={idx} href={att.url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 10px', backgroundColor: 'white', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', color: '#4f46e5', textDecoration: 'none', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }} onMouseEnter={(e) => e.currentTarget.style.borderColor = '#94a3b8'} onMouseLeave={(e) => e.currentTarget.style.borderColor = '#cbd5e1'}>
-                                                                    <LinkIcon size={12} /> {att.name || 'Tài liệu đính kèm'}
-                                                                </a>
-                                                            ))}
+                                    return sysLogs.map((log: any) => {
+                                        let actionText = log.action;
+
+                                        return (
+                                            <div key={log.id} style={{ display: 'flex', gap: '12px', position: 'relative' }}>
+                                                <div style={{ width: '32px', height: '32px', flexShrink: 0, backgroundColor: '#e0e7ff', color: '#4f46e5', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px', zIndex: 10 }}>
+                                                    {log.user?.name ? log.user.name.charAt(0).toUpperCase() : '?'}
+                                                </div>
+                                                <div style={{ flex: 1, paddingBottom: '16px', minWidth: 0 }}>
+                                                    <p style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a', margin: '0 0 4px 0' }}>{actionText}</p>
+                                                    <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 8px 0' }}>{formatDateTime(log.createdAt)} • bởi {log.user?.name}</p>
+
+                                                    {log.details && (
+                                                        <div style={{ fontSize: '14px', color: '#334155', backgroundColor: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', whiteSpace: 'pre-wrap' }}>
+                                                            {log.details}
                                                         </div>
                                                     )}
                                                 </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                                            </div>
+                                        );
+                                    });
+                                })()}
+                            </div>
                         </div>
+
                     </div>
+
+
                 </div>
-            </div>
-
-
+            </div >
 
             {/* Convert Modal */}
-            <Modal isOpen={isConvertModalOpen} onClose={() => { setIsConvertModalOpen(false); setDuplicateWarning(null); }} title="Chuyển đổi Cơ hội thành Khách hàng">
+            < Modal isOpen={isConvertModalOpen} onClose={() => { setIsConvertModalOpen(false); setDuplicateWarning(null); }
+            } title="Chuyển đổi Cơ hội thành Khách hàng" >
                 <div className="space-y-4">
                     {duplicateWarning ? (
                         <div className="bg-amber-50 p-4 border border-amber-200 rounded-lg">
@@ -831,10 +607,10 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [] }
                         </>
                     )}
                 </div>
-            </Modal>
+            </Modal >
 
             {/* Delete Confirmation Modal */}
-            <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Xác nhận xóa">
+            < Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Xác nhận xóa" >
                 <div className="space-y-4">
                     <p className="text-gray-600">
                         Bạn có chắc chắn muốn xóa Cơ hội <strong>{lead.name}</strong>? Thao tác này không thể hoàn tác.
@@ -857,7 +633,7 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [] }
                         </button>
                     </div>
                 </div>
-            </Modal>
+            </Modal >
 
             <SendEmailModal
                 isOpen={isEmailModalOpen}
@@ -912,6 +688,17 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [] }
                     </div>
                 </div>
             </Modal>
-        </div>
+
+            {
+                previewDoc && (
+                    <DocumentPreviewModal
+                        isOpen={!!previewDoc}
+                        onClose={() => setPreviewDoc(null)}
+                        fileUrl={previewDoc.url}
+                        fileName={previewDoc.name}
+                    />
+                )
+            }
+        </>
     );
 }

@@ -63,6 +63,12 @@ export async function getLeadById(id: string) {
                     },
                     orderBy: { createdAt: 'desc' }
                 },
+                leadNotes: {
+                    include: {
+                        user: { select: { id: true, name: true, avatar: true } }
+                    },
+                    orderBy: { createdAt: 'desc' }
+                },
                 tasks: {
                     include: {
                         assignees: {
@@ -98,9 +104,9 @@ export async function getLeadById(id: string) {
         if (!lead) throw new Error('Lead not found');
 
         return lead;
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error fetching lead details:', error);
-        throw new Error('Không thể tải chi tiết Cơ hội bán hàng');
+        throw new Error(error.message || 'Không thể tải chi tiết Cơ hội bán hàng');
     }
 }
 
@@ -630,6 +636,78 @@ export async function sendLeadEmail(leadId: string, to: string, subject: string,
         return res;
     } catch (error: any) {
         console.error("Lỗi khi gửi email cơ hội bán hàng:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function createLeadNote(leadId: string, content: string, attachment?: string) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) return { success: false, error: "Unauthorized" };
+        const userId = session.user.id;
+
+        const note = await prisma.leadNote.create({
+            data: {
+                leadId,
+                userId,
+                content,
+                attachment
+            },
+            include: {
+                user: { select: { name: true, avatar: true } }
+            }
+        });
+
+        const hasText = content.trim().length > 0;
+        const hasFiles = attachment ? true : false;
+        let actionText = 'NOTE_ADDED';
+        if (hasFiles && !hasText) actionText = 'FILE_UPLOADED';
+        if (hasFiles && hasText) actionText = 'NOTE_AND_FILE_ADDED';
+
+        let finalDetails = hasText ? (hasFiles ? `${content.trim()}\n\nĐính kèm: ${attachment}` : content.trim()) : `Đã tải lên tệp: ${attachment}`;
+
+        await prisma.leadActivityLog.create({
+            data: {
+                leadId,
+                userId,
+                action: actionText,
+                details: finalDetails
+            }
+        });
+
+        // revalidatePath in Next14 to refresh the lead detail page
+        const { revalidatePath } = require('next/cache');
+        revalidatePath(`/sales/leads/${leadId}`);
+        return { success: true, data: note };
+    } catch (error: any) {
+        console.error("Lỗi khi thêm ghi chú cơ hội:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function deleteLeadNote(noteId: string) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) return { success: false, error: "Unauthorized" };
+        const userId = session.user.id;
+
+        const note = await prisma.leadNote.findUnique({ where: { id: noteId } });
+        if (!note) return { success: false, error: "Không tìm thấy ghi chú" };
+
+        if (note.userId !== userId) {
+            const user = await prisma.user.findUnique({ where: { id: userId } });
+            if (user?.role !== 'ADMIN') {
+                return { success: false, error: "Bạn không có quyền xóa ghi chú này" };
+            }
+        }
+
+        await prisma.leadNote.delete({ where: { id: noteId } });
+
+        const { revalidatePath } = require('next/cache');
+        revalidatePath(`/sales/leads/${note.leadId}`);
+        return { success: true };
+    } catch (error: any) {
+        console.error("Lỗi khi xóa ghi chú cơ hội:", error);
         return { success: false, error: error.message };
     }
 }
