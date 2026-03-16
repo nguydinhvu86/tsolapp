@@ -6,6 +6,7 @@ import { sendEmailWithTracking } from '@/lib/mailer';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { createManyNotifications } from '@/app/notifications/actions';
+import { sendWebPushNotification } from '@/lib/notifications/webPush';
 
 export async function getTasks(filters?: any) {
     const session = await getServerSession(authOptions);
@@ -161,6 +162,15 @@ export async function createTask(data: any, creatorId: string) {
 
         if (notifications.length > 0) {
             await createManyNotifications(notifications);
+
+            // Send Push
+            assigneeIdsToNotify.forEach((userId: string) => {
+                sendWebPushNotification(userId, {
+                    title: 'Công việc mới',
+                    body: `Bạn vừa được giao việc định kỳ: "${firstTask.title}".` && !isRecurringMode ? `Bạn vừa được giao công việc: "${firstTask.title}".` : `Tự động tạo: "${firstTask.title}".`,
+                    url: `/tasks/${firstTask.id}`
+                });
+            });
         }
 
         // Auto send emails
@@ -390,6 +400,15 @@ export async function updateTask(id: string, data: any, userId: string) {
         }));
         await createManyNotifications(notifications);
 
+        // Send push
+        newAssigneesToNotify.forEach((uId: string) => {
+            sendWebPushNotification(uId, {
+                title: 'Công việc mới',
+                body: `Bạn được gán vào việc: "${restData.title || oldTask?.title}".`,
+                url: `/tasks/${id}`
+            });
+        });
+
         // Auto send emails
         await triggerAutoTaskEmail(id, newAssigneesToNotify, userId);
     }
@@ -438,6 +457,15 @@ export async function updateTaskStatus(id: string, status: string, userId: strin
                 link: `/tasks/${id}`
             }));
             await createManyNotifications(notifications);
+
+            // Send Push
+            Array.from(usersToNotify).forEach((uId: string) => {
+                sendWebPushNotification(uId, {
+                    title: 'Trạng thái công việc',
+                    body: `Việc "${oldTask.title}" đổi trạng thái thành ${statusText}`,
+                    url: `/tasks/${id}`
+                });
+            });
 
             // 2. Send Emails
             const { getTemplatesByModule } = await import('@/app/email-templates/actions');

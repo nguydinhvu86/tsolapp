@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "@/lib/authOptions";
 import { sendEmailWithTracking } from '@/lib/mailer';
+import { sendWebPushNotification } from '@/lib/notifications/webPush';
 
 // 1. Get List of Leads
 export async function getLeads(employeeId?: string) {
@@ -210,6 +211,15 @@ export async function createLead(data: {
             return newLead;
         });
 
+        // Send push notification to assigned user
+        if (result.assignedToId && result.assignedToId !== session.user.id) {
+            sendWebPushNotification(result.assignedToId, {
+                title: 'Cơ hội bán hàng mới được giao',
+                body: `Bạn vừa được giao quản lý cơ hội: ${result.name}`,
+                url: `/sales/leads/${result.id}`
+            });
+        }
+
         return result;
     } catch (error: any) {
         if (error.code === 'P2002' && error.meta?.target?.includes('email')) {
@@ -343,6 +353,15 @@ export async function updateLeadStatus(id: string, status: string) {
                     link: `/sales/leads/${id}`
                 }));
                 await createManyNotifications(notifications);
+
+                // Send Push Notifications
+                usersToNotify.forEach(uId => {
+                    sendWebPushNotification(uId, {
+                        title: 'Tình trạng Lead thay đổi',
+                        body: `Lead "${oldLead.name}" đã sang trạng thái: ${statusText}`,
+                        url: `/sales/leads/${id}`
+                    });
+                });
 
                 // 2. Send Emails
                 const { getTemplatesByModule } = await import('@/app/email-templates/actions');
