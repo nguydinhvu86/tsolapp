@@ -404,6 +404,8 @@ export function DashboardClient({
     const router = useRouter();
     const [tasks, setTasks] = useState<any[]>(userTasks);
 
+    const activeLeads = leads.filter(l => l.status !== 'WON' && l.status !== 'LOST');
+
     const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(null);
     const [selectedCalendarTasks, setSelectedCalendarTasks] = useState<any[]>([]);
     const [selectedCalendarQuotes, setSelectedCalendarQuotes] = useState<any[]>([]);
@@ -825,7 +827,7 @@ export function DashboardClient({
                                                                             </a>
                                                                         </div>
 
-                                                                        {leads.length === 0 ? (
+                                                                        {activeLeads.length === 0 ? (
                                                                             <div className="flex-1 flex flex-col items-center justify-center text-gray-400 bg-gray-50/50 rounded-lg border border-dashed border-gray-200 p-8 h-full min-h-[250px]">
                                                                                 <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
                                                                                     <Users size={24} className="text-gray-200" />
@@ -847,7 +849,7 @@ export function DashboardClient({
                                                                                         </tr>
                                                                                     </thead>
                                                                                     <tbody>
-                                                                                        {leads.slice(0, 50).map((lead: any) => {
+                                                                                        {activeLeads.slice(0, 50).map((lead: any) => {
                                                                                             const statusColors: any = {
                                                                                                 'NEW': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-100' },
                                                                                                 'CONTACTED': { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-100' },
