@@ -11,15 +11,19 @@ export function PushPermissionToggle() {
     useEffect(() => {
         if ('serviceWorker' in navigator && 'PushManager' in window) {
             setIsSupported(true);
-            checkSubscription();
+
+            // Manually register SW since next-pwa register is disabled to fix Next 14 App Router 500 error
+            navigator.serviceWorker.register('/sw.js').then((registration) => {
+                checkSubscription(registration);
+            }).catch(console.error);
+
         } else {
             setIsLoading(false);
         }
     }, []);
 
-    const checkSubscription = async () => {
+    const checkSubscription = async (registration: ServiceWorkerRegistration) => {
         try {
-            const registration = await navigator.serviceWorker.getRegistration();
             if (registration && registration.pushManager) {
                 const subscription = await registration.pushManager.getSubscription();
                 setIsSubscribed(!!subscription);
@@ -34,7 +38,9 @@ export function PushPermissionToggle() {
     const subscribeToPush = async () => {
         setIsLoading(true);
         try {
-            const registration = await navigator.serviceWorker.register('/sw.js');
+            const registration = await navigator.serviceWorker.getRegistration();
+            if (!registration) throw new Error("Service Worker not registered");
+
             await navigator.serviceWorker.ready;
 
             // Fetch public key from the application statically or via API
