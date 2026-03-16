@@ -6,6 +6,7 @@ import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { buildViewFilter } from '@/lib/permissions';
+import { Watermark } from '@/app/components/ui/Watermark';
 
 export default async function QuotePrintPage({ params }: { params: { id: string } }) {
     const session = await getServerSession(authOptions);
@@ -29,6 +30,18 @@ export default async function QuotePrintPage({ params }: { params: { id: string 
         orderBy: { createdAt: 'desc' }
     });
     const users = await prisma.user.findMany({ select: { id: true, name: true, email: true }, orderBy: { name: 'asc' } });
+
+    const settings = await prisma.systemSetting.findMany({
+        where: {
+            key: {
+                in: [
+                    'WATERMARK_ENABLED', 'WATERMARK_TYPE', 'WATERMARK_TEXT', 'WATERMARK_IMAGE_URL', 'WATERMARK_OPACITY', 'WATERMARK_ROTATION', 'WATERMARK_COLOR', 'WATERMARK_SIZE', 'WATERMARK_DOCUMENTS'
+                ]
+            }
+        }
+    });
+    const settingsMap: Record<string, string> = {};
+    settings.forEach(s => settingsMap[s.key] = s.value);
 
     return (
         <>
@@ -105,11 +118,14 @@ export default async function QuotePrintPage({ params }: { params: { id: string 
                             <div className="no-print" style={{ marginBottom: '20px', textAlign: 'right' }}>
                                 <PrintButton />
                             </div>
-                            <div
-                                className="sun-editor-editable contract-print-content"
-                                style={{ fontFamily: '"Times New Roman", Times, serif', lineHeight: 1.6, fontSize: '13pt', color: '#000', padding: 0, border: 'none' }}
-                                dangerouslySetInnerHTML={{ __html: formatCurrencyInHtml(quote.content) }}
-                            />
+                            <div style={{ position: 'relative' }}>
+                                <Watermark settings={settingsMap} documentType="QUOTE" />
+                                <div
+                                    className="sun-editor-editable contract-print-content"
+                                    style={{ position: 'relative', zIndex: 1, fontFamily: '"Times New Roman", Times, serif', lineHeight: 1.6, fontSize: '13pt', color: '#000', padding: 0, border: 'none' }}
+                                    dangerouslySetInnerHTML={{ __html: formatCurrencyInHtml(quote.content) }}
+                                />
+                            </div>
                         </div>
                     </div>
 

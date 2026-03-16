@@ -11,7 +11,9 @@ import { FileText, Plus, Eye, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-export function ContractDetailClient({ contract }: { contract: any }) {
+import { Watermark } from '@/app/components/ui/Watermark';
+
+export function ContractDetailClient({ contract, settings }: { contract: any, settings?: Record<string, string> }) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'content' | 'appendices'>('content');
 
@@ -80,7 +82,8 @@ export function ContractDetailClient({ contract }: { contract: any }) {
             {/* Tab: Content (Printable Area) */}
             {activeTab === 'content' && (
                 <div className="print-wrapper">
-                    <div className="a4-document" style={{ width: '100%', maxWidth: '210mm', minHeight: '297mm', padding: '15mm 20mm', margin: '0 auto', background: 'white', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', boxSizing: 'border-box' }}>
+                    <div className="a4-document" style={{ position: 'relative', width: '100%', maxWidth: '210mm', minHeight: '297mm', padding: '15mm 20mm', margin: '0 auto', background: 'white', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', boxSizing: 'border-box' }}>
+                        <Watermark settings={settings} documentType="CONTRACT" />
                         <style dangerouslySetInnerHTML={{
                             __html: `
                             @page { size: A4; margin: 0; }

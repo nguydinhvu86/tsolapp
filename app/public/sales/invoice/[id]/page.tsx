@@ -3,6 +3,7 @@ import React from 'react';
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import { PrintButton } from '@/app/components/ui/PrintButton';
+import { Watermark } from '@/app/components/ui/Watermark';
 
 export default async function PublicSalesInvoicePage({ params }: { params: { id: string } }) {
     const invoice = await prisma.salesInvoice.findUnique({
@@ -19,7 +20,14 @@ export default async function PublicSalesInvoicePage({ params }: { params: { id:
     }
 
     const settings = await prisma.systemSetting.findMany({
-        where: { key: { in: ['COMPANY_FULL_NAME', 'COMPANY_NAME', 'COMPANY_ADDRESS', 'COMPANY_LOGO', 'COMPANY_PHONE', 'COMPANY_EMAIL', 'COMPANY_TAX_CODE'] } }
+        where: {
+            key: {
+                in: [
+                    'COMPANY_FULL_NAME', 'COMPANY_NAME', 'COMPANY_ADDRESS', 'COMPANY_LOGO', 'COMPANY_PHONE', 'COMPANY_EMAIL', 'COMPANY_TAX_CODE',
+                    'WATERMARK_ENABLED', 'WATERMARK_TYPE', 'WATERMARK_TEXT', 'WATERMARK_IMAGE_URL', 'WATERMARK_OPACITY', 'WATERMARK_ROTATION', 'WATERMARK_COLOR', 'WATERMARK_SIZE', 'WATERMARK_DOCUMENTS'
+                ]
+            }
+        }
     });
     const settingsMap: Record<string, string> = {};
     settings.forEach(s => settingsMap[s.key] = s.value);
@@ -88,6 +96,7 @@ export default async function PublicSalesInvoicePage({ params }: { params: { id:
             <PrintButton label="In Hóa Đơn / PDF" />
 
             <div className="a4-document" style={{
+                position: 'relative',
                 width: '100%',
                 maxWidth: '210mm',
                 minHeight: '297mm',
@@ -96,6 +105,7 @@ export default async function PublicSalesInvoicePage({ params }: { params: { id:
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
                 fontFamily: 'Arial, sans-serif'
             }}>
+                <Watermark settings={settingsMap} documentType="SALES_INVOICE" />
                 {/* Header: Company Info */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #1e293b', paddingBottom: '1.5rem', marginBottom: '2rem' }}>
                     <div style={{ flex: 1 }}>

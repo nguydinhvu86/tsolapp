@@ -10,6 +10,7 @@ import { authOptions } from '@/lib/authOptions';
 import { buildViewFilter } from '@/lib/permissions';
 import { DocumentManagersPanel } from '@/app/components/shared/DocumentManagersPanel';
 import { assignDispatchManagers, removeDispatchManager } from '../actions';
+import { Watermark } from '@/app/components/ui/Watermark';
 
 export default async function DispatchPrintView({ params }: { params: { id: string } }) {
     const session = await getServerSession(authOptions);
@@ -31,6 +32,18 @@ export default async function DispatchPrintView({ params }: { params: { id: stri
         orderBy: { createdAt: 'desc' }
     });
     const users = await prisma.user.findMany({ select: { id: true, name: true, email: true }, orderBy: { name: 'asc' } });
+
+    const settings = await prisma.systemSetting.findMany({
+        where: {
+            key: {
+                in: [
+                    'WATERMARK_ENABLED', 'WATERMARK_TYPE', 'WATERMARK_TEXT', 'WATERMARK_IMAGE_URL', 'WATERMARK_OPACITY', 'WATERMARK_ROTATION', 'WATERMARK_COLOR', 'WATERMARK_SIZE', 'WATERMARK_DOCUMENTS'
+                ]
+            }
+        }
+    });
+    const settingsMap: Record<string, string> = {};
+    settings.forEach(s => settingsMap[s.key] = s.value);
 
     return (
         <div style={{ paddingBottom: '3rem' }}>
@@ -94,11 +107,14 @@ export default async function DispatchPrintView({ params }: { params: { id: stri
                     .contract-print-content strong, .contract-print-content b { font-weight: bold !important; color: #000 !important; }
                 `}} />
 
-                            <div
-                                className="sun-editor-editable contract-print-content"
-                                style={{ fontFamily: '"Times New Roman", Times, serif', lineHeight: 1.6, fontSize: '13pt', color: '#000', padding: 0, border: 'none' }}
-                                dangerouslySetInnerHTML={{ __html: formatCurrencyInHtml(dispatch.content) }}
-                            />
+                            <div style={{ position: 'relative' }}>
+                                <Watermark settings={settingsMap} documentType="DISPATCH" />
+                                <div
+                                    className="sun-editor-editable contract-print-content"
+                                    style={{ position: 'relative', zIndex: 1, fontFamily: '"Times New Roman", Times, serif', lineHeight: 1.6, fontSize: '13pt', color: '#000', padding: 0, border: 'none' }}
+                                    dangerouslySetInnerHTML={{ __html: formatCurrencyInHtml(dispatch.content) }}
+                                />
+                            </div>
                         </div>
                     </div> {/* End Left Area */}
 

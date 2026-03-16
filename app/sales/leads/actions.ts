@@ -21,7 +21,11 @@ export async function getLeads(employeeId?: string) {
     }
 
     const whereClause = effectiveEmployeeId ? {
-        assignedToId: effectiveEmployeeId
+        OR: [
+            { creatorId: effectiveEmployeeId },
+            { assignedToId: effectiveEmployeeId },
+            { assignees: { some: { userId: effectiveEmployeeId } } }
+        ]
     } : {};
 
     try {
@@ -49,7 +53,13 @@ export async function getLeadById(id: string) {
     if (!session?.user) throw new Error('Unauthorized');
 
     const isAdminOrManager = session.user.role === 'ADMIN' || session.user.role === 'MANAGER';
-    const authFilter = !isAdminOrManager ? { OR: [{ creatorId: session.user.id }, { assignedToId: session.user.id }] } : {};
+    const authFilter = !isAdminOrManager ? {
+        OR: [
+            { creatorId: session.user.id },
+            { assignedToId: session.user.id },
+            { assignees: { some: { userId: session.user.id } } }
+        ]
+    } : {};
 
     try {
         const lead = await prisma.lead.findFirst({

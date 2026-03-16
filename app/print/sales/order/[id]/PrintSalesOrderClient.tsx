@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useEffect } from 'react';
+
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { Printer, ArrowLeft, Download } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { Watermark } from '@/app/components/ui/Watermark';
 
 export default function PrintSalesOrderClient({ order, settings }: any) {
     const router = useRouter();
@@ -121,6 +123,7 @@ export default function PrintSalesOrderClient({ order, settings }: any) {
 
             {/* A4 Paper Container */}
             <div className="print-container" style={{
+                position: 'relative',
                 maxWidth: '800px',
                 margin: '2rem auto',
                 backgroundColor: 'white',
@@ -129,6 +132,7 @@ export default function PrintSalesOrderClient({ order, settings }: any) {
                 color: '#000',
                 minHeight: '1122px' // A4 approx height
             }}>
+                <Watermark settings={settings} documentType="SALES_ORDER" />
 
                 {/* Header: Company Info */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #1e293b', paddingBottom: '1.5rem', marginBottom: '2rem' }}>

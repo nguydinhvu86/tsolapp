@@ -24,29 +24,34 @@ export default async function PrintSalesInvoicePage({ params }: { params: { id: 
         notFound();
     }
 
-    const companyFullName = await prisma.systemSetting.findUnique({ where: { key: 'COMPANY_FULL_NAME' } });
-    const companyName = await prisma.systemSetting.findUnique({ where: { key: 'COMPANY_NAME' } });
-    const companyAddress = await prisma.systemSetting.findUnique({ where: { key: 'COMPANY_ADDRESS' } });
-    const companyPhone = await prisma.systemSetting.findUnique({ where: { key: 'COMPANY_PHONE' } });
-    const companyEmail = await prisma.systemSetting.findUnique({ where: { key: 'COMPANY_EMAIL' } });
-    const companyWebsite = await prisma.systemSetting.findUnique({ where: { key: 'COMPANY_WEBSITE' } });
-    const companyTaxCode = await prisma.systemSetting.findUnique({ where: { key: 'COMPANY_TAX_CODE' } });
-    const companyLogo = await prisma.systemSetting.findUnique({ where: { key: 'COMPANY_LOGO' } });
+    const settings = await prisma.systemSetting.findMany({
+        where: {
+            key: {
+                in: [
+                    'COMPANY_NAME', 'COMPANY_DISPLAY_NAME', 'COMPANY_FULL_NAME', 'COMPANY_LOGO', 'COMPANY_PHONE', 'COMPANY_EMAIL', 'COMPANY_ADDRESS', 'COMPANY_TAX_CODE',
+                    'WATERMARK_ENABLED', 'WATERMARK_TYPE', 'WATERMARK_TEXT', 'WATERMARK_IMAGE_URL', 'WATERMARK_OPACITY', 'WATERMARK_ROTATION', 'WATERMARK_COLOR', 'WATERMARK_SIZE', 'WATERMARK_DOCUMENTS'
+                ]
+            }
+        }
+    });
+
+    const settingsMap: Record<string, string> = {};
+    settings.forEach(s => settingsMap[s.key] = s.value);
 
     const companyInfo = {
-        name: companyFullName?.value || companyName?.value || 'Tên Công Ty',
-        address: companyAddress?.value || 'Địa chỉ công ty',
-        phone: companyPhone?.value || '',
-        email: companyEmail?.value || '',
-        website: companyWebsite?.value || '',
-        taxCode: companyTaxCode?.value || '',
-        logo: companyLogo?.value || ''
+        name: settingsMap['COMPANY_FULL_NAME'] || settingsMap['COMPANY_NAME'] || 'Tên Công Ty',
+        address: settingsMap['COMPANY_ADDRESS'] || 'Địa chỉ công ty',
+        phone: settingsMap['COMPANY_PHONE'] || '',
+        email: settingsMap['COMPANY_EMAIL'] || '',
+        taxCode: settingsMap['COMPANY_TAX_CODE'] || '',
+        logo: settingsMap['COMPANY_LOGO'] || ''
     };
 
     return (
         <PrintSalesInvoiceClient
             invoice={invoice}
             companyInfo={companyInfo}
+            settings={settingsMap}
         />
     );
 }

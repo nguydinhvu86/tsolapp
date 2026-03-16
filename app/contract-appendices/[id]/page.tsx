@@ -5,6 +5,7 @@ import { formatCurrencyInHtml } from '@/lib/utils';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
+import { Watermark } from '@/app/components/ui/Watermark';
 
 export default async function AppendixPrintView({ params }: { params: { id: string } }) {
     const appendix = await prisma.contractAppendix.findUnique({
@@ -24,6 +25,18 @@ export default async function AppendixPrintView({ params }: { params: { id: stri
     // Fallback: If `appendixId` logic is totally broken at runtime because Prisma Client generation failed, we simply get empty tasks array or error. We'll find out.
     // Assuming schema allows this.
     const users = await prisma.user.findMany({ select: { id: true, name: true, email: true }, orderBy: { name: 'asc' } });
+
+    const settings = await prisma.systemSetting.findMany({
+        where: {
+            key: {
+                in: [
+                    'WATERMARK_ENABLED', 'WATERMARK_TYPE', 'WATERMARK_TEXT', 'WATERMARK_IMAGE_URL', 'WATERMARK_OPACITY', 'WATERMARK_ROTATION', 'WATERMARK_COLOR', 'WATERMARK_SIZE', 'WATERMARK_DOCUMENTS'
+                ]
+            }
+        }
+    });
+    const settingsMap: Record<string, string> = {};
+    settings.forEach(s => settingsMap[s.key] = s.value);
 
     return (
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
@@ -110,11 +123,14 @@ export default async function AppendixPrintView({ params }: { params: { id: stri
                             .contract-print-content strong, .contract-print-content b { font-weight: bold !important; color: #000 !important; }
                         `}} />
 
-                            <div
-                                className="sun-editor-editable contract-print-content"
-                                style={{ fontFamily: '"Times New Roman", Times, serif', lineHeight: 1.6, fontSize: '13pt', color: '#000', padding: 0, border: 'none' }}
-                                dangerouslySetInnerHTML={{ __html: formatCurrencyInHtml(appendix.content) }}
-                            />
+                            <div style={{ position: 'relative' }}>
+                                <Watermark settings={settingsMap} documentType="CONTRACT_APPENDIX" />
+                                <div
+                                    className="sun-editor-editable contract-print-content"
+                                    style={{ position: 'relative', zIndex: 1, fontFamily: '"Times New Roman", Times, serif', lineHeight: 1.6, fontSize: '13pt', color: '#000', padding: 0, border: 'none' }}
+                                    dangerouslySetInnerHTML={{ __html: formatCurrencyInHtml(appendix.content) }}
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
