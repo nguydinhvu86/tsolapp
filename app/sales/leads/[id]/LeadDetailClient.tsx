@@ -18,7 +18,7 @@ import { LeadNotes } from '@/app/components/sales/LeadNotes';
 const STATUSES = [
     { id: 'NEW', label: 'Tiếp nhận mới', color: { bg: '#e0e7ff', text: '#3730a3', border: '#c7d2fe', light: '#a5b4fc', solid: '#4f46e5' } },
     { id: 'CONTACTED', label: 'Đã liên hệ', color: { bg: '#e0f2fe', text: '#075985', border: '#bae6fd', light: '#7dd3fc', solid: '#0284c7' } },
-    { id: 'QUALIFIED', label: 'Đánh giá / Khảo sát', color: { bg: '#fef3c7', text: '#92400e', border: '#fde68a', light: '#fcd34d', solid: '#d97706' } },
+    { id: 'QUALIFIED', label: 'Đang Tư Vấn', color: { bg: '#fef3c7', text: '#92400e', border: '#fde68a', light: '#fcd34d', solid: '#d97706' } },
     { id: 'PROPOSAL', label: 'Gửi báo giá', color: { bg: '#f3e8ff', text: '#6b21a8', border: '#e9d5ff', light: '#d8b4fe', solid: '#9333ea' } },
     { id: 'WON', label: 'Chốt thành công', color: { bg: '#dcfce7', text: '#166534', border: '#bbf7d0', light: '#86efac', solid: '#16a34a' } },
     { id: 'LOST', label: 'Thất bại', color: { bg: '#fee2e2', text: '#991b1b', border: '#fecaca', light: '#fca5a5', solid: '#dc2626' } }

@@ -1,0 +1,1005 @@
+[TAILING] Tailing last 500 lines for [inside.tsol.vn] process (change the value with --lines option)
+/home/incall/.pm2/logs/inside.tsol.vn-error.log last 500 lines:
+0|inside.t | Invalid `prisma.lead.findFirst()` invocation:
+0|inside.t | 
+0|inside.t | 
+0|inside.t | The table `LeadNote` does not exist in the current database.
+0|inside.t |     at b (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/sales/leads/[id]/page.js:1:95530) {
+0|inside.t |   digest: '1157367177'
+0|inside.t | }
+0|inside.t | Error fetching lead details: PrismaClientKnownRequestError: 
+0|inside.t | Invalid `prisma.lead.findFirst()` invocation:
+0|inside.t | 
+0|inside.t | 
+0|inside.t | The table `LeadNote` does not exist in the current database.
+0|inside.t |     at $n.handleRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/library.js:121:7315)
+0|inside.t |     at $n.handleAndLogRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/library.js:121:6623)
+0|inside.t |     at $n.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/library.js:121:6307)
+0|inside.t |     at async l (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/library.js:130:9633)
+0|inside.t |     at async o (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/chunks/5971.js:1:3517)
+0|inside.t |     at async Module.f (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/sales/leads/[id]/page.js:1:94674) {
+0|inside.t |   code: 'P2021',
+0|inside.t |   clientVersion: '5.22.0',
+0|inside.t |   meta: { modelName: 'Lead', table: 'LeadNote' }
+0|inside.t | }
+0|inside.t |  ⨯ Error: Cannot find module '/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/pages/_error.js'
+0|inside.t | Require stack:
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require.js
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next.js
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/cli/next-start.js
+0|inside.t |     at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require-hook.js:55:36
+0|inside.t |     at Module._load (node:internal/modules/cjs/loader:981:27)
+0|inside.t |     at Module.require (node:internal/modules/cjs/loader:1231:19)
+0|inside.t |     at mod.require (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require-hook.js:65:28)
+0|inside.t |     at require (node:internal/modules/helpers:177:18)
+0|inside.t |     at requirePage (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require.js:109:84)
+0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/load-components.js:103:84
+0|inside.t |     at async loadComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/load-components.js:103:26)
+0|inside.t |     at async NextNodeServer.findPageComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js:714:36) {
+0|inside.t |   code: 'MODULE_NOT_FOUND',
+0|inside.t |   requireStack: [
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require.js',
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js',
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next.js',
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js',
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/cli/next-start.js'
+0|inside.t |   ]
+0|inside.t | }
+0|inside.t |  ⨯ Error: Cannot find module '/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/pages/_error.js'
+0|inside.t | Require stack:
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require.js
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next.js
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/cli/next-start.js
+0|inside.t |     at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require-hook.js:55:36
+0|inside.t |     at Module._load (node:internal/modules/cjs/loader:981:27)
+0|inside.t |     at Module.require (node:internal/modules/cjs/loader:1231:19)
+0|inside.t |     at mod.require (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require-hook.js:65:28)
+0|inside.t |     at require (node:internal/modules/helpers:177:18)
+0|inside.t |     at requirePage (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require.js:109:84)
+0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/load-components.js:103:84
+0|inside.t |     at async loadComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/load-components.js:103:26)
+0|inside.t |     at async NextNodeServer.findPageComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js:714:36) {
+0|inside.t |   code: 'MODULE_NOT_FOUND',
+0|inside.t |   requireStack: [
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require.js',
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js',
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next.js',
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js',
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/cli/next-start.js'
+0|inside.t |   ]
+0|inside.t | }
+0|inside.t |  ⨯ Error: Cannot find module '/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/pages/_error.js'
+0|inside.t | Require stack:
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require.js
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next.js
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/cli/next-start.js
+0|inside.t |     at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require-hook.js:55:36
+0|inside.t |     at Module._load (node:internal/modules/cjs/loader:981:27)
+0|inside.t |     at Module.require (node:internal/modules/cjs/loader:1231:19)
+0|inside.t |     at mod.require (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require-hook.js:65:28)
+0|inside.t |     at require (node:internal/modules/helpers:177:18)
+0|inside.t |     at requirePage (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require.js:109:84)
+0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/load-components.js:103:84
+0|inside.t |     at async loadComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/load-components.js:103:26)
+0|inside.t |     at async NextNodeServer.findPageComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js:714:36) {
+0|inside.t |   code: 'MODULE_NOT_FOUND',
+0|inside.t |   requireStack: [
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require.js',
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js',
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next.js',
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js',
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/cli/next-start.js'
+0|inside.t |   ]
+0|inside.t | }
+0|inside.t |  ⨯ Error: Cannot find module '/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/pages/_error.js'
+0|inside.t | Require stack:
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require.js
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next.js
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/cli/next-start.js
+0|inside.t |     at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require-hook.js:55:36
+0|inside.t |     at Module._load (node:internal/modules/cjs/loader:981:27)
+0|inside.t |     at Module.require (node:internal/modules/cjs/loader:1231:19)
+0|inside.t |     at mod.require (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require-hook.js:65:28)
+0|inside.t |     at require (node:internal/modules/helpers:177:18)
+0|inside.t |     at requirePage (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require.js:109:84)
+0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/load-components.js:103:84
+0|inside.t |     at async loadComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/load-components.js:103:26)
+0|inside.t |     at async NextNodeServer.findPageComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js:714:36) {
+0|inside.t |   code: 'MODULE_NOT_FOUND',
+0|inside.t |   requireStack: [
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require.js',
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js',
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next.js',
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js',
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/cli/next-start.js'
+0|inside.t |   ]
+0|inside.t | }
+0|inside.t |  ⨯ Error: Cannot find module '/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/pages/_error.js'
+0|inside.t | Require stack:
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require.js
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next.js
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/cli/next-start.js
+0|inside.t |     at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require-hook.js:55:36
+0|inside.t |     at Module._load (node:internal/modules/cjs/loader:981:27)
+0|inside.t |     at Module.require (node:internal/modules/cjs/loader:1231:19)
+0|inside.t |     at mod.require (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require-hook.js:65:28)
+0|inside.t |     at require (node:internal/modules/helpers:177:18)
+0|inside.t |     at requirePage (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require.js:109:84)
+0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/load-components.js:103:84
+0|inside.t |     at async loadComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/load-components.js:103:26)
+0|inside.t |     at async NextNodeServer.findPageComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js:714:36) {
+0|inside.t |   code: 'MODULE_NOT_FOUND',
+0|inside.t |   requireStack: [
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require.js',
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js',
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next.js',
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js',
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/cli/next-start.js'
+0|inside.t |   ]
+0|inside.t | }
+0|inside.t | ReferenceError: window is not defined
+0|inside.t |     at U (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/sales/leads/[id]/page.js:1:72441)
+0|inside.t |     at nj (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:46252)
+0|inside.t |     at nM (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:47572)
+0|inside.t |     at nM (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:61547)
+0|inside.t |     at nL (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:64547)
+0|inside.t |     at nL (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:64826)
+0|inside.t |     at nG (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:71973)
+0|inside.t |     at Timeout._onTimeout (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:44373)
+0|inside.t |     at listOnTimeout (node:internal/timers:569:17)
+0|inside.t |     at process.processTimers (node:internal/timers:512:7) {
+0|inside.t |   digest: '832766088'
+0|inside.t | }
+0|inside.t |  ⨯ TypeError: Cannot read properties of undefined (reading 'entryCSSFiles')
+0|inside.t |     at rH (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:3566)
+0|inside.t |     at rK (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:11861)
+0|inside.t |     at r7 (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:15099)
+0|inside.t |     at no (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:22633)
+0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:726
+0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
+0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:17831)
+0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:616
+0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
+0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:16935)
+0|inside.t |  ⨯ TypeError: Cannot read properties of undefined (reading 'entryCSSFiles')
+0|inside.t |     at rH (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:3566)
+0|inside.t |     at rK (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:11861)
+0|inside.t |     at r7 (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:15099)
+0|inside.t |     at no (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:22633)
+0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:726
+0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
+0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:17831)
+0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:616
+0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
+0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:16935)
+0|inside.t |  ⨯ TypeError: Cannot read properties of undefined (reading 'entryCSSFiles')
+0|inside.t |     at rH (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:3566)
+0|inside.t |     at rK (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:11861)
+0|inside.t |     at r7 (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:15099)
+0|inside.t |     at no (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:22633)
+0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:726
+0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
+0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:17831)
+0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:616
+0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
+0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:16935)
+0|inside.t | ReferenceError: window is not defined
+0|inside.t |     at U (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/sales/leads/[id]/page.js:1:72441)
+0|inside.t |     at nj (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:46252)
+0|inside.t |     at nM (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:47572)
+0|inside.t |     at nM (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:61547)
+0|inside.t |     at nL (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:64547)
+0|inside.t |     at nL (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:64826)
+0|inside.t |     at nG (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:71973)
+0|inside.t |     at Timeout._onTimeout (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:44373)
+0|inside.t |     at listOnTimeout (node:internal/timers:569:17)
+0|inside.t |     at process.processTimers (node:internal/timers:512:7) {
+0|inside.t |   digest: '832766088'
+0|inside.t | }
+0|inside.t | (node:2847594) ExperimentalWarning: buffer.File is an experimental feature and might change at any time
+0|inside.t | (Use `node --trace-warnings ...` to show where the warning was created)
+0|inside.t | ReferenceError: window is not defined
+0|inside.t |     at U (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/sales/leads/[id]/page.js:1:72441)
+0|inside.t |     at nj (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:46252)
+0|inside.t |     at nM (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:47572)
+0|inside.t |     at nM (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:61547)
+0|inside.t |     at nL (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:64547)
+0|inside.t |     at nL (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:64826)
+0|inside.t |     at nG (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:71973)
+0|inside.t |     at Timeout._onTimeout (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:44373)
+0|inside.t |     at listOnTimeout (node:internal/timers:569:17)
+0|inside.t |     at process.processTimers (node:internal/timers:512:7) {
+0|inside.t |   digest: '832766088'
+0|inside.t | }
+0|inside.t | ReferenceError: window is not defined
+0|inside.t |     at U (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/sales/leads/[id]/page.js:1:72441)
+0|inside.t |     at nj (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:46252)
+0|inside.t |     at nM (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:47572)
+0|inside.t |     at nM (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:61547)
+0|inside.t |     at nL (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:64547)
+0|inside.t |     at nL (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:64826)
+0|inside.t |     at nG (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:71973)
+0|inside.t |     at Timeout._onTimeout (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:44373)
+0|inside.t |     at listOnTimeout (node:internal/timers:569:17)
+0|inside.t |     at process.processTimers (node:internal/timers:512:7) {
+0|inside.t |   digest: '832766088'
+0|inside.t | }
+0|inside.t | ReferenceError: window is not defined
+0|inside.t |     at U (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/sales/leads/[id]/page.js:1:72441)
+0|inside.t |     at nj (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:46252)
+0|inside.t |     at nM (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:47572)
+0|inside.t |     at nM (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:61547)
+0|inside.t |     at nL (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:64547)
+0|inside.t |     at nL (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:64826)
+0|inside.t |     at nG (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:71973)
+0|inside.t |     at Timeout._onTimeout (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:44373)
+0|inside.t |     at listOnTimeout (node:internal/timers:569:17)
+0|inside.t |     at process.processTimers (node:internal/timers:512:7) {
+0|inside.t |   digest: '832766088'
+0|inside.t | }
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+0|inside.t | Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+0|inside.t |     at setupFsCheck (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-utils/filesystem.js:151:19)
+0|inside.t |     at async initialize (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:64:23)
+0|inside.t |     at async Server.<anonymous> (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:249:36)
+
+/home/incall/.pm2/logs/inside.tsol.vn-out.log last 500 lines:
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+

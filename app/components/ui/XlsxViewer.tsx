@@ -18,10 +18,23 @@ export default function XlsxViewer({ fileUrl }: XlsxViewerProps) {
             try {
                 setIsLoading(true);
                 setError(null);
-                const response = await fetch(fileUrl);
-                if (!response.ok) throw new Error('Không thể tải file bảng tính');
+                let arrayBuffer: ArrayBuffer;
 
-                const arrayBuffer = await response.arrayBuffer();
+                if (fileUrl.startsWith('data:')) {
+                    // Direct base64 parsing 
+                    const base64Data = fileUrl.split(',')[1];
+                    const binaryString = window.atob(base64Data);
+                    const bytes = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+                    arrayBuffer = bytes.buffer;
+                } else {
+                    const response = await fetch(fileUrl);
+                    if (!response.ok) throw new Error('Không thể tải file bảng tính');
+                    arrayBuffer = await response.arrayBuffer();
+                }
+
                 const workbook = XLSX.read(arrayBuffer, { type: 'array' });
 
                 if (!workbook.SheetNames || workbook.SheetNames.length === 0) {

@@ -857,7 +857,7 @@ export function DashboardClient({
                                                                                                 'LOST': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-100' }
                                                                                             };
                                                                                             const statusLabels: any = {
-                                                                                                'NEW': 'Mới', 'CONTACTED': 'Đã liên hệ', 'QUALIFIED': 'Đã xác định',
+                                                                                                'NEW': 'Mới', 'CONTACTED': 'Đã liên hệ', 'QUALIFIED': 'Đã Tư Vấn',
                                                                                                 'PROPOSAL': 'Đã báo giá', 'WON': 'Thành công', 'LOST': 'Thất bại'
                                                                                             };
 
@@ -917,10 +917,10 @@ export function DashboardClient({
                                                                                                 const PIE_COLORS: Record<string, string> = {
                                                                                                     'NEW': '#3b82f6', 'CONTACTED': '#6366f1',
                                                                                                     'QUALIFIED': '#f59e0b', 'PROPOSAL': '#ec4899',
-                                                                                                    'WON': '#10b981', 'LOST': '#ef4444'
+                                                                                                    'WON': '#10b981', 'LOST': '#000000'
                                                                                                 };
                                                                                                 const PIE_LABELS: Record<string, string> = {
-                                                                                                    'NEW': 'Mới', 'CONTACTED': 'Đã liên hệ', 'QUALIFIED': 'Đã xác định',
+                                                                                                    'NEW': 'Mới', 'CONTACTED': 'Đã liên hệ', 'QUALIFIED': 'Đã Tư Vấn',
                                                                                                     'PROPOSAL': 'Đã báo giá', 'WON': 'Thành công', 'LOST': 'Thất bại'
                                                                                                 };
                                                                                                 return Object.entries(statusCounts).map(([status, count]) => ({
@@ -945,7 +945,7 @@ export function DashboardClient({
                                                                                                 const PIE_COLORS: Record<string, string> = {
                                                                                                     'NEW': '#3b82f6', 'CONTACTED': '#6366f1',
                                                                                                     'QUALIFIED': '#f59e0b', 'PROPOSAL': '#ec4899',
-                                                                                                    'WON': '#10b981', 'LOST': '#ef4444'
+                                                                                                    'WON': '#10b981', 'LOST': '#000000'
                                                                                                 };
                                                                                                 const ordered = Object.entries(statusCounts).sort((a, b) => b[1] - a[1]);
                                                                                                 return ordered.map((entry, index) => (
