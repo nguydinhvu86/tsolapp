@@ -11,7 +11,8 @@ import { createProduct, updateProduct, deleteProduct, createProductGroup, update
 import { useRouter } from 'next/navigation';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
 
-export default function ProductClient({ initialProducts, warehouses = [], productGroups = [] }: { initialProducts: any[], warehouses?: any[], productGroups?: any[] }) {
+export default function ProductClient({ initialProducts, warehouses = [], productGroups = [], userRole = 'USER' }: { initialProducts: any[], warehouses?: any[], productGroups?: any[], userRole?: string }) {
+    const canViewImportPrice = userRole === 'ADMIN' || userRole === 'MANAGER';
     const router = useRouter();
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedWarehouseId, setSelectedWarehouseId] = useState('');
@@ -406,10 +407,12 @@ export default function ProductClient({ initialProducts, warehouses = [], produc
                             </div>
 
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.875rem' }}>Giá Nhập (VNĐ)</label>
-                                    <Input type="number" value={importPrice} onChange={(e) => setImportPrice(e.target.value)} min="0" />
-                                </div>
+                                {canViewImportPrice ? (
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.875rem' }}>Giá Nhập (VNĐ)</label>
+                                        <Input type="number" value={importPrice} onChange={(e) => setImportPrice(e.target.value)} min="0" />
+                                    </div>
+                                ) : <div />}
                                 <div>
                                     <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.875rem' }}>Giá Bán (VNĐ) *</label>
                                     <Input type="number" value={salePrice} onChange={(e) => setSalePrice(e.target.value)} min="0" required />
@@ -495,8 +498,12 @@ export default function ProductClient({ initialProducts, warehouses = [], produc
                             <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px' }}>
                                 <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--text-main)' }}>Giá Cả</h3>
                                 <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.5rem', fontSize: '0.875rem' }}>
-                                    <span style={{ color: 'var(--text-muted)' }}>Giá nhập:</span>
-                                    <span style={{ fontWeight: 500 }}>{formatMoney(viewingProduct.importPrice)}</span>
+                                    {canViewImportPrice && (
+                                        <>
+                                            <span style={{ color: 'var(--text-muted)' }}>Giá nhập:</span>
+                                            <span style={{ fontWeight: 500 }}>{formatMoney(viewingProduct.importPrice)}</span>
+                                        </>
+                                    )}
 
                                     <span style={{ color: 'var(--text-muted)' }}>Giá bán:</span>
                                     <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{formatMoney(viewingProduct.salePrice)}</span>

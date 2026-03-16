@@ -3,6 +3,7 @@ import React from 'react';
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import { PrintButton } from '@/app/components/ui/PrintButton';
+import { Watermark } from '@/app/components/ui/Watermark';
 
 export default async function PublicPurchaseBillPage({ params }: { params: { id: string } }) {
     const bill = await prisma.purchaseBill.findUnique({
@@ -20,7 +21,14 @@ export default async function PublicPurchaseBillPage({ params }: { params: { id:
     }
 
     const settings = await prisma.systemSetting.findMany({
-        where: { key: { in: ['COMPANY_FULL_NAME', 'COMPANY_NAME', 'COMPANY_ADDRESS', 'COMPANY_LOGO', 'COMPANY_PHONE', 'COMPANY_EMAIL', 'COMPANY_TAX'] } }
+        where: {
+            key: {
+                in: [
+                    'COMPANY_FULL_NAME', 'COMPANY_NAME', 'COMPANY_ADDRESS', 'COMPANY_LOGO', 'COMPANY_PHONE', 'COMPANY_EMAIL', 'COMPANY_TAX',
+                    'WATERMARK_ENABLED', 'WATERMARK_TYPE', 'WATERMARK_TEXT', 'WATERMARK_IMAGE_URL', 'WATERMARK_OPACITY', 'WATERMARK_ROTATION', 'WATERMARK_COLOR', 'WATERMARK_SIZE', 'WATERMARK_DOCUMENTS'
+                ]
+            }
+        }
     });
     const settingsMap: Record<string, string> = {};
     settings.forEach(s => settingsMap[s.key] = s.value);
@@ -99,6 +107,7 @@ export default async function PublicPurchaseBillPage({ params }: { params: { id:
                 color: '#000',
                 position: 'relative'
             }}>
+                <Watermark settings={settingsMap} documentType="PURCHASE_BILL" />
                 <div style={{ position: 'absolute', top: '25mm', right: '15mm', border: '3px solid #ef4444', color: '#ef4444', padding: '0.5rem 1rem', fontWeight: 'bold', fontSize: '1.25rem', transform: 'rotate(-5deg)', opacity: 0.8, borderRadius: '0.25rem', zIndex: 10 }}>
                     {bill.status === 'PAID' ? <span style={{ color: '#10b981', borderColor: '#10b981' }}>ĐÃ THANH TOÁN</span> : bill.status === 'APPROVED' ? 'ĐÃ CHỐT SỔ' : 'BẢN NHÁP'}
                 </div>

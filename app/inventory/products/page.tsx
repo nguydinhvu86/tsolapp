@@ -1,7 +1,12 @@
 import { prisma } from '@/lib/prisma';
 import ProductClient from './ProductClient';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/authOptions';
 
 export default async function ProductsPage() {
+    const session = await getServerSession(authOptions);
+    const userRole = session?.user?.role || 'USER';
+
     // Because Prisma generated types might be slightly out of sync in the dev's IDE
     // until server restart, we use 'any' casting if needed to avoid build blocks
     const products = await (prisma as any).product.findMany({
@@ -26,7 +31,7 @@ export default async function ProductsPage() {
             <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1.5rem', color: 'var(--text-main)' }}>
                 Sản Phẩm & Dịch Vụ
             </h1>
-            <ProductClient initialProducts={products} warehouses={warehouses} productGroups={productGroups} />
+            <ProductClient initialProducts={products} warehouses={warehouses} productGroups={productGroups} userRole={userRole} />
         </div>
     );
 }

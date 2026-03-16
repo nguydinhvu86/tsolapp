@@ -34,6 +34,20 @@ export default async function ContractDetailPage({ params }: { params: { id: str
 
     const users = await prisma.user.findMany({ select: { id: true, name: true, email: true }, orderBy: { name: 'asc' } });
 
+    const settings = await prisma.systemSetting.findMany({
+        where: {
+            key: {
+                in: [
+                    'COMPANY_NAME', 'COMPANY_FULL_NAME', 'COMPANY_ADDRESS', 'COMPANY_PHONE', 'COMPANY_EMAIL', 'COMPANY_TAX', 'COMPANY_LOGO',
+                    'WATERMARK_ENABLED', 'WATERMARK_TYPE', 'WATERMARK_TEXT', 'WATERMARK_IMAGE_URL', 'WATERMARK_OPACITY', 'WATERMARK_ROTATION', 'WATERMARK_COLOR', 'WATERMARK_SIZE', 'WATERMARK_DOCUMENTS'
+                ]
+            }
+        }
+    });
+
+    const settingsMap: Record<string, string> = {};
+    settings.forEach(s => settingsMap[s.key] = s.value);
+
     return (
         <>
             <style dangerouslySetInnerHTML={{
@@ -46,7 +60,7 @@ export default async function ContractDetailPage({ params }: { params: { id: str
             <div className="contract-layout-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 350px', gap: '1.5rem', alignItems: 'start' }}>
                 {/* Left Area: Main Content */}
                 <div className="contract-layout-main" style={{ overflow: 'hidden' }}>
-                    <ContractDetailClient contract={contract} />
+                    <ContractDetailClient contract={contract} settings={settingsMap} />
                 </div>
 
                 {/* Right Area: Task Panel */}
