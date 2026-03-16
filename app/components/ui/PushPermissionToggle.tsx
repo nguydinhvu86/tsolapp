@@ -38,6 +38,12 @@ export function PushPermissionToggle() {
     const subscribeToPush = async () => {
         setIsLoading(true);
         try {
+            // Explicitly request notification permission first
+            const permissionResult = await Notification.requestPermission();
+            if (permissionResult !== 'granted') {
+                throw new Error('Permission not granted for Notification');
+            }
+
             const registration = await navigator.serviceWorker.getRegistration();
             if (!registration) throw new Error("Service Worker not registered");
 
@@ -57,7 +63,7 @@ export function PushPermissionToggle() {
 
             if (!applicationServerKey) {
                 console.error("No VAPID public key available");
-                alert("Thiếu cấu hình VAPID Key trên Server.");
+                alert("Lỗi: Không lấy được VAPID Key từ Server để đăng ký.");
                 setIsLoading(false);
                 return;
             }
@@ -83,11 +89,14 @@ export function PushPermissionToggle() {
 
             if (response.ok) {
                 setIsSubscribed(true);
+                alert("Đăng ký thành công! Trình duyệt này sẽ nhận được thông báo.");
             } else {
                 console.error('Failed to store subscription on server');
+                alert("Lỗi: Không thể lưu thông tin vào cơ sở dữ liệu (Response not ok).");
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to subscribe the user: ', error);
+            alert("Lỗi khi xin quyền Thông báo từ HĐH: " + (error.message || JSON.stringify(error)));
         } finally {
             setIsLoading(false);
         }
