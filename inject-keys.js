@@ -3,8 +3,8 @@ const { Client } = require('ssh2');
 const conn = new Client();
 const password = 'P@ssw0rdVu';
 
-const publicVapidKey = 'BKJsmvBgUYQII4AcNtsdIGoONbT-x39d9Q-sP9gY0a8fD0OIfIInz3uK8t8m9A-N_6cFI_V7XDvSNNtVfAp0R1Uc';
-const privateVapidKey = 'iVwqOoU9-nq7TAaQRJ7E6B-1h-K2N5qVv5Z3FzN1_qM';
+const publicVapidKey = 'BGvlQ9L-cZSBUg-vvZYeT9MJZpnJhSrwakR68ZRvrkqFYoszXZBAsBJSAh42hfhzoPvx3Q-rMJprkq6FwU3cuec';
+const privateVapidKey = 'zK96uZKZEYZWyU2X07JQOLLaGdHlB6D-UkO357QHFpo';
 const envAdditions = `
 
 # Web Push VAPID Keys
@@ -14,7 +14,7 @@ VAPID_SUBJECT="mailto:admin@tsol.vn"
 `;
 
 conn.on('ready', () => {
-    console.log('Connected to server. Injecting VAPID keys into .env and rebuilding...');
+    console.log('Connected to server. Injecting new Valid VAPID keys into .env and rebuilding...');
 
     // Replace or append if it doesn't exist
     const cmd = `cd /www/wwwroot/inside.tsol.vn/tsolapp && ` +
