@@ -847,7 +847,7 @@ export function DashboardClient({
                                                                                         </tr>
                                                                                     </thead>
                                                                                     <tbody>
-                                                                                        {leads.slice(0, 5).map((lead: any) => {
+                                                                                        {leads.slice(0, 50).map((lead: any) => {
                                                                                             const statusColors: any = {
                                                                                                 'NEW': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-100' },
                                                                                                 'CONTACTED': { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-100' },
