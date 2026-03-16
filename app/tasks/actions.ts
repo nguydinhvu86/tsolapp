@@ -173,8 +173,8 @@ export async function createTask(data: any, creatorId: string) {
             });
         }
 
-        // Auto send emails
-        await triggerAutoTaskEmail(firstTask.id, assigneeIdsToNotify, creatorId);
+        // Auto send emails (fire and forget)
+        triggerAutoTaskEmail(firstTask.id, assigneeIdsToNotify, creatorId).catch(console.error);
     }
 
     revalidatePath('/tasks');
@@ -202,8 +202,8 @@ export async function triggerAutoTaskEmail(taskId: string, newAssigneeIds: strin
 
         const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-        for (const assignee of assigneesUsers) {
-            if (!assignee.email) continue;
+        await Promise.all(assigneesUsers.map(async (assignee) => {
+            if (!assignee.email) return;
 
             let subject = `Công việc mới: ${task.title}`;
             let htmlBody = `<p>Bạn vừa được giao một công việc mới: <strong>${task.title}</strong></p>
@@ -225,7 +225,6 @@ export async function triggerAutoTaskEmail(taskId: string, newAssigneeIds: strin
                 };
 
                 for (const [key, value] of Object.entries(variables)) {
-                    // escape regex so we replace all
                     const regexKey = key.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
                     subject = subject.replace(new RegExp(regexKey, 'g'), value);
                     htmlBody = htmlBody.replace(new RegExp(regexKey, 'g'), value);
@@ -238,7 +237,7 @@ export async function triggerAutoTaskEmail(taskId: string, newAssigneeIds: strin
                 htmlBody,
                 senderId: creatorId
             });
-        }
+        }));
     } catch (err: any) {
         console.error("Auto email error:", err);
     }
@@ -409,8 +408,8 @@ export async function updateTask(id: string, data: any, userId: string) {
             });
         });
 
-        // Auto send emails
-        await triggerAutoTaskEmail(id, newAssigneesToNotify, userId);
+        // Auto send emails (fire and forget)
+        triggerAutoTaskEmail(id, newAssigneesToNotify, userId).catch(console.error);
     }
 
     revalidatePath('/tasks');
@@ -475,8 +474,9 @@ export async function updateTaskStatus(id: string, status: string, userId: strin
 
             const users = await prisma.user.findMany({ where: { id: { in: Array.from(usersToNotify) } } });
 
-            for (const u of users) {
-                if (!u.email) continue;
+            // Fire all emails in parallel (fire and forget pattern so we do not block returning status to client)
+            Promise.all(users.map(async (u) => {
+                if (!u.email) return;
                 let subject = `Cập nhật trạng thái công việc: ${oldTask.title}`;
                 let htmlBody = `<p>Công việc <strong>${oldTask.title}</strong> vừa được chuyển trạng thái sang: <strong>${statusText}</strong>.</p>
         <p>Người thực hiện: ${creator?.name || 'Hệ thống'}</p>
@@ -506,7 +506,7 @@ export async function updateTaskStatus(id: string, status: string, userId: strin
                 await sendEmailWithTracking({
                     to: u.email, subject, htmlBody, senderId: userId
                 });
-            }
+            })).catch(console.error);
         }
     }
     // ----------------------------------

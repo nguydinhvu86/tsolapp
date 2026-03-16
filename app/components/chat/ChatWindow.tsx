@@ -42,14 +42,14 @@ export default function ChatWindow({ currentUser, onClose }: { currentUser: any,
 
     useEffect(() => {
         fetchRooms();
-        const interval = setInterval(fetchRooms, 15000); // Poll rooms every 15s
+        const interval = setInterval(fetchRooms, 3000); // Poll rooms every 3s
         return () => clearInterval(interval);
     }, []);
 
     useEffect(() => {
         if (activeRoomId) {
             fetchMessages();
-            const interval = setInterval(fetchMessages, 5000); // Poll active messages every 5s
+            const interval = setInterval(fetchMessages, 1500); // Poll active messages every 1.5s
             return () => clearInterval(interval);
         }
     }, [activeRoomId]);
