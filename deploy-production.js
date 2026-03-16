@@ -12,6 +12,7 @@ conn.on('ready', () => {
         `export PATH=/www/server/nvm/versions/node/v24.14.0/bin:$PATH && ` +
         `npx prisma migrate deploy && ` +
         `npx prisma generate && ` +
+        `npm install && ` +
         `npm run build && ` +
         `/www/server/nodejs/v14.17.6/bin/pm2 restart inside.tsol.vn`;
 
