@@ -1,0 +1,141 @@
+
+> contract-app@0.1.0 build
+> next build
+
+  ▲ Next.js 14.2.35
+  - Environments: .env
+
+   Creating an optimized production build ...
+ ✓ (pwa) Compiling for server...
+ ✓ (pwa) Compiling for server...
+ ✓ (pwa) Compiling for client (static)...
+ ○ (pwa) Service worker: /www/wwwroot/inside.tsol.vn/tsolapp/public/sw.js
+ ○ (pwa)   URL: /sw.js
+ ○ (pwa)   Scope: /
+ ✓ Compiled successfully
+   Skipping validation of types
+   Skipping linting
+   Collecting page data ...
+   Generating static pages (0/70) ...
+   Generating static pages (17/70) 
+   Generating static pages (34/70) 
+   Generating static pages (52/70) 
+ ✓ Generating static pages (70/70)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+┌ ƒ /                                    148 B          90.6 kB
+├ ƒ /_not-found                          880 B          91.3 kB
+├ ƒ /api/auth/[...nextauth]              0 B                0 B
+├ ƒ /api/email/click                     0 B                0 B
+├ ƒ /api/email/track                     0 B                0 B
+├ ƒ /api/leads/submit                    0 B                0 B
+├ ƒ /api/upload                          0 B                0 B
+├ ƒ /api/users/2fa/disable               0 B                0 B
+├ ƒ /api/users/2fa/generate              0 B                0 B
+├ ƒ /api/users/2fa/verify                0 B                0 B
+├ ƒ /api/users/avatar                    0 B                0 B
+├ ƒ /appendix-templates                  7.8 kB          105 kB
+├ ƒ /contract-appendices                 3.41 kB         110 kB
+├ ƒ /contract-appendices/[id]            2.21 kB         125 kB
+├ ƒ /contract-appendices/new             6.04 kB         102 kB
+├ ƒ /contracts                           6.86 kB         123 kB
+├ ƒ /contracts/[id]                      4.81 kB         127 kB
+├ ƒ /contracts/new                       2.52 kB        98.6 kB
+├ ƒ /customers                           6.64 kB         116 kB
+├ ƒ /customers/[id]                      19.3 kB         449 kB
+├ ƒ /dashboard                           22.4 kB         275 kB
+├ ƒ /dispatch-templates                  2.25 kB         406 kB
+├ ƒ /dispatches                          3.42 kB         119 kB
+├ ƒ /dispatches/[id]                     3.85 kB         126 kB
+├ ƒ /dispatches/new                      3.67 kB        99.7 kB
+├ ƒ /email-config                        4.12 kB        94.6 kB
+├ ƒ /email-templates                     3.77 kB         103 kB
+├ ƒ /email-templates/[id]                149 B           106 kB
+├ ƒ /email-templates/new                 149 B           106 kB
+├ ƒ /f/[id]                              148 B          90.6 kB
+├ ƒ /forgot-password                     2.65 kB         102 kB
+├ ƒ /handover-templates                  2.76 kB         406 kB
+├ ƒ /handovers                           7.6 kB          124 kB
+├ ƒ /handovers/[id]                      2.21 kB         125 kB
+├ ƒ /handovers/new                       2.53 kB        98.6 kB
+├ ƒ /hr/approvals                        15 kB           373 kB
+├ ƒ /hr/attendance                       2.25 kB         231 kB
+├ ƒ /hr/monitoring                       3.38 kB        93.8 kB
+├ ƒ /inventory/adjustments               4.2 kB          104 kB
+├ ƒ /inventory/products                  8.82 kB         206 kB
+├ ƒ /inventory/reports                   8.19 kB         359 kB
+├ ƒ /inventory/transactions              4.89 kB         234 kB
+├ ƒ /inventory/transactions/[id]         49.8 kB         418 kB
+├ ƒ /inventory/transactions/new          3.56 kB         104 kB
+├ ƒ /inventory/warehouses                4.63 kB        95.1 kB
+├ ƒ /leave-requests                      4.92 kB        95.4 kB
+├ ƒ /library                             3.14 kB         107 kB
+├ ƒ /library/document/[id]               3.39 kB         107 kB
+├ ƒ /login                               3.5 kB          113 kB
+├ ƒ /my-attendance                       1.65 kB        92.1 kB
+├ ƒ /payment-request-templates           2.97 kB         407 kB
+├ ƒ /payment-requests                    7.59 kB         124 kB
+├ ƒ /payment-requests/[id]               2.21 kB         125 kB
+├ ƒ /payment-requests/new                2.54 kB        98.6 kB
+├ ƒ /print/sales/estimate/[id]           7.91 kB         105 kB
+├ ƒ /print/sales/invoice/[id]            7.88 kB         105 kB
+├ ƒ /print/sales/order/[id]              7.86 kB         105 kB
+├ ƒ /profile                             10.4 kB         111 kB
+├ ƒ /projects                            7.64 kB         124 kB
+├ ƒ /projects/[id]                       7.92 kB         139 kB
+├ ƒ /public/document/[id]                1.44 kB        91.9 kB
+├ ƒ /public/purchasing/bills/[id]        1.67 kB        92.1 kB
+├ ƒ /public/purchasing/orders/[id]       1.67 kB        92.1 kB
+├ ƒ /public/purchasing/payments/[id]     1.67 kB        92.1 kB
+├ ƒ /public/sales/estimate/[id]          1.67 kB        92.1 kB
+├ ƒ /public/sales/invoice/[id]           1.67 kB        92.1 kB
+├ ƒ /public/sales/order/[id]             1.67 kB        92.1 kB
+├ ƒ /public/sales/payments/[id]          1.67 kB        92.1 kB
+├ ƒ /purchasing/bills                    13.8 kB         113 kB
+├ ƒ /purchasing/bills/[id]               8.15 kB         401 kB
+├ ƒ /purchasing/orders                   10.2 kB         116 kB
+├ ƒ /purchasing/orders/[id]              8.45 kB         135 kB
+├ ƒ /purchasing/payments                 9.64 kB         116 kB
+├ ƒ /purchasing/payments/[id]            6.74 kB         399 kB
+├ ƒ /purchasing/reports                  8.53 kB         381 kB
+├ ƒ /quote-templates                     2.77 kB         406 kB
+├ ƒ /quotes                              9.85 kB         126 kB
+├ ƒ /quotes/[id]                         2.21 kB         125 kB
+├ ƒ /quotes/new                          2.64 kB        98.7 kB
+├ ƒ /reset-password                      2.99 kB         103 kB
+├ ƒ /sales/estimates                     11.8 kB         122 kB
+├ ƒ /sales/estimates/[id]                10.8 kB         142 kB
+├ ƒ /sales/expenses                      8.36 kB         115 kB
+├ ƒ /sales/expenses/[id]                 5.24 kB         121 kB
+├ ƒ /sales/invoices                      12.2 kB         123 kB
+├ ƒ /sales/invoices/[id]                 14.5 kB         416 kB
+├ ƒ /sales/leads                         8.71 kB         115 kB
+├ ƒ /sales/leads/[id]                    18.4 kB         418 kB
+├ ƒ /sales/leads/[id]/edit               143 B           106 kB
+├ ƒ /sales/leads/new                     143 B           106 kB
+├ ƒ /sales/orders                        8.71 kB         119 kB
+├ ƒ /sales/orders/[id]                   7.51 kB         134 kB
+├ ƒ /sales/payments                      8.21 kB         114 kB
+├ ƒ /sales/payments/[id]                 10.3 kB         407 kB
+├ ƒ /sales/reports                       10 kB           383 kB
+├ ƒ /settings                            4.52 kB          95 kB
+├ ƒ /settings/lead-forms                 4.8 kB         95.3 kB
+├ ƒ /suppliers                           7.22 kB         107 kB
+├ ƒ /suppliers/[id]                      10.2 kB         133 kB
+├ ƒ /tasks                               1.3 kB          129 kB
+├ ƒ /tasks/[id]                          14.9 kB         405 kB
+├ ƒ /templates                           2.34 kB         416 kB
+├ ƒ /users                               4.68 kB        95.1 kB
+└ ƒ /users/roles                         4.69 kB        95.2 kB
++ First Load JS shared by all            90.5 kB
+  ├ chunks/6997-af53447039c9211d.js      34.1 kB
+  ├ chunks/fd9d1056-5528b707a3de9c43.js  53.6 kB
+  └ other shared chunks (total)          2.71 kB
+
+
+ƒ Middleware                             49.4 kB
+
+ƒ  (Dynamic)  server-rendered on demand
+

@@ -18,10 +18,23 @@ export default function DocxViewer({ fileUrl }: DocxViewerProps) {
             try {
                 setIsLoading(true);
                 setError(null);
-                const response = await fetch(fileUrl);
-                if (!response.ok) throw new Error('Không thể tải file tài liệu');
+                let arrayBuffer: ArrayBuffer;
 
-                const arrayBuffer = await response.arrayBuffer();
+                if (fileUrl.startsWith('data:')) {
+                    // Direct base64 parsing 
+                    const base64Data = fileUrl.split(',')[1];
+                    const binaryString = window.atob(base64Data);
+                    const bytes = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+                    arrayBuffer = bytes.buffer;
+                } else {
+                    const response = await fetch(fileUrl);
+                    if (!response.ok) throw new Error('Không thể tải file tài liệu');
+                    arrayBuffer = await response.arrayBuffer();
+                }
+
                 // Need to use browser version of mammoth
                 const result = await mammoth.convertToHtml({ arrayBuffer });
                 setHtmlContent(result.value);

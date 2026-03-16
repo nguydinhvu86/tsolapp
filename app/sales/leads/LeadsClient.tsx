@@ -13,7 +13,7 @@ import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 const STATUSES = [
     { id: 'NEW', label: 'Tiếp nhận mới', color: { bg: '#e0e7ff', text: '#3730a3', border: '#c7d2fe', colBg: '#f8fafc' }, badgeClass: 'badge-purple' },
     { id: 'CONTACTED', label: 'Đã liên hệ', color: { bg: '#e0f2fe', text: '#075985', border: '#bae6fd', colBg: '#f0f9ff' }, badgeClass: 'badge-info' },
-    { id: 'QUALIFIED', label: 'Đánh giá / Khảo sát', color: { bg: '#fef3c7', text: '#92400e', border: '#fde68a', colBg: '#fffbeb' }, badgeClass: 'badge-warning' },
+    { id: 'QUALIFIED', label: 'Đang Tư Vấn', color: { bg: '#fef3c7', text: '#92400e', border: '#fde68a', colBg: '#fffbeb' }, badgeClass: 'badge-warning' },
     { id: 'PROPOSAL', label: 'Gửi báo giá', color: { bg: '#f3e8ff', text: '#6b21a8', border: '#e9d5ff', colBg: '#faf5ff' }, badgeClass: 'badge-purple' },
     { id: 'WON', label: 'Chốt thành công', color: { bg: '#dcfce7', text: '#166534', border: '#bbf7d0', colBg: '#f0fdf4' }, badgeClass: 'badge-success' },
     { id: 'LOST', label: 'Thất bại', color: { bg: '#fee2e2', text: '#991b1b', border: '#fecaca', colBg: '#fef2f2' }, badgeClass: 'badge-danger' }
@@ -121,7 +121,7 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
         { id: 'ACTIVE', label: 'Đang Xử Lý', count: stats.counts.ACTIVE, amount: stats.amounts.ACTIVE, colorClass: 'stat-card-purple', icon: List },
         { id: 'NEW', label: 'Tiếp Nhận Mới', count: stats.counts.NEW, amount: stats.amounts.NEW, colorClass: 'stat-card-emerald', icon: Calendar },
         { id: 'CONTACTED', label: 'Đã Liên Hệ', count: stats.counts.CONTACTED, amount: stats.amounts.CONTACTED, colorClass: 'stat-card-blue', icon: Phone },
-        { id: 'QUALIFIED', label: 'Đánh Giá', count: stats.counts.QUALIFIED, amount: stats.amounts.QUALIFIED, colorClass: 'stat-card-amber', icon: Search },
+        { id: 'QUALIFIED', label: 'Đang Tư Vấn', count: stats.counts.QUALIFIED, amount: stats.amounts.QUALIFIED, colorClass: 'stat-card-amber', icon: Search },
         { id: 'PROPOSAL', label: 'Gửi Báo Giá', count: stats.counts.PROPOSAL, amount: stats.amounts.PROPOSAL, colorClass: 'stat-card-indigo', icon: FileText },
         { id: 'WON', label: 'Chốt Thành Công', count: stats.counts.WON, amount: stats.amounts.WON, colorClass: 'stat-card-green', icon: CheckCircle },
         { id: 'LOST', label: 'Thất Bại', count: stats.counts.LOST, amount: stats.amounts.LOST, colorClass: 'stat-card-red', icon: Trash2 },
@@ -533,7 +533,7 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
                                             >
                                                 <option value="NEW" className="bg-white text-gray-900">Tiếp nhận mới</option>
                                                 <option value="CONTACTED" className="bg-white text-gray-900">Đã liên hệ</option>
-                                                <option value="QUALIFIED" className="bg-white text-gray-900">Đánh giá</option>
+                                                <option value="QUALIFIED" className="bg-white text-gray-900">Đang Tư Vấn</option>
                                                 <option value="PROPOSAL" className="bg-white text-gray-900">Gửi báo giá</option>
                                                 <option value="WON" className="bg-white text-gray-900">Chốt thành công</option>
                                                 <option value="LOST" className="bg-white text-gray-900">Thất bại</option>

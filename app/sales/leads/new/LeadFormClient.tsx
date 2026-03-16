@@ -39,7 +39,7 @@ const styles = {
 const STATUSES = [
     { id: 'NEW', label: 'Tiếp nhận mới' },
     { id: 'CONTACTED', label: 'Đã liên hệ' },
-    { id: 'QUALIFIED', label: 'Đánh giá / Khảo sát' },
+    { id: 'QUALIFIED', label: 'Đang Tư Vấn' },
     { id: 'PROPOSAL', label: 'Gửi báo giá' },
     { id: 'WON', label: 'Chốt thành công' },
     { id: 'LOST', label: 'Thất bại' }
