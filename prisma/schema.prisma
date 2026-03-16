@@ -4,7 +4,9 @@ datasource db {
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  engineType    = "binary"
+  binaryTargets = ["native", "windows"]
 }
 
 model PermissionGroup {
@@ -58,6 +60,7 @@ model User {
   notifications         Notification[]
   inventoryTransactions InventoryTransaction[]
   purchaseRequisitions  PurchaseRequisition[]
+  pushSubscriptions     PushSubscription[]      @relation("UserPushSubscriptions")
   purchaseOrders        PurchaseOrder[]        @relation("POCreator")
   purchaseBills         PurchaseBill[]         @relation("BillCreator")
   purchasePayments      PurchasePayment[]      @relation("PaymentCreator")
@@ -1549,4 +1552,17 @@ model LoginLog {
   loginAt   DateTime @default(now())
 
   user User @relation("UserLoginLogs", fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation("UserPushSubscriptions", fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @db.Text
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }

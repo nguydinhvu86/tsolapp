@@ -10,6 +10,7 @@ import { QuickCreateMenu } from './QuickCreateMenu';
 import { HeaderAttendance } from '../hr/HeaderAttendance';
 import ChatWidget from '../chat/ChatWidget';
 import { AvatarImage } from '../ui/AvatarImage';
+import { PushPermissionToggle } from '../ui/PushPermissionToggle';
 
 export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
     const { data: session } = useSession();
@@ -50,6 +51,7 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
             <div className="flex items-center gap-2 md:gap-3">
                 {session?.user && <ChatWidget currentUser={session.user} />}
                 <HeaderAttendance />
+                <PushPermissionToggle />
                 <NotificationBell />
                 <Link href="/profile" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', cursor: 'pointer', padding: '0.5rem', borderRadius: '8px', transition: 'background 0.2s' }} className="hover:bg-slate-100">
                     <AvatarImage
@@ -59,6 +61,7 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
                         style={{ boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
                         fallbackStyle={{ backgroundColor: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
                     />
+
                 </Link>
 
                 <div
