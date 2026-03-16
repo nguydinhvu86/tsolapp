@@ -44,8 +44,16 @@ export function PushPermissionToggle() {
             await navigator.serviceWorker.ready;
 
             // Fetch public key from the application statically or via API
-            // For now we use the env variable if it was exposed to NEXT_PUBLIC
-            const applicationServerKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+            let applicationServerKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+
+            // Fallback to fetch from API if environment variable is somehow undefined at client runtime
+            if (!applicationServerKey) {
+                const keyRes = await fetch('/api/push/public-key');
+                if (keyRes.ok) {
+                    const keyData = await keyRes.json();
+                    applicationServerKey = keyData.publicKey;
+                }
+            }
 
             if (!applicationServerKey) {
                 console.error("No VAPID public key available");
