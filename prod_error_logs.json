@@ -7,3 +7,12 @@
     "logs": "A migration failed to apply. New migrations cannot be applied before the error is recovered from. Read more about how to resolve migration issues in a production database: https://pris.ly/d/migrate-resolve\n\nMigration name: 20260315150610_add_lead_notes\n\nDatabase error code: 1060\n\nDatabase error:\nDuplicate column name 'parentId'\n\nPlease check the query number 1 from the migration file.\n\n   0: sql_schema_connector::apply_migration::apply_script\n           with migration_name=\"20260315150610_add_lead_notes\"\n             at schema-engine/connectors/sql-schema-connector/src/apply_migration.rs:106\n   1: schema_core::commands::apply_migrations::Applying migration\n           with migration_name=\"20260315150610_add_lead_notes\"\n             at schema-engine/core/src/commands/apply_migrations.rs:91\n   2: schema_core::state::ApplyMigrations\n             at schema-engine/core/src/state.rs:226"
   }
 ]
+[
+  {
+    "migration_name": "20260316064344_add_push_subscription",
+    "started_at": "2026-03-16T06:44:10.294Z",
+    "finished_at": "2026-03-16T06:44:10.335Z",
+    "rolled_back_at": null,
+    "logs": null
+  }
+]
