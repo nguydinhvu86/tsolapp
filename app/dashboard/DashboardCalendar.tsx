@@ -2,8 +2,9 @@
 
 import React, { useState } from 'react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, isSameDay, addDays, addYears, subYears, addWeeks, subWeeks, subDays } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import { vi, enUS, zhCN } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckCircle2 } from 'lucide-react';
+import { useTranslation } from '@/app/i18n/LanguageContext';
 
 interface DashboardCalendarProps {
     tasks?: any[];
@@ -15,8 +16,15 @@ interface DashboardCalendarProps {
 type ViewMode = 'day' | 'week' | 'month' | 'year';
 
 export const DashboardCalendar: React.FC<DashboardCalendarProps> = ({ tasks = [], quotes = [], invoices = [], onDateClick }) => {
+    const { t, locale } = useTranslation();
     const [viewMode, setViewMode] = useState<ViewMode>('month');
     const [currentDate, setCurrentDate] = useState(new Date());
+
+    const getDateLocale = () => {
+        if (locale === 'en') return enUS;
+        if (locale === 'zh') return zhCN;
+        return vi;
+    };
 
     const nextPeriod = () => {
         if (viewMode === 'month') setCurrentDate(addMonths(currentDate, 1));
@@ -55,10 +63,10 @@ export const DashboardCalendar: React.FC<DashboardCalendarProps> = ({ tasks = []
 
     const renderHeader = () => {
         const getTitle = () => {
-            if (viewMode === 'year') return `Lịch Biểu Kế Hoạch - Năm ${format(currentDate, 'yyyy')}`;
-            if (viewMode === 'month') return `Lịch Biểu Kế Hoạch - tháng ${format(currentDate, 'MM yyyy')}`;
-            if (viewMode === 'week') return `Lịch Biểu Kế Hoạch - Tuần ${format(currentDate, 'ww')} năm ${format(currentDate, 'yyyy')}`;
-            return `Lịch Biểu Kế Hoạch - Ngày ${format(currentDate, 'dd/MM/yyyy')}`;
+            if (viewMode === 'year') return `${t("dashboard.calendar.titleYear")} ${format(currentDate, 'yyyy')}`;
+            if (viewMode === 'month') return `${t("dashboard.calendar.titleMonth")} ${format(currentDate, 'MM yyyy')}`;
+            if (viewMode === 'week') return `${t("dashboard.calendar.titleWeek")} ${format(currentDate, 'ww')} ${t("dashboard.calendar.viewYear").toLowerCase()} ${format(currentDate, 'yyyy')}`;
+            return `${t("dashboard.calendar.titleDay")} ${format(currentDate, 'dd/MM/yyyy')}`;
         };
 
         return (
@@ -69,10 +77,10 @@ export const DashboardCalendar: React.FC<DashboardCalendarProps> = ({ tasks = []
                 </h3>
 
                 <div className="cal-view-modes hidden sm:flex">
-                    <button className={`cal-view-btn ${viewMode === 'day' ? 'active' : ''}`} onClick={() => setViewMode('day')}>Ngày</button>
-                    <button className={`cal-view-btn ${viewMode === 'week' ? 'active' : ''}`} onClick={() => setViewMode('week')}>Tuần</button>
-                    <button className={`cal-view-btn ${viewMode === 'month' ? 'active' : ''}`} onClick={() => setViewMode('month')}>Tháng</button>
-                    <button className={`cal-view-btn ${viewMode === 'year' ? 'active' : ''}`} onClick={() => setViewMode('year')}>Năm</button>
+                    <button className={`cal-view-btn ${viewMode === 'day' ? 'active' : ''}`} onClick={() => setViewMode('day')}>{t("dashboard.calendar.viewDay")}</button>
+                    <button className={`cal-view-btn ${viewMode === 'week' ? 'active' : ''}`} onClick={() => setViewMode('week')}>{t("dashboard.calendar.viewWeek")}</button>
+                    <button className={`cal-view-btn ${viewMode === 'month' ? 'active' : ''}`} onClick={() => setViewMode('month')}>{t("dashboard.calendar.viewMonth")}</button>
+                    <button className={`cal-view-btn ${viewMode === 'year' ? 'active' : ''}`} onClick={() => setViewMode('year')}>{t("dashboard.calendar.viewYear")}</button>
                 </div>
 
                 <div className="cal-nav">
@@ -86,7 +94,7 @@ export const DashboardCalendar: React.FC<DashboardCalendarProps> = ({ tasks = []
                         onClick={() => setCurrentDate(new Date())}
                         className="cal-btn-text"
                     >
-                        Hôm nay
+                        {t("dashboard.calendar.today")}
                     </button>
                     {/* Mobile select */}
                     <select
@@ -94,10 +102,10 @@ export const DashboardCalendar: React.FC<DashboardCalendarProps> = ({ tasks = []
                         value={viewMode}
                         onChange={(e) => setViewMode(e.target.value as ViewMode)}
                     >
-                        <option value="day">Ngày</option>
-                        <option value="week">Tuần</option>
-                        <option value="month">Tháng</option>
-                        <option value="year">Năm</option>
+                        <option value="day">{t("dashboard.calendar.viewDay")}</option>
+                        <option value="week">{t("dashboard.calendar.viewWeek")}</option>
+                        <option value="month">{t("dashboard.calendar.viewMonth")}</option>
+                        <option value="year">{t("dashboard.calendar.viewYear")}</option>
                     </select>
                 </div>
             </div>
@@ -107,7 +115,7 @@ export const DashboardCalendar: React.FC<DashboardCalendarProps> = ({ tasks = []
     const renderDaysHeader = () => {
         if (viewMode === 'year' || viewMode === 'day') return null;
 
-        const dayNames = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'];
+        const dayNames = [t("dashboard.calendar.days.0"), t("dashboard.calendar.days.1"), t("dashboard.calendar.days.2"), t("dashboard.calendar.days.3"), t("dashboard.calendar.days.4"), t("dashboard.calendar.days.5"), t("dashboard.calendar.days.6")];
         const days = [];
         for (let i = 0; i < 7; i++) {
             days.push(
@@ -148,12 +156,12 @@ export const DashboardCalendar: React.FC<DashboardCalendarProps> = ({ tasks = []
                 <div className="cal-task-list custom-scrollbar">
                     {dayInvoices.slice(0, stretch ? 10 : 3).map(inv => (
                         <div key={`inv-${inv.id}`} className="cal-task-item cal-item-orange">
-                            HĐ: {inv.code}
+                            {t("dashboard.calendar.invoiceShort")} {inv.code}
                         </div>
                     ))}
                     {dayQuotes.slice(0, stretch ? 10 : 3).map(quo => (
                         <div key={`quo-${quo.id}`} className="cal-task-item cal-item-green">
-                            BG: {quo.code}
+                            {t("dashboard.calendar.quoteShort")} {quo.code}
                         </div>
                     ))}
                     {dayTasks.slice(0, stretch ? 10 : 3).map(task => (
@@ -163,7 +171,7 @@ export const DashboardCalendar: React.FC<DashboardCalendarProps> = ({ tasks = []
                     ))}
                     {!stretch && total > 9 && (
                         <div className="cal-task-more">
-                            +{total - 9} mục khác
+                            +{total - 9} {t("dashboard.calendar.others")}
                         </div>
                     )}
                 </div>
@@ -233,21 +241,21 @@ export const DashboardCalendar: React.FC<DashboardCalendarProps> = ({ tasks = []
         return (
             <div className="cal-body cal-day-body p-6">
                 <h4 className="text-xl font-bold mb-6 text-gray-800 border-b pb-3 capitalize">
-                    {format(currentDate, 'EEEE, dd MMMM yyyy', { locale: vi })}
+                    {format(currentDate, 'EEEE, dd MMMM yyyy', { locale: getDateLocale() })}
                 </h4>
 
                 {total === 0 ? (
                     <div className="text-center py-12 text-gray-500 flex flex-col items-center">
                         <CheckCircle2 className="mx-auto h-16 w-16 text-gray-200 mb-4" />
-                        <p className="text-xl font-medium text-gray-400">Không có sự kiện hay công việc nào.</p>
-                        <p className="text-gray-400 mt-2">Ngày hôm nay thật sự trống trải và thư giãn.</p>
+                        <p className="text-xl font-medium text-gray-400">{t("dashboard.calendar.emptyEvents")}</p>
+                        <p className="text-gray-400 mt-2">{t("dashboard.calendar.emptyEventsDesc")}</p>
                     </div>
                 ) : (
                     <div className="flex flex-col gap-6">
                         {dayInvoices.length > 0 && (
                             <div>
                                 <h5 className="font-bold text-orange-600 mb-3 uppercase tracking-wider text-sm flex items-center gap-2">
-                                    Hóa đơn xuất trong ngày <span className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">{dayInvoices.length}</span>
+                                    {t("dashboard.calendar.invoicesToday")} <span className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">{dayInvoices.length}</span>
                                 </h5>
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                     {dayInvoices.map(inv => (
@@ -261,7 +269,7 @@ export const DashboardCalendar: React.FC<DashboardCalendarProps> = ({ tasks = []
                         {dayQuotes.length > 0 && (
                             <div className="mt-2">
                                 <h5 className="font-bold text-green-600 mb-3 uppercase tracking-wider text-sm flex items-center gap-2">
-                                    Báo giá phát sinh/hết hạn <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{dayQuotes.length}</span>
+                                    {t("dashboard.calendar.quotesToday")} <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{dayQuotes.length}</span>
                                 </h5>
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                     {dayQuotes.map(quo => (
@@ -275,13 +283,13 @@ export const DashboardCalendar: React.FC<DashboardCalendarProps> = ({ tasks = []
                         {dayTasks.length > 0 && (
                             <div className="mt-2">
                                 <h5 className="font-bold text-indigo-600 mb-3 uppercase tracking-wider text-sm flex items-center gap-2">
-                                    Công việc cần thực hiện <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">{dayTasks.length}</span>
+                                    {t("dashboard.calendar.tasksToday")} <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">{dayTasks.length}</span>
                                 </h5>
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                     {dayTasks.map(task => (
                                         <div key={task.id} className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl cursor-pointer hover:shadow-md hover:border-indigo-300 transition" onClick={() => onDateClick(currentDate, dayTasks, dayQuotes, dayInvoices)}>
                                             <div className="font-bold text-indigo-900 mb-1">{task.title}</div>
-                                            <div className="text-sm text-indigo-700 opacity-80 line-clamp-2">{task.description || "Không có mô tả chi tiết."}</div>
+                                            <div className="text-sm text-indigo-700 opacity-80 line-clamp-2">{task.description || t("dashboard.calendar.noDescription")}</div>
                                         </div>
                                     ))}
                                 </div>
@@ -321,15 +329,15 @@ export const DashboardCalendar: React.FC<DashboardCalendarProps> = ({ tasks = []
                     }}
                 >
                     <div className="text-lg font-bold text-gray-800 mb-3 uppercase tracking-wider">
-                        {format(tempDate, 'MMMM', { locale: vi })}
+                        {format(tempDate, 'MMMM', { locale: getDateLocale() })}
                     </div>
                     {total > 0 ? (
                         <div className="flex flex-col gap-1 items-center">
                             <span className="text-2xl font-black text-indigo-600">{total}</span>
-                            <span className="text-xs font-semibold text-gray-500 uppercase">Sự kiện/Tác vụ</span>
+                            <span className="text-xs font-semibold text-gray-500 uppercase">{t("dashboard.calendar.eventsTasks")}</span>
                         </div>
                     ) : (
-                        <div className="text-sm font-medium text-gray-300">Không có dữ liệu</div>
+                        <div className="text-sm font-medium text-gray-300">{t("dashboard.calendar.noData")}</div>
                     )}
                 </div>
             );
@@ -435,19 +443,19 @@ export const DashboardCalendar: React.FC<DashboardCalendarProps> = ({ tasks = []
 
             {(viewMode === 'month' || viewMode === 'week') && (
                 <div className="cal-footer">
-                    <div>Mẹo: Trỏ vào từng ngày để xem chi tiết / thêm kế hoạch.</div>
+                    <div>{t("dashboard.calendar.tip")}</div>
                     <div className="cal-legend">
                         <div className="cal-legend-item">
                             <span className="cal-legend-box cal-box-indigo"></span>
-                            <span>Công việc</span>
+                            <span>{t("dashboard.calendar.legendTask")}</span>
                         </div>
                         <div className="cal-legend-item">
                             <span className="cal-legend-box cal-box-green"></span>
-                            <span>Báo giá</span>
+                            <span>{t("dashboard.calendar.legendQuote")}</span>
                         </div>
                         <div className="cal-legend-item">
                             <span className="cal-legend-box cal-box-orange"></span>
-                            <span>Hóa đơn</span>
+                            <span>{t("dashboard.calendar.legendInvoice")}</span>
                         </div>
                     </div>
                 </div>

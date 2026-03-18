@@ -10,11 +10,13 @@ import { useRouter } from 'next/navigation';
 import { getWarehouseStockForAdjustment } from '../report-actions';
 import { createTransaction, processTransaction } from '../transaction-actions';
 import { useSession } from 'next-auth/react';
+import { useTranslation } from '@/app/i18n/LanguageContext';
 
 export default function AdjustmentClient({ warehouses }: { warehouses: any[] }) {
     const router = useRouter();
     const { data: session } = useSession();
     const userId = session?.user?.id;
+    const { t } = useTranslation();
 
     const [selectedWarehouse, setSelectedWarehouse] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
@@ -25,7 +27,7 @@ export default function AdjustmentClient({ warehouses }: { warehouses: any[] }) 
     const [items, setItems] = useState<Record<string, any>>({});
 
     // Notes for the adjustment transaction
-    const [notes, setNotes] = useState('Kiểm kê định kỳ');
+    const [notes, setNotes] = useState(t('adjustments.defaultNotes'));
 
     // Load stock when warehouse changes
     useEffect(() => {
@@ -48,7 +50,7 @@ export default function AdjustmentClient({ warehouses }: { warehouses: any[] }) 
                 setItems(newItems);
             } catch (error) {
                 console.error("Error loading stock", error);
-                alert("Lỗi tải tồn kho");
+                alert(t('adjustments.errorLoadStock'));
             } finally {
                 setIsLoading(false);
             }
@@ -70,11 +72,11 @@ export default function AdjustmentClient({ warehouses }: { warehouses: any[] }) 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!userId) {
-            alert("Phiên đăng nhập đã hết hạn.");
+            alert(t('transactions.sessionExpired'));
             return;
         }
         if (!selectedWarehouse) {
-            alert("Vui lòng chọn Kho để kiểm kê.");
+            alert(t('adjustments.errorNoWarehouse'));
             return;
         }
 
@@ -96,11 +98,11 @@ export default function AdjustmentClient({ warehouses }: { warehouses: any[] }) 
         });
 
         if (differences.length === 0) {
-            alert("Không có chênh lệch nào so với hệ thống. Không cần tạo phiếu điều chỉnh.");
+            alert(t('adjustments.errorNoDifference'));
             return;
         }
 
-        if (confirm(`Phát hiện ${differences.length} mặt hàng có chênh lệch. Bạn có chắc muốn tạo & duyệt Phiếu Điều Chỉnh? Hao hụt/Dư thừa sẽ được cộng/trừ trực tiếp vào tồn kho.`)) {
+        if (confirm(t('adjustments.confirmAdjustment').replace('{{count}}', differences.length.toString()))) {
             try {
                 setIsSaving(true);
 
@@ -109,7 +111,7 @@ export default function AdjustmentClient({ warehouses }: { warehouses: any[] }) 
                 const newTx = await createTransaction({
                     code,
                     type: 'ADJUSTMENT',
-                    notes: `Phiếu kiểm kê: ${notes}`,
+                    notes: t('adjustments.txNotesPrefix').replace('{{notes}}', notes),
                     date: new Date(),
                     fromWarehouseId: selectedWarehouse, // For adjustments, we just use fromWarehouse as the target
                     creatorId: userId,
@@ -119,11 +121,11 @@ export default function AdjustmentClient({ warehouses }: { warehouses: any[] }) 
                 // 2. Automatically Process it so the inventory is actually adjusted
                 await processTransaction(newTx.id, userId);
 
-                alert(`Đã kiểm kê xong! Phiếu ${code} đã được duyệt & cập nhật.`);
+                alert(t('adjustments.successMsg').replace('{{code}}', code));
                 router.push(`/inventory/transactions/${newTx.id}`);
 
             } catch (error: any) {
-                alert(error.message || 'Có lỗi xảy ra!');
+                alert(error.message || t('transactions.genericError'));
             } finally {
                 setIsSaving(false);
             }
@@ -141,7 +143,7 @@ export default function AdjustmentClient({ warehouses }: { warehouses: any[] }) 
             <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)', backgroundColor: '#fafafa', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                     <div style={{ flex: 1, minWidth: '250px' }}>
-                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-muted)' }}>Chọn Kho Cần Kiểm Kê *</label>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-muted)' }}>{t('adjustments.labelSelectWarehouse')}</label>
                         <select
                             value={selectedWarehouse}
                             onChange={(e) => setSelectedWarehouse(e.target.value)}
@@ -150,7 +152,7 @@ export default function AdjustmentClient({ warehouses }: { warehouses: any[] }) 
                                 outline: 'none', fontSize: '0.875rem', backgroundColor: 'white'
                             }}
                         >
-                            <option value="">-- Chọn Kho Khởi Hành --</option>
+                            <option value="">{t('adjustments.placeholderSelectWarehouse')}</option>
                             {warehouses.map(w => (
                                 <option key={w.id} value={w.id}>{w.name}</option>
                             ))}
@@ -158,11 +160,11 @@ export default function AdjustmentClient({ warehouses }: { warehouses: any[] }) 
                     </div>
 
                     <div style={{ flex: 1, minWidth: '350px' }}>
-                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-muted)' }}>Mục Đích / Ghi Chú</label>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-muted)' }}>{t('adjustments.labelNotes')}</label>
                         <Input
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
-                            placeholder="Ghi chú đợt kiểm kê..."
+                            placeholder={t('adjustments.placeholderNotes')}
                         />
                     </div>
                 </div>
@@ -171,7 +173,7 @@ export default function AdjustmentClient({ warehouses }: { warehouses: any[] }) 
             <div style={{ padding: '1.5rem' }}>
                 {!selectedWarehouse ? (
                     <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', border: '1px dashed var(--border)', borderRadius: 'var(--radius)' }}>
-                        Vui lòng chọn một kho để bắt đầu kiểm đếm.
+                        {t('adjustments.msgSelectWarehouseFirst')}
                     </div>
                 ) : (
                     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -179,7 +181,7 @@ export default function AdjustmentClient({ warehouses }: { warehouses: any[] }) 
                             <Search size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
                             <input
                                 type="text"
-                                placeholder="Tìm mặt hàng để nhập số..."
+                                placeholder={t('adjustments.searchPlaceholder')}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 style={{
@@ -191,18 +193,18 @@ export default function AdjustmentClient({ warehouses }: { warehouses: any[] }) 
                         </div>
 
                         {isLoading ? (
-                            <p>Đang tải dữ liệu tồn hệ thống...</p>
+                            <p>{t('adjustments.loadingStock')}</p>
                         ) : (
                             <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
                                 <Table>
                                     <thead>
                                         <tr>
-                                            <th>Mã SKU</th>
-                                            <th>Tên Sản Phẩm</th>
-                                            <th style={{ textAlign: 'center' }}>ĐVT</th>
-                                            <th style={{ textAlign: 'right', width: '150px' }}>Tồn Hệ Thống</th>
-                                            <th style={{ textAlign: 'right', width: '200px' }}>THỰC TẾ KIỂM ĐẾM</th>
-                                            <th style={{ textAlign: 'right', width: '150px' }}>Chênh Lệch</th>
+                                            <th>{t('transactions.colSku')}</th>
+                                            <th>{t('transactions.colProductName')}</th>
+                                            <th style={{ textAlign: 'center' }}>{t('transactions.colUnit')}</th>
+                                            <th style={{ textAlign: 'right', width: '150px' }}>{t('adjustments.colSystemQty')}</th>
+                                            <th style={{ textAlign: 'right', width: '200px' }}>{t('adjustments.colActualQty')}</th>
+                                            <th style={{ textAlign: 'right', width: '150px' }}>{t('adjustments.colDiff')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -244,7 +246,7 @@ export default function AdjustmentClient({ warehouses }: { warehouses: any[] }) 
                                         }) : (
                                             <tr>
                                                 <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-                                                    Không tìm thấy mặt hàng nào phù hợp hoặc kho chưa có hàng.
+                                                    {t('adjustments.noItems')}
                                                 </td>
                                             </tr>
                                         )}
@@ -255,7 +257,7 @@ export default function AdjustmentClient({ warehouses }: { warehouses: any[] }) 
 
                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
                             <Button type="submit" disabled={isSaving || isLoading} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#16a34a', color: 'white' }}>
-                                <Save size={16} /> {isSaving ? 'Đang Xử Lý...' : 'Hoàn Tất Kiểm Kê (Tạo & Duyệt Điều Chỉnh)'}
+                                <Save size={16} /> {isSaving ? t('adjustments.btnProcessing') : t('adjustments.btnComplete')}
                             </Button>
                         </div>
                     </form>

@@ -13,8 +13,10 @@ import { Plus, Edit2, Trash2, Save, X, Printer, Search, Calendar, PackageCheck, 
 import { submitSalesInvoice, approveSalesInvoice, deleteSalesInvoice, updateSalesInvoice, cancelSalesInvoice, updateSalesInvoiceStatus, restoreSalesInvoice } from './actions';
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { TagDisplay } from '@/app/components/ui/TagDisplay';
+import { useTranslation } from '@/app/i18n/LanguageContext';
 
 export default function SalesInvoiceClient({ initialInvoices, customers, products, orders, nextCode, initialAction, initialCustomerId, users, currentUserId, isAdminOrManager }: any) {
+    const { t } = useTranslation();
     const router = useRouter();
     const [invoices, setInvoices] = useState(initialInvoices);
     const [isFormOpen, setIsFormOpen] = useState(initialAction === 'new');
@@ -362,7 +364,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
 
     const handleSave = async () => {
         if (!formData.customerId || formData.items.length === 0) {
-            alert('Vui lòng chọn khách hàng và ít nhất 1 sản phẩm');
+            alert(t('invoices.alertSelectCustomer'));
             return;
         }
 
@@ -382,27 +384,27 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
             setIsFormOpen(false);
             router.refresh();
         } else {
-            alert('Lỗi: ' + res.error);
+            alert(t('invoices.alertErrorGeneric') + res.error);
         }
     };
 
     const handleSaveAndApprove = async () => {
         if (!formData.customerId || formData.items.length === 0) {
-            alert('Vui lòng chọn khách hàng và ít nhất 1 sản phẩm');
+            alert(t('invoices.alertSelectCustomer'));
             return;
         }
 
         setActionModal({
             isOpen: true,
-            title: 'Lưu & Duyệt Hóa Đơn',
+            title: t('invoices.alertSaveDuyetTitle'),
             icon: <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Save size={24} /></div>,
             message: (
                 <div>
-                    <h4 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#111827', marginBottom: '0.5rem' }}>Xác nhận Lưu & Duyệt</h4>
-                    <p style={{ color: '#4b5563', marginBottom: '1rem' }}>Hệ thống sẽ <strong>Lưu Hóa Đơn</strong> và tiến hành <strong>Duyệt (Xuất Kho & Ghi Nhận Công Nợ)</strong> ngay lập tức. Các thao tác tiếp theo sẽ tự động được kích hoạt.</p>
+                    <h4 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#111827', marginBottom: '0.5rem' }}>{t('invoices.alertSaveDuyetMsgTitle')}</h4>
+                    <p style={{ color: '#4b5563', marginBottom: '1rem' }} dangerouslySetInnerHTML={{ __html: t('invoices.alertSaveDuyetMsg') }}></p>
                 </div>
             ),
-            confirmLabel: 'Lưu & Duyệt Ngay',
+            confirmLabel: t('invoices.alertSaveDuyetConfirm'),
             confirmVariant: 'primary',
             action: async () => {
                 let res;
@@ -417,7 +419,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                     const approveRes = await approveSalesInvoice(invoiceId, 'system');
 
                     if (approveRes.success) {
-                        alert('Đã Lưu Hóa Đơn và Xuất Kho thành công!');
+                        alert(t('invoices.alertSuccessSaveDuyet'));
                         if (formData.id) {
                             setInvoices(invoices.map((inv: any) => inv.id === formData.id ? approveRes.data : inv));
                         } else {
@@ -426,10 +428,10 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                         setIsFormOpen(false);
                         router.refresh();
                     } else {
-                        alert('Lưu Hóa Đơn thành công nhưng lỗi khi Xuất Kho: ' + approveRes.error);
+                        alert(t('invoices.alertErrorSaveDuyet') + approveRes.error);
                     }
                 } else {
-                    alert('Lỗi khi lưu Hóa Đơn: ' + res.error);
+                    alert(t('invoices.alertErrorSave') + res.error);
                 }
             }
         });
@@ -438,31 +440,31 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
     const handleApprove = async (id: string) => {
         setActionModal({
             isOpen: true,
-            title: 'Duyệt Hóa Đơn',
+            title: t('invoices.alertApproveTitle'),
             icon: <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#d1fae5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CheckCircle2 size={24} /></div>,
             message: (
                 <div>
-                    <h4 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#111827', marginBottom: '0.5rem' }}>Bạn đã kiểm tra kỹ hóa đơn?</h4>
-                    <p style={{ color: '#4b5563', marginBottom: '1rem' }}>Sau khi duyệt, hệ thống sẽ thực hiện các tác vụ tự động sau đây:</p>
+                    <h4 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#111827', marginBottom: '0.5rem' }}>{t('invoices.alertApproveMsgTitle')}</h4>
+                    <p style={{ color: '#4b5563', marginBottom: '1rem' }}>{t('invoices.alertApproveMsg1')}</p>
                     <ul style={{ listStyle: 'none', padding: '1rem', background: '#f9fafb', borderRadius: '0.75rem', border: '1px solid #f3f4f6', display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '0.5rem' }}>
                         <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', fontSize: '0.875rem', color: '#374151' }}>
                             <span style={{ color: '#10b981', background: '#d1fae5', padding: '0.25rem', borderRadius: '50%', marginTop: '0.125rem', display: 'flex' }}><CheckCircle2 size={16} /></span>
-                            <span><strong>Ghi nhận công nợ</strong> đối với khách hàng này vào hệ thống kế toán.</span>
+                            <span dangerouslySetInnerHTML={{ __html: t('invoices.alertApproveMsg2') }}></span>
                         </li>
                         <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', fontSize: '0.875rem', color: '#374151' }}>
                             <span style={{ color: '#10b981', background: '#d1fae5', padding: '0.25rem', borderRadius: '50%', marginTop: '0.125rem', display: 'flex' }}><PackageCheck size={16} /></span>
-                            <span><strong>Tự động xuất kho</strong> trừ tồn các sản phẩm có trong hóa đơn.</span>
+                            <span dangerouslySetInnerHTML={{ __html: t('invoices.alertApproveMsg3') }}></span>
                         </li>
                     </ul>
                 </div>
             ),
-            confirmLabel: 'Đồng Ý Duyệt',
+            confirmLabel: t('invoices.alertApproveConfirm'),
             confirmVariant: 'success',
             action: async () => {
                 const res = await approveSalesInvoice(id, 'system');
                 if (res.success) {
                     setInvoices(invoices.map((inv: any) => inv.id === id ? res.data : inv));
-                    alert("Đã duyệt Hóa Đơn thành công!");
+                    alert(t('invoices.alertSuccessApprove'));
                     router.refresh();
                 } else alert(res.error);
             }
@@ -476,10 +478,10 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         }
         setActionModal({
             isOpen: true,
-            title: 'Chuyển trạng thái',
+            title: t('invoices.alertChangeStatusTitle'),
             icon: <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Info size={24} /></div>,
-            message: <p style={{ color: '#374151', fontSize: '0.9375rem' }}>Bạn có chắc chắn muốn chuyển trạng thái hóa đơn sang <strong>{newStatus}</strong>?</p>,
-            confirmLabel: 'Chuyển Đổi',
+            message: <p style={{ color: '#374151', fontSize: '0.9375rem' }} dangerouslySetInnerHTML={{ __html: t('invoices.alertChangeStatusMsg').replace('{{status}}', newStatus) }}></p>,
+            confirmLabel: t('invoices.alertChangeStatusConfirm'),
             confirmVariant: 'primary',
             action: async () => {
                 const res = await updateSalesInvoiceStatus(id, newStatus);
@@ -493,20 +495,20 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
     const handleCancel = async (id: string) => {
         setActionModal({
             isOpen: true,
-            title: 'Hủy Hóa Đơn',
+            title: t('invoices.alertCancelTitle'),
             icon: <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#fef2f2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><AlertTriangle size={24} /></div>,
             message: (
                 <div>
-                    <h4 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#111827', marginBottom: '0.5rem' }}>Hủy Hóa Đơn Này?</h4>
-                    <p style={{ color: '#4b5563', marginBottom: '1rem' }}>Các chứng từ xuất kho và công nợ liên quan sẽ được <strong>tự động hoàn tác</strong>. Mọi tác vụ về sau sẽ không thể phục hồi.</p>
+                    <h4 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#111827', marginBottom: '0.5rem' }}>{t('invoices.alertCancelMsgTitle')}</h4>
+                    <p style={{ color: '#4b5563', marginBottom: '1rem' }} dangerouslySetInnerHTML={{ __html: t('invoices.alertCancelMsg') }}></p>
                 </div>
             ),
-            confirmLabel: 'Xác Nhận Hủy',
+            confirmLabel: t('invoices.alertCancelConfirm'),
             confirmVariant: 'danger',
             action: async () => {
                 const res = await cancelSalesInvoice(id);
                 if (res.success) {
-                    alert('Hủy Hóa Đơn và hoàn tác dữ liệu thành công!');
+                    alert(t('invoices.alertSuccessCancel'));
                     setInvoices(invoices.map((inv: any) => inv.id === id ? { ...inv, status: 'CANCELLED' } : inv));
                 } else alert(res.error);
             }
@@ -516,23 +518,23 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
     const handleRestore = async (id: string) => {
         setActionModal({
             isOpen: true,
-            title: 'Khôi phục Hóa Đơn',
+            title: t('invoices.alertRestoreTitle'),
             icon: <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#d1fae5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Undo2 size={24} /></div>,
             message: (
                 <div>
-                    <h4 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#111827', marginBottom: '0.5rem' }}>Khôi phục lại chứng từ?</h4>
-                    <p style={{ color: '#4b5563', lineHeight: 1.6 }}>Việc khôi phục sẽ tiến hành <strong>ghi nhận lại công nợ</strong> và <strong>xuất lại kho</strong> đối với hóa đơn này.</p>
+                    <h4 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#111827', marginBottom: '0.5rem' }}>{t('invoices.alertRestoreMsgTitle')}</h4>
+                    <p style={{ color: '#4b5563', lineHeight: 1.6 }} dangerouslySetInnerHTML={{ __html: t('invoices.alertRestoreMsg') }}></p>
                 </div>
             ),
-            confirmLabel: 'Đồng Ý Khôi Phục',
+            confirmLabel: t('invoices.alertRestoreConfirm'),
             confirmVariant: 'success',
             action: async () => {
                 const res = await restoreSalesInvoice(id);
                 if (res.success) {
-                    alert('Đã khôi phục hóa đơn thành công!');
+                    alert(t('invoices.alertSuccessRestore'));
                     router.refresh();
                 } else {
-                    alert('Lỗi: ' + res.error);
+                    alert(t('invoices.alertErrorGeneric') + ' ' + res.error);
                 }
             }
         });
@@ -540,15 +542,15 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
 
     const handleDelete = async (id: string, status: string) => {
         if (status !== 'DRAFT') {
-            alert("Chỉ có thể xóa Hóa đơn Dự Thảo. Các Hóa đơn đã Ghi Nhận không thể xóa.");
+            alert(t('invoices.alertDeleteOnlyDraft'));
             return;
         }
         setActionModal({
             isOpen: true,
-            title: 'Xóa Hóa Đơn Dự Thảo',
+            title: t('invoices.alertDeleteTitle'),
             icon: <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#fef2f2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Trash2 size={24} /></div>,
-            message: <p style={{ color: '#374151', fontSize: '0.9375rem' }}>Hóa đơn này sẽ bị <strong>xóa hoàn toàn khỏi hệ thống</strong> và không thể phục hồi. Bạn có chắc chắn muốn xóa?</p>,
-            confirmLabel: 'Xóa Vĩnh Viễn',
+            message: <p style={{ color: '#374151', fontSize: '0.9375rem' }} dangerouslySetInnerHTML={{ __html: t('invoices.alertDeleteMsg') }}></p>,
+            confirmLabel: t('invoices.alertDeleteConfirm'),
             confirmVariant: 'danger',
             action: async () => {
                 const res = await deleteSalesInvoice(id);
@@ -617,13 +619,13 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
     }, [baseFilteredInvoices]);
 
     const statsCards = [
-        { id: 'ALL', label: 'Tất Cả', count: stats.ALL.count, amount: stats.ALL.amount, colorClass: 'stat-card-purple', icon: LayoutList },
-        { id: 'DRAFT', label: 'Dự Thảo', count: stats.DRAFT.count, amount: stats.DRAFT.amount, colorClass: 'stat-card-amber', icon: FileText },
-        { id: 'ISSUED', label: 'Ghi Nhận Nợ', count: stats.ISSUED.count, amount: stats.ISSUED.amount, colorClass: 'stat-card-blue', icon: PackageCheck },
-        { id: 'PARTIAL_PAID', label: 'Đã Thu Một Phần', count: stats.PARTIAL_PAID.count, amount: stats.PARTIAL_PAID.amount, colorClass: 'stat-card-green', icon: CheckCircle2 },
-        { id: 'PAID', label: 'Hoàn Tất Thu', count: stats.PAID.count, amount: stats.PAID.amount, colorClass: 'stat-card-green', icon: CheckCircle2 },
-        { id: 'OVERDUE', label: 'Quá Hạn', count: stats.OVERDUE.count, amount: stats.OVERDUE.amount, colorClass: 'stat-card-red', icon: AlertTriangle },
-        { id: 'DUE_SOON', label: 'Tới Hạn', count: stats.DUE_SOON.count, amount: stats.DUE_SOON.amount, colorClass: 'stat-card-amber', icon: Clock },
+        { id: 'ALL', label: t('invoices.statsAll'), count: stats.ALL.count, amount: stats.ALL.amount, colorClass: 'stat-card-purple', icon: LayoutList },
+        { id: 'DRAFT', label: t('invoices.statsDraft'), count: stats.DRAFT.count, amount: stats.DRAFT.amount, colorClass: 'stat-card-amber', icon: FileText },
+        { id: 'ISSUED', label: t('invoices.statsIssued'), count: stats.ISSUED.count, amount: stats.ISSUED.amount, colorClass: 'stat-card-blue', icon: PackageCheck },
+        { id: 'PARTIAL_PAID', label: t('invoices.statsPartialPaid'), count: stats.PARTIAL_PAID.count, amount: stats.PARTIAL_PAID.amount, colorClass: 'stat-card-green', icon: CheckCircle2 },
+        { id: 'PAID', label: t('invoices.statsPaid'), count: stats.PAID.count, amount: stats.PAID.amount, colorClass: 'stat-card-green', icon: CheckCircle2 },
+        { id: 'OVERDUE', label: t('invoices.statsOverdue'), count: stats.OVERDUE.count, amount: stats.OVERDUE.amount, colorClass: 'stat-card-red', icon: AlertTriangle },
+        { id: 'DUE_SOON', label: t('invoices.statsDueSoon'), count: stats.DUE_SOON.count, amount: stats.DUE_SOON.amount, colorClass: 'stat-card-amber', icon: Clock },
     ];
 
     const filteredInvoices = useMemo(() => {
@@ -693,11 +695,11 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
     return (
         <Card className="p-6">
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold">Danh sách Hóa Đơn (Phải Thu)</h2>
+                <h2 className="text-xl font-semibold">{t('invoices.title')}</h2>
                 <div className="flex items-center gap-3">
                     {isAdminOrManager && users && users.length > 0 && (
                         <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-500 font-medium">Lọc nhân viên:</span>
+                            <span className="text-sm text-gray-500 font-medium">{t('invoices.filterEmployee')}</span>
                             <select
                                 className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 outline-none focus:border-blue-500"
                                 defaultValue={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('employeeId') || '' : ''}
@@ -712,7 +714,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                     router.push(`/sales/invoices?${params.toString()}`);
                                 }}
                             >
-                                <option value="">Tất cả nhân viên</option>
+                                <option value="">{t('invoices.allEmployees')}</option>
                                 {users.map((u: any) => (
                                     <option key={u.id} value={u.id}>{u.name}</option>
                                 ))}
@@ -721,7 +723,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                     )}
                     <Button onClick={() => isFormOpen ? setIsFormOpen(false) : handleOpenCreate()} className="flex items-center gap-2">
                         {isFormOpen ? <X size={16} /> : <Plus size={16} />}
-                        {isFormOpen ? 'Hủy' : 'Tạo Hóa Đơn'}
+                        {isFormOpen ? t('invoices.cancel') : t('invoices.createInvoice')}
                     </Button>
                 </div>
             </div>
@@ -759,7 +761,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                 <div className="flex-1 relative min-w-[200px]">
                     <input
                         type="text"
-                        placeholder="Tìm theo Mã HĐ, Tên khách hàng..."
+                        placeholder={t('invoices.searchPlaceholder')}
                         className="px-3 border border-slate-300 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 w-full bg-white"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
@@ -772,7 +774,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                         className="border border-slate-300 px-3 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 bg-white"
                         value={dateFrom}
                         onChange={e => setDateFrom(e.target.value)}
-                        title="Từ ngày"
+                        title={t('invoices.fromDate')}
                     />
                     <span className="text-gray-400">-</span>
                     <input
@@ -780,7 +782,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                         className="border border-slate-300 px-3 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 bg-white"
                         value={dateTo}
                         onChange={e => setDateTo(e.target.value)}
-                        title="Đến ngày"
+                        title={t('invoices.toDate')}
                     />
                 </div>
                 <div className="flex items-center gap-2 min-w-[200px]">
@@ -789,22 +791,22 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                         value={sortBy}
                         onChange={e => setSortBy(e.target.value)}
                     >
-                        <option value="createdAt_desc">Mới tạo nhất</option>
-                        <option value="date_desc">Ngày (Mới nhất)</option>
-                        <option value="date_asc">Ngày (Cũ nhất)</option>
-                        <option value="amount_desc">Tổng Tiền (Cao xuống thấp)</option>
-                        <option value="amount_asc">Tổng Tiền (Thấp lên cao)</option>
-                        <option value="code_asc">Mã HĐ (A-Z)</option>
-                        <option value="code_desc">Mã HĐ (Z-A)</option>
+                        <option value="createdAt_desc">{t('invoices.sortNewest')}</option>
+                        <option value="date_desc">{t('invoices.sortDateDesc')}</option>
+                        <option value="date_asc">{t('invoices.sortDateAsc')}</option>
+                        <option value="amount_desc">{t('invoices.sortAmountDesc')}</option>
+                        <option value="amount_asc">{t('invoices.sortAmountAsc')}</option>
+                        <option value="code_asc">{t('invoices.sortCodeAsc')}</option>
+                        <option value="code_desc">{t('invoices.sortCodeDesc')}</option>
                     </select>
                 </div>
             </div>
 
-            <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title={formData.id ? "Sửa Hóa Đơn Dự Thảo" : "Tạo Hóa Đơn Mới"} maxWidth="1000px">
+            <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title={formData.id ? t('invoices.editInvoice') : t('invoices.createInvoiceModal')} maxWidth="1000px">
                 <div className="p-4">
-                    <div className="grid grid-cols-4 gap-4 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                         <div>
-                            <label className="block text-sm text-gray-600 mb-1">Mã HĐ</label>
+                            <label className="block text-sm text-gray-600 mb-1">{t('invoices.code')}</label>
                             <input
                                 type="text" className="w-full border rounded p-2 bg-gray-100"
                                 value={formData.code}
@@ -812,127 +814,128 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                             />
                         </div>
                         <div>
-                            <label className="block text-sm text-gray-600 mb-1">Kế thừa từ Đơn Hàng (SO)</label>
+                            <label className="block text-sm text-gray-600 mb-1">{t('invoices.order')}</label>
                             <SearchableSelect
-                                options={[{ value: '', label: '-- Mua Trực Tiếp Không Qua Đơn --' }, ...confirmedOrders.map((o: any) => ({ value: o.id, label: `${o.code} - ${o.customer?.name || 'KH'}` }))]}
+                                options={[{ value: '', label: t('invoices.orderSelect') }, ...confirmedOrders.map((o: any) => ({ value: o.id, label: `${o.code} - ${o.customer?.name || 'KH'}` }))]}
                                 value={formData.orderId || ''}
                                 onChange={handleOrderSelect}
-                                placeholder="-- Mua Trực Tiếp Không Qua Đơn --"
+                                placeholder={t('invoices.orderSelect')}
                             />
                         </div>
                         <div>
-                            <label className="block text-sm text-gray-600 mb-1">Khách Hàng (*)</label>
+                            <label className="block text-sm text-gray-600 mb-1">{t('invoices.customerReq')}</label>
                             <SearchableSelect
                                 options={customers.map((c: any) => ({ value: c.id, label: c.name }))}
                                 value={formData.customerId || ''}
                                 onChange={val => setFormData({ ...formData, customerId: val })}
-                                placeholder="-- Chọn KH --"
+                                placeholder={t('invoices.customerSelect')}
                                 disabled={!!formData.orderId}
                             />
                         </div>
                         <div>
-                            <label className="block text-sm text-gray-600 mb-1">Hạn Thanh Toán</label>
+                            <label className="block text-sm text-gray-600 mb-1">{t('invoices.dueDateString')}</label>
                             <input
                                 type="date" className="w-full border rounded p-2"
                                 value={formData.dueDate}
                                 onChange={e => setFormData({ ...formData, dueDate: e.target.value })}
                             />
                         </div>
-                        <div className="col-span-4 grid grid-cols-2 gap-x-4">
+                        <div className="md:col-span-4 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-4">
                             <div>
-                                <label className="block text-sm text-gray-600 mb-1">Người Bán (Nhân viên HT)</label>
+                                <label className="block text-sm text-gray-600 mb-1">{t('invoices.salespersonString')}</label>
                                 <SearchableSelect
                                     options={users?.map((u: any) => ({ value: u.id, label: u.name })) || []}
                                     value={formData.salespersonId || ''}
                                     onChange={val => setFormData({ ...formData, salespersonId: val })}
-                                    placeholder="-- Chọn Người --"
+                                    placeholder={t('invoices.salespersonSelect')}
                                 />
                             </div>
-                            <div className="grid grid-cols-2 gap-x-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
                                 <div>
-                                    <label className="block text-sm text-gray-600 mb-1">Ghi chú Hóa Đơn</label>
+                                    <label className="block text-sm text-gray-600 mb-1">{t('invoices.generalNotes')}</label>
                                     <input
                                         type="text" className="w-full border rounded p-2"
                                         value={formData.notes || ''}
                                         onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                                        placeholder={t('invoices.generalNotesPlaceholder')}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm text-gray-600 mb-1">Thẻ Quản Lý (Tags)</label>
+                                    <label className="block text-sm text-gray-600 mb-1">{t('invoices.tags')}</label>
                                     <input
                                         type="text" className="w-full border rounded p-2"
                                         value={formData.tags || ''}
                                         onChange={e => setFormData({ ...formData, tags: e.target.value })}
-                                        placeholder="VD: VIP, Đại lý..."
+                                        placeholder={t('invoices.tagsPlaceholder')}
                                     />
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <h3 className="font-medium mb-4 mt-6">Chi tiết Sản Phẩm Xuất Bán</h3>
+                    <h3 className="font-medium mb-4 mt-6">{t('invoices.productDetails')}</h3>
                     <div className="flex flex-col bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
                         <div className="mb-4 flex items-center gap-4 border-b border-gray-100 pb-3">
                             <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
                                 <input type="radio" className="accent-indigo-600 w-4 h-4 cursor-pointer" checked={!isCustomProduct} onChange={() => setIsCustomProduct(false)} />
-                                <span>Chọn từ kho</span>
+                                <span>{t('invoices.selectFromInventory')}</span>
                             </label>
                             <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
                                 <input type="radio" className="accent-indigo-600 w-4 h-4 cursor-pointer" checked={isCustomProduct} onChange={() => setIsCustomProduct(true)} />
-                                <span>Nhập tự do ngoài hệ thống</span>
+                                <span>{t('invoices.enterCustomProduct')}</span>
                             </label>
                         </div>
-                        <div className="flex flex-wrap gap-2 items-end mb-4">
-                            <div className="flex-1 min-w-[150px]">
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Tên Sản Phẩm</label>
+                        <div className="flex flex-col md:flex-row gap-3 md:items-end mb-4">
+                            <div className="flex-1 w-full min-w-[150px]">
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('invoices.productName')}</label>
                                 {!isCustomProduct ? (
                                     <SearchableSelect
                                         options={products.map((p: any) => ({ value: p.id, label: `${p.sku} - ${p.name} (Tồn: ${p.inventories?.[0]?.quantity || 0})` }))}
                                         value={selectedProduct || ''}
                                         onChange={handleProductSelect}
-                                        placeholder="-- Chọn Sản Phẩm --"
+                                        placeholder={t('invoices.productSelect')}
                                     />
                                 ) : (
-                                    <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" placeholder="Nhập tên dịch vụ/sản phẩm..." value={customName} onChange={e => setCustomName(e.target.value)} />
+                                    <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" placeholder={t('invoices.productNamePlaceholder')} value={customName} onChange={e => setCustomName(e.target.value)} />
                                 )}
                             </div>
                             {isCustomProduct && (
-                                <div className="w-24 shrink-0">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">ĐVT</label>
-                                    <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white text-center" placeholder="Đơn vị" value={customUnit} onChange={e => setCustomUnit(e.target.value)} />
+                                <div className="w-full md:w-24 shrink-0">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('invoices.unit')}</label>
+                                    <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white text-center" placeholder={t('invoices.unitPlaceholder')} value={customUnit} onChange={e => setCustomUnit(e.target.value)} />
                                 </div>
                             )}
-                            <div className="w-24 shrink-0">
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Đơn giá</label>
+                            <div className="w-full md:w-36 shrink-0">
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('invoices.unitPrice')}</label>
                                 <input type="number" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" value={price} onChange={e => setPrice(Number(e.target.value))} />
                             </div>
-                            <div className="w-20 shrink-0">
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Thuế %</label>
+                            <div className="w-full md:w-20 shrink-0">
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('invoices.taxRateLabel')}</label>
                                 {isCustomProduct ? (
                                     <input type="number" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-center text-gray-900 bg-white" value={customTaxRate} onChange={e => setCustomTaxRate(Number(e.target.value))} />
                                 ) : (
                                     <input type="text" className="w-full border border-gray-200 rounded-lg p-2.5 bg-slate-50 text-center text-gray-500 font-medium cursor-not-allowed" value={`${products.find((p: any) => p.id === selectedProduct)?.taxRate || 0}`} disabled />
                                 )}
                             </div>
-                            <div className="w-16 shrink-0">
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">SL</label>
+                            <div className="w-full md:w-20 shrink-0">
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('invoices.quantityLabel')}</label>
                                 <input type="number" min="1" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-center text-gray-900 bg-white" value={qty} onChange={e => setQty(Number(e.target.value))} />
                             </div>
-                            <Button onClick={handleAddItem} variant="secondary" className="shrink-0 mb-[2px] h-[46px] px-4 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 shadow-sm font-semibold rounded-lg">Thêm</Button>
+                            <Button onClick={handleAddItem} variant="secondary" className="w-full md:w-auto shrink-0 md:mb-[2px] h-[46px] px-4 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 shadow-sm font-semibold rounded-lg">{t('invoices.addButton')}</Button>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1.5">Chi tiết Kỹ Thuật / Ghi chú cho khách hàng <span className="text-gray-400 font-normal">(In dưới tên SP)</span></label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('invoices.techDetailsDesc')} <span className="text-gray-400 font-normal">{t('invoices.techDetailsDescSub')}</span></label>
                             <div className="flex items-center gap-4 mb-2">
                                 <label className={`flex items-center gap-2 cursor-pointer text-sm font-medium ${isCustomProduct ? 'text-gray-400' : 'text-gray-700'}`}>
                                     <input type="radio" className="accent-indigo-600 w-4 h-4 cursor-pointer" checked={useInventoryDescription && !isCustomProduct} onChange={() => handleDescSourceChange(true)} disabled={isCustomProduct} />
-                                    <span>Lấy mô tả từ kho</span>
+                                    <span>{t('invoices.descFromInventory')}</span>
                                 </label>
                                 <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
                                     <input type="radio" className="accent-indigo-600 w-4 h-4 cursor-pointer" checked={!useInventoryDescription || isCustomProduct} onChange={() => handleDescSourceChange(false)} />
-                                    <span>Tự nhập mô tả</span>
+                                    <span>{t('invoices.descCustom')}</span>
                                 </label>
                             </div>
-                            <textarea rows={2} className={`w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all resize-none text-sm text-gray-900 bg-white`} placeholder="Ghi chú thêm thông số, tính năng cho sản phẩm này..." value={customDescription} onChange={e => setCustomDescription(e.target.value)}></textarea>
+                            <textarea rows={2} className={`w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all resize-none text-sm text-gray-900 bg-white`} placeholder={t('invoices.descPlaceholder')} value={customDescription} onChange={e => setCustomDescription(e.target.value)}></textarea>
                         </div>
                     </div>
 
@@ -941,11 +944,11 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                             <table className="w-full min-w-[600px] text-sm mb-4 bg-white text-left">
                                 <thead className="bg-slate-50 border-b border-gray-200 text-gray-600">
                                     <tr>
-                                        <th className="p-3 font-medium">Sản Phẩm</th>
-                                        <th className="p-3 font-medium text-center w-20">SL</th>
-                                        <th className="p-3 font-medium text-right w-32">Đ.Giá</th>
-                                        <th className="p-3 font-medium text-center w-20">Thuế</th>
-                                        <th className="p-3 font-medium text-right w-36">Thành Tiền</th>
+                                        <th className="p-3 font-medium">{t('invoices.colProduct')}</th>
+                                        <th className="p-3 font-medium text-center w-20">{t('invoices.colQty')}</th>
+                                        <th className="p-3 font-medium text-right w-32">{t('invoices.colPrice')}</th>
+                                        <th className="p-3 font-medium text-center w-20">{t('invoices.colTax')}</th>
+                                        <th className="p-3 font-medium text-right w-36">{t('invoices.colAmountRow')}</th>
                                         <th className="p-3 font-medium text-center w-12"></th>
                                     </tr>
                                 </thead>
@@ -964,8 +967,8 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                             <td className="p-2 border text-right font-medium">{formatMoney(item.totalPrice)}</td>
                                             <td className="p-2 border text-center">
                                                 <div className="flex items-center justify-center gap-2">
-                                                    <button type="button" onClick={() => handleEditItem(i)} className="text-blue-500 hover:text-blue-700 transition-colors" title="Sửa dòng này"><Edit2 size={14} /></button>
-                                                    <button type="button" onClick={() => handleRemoveItem(i)} className="text-red-500 hover:text-red-700 transition-colors" title="Xóa"><Trash2 size={14} /></button>
+                                                    <button type="button" onClick={() => handleEditItem(i)} className="text-blue-500 hover:text-blue-700 transition-colors" title={t('invoices.edit')}><Edit2 size={14} /></button>
+                                                    <button type="button" onClick={() => handleRemoveItem(i)} className="text-red-500 hover:text-red-700 transition-colors" title={t('invoices.delete')}><Trash2 size={14} /></button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -973,17 +976,17 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <td colSpan={4} className="p-2 border text-right font-medium text-gray-600 text-sm">Tổng tiền trước thuế:</td>
+                                        <td colSpan={4} className="p-2 border text-right font-medium text-gray-600 text-sm">{t('invoices.subTotal')}:</td>
                                         <td className="p-2 border text-right font-medium text-gray-800">{formatMoney(formData.subTotal || 0)}</td>
                                         <td className="p-2 border"></td>
                                     </tr>
                                     <tr>
-                                        <td colSpan={4} className="p-2 border text-right font-medium text-gray-600 text-sm">Tổng tiền thuế:</td>
+                                        <td colSpan={4} className="p-2 border text-right font-medium text-gray-600 text-sm">{t('invoices.totalTax')}:</td>
                                         <td className="p-2 border text-right font-medium text-gray-800">{formatMoney(formData.taxAmount || 0)}</td>
                                         <td className="p-2 border"></td>
                                     </tr>
                                     <tr>
-                                        <td colSpan={4} className="p-2 border text-right font-bold">Tổng Cộng:</td>
+                                        <td colSpan={4} className="p-2 border text-right font-bold">{t('invoices.grandTotal')}:</td>
                                         <td className="p-2 border text-right font-bold text-primary">{formatMoney(formData.totalAmount || 0)}</td>
                                         <td className="p-2 border"></td>
                                     </tr>
@@ -992,12 +995,12 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                         </div>
                     )}
 
-                    <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 mt-4">
-                        <Button onClick={handleSave} variant="secondary" className="flex items-center gap-2 border-gray-300">
-                            <Save size={16} /> Lưu Dự Thảo
+                    <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-200 mt-4">
+                        <Button onClick={handleSave} variant="secondary" className="w-full sm:w-auto flex justify-center items-center gap-2 border-gray-300">
+                            <Save size={16} /> <span>{t('invoices.modalSaveBtn')}</span>
                         </Button>
-                        <Button onClick={handleSaveAndApprove} className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white">
-                            <CheckCircle2 size={16} /> Lưu & Xuất Kho Trừ Tồn
+                        <Button onClick={handleSaveAndApprove} className="w-full sm:w-auto flex justify-center items-center gap-2 bg-primary hover:bg-primary-dark text-white">
+                            <CheckCircle2 size={16} /> <span>{t('invoices.modalSaveAndApproveBtn')}</span>
                         </Button>
                     </div>
                 </div>
@@ -1008,26 +1011,26 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                     <tr>
                         <th className="text-left font-medium text-gray-500 pb-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('code')}>
                             <div className="flex items-center gap-1">
-                                Mã HĐ {sortBy === 'code_asc' ? <ChevronUp size={14} /> : sortBy === 'code_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
+                                {t('invoices.colCode')} {sortBy === 'code_asc' ? <ChevronUp size={14} /> : sortBy === 'code_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
                             </div>
                         </th>
                         <th className="text-left font-medium text-gray-500 pb-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('date')}>
                             <div className="flex items-center gap-1">
-                                Ngày <div className="text-xs text-gray-400 font-normal">(Tạo / Tới Hạn)</div>
+                                {t('invoices.colDate')} <div className="text-xs text-gray-400 font-normal">{t('invoices.colDateSub')}</div>
                                 {sortBy === 'date_asc' ? <ChevronUp size={14} /> : sortBy === 'date_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
                             </div>
                         </th>
-                        <th className="text-left font-medium text-gray-500 pb-3">Khách Hàng / ĐH</th>
-                        <th className="text-left font-medium text-gray-500 pb-3">Người Bán</th>
-                        <th className="text-left font-medium text-gray-500 pb-3">Thẻ Quản Lý</th>
+                        <th className="text-left font-medium text-gray-500 pb-3">{t('invoices.colCustomer')} / {t('invoices.colOrder')}</th>
+                        <th className="text-left font-medium text-gray-500 pb-3">{t('invoices.salespersonString')}</th>
+                        <th className="text-left font-medium text-gray-500 pb-3">{t('invoices.tags')}</th>
                         <th className="text-right font-medium text-gray-500 pb-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('amount')}>
                             <div className="flex items-center justify-end gap-1">
-                                Tổng Tiền {sortBy === 'amount_asc' ? <ChevronUp size={14} /> : sortBy === 'amount_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
+                                {t('invoices.colAmount')} {sortBy === 'amount_asc' ? <ChevronUp size={14} /> : sortBy === 'amount_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
                             </div>
                         </th>
-                        <th className="text-right font-medium text-gray-500 pb-3">Đã Thu</th>
-                        <th className="text-center font-medium text-gray-500 pb-3">Trạng Thái</th>
-                        <th className="text-right font-medium text-gray-500 pb-3">Thao Tác</th>
+                        <th className="text-right font-medium text-gray-500 pb-3">{t('invoices.colCollected')}</th>
+                        <th className="text-center font-medium text-gray-500 pb-3">{t('invoices.colStatus')}</th>
+                        <th className="text-right font-medium text-gray-500 pb-3">{t('invoices.colAction')}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -1038,13 +1041,13 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                 <Link href={`/sales/invoices/${inv.id}`} className={`font-semibold hover:text-primary hover:underline transition-colors block ${inv.dueDate && new Date(inv.dueDate).getTime() < new Date().setHours(0, 0, 0, 0) && !['DRAFT', 'PAID', 'CANCELLED'].includes(inv.status) ? 'text-red-600' : 'text-gray-800'}`}>
                                     {inv.code}
                                 </Link>
-                                {inv.orderId && <span className="text-[10px] bg-blue-100 text-blue-600 px-1 rounded ml-1">Kế thừa</span>}
+                                {inv.orderId && <span className="text-[10px] bg-blue-100 text-blue-600 px-1 rounded ml-1">{t('invoices.inherited') || 'Kế thừa'}</span>}
                             </td>
                             <td className="py-3">
                                 <div className={`font-medium ${inv.dueDate && new Date(inv.dueDate).getTime() < new Date().setHours(0, 0, 0, 0) && !['DRAFT', 'PAID', 'CANCELLED'].includes(inv.status) ? 'text-red-600' : 'text-gray-900'}`}>{formatDate(inv.date)}</div>
                                 {inv.dueDate && (
-                                    <div className="flex items-center gap-1 text-xs text-red-500 mt-1" title="Hạn thanh toán">
-                                        <Calendar size={12} /> HTT: {formatDate(inv.dueDate)}
+                                    <div className="flex items-center gap-1 text-xs text-red-500 mt-1" title={t('invoices.dueDateString')}>
+                                        <Calendar size={12} /> {t('invoices.dueDateString')}: {formatDate(inv.dueDate)}
                                     </div>
                                 )}
                             </td>
@@ -1071,7 +1074,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                             {(inv.salesperson?.name || inv.creator?.name || '?').charAt(0).toUpperCase()}
                                         </div>
                                     )}
-                                    <span className="text-sm font-medium text-slate-700">{inv.salesperson?.name || inv.creator?.name || 'Không rõ'}</span>
+                                    <span className="text-sm font-medium text-slate-700">{inv.salesperson?.name || inv.creator?.name || t('invoices.unknown') || 'Không rõ'}</span>
                                 </div>
                             </td>
                             <td className="py-3">
@@ -1090,17 +1093,17 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                             } ${inv.dueDate && new Date(inv.dueDate).getTime() < new Date().setHours(0, 0, 0, 0) && !['DRAFT', 'PAID', 'CANCELLED'].includes(inv.status) ? 'border-red-500 shadow-[0_0_0_1px_rgba(239,68,68,1)]' : ''}`}
                                         value={inv.status}
                                         onChange={(e) => handleStatusChange(inv.id, e.target.value)}
-                                        title={inv.status === 'CANCELLED' ? "Hóa đơn đã phân hủy" : "Nhấn để đổi trạng thái"}
+                                        title={inv.status === 'CANCELLED' ? (t('invoices.statusCancelled') || "Hóa đơn đã phân hủy") : (t('invoices.clickToChange') || "Nhấn để đổi trạng thái")}
                                         disabled={inv.status === 'CANCELLED'}
                                     >
-                                        <option value="DRAFT" className="bg-white text-gray-900">Bản Dự Thảo</option>
-                                        <option value="ISSUED" className="bg-white text-gray-900">Ghi Nhận Nợ / Xuất Kho</option>
-                                        <option value="PARTIAL_PAID" className="bg-white text-gray-900">Đã Thu Một Phần</option>
-                                        <option value="PAID" className="bg-white text-gray-900">Hoàn Tất Thu</option>
-                                        {inv.status === 'CANCELLED' && <option value="CANCELLED" className="bg-white text-gray-900">Đã Hủy</option>}
+                                        <option value="DRAFT" className="bg-white text-gray-900">{t('invoices.statsDraft')}</option>
+                                        <option value="ISSUED" className="bg-white text-gray-900">{t('invoices.statsIssued')}</option>
+                                        <option value="PARTIAL_PAID" className="bg-white text-gray-900">{t('invoices.statsPartialPaid')}</option>
+                                        <option value="PAID" className="bg-white text-gray-900">{t('invoices.statsPaid')}</option>
+                                        {inv.status === 'CANCELLED' && <option value="CANCELLED" className="bg-white text-gray-900">{t('invoices.cancel')}</option>}
                                     </select>
                                     {inv.dueDate && new Date(inv.dueDate).getTime() < new Date().setHours(0, 0, 0, 0) && !['DRAFT', 'PAID', 'CANCELLED'].includes(inv.status) && (
-                                        <span className="text-[10px] font-bold text-white bg-red-600 px-1.5 py-0.5 rounded-sm uppercase tracking-wider animate-pulse" title="Hóa đơn đã quá hạn thanh toán">Quá Hạn</span>
+                                        <span className="text-[10px] font-bold text-white bg-red-600 px-1.5 py-0.5 rounded-sm uppercase tracking-wider animate-pulse" title={t('invoices.overdueAlert') || "Hóa đơn đã quá hạn thanh toán"}>{t('invoices.statsOverdue')}</span>
                                     )}
                                 </div>
                             </td>
@@ -1108,39 +1111,39 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                 <div className="flex justify-end gap-2 items-center">
                                     <div className="flex items-center gap-1 mr-1">
                                         {inv.status === 'DRAFT' && (
-                                            <button onClick={() => handleEdit(inv)} title="Chỉnh sửa" className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                                            <button onClick={() => handleEdit(inv)} title={t('invoices.edit')} className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors">
                                                 <Edit2 size={15} />
                                             </button>
                                         )}
-                                        <button onClick={() => handleCopy(inv)} title="Copy Hóa Đơn" className="p-2 text-slate-500 hover:text-green-600 hover:bg-green-50 transition-colors">
+                                        <button onClick={() => handleCopy(inv)} title={t('invoices.copy')} className="p-2 text-slate-500 hover:text-green-600 hover:bg-green-50 transition-colors">
                                             <Copy size={15} />
                                         </button>
-                                        <Link href={`/sales/invoices/${inv.id}`} title="Xem chi tiết" className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors block">
+                                        <Link href={`/sales/invoices/${inv.id}`} title={t('invoices.viewDetails')} className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors block">
                                             <Eye size={15} />
                                         </Link>
-                                        <Link href={`/print/sales/invoice/${inv.id}`} target="_blank" title="Tải PDF / In ấn" className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors block">
+                                        <Link href={`/print/sales/invoice/${inv.id}`} target="_blank" title={t('invoices.printPdf')} className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors block">
                                             <Printer size={15} />
                                         </Link>
                                         {inv.status !== 'CANCELLED' && (
-                                            <button onClick={() => handleCancel(inv.id)} title="Hủy Hóa Đơn" className="p-2 text-slate-500 hover:text-orange-600 hover:bg-orange-50 transition-colors block">
+                                            <button onClick={() => handleCancel(inv.id)} title={t('invoices.cancelInvoice')} className="p-2 text-slate-500 hover:text-orange-600 hover:bg-orange-50 transition-colors block">
                                                 <XCircle size={15} />
                                             </button>
                                         )}
                                         {inv.status === 'CANCELLED' && (
-                                            <button onClick={() => handleRestore(inv.id)} title="Khôi Phục" className="p-2 text-slate-500 hover:text-green-600 hover:bg-green-50 transition-colors block">
+                                            <button onClick={() => handleRestore(inv.id)} title={t('invoices.restoreInvoice')} className="p-2 text-slate-500 hover:text-green-600 hover:bg-green-50 transition-colors block">
                                                 <Undo2 size={15} />
                                             </button>
                                         )}
                                         {inv.status === 'DRAFT' && (
-                                            <button onClick={() => handleDelete(inv.id, inv.status)} title="Xóa" className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors block">
+                                            <button onClick={() => handleDelete(inv.id, inv.status)} title={t('invoices.delete')} className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors block">
                                                 <Trash2 size={15} />
                                             </button>
                                         )}
                                     </div>
 
                                     {inv.status === 'DRAFT' && (
-                                        <Button variant="secondary" onClick={() => handleApprove(inv.id)} className="text-amber-600 border-amber-600 px-2 py-1 flex-shrink-0 text-xs flex items-center gap-1 shadow-sm transition-all rounded-md" title="Duyệt để Ghi nhận Nợ & Xuất Kho">
-                                            <CheckCircle2 size={14} className="mr-0.5" /> Duyệt
+                                        <Button variant="secondary" onClick={() => handleApprove(inv.id)} className="text-amber-600 border-amber-600 px-2 py-1 flex-shrink-0 text-xs flex items-center gap-1 shadow-sm transition-all rounded-md" title={t('invoices.actionApproveDesc') || "Duyệt để Ghi nhận Nợ & Xuất Kho"}>
+                                            <CheckCircle2 size={14} className="mr-0.5" /> {t('invoices.actionApprove')}
                                         </Button>
                                     )}
                                 </div>
@@ -1148,14 +1151,14 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                         </tr>
                     ))}
                     {paginatedItems.length === 0 && (
-                        <tr><td colSpan={7} className="py-8 text-center text-gray-500">Chưa có hóa đơn nào phù hợp với bộ lọc</td></tr>
+                        <tr><td colSpan={7} className="py-8 text-center text-gray-500">{t('invoices.emptyNoMatch')}</td></tr>
                     )}
                 </tbody>
             </Table>
             <Pagination {...paginationProps} />
 
             {/* Generic Action Modal */}
-            <Modal isOpen={!!actionModal?.isOpen} onClose={() => !isActioning && setActionModal(null)} title={actionModal?.title || 'Xác nhận'}>
+            <Modal isOpen={!!actionModal?.isOpen} onClose={() => !isActioning && setActionModal(null)} title={actionModal?.title || t('invoices.confirm') || 'Xác nhận'}>
                 <div style={{ padding: '1.5rem' }}>
                     <div style={{ display: 'flex', gap: '1rem' }}>
                         {actionModal?.icon && (
@@ -1170,7 +1173,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
 
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '2rem', borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
                         <button onClick={() => setActionModal(null)} className="btn btn-secondary" disabled={isActioning}>
-                            {actionModal?.cancelLabel || 'Hủy Bỏ'}
+                            {actionModal?.cancelLabel || t('invoices.cancel') || 'Hủy Bỏ'}
                         </button>
                         <button onClick={async () => {
                             if (!actionModal) return;
@@ -1188,9 +1191,9 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                             {isActioning ? (
                                 <span style={{ display: 'flex', alignItems: 'center' }}>
                                     <span style={{ display: 'inline-block', width: '16px', height: '16px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite', marginRight: '8px' }}></span>
-                                    Đang xử lý...
+                                    {t('invoices.processing') || 'Đang xử lý...'}
                                 </span>
-                            ) : (actionModal?.confirmLabel || 'Xác Nhận')}
+                            ) : (actionModal?.confirmLabel || t('invoices.confirmBtn') || 'Xác Nhận')}
                         </button>
                     </div>
                 </div>

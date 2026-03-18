@@ -5,6 +5,8 @@ import { NextAuthProvider } from './components/providers/NextAuthProvider'
 import { MainLayout } from './components/layout/MainLayout'
 import { getLayoutSettings, getSidebarOrder } from './components/layout/actions'
 import { PushNotificationListener } from './components/PushNotificationListener'
+import { LanguageProvider } from './i18n/LanguageContext'
+import { getDictionary, getCurrentLocale } from './i18n/getDictionary'
 
 export async function generateMetadata(): Promise<Metadata> {
     const { name: brandName, logo: logoUrl } = await getLayoutSettings();
@@ -64,15 +66,19 @@ export default async function RootLayout({
 }) {
     const { name: brandName, logo: logoUrl } = await getLayoutSettings();
     const initialSidebarOrder = await getSidebarOrder();
+    const dictionary = await getDictionary();
+    const locale = getCurrentLocale();
 
     return (
-        <html lang="en">
+        <html lang={locale}>
             <body style={{ minHeight: '100vh', backgroundColor: 'var(--background)', margin: 0 }}>
                 <NextAuthProvider>
-                    <PushNotificationListener />
-                    <MainLayout brandName={brandName} logoUrl={logoUrl} initialSidebarOrder={initialSidebarOrder}>
-                        {children}
-                    </MainLayout>
+                    <LanguageProvider dictionary={dictionary} locale={locale}>
+                        <PushNotificationListener />
+                        <MainLayout brandName={brandName} logoUrl={logoUrl} initialSidebarOrder={initialSidebarOrder}>
+                            {children}
+                        </MainLayout>
+                    </LanguageProvider>
                 </NextAuthProvider>
             </body>
         </html>

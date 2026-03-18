@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { Modal } from '@/app/components/ui/Modal';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { useTranslation } from '@/app/i18n/LanguageContext';
 
 // Set up default layout array
 const DEFAULT_LAYOUT = ['kpi_cards', 'my_work_todo', 'my_leads_status', 'cash_flow_chart', 'dashboard_calendar'];
@@ -47,6 +48,7 @@ interface TodoItem {
 import { getTodos, addTodo, toggleTodo, deleteTodo } from '@/app/actions/todo';
 
 function TodoListWidget() {
+    const { t } = useTranslation();
     const [todos, setTodos] = useState<any[]>([]);
     const [inputValue, setInputValue] = useState('');
     const [showAll, setShowAll] = useState(false);
@@ -163,7 +165,7 @@ function TodoListWidget() {
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                     <CheckCircle2 size={20} className="text-emerald-500" />
-                    Công việc cần làm
+                    {t("dashboard.todo.title")}
                 </h3>
             </div>
 
@@ -176,21 +178,21 @@ function TodoListWidget() {
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
                 >
                     <Plus size={18} />
-                    <span>Tạo Việc Cần Làm</span>
+                    <span>{t("dashboard.todo.create")}</span>
                 </button>
                 <button
                     onClick={() => setShowAll(!showAll)}
                     disabled={todos.length === 0}
                     className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    <span>{showAll ? 'Thu gọn danh sách' : `Xem toàn bộ (${todos.length})`}</span>
+                    <span>{showAll ? t("dashboard.todo.collapse") : `${t("dashboard.todo.viewAll")} (${todos.length})`}</span>
                 </button>
             </div>
 
             <div className="flex-1 overflow-y-auto pr-1" style={{ maxHeight: showAll ? '400px' : 'auto' }}>
                 {todos.length === 0 ? (
                     <div className="text-center text-sm text-gray-400 mt-8">
-                        Chưa có công việc nào.
+                        {t("dashboard.todo.empty")}
                     </div>
                 ) : (
                     <ul className="space-y-2">
@@ -202,7 +204,7 @@ function TodoListWidget() {
                                 <button
                                     onClick={() => handleToggleTodo(todo.id, todo.completed)}
                                     className="mt-0.5 text-gray-400 hover:text-emerald-500 flex-shrink-0 transition-colors"
-                                    title={todo.completed ? "Đánh dấu chưa hoàn thành" : "Hoàn thành công việc"}
+                                    title={todo.completed ? t("dashboard.todo.markIncomplete") : t("dashboard.todo.markComplete")}
                                 >
                                     {todo.completed ? (
                                         <CheckCircle2 size={20} className="text-emerald-500" />
@@ -215,7 +217,7 @@ function TodoListWidget() {
                                         {todo.text}
                                     </span>
                                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-[11px] text-gray-400">
-                                        <span className="flex items-center gap-1 leading-none" title="Ngày tạo">
+                                        <span className="flex items-center gap-1 leading-none" title={t("dashboard.todo.createdAt")}>
                                             <Clock size={11} className={todo.completed ? "text-gray-300" : "text-blue-400/70"} />
                                             {new Date(todo.createdAt).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}
                                         </span>
@@ -224,7 +226,7 @@ function TodoListWidget() {
                                 <button
                                     onClick={() => handleRemoveTodo(todo.id)}
                                     className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity"
-                                    title="Xóa công việc"
+                                    title={t("dashboard.todo.delete")}
                                 >
                                     <X size={16} />
                                 </button>
@@ -234,11 +236,11 @@ function TodoListWidget() {
                 )}
             </div>
 
-            <Modal isOpen={isAddTodoModalOpen} onClose={() => setIsAddTodoModalOpen(false)} title="Tạo Việc Cần Làm" maxWidth="500px">
+            <Modal isOpen={isAddTodoModalOpen} onClose={() => setIsAddTodoModalOpen(false)} title={t("dashboard.todo.create")} maxWidth="500px">
                 <form onSubmit={handleAddTodo} className="flex flex-col gap-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Nội dung công việc <span className="text-red-500">*</span>
+                            {t("dashboard.todo.content")} <span className="text-red-500">*</span>
                         </label>
                         <textarea
                             value={inputValue}
@@ -249,14 +251,14 @@ function TodoListWidget() {
                                     handleAddTodo();
                                 }
                             }}
-                            placeholder="Nhập nội dung các việc cần làm...&#10;(Hỗ trợ nhập nhiều dòng)"
+                            placeholder={t("dashboard.todo.placeholder")}
                             className="w-full border border-gray-300 rounded-lg p-3 outline-none transition-shadow resize-y min-h-[120px]"
                             onFocus={(e) => { e.currentTarget.style.borderColor = '#2563eb'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(37,99,235,0.2)'; }}
                             onBlur={(e) => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.boxShadow = 'none'; }}
                             autoFocus
                         />
                         <p className="mt-1.5 text-xs text-gray-500">
-                            Nhấn <kbd className="bg-gray-100 border border-gray-300 rounded px-1 text-[10px] font-sans">Enter</kbd> để tạo nhanh, <kbd className="bg-gray-100 border border-gray-300 rounded px-1 text-[10px] font-sans">Shift + Enter</kbd> để xuống dòng.
+                            {t("dashboard.todo.hint")}
                         </p>
                     </div>
 
@@ -267,7 +269,7 @@ function TodoListWidget() {
                             className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors"
                             disabled={isSubmitting}
                         >
-                            Hủy
+                            {t("common.cancel")}
                         </button>
                         <button
                             type="submit"
@@ -285,7 +287,7 @@ function TodoListWidget() {
                                 }
                             }}
                         >
-                            {isSubmitting ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : 'Tạo mới'}
+                            {isSubmitting ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : t("dashboard.todo.submit")}
                         </button>
                     </div>
                 </form>
@@ -295,6 +297,7 @@ function TodoListWidget() {
 }
 
 function InvoiceStatusWidget({ invoices }: { invoices: any[] }) {
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState<'OVERDUE' | 'DUE_SOON'>('OVERDUE');
 
     // Normalize now to start of day for accurate comparison
@@ -322,9 +325,9 @@ function InvoiceStatusWidget({ invoices }: { invoices: any[] }) {
     return (
         <div className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col h-full" style={{ minHeight: '430px', maxHeight: '460px' }}>
             <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-3">
-                <h3 className="text-lg font-semibold text-gray-800">Tình Hình Hóa Đơn</h3>
+                <h3 className="text-lg font-semibold text-gray-800">{t("dashboard.invoice.title")}</h3>
                 <a href={`/sales/invoices?filter=${activeTab}`} className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 transition-colors text-right">
-                    Xem tất cả <span style={{ fontSize: '10px' }}>▶</span>
+                    {t("dashboard.invoice.viewAll")} <span style={{ fontSize: '10px' }}>▶</span>
                 </a>
             </div>
 
@@ -334,14 +337,14 @@ function InvoiceStatusWidget({ invoices }: { invoices: any[] }) {
                     className={`flex-1 py-2 px-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 ${activeTab === 'OVERDUE' ? 'bg-red-50 text-red-700 shadow-sm border border-red-100' : 'bg-gray-50 text-gray-500 hover:bg-gray-100 border border-transparent'}`}
                     onClick={() => setActiveTab('OVERDUE')}
                 >
-                    Quá Hạn
+                    {t("dashboard.invoice.overdue")}
                     <span className={`px-1.5 py-0.5 rounded-md text-[11px] font-bold ${activeTab === 'OVERDUE' ? 'bg-red-200 text-red-800' : 'bg-gray-200 text-gray-600'}`}>{overdueInvoices.length}</span>
                 </button>
                 <button
                     className={`flex-1 py-2 px-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 ${activeTab === 'DUE_SOON' ? 'bg-orange-50 text-orange-700 shadow-sm border border-orange-100' : 'bg-gray-50 text-gray-500 hover:bg-gray-100 border border-transparent'}`}
                     onClick={() => setActiveTab('DUE_SOON')}
                 >
-                    Sắp Tới Hạn
+                    {t("dashboard.invoice.dueSoon")}
                     <span className={`px-1.5 py-0.5 rounded-md text-[11px] font-bold ${activeTab === 'DUE_SOON' ? 'bg-orange-200 text-orange-800' : 'bg-gray-200 text-gray-600'}`}>{dueSoonInvoices.length}</span>
                 </button>
             </div>
@@ -353,7 +356,7 @@ function InvoiceStatusWidget({ invoices }: { invoices: any[] }) {
                         <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mb-3">
                             <CheckCircle2 size={28} className="text-emerald-400" />
                         </div>
-                        <span className="text-center px-4 font-medium text-gray-500">Tuyệt vời! Không có hóa đơn {activeTab === 'OVERDUE' ? 'quá hạn' : 'sắp tới hạn'}.</span>
+                        <span className="text-center px-4 font-medium text-gray-500">{activeTab === 'OVERDUE' ? t("dashboard.invoice.emptyOverdue") : t("dashboard.invoice.emptyDueSoon")}</span>
                     </div>
                 ) : (
                     <div className="space-y-3">
@@ -379,7 +382,7 @@ function InvoiceStatusWidget({ invoices }: { invoices: any[] }) {
                                     </div>
                                 </div>
                                 <div className="flex justify-between items-end mt-1 pt-3 border-t border-gray-50 pl-1">
-                                    <span className="text-[12px] text-gray-500 font-medium">Cần thu</span>
+                                    <span className="text-[12px] text-gray-500 font-medium">{t("dashboard.invoice.toBeCollected")}</span>
                                     <span className={`font-black text-sm ${activeTab === 'OVERDUE' ? 'text-red-600' : 'text-orange-600'}`}>{formatMoney(inv.totalAmount - (inv.paidAmount || 0))}</span>
                                 </div>
                             </div>
@@ -401,6 +404,7 @@ export function DashboardClient({
     kpiData?: any, userTasks?: any[], quotes?: any[], invoices?: any[], leads?: any[], savedConfig?: string,
     users?: any[], currentEmployeeId?: string, isAdminOrManager?: boolean
 }) {
+    const { t } = useTranslation();
     const router = useRouter();
     const [tasks, setTasks] = useState<any[]>(userTasks);
 
@@ -537,17 +541,17 @@ export function DashboardClient({
     return (
         <div className="bg-gray-50/50 min-h-screen p-4 xl:p-8 pt-4 xl:pt-6">
             <div className="w-full mx-auto space-y-8 pb-10">
-                <div className="flex items-center justify-between mb-2 -mx-2">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 md:mb-2 -mx-2 md:mx-0">
                     <div>
-                        <h2 className="text-3xl font-bold text-gray-800 tracking-tight">Bảng Điều Khiển</h2>
-                        <p className="text-gray-600 mt-1">Tổng quan hoạt động doanh nghiệp</p>
+                        <h2 className="text-3xl font-bold text-gray-800 tracking-tight">{t("dashboard.header.title")}</h2>
+                        <p className="text-gray-600 mt-1">{t("dashboard.header.subtitle")}</p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-col sm:flex-row md:items-center items-stretch gap-3 w-full md:w-auto">
                         {isAdminOrManager && users && users.length > 0 && (
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm text-gray-500 font-medium">Hiển thị theo:</span>
+                            <div className="flex items-center gap-2 w-full sm:w-auto">
+                                <span className="text-sm text-gray-500 font-medium whitespace-nowrap">{t("dashboard.header.displayBy")}</span>
                                 <select
-                                    className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                    className="flex-1 sm:flex-none px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                                     value={currentEmployeeId || ''}
                                     onChange={(e) => {
                                         const newEmployeeId = e.target.value;
@@ -560,7 +564,7 @@ export function DashboardClient({
                                         router.push(`/dashboard?${params.toString()}`);
                                     }}
                                 >
-                                    <option value="">Tất cả nhân viên (Công ty)</option>
+                                    <option value="">{t("dashboard.header.allEmployees")}</option>
                                     {users.map(u => (
                                         <option key={u.id} value={u.id}>{u.name}</option>
                                     ))}
@@ -569,9 +573,9 @@ export function DashboardClient({
                         )}
                         <button
                             onClick={() => setIsCustomizeMode(!isCustomizeMode)}
-                            className={`px-4 py-2 rounded-xl font-medium text-sm transition-colors border flex-shrink-0 ${isCustomizeMode ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                            className={`w-full sm:w-auto px-4 py-2 rounded-xl font-medium text-sm transition-colors border flex-shrink-0 ${isCustomizeMode ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
                         >
-                            {isCustomizeMode ? 'Hoàn tất Tùy chỉnh ✓' : 'Tùy chỉnh Giao diện ⚙️'}
+                            {isCustomizeMode ? t("dashboard.header.finishCustomize") : t("dashboard.header.customize")}
                         </button>
                     </div>
                 </div>
@@ -606,7 +610,7 @@ export function DashboardClient({
                                                             <div className="gap-4 mb-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
                                                                 <div className="stat-card stat-card-purple flex-1 min-w-[200px]">
                                                                     <div className="flex justify-between items-start mb-2">
-                                                                        <span className="stat-title text-sm font-semibold uppercase tracking-wide">Doanh Thu Tháng</span>
+                                                                        <span className="stat-title text-sm font-semibold uppercase tracking-wide">{t("dashboard.kpi.revenue")}</span>
                                                                         <div className="stat-icon p-2 rounded-xl flex items-center justify-center">
                                                                             <DollarSign size={20} strokeWidth={2.5} />
                                                                         </div>
@@ -615,14 +619,14 @@ export function DashboardClient({
                                                                         <span className="stat-value text-3xl font-bold mb-1 truncate" title={formatMoney(revenueThisMonth)}>{formatMoney(revenueThisMonth)}</span>
                                                                         <div className="text-[12px] font-medium mt-1" style={{ color: isRevenueUp ? '#10b981' : '#ef4444' }}>
                                                                             <span className="font-bold">{isRevenueUp ? '↑' : '↓'} {Math.abs(revenueGrowth).toFixed(1)}%</span>
-                                                                            <span className="text-purple-700 opacity-80" style={{ color: 'inherit' }}> so với tháng trước</span>
+                                                                            <span className="text-purple-700 opacity-80" style={{ color: 'inherit' }}> {t("dashboard.kpi.vsLastMonth")}</span>
                                                                         </div>
                                                                     </div>
                                                                 </div>
 
                                                                 <div className="stat-card stat-card-amber flex-1 min-w-[200px]">
                                                                     <div className="flex justify-between items-start mb-2">
-                                                                        <span className="stat-title text-sm font-semibold uppercase tracking-wide">Hóa Đơn Phát Hành</span>
+                                                                        <span className="stat-title text-sm font-semibold uppercase tracking-wide">{t("dashboard.kpi.invoices")}</span>
                                                                         <div className="stat-icon p-2 rounded-xl flex items-center justify-center">
                                                                             <Receipt size={20} strokeWidth={2.5} />
                                                                         </div>
@@ -631,14 +635,14 @@ export function DashboardClient({
                                                                         <span className="stat-value text-3xl font-bold mb-1">{invoicesThisMonth}</span>
                                                                         <div className="text-[12px] font-medium mt-1" style={{ color: isInvoiceUp ? '#10b981' : '#ef4444' }}>
                                                                             <span className="font-bold">{isInvoiceUp ? '↑' : '↓'} {Math.abs(invoiceGrowth).toFixed(1)}%</span>
-                                                                            <span className="text-amber-700 opacity-80" style={{ color: 'inherit' }}> so với tháng trước</span>
+                                                                            <span className="text-amber-700 opacity-80" style={{ color: 'inherit' }}> {t("dashboard.kpi.vsLastMonth")}</span>
                                                                         </div>
                                                                     </div>
                                                                 </div>
 
                                                                 <div className="stat-card stat-card-green flex-1 min-w-[200px]">
                                                                     <div className="flex justify-between items-start mb-2">
-                                                                        <span className="stat-title text-sm font-semibold uppercase tracking-wide" style={{ color: '#059669' }}>Tiền Đã Thu</span>
+                                                                        <span className="stat-title text-sm font-semibold uppercase tracking-wide" style={{ color: '#059669' }}>{t("dashboard.kpi.collected")}</span>
                                                                         <div className="stat-icon p-2 rounded-xl flex items-center justify-center">
                                                                             <CreditCard size={20} strokeWidth={2.5} />
                                                                         </div>
@@ -647,14 +651,14 @@ export function DashboardClient({
                                                                         <span className="stat-value text-3xl font-bold mb-1 truncate" style={{ color: '#059669' }} title={formatMoney(paymentsThisMonth)}>{formatMoney(paymentsThisMonth)}</span>
                                                                         <div className="text-[12px] font-medium mt-1" style={{ color: isPaymentUp ? '#10b981' : '#ef4444' }}>
                                                                             <span className="font-bold">{isPaymentUp ? '↑' : '↓'} {Math.abs(paymentGrowth).toFixed(1)}%</span>
-                                                                            <span className="text-green-700 opacity-80" style={{ color: 'inherit' }}> so với tháng trước</span>
+                                                                            <span className="text-green-700 opacity-80" style={{ color: 'inherit' }}> {t("dashboard.kpi.vsLastMonth")}</span>
                                                                         </div>
                                                                     </div>
                                                                 </div>
 
                                                                 <div className="stat-card stat-card-blue flex-1 min-w-[200px]">
                                                                     <div className="flex justify-between items-start mb-2">
-                                                                        <span className="stat-title text-sm font-semibold uppercase tracking-wide">Công Nợ Phải Thu</span>
+                                                                        <span className="stat-title text-sm font-semibold uppercase tracking-wide">{t("dashboard.kpi.debt")}</span>
                                                                         <div className="stat-icon p-2 rounded-xl flex items-center justify-center">
                                                                             <Briefcase size={20} strokeWidth={2.5} />
                                                                         </div>
@@ -663,7 +667,7 @@ export function DashboardClient({
                                                                         <span className="stat-value text-3xl font-bold mb-1 truncate" title={formatMoney(debtThisMonth)}>{formatMoney(debtThisMonth)}</span>
                                                                         <div className="text-[12px] font-medium mt-1" style={{ color: isDebtUp ? '#ef4444' : '#10b981' }}>
                                                                             <span className="font-bold">{isDebtUp ? '↑' : '↓'} {Math.abs(debtGrowth).toFixed(1)}%</span>
-                                                                            <span className="text-blue-700 opacity-80" style={{ color: 'inherit' }}> so với tháng trước</span>
+                                                                            <span className="text-blue-700 opacity-80" style={{ color: 'inherit' }}> {t("dashboard.kpi.vsLastMonth")}</span>
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -679,9 +683,9 @@ export function DashboardClient({
                                                                         <div className="flex items-center justify-between mb-4">
                                                                             <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                                                                                 <Briefcase size={20} className="text-blue-500" />
-                                                                                Công việc của tôi
+                                                                                {t("dashboard.myWork.title")}
                                                                             </h3>
-                                                                            <span className="text-sm font-medium bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full">{tasks.length} việc</span>
+                                                                            <span className="text-sm font-medium bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full">{tasks.length} {t("dashboard.myWork.tasksCount")}</span>
                                                                         </div>
 
                                                                         {tasks.length === 0 ? (
@@ -689,9 +693,9 @@ export function DashboardClient({
                                                                                 <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
                                                                                     <Briefcase size={24} className="text-gray-200" />
                                                                                 </div>
-                                                                                <p className="font-medium text-gray-500">Chưa có công việc nào</p>
+                                                                                <p className="font-medium text-gray-500">{t("dashboard.myWork.empty")}</p>
                                                                                 <p className="text-sm mt-1 text-center max-w-sm">
-                                                                                    Các công việc bạn được giao phụ trách hoặc theo dõi sẽ hiển thị tại đây.
+                                                                                    {t("dashboard.myWork.emptyDesc")}
                                                                                 </p>
                                                                             </div>
                                                                         ) : (
@@ -699,11 +703,11 @@ export function DashboardClient({
                                                                                 <table style={{ minWidth: '100%' }}>
                                                                                     <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
                                                                                         <tr>
-                                                                                            <th>Tên công việc</th>
-                                                                                            <th>Mức độ</th>
-                                                                                            <th>Hạn chót</th>
-                                                                                            <th>Liên quan</th>
-                                                                                            <th>Tình trạng</th>
+                                                                                            <th>{t("dashboard.myWork.taskName")}</th>
+                                                                                            <th>{t("dashboard.myWork.priority")}</th>
+                                                                                            <th>{t("dashboard.myWork.dueDate")}</th>
+                                                                                            <th>{t("dashboard.myWork.related")}</th>
+                                                                                            <th>{t("dashboard.myWork.status")}</th>
                                                                                         </tr>
                                                                                     </thead>
                                                                                     <tbody>
@@ -737,7 +741,7 @@ export function DashboardClient({
                                                                                                             backgroundColor: task.priority === 'URGENT' ? 'var(--danger)' : (task.priority === 'HIGH' ? 'var(--warning)' : '#e2e8f0'),
                                                                                                             color: task.priority === 'URGENT' || task.priority === 'HIGH' ? '#fff' : '#000'
                                                                                                         }}>
-                                                                                                            {task.priority === 'MEDIUM' ? 'TRUNG BÌNH' : task.priority === 'HIGH' ? 'CAO' : task.priority === 'URGENT' ? 'GẤP' : 'THẤP'}
+                                                                                                            {task.priority === 'MEDIUM' ? t("dashboard.myWork.priorityMedium") : task.priority === 'HIGH' ? t("dashboard.myWork.priorityHigh") : task.priority === 'URGENT' ? t("dashboard.myWork.priorityUrgent") : t("dashboard.myWork.priorityLow")}
                                                                                                         </span>
                                                                                                     </td>
                                                                                                     <td style={{ color: isDueSoon ? 'var(--danger)' : 'inherit' }}>
@@ -786,10 +790,10 @@ export function DashboardClient({
                                                                                                                 backgroundColor: 'transparent', cursor: 'pointer'
                                                                                                             }}
                                                                                                         >
-                                                                                                            <option value="TODO">Cần Làm</option>
-                                                                                                            <option value="IN_PROGRESS">Đang Xử Lý</option>
-                                                                                                            <option value="REVIEW">Chờ Duyệt</option>
-                                                                                                            <option value="DONE">Hoàn Thành</option>
+                                                                                                            <option value="TODO">{t("dashboard.myWork.statusTodo")}</option>
+                                                                                                            <option value="IN_PROGRESS">{t("dashboard.myWork.statusInProgress")}</option>
+                                                                                                            <option value="REVIEW">{t("dashboard.myWork.statusReview")}</option>
+                                                                                                            <option value="DONE">{t("dashboard.myWork.statusDone")}</option>
                                                                                                         </select>
                                                                                                     </td>
                                                                                                 </tr>
@@ -820,10 +824,10 @@ export function DashboardClient({
                                                                         <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
                                                                             <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                                                                                 <Users size={20} className="text-blue-500" />
-                                                                                Thông tin Lead của tôi
+                                                                                {t("dashboard.leads.myLeadsTitle")}
                                                                             </h3>
                                                                             <a href="/sales/leads" className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 transition-colors">
-                                                                                Xem tất cả <span style={{ fontSize: '10px' }}>▶</span>
+                                                                                {t("dashboard.leads.viewAll")} <span style={{ fontSize: '10px' }}>▶</span>
                                                                             </a>
                                                                         </div>
 
@@ -832,9 +836,9 @@ export function DashboardClient({
                                                                                 <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
                                                                                     <Users size={24} className="text-gray-200" />
                                                                                 </div>
-                                                                                <p className="font-medium text-gray-500">Chưa có Lead nào</p>
+                                                                                <p className="font-medium text-gray-500">{t("dashboard.leads.empty")}</p>
                                                                                 <p className="text-sm mt-1 text-center max-w-sm">
-                                                                                    Bạn chưa quản lý Cơ hội bán hàng nào.
+                                                                                    {t("dashboard.leads.emptyDesc")}
                                                                                 </p>
                                                                             </div>
                                                                         ) : (
@@ -842,10 +846,10 @@ export function DashboardClient({
                                                                                 <table style={{ minWidth: '100%' }}>
                                                                                     <thead style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#f9fafb' }}>
                                                                                         <tr>
-                                                                                            <th className="text-left font-semibold text-gray-600 py-3 px-4 border-b border-gray-100">Mã Lead</th>
-                                                                                            <th className="text-left font-semibold text-gray-600 py-3 px-4 border-b border-gray-100">Tên Cơ Hội</th>
-                                                                                            <th className="text-right font-semibold text-gray-600 py-3 px-4 border-b border-gray-100">Giá trị</th>
-                                                                                            <th className="text-center font-semibold text-gray-600 py-3 px-4 border-b border-gray-100">Trạng thái</th>
+                                                                                            <th className="text-left font-semibold text-gray-600 py-3 px-4 border-b border-gray-100">{t("dashboard.leads.code")}</th>
+                                                                                            <th className="text-left font-semibold text-gray-600 py-3 px-4 border-b border-gray-100">{t("dashboard.leads.name")}</th>
+                                                                                            <th className="text-right font-semibold text-gray-600 py-3 px-4 border-b border-gray-100">{t("dashboard.leads.value")}</th>
+                                                                                            <th className="text-center font-semibold text-gray-600 py-3 px-4 border-b border-gray-100">{t("dashboard.leads.status")}</th>
                                                                                         </tr>
                                                                                     </thead>
                                                                                     <tbody>
@@ -859,8 +863,8 @@ export function DashboardClient({
                                                                                                 'LOST': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-100' }
                                                                                             };
                                                                                             const statusLabels: any = {
-                                                                                                'NEW': 'Mới', 'CONTACTED': 'Đã liên hệ', 'QUALIFIED': 'Đã Tư Vấn',
-                                                                                                'PROPOSAL': 'Đã báo giá', 'WON': 'Thành công', 'LOST': 'Thất bại'
+                                                                                                'NEW': t("dashboard.leads.statusLabel.NEW"), 'CONTACTED': t("dashboard.leads.statusLabel.CONTACTED"), 'QUALIFIED': t("dashboard.leads.statusLabel.QUALIFIED"),
+                                                                                                'PROPOSAL': t("dashboard.leads.statusLabel.PROPOSAL"), 'WON': t("dashboard.leads.statusLabel.WON"), 'LOST': t("dashboard.leads.statusLabel.LOST")
                                                                                             };
 
                                                                                             const sc = statusColors[lead.status] || statusColors['NEW'];
@@ -900,11 +904,11 @@ export function DashboardClient({
                                                                 {/* Vùng 2: Biểu đồ trạng thái Lead */}
                                                                 <div className="w-full xl:w-[35%] flex flex-col">
                                                                     <div className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col h-full min-h-[300px]">
-                                                                        <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-100 pb-3">Thống kê trạng thái Leads</h3>
+                                                                        <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-100 pb-3">{t("dashboard.leads.statsTitle")}</h3>
 
                                                                         {leads.length === 0 ? (
                                                                             <div className="flex-1 flex items-center justify-center text-gray-400">
-                                                                                Chưa có dữ liệu thống kê
+                                                                                {t("dashboard.leads.emptyStats")}
                                                                             </div>
                                                                         ) : (
                                                                             <div className="flex-1 min-h-[250px] w-full mt-2 relative">
@@ -922,8 +926,8 @@ export function DashboardClient({
                                                                                                     'WON': '#10b981', 'LOST': '#000000'
                                                                                                 };
                                                                                                 const PIE_LABELS: Record<string, string> = {
-                                                                                                    'NEW': 'Mới', 'CONTACTED': 'Đã liên hệ', 'QUALIFIED': 'Đã Tư Vấn',
-                                                                                                    'PROPOSAL': 'Đã báo giá', 'WON': 'Thành công', 'LOST': 'Thất bại'
+                                                                                                    'NEW': t("dashboard.leads.statusLabel.NEW"), 'CONTACTED': t("dashboard.leads.statusLabel.CONTACTED"), 'QUALIFIED': t("dashboard.leads.statusLabel.QUALIFIED"),
+                                                                                                    'PROPOSAL': t("dashboard.leads.statusLabel.PROPOSAL"), 'WON': t("dashboard.leads.statusLabel.WON"), 'LOST': t("dashboard.leads.statusLabel.LOST")
                                                                                                 };
                                                                                                 return Object.entries(statusCounts).map(([status, count]) => ({
                                                                                                     name: PIE_LABELS[status] || status,
@@ -972,7 +976,7 @@ export function DashboardClient({
                                                                                     </PieChart>
                                                                                 </ResponsiveContainer>
                                                                                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none" style={{ marginTop: '-36px' }}>
-                                                                                    <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-0.5">Tổng leads</span>
+                                                                                    <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-0.5">{t("dashboard.leads.totalLeads")}</span>
                                                                                     <span className="text-3xl font-black text-gray-800">{leads.length}</span>
                                                                                 </div>
                                                                             </div>
@@ -988,7 +992,7 @@ export function DashboardClient({
                                                                 {/* Cash Flow Chart - Left Column */}
                                                                 <div className="w-full xl:w-[65%]">
                                                                     <div className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm h-full flex flex-col">
-                                                                        <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-100 pb-3">Lưu Chuyển Tiền Tệ Năm {new Date().getFullYear()}</h3>
+                                                                        <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-100 pb-3">{t("dashboard.cashFlow.title")} {new Date().getFullYear()}</h3>
                                                                         <div className="flex-1 min-h-[350px]" style={{ width: '100%', marginLeft: '-15px' }}>
                                                                             <ResponsiveContainer width="100%" height="100%">
                                                                                 <AreaChart data={kpiData?.cashFlow || []} margin={{ top: 10, right: 10, left: 20, bottom: 0 }}>
@@ -1023,9 +1027,9 @@ export function DashboardClient({
                                                                                         contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                                                                                         formatter={(value: any, name: any) => {
                                                                                             let label = '';
-                                                                                            if (name === 'income') label = 'Tổng Thu';
-                                                                                            if (name === 'expense') label = 'Lương / Chi Phí';
-                                                                                            if (name === 'supplierPayment') label = 'Trả NCC';
+                                                                                            if (name === 'income') label = t("dashboard.cashFlow.income");
+                                                                                            if (name === 'expense') label = t("dashboard.cashFlow.expense");
+                                                                                            if (name === 'supplierPayment') label = t("dashboard.cashFlow.supplierPaymentShort");
                                                                                             return [new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(value) || 0), label];
                                                                                         }}
                                                                                     />
@@ -1033,9 +1037,9 @@ export function DashboardClient({
                                                                                         verticalAlign="top"
                                                                                         height={36}
                                                                                         formatter={(value) => {
-                                                                                            if (value === 'income') return 'Tổng Thu';
-                                                                                            if (value === 'expense') return 'Lương / Chi Phí';
-                                                                                            if (value === 'supplierPayment') return 'Thanh Toán NCC';
+                                                                                            if (value === 'income') return t("dashboard.cashFlow.income");
+                                                                                            if (value === 'expense') return t("dashboard.cashFlow.expense");
+                                                                                            if (value === 'supplierPayment') return t("dashboard.cashFlow.supplierPayment");
                                                                                             return value;
                                                                                         }}
                                                                                     />

@@ -14,15 +14,7 @@ import { EmailLogTable } from '@/app/components/ui/EmailLogTable';
 import { LeadComments } from './comments/LeadComments';
 import { DocumentPreviewModal } from '@/app/components/ui/DocumentPreviewModal';
 import { LeadNotes } from '@/app/components/sales/LeadNotes';
-
-const STATUSES = [
-    { id: 'NEW', label: 'Tiếp nhận mới', color: { bg: '#e0e7ff', text: '#3730a3', border: '#c7d2fe', light: '#a5b4fc', solid: '#4f46e5' } },
-    { id: 'CONTACTED', label: 'Đã liên hệ', color: { bg: '#e0f2fe', text: '#075985', border: '#bae6fd', light: '#7dd3fc', solid: '#0284c7' } },
-    { id: 'QUALIFIED', label: 'Đang Tư Vấn', color: { bg: '#fef3c7', text: '#92400e', border: '#fde68a', light: '#fcd34d', solid: '#d97706' } },
-    { id: 'PROPOSAL', label: 'Gửi báo giá', color: { bg: '#f3e8ff', text: '#6b21a8', border: '#e9d5ff', light: '#d8b4fe', solid: '#9333ea' } },
-    { id: 'WON', label: 'Chốt thành công', color: { bg: '#dcfce7', text: '#166534', border: '#bbf7d0', light: '#86efac', solid: '#16a34a' } },
-    { id: 'LOST', label: 'Thất bại', color: { bg: '#fee2e2', text: '#991b1b', border: '#fecaca', light: '#fca5a5', solid: '#dc2626' } }
-];
+import { useTranslation } from '@/app/i18n/LanguageContext';
 
 const styles = {
     pageContainer: { padding: '24px', maxWidth: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column' as const, gap: '24px', boxSizing: 'border-box' as const, fontFamily: 'Inter, sans-serif' },
@@ -68,8 +60,18 @@ const styles = {
 };
 
 export function LeadDetailClient({ lead, customers, users, emailTemplates = [], currentUserId, currentUserRole }: { lead: any, customers: any[], users: any[], emailTemplates?: any[], currentUserId: string, currentUserRole: string }) {
+    const { t } = useTranslation();
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+
+    const STATUSES = React.useMemo(() => [
+        { id: 'NEW', label: t('leadDetails.statusNew'), color: { bg: '#e0e7ff', text: '#3730a3', border: '#c7d2fe', light: '#a5b4fc', solid: '#4f46e5' } },
+        { id: 'CONTACTED', label: t('leadDetails.statusContacted'), color: { bg: '#e0f2fe', text: '#075985', border: '#bae6fd', light: '#7dd3fc', solid: '#0284c7' } },
+        { id: 'QUALIFIED', label: t('leadDetails.statusQualified'), color: { bg: '#fef3c7', text: '#92400e', border: '#fde68a', light: '#fcd34d', solid: '#d97706' } },
+        { id: 'PROPOSAL', label: t('leadDetails.statusProposal'), color: { bg: '#f3e8ff', text: '#6b21a8', border: '#e9d5ff', light: '#d8b4fe', solid: '#9333ea' } },
+        { id: 'WON', label: t('leadDetails.statusWon'), color: { bg: '#dcfce7', text: '#166534', border: '#bbf7d0', light: '#86efac', solid: '#16a34a' } },
+        { id: 'LOST', label: t('leadDetails.statusLost'), color: { bg: '#fee2e2', text: '#991b1b', border: '#fecaca', light: '#fca5a5', solid: '#dc2626' } }
+    ], [t]);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<'info' | 'emailLogs'>('info');
@@ -197,15 +199,15 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [], 
                                 </span>
                                 {lead.customerId && (
                                     <span style={styles.customerBadge}>
-                                        <CheckCircle size={14} /> Đã có KH
+                                        <CheckCircle size={14} /> {t('leadDetails.hasCustomer')}
                                     </span>
                                 )}
                             </div>
                             <div style={{ ...styles.subtitle, display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                <span>Mã KH: <span style={{ fontWeight: '700' }}>{lead.code}</span></span>
+                                <span>{t('leadDetails.leadCode')}: <span style={{ fontWeight: '700' }}>{lead.code}</span></span>
                                 <span>•</span>
                                 <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                    Phụ trách:
+                                    {t('leadDetails.assignee')}:
                                     {lead.assignees && lead.assignees.length > 0 ? (
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                             {lead.assignees.map((a: any) => (
@@ -215,9 +217,9 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [], 
                                             ))}
                                         </div>
                                     ) : (
-                                        <span>{lead.assignedTo?.name || 'Chưa gán'}</span>
+                                        <span>{lead.assignedTo?.name || t('leadDetails.unassigned')}</span>
                                     )}
-                                    <button onClick={() => setIsAssigneeModalOpen(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3b82f6', display: 'flex', alignItems: 'center', padding: '4px' }} title="Sửa người phụ trách">
+                                    <button onClick={() => setIsAssigneeModalOpen(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3b82f6', display: 'flex', alignItems: 'center', padding: '4px' }} title={t('leadDetails.editAssigneeTitle')}>
                                         <Edit size={14} />
                                     </button>
                                 </span>
@@ -231,26 +233,26 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [], 
                                 onClick={() => setIsConvertModalOpen(true)}
                                 style={styles.btnPrimary}
                             >
-                                <RefreshCcw size={16} /> Chuyển thành Khách Hàng
+                                <RefreshCcw size={16} /> {t('leadDetails.convertToCustomer')}
                             </button>
                         )}
                         {lead.customerId && (
                             <Link href={`/customers/${lead.customerId}`} style={{ ...styles.btnSecondary, color: '#4f46e5', borderColor: '#c7d2fe', backgroundColor: '#e0e7ff' }}>
-                                <User size={16} /> Xem hồ sơ KH
+                                <User size={16} /> {t('leadDetails.viewCustomerProfile')}
                             </Link>
                         )}
-                        <Link href={`/sales/estimates?action=new&leadId=${lead.id}&customerId=${lead.customerId || ''}`} style={{ ...styles.btnSecondary, color: '#0ea5e9', borderColor: '#bae6fd', backgroundColor: '#f0f9ff' }} title="Tạo Báo Giá">
-                            <FileText size={16} /> Tạo Báo Giá
+                        <Link href={`/sales/estimates?action=new&leadId=${lead.id}&customerId=${lead.customerId || ''}`} style={{ ...styles.btnSecondary, color: '#0ea5e9', borderColor: '#bae6fd', backgroundColor: '#f0f9ff' }} title={t('leadDetails.createEstimate')}>
+                            <FileText size={16} /> {t('leadDetails.createEstimate')}
                         </Link>
                         <button
                             onClick={() => setIsEmailModalOpen(true)}
                             style={{ ...styles.btnSecondary, color: '#3b82f6', borderColor: '#bfdbfe', backgroundColor: '#eff6ff' }}
-                            title="Gửi Email Thông Báo"
+                            title={t('leadDetails.sendEmail')}
                         >
-                            <Mail size={16} /> Gửi Email
+                            <Mail size={16} /> {t('leadDetails.sendEmail')}
                         </button>
                         <Link href={`/sales/leads/${lead.id}/edit`} style={styles.btnSecondary}>
-                            <Edit size={16} /> Sửa
+                            <Edit size={16} /> {t('leadDetails.edit')}
                         </Link>
                         <button
                             onClick={() => setIsDeleteModalOpen(true)}
@@ -323,7 +325,7 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [], 
                                     transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
                                 }}
                             >
-                                <Building2 size={16} /> Thông tin chung
+                                <Building2 size={16} /> {t('leadDetails.generalInfo')}
                             </button>
                             <button
                                 onClick={() => setActiveTab('emailLogs')}
@@ -336,7 +338,7 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [], 
                                     transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
                                 }}
                             >
-                                <Mail size={16} /> Lịch sử Email
+                                <Mail size={16} /> {t('leadDetails.emailHistory')}
                                 <span style={{ backgroundColor: activeTab === 'emailLogs' ? '#e0e7ff' : '#cbd5e1', color: activeTab === 'emailLogs' ? '#4f46e5' : '#475569', padding: '2px 8px', borderRadius: '99px', fontSize: '12px' }}>
                                     {lead.emailLogs?.length || 0}
                                 </span>
@@ -348,53 +350,53 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [], 
                                 {/* Cơ bản */}
                                 <div style={styles.sectionCard}>
                                     <h2 style={styles.sectionTitle}>
-                                        <Building2 size={20} color="#6366f1" /> Thông tin chung
+                                        <Building2 size={20} color="#6366f1" /> {t('leadDetails.generalInfo')}
                                     </h2>
 
                                     <div style={styles.infoGrid}>
                                         <div style={styles.infoGroup}>
-                                            <p style={styles.infoLabel}>Công ty / Tổ chức</p>
+                                            <p style={styles.infoLabel}>{t('leadDetails.companyOrg')}</p>
                                             <p style={styles.infoValue}>
                                                 {lead.customer?.name || lead.company || '—'}
                                             </p>
                                         </div>
                                         <div style={styles.infoGroup}>
-                                            <p style={styles.infoLabel}>Người liên hệ</p>
+                                            <p style={styles.infoLabel}>{t('leadDetails.contactPerson')}</p>
                                             <div style={styles.infoValue}>
                                                 <User size={16} style={styles.infoIcon} />
                                                 {lead.customer?.contactName || lead.contactName || '—'}
                                             </div>
                                         </div>
                                         <div style={styles.infoGroup}>
-                                            <p style={styles.infoLabel}>Số điện thoại</p>
+                                            <p style={styles.infoLabel}>{t('leadDetails.phoneNumber')}</p>
                                             <div style={styles.infoValue}>
                                                 <Phone size={16} style={styles.infoIcon} />
                                                 {lead.customer?.phone || lead.phone || '—'}
                                             </div>
                                         </div>
                                         <div style={styles.infoGroup}>
-                                            <p style={styles.infoLabel}>Email</p>
+                                            <p style={styles.infoLabel}>{t('leadDetails.email')}</p>
                                             <div style={styles.infoValue}>
                                                 <Mail size={16} style={styles.infoIcon} />
                                                 {lead.customer?.email || lead.email || '—'}
                                             </div>
                                         </div>
                                         <div style={styles.infoGroup}>
-                                            <p style={styles.infoLabel}>Giá trị dự kiến</p>
+                                            <p style={styles.infoLabel}>{t('leadDetails.expectedValue')}</p>
                                             <div style={styles.infoValue}>
                                                 <DollarSign size={16} style={{ color: '#059669' }} />
                                                 <span style={{ color: '#059669', fontWeight: 'bold', fontSize: '18px' }}>{formatMoney(lead.estimatedValue)}</span>
                                             </div>
                                         </div>
                                         <div style={styles.infoGroup}>
-                                            <p style={styles.infoLabel}>Ngày chốt dự kiến</p>
+                                            <p style={styles.infoLabel}>{t('leadDetails.expectedCloseDate')}</p>
                                             <div style={styles.infoValue}>
                                                 <Calendar size={16} style={styles.infoIcon} />
                                                 {lead.expectedCloseDate ? formatDate(lead.expectedCloseDate) : '—'}
                                             </div>
                                         </div>
                                         <div style={styles.infoGroup}>
-                                            <p style={styles.infoLabel}>Nguồn khách hàng</p>
+                                            <p style={styles.infoLabel}>{t('leadDetails.leadSource')}</p>
                                             <div style={styles.infoValue}>
                                                 <Tag size={16} style={styles.infoIcon} />
                                                 {lead.source || '—'}
@@ -405,7 +407,7 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [], 
                                     {lead.notes && (
                                         <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #f1f5f9' }}>
                                             <p style={{ ...styles.infoLabel, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                                <FileText size={16} /> Ghi chú nội bộ
+                                                <FileText size={16} /> {t('leadDetails.internalNotes')}
                                             </p>
                                             <p style={{ fontSize: '14px', color: '#475569', whiteSpace: 'pre-wrap', backgroundColor: '#fffbeb', padding: '16px', borderRadius: '12px', border: '1px solid #fef3c7', margin: 0 }}>
                                                 {lead.notes}
@@ -441,7 +443,7 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [], 
                         {lead.salesEstimates && lead.salesEstimates.length > 0 && (
                             <div style={{ ...styles.sectionCard }}>
                                 <h2 style={{ ...styles.sectionTitle, borderBottom: 'none', paddingBottom: 0, marginBottom: '12px' }}>
-                                    <FileText size={18} style={{ color: '#0ea5e9' }} /> Báo Giá Liên Quan
+                                    <FileText size={18} style={{ color: '#0ea5e9' }} /> {t('leadDetails.relatedEstimates')}
                                 </h2>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                     {lead.salesEstimates.map((est: any) => (
@@ -459,7 +461,7 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [], 
                                                     {formatMoney(est.totalAmount)}
                                                 </span>
                                                 <span style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '99px', fontWeight: '600', backgroundColor: est.status === 'DRAFT' ? '#f1f5f9' : est.status === 'ACCEPTED' ? '#dcfce7' : est.status === 'REJECTED' ? '#fee2e2' : '#e0e7ff', color: est.status === 'DRAFT' ? '#475569' : est.status === 'ACCEPTED' ? '#166534' : est.status === 'REJECTED' ? '#991b1b' : '#3730a3' }}>
-                                                    {est.status === 'DRAFT' ? 'Bản Nháp' : est.status === 'ACCEPTED' ? 'Đã Chốt' : est.status === 'SENT' ? 'Đã Gửi' : est.status === 'INVOICED' ? 'Đã Hóa Đơn' : est.status === 'ORDERED' ? 'Đã Lên Đơn' : est.status === 'REJECTED' ? 'Từ Chối' : est.status}
+                                                    {est.status === 'DRAFT' ? t('leadDetails.estimateDraft') : est.status === 'ACCEPTED' ? t('leadDetails.estimateAccepted') : est.status === 'SENT' ? t('leadDetails.estimateSent') : est.status === 'INVOICED' ? t('leadDetails.estimateInvoiced') : est.status === 'ORDERED' ? t('leadDetails.estimateOrdered') : est.status === 'REJECTED' ? t('leadDetails.estimateRejected') : est.status}
                                                 </span>
                                             </div>
                                         </div>
@@ -474,13 +476,13 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [], 
 
 
                         <div style={{ ...styles.sectionCard, height: '100%', maxHeight: '400px', display: 'flex', flexDirection: 'column' }}>
-                            <h2 style={styles.sectionTitle}>Lịch sử hoạt động</h2>
+                            <h2 style={styles.sectionTitle}>{t('leadDetails.activityHistory')}</h2>
                             <div style={{ flex: 1, overflowY: 'auto' as const, paddingRight: '8px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                 {(() => {
                                     const sysLogs = activityLogs.filter((log: any) => !['NOTE_ADDED', 'FILE_UPLOADED', 'NOTE_AND_FILE_ADDED'].includes(log.action));
 
                                     if (sysLogs.length === 0) {
-                                        return <p style={{ fontSize: '13px', color: '#64748b', fontStyle: 'italic' }}>Chưa có hoạt động hệ thống nào.</p>;
+                                        return <p style={{ fontSize: '13px', color: '#64748b', fontStyle: 'italic' }}>{t('leadDetails.noSystemActivity')}</p>;
                                     }
 
                                     return sysLogs.map((log: any) => {
@@ -493,7 +495,7 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [], 
                                                 </div>
                                                 <div style={{ flex: 1, paddingBottom: '16px', minWidth: 0 }}>
                                                     <p style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a', margin: '0 0 4px 0' }}>{actionText}</p>
-                                                    <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 8px 0' }}>{formatDateTime(log.createdAt)} • bởi {log.user?.name}</p>
+                                                    <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 8px 0' }}>{formatDateTime(log.createdAt)} • {t('leadDetails.byUser')} {log.user?.name}</p>
 
                                                     {log.details && (
                                                         <div style={{ fontSize: '14px', color: '#334155', backgroundColor: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', whiteSpace: 'pre-wrap' }}>
@@ -516,11 +518,11 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [], 
 
             {/* Convert Modal */}
             < Modal isOpen={isConvertModalOpen} onClose={() => { setIsConvertModalOpen(false); setDuplicateWarning(null); }
-            } title="Chuyển đổi Cơ hội thành Khách hàng" >
+            } title={t('leadDetails.convertModalTitle')} >
                 <div className="space-y-4">
                     {duplicateWarning ? (
                         <div className="bg-amber-50 p-4 border border-amber-200 rounded-lg">
-                            <h3 className="text-amber-800 font-semibold mb-2">Phát hiện trùng lặp!</h3>
+                            <h3 className="text-amber-800 font-semibold mb-2">{t('leadDetails.duplicateAlert')}</h3>
                             <p className="text-sm text-amber-700 mb-4">{duplicateWarning.message}</p>
 
                             <div className="bg-white p-3 rounded border border-amber-100 mb-4 text-sm">
@@ -528,7 +530,7 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [], 
                                 <strong>SĐT:</strong> {duplicateWarning.customer.phone || '—'} | <strong>Email:</strong> {duplicateWarning.customer.email || '—'}
                             </div>
 
-                            <p className="text-sm text-gray-600 mb-3">Bạn muốn làm gì tiếp theo?</p>
+                            <p className="text-sm text-gray-600 mb-3">{t('leadDetails.whatNext')}</p>
 
                             <div className="flex gap-3 mt-4">
                                 <button
@@ -539,7 +541,7 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [], 
                                     }}
                                     className="btn-primary w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded px-4 py-2 text-sm text-center"
                                 >
-                                    Liên kết vào khách hàng này
+                                    {t('leadDetails.linkToExisting')}
                                 </button>
                                 <button
                                     onClick={() => {
@@ -548,7 +550,7 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [], 
                                     }}
                                     className="btn-secondary w-full bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded px-4 py-2 text-sm text-center"
                                 >
-                                    Hủy bỏ
+                                    {t('leadDetails.cancel')}
                                 </button>
                             </div>
                         </div>
@@ -559,24 +561,24 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [], 
                                     onClick={() => setConvertMode('AUTO')}
                                     className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-colors ${convertMode === 'AUTO' ? 'bg-white shadow text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
                                 >
-                                    Tạo KH rỗng
+                                    {t('leadDetails.createEmptyCustomer')}
                                 </button>
                                 <button
                                     onClick={() => setConvertMode('EXISTING')}
                                     className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-colors ${convertMode === 'EXISTING' ? 'bg-white shadow text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
                                 >
-                                    Chọn KH có sẵn
+                                    {t('leadDetails.chooseExistingCustomer')}
                                 </button>
                             </div>
 
                             {convertMode === 'AUTO' ? (
                                 <p className="text-sm text-gray-600">
-                                    Hệ thống sẽ tự động tạo một Hồ sơ Khách hàng mới dựa trên thông tin Cơ hội này (Tên công ty: <strong>{lead.company || lead.name}</strong>). Bạn có chắc chắn muốn tiếp tục?
+                                    {t('leadDetails.autoCreateWarning')}
                                 </p>
                             ) : (
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Chọn khách hàng để liên kết:
+                                        {t('leadDetails.selectLinkCustomer')}
                                     </label>
                                     <SearchableSelect
                                         options={customerOptions}
@@ -593,7 +595,7 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [], 
                                     className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
                                     disabled={loading}
                                 >
-                                    Hủy
+                                    {t('leadDetails.cancel')}
                                 </button>
                                 <button
                                     onClick={handleConvert}
@@ -601,7 +603,7 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [], 
                                     disabled={loading || (convertMode === 'EXISTING' && !selectedCustomerId)}
                                 >
                                     {loading && <RefreshCcw size={14} className="animate-spin" />}
-                                    Xác nhận {convertMode === 'AUTO' ? 'Tạo mới' : 'Liên kết'}
+                                    {convertMode === 'AUTO' ? t('leadDetails.confirmCreate') : t('leadDetails.confirmLink')}
                                 </button>
                             </div>
                         </>
@@ -610,10 +612,10 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [], 
             </Modal >
 
             {/* Delete Confirmation Modal */}
-            < Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Xác nhận xóa" >
+            < Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title={t('leadDetails.deleteModalTitle')} >
                 <div className="space-y-4">
                     <p className="text-gray-600">
-                        Bạn có chắc chắn muốn xóa Cơ hội <strong>{lead.name}</strong>? Thao tác này không thể hoàn tác.
+                        {t('leadDetails.deleteWarning')}
                     </p>
                     <div className="flex justify-end gap-3 mt-6">
                         <button
@@ -621,7 +623,7 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [], 
                             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
                             disabled={loading}
                         >
-                            Hủy
+                            {t('leadDetails.cancel')}
                         </button>
                         <button
                             onClick={handleDelete}
@@ -629,7 +631,7 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [], 
                             disabled={loading}
                         >
                             {loading && <RefreshCcw size={14} className="animate-spin" />}
-                            Xóa Cơ hội
+                            {t('leadDetails.confirmDelete')}
                         </button>
                     </div>
                 </div>
@@ -658,10 +660,10 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [], 
             />
 
             {/* Edit Assignees Modal */}
-            <Modal isOpen={isAssigneeModalOpen} onClose={() => setIsAssigneeModalOpen(false)} title="Chỉnh sửa người phụ trách">
+            <Modal isOpen={isAssigneeModalOpen} onClose={() => setIsAssigneeModalOpen(false)} title={t('leadDetails.editAssigneeTitle')}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', paddingTop: '1rem' }}>
                     <div>
-                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Người phụ trách</label>
+                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>{t('leadDetails.assigneeLabel')}</label>
                         <select
                             multiple
                             value={editAssignees}
@@ -675,15 +677,15 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [], 
                                 <option key={u.id} value={u.id}>{u.name || u.email}</option>
                             ))}
                         </select>
-                        <small style={{ color: '#64748b', display: 'block', marginTop: '4px' }}>Bấm <kbd>Ctrl</kbd> hoặc kéo thả để chọn nhiều người.</small>
+                        <small style={{ color: '#64748b', display: 'block', marginTop: '4px' }}>{t('leadDetails.selectMultipleHint')}</small>
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
                         <button onClick={() => setIsAssigneeModalOpen(false)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', color: '#475569', cursor: 'pointer', fontWeight: 600 }}>
-                            Hủy
+                            {t('leadDetails.cancel')}
                         </button>
                         <button onClick={handleSaveAssignees} disabled={isSavingAssignees} style={{ padding: '8px 16px', borderRadius: '6px', border: 'none', backgroundColor: '#2563eb', color: 'white', cursor: isSavingAssignees ? 'not-allowed' : 'pointer', fontWeight: 600 }}>
-                            {isSavingAssignees ? 'Đang lưu...' : 'Lưu Thay Đổi'}
+                            {isSavingAssignees ? t('leadDetails.saving') : t('leadDetails.saveChanges')}
                         </button>
                     </div>
                 </div>

@@ -10,10 +10,12 @@ import { Table } from '@/app/components/ui/Table';
 import { FileText, Plus, Eye, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslation } from '@/app/i18n/LanguageContext';
 
 import { Watermark } from '@/app/components/ui/Watermark';
 
 export function ContractDetailClient({ contract, settings }: { contract: any, settings?: Record<string, string> }) {
+    const { t } = useTranslation();
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'content' | 'appendices'>('content');
 
@@ -30,14 +32,14 @@ export function ContractDetailClient({ contract, settings }: { contract: any, se
                             {contract.title}
                         </h1>
                         <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                            Soạn thảo lúc: {formatDate(new Date(contract.createdAt))}
+                            {t('contractDetails.draftAt')} {formatDate(new Date(contract.createdAt))}
                         </p>
                     </div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
                     {activeTab === 'content' && <PrintButton />}
                     <Button onClick={() => router.push(`/contract-appendices/new?contractId=${contract.id}`)} className="gap-2" style={{ background: 'var(--success)' }}>
-                        <Plus size={18} /> Soạn Phụ Lục Mới
+                        <Plus size={18} /> {t('contractDetails.createAppendix')}
                     </Button>
                 </div>
             </div>
@@ -55,7 +57,7 @@ export function ContractDetailClient({ contract, settings }: { contract: any, se
                             fontWeight: activeTab === 'content' ? 600 : 500, fontSize: '0.9375rem', outline: 'none'
                         }}
                     >
-                        <FileText size={18} /> Nội Dung Hợp Đồng
+                        <FileText size={18} /> {t('contractDetails.tabContent')}
                     </button>
                     <button
                         onClick={() => setActiveTab('appendices')}
@@ -67,7 +69,7 @@ export function ContractDetailClient({ contract, settings }: { contract: any, se
                             fontWeight: activeTab === 'appendices' ? 600 : 500, fontSize: '0.9375rem', outline: 'none'
                         }}
                     >
-                        <FileText size={18} /> Danh Sách Phụ Lục
+                        <FileText size={18} /> {t('contractDetails.tabAppendices')}
                         <span style={{
                             background: activeTab === 'appendices' ? 'rgba(79, 70, 229, 0.1)' : 'var(--border)',
                             color: activeTab === 'appendices' ? 'var(--primary)' : 'var(--text-main)',
@@ -157,17 +159,17 @@ export function ContractDetailClient({ contract, settings }: { contract: any, se
                     <Table>
                         <thead>
                             <tr>
-                                <th>Tiêu đề Phụ Lục</th>
-                                <th>Trạng thái</th>
-                                <th>Ngày tạo</th>
-                                <th style={{ width: '100px', textAlign: 'right' }}>Thao tác</th>
+                                <th>{t('contractDetails.apxTitle')}</th>
+                                <th>{t('contractDetails.apxStatus')}</th>
+                                <th>{t('contractDetails.apxCreatedAt')}</th>
+                                <th style={{ width: '100px', textAlign: 'right' }}>{t('contractDetails.apxActions')}</th>
                             </tr>
                         </thead>
                         <tbody>
                             {contract.appendices.length === 0 ? (
                                 <tr>
                                     <td colSpan={4} style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
-                                        Chưa có phụ lục nào được đính kèm vào hợp đồng này.
+                                        {t('contractDetails.noAppendices')}
                                     </td>
                                 </tr>
                             ) : contract.appendices.map((apx: any) => (
@@ -188,7 +190,7 @@ export function ContractDetailClient({ contract, settings }: { contract: any, se
                                                 width: '32px', height: '32px', borderRadius: '8px',
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                 background: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)', transition: 'all 0.2s'
-                                            }} title="Xem chi tiết & In">
+                                            }} title={t('contractDetails.viewAndPrint')}>
                                                 <Eye size={16} />
                                             </Link>
                                         </div>

@@ -9,18 +9,20 @@ import { updateLeadStatus } from './actions';
 import { Card } from '@/app/components/ui/Card';
 import { Table } from '@/app/components/ui/Table';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
-
-const STATUSES = [
-    { id: 'NEW', label: 'Tiếp nhận mới', color: { bg: '#e0e7ff', text: '#3730a3', border: '#c7d2fe', colBg: '#f8fafc' }, badgeClass: 'badge-purple' },
-    { id: 'CONTACTED', label: 'Đã liên hệ', color: { bg: '#e0f2fe', text: '#075985', border: '#bae6fd', colBg: '#f0f9ff' }, badgeClass: 'badge-info' },
-    { id: 'QUALIFIED', label: 'Đang Tư Vấn', color: { bg: '#fef3c7', text: '#92400e', border: '#fde68a', colBg: '#fffbeb' }, badgeClass: 'badge-warning' },
-    { id: 'PROPOSAL', label: 'Gửi báo giá', color: { bg: '#f3e8ff', text: '#6b21a8', border: '#e9d5ff', colBg: '#faf5ff' }, badgeClass: 'badge-purple' },
-    { id: 'WON', label: 'Chốt thành công', color: { bg: '#dcfce7', text: '#166534', border: '#bbf7d0', colBg: '#f0fdf4' }, badgeClass: 'badge-success' },
-    { id: 'LOST', label: 'Thất bại', color: { bg: '#fee2e2', text: '#991b1b', border: '#fecaca', colBg: '#fef2f2' }, badgeClass: 'badge-danger' }
-];
+import { useTranslation } from '@/app/i18n/LanguageContext';
 
 export function LeadsClient({ leads, customers, users, isAdminOrManager }: { leads: any[], customers: any[], users: any[], isAdminOrManager?: boolean }) {
+    const { t } = useTranslation();
     const router = useRouter();
+
+    const STATUSES = useMemo(() => [
+        { id: 'NEW', label: t('leads.statusNew'), color: { bg: '#e0e7ff', text: '#3730a3', border: '#c7d2fe', colBg: '#f8fafc' }, badgeClass: 'badge-purple' },
+        { id: 'CONTACTED', label: t('leads.statusContacted'), color: { bg: '#e0f2fe', text: '#075985', border: '#bae6fd', colBg: '#f0f9ff' }, badgeClass: 'badge-info' },
+        { id: 'QUALIFIED', label: t('leads.statusQualified'), color: { bg: '#fef3c7', text: '#92400e', border: '#fde68a', colBg: '#fffbeb' }, badgeClass: 'badge-warning' },
+        { id: 'PROPOSAL', label: t('leads.statusProposal'), color: { bg: '#f3e8ff', text: '#6b21a8', border: '#e9d5ff', colBg: '#faf5ff' }, badgeClass: 'badge-purple' },
+        { id: 'WON', label: t('leads.statusWon'), color: { bg: '#dcfce7', text: '#166534', border: '#bbf7d0', colBg: '#f0fdf4' }, badgeClass: 'badge-success' },
+        { id: 'LOST', label: t('leads.statusLost'), color: { bg: '#fee2e2', text: '#991b1b', border: '#fecaca', colBg: '#fef2f2' }, badgeClass: 'badge-danger' }
+    ], [t]);
     const [viewMode, setViewMode] = useState<'kanban' | 'table'>('table');
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('ACTIVE');
@@ -91,7 +93,7 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
             else grouped['NEW'].push(l); // fallback
         });
         return grouped;
-    }, [filteredLeads]);
+    }, [filteredLeads, STATUSES]);
 
     const { paginatedItems: tableLeads, paginationProps } = usePagination(filteredLeads, 25);
 
@@ -117,15 +119,15 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
         return { counts, amounts };
     }, [localLeads]);
 
-    const statsCards = [
-        { id: 'ACTIVE', label: 'Đang Xử Lý', count: stats.counts.ACTIVE, amount: stats.amounts.ACTIVE, colorClass: 'stat-card-purple', icon: List },
-        { id: 'NEW', label: 'Tiếp Nhận Mới', count: stats.counts.NEW, amount: stats.amounts.NEW, colorClass: 'stat-card-emerald', icon: Calendar },
-        { id: 'CONTACTED', label: 'Đã Liên Hệ', count: stats.counts.CONTACTED, amount: stats.amounts.CONTACTED, colorClass: 'stat-card-blue', icon: Phone },
-        { id: 'QUALIFIED', label: 'Đang Tư Vấn', count: stats.counts.QUALIFIED, amount: stats.amounts.QUALIFIED, colorClass: 'stat-card-amber', icon: Search },
-        { id: 'PROPOSAL', label: 'Gửi Báo Giá', count: stats.counts.PROPOSAL, amount: stats.amounts.PROPOSAL, colorClass: 'stat-card-indigo', icon: FileText },
-        { id: 'WON', label: 'Chốt Thành Công', count: stats.counts.WON, amount: stats.amounts.WON, colorClass: 'stat-card-green', icon: CheckCircle },
-        { id: 'LOST', label: 'Thất Bại', count: stats.counts.LOST, amount: stats.amounts.LOST, colorClass: 'stat-card-red', icon: Trash2 },
-    ];
+    const statsCards = useMemo(() => [
+        { id: 'ACTIVE', label: t('leads.statusActive'), count: stats.counts.ACTIVE, amount: stats.amounts.ACTIVE, colorClass: 'stat-card-purple', icon: List },
+        { id: 'NEW', label: t('leads.statusNew'), count: stats.counts.NEW, amount: stats.amounts.NEW, colorClass: 'stat-card-emerald', icon: Calendar },
+        { id: 'CONTACTED', label: t('leads.statusContacted'), count: stats.counts.CONTACTED, amount: stats.amounts.CONTACTED, colorClass: 'stat-card-blue', icon: Phone },
+        { id: 'QUALIFIED', label: t('leads.statusQualified'), count: stats.counts.QUALIFIED, amount: stats.amounts.QUALIFIED, colorClass: 'stat-card-amber', icon: Search },
+        { id: 'PROPOSAL', label: t('leads.statusProposal'), count: stats.counts.PROPOSAL, amount: stats.amounts.PROPOSAL, colorClass: 'stat-card-indigo', icon: FileText },
+        { id: 'WON', label: t('leads.statusWon'), count: stats.counts.WON, amount: stats.amounts.WON, colorClass: 'stat-card-green', icon: CheckCircle },
+        { id: 'LOST', label: t('leads.statusLost'), count: stats.counts.LOST, amount: stats.amounts.LOST, colorClass: 'stat-card-red', icon: Trash2 },
+    ], [stats, t]);
 
     const premiumCSS = `
         .status-badge {
@@ -200,7 +202,7 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
                 setLocalLeads(prev => prev.map(l =>
                     l.id === leadId ? { ...l, status: previousStatus } : l
                 ));
-                alert("Lỗi khi cập nhật trạng thái");
+                alert(t('leads.errorUpdateStatus'));
             } else {
                 router.refresh();
             }
@@ -224,7 +226,7 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
             const res = await updateLeadStatus(id, newStatus);
             if (!res) {
                 setLocalLeads(prev => prev.map(l => l.id === id ? { ...l, status: previousStatus } : l));
-                alert("Lỗi khi cập nhật trạng thái");
+                alert(t('leads.errorUpdateStatus'));
             } else {
                 router.refresh();
             }
@@ -240,9 +242,9 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
             {/* Header / Actions */}
             <div className="flex justify-between items-center mb-6 gap-4">
                 <div className="flex-1">
-                    <h2 className="text-xl font-semibold text-slate-800">Quản lý Cơ Hội Bán Hàng</h2>
+                    <h2 className="text-xl font-semibold text-slate-800">{t('leads.title')}</h2>
                     <p className="text-sm text-slate-500 mt-1">
-                        Theo dõi và chuyển đổi khách hàng tiềm năng thành hợp đồng.
+                        {t('leads.description')}
                     </p>
                 </div>
 
@@ -251,23 +253,23 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
                     <button
                         onClick={() => setViewMode('table')}
                         className={`btn ${viewMode === 'table' ? 'btn-primary' : 'btn-secondary'} !py-1 !px-3 font-semibold text-[13px] h-[36px] min-w-[120px]`}
-                        title="Hiển thị Dạng Bảng"
+                        title={t('leads.viewTable')}
                     >
                         <List size={16} className="mr-2 shrink-0" />
-                        <span>Dạng Bảng</span>
+                        <span>{t('leads.viewTable')}</span>
                     </button>
                     <button
                         onClick={() => setViewMode('kanban')}
                         className={`btn ${viewMode === 'kanban' ? 'btn-primary' : 'btn-secondary'} !py-1 !px-3 font-semibold text-[13px] h-[36px] min-w-[120px]`}
-                        title="Hiển thị thẻ Kanban"
+                        title={t('leads.viewKanban')}
                     >
                         <LayoutGrid size={16} className="mr-2 shrink-0" />
-                        <span>Kanban</span>
+                        <span>{t('leads.viewKanban')}</span>
                     </button>
                     <div className="w-[1px] h-6 bg-slate-300 mx-1 sm:mx-2 hidden sm:block"></div>
                     <Link href="/sales/leads/new" className="btn btn-primary !py-1 !px-3 font-semibold text-[13px] h-[36px] min-w-[140px] shadow-sm flex items-center justify-center">
                         <Plus size={16} className="mr-2 shrink-0" />
-                        <span>Tạo Cơ Hội Mới</span>
+                        <span>{t('leads.createNew')}</span>
                     </Link>
                 </div>
             </div>
@@ -304,7 +306,7 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
                 <div className="flex-1 min-w-[200px] relative">
                     <input
                         type="text"
-                        placeholder="Tìm theo Mã CH, Tên, Khách hàng..."
+                        placeholder={t('leads.searchPlaceholder')}
                         className="h-[40px] w-full px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-700 outline-none transition-all placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
@@ -319,7 +321,7 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
                         className="h-[40px] px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-700 outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                         value={dateFrom}
                         onChange={e => setDateFrom(e.target.value)}
-                        title="Từ ngày"
+                        title={t('leads.fromDate')}
                     />
                     <span className="text-gray-400">-</span>
                     <input
@@ -327,7 +329,7 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
                         className="h-[40px] px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-700 outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                         value={dateTo}
                         onChange={e => setDateTo(e.target.value)}
-                        title="Đến ngày"
+                        title={t('leads.toDate')}
                     />
                 </div>
 
@@ -348,7 +350,7 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
                                 window.location.href = `/sales/leads?${params.toString()}`;
                             }}
                         >
-                            <option value="">Lọc theo: Tất cả nhân viên</option>
+                            <option value="">{t('leads.filterAllEmployees')}</option>
                             {users.map((u: any) => (
                                 <option key={u.id} value={u.id}>{u.name}</option>
                             ))}
@@ -363,9 +365,9 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
                         value={statusFilter}
                         onChange={e => setStatusFilter(e.target.value)}
                     >
-                        <option value="ACTIVE">Đang xử lý (Ẩn Chốt/Rớt)</option>
-                        <option value="ALL">Tất cả trạng thái</option>
-                        <optgroup label="Từng trạng thái cụ thể">
+                        <option value="ACTIVE">{t('leads.filterActive')}</option>
+                        <option value="ALL">{t('leads.filterAllStatuses')}</option>
+                        <optgroup label={t('leads.filterSpecificGroup')}>
                             {STATUSES.map(s => (
                                 <option key={s.id} value={s.id}>{s.label}</option>
                             ))}
@@ -380,12 +382,12 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
                         value={sortBy}
                         onChange={e => setSortBy(e.target.value)}
                     >
-                        <option value="date_desc">Ngày (Mới nhất)</option>
-                        <option value="date_asc">Ngày (Cũ nhất)</option>
-                        <option value="amount_desc">Tổng Tiền (Cao xuống thấp)</option>
-                        <option value="amount_asc">Tổng Tiền (Thấp lên cao)</option>
-                        <option value="code_asc">Mã BG (A-Z)</option>
-                        <option value="code_desc">Mã BG (Z-A)</option>
+                        <option value="date_desc">{t('leads.sortDateDesc')}</option>
+                        <option value="date_asc">{t('leads.sortDateAsc')}</option>
+                        <option value="amount_desc">{t('leads.sortAmountDesc')}</option>
+                        <option value="amount_asc">{t('leads.sortAmountAsc')}</option>
+                        <option value="code_asc">{t('leads.sortCodeAsc')}</option>
+                        <option value="code_desc">{t('leads.sortCodeDesc')}</option>
                     </select>
                 </div>
             </div>
@@ -442,7 +444,7 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
                                                 {lead.name}
                                             </h3>
                                             <p className="text-sm text-gray-600 mb-3 truncate">
-                                                {lead.customer?.name || lead.company || lead.contactName || 'Chưa rõ khách hàng'}
+                                                {lead.customer?.name || lead.company || lead.contactName || t('leads.unknownCustomer')}
                                             </p>
 
                                             <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-100">
@@ -458,7 +460,7 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
                                     ))}
                                     {leadsByStatus[status.id].length === 0 && (
                                         <div className="text-center py-8 text-gray-400 text-sm italic border-2 border-dashed border-gray-200 bg-white/50 rounded-lg">
-                                            Không có
+                                            {t('leads.emptyKanban')}
                                         </div>
                                     )}
                                 </div>
@@ -476,23 +478,23 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
                             <tr>
                                 <th className="text-left font-medium text-gray-500 pb-3 cursor-pointer hover:text-indigo-600 transition-colors select-none" onClick={() => handleSort('code')}>
                                     <div className="flex items-center gap-1">
-                                        Mã CH {sortBy === 'code_asc' ? <ChevronUp size={14} /> : sortBy === 'code_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
+                                        {t('leads.code')} {sortBy === 'code_asc' ? <ChevronUp size={14} /> : sortBy === 'code_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
                                     </div>
                                 </th>
                                 <th className="text-left font-medium text-gray-500 pb-3 cursor-pointer hover:text-indigo-600 transition-colors select-none" onClick={() => handleSort('date')}>
                                     <div className="flex items-center gap-1">
-                                        Ngày Tạo {sortBy === 'date_asc' ? <ChevronUp size={14} /> : sortBy === 'date_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
+                                        {t('leads.createdAt')} {sortBy === 'date_asc' ? <ChevronUp size={14} /> : sortBy === 'date_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
                                     </div>
                                 </th>
-                                <th className="text-left font-medium text-gray-500 pb-3">Tên Cơ Hội</th>
-                                <th className="text-left font-medium text-gray-500 pb-3">Khách Hàng</th>
+                                <th className="text-left font-medium text-gray-500 pb-3">{t('leads.name')}</th>
+                                <th className="text-left font-medium text-gray-500 pb-3">{t('leads.customer')}</th>
                                 <th className="text-right font-medium text-gray-500 pb-3 cursor-pointer hover:text-indigo-600 transition-colors select-none" onClick={() => handleSort('amount')}>
                                     <div className="flex items-center justify-end gap-1">
-                                        Giá Trị Dự Kiến {sortBy === 'amount_asc' ? <ChevronUp size={14} /> : sortBy === 'amount_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
+                                        {t('leads.estimatedValue')} {sortBy === 'amount_asc' ? <ChevronUp size={14} /> : sortBy === 'amount_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
                                     </div>
                                 </th>
-                                <th className="text-center font-medium text-gray-500 pb-3">Trạng Thái</th>
-                                <th className="text-right font-medium text-gray-500 pb-3">Thao Tác</th>
+                                <th className="text-center font-medium text-gray-500 pb-3">{t('leads.status')}</th>
+                                <th className="text-right font-medium text-gray-500 pb-3">{t('leads.action')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -528,23 +530,23 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
                                                 className={`status-badge status-select appearance-none ${statusObj.badgeClass}`}
                                                 value={lead.status}
                                                 onChange={(e) => handleStatusChange(lead.id, e.target.value)}
-                                                title="Nhấn để đổi trạng thái"
+                                                title={t('leads.clickToChange')}
                                                 onClick={(e) => e.stopPropagation()}
                                             >
-                                                <option value="NEW" className="bg-white text-gray-900">Tiếp nhận mới</option>
-                                                <option value="CONTACTED" className="bg-white text-gray-900">Đã liên hệ</option>
-                                                <option value="QUALIFIED" className="bg-white text-gray-900">Đang Tư Vấn</option>
-                                                <option value="PROPOSAL" className="bg-white text-gray-900">Gửi báo giá</option>
-                                                <option value="WON" className="bg-white text-gray-900">Chốt thành công</option>
-                                                <option value="LOST" className="bg-white text-gray-900">Thất bại</option>
+                                                <option value="NEW" className="bg-white text-gray-900">{t('leads.statusNew')}</option>
+                                                <option value="CONTACTED" className="bg-white text-gray-900">{t('leads.statusContacted')}</option>
+                                                <option value="QUALIFIED" className="bg-white text-gray-900">{t('leads.statusQualified')}</option>
+                                                <option value="PROPOSAL" className="bg-white text-gray-900">{t('leads.statusProposal')}</option>
+                                                <option value="WON" className="bg-white text-gray-900">{t('leads.statusWon')}</option>
+                                                <option value="LOST" className="bg-white text-gray-900">{t('leads.statusLost')}</option>
                                             </select>
                                         </td>
                                         <td className="py-3 text-right">
                                             <div className="flex justify-end items-center gap-1">
-                                                <Link href={`/sales/leads/${lead.id}`} title="Xem chi tiết" className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors block rounded-md">
+                                                <Link href={`/sales/leads/${lead.id}`} title={t('leads.viewDetails')} className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors block rounded-md">
                                                     <Eye size={16} />
                                                 </Link>
-                                                <Link href={`/sales/leads/${lead.id}`} title="Chỉnh sửa" className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors block rounded-md">
+                                                <Link href={`/sales/leads/${lead.id}`} title={t('leads.edit')} className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors block rounded-md">
                                                     <Edit2 size={16} />
                                                 </Link>
                                             </div>
@@ -555,7 +557,7 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
                             {filteredLeads.length === 0 && (
                                 <tr>
                                     <td colSpan={7} className="py-12 text-center text-gray-500 bg-slate-50 border border-dashed border-gray-200 mt-4 rounded-xl">
-                                        Không tìm thấy cơ hội bán hàng nào phù hợp với bộ lọc.
+                                        {t('leads.emptyTable')}
                                     </td>
                                 </tr>
                             )}

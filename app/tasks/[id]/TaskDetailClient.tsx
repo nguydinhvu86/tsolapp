@@ -533,10 +533,10 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
     };
 
     return (
-        <div style={{ maxWidth: '100%', margin: '0 auto', width: '100%', display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: '1.5rem', alignItems: 'start' }}>
+        <div className="w-full max-w-full mx-auto grid grid-cols-1 lg:grid-cols-3 lg:gap-6 gap-4 items-start">
 
             {/* LEFT COLUMN: Main Content */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div className="lg:col-span-2 flex flex-col gap-6">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <Button variant="secondary" onClick={() => router.back()} style={{ padding: '0.5rem' }}>
                         <ChevronLeft size={20} />
@@ -953,7 +953,7 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
             </div>
 
             {/* RIGHT COLUMN: Sidebar Info */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div className="lg:col-span-1 flex flex-col gap-6">
 
                 {/* Related Links */}
                 <Card>
