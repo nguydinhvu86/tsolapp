@@ -36,10 +36,12 @@ export function Watermark({ settings, documentType }: WatermarkProps) {
             <rect width="100%" height="100%" fill="none"/>
             <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="${size}px" font-weight="bold" fill="${color}" opacity="${opacity}" transform="rotate(${rotation}, ${svgBoxSize / 2}, ${svgBoxSize / 2})">${text}</text>
         </svg>`;
+        const isLarge = svgBoxSize > 400;
         backgroundStyle = {
             backgroundImage: `url("data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svgString)}")`,
-            backgroundRepeat: 'space',
-            backgroundPosition: 'center center'
+            backgroundRepeat: isLarge ? 'no-repeat' : 'space',
+            backgroundPosition: 'center center',
+            backgroundSize: isLarge ? 'contain' : `${svgBoxSize}px`
         };
     } else if (type === 'IMAGE' && imageUrl) {
         backgroundStyle = {
