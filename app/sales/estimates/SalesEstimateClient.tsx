@@ -790,13 +790,13 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                             </div>
 
                                             {est.status === 'DRAFT' && (
-                                                <Button variant="secondary" onClick={() => handleStatusChange(est.id, 'SENT')} title={t('estimates.actionSent')} className="px-3 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-300 py-1.5 text-xs font-semibold flex-shrink-0 shadow-sm transition-all rounded-md">
-                                                    {t('estimates.actionSentShort')}
+                                                <Button variant="secondary" onClick={() => handleStatusChange(est.id, 'SENT')} title={t('estimates.actionSend')} className="px-3 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-300 py-1.5 text-xs font-semibold flex-shrink-0 shadow-sm transition-all rounded-md">
+                                                    {t('estimates.actionSendShort')}
                                                 </Button>
                                             )}
                                             {est.status === 'SENT' && (
-                                                <Button variant="secondary" onClick={() => handleStatusChange(est.id, 'ACCEPTED')} className="text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title={t('estimates.actionAccepted')}>
-                                                    <Check size={14} className="mr-1.5 inline-block" /> {t('estimates.actionAcceptedShort')}
+                                                <Button variant="secondary" onClick={() => handleStatusChange(est.id, 'ACCEPTED')} className="text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title={t('estimates.actionAccept')}>
+                                                    <Check size={14} className="mr-1.5 inline-block" /> {t('estimates.actionAcceptShort')}
                                                 </Button>
                                             )}
                                             {(est.status === 'DRAFT' || est.status === 'SENT' || est.status === 'ACCEPTED') && (

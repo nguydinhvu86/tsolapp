@@ -81,6 +81,11 @@ export async function createLeadComment(leadId: string, content: string, parentI
             }
         });
 
+        const { notifyLeadStakeholders } = await import('@/app/sales/leads/actions');
+        let notificationMsg = 'đã bình luận';
+        if (images || files) notificationMsg += ' và đính kèm tệp';
+        await notifyLeadStakeholders(leadId, userId, notificationMsg, session.user.name || 'Ai đó');
+
         revalidatePath(`/sales/leads/${leadId}`);
         return { success: true, data: comment };
     } catch (error: any) {
