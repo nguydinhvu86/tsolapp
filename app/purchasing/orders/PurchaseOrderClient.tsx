@@ -8,16 +8,18 @@ import { useSearchParams } from 'next/navigation';
 import { createPurchaseOrder, deletePurchaseOrder, updatePurchaseOrder } from '@/app/purchasing/actions';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
+import { useTranslation } from '@/app/i18n/LanguageContext';
 
 export function PurchaseOrderClient({ initialOrders, suppliers, products }: { initialOrders: any[], suppliers: any[], products: any[] }) {
+    const { t } = useTranslation();
     const [orders, setOrders] = useState(initialOrders);
     const [searchQuery, setSearchQuery] = useState('');
 
     // Sort logic
     const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>({ key: 'date', direction: 'desc' });
 
-    const supplierFilterOptions = [{ value: '', label: 'Tất cả Nhà cung cấp' }, ...suppliers.map((s: any) => ({ value: s.id, label: s.name }))];
-    const supplierFormOptions = [{ value: '', label: '-- Chọn Nhà Cung Cấp --' }, ...suppliers.map((s: any) => ({ value: s.id, label: `${s.name} - ${s.code}` }))];
+    const supplierFilterOptions = [{ value: '', label: t('purchaseOrders.allSuppliers') }, ...suppliers.map((s: any) => ({ value: s.id, label: s.name }))];
+    const supplierFormOptions = [{ value: '', label: t('purchaseOrders.selectSupplier') }, ...suppliers.map((s: any) => ({ value: s.id, label: `${s.name} - ${s.code}` }))];
     const productOptions = [{ value: '', label: 'Lựa chọn...' }, { value: 'EXTERNAL', label: '+ Nhập Sản Phẩm tùy chỉnh ngoài hệ thống...' }, ...products.map((p: any) => ({ value: p.id, label: p.code ? `[${p.code}] ${p.name}` : p.name }))];
 
     // Modals
@@ -207,15 +209,15 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
 
     const handleAddItem = () => {
         if (!isCustomProduct && !selectedProduct) {
-            alert('Vui lòng chọn sản phẩm');
+            alert(t('purchaseOrders.pleaseSelectProduct'));
             return;
         }
         if (isCustomProduct && !customName.trim()) {
-            alert('Vui lòng nhập tên sản phẩm tùy chỉnh');
+            alert(t('purchaseOrders.pleaseEnterCustomName'));
             return;
         }
         if (qty <= 0) {
-            alert('Số lượng phải lớn hơn 0');
+            alert(t('purchaseOrders.qtyMustBeGreaterThanZero'));
             return;
         }
 
@@ -301,12 +303,12 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
     };
 
     const handleDelete = async (id: string, code: string) => {
-        if (confirm(`Bạn có chắc chắn muốn xóa Đơn Đặt Hàng ${code}? hành động này không thể hoàn tác.`)) {
+        if (confirm(t('purchaseOrders.deleteConfirm').replace('{{code}}', code))) {
             try {
                 await deletePurchaseOrder(id);
                 setOrders(orders.filter(o => o.id !== id));
             } catch (error: any) {
-                alert(error.message || "Xóa thất bại. Có thể đơn hàng đã chuyển trạng thái.");
+                alert(error.message || t('purchaseOrders.deleteFailed'));
             }
         }
     };
@@ -315,22 +317,22 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
         e.preventDefault();
 
         if (!formData.supplierId) {
-            alert("Vui lòng chọn nhà cung cấp");
+            alert(t('purchaseOrders.pleaseSelectSupplier'));
             return;
         }
 
         if (orderItems.length === 0) {
-            alert("Vui lòng thêm ít nhất 1 sản phẩm vào đơn hàng");
+            alert(t('purchaseOrders.pleaseAddItems'));
             return;
         }
 
         for (let i = 0; i < orderItems.length; i++) {
             if (orderItems[i].productId === 'EXTERNAL' && !orderItems[i].productName?.trim()) {
-                alert(`Vui lòng nhập tên sản phẩm cho dòng ${i + 1}`);
+                alert(t('purchaseOrders.pleaseEnterProductName').replace('{{line}}', (i + 1).toString()));
                 return;
             }
             if (!orderItems[i].productId || orderItems[i].quantity <= 0) {
-                alert(`Sản phẩm dòng ${i + 1} không hợp lệ`);
+                alert(t('purchaseOrders.invalidProduct').replace('{{line}}', (i + 1).toString()));
                 return;
             }
         }
@@ -364,7 +366,7 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
             setIsCreateModalOpen(false);
         } catch (error) {
             console.error(error);
-            alert("Có lỗi xảy ra khi tạo Đơn đặt hàng");
+            alert(t('purchaseOrders.createFailed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -372,11 +374,11 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
 
     const getStatusBadge = (status: string) => {
         switch (status) {
-            case 'DRAFT': return <span className="px-2 py-1 rounded bg-gray-100 text-gray-700 text-xs font-medium">Lưu Nháp</span>;
-            case 'SENT': return <span className="px-2 py-1 rounded bg-blue-100 text-blue-700 text-xs font-medium">Đã Gửi</span>;
-            case 'PARTIAL_RECEIVED': return <span className="px-2 py-1 rounded bg-amber-100 text-amber-700 text-xs font-medium">Nhập 1 phần</span>;
-            case 'COMPLETED': return <span className="px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-medium">Hoàn Thành</span>;
-            case 'CANCELLED': return <span className="px-2 py-1 rounded bg-red-100 text-red-700 text-xs font-medium">Đã Hủy</span>;
+            case 'DRAFT': return <span className="px-2 py-1 rounded bg-gray-100 text-gray-700 text-xs font-medium">{t('purchaseOrders.statusDraft')}</span>;
+            case 'SENT': return <span className="px-2 py-1 rounded bg-blue-100 text-blue-700 text-xs font-medium">{t('purchaseOrders.statusSent')}</span>;
+            case 'PARTIAL_RECEIVED': return <span className="px-2 py-1 rounded bg-amber-100 text-amber-700 text-xs font-medium">{t('purchaseOrders.statusPartial')}</span>;
+            case 'COMPLETED': return <span className="px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-medium">{t('purchaseOrders.statusCompleted')}</span>;
+            case 'CANCELLED': return <span className="px-2 py-1 rounded bg-red-100 text-red-700 text-xs font-medium">{t('purchaseOrders.statusCancelled')}</span>;
             default: return <span className="px-2 py-1 rounded bg-gray-100 text-gray-700 text-xs font-medium">{status}</span>;
         }
     };
@@ -385,15 +387,15 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
         <div className="p-8">
             <div className="page-header">
                 <div>
-                    <h1 className="text-2xl mb-1">Đơn Đặt Hàng (PO)</h1>
-                    <p className="text-sm text-gray-500">Quản lý các đơn yêu cầu mua hàng gửi NCC</p>
+                    <h1 className="text-2xl mb-1">{t('purchaseOrders.title')}</h1>
+                    <p className="text-sm text-gray-500">{t('purchaseOrders.description')}</p>
                 </div>
                 <button
                     onClick={handleOpenCreate}
                     className="btn btn-primary"
                 >
                     <Plus size={20} style={{ marginRight: '8px' }} />
-                    <span>Tạo Đơn Hàng</span>
+                    <span>{t('purchaseOrders.createOrder')}</span>
                 </button>
             </div>
 
@@ -403,7 +405,7 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                     <Search className="search-icon" size={20} />
                     <input
                         type="text"
-                        placeholder="Tìm theo mã PO, tên NCC..."
+                        placeholder={t('purchaseOrders.searchPlaceholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="input"
@@ -417,13 +419,13 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                             value={filterSupplierId}
                             onChange={(val) => setFilterSupplierId(val)}
                             options={supplierFilterOptions}
-                            placeholder="Tất cả Nhà cung cấp"
+                            placeholder={t('purchaseOrders.allSuppliers')}
                         />
                     </div>
                     <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flex: '1 1 300px' }}>
-                        <span style={{ fontSize: '0.875rem', color: '#6b7280', whiteSpace: 'nowrap' }}>Từ:</span>
+                        <span style={{ fontSize: '0.875rem', color: '#6b7280', whiteSpace: 'nowrap' }}>{t('purchaseOrders.from')}</span>
                         <input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="input" style={{ padding: '0.5rem', borderRadius: '0.375rem', width: '100%' }} />
-                        <span style={{ fontSize: '0.875rem', color: '#6b7280', whiteSpace: 'nowrap' }}>Đến:</span>
+                        <span style={{ fontSize: '0.875rem', color: '#6b7280', whiteSpace: 'nowrap' }}>{t('purchaseOrders.to')}</span>
                         <input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="input" style={{ padding: '0.5rem', borderRadius: '0.375rem', width: '100%' }} />
                     </div>
                 </div>
@@ -431,13 +433,13 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                 <div className="flex gap-4 w-full sm:w-auto text-sm mt-4">
                     <div className="stat-card stat-card-blue" style={{ minWidth: '160px' }}>
                         <div className="stat-info">
-                            <span className="stat-title">Tổng Đơn Đặt</span>
+                            <span className="stat-title">{t('purchaseOrders.totalOrders')}</span>
                             <span className="stat-value">{orders.length}</span>
                         </div>
                     </div>
                     <div className="stat-card stat-card-green" style={{ minWidth: '160px' }}>
                         <div className="stat-info">
-                            <span className="stat-title">Tổng Giá Trị Đặt</span>
+                            <span className="stat-title">{t('purchaseOrders.totalAmount')}</span>
                             <span className="stat-value">
                                 {formatMoney(orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0))}
                             </span>
@@ -452,26 +454,26 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                     <thead>
                         <tr>
                             <th onClick={() => requestSort('code')} className="cursor-pointer hover:bg-gray-100">
-                                <div className="flex items-center gap-1">Mã Đơn <ArrowUpDown size={14} className="text-gray-400" /></div>
+                                <div className="flex items-center gap-1">{t('purchaseOrders.code')} <ArrowUpDown size={14} className="text-gray-400" /></div>
                             </th>
                             <th onClick={() => requestSort('date')} className="cursor-pointer hover:bg-gray-100">
-                                <div className="flex items-center gap-1">Ngày / Nhà Cung Cấp <ArrowUpDown size={14} className="text-gray-400" /></div>
+                                <div className="flex items-center gap-1">{t('purchaseOrders.dateAndSupplier')} <ArrowUpDown size={14} className="text-gray-400" /></div>
                             </th>
-                            <th className="text-center">Số Mặt Hàng</th>
+                            <th className="text-center">{t('purchaseOrders.itemCount')}</th>
                             <th onClick={() => requestSort('totalAmount')} className="cursor-pointer hover:bg-gray-100 text-right">
-                                <div className="flex items-center justify-end gap-1">Tổng Tiền <ArrowUpDown size={14} className="text-gray-400" /></div>
+                                <div className="flex items-center justify-end gap-1">{t('purchaseOrders.total')} <ArrowUpDown size={14} className="text-gray-400" /></div>
                             </th>
                             <th onClick={() => requestSort('status')} className="cursor-pointer hover:bg-gray-100 text-center">
-                                <div className="flex items-center justify-center gap-1">Trạng Thái <ArrowUpDown size={14} className="text-gray-400" /></div>
+                                <div className="flex items-center justify-center gap-1">{t('purchaseOrders.status')} <ArrowUpDown size={14} className="text-gray-400" /></div>
                             </th>
-                            <th className="text-center">Thao tác</th>
+                            <th className="text-center">{t('purchaseOrders.actions')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {paginatedItems.length === 0 ? (
                             <tr>
                                 <td colSpan={6} className="p-8 text-center text-gray-500">
-                                    Không tìm thấy đơn đặt hàng nào
+                                    {t('purchaseOrders.noOrdersFound')}
                                 </td>
                             </tr>
                         ) : (
@@ -507,7 +509,7 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                                                 <button
                                                     onClick={() => handleEdit(order)}
                                                     className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded inline-block"
-                                                    title="Sửa"
+                                                    title={t('purchaseOrders.editTooltip')}
                                                 >
                                                     <Edit2 size={18} />
                                                 </button>
@@ -515,7 +517,7 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                                             <Link
                                                 href={`/purchasing/orders/${order.id}`}
                                                 className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded inline-block"
-                                                title="Xem chi tiết"
+                                                title={t('purchaseOrders.viewTooltip')}
                                             >
                                                 <Eye size={18} />
                                             </Link>
@@ -523,7 +525,7 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                                                 <button
                                                     onClick={() => handleDelete(order.id, order.code)}
                                                     className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded inline-block"
-                                                    title="Xóa"
+                                                    title={t('purchaseOrders.deleteTooltip')}
                                                 >
                                                     <Trash2 size={18} />
                                                 </button>
@@ -546,7 +548,7 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                             <div>
                                 <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                                     <ShoppingCart className="text-primary" />
-                                    {(formData as any).id ? "Sửa Đơn Đặt Hàng" : "Tạo Đơn Đặt Hàng Mới"}
+                                    {(formData as any).id ? t('purchaseOrders.editTitle') : t('purchaseOrders.addTitle')}
                                 </h2>
                             </div>
                             <button
@@ -561,16 +563,16 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                                 {/* General Info */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 bg-gray-50 dark:bg-gray-800/30 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
                                     <div className="sm:col-span-2 lg:col-span-1">
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nhà Cung Cấp *</label>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('purchaseOrders.supplierLabel')}</label>
                                         <SearchableSelect
                                             value={formData.supplierId}
                                             onChange={(val) => setFormData({ ...formData, supplierId: val })}
                                             options={supplierFormOptions}
-                                            placeholder="-- Chọn Nhà Cung Cấp --"
+                                            placeholder={t('purchaseOrders.selectSupplier')}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ngày Đặt Hàng</label>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('purchaseOrders.orderDate')}</label>
                                         <input
                                             type="date"
                                             required
@@ -580,13 +582,13 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                                         />
                                     </div>
                                     <div className="sm:col-span-2 lg:col-span-3">
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ghi Chú</label>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('purchaseOrders.notes')}</label>
                                         <input
                                             type="text"
                                             value={formData.notes}
                                             onChange={e => setFormData({ ...formData, notes: e.target.value })}
                                             className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2.5 text-gray-900 dark:text-white"
-                                            placeholder="Giao hàng buổi sáng..."
+                                            placeholder={t('purchaseOrders.notesPlaceholder')}
                                         />
                                     </div>
                                 </div>
@@ -595,7 +597,7 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                                 <div>
                                     <div className="flex justify-between items-center mb-3">
                                         <h3 className="font-semibold text-gray-800 dark:text-gray-200 text-lg flex items-center gap-2">
-                                            <FileText size={18} /> Chi Tiết Sản Phẩm Đặt
+                                            <FileText size={18} /> {t('purchaseOrders.itemDetailsTitle')}
                                         </h3>
                                     </div>
 
@@ -604,39 +606,39 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                                         <div className="mb-4 flex items-center gap-4 border-b border-gray-100 dark:border-gray-700 pb-3">
                                             <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
                                                 <input type="radio" className="accent-primary w-4 h-4 cursor-pointer" checked={!isCustomProduct} onChange={() => setIsCustomProduct(false)} />
-                                                <span>Chọn từ kho</span>
+                                                <span>{t('purchaseOrders.selectFromInventory')}</span>
                                             </label>
                                             <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
                                                 <input type="radio" className="accent-primary w-4 h-4 cursor-pointer" checked={isCustomProduct} onChange={() => setIsCustomProduct(true)} />
-                                                <span>Nhập tự do ngoài hệ thống</span>
+                                                <span>{t('purchaseOrders.customInput')}</span>
                                             </label>
                                         </div>
                                         <div className="flex flex-wrap gap-3 items-end mb-4">
                                             <div className="flex-1 min-w-[250px]">
-                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Tên Sản Phẩm</label>
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('purchaseOrders.productName')}</label>
                                                 {!isCustomProduct ? (
                                                     <SearchableSelect
                                                         options={products.map((p: any) => ({ value: p.id, label: `${p.sku} - ${p.name}` }))}
                                                         value={selectedProduct || ''}
                                                         onChange={handleProductSelect}
-                                                        placeholder="-- Chọn Sản Phẩm --"
+                                                        placeholder={t('purchaseOrders.selectProductPlaceholder')}
                                                     />
                                                 ) : (
-                                                    <input type="text" className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700" placeholder="Nhập tên sản phẩm/dịch vụ..." value={customName} onChange={e => setCustomName(e.target.value)} />
+                                                    <input type="text" className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700" placeholder={t('purchaseOrders.customNamePlaceholder')} value={customName} onChange={e => setCustomName(e.target.value)} />
                                                 )}
                                             </div>
                                             {isCustomProduct && (
                                                 <div className="w-24 shrink-0">
-                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">ĐVT</label>
-                                                    <input type="text" className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 text-center" placeholder="Đơn vị" value={customUnit} onChange={e => setCustomUnit(e.target.value)} />
+                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('purchaseOrders.unitLabel')}</label>
+                                                    <input type="text" className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 text-center" placeholder={t('purchaseOrders.unitPlaceholder')} value={customUnit} onChange={e => setCustomUnit(e.target.value)} />
                                                 </div>
                                             )}
                                             <div className="w-28 shrink-0">
-                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Đơn giá nhập</label>
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('purchaseOrders.priceLabel')}</label>
                                                 <input type="number" className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700" value={price} onChange={e => setPrice(Number(e.target.value))} />
                                             </div>
                                             <div className="w-20 shrink-0">
-                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Thuế %</label>
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('purchaseOrders.taxLabel')}</label>
                                                 {isCustomProduct ? (
                                                     <input type="number" className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-center text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700" value={customTaxRate} onChange={e => setCustomTaxRate(Number(e.target.value))} />
                                                 ) : (
@@ -644,24 +646,24 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                                                 )}
                                             </div>
                                             <div className="w-20 shrink-0">
-                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">SL</label>
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('purchaseOrders.qtyLabel')}</label>
                                                 <input type="number" min="1" className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-center text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700" value={qty} onChange={e => setQty(Number(e.target.value))} />
                                             </div>
-                                            <button type="button" onClick={handleAddItem} className="shrink-0 mb-[2px] h-[46px] px-6 border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 shadow-sm font-semibold rounded-lg dark:border-primary/50 dark:text-primary-light">Thêm</button>
+                                            <button type="button" onClick={handleAddItem} className="shrink-0 mb-[2px] h-[46px] px-6 border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 shadow-sm font-semibold rounded-lg dark:border-primary/50 dark:text-primary-light">{t('purchaseOrders.addBtn')}</button>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Ghi chú SP nhập <span className="text-gray-400 font-normal">(In trên PO)</span></label>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('purchaseOrders.itemNotesLabel')} <span className="text-gray-400 font-normal">{t('purchaseOrders.printOnPO')}</span></label>
                                             <div className="flex flex-wrap items-center gap-4 mb-2">
                                                 <label className={`flex items-center gap-2 cursor-pointer text-sm font-medium ${isCustomProduct ? 'text-gray-400' : 'text-gray-700 dark:text-gray-300'}`}>
                                                     <input type="radio" className="accent-primary w-4 h-4 cursor-pointer" checked={useInventoryDescription && !isCustomProduct} onChange={() => handleDescSourceChange(true)} disabled={isCustomProduct} />
-                                                    <span>Lấy mô tả từ kho</span>
+                                                    <span>{t('purchaseOrders.useInventoryDesc')}</span>
                                                 </label>
                                                 <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
                                                     <input type="radio" className="accent-primary w-4 h-4 cursor-pointer" checked={!useInventoryDescription || isCustomProduct} onChange={() => handleDescSourceChange(false)} />
-                                                    <span>Tự nhập ghi chú</span>
+                                                    <span>{t('purchaseOrders.customDesc')}</span>
                                                 </label>
                                             </div>
-                                            <textarea rows={2} className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-none text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700`} placeholder="Ghi chú thêm thông số, tính năng cho sản phẩm này..." value={customDescription} onChange={e => setCustomDescription(e.target.value)}></textarea>
+                                            <textarea rows={2} className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-none text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700`} placeholder={t('purchaseOrders.descPlaceholder')} value={customDescription} onChange={e => setCustomDescription(e.target.value)}></textarea>
                                         </div>
                                     </div>
 
@@ -671,11 +673,11 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                                             <table className="w-full min-w-[600px] text-sm mb-4 bg-white dark:bg-gray-800 text-left">
                                                 <thead className="bg-slate-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400">
                                                     <tr>
-                                                        <th className="p-3 font-medium">Sản Phẩm Đặt</th>
-                                                        <th className="p-3 font-medium text-center w-20">SL</th>
-                                                        <th className="p-3 font-medium text-right w-32">Đ.Giá</th>
-                                                        <th className="p-3 font-medium text-center w-20">Thuế</th>
-                                                        <th className="p-3 font-medium text-right w-36">Thành Tiền</th>
+                                                        <th className="p-3 font-medium">{t('purchaseOrders.orderedProduct')}</th>
+                                                        <th className="p-3 font-medium text-center w-20">{t('purchaseOrders.colQty')}</th>
+                                                        <th className="p-3 font-medium text-right w-32">{t('purchaseOrders.colPrice')}</th>
+                                                        <th className="p-3 font-medium text-center w-20">{t('purchaseOrders.colTax')}</th>
+                                                        <th className="p-3 font-medium text-right w-36">{t('purchaseOrders.colTotal')}</th>
                                                         <th className="p-3 font-medium text-center w-16"></th>
                                                     </tr>
                                                 </thead>
@@ -698,8 +700,8 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                                                                 <td className="p-3 text-right font-medium text-gray-800 dark:text-gray-200">{formatMoney(rowTotal)}</td>
                                                                 <td className="p-3 text-center">
                                                                     <div className="flex items-center justify-center gap-2">
-                                                                        <button type="button" onClick={() => handleEditItem(i)} className="text-blue-500 hover:text-blue-700 transition-colors" title="Sửa dòng này"><Edit2 size={14} /></button>
-                                                                        <button type="button" onClick={() => handleRemoveItem(i)} className="text-red-500 hover:text-red-700 transition-colors" title="Xóa"><Trash2 size={14} /></button>
+                                                                        <button type="button" onClick={() => handleEditItem(i)} className="text-blue-500 hover:text-blue-700 transition-colors" title={t('purchaseOrders.editLineTooltip')}><Edit2 size={14} /></button>
+                                                                        <button type="button" onClick={() => handleRemoveItem(i)} className="text-red-500 hover:text-red-700 transition-colors" title={t('purchaseOrders.deleteLineTooltip')}><Trash2 size={14} /></button>
                                                                     </div>
                                                                 </td>
                                                             </tr>
@@ -708,17 +710,17 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                                                 </tbody>
                                                 <tfoot>
                                                     <tr className="bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
-                                                        <td colSpan={4} className="p-3 text-right font-medium text-gray-600 dark:text-gray-400 text-sm">Tổng tiền trước thuế:</td>
+                                                        <td colSpan={4} className="p-3 text-right font-medium text-gray-600 dark:text-gray-400 text-sm">{t('purchaseOrders.subTotal')}</td>
                                                         <td className="p-3 text-right font-medium text-gray-800 dark:text-gray-200 text-sm">{formatMoney(calculateSubTotal())}</td>
                                                         <td className="p-3 border"></td>
                                                     </tr>
                                                     <tr className="bg-gray-50 dark:bg-gray-800/50">
-                                                        <td colSpan={4} className="p-3 text-right font-medium text-gray-600 dark:text-gray-400 text-sm">Tổng tiền thuế:</td>
+                                                        <td colSpan={4} className="p-3 text-right font-medium text-gray-600 dark:text-gray-400 text-sm">{t('purchaseOrders.taxAmount')}</td>
                                                         <td className="p-3 text-right font-medium text-gray-800 dark:text-gray-200 text-sm">{formatMoney(calculateTax())}</td>
                                                         <td className="p-3 border"></td>
                                                     </tr>
                                                     <tr className="bg-slate-100 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-700">
-                                                        <td colSpan={4} className="p-3 text-right font-bold text-gray-800 dark:text-gray-200">Tổng Cộng:</td>
+                                                        <td colSpan={4} className="p-3 text-right font-bold text-gray-800 dark:text-gray-200">{t('purchaseOrders.grandTotal')}</td>
                                                         <td className="p-3 text-right font-bold text-primary text-[15px]">{formatMoney(calculateTotal())}</td>
                                                         <td className="p-3 border"></td>
                                                     </tr>
@@ -735,7 +737,7 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                                 onClick={() => setIsCreateModalOpen(false)}
                                 className="px-4 py-2 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
                             >
-                                Hủy
+                                {t('purchaseOrders.cancelBtn')}
                             </button>
                             <button
                                 type="submit"
@@ -743,7 +745,7 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                                 disabled={isSubmitting || orderItems.length === 0}
                                 className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 font-medium transition-colors"
                             >
-                                {isSubmitting ? 'Đang lưu...' : 'Lưu Đơn Hàng'}
+                                {isSubmitting ? t('purchaseOrders.savingBtn') : t('purchaseOrders.saveBtn')}
                             </button>
                         </div>
                     </div>

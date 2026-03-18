@@ -9,9 +9,11 @@ import { useSearchParams } from 'next/navigation';
 import { createPurchasePayment, deletePurchasePayment } from '@/app/purchasing/actions';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
+import { useTranslation } from '@/app/i18n/LanguageContext';
 
 export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills }: { initialPayments: any[], suppliers: any[], unpaidBills: any[] }) {
     const router = useRouter();
+    const { t } = useTranslation();
     const [payments, setPayments] = useState(initialPayments);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -52,7 +54,7 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
             if (!res.ok) throw new Error(data.error);
             setFormData(prev => ({ ...prev, attachment: data.url }));
         } catch (err: any) {
-            alert(err.message || 'Upload thất bại');
+            alert(err.message || t('purchasePayments.uploadError'));
         } finally {
             setIsUploading(false);
         }
@@ -140,10 +142,9 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
     };
 
     const supplierFormOptions = useMemo(() => [
-        { value: '', label: '-- Chọn Nhà Cung Cấp --' },
-        ...suppliers.map((s: any) => ({ value: s.id, label: `${s.name} (Nợ: ${formatMoney(s.totalDebt)})` }))
-    ], [suppliers]);
-
+        { value: '', label: t('purchasePayments.selectSupplierPlaceholder') },
+        ...suppliers.map((s: any) => ({ value: s.id, label: `${s.name} (${t('purchasePayments.debtPrefix')} ${formatMoney(s.totalDebt)})` }))
+    ], [suppliers, t]);
 
     const handleOpenCreate = () => {
         setFormData({ supplierId: '', date: new Date().toISOString().substring(0, 10), amount: 0, paymentMethod: 'BANK_TRANSFER', reference: '', notes: '', attachment: '' });
@@ -196,12 +197,12 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
     };
 
     const handleDelete = async (id: string, code: string) => {
-        if (confirm(`Bạn có chắc chắn muốn HỦY/XÓA Phiếu Chi ${code}?\n\nHành động này không thể hoàn tác và sẽ hoàn lại công nợ tương ứng cho các Hóa đơn đã phân bổ.`)) {
+        if (confirm(t('purchasePayments.deletePrompt').replace('{{code}}', code))) {
             try {
                 await deletePurchasePayment(id);
                 setPayments(payments.filter(p => p.id !== id));
             } catch (error: any) {
-                alert(error.message || "Xóa thất bại.");
+                alert(error.message || t('purchasePayments.deleteError'));
             }
         }
     };
@@ -210,17 +211,17 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
         e.preventDefault();
 
         if (!formData.supplierId) {
-            alert("Vui lòng chọn nhà cung cấp");
+            alert(t('purchasePayments.supplierRequired'));
             return;
         }
 
         if (formData.amount <= 0) {
-            alert("Số tiền thanh toán phải lớn hơn 0");
+            alert(t('purchasePayments.amountRequired'));
             return;
         }
 
         if (totalAllocated > formData.amount + 0.01) {
-            alert("Tổng tiền phân bổ không được vượt quá số tiền thanh toán");
+            alert(t('purchasePayments.allocationExceedError'));
             return;
         }
 
@@ -256,7 +257,7 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
             router.refresh();
         } catch (error: any) {
             console.error(error);
-            alert(error.message || "Có lỗi xảy ra khi tạo Thanh toán");
+            alert(error.message || t('purchasePayments.createError'));
             setIsSubmitting(false);
         }
     };
@@ -265,12 +266,12 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
         <div className="p-8">
             <div className="page-header">
                 <div>
-                    <h1 className="text-2xl mb-1">Thanh Toán NCC</h1>
-                    <p className="text-sm text-gray-500">Ghi nhận các khoản thanh toán công nợ cho nhà cung cấp</p>
+                    <h1 className="text-2xl mb-1">{t('purchasePayments.title')}</h1>
+                    <p className="text-sm text-gray-500">{t('purchasePayments.description')}</p>
                 </div>
                 <button onClick={handleOpenCreate} className="btn btn-primary">
                     <Plus size={20} style={{ marginRight: '8px' }} />
-                    <span>Tạo Thanh Toán</span>
+                    <span>{t('purchasePayments.createPayment')}</span>
                 </button>
             </div>
 
@@ -279,7 +280,7 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                     <Search className="search-icon" size={20} />
                     <input
                         type="text"
-                        placeholder="Tìm theo mã GD, tham chiếu, tên NCC..."
+                        placeholder={t('purchasePayments.searchPlaceholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="input"
@@ -288,13 +289,13 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                 <div className="flex gap-4 w-full sm:w-auto text-sm mt-4 sm:mt-0">
                     <div className="stat-card stat-card-blue" style={{ minWidth: '160px' }}>
                         <div className="stat-info">
-                            <span className="stat-title">Tổng Lượt Thanh Toán</span>
+                            <span className="stat-title">{t('purchasePayments.totalPayments')}</span>
                             <span className="stat-value">{payments.length}</span>
                         </div>
                     </div>
                     <div className="stat-card stat-card-green" style={{ minWidth: '160px' }}>
                         <div className="stat-info">
-                            <span className="stat-title">Số Tiền Đã Trả</span>
+                            <span className="stat-title">{t('purchasePayments.totalPaidAmount')}</span>
                             <span className="stat-value">
                                 {formatMoney(payments.reduce((sum, p) => sum + (p.amount || 0), 0))}
                             </span>
@@ -308,25 +309,25 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                     <thead>
                         <tr>
                             <th onClick={() => requestSort('code')} className="cursor-pointer hover:bg-gray-100">
-                                <div className="flex items-center gap-1">Mã GD <ArrowUpDown size={14} className="text-gray-400" /></div>
+                                <div className="flex items-center gap-1">{t('purchasePayments.colTxnCode')} <ArrowUpDown size={14} className="text-gray-400" /></div>
                             </th>
                             <th onClick={() => requestSort('date')} className="cursor-pointer hover:bg-gray-100">
-                                <div className="flex items-center gap-1">Ngày / Nhà Cung Cấp <ArrowUpDown size={14} className="text-gray-400" /></div>
+                                <div className="flex items-center gap-1">{t('purchasePayments.colDateSupplier')} <ArrowUpDown size={14} className="text-gray-400" /></div>
                             </th>
                             <th onClick={() => requestSort('paymentMethod')} className="cursor-pointer hover:bg-gray-100">
-                                <div className="flex items-center gap-1">Phương Thức <ArrowUpDown size={14} className="text-gray-400" /></div>
+                                <div className="flex items-center gap-1">{t('purchasePayments.colMethod')} <ArrowUpDown size={14} className="text-gray-400" /></div>
                             </th>
                             <th onClick={() => requestSort('amount')} className="cursor-pointer hover:bg-gray-100 text-right">
-                                <div className="flex items-center justify-end gap-1">Số Tiền <ArrowUpDown size={14} className="text-gray-400" /></div>
+                                <div className="flex items-center justify-end gap-1">{t('purchasePayments.colAmount')} <ArrowUpDown size={14} className="text-gray-400" /></div>
                             </th>
-                            <th className="text-center">Thao tác</th>
+                            <th className="text-center">{t('purchasePayments.colActions')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {paginatedItems.length === 0 ? (
                             <tr>
                                 <td colSpan={5} className="p-8 text-center text-gray-500">
-                                    Không tìm thấy giao dịch thanh toán nào
+                                    {t('purchasePayments.noPaymentsFound')}
                                 </td>
                             </tr>
                         ) : (
@@ -346,15 +347,15 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                                         </Link>
                                     </td>
                                     <td className="p-4 text-sm text-gray-600 dark:text-gray-300">
-                                        {payment.paymentMethod === 'CASH' ? 'Tiền Mặt' : 'Chuyển Khoản'}
-                                        {payment.reference && <div className="text-xs text-gray-500 mt-1">Ref: {payment.reference}</div>}
+                                        {payment.paymentMethod === 'CASH' ? t('purchasePayments.methodCash') : t('purchasePayments.methodBank')}
+                                        {payment.reference && <div className="text-xs text-gray-500 mt-1">{t('purchasePayments.refPrefix')} {payment.reference}</div>}
                                     </td>
                                     <td className="p-4 text-right">
                                         <span className="font-semibold text-green-600 dark:text-green-400">
                                             {formatMoney(payment.amount)}
                                         </span>
                                         <div className="text-xs text-gray-500 mt-1">
-                                            Đã PB: {formatMoney(payment.allocations?.reduce((sum: number, a: any) => sum + a.amount, 0) || 0)}
+                                            {t('purchasePayments.allocatedPrefix')} {formatMoney(payment.allocations?.reduce((sum: number, a: any) => sum + a.amount, 0) || 0)}
                                         </div>
                                     </td>
                                     <td className="p-4 text-center">
@@ -362,14 +363,14 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                                             <Link
                                                 href={`/purchasing/payments/${payment.id}`}
                                                 className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded inline-block"
-                                                title="Xem chi tiết"
+                                                title={t('purchasePayments.viewTooltip')}
                                             >
                                                 <Eye size={18} />
                                             </Link>
                                             <button
                                                 onClick={() => handleDelete(payment.id, payment.code)}
                                                 className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded inline-block"
-                                                title="Hủy / Xóa"
+                                                title={t('purchasePayments.deleteTooltip')}
                                             >
                                                 <Trash2 size={18} />
                                             </button>
@@ -390,47 +391,47 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                         <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50">
                             <div>
                                 <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                    <Wallet className="text-green-500" /> Chi Tiết Thanh Toán
+                                    <Wallet className="text-green-500" /> {t('purchasePayments.viewModalTitle')}
                                 </h2>
-                                <p className="text-sm text-gray-500 mt-1">Mã: {viewingPayment.code}</p>
+                                <p className="text-sm text-gray-500 mt-1">{t('purchasePayments.codeLabel')} {viewingPayment.code}</p>
                             </div>
                             <button onClick={() => setViewingPayment(null)} className="text-gray-400 hover:text-gray-600">×</button>
                         </div>
                         <div className="p-6">
                             <div className="grid grid-cols-2 gap-4 mb-6">
                                 <div>
-                                    <p className="text-sm text-gray-500">Nhà Cung Cấp</p>
+                                    <p className="text-sm text-gray-500">{t('purchasePayments.supplierLabel')}</p>
                                     <p className="font-semibold text-gray-900 dark:text-white">{viewingPayment.supplier?.name}</p>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-sm text-gray-500">Ngày Thanh Toán</p>
+                                    <p className="text-sm text-gray-500">{t('purchasePayments.paymentDateLabel')}</p>
                                     <p className="font-semibold text-gray-900 dark:text-white">{formatDate(viewingPayment.date)}</p>
                                 </div>
                                 <div>
-                                    <p className="text-sm text-gray-500">Số Tiền</p>
+                                    <p className="text-sm text-gray-500">{t('purchasePayments.amountLabel')}</p>
                                     <p className="font-bold text-green-600 dark:text-green-400 text-lg">{formatMoney(viewingPayment.amount)}</p>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-sm text-gray-500">Hình Thức</p>
+                                    <p className="text-sm text-gray-500">{t('purchasePayments.methodLabel')}</p>
                                     <p className="font-semibold text-gray-900 dark:text-white">
-                                        {viewingPayment.paymentMethod === 'BANK_TRANSFER' ? 'Chuyển Khoản' : 'Tiền Mặt'}
+                                        {viewingPayment.paymentMethod === 'BANK_TRANSFER' ? t('purchasePayments.methodBank') : t('purchasePayments.methodCash')}
                                     </p>
-                                    {viewingPayment.reference && <p className="text-xs text-gray-500">Tham chiếu: {viewingPayment.reference}</p>}
+                                    {viewingPayment.reference && <p className="text-xs text-gray-500">{t('purchasePayments.refPrefix')} {viewingPayment.reference}</p>}
                                     {viewingPayment.attachment && (
                                         <a href={viewingPayment.attachment} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline flex items-center justify-end gap-1 mt-1">
-                                            <CheckCircle2 size={12} className="text-green-500" /> Xem chứng từ
+                                            <CheckCircle2 size={12} className="text-green-500" /> {t('purchasePayments.viewDocumentText')}
                                         </a>
                                     )}
                                 </div>
                             </div>
 
-                            <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-3 border-b border-gray-100 dark:border-gray-800 pb-2">Chi Tiết Phân Bổ Hóa Đơn</h3>
+                            <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-3 border-b border-gray-100 dark:border-gray-800 pb-2">{t('purchasePayments.allocationDetailsTitle')}</h3>
                             {viewingPayment.allocations && viewingPayment.allocations.length > 0 ? (
                                 <table className="w-full text-left text-sm">
                                     <thead>
                                         <tr className="text-gray-500">
-                                            <th className="pb-2">Hóa Đơn</th>
-                                            <th className="pb-2 text-right">Số Tiền Phân Bổ</th>
+                                            <th className="pb-2">{t('purchasePayments.colBill')}</th>
+                                            <th className="pb-2 text-right">{t('purchasePayments.colAllocatedAmount')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -443,7 +444,7 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                                     </tbody>
                                 </table>
                             ) : (
-                                <p className="text-sm text-gray-500 italic">Không có hóa đơn nào được phân bổ trực tiếp.</p>
+                                <p className="text-sm text-gray-500 italic">{t('purchasePayments.noBillsAllocated')}</p>
                             )}
                         </div>
                     </div>
@@ -458,7 +459,7 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                         <div className="modal-container flex max-w-4xl shadow-2xl">
                             <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50">
                                 <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                    <Wallet className="text-green-500" /> Ghi Nhận Thanh Toán (Chi Tiền)
+                                    <Wallet className="text-green-500" /> {t('purchasePayments.createModalTitle')}
                                 </h2>
                                 <button onClick={() => setIsCreateModalOpen(false)} className="text-gray-400 hover:text-gray-600">×</button>
                             </div>
@@ -467,50 +468,50 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                                 <form id="paymentForm" onSubmit={handleSubmit} className="space-y-6">
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-gray-50 dark:bg-gray-800/30 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
                                         <div className="sm:col-span-2 lg:col-span-2">
-                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nhà Cung Cấp *</label>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('purchasePayments.supplierReqLabel')}</label>
                                             <SearchableSelect
                                                 value={formData.supplierId}
                                                 onChange={(val) => handleSupplierChange(val)}
                                                 options={supplierFormOptions}
-                                                placeholder="-- Chọn Nhà Cung Cấp --"
+                                                placeholder={t('purchasePayments.selectSupplierPlaceholder')}
                                             />
                                         </div>
                                         <div className="sm:col-span-2 lg:col-span-2">
-                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Số Tiền Thanh Toán *</label>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('purchasePayments.paymentAmountReqLabel')}</label>
                                             <input
                                                 type="number" required min="1"
                                                 value={formData.amount}
                                                 onChange={e => setFormData({ ...formData, amount: Number(e.target.value) })}
                                                 className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2.5 font-bold text-lg text-green-600 dark:text-green-400"
                                             />
-                                            <p className="text-xs text-gray-500 mt-1">Định dạng số: {formatMoney(formData.amount)}</p>
+                                            <p className="text-xs text-gray-500 mt-1">{t('purchasePayments.numberFormat')} {formatMoney(formData.amount)}</p>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ngày Tháng</label>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('purchasePayments.dateLabel')}</label>
                                             <input type="date" required value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2.5" />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Hình Thức</label>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('purchasePayments.methodLabel')}</label>
                                             <select value={formData.paymentMethod} onChange={e => setFormData({ ...formData, paymentMethod: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2.5">
-                                                <option value="BANK_TRANSFER">Chuyển Khoản</option>
-                                                <option value="CASH">Tiền Mặt</option>
+                                                <option value="BANK_TRANSFER">{t('purchasePayments.methodBank')}</option>
+                                                <option value="CASH">{t('purchasePayments.methodCash')}</option>
                                             </select>
                                         </div>
                                         <div className="sm:col-span-1">
-                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tham Chiếu (UNC/Mã GD)</label>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('purchasePayments.referenceLabel')}</label>
                                             <input type="text" value={formData.reference} onChange={e => setFormData({ ...formData, reference: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2.5" />
                                         </div>
                                         <div className="sm:col-span-1">
-                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Hình ảnh/Tài liệu</label>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('purchasePayments.attachmentLabel')}</label>
                                             <div className="flex items-center gap-3 mt-1">
                                                 <label className="cursor-pointer bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2.5 hover:bg-gray-50 flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 transition-colors w-full justify-center">
                                                     <Upload size={16} />
-                                                    {isUploading ? 'Đang tải lên...' : 'Chọn file'}
+                                                    {isUploading ? t('purchasePayments.uploadingBtn') : t('purchasePayments.chooseFileBtn')}
                                                     <input type="file" accept="image/*,.pdf,.doc,.docx" className="hidden" onChange={handleFileUpload} disabled={isUploading} />
                                                 </label>
                                                 {formData.attachment && (
                                                     <a href={formData.attachment} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline text-sm flex items-center gap-1 min-w-max">
-                                                        <CheckCircle2 size={16} className="text-green-500" /> Đã tải lên
+                                                        <CheckCircle2 size={16} className="text-green-500" /> {t('purchasePayments.uploadedText')}
                                                     </a>
                                                 )}
                                             </div>
@@ -523,11 +524,11 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                                             <div className="flex justify-between items-end mb-3">
                                                 <div>
                                                     <h3 className="font-semibold text-gray-800 dark:text-gray-200 text-lg flex items-center gap-2">
-                                                        Phân Bổ Cho Các Hóa Đơn Nợ
+                                                        {t('purchasePayments.allocateBillsTitle')}
                                                     </h3>
                                                     {formData.amount > 0 && (
                                                         <div className="mt-1.5 text-sm flex items-center gap-2">
-                                                            <span className="text-gray-600 dark:text-gray-400">Số tiền chưa phân bổ:</span>
+                                                            <span className="text-gray-600 dark:text-gray-400">{t('purchasePayments.unallocatedAmount')}</span>
                                                             <span className={`font-bold px-2 py-0.5 rounded-md ${formData.amount - totalAllocated > 0 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : formData.amount === totalAllocated ? 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
                                                                 {formatMoney(formData.amount - totalAllocated)}
                                                             </span>
@@ -539,17 +540,17 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                                                     onClick={handleAutoAllocate}
                                                     className="text-sm font-medium bg-blue-50 text-blue-600 dark:bg-blue-900/30 px-3 py-1.5 rounded hover:bg-blue-100 flex items-center gap-1.5 transition-colors"
                                                 >
-                                                    <CheckCircle2 size={16} /> Phân bổ tự động
+                                                    <CheckCircle2 size={16} /> {t('purchasePayments.autoAllocateBtn')}
                                                 </button>
                                             </div>
                                             <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
                                                 <table className="w-full text-left border-collapse">
                                                     <thead>
                                                         <tr className="bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                                                            <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm">Hóa Đơn / Ngày</th>
-                                                            <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm text-right">Giá Trị HĐ</th>
-                                                            <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm text-right">Còn Nợ</th>
-                                                            <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm text-right w-48">Số Tiền Trả</th>
+                                                            <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm">{t('purchasePayments.colBillDate')}</th>
+                                                            <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm text-right">{t('purchasePayments.colBillValue')}</th>
+                                                            <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm text-right">{t('purchasePayments.colRemainingDebt')}</th>
+                                                            <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm text-right w-48">{t('purchasePayments.colPaymentAmountInput')}</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -586,9 +587,9 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                                                                                                 type="button"
                                                                                                 onClick={() => handleAllocationChange(bill.id, recommendVal, debt)}
                                                                                                 className="text-[11px] font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-100 px-2 py-0.5 rounded shadow-sm transition-colors active:scale-95"
-                                                                                                title="Điền tối đa số tiền còn lại có thể phân bổ"
+                                                                                                title={t('purchasePayments.fillMaxTooltip')}
                                                                                             >
-                                                                                                Điền {formatMoney(recommendVal)}
+                                                                                                {t('purchasePayments.fillBtn')} {formatMoney(recommendVal)}
                                                                                             </button>
                                                                                         </div>
                                                                                     );
@@ -601,14 +602,14 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                                                             )
                                                         })}
                                                         <tr className="bg-gray-50 dark:bg-gray-800/80 border-t-2 border-gray-200 dark:border-gray-700">
-                                                            <td colSpan={2} className="p-3 text-right font-semibold text-gray-700 dark:text-gray-300">Tổng Phân Bổ:</td>
+                                                            <td colSpan={2} className="p-3 text-right font-semibold text-gray-700 dark:text-gray-300">{t('purchasePayments.totalAllocatedLabel')}</td>
                                                             <td className="p-3 text-right font-bold text-red-600 dark:text-red-400">
                                                                 {formatMoney(supplierBills.reduce((s, b) => s + (b.totalAmount - b.paidAmount), 0))}
                                                             </td>
                                                             <td className={`p-3 text-right font-bold text-lg pr-4 ${totalAllocated > formData.amount ? 'text-red-600' : 'text-green-600'}`}>
                                                                 {formatMoney(totalAllocated)}
                                                                 <span className="block text-xs font-normal text-gray-500 mt-1">
-                                                                    / Tiền trả: {formatMoney(formData.amount)}
+                                                                    {t('purchasePayments.paymentLabel')} {formatMoney(formData.amount)}
                                                                 </span>
                                                             </td>
                                                         </tr>
@@ -616,14 +617,14 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                                                 </table>
                                             </div>
                                             {totalAllocated > formData.amount && (
-                                                <p className="text-red-500 text-sm mt-2 text-right">Lỗi: Tiền phân bổ đang lớn hơn Tổng tiền thanh toán.</p>
+                                                <p className="text-red-500 text-sm mt-2 text-right">{t('purchasePayments.allocationError')}</p>
                                             )}
                                         </div>
                                     )}
                                 </form>
                             </div>
                             <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 flex justify-end gap-3 mt-auto">
-                                <button type="button" onClick={() => setIsCreateModalOpen(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Hủy</button>
+                                <button type="button" onClick={() => setIsCreateModalOpen(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">{t('purchasePayments.cancelBtn')}</button>
                                 <button
                                     type="submit"
                                     form="paymentForm"
@@ -631,7 +632,7 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                                     style={{ backgroundColor: (isSubmitting || totalAllocated > formData.amount) ? '#9ca3af' : '#16a34a', color: 'white' }}
                                     className="px-6 py-2 rounded-lg font-medium transition-colors"
                                 >
-                                    {isSubmitting ? 'Đang xử lý...' : 'Xác Nhận Thanh Toán'}
+                                    {isSubmitting ? t('purchasePayments.processingBtn') : t('purchasePayments.confirmPaymentBtn')}
                                 </button>
                             </div>
                         </div>

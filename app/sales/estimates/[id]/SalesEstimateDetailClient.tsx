@@ -108,7 +108,7 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
 
     return (
         <div style={{ padding: '0', maxWidth: '100%', margin: '0 auto', fontFamily: 'Inter, sans-serif' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 md:mb-8">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <button
                         onClick={() => router.back()}
@@ -133,7 +133,7 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <div className="flex flex-wrap items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
                     <button
                         onClick={handleCopyPublicLink}
                         className="btn btn-secondary"
@@ -203,16 +203,16 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 5fr) minmax(0, 3fr)', gap: '2rem' }}>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 mt-6">
                 {/* Left Column: Details & Tabs */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                <div className="lg:col-span-2 flex flex-col gap-6">
 
                     {/* Summary Card */}
                     <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '1.5rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}>
                         <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#1e293b', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <FileText size={20} color="#6366f1" /> Thông tin chung
                         </h2>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1.5rem' }}>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
                             <div>
                                 <p style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600, color: '#94a3b8', marginBottom: '0.25rem' }}>KHÁCH HÀNG</p>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -258,7 +258,7 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
 
                     {/* Tabs area */}
                     <div style={{ backgroundColor: 'white', borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }}>
-                        <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0' }}>
+                        <div className="flex overflow-x-auto whitespace-nowrap border-b border-gray-200 px-2 pb-1 sm:pb-0 scrollbar-hide">
                             <button
                                 onClick={() => setActiveTab('items')}
                                 style={{
@@ -300,10 +300,10 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                             </button>
                         </div>
 
-                        <div style={{ padding: '1.5rem' }}>
+                        <div className="p-4 sm:p-6">
                             {activeTab === 'items' && (
-                                <div style={{ overflowX: 'auto' }}>
-                                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+                                <div className="overflow-x-auto w-full">
+                                    <table className="w-full min-w-[700px] text-left text-sm border-collapse">
                                         <thead>
                                             <tr style={{ backgroundColor: '#f8fafc', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>
                                                 <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Sản Phẩm</th>
@@ -373,7 +373,7 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
 
 
                 {/* Column 2: TaskPanel and Timeline */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div className="lg:col-span-1 flex flex-col gap-6">
 
                     <TaskPanel
                         initialTasks={estimate.tasks || []}

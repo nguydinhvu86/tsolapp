@@ -13,10 +13,12 @@ import { Plus, Trash2, Printer, Search, Edit, Eye, ChevronUp, ChevronDown, Arrow
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
+import { useTranslation } from '@/app/i18n/LanguageContext';
 
 type ContractWithRelations = Contract & { customer: Customer, template: ContractTemplate };
 
 export function ContractDashboardClient({ initialData }: { initialData: ContractWithRelations[] }) {
+    const { t } = useTranslation();
     const router = useRouter();
     const { data: session } = useSession();
     const permissions = session?.user?.permissions || [];
@@ -73,7 +75,7 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
     });
 
     const handleDelete = async (id: string) => {
-        if (confirm('Bạn có chắc chắn muốn xóa hợp đồng này?')) {
+        if (confirm(t('contractDashboard.confirmDelete'))) {
             await deleteContract(id);
             router.refresh();
         }
@@ -109,23 +111,23 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
                         <Search size={18} color="var(--text-muted)" />
                         <input
                             style={{ border: 'none', outline: 'none', padding: '0.25rem', background: 'transparent' }}
-                            placeholder="Tìm theo tên/khách hàng..."
+                            placeholder={t('contractDashboard.searchPlaceholder')}
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                         />
                     </div>
                     <select className="input" style={{ width: '150px' }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-                        <option value="">Tất cả trạng thái</option>
-                        <option value="DRAFT">Nháp</option>
-                        <option value="SENT">Đã Gửi</option>
-                        <option value="SIGNED">Đã Ký</option>
-                        <option value="CANCELLED">Hủy</option>
+                        <option value="">{t('contractDashboard.statusAll')}</option>
+                        <option value="DRAFT">{t('contractDashboard.statusDraft')}</option>
+                        <option value="SENT">{t('contractDashboard.statusSent')}</option>
+                        <option value="SIGNED">{t('contractDashboard.statusSigned')}</option>
+                        <option value="CANCELLED">{t('contractDashboard.statusCancelled')}</option>
                     </select>
                 </div>
                 {canCreate && (
                     <Link href="/contracts/new">
                         <Button className="gap-2">
-                            <Plus size={18} /> Tạo Hợp Đồng
+                            <Plus size={18} /> {t('contractDashboard.createContract')}
                         </Button>
                     </Link>
                 )}
@@ -135,26 +137,26 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
                 <thead>
                     <tr>
                         <th onClick={() => handleSort('title')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                            <div className="flex items-center gap-1">Tên Hợp đồng {sortField === 'title' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
+                            <div className="flex items-center gap-1">{t('contractDashboard.title')} {sortField === 'title' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
                         </th>
                         <th onClick={() => handleSort('templateName')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                            <div className="flex items-center gap-1">Loại Mẫu {sortField === 'templateName' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
+                            <div className="flex items-center gap-1">{t('contractDashboard.templateName')} {sortField === 'templateName' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
                         </th>
                         <th onClick={() => handleSort('customerName')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                            <div className="flex items-center gap-1">Khách hàng {sortField === 'customerName' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
+                            <div className="flex items-center gap-1">{t('contractDashboard.customerName')} {sortField === 'customerName' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
                         </th>
                         <th onClick={() => handleSort('status')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                            <div className="flex items-center gap-1">Trạng thái {sortField === 'status' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
+                            <div className="flex items-center gap-1">{t('contractDashboard.status')} {sortField === 'status' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
                         </th>
                         <th onClick={() => handleSort('createdAt')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                            <div className="flex items-center gap-1">Ngày tạo {sortField === 'createdAt' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
+                            <div className="flex items-center gap-1">{t('contractDashboard.createdAt')} {sortField === 'createdAt' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
                         </th>
-                        <th style={{ width: '150px' }}>Thao tác</th>
+                        <th style={{ width: '150px' }}>{t('contractDashboard.actions')}</th>
                     </tr>
                 </thead>
                 <tbody>
                     {sortedData.length === 0 ? (
-                        <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Chưa có hợp đồng nào</td></tr>
+                        <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>{t('contractDashboard.noContracts')}</td></tr>
                     ) : sortedData.map(c => (
                         <tr key={c.id}>
                             <td style={{ fontWeight: 500 }}>
@@ -181,27 +183,27 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
                                     onChange={(e) => handleStatusChange(c.id, e.target.value)}
                                     disabled={!canEdit}
                                 >
-                                    <option value="DRAFT">Nháp</option>
-                                    <option value="SENT">Đã Gửi</option>
-                                    <option value="SIGNED">Đã Ký</option>
-                                    <option value="CANCELLED">Hủy</option>
+                                    <option value="DRAFT">{t('contractDashboard.statusDraft')}</option>
+                                    <option value="SENT">{t('contractDashboard.statusSent')}</option>
+                                    <option value="SIGNED">{t('contractDashboard.statusSigned')}</option>
+                                    <option value="CANCELLED">{t('contractDashboard.statusCancelled')}</option>
                                 </select>
                             </td>
                             <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }} suppressHydrationWarning>{formatDate(new Date(c.createdAt))}</td>
                             <td>
                                 <div className="flex gap-2">
                                     {canEdit && (
-                                        <button onClick={() => handleEditClick(c)} style={{ color: 'var(--primary)', padding: '0.25rem' }} title="Chỉnh sửa nội dung">
+                                        <button onClick={() => handleEditClick(c)} style={{ color: 'var(--primary)', padding: '0.25rem' }} title={t('contractDashboard.editContent')}>
                                             <Edit size={18} />
                                         </button>
                                     )}
                                     <Link href={`/contracts/${c.id}`}>
-                                        <button style={{ color: 'var(--primary)', padding: '0.25rem' }} title="Xem Hợp Đồng & Phụ Lục">
+                                        <button style={{ color: 'var(--primary)', padding: '0.25rem' }} title={t('contractDashboard.viewContract')}>
                                             <Eye size={18} />
                                         </button>
                                     </Link>
                                     {canDelete && (
-                                        <button onClick={() => handleDelete(c.id)} style={{ color: 'var(--danger)', padding: '0.25rem' }} title="Xóa">
+                                        <button onClick={() => handleDelete(c.id)} style={{ color: 'var(--danger)', padding: '0.25rem' }} title={t('contractDashboard.delete')}>
                                             <Trash2 size={18} />
                                         </button>
                                     )}
@@ -215,22 +217,22 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
             <Modal
                 isOpen={!!editingContract}
                 onClose={() => setEditingContract(null)}
-                title={`Sửa hợp đồng: ${editingContract?.title}`}
+                title={`${t('contractDashboard.editTitle')}: ${editingContract?.title}`}
                 maxWidth="1000px"
             >
                 <div className="flex flex-col gap-4">
                     <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                        Khách hàng: <strong>{editingContract?.customer.name}</strong>
+                        {t('contractDashboard.customerLabel')}: <strong>{editingContract?.customer.name}</strong>
                     </p>
                     <RichTextEditor
                         value={editContent}
                         onChange={setEditContent}
-                        placeholder="Nội dung hợp đồng..."
+                        placeholder={t('contractDashboard.editPlaceholder')}
                     />
                     <div className="flex gap-2" style={{ marginTop: '1rem', justifyContent: 'flex-end' }}>
-                        <Button variant="secondary" onClick={() => setEditingContract(null)}>Hủy</Button>
+                        <Button variant="secondary" onClick={() => setEditingContract(null)}>{t('contractDashboard.cancel')}</Button>
                         <Button onClick={handleSaveContract} disabled={isSaving}>
-                            {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
+                            {isSaving ? t('contractDashboard.saving') : t('contractDashboard.saveChanges')}
                         </Button>
                     </div>
                 </div>

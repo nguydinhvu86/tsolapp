@@ -8,6 +8,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { updateSidebarOrder } from './actions';
+import { useTranslation } from '../../i18n/LanguageContext';
 
 // Define the interface for Online User data
 interface OnlineUser {
@@ -28,97 +29,97 @@ const hasPermission = (permissions: string[], requiredPerm: string) => {
 };
 
 const mainNavItems: any[] = [
-    { name: 'Bảng Điều Khiển', href: '/dashboard', icon: LayoutDashboard, permission: 'VIEW_DASHBOARD' },
-    { name: 'Dự Án (Projects)', href: '/projects', icon: Target, permission: 'TASKS_VIEW' },
-    { name: 'Công Việc & Giao Việc', href: '/tasks', icon: CheckSquare, permission: 'TASKS_VIEW' },
-    { name: 'Thư Viện & Đào Tạo', href: '/library', icon: BookOpen, permission: 'TASKS_VIEW' },
+    { name: 'Bảng Điều Khiển', nameKey: 'sidebar.dashboard', href: '/dashboard', icon: LayoutDashboard, permission: 'VIEW_DASHBOARD' },
+    { name: 'Dự Án (Projects)', nameKey: 'sidebar.projects', href: '/projects', icon: Target, permission: 'TASKS_VIEW' },
+    { name: 'Công Việc & Giao Việc', nameKey: 'sidebar.tasks', href: '/tasks', icon: CheckSquare, permission: 'TASKS_VIEW' },
+    { name: 'Thư Viện & Đào Tạo', nameKey: 'sidebar.library', href: '/library', icon: BookOpen, permission: 'TASKS_VIEW' },
     {
-        name: 'Quản Lý Văn Thư',
+        name: 'Quản Lý Văn Thư', nameKey: 'sidebar.documents',
         icon: FileStack,
         children: [
-            { name: 'Quản lý Hợp Đồng', href: '/contracts', permission: 'CONTRACTS_VIEW' },
-            { name: 'Phụ Lục Hợp Đồng', href: '/contract-appendices', permission: 'CONTRACTS_VIEW' },
-            { name: 'Công Văn & Thông Báo', href: '/dispatches', permission: 'DISPATCHES_VIEW' },
-            { name: 'Quản lý Báo Giá', href: '/quotes', permission: 'QUOTES_VIEW' },
-            { name: 'Biên Bản Bàn Giao', href: '/handovers', permission: 'HANDOVERS_VIEW' },
-            { name: 'Đề Nghị Thanh Toán', href: '/payment-requests', permission: 'PAYMENTS_VIEW' },
+            { name: 'Quản lý Hợp Đồng', nameKey: 'sidebar.contracts', href: '/contracts', permission: 'CONTRACTS_VIEW' },
+            { name: 'Phụ Lục Hợp Đồng', nameKey: 'sidebar.appendix', href: '/contract-appendices', permission: 'CONTRACTS_VIEW' },
+            { name: 'Công Văn & Thông Báo', nameKey: 'sidebar.dispatches', href: '/dispatches', permission: 'DISPATCHES_VIEW' },
+            { name: 'Quản lý Báo Giá', nameKey: 'sidebar.quotes', href: '/quotes', permission: 'QUOTES_VIEW' },
+            { name: 'Biên Bản Bàn Giao', nameKey: 'sidebar.handovers', href: '/handovers', permission: 'HANDOVERS_VIEW' },
+            { name: 'Đề Nghị Thanh Toán', nameKey: 'sidebar.payments', href: '/payment-requests', permission: 'PAYMENTS_VIEW' },
             {
-                name: 'Quản Lý Biểu Mẫu',
+                name: 'Quản Lý Biểu Mẫu', nameKey: 'sidebar.templates',
                 icon: FileCode,
                 permission: 'TEMPLATES_VIEW',
                 children: [
-                    { name: 'Mẫu Hợp Đồng', href: '/templates' },
-                    { name: 'Mẫu Phụ Lục HĐ', href: '/appendix-templates' },
-                    { name: 'Mẫu Báo Giá', href: '/quote-templates' },
-                    { name: 'Mẫu Biên Bản', href: '/handover-templates' },
-                    { name: 'Mẫu Đề Nghị', href: '/payment-request-templates' },
-                    { name: 'Mẫu Công Văn', href: '/dispatch-templates' }
+                    { name: 'Mẫu Hợp Đồng', nameKey: 'sidebar.tpl_contracts', href: '/templates' },
+                    { name: 'Mẫu Phụ Lục HĐ', nameKey: 'sidebar.tpl_appendix', href: '/appendix-templates' },
+                    { name: 'Mẫu Báo Giá', nameKey: 'sidebar.tpl_quotes', href: '/quote-templates' },
+                    { name: 'Mẫu Biên Bản', nameKey: 'sidebar.tpl_handovers', href: '/handover-templates' },
+                    { name: 'Mẫu Đề Nghị', nameKey: 'sidebar.tpl_payments', href: '/payment-request-templates' },
+                    { name: 'Mẫu Công Văn', nameKey: 'sidebar.tpl_dispatches', href: '/dispatch-templates' }
                 ]
             }
         ]
     },
     {
-        name: 'Quản Lý Kho',
+        name: 'Quản Lý Kho', nameKey: 'sidebar.inventory',
         icon: Package,
         children: [
-            { name: 'Sản Phẩm & Dịch Vụ', href: '/inventory/products', permission: 'PRODUCTS_VIEW' },
-            { name: 'Danh Sách Kho', href: '/inventory/warehouses', permission: 'WAREHOUSES_VIEW' },
-            { name: 'Lịch Sử Lệnh Kho', href: '/inventory/transactions', permission: 'INVENTORY_TX_VIEW' },
-            { name: 'Kiểm Kê Kho', href: '/inventory/adjustments', permission: 'INVENTORY_TX_VIEW' },
-            { name: 'Báo Cáo Tồn Kho', href: '/inventory/reports', permission: 'INVENTORY_TX_VIEW' }
+            { name: 'Sản Phẩm & Dịch Vụ', nameKey: 'sidebar.products', href: '/inventory/products', permission: 'PRODUCTS_VIEW' },
+            { name: 'Danh Sách Kho', nameKey: 'sidebar.warehouses', href: '/inventory/warehouses', permission: 'WAREHOUSES_VIEW' },
+            { name: 'Lịch Sử Lệnh Kho', nameKey: 'sidebar.inventory_tx', href: '/inventory/transactions', permission: 'INVENTORY_TX_VIEW' },
+            { name: 'Kiểm Kê Kho', nameKey: 'sidebar.inventory_adj', href: '/inventory/adjustments', permission: 'INVENTORY_TX_VIEW' },
+            { name: 'Báo Cáo Tồn Kho', nameKey: 'sidebar.inventory_reports', href: '/inventory/reports', permission: 'INVENTORY_TX_VIEW' }
         ]
     },
     {
-        name: 'Mua Hàng',
+        name: 'Mua Hàng', nameKey: 'sidebar.purchasing',
         icon: ShoppingCart,
         children: [
-            { name: 'Nhà Cung Cấp', href: '/suppliers', permission: 'SUPPLIERS_VIEW' },
-            { name: 'Đơn Đặt Hàng', href: '/purchasing/orders', permission: 'PURCHASE_ORDERS_VIEW' },
-            { name: 'Hóa Đơn Mua', href: '/purchasing/bills', permission: 'PURCHASE_BILLS_VIEW' },
-            { name: 'Thanh Toán', href: '/purchasing/payments', permission: 'PURCHASE_PAYMENTS_VIEW' },
-            { name: 'Báo Cáo Mua Hàng', href: '/purchasing/reports', permission: 'PURCHASE_BILLS_VIEW' }
+            { name: 'Nhà Cung Cấp', nameKey: 'sidebar.suppliers', href: '/suppliers', permission: 'SUPPLIERS_VIEW' },
+            { name: 'Đơn Đặt Hàng', nameKey: 'sidebar.po', href: '/purchasing/orders', permission: 'PURCHASE_ORDERS_VIEW' },
+            { name: 'Hóa Đơn Mua', nameKey: 'sidebar.pb', href: '/purchasing/bills', permission: 'PURCHASE_BILLS_VIEW' },
+            { name: 'Thanh Toán', nameKey: 'sidebar.pp', href: '/purchasing/payments', permission: 'PURCHASE_PAYMENTS_VIEW' },
+            { name: 'Báo Cáo Mua Hàng', nameKey: 'sidebar.purchasing_reports', href: '/purchasing/reports', permission: 'PURCHASE_BILLS_VIEW' }
         ]
     },
     {
-        name: 'Bán Hàng',
+        name: 'Bán Hàng', nameKey: 'sidebar.sales',
         icon: ShoppingCart,
         children: [
-            { name: 'Cơ Hội Bán Hàng', href: '/sales/leads', permission: 'SALES_ESTIMATES_VIEW' }, // FIXME later with proper permission
-            { name: 'Báo Giá (ERP)', href: '/sales/estimates', permission: 'SALES_ESTIMATES_VIEW' },
-            { name: 'Đơn Đặt Hàng', href: '/sales/orders', permission: 'SALES_ORDERS_VIEW' },
-            { name: 'Hóa Đơn / Xuất Kho', href: '/sales/invoices', permission: 'SALES_INVOICES_VIEW' },
-            { name: 'Thu Tiền / Công Nợ', href: '/sales/payments', permission: 'SALES_PAYMENTS_VIEW' },
-            { name: 'Chi Phí', href: '/sales/expenses', permission: 'SALES_EXPENSES_VIEW' },
-            { name: 'Báo Cáo Doanh Thu', href: '/sales/reports', permission: 'SALES_INVOICES_VIEW' }
+            { name: 'Cơ Hội Bán Hàng', nameKey: 'sidebar.leads', href: '/sales/leads', permission: 'SALES_ESTIMATES_VIEW' }, // FIXME later with proper permission
+            { name: 'Báo Giá (ERP)', nameKey: 'sidebar.estimates', href: '/sales/estimates', permission: 'SALES_ESTIMATES_VIEW' },
+            { name: 'Đơn Đặt Hàng', nameKey: 'sidebar.so', href: '/sales/orders', permission: 'SALES_ORDERS_VIEW' },
+            { name: 'Hóa Đơn / Xuất Kho', nameKey: 'sidebar.si', href: '/sales/invoices', permission: 'SALES_INVOICES_VIEW' },
+            { name: 'Thu Tiền / Công Nợ', nameKey: 'sidebar.sp', href: '/sales/payments', permission: 'SALES_PAYMENTS_VIEW' },
+            { name: 'Chi Phí', nameKey: 'sidebar.expenses', href: '/sales/expenses', permission: 'SALES_EXPENSES_VIEW' },
+            { name: 'Báo Cáo Doanh Thu', nameKey: 'sidebar.sales_reports', href: '/sales/reports', permission: 'SALES_INVOICES_VIEW' }
         ]
     },
-    { name: 'Khách Hàng', href: '/customers', icon: Users, permission: 'CUSTOMERS_VIEW' },
+    { name: 'Khách Hàng', nameKey: 'sidebar.customers', href: '/customers', icon: Users, permission: 'CUSTOMERS_VIEW' },
     {
-        name: 'Nhân Sự (HR)',
+        name: 'Nhân Sự (HR)', nameKey: 'sidebar.hr',
         icon: Clock,
         children: [
-            { name: 'Công Của Tôi', href: '/my-attendance' },
-            { name: 'Đơn Nghỉ Phép', href: '/leave-requests' },
-            { name: 'Bảng Công', href: '/hr/attendance', permission: 'SETTINGS_VIEW' }, // using SETTINGS_VIEW for admin/hr bypass for now
-            { name: 'Duyệt Đơn', href: '/hr/approvals', permission: 'SETTINGS_VIEW' },
-            { name: 'Giám Sát (Ping)', href: '/hr/monitoring', permission: 'SETTINGS_VIEW' }
+            { name: 'Công Của Tôi', nameKey: 'sidebar.my_attendance', href: '/my-attendance' },
+            { name: 'Đơn Nghỉ Phép', nameKey: 'sidebar.leave_requests', href: '/leave-requests' },
+            { name: 'Bảng Công', nameKey: 'sidebar.attendance', href: '/hr/attendance', permission: 'SETTINGS_VIEW' }, // using SETTINGS_VIEW for admin/hr bypass for now
+            { name: 'Duyệt Đơn', nameKey: 'sidebar.approvals', href: '/hr/approvals', permission: 'SETTINGS_VIEW' },
+            { name: 'Giám Sát (Ping)', nameKey: 'sidebar.monitoring', href: '/hr/monitoring', permission: 'SETTINGS_VIEW' }
         ]
     },
     {
-        name: 'Thiết Lập',
+        name: 'Thiết Lập', nameKey: 'sidebar.settings',
         icon: Settings,
         children: [
-            { name: 'Quản lý Người dùng', href: '/users', permission: 'USERS_VIEW', icon: Users },
-            { name: 'Nhóm Quyền', href: '/users/roles', permission: 'ROLES_VIEW', icon: CheckSquare },
-            { name: 'Cấu hình Email', href: '/email-config', permission: 'SETTINGS_VIEW', icon: Mail },
-            { name: 'Mẫu Email', href: '/email-templates', permission: 'SETTINGS_VIEW', icon: FileText },
-            { name: 'Cấu hình Lead', href: '/settings/lead-forms', permission: 'SETTINGS_VIEW', icon: Target },
-            { name: 'Cài đặt chung', href: '/settings', permission: 'SETTINGS_VIEW', icon: Settings }
+            { name: 'Quản lý Người dùng', nameKey: 'sidebar.users', href: '/users', permission: 'USERS_VIEW', icon: Users },
+            { name: 'Nhóm Quyền', nameKey: 'sidebar.roles', href: '/users/roles', permission: 'ROLES_VIEW', icon: CheckSquare },
+            { name: 'Cấu hình Email', nameKey: 'sidebar.email_config', href: '/email-config', permission: 'SETTINGS_VIEW', icon: Mail },
+            { name: 'Mẫu Email', nameKey: 'sidebar.email_templates', href: '/email-templates', permission: 'SETTINGS_VIEW', icon: FileText },
+            { name: 'Cấu hình Lead', nameKey: 'sidebar.lead_settings', href: '/settings/lead-forms', permission: 'SETTINGS_VIEW', icon: Target },
+            { name: 'Cài đặt chung', nameKey: 'sidebar.general_settings', href: '/settings', permission: 'SETTINGS_VIEW', icon: Settings }
         ]
     }
 ];
 
-function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, toggleSubMenu, onClose }: any) {
+function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, toggleSubMenu, onClose, t }: any) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.name });
 
     const style = {
@@ -162,7 +163,7 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
                     >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                             {item.icon && <item.icon size={20} />}
-                            {item.name}
+                            {t(item.nameKey) !== item.nameKey ? t(item.nameKey) : item.name}
                         </div>
                         {isOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                     </button>
@@ -187,7 +188,7 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
                                         >
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                                 {child.icon ? <child.icon size={18} /> : <FileCode size={18} />}
-                                                {child.name}
+                                                {t(child.nameKey) !== child.nameKey ? t(child.nameKey) : child.name}
                                             </div>
                                             {isChildOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                                         </button>
@@ -208,7 +209,7 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
                                                                 transition: 'all 0.2s', display: 'block'
                                                             }}
                                                         >
-                                                            {gChild.name}
+                                                            {t(gChild.nameKey) !== gChild.nameKey ? t(gChild.nameKey) : gChild.name}
                                                         </Link>
                                                     )
                                                 })}
@@ -232,7 +233,7 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
                                         transition: 'all 0.2s', display: 'block'
                                     }}
                                 >
-                                    {child.name}
+                                    {t(child.nameKey) !== child.nameKey ? t(child.nameKey) : child.name}
                                 </Link>
                             )
                         })}
@@ -260,7 +261,7 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
                 }}
             >
                 <item.icon size={20} />
-                {item.name}
+                {t(item.nameKey) !== item.nameKey ? t(item.nameKey) : item.name}
             </Link>
         </div>
     );
@@ -270,6 +271,7 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
 export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, onClose, initialSidebarOrder = [] }: { brandName?: string, logoUrl?: string | null, isOpen?: boolean, onClose?: () => void, initialSidebarOrder?: string[] }) {
     const pathname = usePathname();
     const { data: session } = useSession();
+    const { t } = useTranslation();
     const [openSubMenus, setOpenSubMenus] = useState<Record<string, boolean>>({});
 
     const [navItems, setNavItems] = useState(mainNavItems);
@@ -520,6 +522,7 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
                                     openSubMenus={openSubMenus}
                                     toggleSubMenu={toggleSubMenu}
                                     onClose={onClose}
+                                    t={t}
                                 />
                             ))}
                         </SortableContext>

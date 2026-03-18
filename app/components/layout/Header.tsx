@@ -11,6 +11,7 @@ import { HeaderAttendance } from '../hr/HeaderAttendance';
 import ChatWidget from '../chat/ChatWidget';
 import { AvatarImage } from '../ui/AvatarImage';
 import { PushPermissionToggle } from '../ui/PushPermissionToggle';
+import LanguageSwitcher from '../LanguageSwitcher';
 
 export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
     const { data: session } = useSession();
@@ -50,6 +51,7 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
             </div>
             <div className="flex items-center gap-2 md:gap-3">
                 {session?.user && <ChatWidget currentUser={session.user} />}
+                <LanguageSwitcher />
                 <HeaderAttendance />
                 <PushPermissionToggle />
                 <NotificationBell />

@@ -7,6 +7,7 @@ import { Card } from '@/app/components/ui/Card';
 import { Table } from '@/app/components/ui/Table';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { Button } from '@/app/components/ui/Button';
+import { useTranslation } from '@/app/i18n/LanguageContext';
 import { Modal } from '@/app/components/ui/Modal';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { Plus, Edit2, Trash2, Save, X, Printer, FileText, Search, Calendar, FolderClock, LayoutList, CheckCircle2, XCircle, Eye, Link as LinkIcon, Download, ChevronUp, ChevronDown, Check, ArrowRightLeft, ShoppingCart, Copy } from 'lucide-react';
@@ -16,6 +17,7 @@ import { TagDisplay } from '@/app/components/ui/TagDisplay';
 import { AvatarImage } from '@/app/components/ui/AvatarImage';
 
 export default function SalesEstimateClient({ initialEstimates, customers, products, leads, nextCode, initialAction, initialCustomerId, initialLeadId, users, currentUserId, isAdminOrManager }: any) {
+    const { t } = useTranslation();
     const router = useRouter();
     const [estimates, setEstimates] = useState(initialEstimates);
     const [isFormOpen, setIsFormOpen] = useState(initialAction === 'new');
@@ -215,7 +217,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
 
         if (isCustomProduct) {
             if (!customName.trim()) {
-                alert('Vui lòng nhập tên sản phẩm tự do');
+                alert(t('estimates.errorCustomName'));
                 return;
             }
             pName = customName;
@@ -314,7 +316,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
 
     const handleSave = async () => {
         if (!formData.customerId || formData.items.length === 0) {
-            alert('Vui lòng chọn khách hàng và ít nhất 1 sản phẩm');
+            alert(t('estimates.errorSave'));
             return;
         }
 
@@ -334,15 +336,15 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
             setIsFormOpen(false);
             router.refresh();
         } else {
-            alert('Lỗi: ' + res.error);
+            alert(t('estimates.errorGeneric') + ' ' + res.error);
         }
     };
 
     const handleStatusChange = async (id: string, newStatus: string) => {
         setActionModal({
             isOpen: true,
-            title: 'Khẳng định thay đổi',
-            message: `Bạn có chắc chắn muốn chuyển trạng thái báo giá này sang "${newStatus}"?`,
+            title: t('estimates.confirmTitle'),
+            message: t('estimates.confirmChangeStatusMsg').replace('{{status}}', newStatus),
             action: async () => {
                 const res = await updateSalesEstimateStatus(id, newStatus);
                 if (res.success) {
@@ -355,8 +357,8 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
     const handleDelete = async (id: string) => {
         setActionModal({
             isOpen: true,
-            title: 'Xóa Báo Giá',
-            message: 'Hành động này sẽ Xóa báo giá này hoàn toàn (không thể phục hồi). Bạn chắc chắn chứ?',
+            title: t('estimates.confirmDeleteTitle'),
+            message: t('estimates.confirmDeleteMsg'),
             action: async () => {
                 const res = await deleteSalesEstimate(id);
                 if (res.success) {
@@ -371,7 +373,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         setIsConverting(true);
         const res = await convertEstimateToInvoice(convertModalId);
         if (res.success) {
-            alert("Đã tạo Hóa Đơn thành công!");
+            alert(t('estimates.successInvoice'));
             router.push('/sales/invoices');
         } else {
             alert(res.error);
@@ -385,7 +387,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         setIsConvertingOrder(true);
         const res = await convertEstimateToOrder(convertOrderModalId);
         if (res.success) {
-            alert("Đã tạo Đơn Đặt Hàng thành công!");
+            alert(t('estimates.successOrder'));
             router.push('/sales/orders');
         } else {
             alert(res.error);
@@ -448,16 +450,16 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         };
     }, [baseFilteredEstimates]);
 
-    const statsCards = [
-        { id: 'ALL', label: 'Tất Cả', count: stats.ALL.count, amount: stats.ALL.amount, colorClass: 'stat-card-purple', icon: LayoutList },
-        { id: 'DRAFT', label: 'Bản Dự Thảo', count: stats.DRAFT.count, amount: stats.DRAFT.amount, colorClass: 'stat-card-amber', icon: FileText },
-        { id: 'SENT', label: 'Đã Gửi KH', count: stats.SENT.count, amount: stats.SENT.amount, colorClass: 'stat-card-blue', icon: FolderClock },
-        { id: 'EXPIRED', label: 'Hết Hiệu Lực', count: stats.EXPIRED.count, amount: stats.EXPIRED.amount, colorClass: 'stat-card-gray', icon: XCircle },
-        { id: 'ACCEPTED', label: 'Khách Chốt', count: stats.ACCEPTED.count, amount: stats.ACCEPTED.amount, colorClass: 'stat-card-green', icon: CheckCircle2 },
-        { id: 'ORDERED', label: 'Đã Lên Đơn', count: stats.ORDERED.count, amount: stats.ORDERED.amount, colorClass: 'stat-card-indigo', icon: ShoppingCart },
-        { id: 'INVOICED', label: 'Đã Hóa Đơn', count: stats.INVOICED.count, amount: stats.INVOICED.amount, colorClass: 'stat-card-emerald', icon: FileText },
-        { id: 'REJECTED', label: 'Từ Chối', count: stats.REJECTED.count, amount: stats.REJECTED.amount, colorClass: 'stat-card-red', icon: XCircle },
-    ];
+    const statsCards = useMemo(() => [
+        { id: 'ALL', label: t('estimates.statsAll'), count: stats.ALL.count, amount: stats.ALL.amount, colorClass: 'stat-card-purple', icon: LayoutList },
+        { id: 'DRAFT', label: t('estimates.statsDraft'), count: stats.DRAFT.count, amount: stats.DRAFT.amount, colorClass: 'stat-card-amber', icon: FileText },
+        { id: 'SENT', label: t('estimates.statsSent'), count: stats.SENT.count, amount: stats.SENT.amount, colorClass: 'stat-card-blue', icon: FolderClock },
+        { id: 'EXPIRED', label: t('estimates.statsExpired'), count: stats.EXPIRED.count, amount: stats.EXPIRED.amount, colorClass: 'stat-card-gray', icon: XCircle },
+        { id: 'ACCEPTED', label: t('estimates.statsAccepted'), count: stats.ACCEPTED.count, amount: stats.ACCEPTED.amount, colorClass: 'stat-card-green', icon: CheckCircle2 },
+        { id: 'ORDERED', label: t('estimates.statsOrdered'), count: stats.ORDERED.count, amount: stats.ORDERED.amount, colorClass: 'stat-card-indigo', icon: ShoppingCart },
+        { id: 'INVOICED', label: t('estimates.statsInvoiced'), count: stats.INVOICED.count, amount: stats.INVOICED.amount, colorClass: 'stat-card-emerald', icon: FileText },
+        { id: 'REJECTED', label: t('estimates.statsRejected'), count: stats.REJECTED.count, amount: stats.REJECTED.amount, colorClass: 'stat-card-red', icon: XCircle },
+    ], [stats, t]);
 
     const filteredEstimates = useMemo(() => {
         let result = baseFilteredEstimates;
@@ -668,29 +670,29 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                 </div>
 
                 <Table>
-                    <thead>
+                    <thead className="bg-slate-50 border-b border-gray-200">
                         <tr>
                             <th className="text-left font-medium text-gray-500 pb-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('code')}>
                                 <div className="flex items-center gap-1">
-                                    Mã BG {sortBy === 'code_asc' ? <ChevronUp size={14} /> : sortBy === 'code_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
+                                    {t('estimates.code')} {sortBy === 'code_asc' ? <ChevronUp size={14} /> : sortBy === 'code_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
                                 </div>
                             </th>
                             <th className="text-left font-medium text-gray-500 pb-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('date')}>
                                 <div className="flex items-center gap-1">
-                                    Ngày <div className="text-xs text-gray-400 font-normal">(Tạo / Hết Hạn)</div>
+                                    {t('estimates.dateCreatedExpire')} <div className="text-xs text-gray-400 font-normal">{t('estimates.dateCreatedExpireSub')}</div>
                                     {sortBy === 'date_asc' ? <ChevronUp size={14} /> : sortBy === 'date_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
                                 </div>
                             </th>
-                            <th className="text-left font-medium text-gray-500 pb-3">Khách Hàng</th>
-                            <th className="text-left font-medium text-gray-500 pb-3">Người Báo Giá</th>
-                            <th className="text-left font-medium text-gray-500 pb-3">Thẻ Quản Lý</th>
+                            <th className="text-left font-medium text-gray-500 pb-3">{t('estimates.customer')}</th>
+                            <th className="text-left font-medium text-gray-500 pb-3">{t('estimates.salesperson')}</th>
+                            <th className="text-left font-medium text-gray-500 pb-3">{t('estimates.tags')}</th>
                             <th className="text-right font-medium text-gray-500 pb-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('amount')}>
                                 <div className="flex items-center justify-end gap-1">
-                                    Tổng Tiền {sortBy === 'amount_asc' ? <ChevronUp size={14} /> : sortBy === 'amount_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
+                                    {t('estimates.totalAmount')} {sortBy === 'amount_asc' ? <ChevronUp size={14} /> : sortBy === 'amount_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
                                 </div>
                             </th>
-                            <th className="text-center font-medium text-gray-500 pb-3">Trạng Thái</th>
-                            <th className="text-right font-medium text-gray-500 pb-3">Thao Tác</th>
+                            <th className="text-center font-medium text-gray-500 pb-3">{t('estimates.status')}</th>
+                            <th className="text-right font-medium text-gray-500 pb-3">{t('estimates.action')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -707,8 +709,8 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                     <td className="py-3">
                                         <div className={`font-medium ${isExpired ? 'text-gray-500' : 'text-gray-600'}`} suppressHydrationWarning>{formatDate(new Date(est.date))}</div>
                                         {est.validUntil && (
-                                            <div className={`text-xs mt-1 flex items-center gap-1 ${isExpired ? 'text-red-600 font-semibold' : 'text-red-500'}`} title="Hạn Báo Giá">
-                                                <Calendar size={12} /> HBG: {formatDate(est.validUntil)}
+                                            <div className={`text-xs mt-1 flex items-center gap-1 ${isExpired ? 'text-red-600 font-semibold' : 'text-red-500'}`} title={t('estimates.validUntil')}>
+                                                <Calendar size={12} /> {t('estimates.validUntil')} {formatDate(est.validUntil)}
                                             </div>
                                         )}
                                     </td>
@@ -726,11 +728,9 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                             <AvatarImage
                                                 src={est.salesperson?.avatar}
                                                 name={est.salesperson?.name}
-                                                size={24}
+                                                className="w-7 h-7 bg-slate-100 border border-slate-200"
                                             />
-                                            <span className="text-sm font-medium text-slate-700 truncate" title={est.salesperson?.name || ''}>
-                                                {est.salesperson?.name || '(Chưa gán)'}
-                                            </span>
+                                            <span className="font-medium text-gray-800">{est.salesperson?.name || t('common.unassigned')}</span>
                                         </div>
                                     </td>
                                     <td className="py-3">
@@ -768,43 +768,43 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                         <div className="flex justify-end items-center gap-2">
                                             <div className="flex items-center gap-1 mr-1">
                                                 {est.status === 'DRAFT' && (
-                                                    <button onClick={() => handleEdit(est)} title="Chỉnh sửa" className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                                                    <button onClick={() => handleEdit(est)} title={t('estimates.edit')} className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors">
                                                         <Edit2 size={15} />
                                                     </button>
                                                 )}
-                                                <button onClick={() => handleCopy(est)} title="Copy Báo Giá" className="p-2 text-slate-500 hover:text-green-600 hover:bg-green-50 transition-colors">
+                                                <button onClick={() => handleCopy(est)} title={t('estimates.copy')} className="p-2 text-slate-500 hover:text-green-600 hover:bg-green-50 transition-colors">
                                                     <Copy size={15} />
                                                 </button>
-                                                <Link href={`/sales/estimates/${est.id}`} title="Xem chi tiết" className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors block">
+                                                <Link href={`/sales/estimates/${est.id}`} title={t('estimates.viewDetails')} className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors block">
                                                     <Eye size={15} />
                                                 </Link>
-                                                <Link href={`/print/sales/estimate/${est.id}`} target="_blank" title="Tải PDF / In ấn" className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors block">
+                                                <Link href={`/print/sales/estimate/${est.id}`} target="_blank" title={t('estimates.printPdf')} className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors block">
                                                     <Download size={15} />
                                                 </Link>
-                                                <Link href={`/public/sales/estimate/${est.id}`} target="_blank" title="Link xem Public" className="p-2 text-slate-500 hover:text-teal-600 hover:bg-teal-50 transition-colors block">
+                                                <Link href={`/public/sales/estimate/${est.id}`} target="_blank" title={t('estimates.publicUrl')} className="p-2 text-slate-500 hover:text-teal-600 hover:bg-teal-50 transition-colors block">
                                                     <LinkIcon size={15} />
                                                 </Link>
-                                                <button onClick={() => handleDelete(est.id)} className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors" title="Xóa">
+                                                <button onClick={() => handleDelete(est.id)} className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors" title={t('estimates.delete')}>
                                                     <Trash2 size={15} />
                                                 </button>
                                             </div>
 
                                             {est.status === 'DRAFT' && (
-                                                <Button variant="secondary" onClick={() => handleStatusChange(est.id, 'SENT')} title="Ghi nhận Đã Gửi" className="px-3 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-300 py-1.5 text-xs font-semibold flex-shrink-0 shadow-sm transition-all rounded-md">
-                                                    Gửi KH
+                                                <Button variant="secondary" onClick={() => handleStatusChange(est.id, 'SENT')} title={t('estimates.actionSent')} className="px-3 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-300 py-1.5 text-xs font-semibold flex-shrink-0 shadow-sm transition-all rounded-md">
+                                                    {t('estimates.actionSentShort')}
                                                 </Button>
                                             )}
                                             {est.status === 'SENT' && (
-                                                <Button variant="secondary" onClick={() => handleStatusChange(est.id, 'ACCEPTED')} className="text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title="Đánh dấu Chốt đơn">
-                                                    <Check size={14} className="mr-1.5 inline-block" /> Chốt
+                                                <Button variant="secondary" onClick={() => handleStatusChange(est.id, 'ACCEPTED')} className="text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title={t('estimates.actionAccepted')}>
+                                                    <Check size={14} className="mr-1.5 inline-block" /> {t('estimates.actionAcceptedShort')}
                                                 </Button>
                                             )}
                                             {(est.status === 'DRAFT' || est.status === 'SENT' || est.status === 'ACCEPTED') && (
                                                 <>
-                                                    <Button variant="secondary" onClick={() => setConvertOrderModalId(est.id)} className="text-indigo-700 bg-indigo-50 border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title="Tạo Đơn Hàng Tự Động">
-                                                        <ArrowRightLeft size={14} className="mr-1.5 inline-block" /> Lên Đơn Hàng
+                                                    <Button variant="secondary" onClick={() => setConvertOrderModalId(est.id)} className="text-indigo-700 bg-indigo-50 border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title={t('estimates.actionCreateOrder')}>
+                                                        <ArrowRightLeft size={14} className="mr-1.5 inline-block" /> Lên Đơn
                                                     </Button>
-                                                    <Button variant="secondary" onClick={() => setConvertModalId(est.id)} className="text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title="Tạo Hóa Đơn Tự Động">
+                                                    <Button variant="secondary" onClick={() => setConvertModalId(est.id)} className="text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title={t('estimates.actionCreateInvoice')}>
                                                         <ArrowRightLeft size={14} className="mr-1.5 inline-block" /> Lên Hóa Đơn
                                                     </Button>
                                                 </>
@@ -815,8 +815,8 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                             )
                         })}
                         {paginatedItems.length === 0 && (
-                            <tr><td colSpan={6} className="py-8 text-center text-gray-500">
-                                {estimates.length === 0 ? 'Chưa có bảng báo giá ERP nào' : 'Không có báo giá nào khớp với trạng thái này'}
+                            <tr><td colSpan={7} className="py-8 text-center text-gray-500">
+                                {estimates.length === 0 ? t('estimates.emptyNoEstimates') : t('estimates.emptyNoMatch')}
                             </td></tr>
                         )}
                     </tbody>
@@ -824,13 +824,13 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                 <Pagination {...paginationProps} />
             </Card>
 
-            <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title={formData.id ? "Sửa Báo Giá ERP" : "Tạo Báo Giá ERP"} maxWidth="1000px">
+            <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title={formData.id ? t('estimates.modalEditTitle') : t('estimates.modalCreateTitle')} maxWidth="1000px">
                 <div className="flex flex-col gap-6 py-2">
                     <div>
-                        <h3 className="text-[1.1rem] font-semibold text-gray-800 mb-4">Thông tin chung</h3>
-                        <div className="grid grid-cols-2 gap-x-5 gap-y-4 bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                        <h3 className="text-[1.1rem] font-semibold text-gray-800 mb-4">{t('estimates.generalInfo')}</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-4 bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Mã Báo Giá</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('estimates.estimateCode')}</label>
                                 <input
                                     type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white"
                                     value={formData.code}
@@ -838,16 +838,16 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Khách Hàng (*)</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('estimates.customerReq')}</label>
                                 <SearchableSelect
                                     options={customers.map((c: any) => ({ value: c.id, label: c.name }))}
                                     value={formData.customerId}
                                     onChange={val => setFormData({ ...formData, customerId: val, leadId: '' })}
-                                    placeholder="-- Chọn KH --"
+                                    placeholder={t('estimates.selectCustomer')}
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Cơ Hội Bán Hàng</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('estimates.lead')}</label>
                                 <SearchableSelect
                                     options={leads?.map((l: any) => ({ value: l.id, label: l.name })) || []}
                                     value={formData.leadId}
@@ -859,12 +859,12 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                             setFormData({ ...formData, leadId: val });
                                         }
                                     }}
-                                    placeholder="-- Chọn Cơ Hội --"
+                                    placeholder={t('estimates.selectLead')}
                                 />
                             </div>
-                            <div className="col-span-2 grid grid-cols-3 gap-x-5">
+                            <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-5 gap-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Ngày Báo Giá</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('estimates.estimateDate')}</label>
                                     <input
                                         type="date" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white"
                                         value={formData.date}
@@ -872,7 +872,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Hiệu Lực Đến</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('estimates.validUntilDate')}</label>
                                     <input
                                         type="date" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white"
                                         value={formData.validUntil}
@@ -880,32 +880,32 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Người Báo Giá</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('estimates.salespersonReq')}</label>
                                     <SearchableSelect
                                         options={users?.map((u: any) => ({ value: u.id, label: u.name })) || []}
                                         value={formData.salespersonId}
                                         onChange={val => setFormData({ ...formData, salespersonId: val })}
-                                        placeholder="-- Chọn Người --"
+                                        placeholder={t('estimates.selectSalesperson')}
                                     />
                                 </div>
                             </div>
-                            <div className="col-span-2 grid grid-cols-2 gap-x-5">
+                            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Ghi chú</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('estimates.notes')}</label>
                                     <input
                                         type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white"
                                         value={formData.notes || ''}
                                         onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                                        placeholder="Ghi chú thêm..."
+                                        placeholder={t('estimates.notesPlaceholder')}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Thẻ Quản Lý (Tags)</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('estimates.tags')}</label>
                                     <input
                                         type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white"
                                         value={formData.tags || ''}
                                         onChange={e => setFormData({ ...formData, tags: e.target.value })}
-                                        placeholder="VD: VIP, Đại lý, Bán buôn..."
+                                        placeholder={t('estimates.tagsPlaceholder')}
                                     />
                                 </div>
                             </div>
@@ -925,8 +925,8 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                     <span>Nhập tự do ngoài hệ thống</span>
                                 </label>
                             </div>
-                            <div className="flex gap-3 items-end mb-4">
-                                <div className="flex-1 min-w-0">
+                            <div className="flex flex-col md:flex-row gap-3 md:items-end mb-4">
+                                <div className="flex-1 w-full min-w-0">
                                     <label className="block text-sm font-medium text-gray-700 mb-1.5">Tên Sản Phẩm</label>
                                     {!isCustomProduct ? (
                                         <SearchableSelect
@@ -940,16 +940,16 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                     )}
                                 </div>
                                 {isCustomProduct && (
-                                    <div className="w-24">
+                                    <div className="w-full md:w-24">
                                         <label className="block text-sm font-medium text-gray-700 mb-1.5">ĐVT</label>
                                         <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white text-center" placeholder="Đơn vị" value={customUnit} onChange={e => setCustomUnit(e.target.value)} />
                                     </div>
                                 )}
-                                <div className="w-36">
+                                <div className="w-full md:w-36">
                                     <label className="block text-sm font-medium text-gray-700 mb-1.5">Đơn giá</label>
                                     <input type="number" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" value={price} onChange={e => setPrice(Number(e.target.value))} />
                                 </div>
-                                <div className="w-20">
+                                <div className="w-full md:w-20">
                                     <label className="block text-sm font-medium text-gray-700 mb-1.5">Thuế %</label>
                                     {isCustomProduct ? (
                                         <input type="number" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-center text-gray-900 bg-white" value={customTaxRate} onChange={e => setCustomTaxRate(Number(e.target.value))} />
@@ -957,11 +957,11 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                         <input type="text" className="w-full border border-gray-200 rounded-lg p-2.5 bg-slate-50 text-center text-gray-500 font-medium cursor-not-allowed" value={`${products.find((p: any) => p.id === selectedProduct)?.taxRate || 0}`} disabled />
                                     )}
                                 </div>
-                                <div className="w-20">
+                                <div className="w-full md:w-20">
                                     <label className="block text-sm font-medium text-gray-700 mb-1.5">SL</label>
                                     <input type="number" min="1" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-center text-gray-900 bg-white" value={qty} onChange={e => setQty(Number(e.target.value))} />
                                 </div>
-                                <Button onClick={handleAddItem} variant="secondary" className="mb-[2px] h-[46px] px-6 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 shadow-sm font-semibold rounded-lg">Thêm</Button>
+                                <Button onClick={handleAddItem} variant="secondary" className="w-full md:w-auto md:mb-[2px] h-[46px] px-6 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 shadow-sm font-semibold rounded-lg">Thêm</Button>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Chi tiết Kỹ Thuật / Ghi chú cho khách hàng <span className="text-gray-400 font-normal">(In dưới tên SP)</span></label>
@@ -1015,17 +1015,17 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                         </tbody>
                                         <tfoot className="bg-slate-50 border-t border-gray-200 text-gray-700">
                                             <tr>
-                                                <td colSpan={4} className="p-3 text-right text-sm">Tổng tiền trước thuế:</td>
+                                                <td colSpan={4} className="p-3 text-right text-sm">{t('estimates.subTotal')}:</td>
                                                 <td className="p-3 text-right font-medium">{formatMoney(formData.subTotal || 0)}</td>
                                                 <td className="p-3"></td>
                                             </tr>
                                             <tr>
-                                                <td colSpan={4} className="p-3 text-right text-sm">Tổng tiền thuế:</td>
+                                                <td colSpan={4} className="p-3 text-right text-sm">{t('estimates.totalTax')}:</td>
                                                 <td className="p-3 text-right font-medium text-gray-500">{formatMoney(formData.taxAmount || 0)}</td>
                                                 <td className="p-3"></td>
                                             </tr>
                                             <tr className="border-t border-gray-200">
-                                                <td colSpan={4} className="p-3 text-right font-semibold text-base">Tổng Cộng:</td>
+                                                <td colSpan={4} className="p-3 text-right font-semibold text-base">{t('estimates.grandTotal')}:</td>
                                                 <td className="p-3 text-right font-bold text-indigo-700 text-lg">{formatMoney(formData.totalAmount || 0)}</td>
                                                 <td className="p-3"></td>
                                             </tr>
@@ -1036,10 +1036,10 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                         </div>
                     </div>
 
-                    <div className="flex justify-start gap-3 mt-4">
-                        <Button onClick={() => setIsFormOpen(false)} variant="secondary" className="px-6 py-2 border-gray-200 shadow-sm text-gray-700 font-medium bg-white hover:bg-gray-50">Hủy</Button>
-                        <Button onClick={handleSave} className="flex items-center gap-2 px-8 py-2 font-medium bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-all text-white">
-                            <Save size={16} /> Lưu Báo Giá
+                    <div className="flex flex-col sm:flex-row justify-start gap-3 mt-4">
+                        <Button onClick={() => setIsFormOpen(false)} variant="secondary" className="w-full sm:w-auto px-6 py-2 border-gray-200 shadow-sm text-gray-700 font-medium bg-white hover:bg-gray-50 flex justify-center">{t('estimates.btnCancel')}</Button>
+                        <Button onClick={handleSave} className="w-full sm:w-auto flex justify-center items-center gap-2 px-8 py-2 font-medium bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-all text-white">
+                            <Save size={16} /> <span>{t('estimates.btnSave')}</span>
                         </Button>
                     </div>
                 </div>

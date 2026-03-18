@@ -219,7 +219,7 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
     return (
         <div style={{ padding: '0', maxWidth: '100%', margin: '0 auto', fontFamily: 'Inter, sans-serif' }}>
             {/* Header Area */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 md:mb-8">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <button
                         onClick={() => router.push('/sales/invoices')}
@@ -245,7 +245,7 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <div className="flex flex-wrap items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
                     <button
                         onClick={handleCopyPublicLink}
                         className="btn btn-secondary"
@@ -345,9 +345,9 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                 </div>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 5fr) minmax(0, 3fr)', gap: '2rem' }}>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
                 {/* Left Column: Details & Tabs */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                <div className="lg:col-span-2 flex flex-col gap-6">
 
                     {/* Summary Card */}
                     <div style={{ backgroundColor: 'white', borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)', overflow: 'hidden' }}>
@@ -376,8 +376,8 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                             </div>
                         </div>
 
-                        <div style={{ padding: '1.5rem' }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                        <div className="p-4 sm:p-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 <div>
                                     <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Khách Hàng</div>
                                     <div style={{ fontSize: '1rem', fontWeight: 500, color: '#0f172a' }}>{invoice.customer?.name}</div>
@@ -407,7 +407,7 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
 
                     {/* Tabs Area */}
                     <div style={{ backgroundColor: 'white', borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
-                        <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0', padding: '0 0.5rem' }}>
+                        <div className="flex overflow-x-auto whitespace-nowrap border-b border-gray-200 px-2 pb-1 sm:pb-0 scrollbar-hide">
                             {tabs.map(tab => (
                                 <button
                                     key={tab.id}
@@ -481,8 +481,8 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
 
                         <div style={{ padding: '1.5rem' }}>
                             {activeTab === 'items' && (
-                                <div>
-                                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                                <div className="overflow-x-auto w-full">
+                                    <table className="w-full min-w-[700px] border-collapse text-sm">
                                         <thead>
                                             <tr style={{ borderBottom: '2px solid #e2e8f0', textAlign: 'left', color: '#64748b' }}>
                                                 <th style={{ padding: '0.75rem 0.5rem', fontWeight: 600 }}>Tên Sản phẩm / Dịch vụ</th>
@@ -512,8 +512,8 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                                     </table>
 
                                     {/* Totals Box */}
-                                    <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
-                                        <div style={{ width: '320px', backgroundColor: '#f8fafc', borderRadius: '0.75rem', padding: '1.5rem', border: '1px solid #e2e8f0' }}>
+                                    <div className="mt-8 flex justify-end w-full">
+                                        <div className="w-full sm:w-80 bg-slate-50 rounded-xl p-6 border border-slate-200">
                                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', fontSize: '0.875rem', color: '#475569' }}>
                                                 <span>Tổng tiền hàng:</span>
                                                 <span style={{ fontWeight: 500, color: '#0f172a' }}>{formatMoney(invoice.subTotal)}</span>
@@ -559,7 +559,7 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                 </div>
 
                 {/* Right Column: Related Tasks and History */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                <div className="lg:col-span-1 flex flex-col gap-6">
 
                     {/* Invoice Notes Panel */}
                     <SalesInvoiceNotes
