@@ -472,6 +472,10 @@ export async function updateLeadAssignees(id: string, assigneeIds: string[]) {
             return updatedLead;
         });
 
+        if (assigneeIds && assigneeIds.length > 0) {
+            await notifyLeadStakeholders(id, session.user.id, 'đã thay đổi người phụ trách', session.user.name || 'Ai đó');
+        }
+
         return result;
     } catch (error) {
         console.error('Error updating lead assignees:', error);
@@ -669,6 +673,51 @@ export async function sendLeadEmail(leadId: string, to: string, subject: string,
     }
 }
 
+export async function notifyLeadStakeholders(
+    leadId: string,
+    actionUserId: string,
+    actionName: string,
+    actionUserName: string
+) {
+    const lead = await prisma.lead.findUnique({
+        where: { id: leadId },
+        include: { assignees: true }
+    });
+    if (!lead) return;
+
+    const usersToNotify = new Set<string>();
+    if (lead.assignedToId && lead.assignedToId !== actionUserId) usersToNotify.add(lead.assignedToId);
+    if (lead.creatorId && lead.creatorId !== actionUserId) usersToNotify.add(lead.creatorId);
+    if (lead.assignees) {
+        lead.assignees.forEach(a => { if (a.userId !== actionUserId) usersToNotify.add(a.userId); });
+    }
+
+    if (usersToNotify.size > 0) {
+        const title = 'Cập nhật Cơ hội bán hàng';
+        const message = `${actionUserName} ${actionName} trong cơ hội "${lead.name}".`;
+        const url = `/sales/leads/${leadId}`;
+
+        const { createManyNotifications } = await import('@/app/notifications/actions');
+        const notifications = Array.from(usersToNotify).map(uId => ({
+            userId: uId,
+            title,
+            message,
+            type: 'INFO',
+            link: url
+        }));
+        await createManyNotifications(notifications);
+
+        const { sendWebPushNotification } = await import('@/lib/notifications/webPush');
+        Array.from(usersToNotify).forEach(uId => {
+            sendWebPushNotification(uId, {
+                title,
+                body: message,
+                url
+            });
+        });
+    }
+}
+
 export async function createLeadNote(leadId: string, content: string, attachment?: string) {
     try {
         const session = await getServerSession(authOptions);
@@ -703,6 +752,11 @@ export async function createLeadNote(leadId: string, content: string, attachment
                 details: finalDetails
             }
         });
+
+        let actionMsg = 'đã thêm ghi chú mới';
+        if (hasFiles && !hasText) actionMsg = 'đã tải lên tài liệu mới';
+        if (hasFiles && hasText) actionMsg = 'đã thêm ghi chú và tài liệu mới';
+        await notifyLeadStakeholders(leadId, userId, actionMsg, session.user.name || 'Ai đó');
 
         // revalidatePath in Next14 to refresh the lead detail page
         const { revalidatePath } = require('next/cache');
