@@ -121,7 +121,17 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
             finalHtml = finalHtml.replace(/@([a-zA-Z0-9_\u00C0-\u024F\u1E00-\u1EFF ]+?)(?=\s|$|<)/g, '<strong style="color: #4f46e5;">@$1</strong>');
 
             if (commentImages.length > 0) {
-                const imgTags = commentImages.map(img => `<img src="${img.url}" style="max-width: 100%; max-height: 200px; border-radius: 8px; margin-top: 8px; cursor: pointer; border: 1px solid #e2e8f0;"/>`).join('');
+                const uploadedImages = [];
+                for (const img of commentImages) {
+                    const formData = new FormData();
+                    formData.append('file', img.file);
+                    const res = await fetch('/api/upload', { method: 'POST', body: formData });
+                    if (!res.ok) throw new Error('Ảnh tải lên thất bại');
+                    const data = await res.json();
+                    uploadedImages.push(data.url);
+                }
+
+                const imgTags = uploadedImages.map(url => `<img src="${url}" style="max-width: 100%; max-height: 200px; border-radius: 8px; margin-top: 8px; cursor: pointer; border: 1px solid #e2e8f0;"/>`).join('');
                 finalHtml += `<div style="display: flex; gap: 8px; flex-wrap: wrap;">${imgTags}</div>`;
             }
 
