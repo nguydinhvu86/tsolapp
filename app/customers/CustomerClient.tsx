@@ -230,8 +230,8 @@ export function CustomerClient({ initialData, users, isAdminOrManager }: { initi
             </div>
 
             <Card>
-                <div className="flex justify-between items-center" style={{ marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-                    <div className="flex gap-2 items-center flex-1 w-full sm:min-w-[300px]" style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '0.5rem 1rem', background: '#fff' }}>
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+                    <div className="flex gap-2 items-center w-full sm:w-[350px]" style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '0.5rem 1rem', background: '#fff' }}>
                         <Search size={18} color="var(--text-muted)" />
                         <input
                             style={{ border: 'none', outline: 'none', background: 'transparent', width: '100%', fontSize: '0.9375rem' }}
@@ -274,64 +274,66 @@ export function CustomerClient({ initialData, users, isAdminOrManager }: { initi
                     </div>
                 </div>
 
-                <Table>
-                    <thead>
-                        <tr>
-                            <th onClick={() => handleSort('name')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                                <div className="flex items-center gap-1">{t('customers.name')} {sortField === 'name' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
-                            </th>
-                            <th onClick={() => handleSort('email')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                                <div className="flex items-center gap-1">{t('customers.email')} {sortField === 'email' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
-                            </th>
-                            <th onClick={() => handleSort('phone')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                                <div className="flex items-center gap-1">{t('customers.phone')} {sortField === 'phone' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
-                            </th>
-                            <th onClick={() => handleSort('taxCode')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                                <div className="flex items-center gap-1">{t('customers.taxCode')} {sortField === 'taxCode' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
-                            </th>
-                            <th style={{ width: '100px' }}>{t('customers.action')}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {paginatedItems.length === 0 ? (
-                            <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>{t('customers.empty')}</td></tr>
-                        ) : paginatedItems.map(customer => (
-                            <tr key={customer.id}>
-                                <td style={{ fontWeight: 600 }}>
-                                    <Link
-                                        href={`/customers/${customer.id}`}
-                                        className="text-blue-600 hover:underline"
-                                    >
-                                        {customer.name}
-                                    </Link>
-                                    {activeFilter === 'TOP_REVENUE_5' && customer.revenue ? (
-                                        <div style={{ fontSize: '0.75rem', color: '#059669', marginTop: '0.25rem', fontWeight: 500 }}>{t('customers.revenue')} {formatMoney(customer.revenue)}</div>
-                                    ) : null}
-                                </td>
-                                <td style={{ color: 'var(--text-muted)' }}>{customer.email || '-'}</td>
-                                <td style={{ color: 'var(--text-muted)' }}>{customer.phone || '-'}</td>
-                                <td>{customer.taxCode || '-'}</td>
-                                <td>
-                                    <div className="flex gap-2">
-                                        <Link href={`/customers/${customer.id}`} style={{ color: 'var(--primary)', display: 'flex' }} title={t('customers.viewDetails')}>
-                                            <Eye size={18} />
-                                        </Link>
-                                        {canEdit && (
-                                            <button onClick={() => openModal(customer)} style={{ color: 'var(--text-muted)' }} title={t('customers.edit')}>
-                                                <Edit size={18} />
-                                            </button>
-                                        )}
-                                        {canDelete && (
-                                            <button onClick={() => handleDelete(customer.id)} style={{ color: 'var(--danger)' }} title={t('customers.delete')}>
-                                                <Trash2 size={18} />
-                                            </button>
-                                        )}
-                                    </div>
-                                </td>
+                <div className="overflow-x-auto pb-4">
+                    <Table>
+                        <thead className="whitespace-nowrap">
+                            <tr>
+                                <th onClick={() => handleSort('name')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                    <div className="flex items-center gap-1">{t('customers.name')} {sortField === 'name' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
+                                </th>
+                                <th onClick={() => handleSort('email')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                    <div className="flex items-center gap-1">{t('customers.email')} {sortField === 'email' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
+                                </th>
+                                <th onClick={() => handleSort('phone')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                    <div className="flex items-center gap-1">{t('customers.phone')} {sortField === 'phone' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
+                                </th>
+                                <th onClick={() => handleSort('taxCode')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                    <div className="flex items-center gap-1">{t('customers.taxCode')} {sortField === 'taxCode' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
+                                </th>
+                                <th style={{ width: '100px' }}>{t('customers.action')}</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </Table>
+                        </thead>
+                        <tbody>
+                            {paginatedItems.length === 0 ? (
+                                <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>{t('customers.empty')}</td></tr>
+                            ) : paginatedItems.map(customer => (
+                                <tr key={customer.id}>
+                                    <td style={{ fontWeight: 600 }}>
+                                        <Link
+                                            href={`/customers/${customer.id}`}
+                                            className="text-blue-600 hover:underline"
+                                        >
+                                            {customer.name}
+                                        </Link>
+                                        {activeFilter === 'TOP_REVENUE_5' && customer.revenue ? (
+                                            <div style={{ fontSize: '0.75rem', color: '#059669', marginTop: '0.25rem', fontWeight: 500 }}>{t('customers.revenue')} {formatMoney(customer.revenue)}</div>
+                                        ) : null}
+                                    </td>
+                                    <td style={{ color: 'var(--text-muted)' }}>{customer.email || '-'}</td>
+                                    <td style={{ color: 'var(--text-muted)' }}>{customer.phone || '-'}</td>
+                                    <td>{customer.taxCode || '-'}</td>
+                                    <td>
+                                        <div className="flex gap-2">
+                                            <Link href={`/customers/${customer.id}`} style={{ color: 'var(--primary)', display: 'flex' }} title={t('customers.viewDetails')}>
+                                                <Eye size={18} />
+                                            </Link>
+                                            {canEdit && (
+                                                <button onClick={() => openModal(customer)} style={{ color: 'var(--text-muted)' }} title={t('customers.edit')}>
+                                                    <Edit size={18} />
+                                                </button>
+                                            )}
+                                            {canDelete && (
+                                                <button onClick={() => handleDelete(customer.id)} style={{ color: 'var(--danger)' }} title={t('customers.delete')}>
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </Table>
+                </div>
                 <Pagination {...paginationProps} />
 
                 <Modal
