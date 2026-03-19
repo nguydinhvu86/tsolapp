@@ -197,7 +197,7 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
             </Card>
 
             {/* 3 Columns Grid: Sidebar, Content Area, TaskPanel */}
-            <div style={{ display: 'grid', gridTemplateColumns: '260px minmax(0, 1fr) 350px', gap: '1.5rem', alignItems: 'start' }}>
+            <div className="flex flex-col lg:grid lg:grid-cols-[260px_minmax(0,1fr)_350px] gap-6 items-start">
                 {/* Column 1: Sidebar Menu */}
                 <Card style={{ padding: '0', overflow: 'hidden', position: 'sticky', top: '1.5rem', background: '#ffffff', borderRadius: '12px', border: '1px solid var(--border)' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem 0' }}>
@@ -297,9 +297,9 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                 </Card>
 
                 {/* Column 2: Content Area */}
-                <div>
+                <div className="flex flex-col xl:flex-row min-w-0 w-full gap-6">
                     {/* Header */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
                         <h3 style={{ fontSize: '1.125rem', fontWeight: 700, margin: 0, color: '#1e293b' }}>
                             {tabs.find(t => t.id === activeTab)?.name}
                         </h3>
@@ -412,93 +412,95 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                     />
                                 </div>
                             </div>
-                            <Table>
-                                <thead>
-                                    <tr>
-                                        <th>Mã HS</th>
-                                        <th>Tiêu đề</th>
-                                        <th>Trạng thái</th>
-                                        <th>Ngày tạo</th>
-                                        <th style={{ width: '100px', textAlign: 'right' }}>Thao tác</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {(() => {
-                                        const filterDocs = (docs: any[]) => {
-                                            if (!docs) return [];
-                                            if (!searchQuery) return docs;
-                                            const q = searchQuery.toLowerCase();
-                                            return docs.filter(doc =>
-                                                doc.code?.toLowerCase().includes(q) ||
-                                                doc.id?.toLowerCase().includes(q) ||
-                                                doc.title?.toLowerCase().includes(q) ||
-                                                doc.notes?.toLowerCase().includes(q) ||
-                                                doc.tags?.toLowerCase().includes(q) ||
-                                                getStatusColor(doc.status).text.toLowerCase().includes(q)
-                                            );
-                                        };
-
-                                        const lists: any = {
-                                            quotes: filterDocs(customer.quotes || []),
-                                            contracts: filterDocs(customer.contracts || []),
-                                            appendices: filterDocs(customer.contracts?.flatMap((c: any) => c.appendices || []) || []),
-                                            dispatches: filterDocs(customer.dispatches || []),
-                                            handovers: filterDocs(customer.handovers || []),
-                                            payments: filterDocs(customer.paymentRequests || []),
-                                            salesEstimates: filterDocs(customer.salesEstimates || []),
-                                            salesOrders: filterDocs(customer.salesOrders || []),
-                                            salesInvoices: filterDocs(customer.salesInvoices || []),
-                                            salesPayments: filterDocs(customer.salesPayments || []),
-                                            leads: filterDocs(customer.leads || []),
-                                        };
-
-                                        const currentList = lists[activeTab];
-
-                                        if (currentList.length === 0) {
-                                            return (
-                                                <tr>
-                                                    <td colSpan={5} style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-muted)' }}>
-                                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-                                                            <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--background)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-                                                                {React.createElement(tabs.find(t => t.id === activeTab)?.icon || FileText, { size: 24 })}
-                                                            </div>
-                                                            <p style={{ margin: 0, fontSize: '0.9375rem' }}>Không tìm thấy {tabs.find(t => t.id === activeTab)?.name.toLowerCase()} nào.</p>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        }
-
-                                        return currentList.map((doc: any) => {
-                                            if (activeTab.startsWith('sales')) {
-                                                const typeMap: any = {
-                                                    salesEstimates: 'sales/estimates',
-                                                    salesOrders: 'sales/orders',
-                                                    salesInvoices: 'sales/invoices',
-                                                    salesPayments: 'sales/payments'
-                                                };
-                                                return <SalesDocumentRow key={doc.id} doc={doc} type={typeMap[activeTab]} getStatusColor={getStatusColor} />;
-                                            }
-                                            const typeMap: any = {
-                                                quotes: 'quotes',
-                                                contracts: 'contracts',
-                                                appendices: 'contract-appendices',
-                                                dispatches: 'dispatches',
-                                                handovers: 'handovers',
-                                                payments: 'payment-requests',
-                                                leads: 'sales/leads'
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <thead className="whitespace-nowrap">
+                                        <tr>
+                                            <th>Mã HS</th>
+                                            <th>Tiêu đề</th>
+                                            <th>Trạng thái</th>
+                                            <th>Ngày tạo</th>
+                                            <th style={{ width: '100px', textAlign: 'right' }}>Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {(() => {
+                                            const filterDocs = (docs: any[]) => {
+                                                if (!docs) return [];
+                                                if (!searchQuery) return docs;
+                                                const q = searchQuery.toLowerCase();
+                                                return docs.filter(doc =>
+                                                    doc.code?.toLowerCase().includes(q) ||
+                                                    doc.id?.toLowerCase().includes(q) ||
+                                                    doc.title?.toLowerCase().includes(q) ||
+                                                    doc.notes?.toLowerCase().includes(q) ||
+                                                    doc.tags?.toLowerCase().includes(q) ||
+                                                    getStatusColor(doc.status).text.toLowerCase().includes(q)
+                                                );
                                             };
-                                            return <DocumentRow key={doc.id} doc={doc} type={typeMap[activeTab]} getStatusColor={getStatusColor} />;
-                                        });
-                                    })()}
-                                </tbody>
-                            </Table>
+
+                                            const lists: any = {
+                                                quotes: filterDocs(customer.quotes || []),
+                                                contracts: filterDocs(customer.contracts || []),
+                                                appendices: filterDocs(customer.contracts?.flatMap((c: any) => c.appendices || []) || []),
+                                                dispatches: filterDocs(customer.dispatches || []),
+                                                handovers: filterDocs(customer.handovers || []),
+                                                payments: filterDocs(customer.paymentRequests || []),
+                                                salesEstimates: filterDocs(customer.salesEstimates || []),
+                                                salesOrders: filterDocs(customer.salesOrders || []),
+                                                salesInvoices: filterDocs(customer.salesInvoices || []),
+                                                salesPayments: filterDocs(customer.salesPayments || []),
+                                                leads: filterDocs(customer.leads || []),
+                                            };
+
+                                            const currentList = lists[activeTab];
+
+                                            if (currentList.length === 0) {
+                                                return (
+                                                    <tr>
+                                                        <td colSpan={5} style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-muted)' }}>
+                                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                                                                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--background)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+                                                                    {React.createElement(tabs.find(t => t.id === activeTab)?.icon || FileText, { size: 24 })}
+                                                                </div>
+                                                                <p style={{ margin: 0, fontSize: '0.9375rem' }}>Không tìm thấy {tabs.find(t => t.id === activeTab)?.name.toLowerCase()} nào.</p>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            }
+
+                                            return currentList.map((doc: any) => {
+                                                if (activeTab.startsWith('sales')) {
+                                                    const typeMap: any = {
+                                                        salesEstimates: 'sales/estimates',
+                                                        salesOrders: 'sales/orders',
+                                                        salesInvoices: 'sales/invoices',
+                                                        salesPayments: 'sales/payments'
+                                                    };
+                                                    return <SalesDocumentRow key={doc.id} doc={doc} type={typeMap[activeTab]} getStatusColor={getStatusColor} />;
+                                                }
+                                                const typeMap: any = {
+                                                    quotes: 'quotes',
+                                                    contracts: 'contracts',
+                                                    appendices: 'contract-appendices',
+                                                    dispatches: 'dispatches',
+                                                    handovers: 'handovers',
+                                                    payments: 'payment-requests',
+                                                    leads: 'sales/leads'
+                                                };
+                                                return <DocumentRow key={doc.id} doc={doc} type={typeMap[activeTab]} getStatusColor={getStatusColor} />;
+                                            });
+                                        })()}
+                                    </tbody>
+                                </Table>
+                            </div>
                         </Card>
                     )}
                 </div>
 
                 {/* Column 3: TaskPanel & Timeline */}
-                <div style={{ position: 'sticky', top: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div className="w-full" style={{ position: 'sticky', top: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                     <TaskPanel initialTasks={tasks} users={users} entityType="CUSTOMER" entityId={customer.id} />
                     <CustomerHistoryTimeline logs={customer.activityLogs || []} />
                 </div>
@@ -522,7 +524,7 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                 }}
             />
 
-        </div>
+        </div >
     );
 }
 
