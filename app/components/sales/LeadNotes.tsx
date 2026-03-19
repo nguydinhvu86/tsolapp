@@ -7,6 +7,7 @@ import { FileText, User as UserIcon, Send, Trash2, Paperclip, MessageSquare } fr
 import { createLeadNote, deleteLeadNote } from '../../sales/leads/actions';
 import { Modal } from '@/app/components/ui/Modal';
 import { DocumentPreviewModal } from '@/app/components/ui/DocumentPreviewModal';
+import { autoLinkText } from '@/lib/utils/formatters';
 
 interface LeadNotesProps {
     leadId: string;
@@ -244,9 +245,10 @@ export function LeadNotes({ leadId, notes, currentUserId, currentUserRole }: Lea
                                                     </button>
                                                 )}
                                             </div>
-                                            <div style={{ fontSize: '0.9375rem', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: 1.5, wordBreak: 'break-word' }}>
-                                                {note.content}
-                                            </div>
+                                            <div
+                                                style={{ fontSize: '0.9375rem', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: 1.5, wordBreak: 'break-word' }}
+                                                dangerouslySetInnerHTML={{ __html: autoLinkText(note.content) }}
+                                            />
                                         </div>
                                     ) : (
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' }}>
@@ -363,9 +365,10 @@ export function LeadNotes({ leadId, notes, currentUserId, currentUserRole }: Lea
                                                     </span>
                                                 </div>
                                             </div>
-                                            <div style={{ fontSize: '0.9375rem', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: 1.5, wordBreak: 'break-word' }}>
-                                                {note.content}
-                                            </div>
+                                            <div
+                                                style={{ fontSize: '0.9375rem', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: 1.5, wordBreak: 'break-word' }}
+                                                dangerouslySetInnerHTML={{ __html: autoLinkText(note.content) }}
+                                            />
                                         </div>
                                     ) : (
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' }}>

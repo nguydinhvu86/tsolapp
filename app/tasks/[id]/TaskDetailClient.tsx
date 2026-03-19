@@ -14,8 +14,9 @@ import { vi } from 'date-fns/locale';
 import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
 import { DocumentPreviewModal } from '@/app/components/ui/DocumentPreviewModal';
 import { toggleReaction, updateTaskLinks, searchEntities } from '../actions';
+import { autoLinkHtml, autoLinkText } from '@/lib/utils/formatters';
 
-const EMOJIS = ['👍', '❤️', '😂', '🎉', '👀'];
+const EMOJIS = ['👍', '❤️', '😂', '🔥', '👀', '🎉', '😢', '🚀'];
 
 export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { initialTask: any, users: any[], emailTemplates?: any[] }) {
     const router = useRouter();
@@ -788,10 +789,9 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                                                         </span>
                                                     </div>
 
-                                                    {/* Rich Text Output */}
                                                     <div
                                                         style={{ padding: '0.75rem', backgroundColor: isReply ? '#f8fafc' : 'var(--background)', borderRadius: '0.5rem', lineHeight: 1.5, fontSize: '0.95rem', overflowWrap: 'anywhere' }}
-                                                        dangerouslySetInnerHTML={{ __html: c.content }}
+                                                        dangerouslySetInnerHTML={{ __html: autoLinkHtml(c.content) }}
                                                         className="sun-editor-output custom-comment-content"
                                                         onClick={handleCommentClick}
                                                     />
@@ -1051,9 +1051,10 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                                                         </button>
                                                     )}
                                                 </div>
-                                                <div style={{ fontSize: '0.9rem', color: 'var(--text)', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
-                                                    {doc.fileUrl}
-                                                </div>
+                                                <div
+                                                    style={{ fontSize: '0.9rem', color: 'var(--text)', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}
+                                                    dangerouslySetInnerHTML={{ __html: autoLinkText(doc.fileUrl) }}
+                                                />
                                             </div>
                                         );
                                     }

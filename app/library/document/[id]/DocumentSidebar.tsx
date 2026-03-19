@@ -5,6 +5,11 @@ import { MessageSquare, BookOpen, Send, Trash2, PlayCircle, Clock } from 'lucide
 import { addDocumentComment, addDocumentNote, deleteDocumentNote } from '../../actions';
 import { useRouter } from 'next/navigation';
 import styles from '../../library.module.css';
+import { Modal } from '@/app/components/ui/Modal';
+import { Button } from '@/app/components/ui/Button';
+import { autoLinkText } from '@/lib/utils/formatters';
+
+interface DocumentSidebarProps { } // Added as per instruction, though not fully used in the provided snippet
 
 export default function DocumentSidebar({ documentId, initialComments, initialNotes, currentUser }: any) {
     const router = useRouter();
@@ -183,7 +188,10 @@ export default function DocumentSidebar({ documentId, initialComments, initialNo
                                             <Trash2 size={14} />
                                         </button>
                                     </div>
-                                    <p style={{ margin: 0, fontSize: '0.875rem', color: '#1e293b', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{note.content}</p>
+                                    <div
+                                        style={{ margin: 0, fontSize: '0.875rem', color: '#1e293b', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}
+                                        dangerouslySetInnerHTML={{ __html: autoLinkText(note.content) }}
+                                    />
 
                                     {note.videoTime !== null && note.videoTime !== undefined && (
                                         <div style={{ marginTop: '0.75rem', fontSize: '0.75rem', color: '#10b981', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', background: '#d1fae5', padding: '0.25rem 0.5rem', borderRadius: '4px', fontWeight: 600 }}>

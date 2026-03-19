@@ -6,6 +6,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { MessageSquare, ImageIcon, Paperclip, Send, Trash2, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { createLeadComment, deleteLeadComment, toggleLeadCommentReaction } from './actions';
+import { autoLinkHtml } from '@/lib/utils/formatters';
 import { Button } from '@/app/components/ui/Button';
 import { useRouter } from 'next/navigation';
 import { DocumentPreviewModal } from '@/app/components/ui/DocumentPreviewModal';
@@ -386,7 +387,7 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
                                         {c.content && c.content !== '' && (
                                             <div
                                                 style={{ padding: isReply ? '8px 12px' : '12px', backgroundColor: isReply ? '#f1f5f9' : '#f8fafc', borderRadius: '0px 12px 12px 12px', border: '1px solid #e2e8f0', fontSize: isReply ? '13.5px' : '14px', color: '#334155', lineHeight: 1.5, overflowWrap: 'anywhere' }}
-                                                dangerouslySetInnerHTML={{ __html: c.content }}
+                                                dangerouslySetInnerHTML={{ __html: autoLinkHtml(c.content) }}
                                                 onClick={handleCommentClick}
                                             />
                                         )}

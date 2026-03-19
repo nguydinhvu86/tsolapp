@@ -7,7 +7,7 @@ import { Button } from '@/app/components/ui/Button';
 import { ArrowLeft, User as UserIcon, Calendar, CheckCircle2, DollarSign, Tag, FileText, Plus, MapPin, Phone, Building2, CreditCard, Clock, Link as LinkIcon, Download, Printer } from 'lucide-react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { formatMoney, formatDate } from '@/lib/utils/formatters';
+import { formatMoney, formatDate, autoLinkText } from '@/lib/utils/formatters';
 import { addExpenseNote } from '../actions';
 import { useRouter } from 'next/navigation';
 
@@ -244,7 +244,10 @@ export function ExpenseDetailClient({ initialData }: { initialData: ExpenseWithR
                                                 {formatDate(new Date(note.createdAt))}
                                             </span>
                                         </div>
-                                        <p className="text-sm text-slate-700 whitespace-pre-wrap">{note.content}</p>
+                                        <div
+                                            className="text-sm text-slate-700 whitespace-pre-wrap"
+                                            dangerouslySetInnerHTML={{ __html: autoLinkText(note.content) }}
+                                        />
                                     </div>
                                 ))
                             )}
