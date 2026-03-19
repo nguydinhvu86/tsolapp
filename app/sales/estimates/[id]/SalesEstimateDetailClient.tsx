@@ -10,7 +10,7 @@ import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import { Modal } from '@/app/components/ui/Modal';
 import { SalesEstimateActivityLog } from '@/app/components/sales/SalesEstimateActivityLog';
 import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
-import { sendEstimateEmail, assignSalesEstimateManagers, removeSalesEstimateManager } from '../actions';
+import { sendEstimateEmail, assignSalesEstimateManagers, removeSalesEstimateManager, cloneSalesEstimate } from '../actions';
 import { Mail, UserCheck } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { DocumentManagersPanel } from '@/app/components/shared/DocumentManagersPanel';
@@ -71,6 +71,22 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                     router.refresh();
                 } else {
                     alert(res.error);
+                }
+            }
+        });
+    };
+
+    const handleClone = async () => {
+        setActionModal({
+            isOpen: true,
+            title: 'Khẳng định sao chép',
+            message: `Hệ thống sẽ tạo ra một Báo Giá Nháp mới với toàn bộ dữ liệu từ báo giá này. Tiếp tục?`,
+            action: async () => {
+                const res = await cloneSalesEstimate(estimate.id);
+                if (res.success && res.data) {
+                    router.push('/sales/estimates/' + res.data.id);
+                } else {
+                    alert(res.error || 'Đã có lỗi xảy ra');
                 }
             }
         });
@@ -156,6 +172,14 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                     >
                         <Mail size={16} /> Gửi Email
                     </button>
+                    {(estimate.status === 'EXPIRED' || estimate.status === 'REJECTED') && (
+                        <button
+                            onClick={handleClone}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                        >
+                            <Copy size={16} /> Tạo Bản Sao Mới
+                        </button>
+                    )}
                     {(estimate.status === 'DRAFT' || estimate.status === 'SENT' || estimate.status === 'ACCEPTED') && (
                         <>
                             <button

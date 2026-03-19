@@ -809,6 +809,11 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                                     </Button>
                                                 </>
                                             )}
+                                            {est.status === 'EXPIRED' && (
+                                                <Button variant="secondary" onClick={() => handleCopy(est)} className="text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title="Tạo một báo giá mới sao chép toàn bộ dữ liệu này">
+                                                    <Copy size={14} className="mr-1.5 inline-block" /> Tạo Lại Mới
+                                                </Button>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
