@@ -715,6 +715,44 @@ export async function notifyLeadStakeholders(
                 url
             });
         });
+
+        // 3. Send Email Notifications
+        const { sendEmailWithTracking } = await import('@/lib/mailer');
+        const users = await prisma.user.findMany({
+            where: { id: { in: Array.from(usersToNotify) } },
+            select: { id: true, email: true, name: true }
+        });
+
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'https://inside.tsol.vn';
+        const absoluteUrl = `${appUrl}${url}`;
+
+        const htmlBody = `
+        <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 8px;">
+            <h2 style="color: #4f46e5; margin-bottom: 20px;">Thông báo từ hệ thống ERP</h2>
+            <p style="font-size: 16px;">Chào bạn,</p>
+            <p style="font-size: 16px;">${message}</p>
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="${absoluteUrl}" style="background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+                    Xem chi tiết Cơ hội bán hàng
+                </a>
+            </div>
+            <hr style="border: 0; border-top: 1px solid #eaeaea; margin: 30px 0;">
+            <p style="font-size: 13px; color: #888;">Đây là email tự động, vui lòng không trả lời.</p>
+        </div>
+        `;
+
+        Promise.allSettled(users.map(user => {
+            if (user.email) {
+                return sendEmailWithTracking({
+                    to: user.email,
+                    subject: 'ERP Notification: ' + title,
+                    htmlBody,
+                    senderId: actionUserId,
+                    leadId: leadId
+                });
+            }
+            return Promise.resolve();
+        })).catch(err => console.error("Error dispatching Lead Notification emails:", err));
     }
 }
 
