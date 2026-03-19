@@ -169,7 +169,7 @@ export function SalesPaymentDetailClient({ payment, tasks, users, unpaidInvoices
 
     return (
         <div style={{ padding: '2rem', maxWidth: '100%', margin: '0 auto', fontFamily: 'Inter, sans-serif', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
+            <div className="flex flex-col md:flex-row justify-between md:items-start gap-4 mb-8">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <button
                         onClick={() => router.back()}
@@ -207,7 +207,7 @@ export function SalesPaymentDetailClient({ payment, tasks, users, unpaidInvoices
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <div className="flex flex-wrap gap-3">
                     {localPayment.status !== 'CANCELLED' ? (
                         <>
                             <button
@@ -262,7 +262,7 @@ export function SalesPaymentDetailClient({ payment, tasks, users, unpaidInvoices
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 5fr) minmax(0, 3fr)', gap: '2rem' }}>
+            <div className="flex flex-col lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,3fr)] gap-8">
                 {/* Left Column: Details & Tabs */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
 
@@ -271,7 +271,7 @@ export function SalesPaymentDetailClient({ payment, tasks, users, unpaidInvoices
                         <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#1e293b', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <FileText size={20} color="#6366f1" /> Thông tin Phiếu Thu
                         </h2>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div>
                                 <p style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600, color: '#94a3b8', marginBottom: '0.25rem' }}>Khách Hàng</p>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -357,48 +357,50 @@ export function SalesPaymentDetailClient({ payment, tasks, users, unpaidInvoices
                                             </button>
                                         )}
                                     </div>
-                                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
-                                        <thead>
-                                            <tr style={{ backgroundColor: '#f8fafc', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>
-                                                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Cấn trừ Hóa Đơn số</th>
-                                                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Trạng Thái HĐ</th>
-                                                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Giá Trị Phân Bổ</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {localPayment.allocations?.length === 0 ? (
-                                                <tr><td colSpan={3} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Chưa cấn trừ hóa đơn nào (Thanh toán dư nợ chung).</td></tr>
-                                            ) : (
-                                                localPayment.allocations?.map((allocation: any) => (
-                                                    <tr key={allocation.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                                        <td style={{ padding: '1rem' }}>
-                                                            <Link href={`/sales/invoices/${allocation.invoice?.id}`} style={{ fontWeight: 600, color: '#4f46e5', textDecoration: 'none' }} className="hover:underline">
-                                                                {allocation.invoice?.code}
-                                                            </Link>
-                                                        </td>
-                                                        <td style={{ padding: '1rem' }}>
-                                                            {allocation.invoice?.status === 'PAID' ? (
-                                                                <span className="px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-semibold">Đã Thanh Toán Khách Hàng</span>
-                                                            ) : (
-                                                                <span className="px-2 py-1 rounded bg-amber-100 text-amber-700 text-xs font-semibold">Còn Ghi Nợ</span>
-                                                            )}
-                                                        </td>
-                                                        <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#10b981' }}>{formatMoney(allocation.amount)}</td>
-                                                    </tr>
-                                                ))
-                                            )}
-                                        </tbody>
-                                        {localPayment.allocations?.length > 0 && (
-                                            <tfoot>
-                                                <tr style={{ backgroundColor: '#f8fafc' }}>
-                                                    <td colSpan={2} style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#64748b' }}>Tổng Phân Bổ:</td>
-                                                    <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 700, color: '#1e293b', fontSize: '1rem' }}>
-                                                        {formatMoney(localPayment.allocations.reduce((acc: number, cur: any) => acc + cur.amount, 0))}
-                                                    </td>
+                                    <div className="overflow-x-auto">
+                                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+                                            <thead className="whitespace-nowrap">
+                                                <tr style={{ backgroundColor: '#f8fafc', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>
+                                                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Cấn trừ Hóa Đơn số</th>
+                                                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Trạng Thái HĐ</th>
+                                                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Giá Trị Phân Bổ</th>
                                                 </tr>
-                                            </tfoot>
-                                        )}
-                                    </table>
+                                            </thead>
+                                            <tbody>
+                                                {localPayment.allocations?.length === 0 ? (
+                                                    <tr><td colSpan={3} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Chưa cấn trừ hóa đơn nào (Thanh toán dư nợ chung).</td></tr>
+                                                ) : (
+                                                    localPayment.allocations?.map((allocation: any) => (
+                                                        <tr key={allocation.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                                            <td style={{ padding: '1rem' }}>
+                                                                <Link href={`/sales/invoices/${allocation.invoice?.id}`} style={{ fontWeight: 600, color: '#4f46e5', textDecoration: 'none' }} className="hover:underline">
+                                                                    {allocation.invoice?.code}
+                                                                </Link>
+                                                            </td>
+                                                            <td style={{ padding: '1rem' }}>
+                                                                {allocation.invoice?.status === 'PAID' ? (
+                                                                    <span className="px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-semibold">Đã Thanh Toán Khách Hàng</span>
+                                                                ) : (
+                                                                    <span className="px-2 py-1 rounded bg-amber-100 text-amber-700 text-xs font-semibold">Còn Ghi Nợ</span>
+                                                                )}
+                                                            </td>
+                                                            <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#10b981' }}>{formatMoney(allocation.amount)}</td>
+                                                        </tr>
+                                                    ))
+                                                )}
+                                            </tbody>
+                                            {localPayment.allocations?.length > 0 && (
+                                                <tfoot>
+                                                    <tr style={{ backgroundColor: '#f8fafc' }}>
+                                                        <td colSpan={2} style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#64748b' }}>Tổng Phân Bổ:</td>
+                                                        <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 700, color: '#1e293b', fontSize: '1rem' }}>
+                                                            {formatMoney(localPayment.allocations.reduce((acc: number, cur: any) => acc + cur.amount, 0))}
+                                                        </td>
+                                                    </tr>
+                                                </tfoot>
+                                            )}
+                                        </table>
+                                    </div>
                                 </div>
                             )}
 
@@ -655,70 +657,72 @@ export function SalesPaymentDetailClient({ payment, tasks, users, unpaidInvoices
                             </div>
 
                             <form id="allocationForm" onSubmit={submitAllocations} className="space-y-4 pt-2">
-                                <table className="w-full text-left border-collapse text-sm">
-                                    <thead>
-                                        <tr className="border-b bg-gray-50 text-gray-600">
-                                            <th className="p-3 font-semibold rounded-tl-lg">Hóa Đơn Số</th>
-                                            <th className="p-3 font-semibold">Khách Hàng</th>
-                                            <th className="p-3 font-semibold text-right">Tổng Tiền</th>
-                                            <th className="p-3 font-semibold text-right">Đã Thu</th>
-                                            <th className="p-3 font-semibold text-right">Còn Nợ</th>
-                                            <th className="p-3 font-semibold text-right rounded-tr-lg">Phân Bổ Lần Này</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100">
-                                        {unpaidInvoices?.map(inv => {
-                                            const totalAllocatedToInv = inv.allocations?.reduce((s: number, a: any) => s + a.amount, 0) || 0;
-                                            const debt = inv.totalAmount - totalAllocatedToInv;
-                                            if (debt <= 0.01) return null; // Already paid mapping, though filter should have caught it
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left border-collapse text-sm min-w-[600px]">
+                                        <thead>
+                                            <tr className="border-b bg-gray-50 text-gray-600">
+                                                <th className="p-3 font-semibold rounded-tl-lg">Hóa Đơn Số</th>
+                                                <th className="p-3 font-semibold">Khách Hàng</th>
+                                                <th className="p-3 font-semibold text-right">Tổng Tiền</th>
+                                                <th className="p-3 font-semibold text-right">Đã Thu</th>
+                                                <th className="p-3 font-semibold text-right">Còn Nợ</th>
+                                                <th className="p-3 font-semibold text-right rounded-tr-lg">Phân Bổ Lần Này</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {unpaidInvoices?.map(inv => {
+                                                const totalAllocatedToInv = inv.allocations?.reduce((s: number, a: any) => s + a.amount, 0) || 0;
+                                                const debt = inv.totalAmount - totalAllocatedToInv;
+                                                if (debt <= 0.01) return null; // Already paid mapping, though filter should have caught it
 
-                                            return (
-                                                <tr key={inv.id} className="hover:bg-gray-50 transition-colors">
-                                                    <td className="p-3 font-medium text-blue-600">{inv.code}</td>
-                                                    <td className="p-3 text-gray-700">{localPayment.customer?.name}</td>
-                                                    <td className="p-3 text-right">{formatMoney(inv.totalAmount)}</td>
-                                                    <td className="p-3 text-right text-gray-500">{formatMoney(totalAllocatedToInv)}</td>
-                                                    <td className="p-3 text-right font-bold ">{formatMoney(debt)}</td>
-                                                    <td className="p-3 text-right">
-                                                        <div className="flex flex-col items-end gap-1">
-                                                            <input
-                                                                type="number"
-                                                                className="border border-gray-300 rounded-lg p-2 text-right w-[160px] focus:ring-2 focus:ring-gray-300 focus:border-gray-500 outline-none transition-all"
-                                                                placeholder="0"
-                                                                min="0"
-                                                                max={debt}
-                                                                step="1"
-                                                                value={allocations[inv.id] || ''}
-                                                                onChange={(e) => handleAllocationChange(inv.id, Number(e.target.value), debt)}
-                                                            />
-                                                            <div className="flex gap-1 justify-end w-full max-w-[160px]">
-                                                                <button
-                                                                    type="button"
-                                                                    className="text-xs text-gray-900 border font-[500] px-2 py-0.5"
-                                                                    onClick={() => {
-                                                                        const currentVal = allocations[inv.id] || 0;
-                                                                        const remainingUnalloc = unallocatedAmount - Object.values(allocations).reduce((sum, val) => sum + (val || 0), 0) + currentVal;
-                                                                        const recommendVal = Math.min(debt, remainingUnalloc);
-                                                                        handleAllocationChange(inv.id, recommendVal, debt);
-                                                                    }}
-                                                                >
-                                                                    Điền {formatMoney(debt)}
-                                                                </button>
+                                                return (
+                                                    <tr key={inv.id} className="hover:bg-gray-50 transition-colors">
+                                                        <td className="p-3 font-medium text-blue-600">{inv.code}</td>
+                                                        <td className="p-3 text-gray-700">{localPayment.customer?.name}</td>
+                                                        <td className="p-3 text-right">{formatMoney(inv.totalAmount)}</td>
+                                                        <td className="p-3 text-right text-gray-500">{formatMoney(totalAllocatedToInv)}</td>
+                                                        <td className="p-3 text-right font-bold ">{formatMoney(debt)}</td>
+                                                        <td className="p-3 text-right">
+                                                            <div className="flex flex-col items-end gap-1">
+                                                                <input
+                                                                    type="number"
+                                                                    className="border border-gray-300 rounded-lg p-2 text-right w-[160px] focus:ring-2 focus:ring-gray-300 focus:border-gray-500 outline-none transition-all"
+                                                                    placeholder="0"
+                                                                    min="0"
+                                                                    max={debt}
+                                                                    step="1"
+                                                                    value={allocations[inv.id] || ''}
+                                                                    onChange={(e) => handleAllocationChange(inv.id, Number(e.target.value), debt)}
+                                                                />
+                                                                <div className="flex gap-1 justify-end w-full max-w-[160px]">
+                                                                    <button
+                                                                        type="button"
+                                                                        className="text-xs text-gray-900 border font-[500] px-2 py-0.5"
+                                                                        onClick={() => {
+                                                                            const currentVal = allocations[inv.id] || 0;
+                                                                            const remainingUnalloc = unallocatedAmount - Object.values(allocations).reduce((sum, val) => sum + (val || 0), 0) + currentVal;
+                                                                            const recommendVal = Math.min(debt, remainingUnalloc);
+                                                                            handleAllocationChange(inv.id, recommendVal, debt);
+                                                                        }}
+                                                                    >
+                                                                        Điền {formatMoney(debt)}
+                                                                    </button>
+                                                                </div>
                                                             </div>
-                                                        </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                            {(!unpaidInvoices || unpaidInvoices.length === 0) && (
+                                                <tr>
+                                                    <td colSpan={6} className="p-8 text-center text-gray-400 border-b">
+                                                        Không có hóa đơn nợ nào có thể cấp tiền.
                                                     </td>
                                                 </tr>
-                                            );
-                                        })}
-                                        {(!unpaidInvoices || unpaidInvoices.length === 0) && (
-                                            <tr>
-                                                <td colSpan={6} className="p-8 text-center text-gray-400 border-b">
-                                                    Không có hóa đơn nợ nào có thể cấp tiền.
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </form>
                         </div>
                         <div className="p-5 border-t border-gray-100 bg-white flex justify-start gap-4 pb-8 pl-8">

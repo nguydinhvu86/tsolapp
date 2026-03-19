@@ -285,36 +285,36 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
 
     return (
         <div className="p-8">
-            <div className="page-header">
+            <div className="flex flex-col md:flex-row justify-between md:items-end gap-4 mb-6">
                 <div>
                     <h1 className="text-2xl mb-1">Thanh Toán Bán Hàng</h1>
                     <p className="text-sm text-gray-500">Ghi nhận các khoản thu tiền công nợ từ khách hàng</p>
                 </div>
-                <button onClick={() => setIsCreateModalOpen(true)} className="btn btn-primary">
+                <button onClick={() => setIsCreateModalOpen(true)} className="btn btn-primary w-full md:w-auto flex justify-center">
                     <Plus size={20} style={{ marginRight: '8px' }} />
                     <span>Tạo Phiếu Thu</span>
                 </button>
             </div>
 
-            <div className="card search-card">
-                <div className="search-input-wrapper">
+            <div className="card search-card flex flex-col md:flex-row justify-between gap-4 md:items-center mb-6">
+                <div className="search-input-wrapper flex-1">
                     <Search className="search-icon" size={20} />
                     <input
                         type="text"
                         placeholder="Tìm theo mã PT, KH, tham chiếu..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="input"
+                        className="input w-full"
                     />
                 </div>
-                <div className="flex gap-4 w-full sm:w-auto text-sm mt-4 sm:mt-0">
-                    <div className="stat-card stat-card-blue" style={{ minWidth: '160px' }}>
+                <div className="flex flex-wrap gap-4 w-full md:w-auto text-sm">
+                    <div className="stat-card stat-card-blue flex-1" style={{ minWidth: '160px' }}>
                         <div className="stat-info">
                             <span className="stat-title">Tổng Lượt Thu Mới</span>
                             <span className="stat-value">{totalStats.count}</span>
                         </div>
                     </div>
-                    <div className="stat-card stat-card-green" style={{ minWidth: '160px' }}>
+                    <div className="stat-card stat-card-green flex-1" style={{ minWidth: '160px' }}>
                         <div className="stat-info">
                             <span className="stat-title">Tổng Tiền Đã Thu</span>
                             <span className="stat-value">{formatMoney(totalStats.totalAmount)}</span>
@@ -323,9 +323,9 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
                 </div>
             </div>
 
-            <div className="table-wrapper">
-                <table>
-                    <thead>
+            <div className="table-wrapper overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[800px]">
+                    <thead className="whitespace-nowrap">
                         <tr>
                             <th onClick={() => requestSort('code')} className="cursor-pointer hover:bg-gray-100">
                                 <div className="flex items-center gap-1">Mã Phiếu <ArrowUpDown size={14} className="text-gray-400" /></div>
@@ -508,9 +508,9 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
                                                     <CheckCircle2 size={16} /> Phân bổ tự động
                                                 </button>
                                             </div>
-                                            <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
-                                                <table className="w-full text-left border-collapse">
-                                                    <thead>
+                                            <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden overflow-x-auto">
+                                                <table className="w-full text-left border-collapse min-w-[600px]">
+                                                    <thead className="whitespace-nowrap">
                                                         <tr className="bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                                                             <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm">Hóa Đơn / Ngày</th>
                                                             <th className="p-3 font-semibold text-gray-600 dark:text-gray-300 text-sm text-right">Giá Trị HĐ</th>
@@ -601,49 +601,51 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
                                 </button>
                             </div>
                         </div>
-                    </div>
+                    </div >
                 )
             }
 
             {/* Generic Action Modal */}
-            {actionModal?.isOpen && (
-                <div className="modal-backdrop fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="modal-container bg-white dark:bg-[#1E1E1E] rounded-xl w-full flex flex-col max-w-md shadow-2xl">
-                        <div className="p-5 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50">
-                            <h2 className="text-lg font-bold text-gray-900 dark:text-white">{actionModal.title}</h2>
-                            <button onClick={() => !isActioning && setActionModal(null)} className="text-gray-400 hover:text-gray-600">×</button>
-                        </div>
-                        <div className="p-6">
-                            <div className="text-gray-700 dark:text-gray-300 text-[15px] mb-6 leading-relaxed">
-                                {actionModal.message}
+            {
+                actionModal?.isOpen && (
+                    <div className="modal-backdrop fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                        <div className="modal-container bg-white dark:bg-[#1E1E1E] rounded-xl w-full flex flex-col max-w-md shadow-2xl">
+                            <div className="p-5 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50">
+                                <h2 className="text-lg font-bold text-gray-900 dark:text-white">{actionModal.title}</h2>
+                                <button onClick={() => !isActioning && setActionModal(null)} className="text-gray-400 hover:text-gray-600">×</button>
                             </div>
-                            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
-                                <button type="button" onClick={() => setActionModal(null)} disabled={isActioning} className="px-4 py-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-300">Hủy Bỏ</button>
-                                <button
-                                    className="bg-blue-600 hover:bg-blue-700 text-white min-w-[120px] px-4 py-2 rounded-lg font-medium flex justify-center items-center"
-                                    onClick={async () => {
-                                        setIsActioning(true);
-                                        try {
-                                            await actionModal.action();
-                                            setActionModal(null);
-                                        } finally {
-                                            setIsActioning(false);
-                                        }
-                                    }}
-                                    disabled={isActioning}
-                                >
-                                    {isActioning ? (
-                                        <>
-                                            <span style={{ display: 'inline-block', width: '16px', height: '16px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite', marginRight: '8px' }}></span>
-                                            Đang xử lý...
-                                        </>
-                                    ) : 'Xác Nhận'}
-                                </button>
+                            <div className="p-6">
+                                <div className="text-gray-700 dark:text-gray-300 text-[15px] mb-6 leading-relaxed">
+                                    {actionModal.message}
+                                </div>
+                                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
+                                    <button type="button" onClick={() => setActionModal(null)} disabled={isActioning} className="px-4 py-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-300">Hủy Bỏ</button>
+                                    <button
+                                        className="bg-blue-600 hover:bg-blue-700 text-white min-w-[120px] px-4 py-2 rounded-lg font-medium flex justify-center items-center"
+                                        onClick={async () => {
+                                            setIsActioning(true);
+                                            try {
+                                                await actionModal.action();
+                                                setActionModal(null);
+                                            } finally {
+                                                setIsActioning(false);
+                                            }
+                                        }}
+                                        disabled={isActioning}
+                                    >
+                                        {isActioning ? (
+                                            <>
+                                                <span style={{ display: 'inline-block', width: '16px', height: '16px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite', marginRight: '8px' }}></span>
+                                                Đang xử lý...
+                                            </>
+                                        ) : 'Xác Nhận'}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
         </div >
     );
 }
