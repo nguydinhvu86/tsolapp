@@ -79,6 +79,15 @@ export default function ExpenseClient({
         }
     }, []);
 
+    // Sync state when Server Components re-render via router.refresh()
+    React.useEffect(() => {
+        setExpenses(initialData);
+    }, [initialData]);
+
+    React.useEffect(() => {
+        setCategories(initialCategories);
+    }, [initialCategories]);
+
     const handleSort = (field: keyof ExpenseWithDetails) => {
         if (sortField === field) {
             setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
