@@ -988,72 +988,74 @@ export function DashboardClient({
 
                                                         {widgetId === 'cash_flow_chart' && (
                                                             /* Cash Flow Chart & Invoice Status */
-                                                            <div className="flex flex-col xl:flex-row gap-6 w-full mb-2">
+                                                            <div className="flex flex-col xl:flex-row gap-6 w-full mb-2 items-stretch">
                                                                 {/* Cash Flow Chart - Left Column */}
-                                                                <div className="w-full xl:w-[65%]">
-                                                                    <div className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm h-full flex flex-col">
-                                                                        <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-100 pb-3">{t("dashboard.cashFlow.title")} {new Date().getFullYear()}</h3>
-                                                                        <div className="flex-1 min-h-[350px]" style={{ width: '100%', marginLeft: '-15px' }}>
-                                                                            <ResponsiveContainer width="100%" height="100%">
-                                                                                <AreaChart data={kpiData?.cashFlow || []} margin={{ top: 10, right: 10, left: 20, bottom: 0 }}>
-                                                                                    <defs>
-                                                                                        <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-                                                                                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
-                                                                                            <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
-                                                                                        </linearGradient>
-                                                                                        <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
-                                                                                            <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4} />
-                                                                                            <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.0} />
-                                                                                        </linearGradient>
-                                                                                        <linearGradient id="colorSupplier" x1="0" y1="0" x2="0" y2="1">
-                                                                                            <stop offset="5%" stopColor="#ef4444" stopOpacity={0.4} />
-                                                                                            <stop offset="95%" stopColor="#ef4444" stopOpacity={0.0} />
-                                                                                        </linearGradient>
-                                                                                    </defs>
-                                                                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 13 }} dy={10} />
-                                                                                    <YAxis
-                                                                                        axisLine={false}
-                                                                                        tickLine={false}
-                                                                                        tick={{ fill: '#9ca3af', fontSize: 13 }}
-                                                                                        dx={-10}
-                                                                                        tickFormatter={(value) => {
-                                                                                            if (value >= 1000000000) return `${(value / 1000000000).toFixed(1)}T`;
-                                                                                            if (value >= 1000000) return `${(value / 1000000).toFixed(0)}Tr`;
-                                                                                            return value;
-                                                                                        }}
-                                                                                    />
-                                                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                                                                                    <Tooltip
-                                                                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                                                                        formatter={(value: any, name: any) => {
-                                                                                            let label = '';
-                                                                                            if (name === 'income') label = t("dashboard.cashFlow.income");
-                                                                                            if (name === 'expense') label = t("dashboard.cashFlow.expense");
-                                                                                            if (name === 'supplierPayment') label = t("dashboard.cashFlow.supplierPaymentShort");
-                                                                                            return [new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(value) || 0), label];
-                                                                                        }}
-                                                                                    />
-                                                                                    <Legend
-                                                                                        verticalAlign="top"
-                                                                                        height={36}
-                                                                                        formatter={(value) => {
-                                                                                            if (value === 'income') return t("dashboard.cashFlow.income");
-                                                                                            if (value === 'expense') return t("dashboard.cashFlow.expense");
-                                                                                            if (value === 'supplierPayment') return t("dashboard.cashFlow.supplierPayment");
-                                                                                            return value;
-                                                                                        }}
-                                                                                    />
-                                                                                    <Area type="monotone" dataKey="income" name="income" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorIncome)" />
-                                                                                    <Area type="monotone" dataKey="expense" name="expense" stroke="#f59e0b" strokeWidth={3} fillOpacity={1} fill="url(#colorExpense)" />
-                                                                                    <Area type="monotone" dataKey="supplierPayment" name="supplierPayment" stroke="#ef4444" strokeWidth={3} fillOpacity={1} fill="url(#colorSupplier)" />
-                                                                                </AreaChart>
-                                                                            </ResponsiveContainer>
+                                                                {isAdminOrManager && (
+                                                                    <div className="w-full xl:w-[65%]">
+                                                                        <div className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm h-full flex flex-col">
+                                                                            <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-100 pb-3">{t("dashboard.cashFlow.title")} {new Date().getFullYear()}</h3>
+                                                                            <div className="flex-1 min-h-[350px]" style={{ width: '100%', marginLeft: '-15px' }}>
+                                                                                <ResponsiveContainer width="100%" height="100%">
+                                                                                    <AreaChart data={kpiData?.cashFlow || []} margin={{ top: 10, right: 10, left: 20, bottom: 0 }}>
+                                                                                        <defs>
+                                                                                            <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+                                                                                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                                                                                                <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+                                                                                            </linearGradient>
+                                                                                            <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
+                                                                                                <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4} />
+                                                                                                <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.0} />
+                                                                                            </linearGradient>
+                                                                                            <linearGradient id="colorSupplier" x1="0" y1="0" x2="0" y2="1">
+                                                                                                <stop offset="5%" stopColor="#ef4444" stopOpacity={0.4} />
+                                                                                                <stop offset="95%" stopColor="#ef4444" stopOpacity={0.0} />
+                                                                                            </linearGradient>
+                                                                                        </defs>
+                                                                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 13 }} dy={10} />
+                                                                                        <YAxis
+                                                                                            axisLine={false}
+                                                                                            tickLine={false}
+                                                                                            tick={{ fill: '#9ca3af', fontSize: 13 }}
+                                                                                            dx={-10}
+                                                                                            tickFormatter={(value) => {
+                                                                                                if (value >= 1000000000) return `${(value / 1000000000).toFixed(1)}T`;
+                                                                                                if (value >= 1000000) return `${(value / 1000000).toFixed(0)}Tr`;
+                                                                                                return value;
+                                                                                            }}
+                                                                                        />
+                                                                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                                                                                        <Tooltip
+                                                                                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                                                            formatter={(value: any, name: any) => {
+                                                                                                let label = '';
+                                                                                                if (name === 'income') label = t("dashboard.cashFlow.income");
+                                                                                                if (name === 'expense') label = t("dashboard.cashFlow.expense");
+                                                                                                if (name === 'supplierPayment') label = t("dashboard.cashFlow.supplierPaymentShort");
+                                                                                                return [new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(value) || 0), label];
+                                                                                            }}
+                                                                                        />
+                                                                                        <Legend
+                                                                                            verticalAlign="top"
+                                                                                            height={36}
+                                                                                            formatter={(value) => {
+                                                                                                if (value === 'income') return t("dashboard.cashFlow.income");
+                                                                                                if (value === 'expense') return t("dashboard.cashFlow.expense");
+                                                                                                if (value === 'supplierPayment') return t("dashboard.cashFlow.supplierPayment");
+                                                                                                return value;
+                                                                                            }}
+                                                                                        />
+                                                                                        <Area type="monotone" dataKey="income" name="income" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorIncome)" />
+                                                                                        <Area type="monotone" dataKey="expense" name="expense" stroke="#f59e0b" strokeWidth={3} fillOpacity={1} fill="url(#colorExpense)" />
+                                                                                        <Area type="monotone" dataKey="supplierPayment" name="supplierPayment" stroke="#ef4444" strokeWidth={3} fillOpacity={1} fill="url(#colorSupplier)" />
+                                                                                    </AreaChart>
+                                                                                </ResponsiveContainer>
+                                                                            </div>
                                                                         </div>
                                                                     </div>
-                                                                </div>
+                                                                )}
 
                                                                 {/* Invoice Status - Right Column */}
-                                                                <div className="w-full xl:w-[35%]">
+                                                                <div className={`w-full ${isAdminOrManager ? 'xl:w-[35%]' : ''}`}>
                                                                     <InvoiceStatusWidget invoices={invoices || []} />
                                                                 </div>
                                                             </div>
