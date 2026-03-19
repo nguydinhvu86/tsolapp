@@ -297,7 +297,7 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                 </Card>
 
                 {/* Column 2: Content Area */}
-                <div className="flex flex-col xl:flex-row min-w-0 w-full gap-6">
+                <div className="flex flex-col min-w-0 w-full">
                     {/* Header */}
                     <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
                         <h3 style={{ fontSize: '1.125rem', fontWeight: 700, margin: 0, color: '#1e293b' }}>
