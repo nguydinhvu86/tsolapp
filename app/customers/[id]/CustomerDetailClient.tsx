@@ -196,8 +196,8 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                 </div>
             </Card>
 
-            {/* 3 Columns Grid: Sidebar, Content Area, TaskPanel */}
-            <div className="flex flex-col lg:grid lg:grid-cols-[260px_minmax(0,1fr)_350px] gap-6 items-start">
+            {/* Responsive Grid: 1 col on mobile, 2 cols on laptop (lg), 3 cols on widescreen (xl/2xl) */}
+            <div className="flex flex-col lg:grid lg:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[250px_minmax(0,1fr)_320px] 2xl:grid-cols-[260px_minmax(0,1fr)_350px] gap-6 items-start">
                 {/* Column 1: Sidebar Menu */}
                 <Card style={{ padding: '0', overflow: 'hidden', position: 'sticky', top: '1.5rem', background: '#ffffff', borderRadius: '12px', border: '1px solid var(--border)' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem 0' }}>
@@ -500,7 +500,7 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                 </div>
 
                 {/* Column 3: TaskPanel & Timeline */}
-                <div className="w-full" style={{ position: 'sticky', top: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div className="w-full lg:col-span-2 xl:col-span-1" style={{ position: 'sticky', top: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                     <TaskPanel initialTasks={tasks} users={users} entityType="CUSTOMER" entityId={customer.id} />
                     <CustomerHistoryTimeline logs={customer.activityLogs || []} />
                 </div>
