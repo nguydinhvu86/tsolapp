@@ -6,6 +6,7 @@ import { vi } from 'date-fns/locale';
 import { MessageSquare, Paperclip, Send, Trash2, User as UserIcon, FileText } from 'lucide-react';
 import { createCustomerNote, deleteCustomerNote } from '../../customers/[id]/actions';
 import { DocumentPreviewModal } from '@/app/components/ui/DocumentPreviewModal';
+import { autoLinkText } from '@/lib/utils/formatters';
 
 interface CustomerNotesPanelProps {
     customerId: string;
@@ -213,9 +214,10 @@ export function CustomerNotesPanel({ customerId, notes, currentUserId, currentUs
                                             </button>
                                         )}
                                     </div>
-                                    <div style={{ fontSize: '0.9375rem', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
-                                        {note.content}
-                                    </div>
+                                    <div
+                                        style={{ fontSize: '0.9375rem', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}
+                                        dangerouslySetInnerHTML={{ __html: autoLinkText(note.content) }}
+                                    />
                                     {note.attachment && (() => {
                                         try {
                                             const parsed = JSON.parse(note.attachment);

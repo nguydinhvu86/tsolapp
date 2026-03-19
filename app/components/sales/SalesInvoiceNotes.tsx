@@ -7,6 +7,7 @@ import { FileText, User as UserIcon, Send, Trash2, Paperclip, MessageSquare } fr
 import { createSalesInvoiceNote, deleteSalesInvoiceNote } from '../../sales/invoices/actions';
 import { Modal } from '@/app/components/ui/Modal';
 import { DocumentPreviewModal } from '@/app/components/ui/DocumentPreviewModal';
+import { autoLinkText } from '@/lib/utils/formatters';
 
 interface SalesInvoiceNotesProps {
     invoiceId: string;
@@ -177,9 +178,8 @@ export function SalesInvoiceNotes({ invoiceId, notes, currentUserId, currentUser
                                             </button>
                                         )}
                                     </div>
-                                    <div style={{ fontSize: '0.9375rem', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
-                                        {note.content}
-                                    </div>
+                                    <div style={{ fontSize: '0.9375rem', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}
+                                        dangerouslySetInnerHTML={{ __html: autoLinkText(note.content) }} />
                                     {note.attachment && (() => {
                                         try {
                                             const parsed = JSON.parse(note.attachment);
@@ -252,9 +252,8 @@ export function SalesInvoiceNotes({ invoiceId, notes, currentUserId, currentUser
                                             </span>
                                         </div>
                                     </div>
-                                    <div style={{ fontSize: '0.9375rem', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
-                                        {note.content}
-                                    </div>
+                                    <div style={{ fontSize: '0.9375rem', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}
+                                        dangerouslySetInnerHTML={{ __html: autoLinkText(note.content) }} />
                                     {note.attachment && (() => {
                                         try {
                                             const parsed = JSON.parse(note.attachment);
