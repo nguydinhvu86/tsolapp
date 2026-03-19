@@ -690,3 +690,60 @@ export async function removeSalesEstimateManager(estimateId: string, userId: str
     revalidatePath(`/sales/estimates/${estimateId}`);
     return doc;
 }
+
+export async function cloneSalesEstimate(estimateId: string) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) return { success: false, error: "Unauthorized" };
+        const creatorId = session.user.id;
+
+        const estimate = await prisma.salesEstimate.findUnique({
+            where: { id: estimateId },
+            include: { items: true }
+        });
+
+        if (!estimate) return { success: false, error: "Báo giá không tồn tại." };
+
+        const nextCode = await getNextEstimateCode();
+
+        const clonedEstimate = await prisma.salesEstimate.create({
+            data: {
+                code: nextCode,
+                date: new Date(),
+                validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                status: "DRAFT",
+                notes: estimate.notes,
+                tags: estimate.tags,
+                customerId: estimate.customerId,
+                subTotal: estimate.subTotal,
+                taxAmount: estimate.taxAmount,
+                totalAmount: estimate.totalAmount,
+                creatorId: creatorId,
+                salespersonId: estimate.salespersonId || creatorId,
+                leadId: estimate.leadId,
+                items: {
+                    create: estimate.items.map((i: any) => ({
+                        productId: i.productId,
+                        customName: i.customName,
+                        description: i.description,
+                        unit: i.unit,
+                        quantity: i.quantity,
+                        unitPrice: i.unitPrice,
+                        taxRate: i.taxRate,
+                        taxAmount: i.taxAmount,
+                        totalPrice: i.totalPrice
+                    }))
+                }
+            }
+        });
+
+        await logSalesEstimateActivity(clonedEstimate.id, creatorId, 'CREATED', `Tạo Báo giá ${clonedEstimate.code} (Sao chép từ ${estimate.code})`);
+        await logCustomerActivity(estimate.customerId, creatorId, 'TẠO_BÁO_GIÁ', `Tạo Báo giá mới ${clonedEstimate.code} (Sao chép từ ${estimate.code})`);
+
+        revalidatePath('/sales/estimates');
+        return { success: true, data: clonedEstimate };
+    } catch (error: any) {
+        console.error("Lỗi khi sao chép Báo Giá:", error);
+        return { success: false, error: error.message };
+    }
+}
