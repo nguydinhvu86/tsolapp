@@ -259,8 +259,8 @@ export default function ExpenseClient({
     return (
         <div className="flex flex-col gap-6">
             <Card>
-                <div className="flex justify-between items-center" style={{ marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-                    <div className="flex gap-2 items-center" style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '0.5rem 1rem', background: '#fff', minWidth: '300px' }}>
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+                    <div className="flex gap-2 items-center w-full sm:w-[300px]" style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '0.5rem 1rem', background: '#fff' }}>
                         <Search size={18} color="var(--text-muted)" />
                         <input
                             style={{ border: 'none', outline: 'none', background: 'transparent', width: '100%', fontSize: '0.9375rem' }}
@@ -269,97 +269,99 @@ export default function ExpenseClient({
                             onChange={e => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    <Button onClick={() => openModal()} className="gap-2">
+                    <Button onClick={() => openModal()} className="w-full sm:w-auto gap-2">
                         <Plus size={18} /> Thêm Phiếu Chi
                     </Button>
                 </div>
 
-                <Table>
-                    <thead>
-                        <tr>
-                            <th onClick={() => handleSort('code')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                                <div className="flex items-center gap-1">Mã Phiếu {sortField === 'code' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
-                            </th>
-                            <th onClick={() => handleSort('date')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                                <div className="flex items-center gap-1">Ngày Chi {sortField === 'date' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
-                            </th>
-                            <th onClick={() => handleSort('payee')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                                <div className="flex items-center gap-1">Đối tượng {sortField === 'payee' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
-                            </th>
-                            <th onClick={() => handleSort('categoryId')} style={{ cursor: 'pointer', userSelect: 'none' }}>Danh mục</th>
-                            <th>Mô tả</th>
-                            <th onClick={() => handleSort('amount')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                                <div className="flex items-center gap-1 justify-end">Số Tiền {sortField === 'amount' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
-                            </th>
-                            <th>Phương thức</th>
-                            <th style={{ width: '100px', textAlign: 'center' }}>Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {paginatedItems.length === 0 ? (
-                            <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Chưa có dữ liệu chi phí</td></tr>
-                        ) : paginatedItems.map(expense => (
-                            <tr key={expense.id}>
-                                <td>
-                                    <Link
-                                        href={`/sales/expenses/${expense.id}`}
-                                        className="font-semibold text-primary hover:text-blue-700 hover:underline transition-colors"
-                                    >
-                                        {expense.code}
-                                    </Link>
-                                </td>
-                                <td>{formatDate(new Date(expense.date))}</td>
-                                <td style={{ fontWeight: 500, color: 'var(--text-main)' }}>
-                                    <div className="flex flex-col gap-1">
-                                        <span>{expense.payee || '---'}</span>
-                                        {expense.customer && (
-                                            <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-sm border border-blue-100 w-fit flex items-center gap-1">
-                                                <UserCircle2 size={10} /> {expense.customer.name}
-                                            </span>
-                                        )}
-                                        {expense.supplier && (
-                                            <span className="text-[10px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-sm border border-amber-100 w-fit flex items-center gap-1">
-                                                <Building2 size={10} /> {expense.supplier.name}
-                                            </span>
-                                        )}
-                                    </div>
-                                </td>
-                                <td>
-                                    <span className="inline-block px-2 py-1 bg-slate-100 text-slate-700 text-xs rounded-md">
-                                        {expense.category?.name}
-                                    </span>
-                                </td>
-                                <td style={{ color: 'var(--text-muted)' }}>{expense.description}</td>
-                                <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--danger)' }}>
-                                    -{formatMoney(expense.amount)}
-                                </td>
-                                <td style={{ color: 'var(--text-muted)' }}>{expense.paymentMethod === 'BANK_TRANSFER' ? 'Chuyển khoản' : 'Tiền mặt'}</td>
-                                <td>
-                                    <div className="flex gap-2 justify-center">
-                                        {expense.attachment && (
-                                            <a href={expense.attachment} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', display: 'flex', alignItems: 'center' }} title="Xem đính kèm">
-                                                <Paperclip size={18} />
-                                            </a>
-                                        )}
-                                        <button onClick={() => openModal(expense)} style={{ color: 'var(--text-muted)' }} title="Sửa">
-                                            <Edit size={18} />
-                                        </button>
-                                        <button onClick={() => handleDelete(expense.id)} style={{ color: 'var(--danger)' }} title="Xóa">
-                                            <Trash2 size={18} />
-                                        </button>
-                                    </div>
-                                </td>
+                <div className="overflow-x-auto pb-4">
+                    <Table>
+                        <thead className="whitespace-nowrap">
+                            <tr>
+                                <th onClick={() => handleSort('code')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                    <div className="flex items-center gap-1">Mã Phiếu {sortField === 'code' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
+                                </th>
+                                <th onClick={() => handleSort('date')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                    <div className="flex items-center gap-1">Ngày Chi {sortField === 'date' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
+                                </th>
+                                <th onClick={() => handleSort('payee')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                    <div className="flex items-center gap-1">Đối tượng {sortField === 'payee' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
+                                </th>
+                                <th onClick={() => handleSort('categoryId')} style={{ cursor: 'pointer', userSelect: 'none' }}>Danh mục</th>
+                                <th>Mô tả</th>
+                                <th onClick={() => handleSort('amount')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                    <div className="flex items-center gap-1 justify-end">Số Tiền {sortField === 'amount' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
+                                </th>
+                                <th>Phương thức</th>
+                                <th style={{ width: '100px', textAlign: 'center' }}>Thao tác</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </Table>
+                        </thead>
+                        <tbody>
+                            {paginatedItems.length === 0 ? (
+                                <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Chưa có dữ liệu chi phí</td></tr>
+                            ) : paginatedItems.map(expense => (
+                                <tr key={expense.id}>
+                                    <td>
+                                        <Link
+                                            href={`/sales/expenses/${expense.id}`}
+                                            className="font-semibold text-primary hover:text-blue-700 hover:underline transition-colors"
+                                        >
+                                            {expense.code}
+                                        </Link>
+                                    </td>
+                                    <td>{formatDate(new Date(expense.date))}</td>
+                                    <td style={{ fontWeight: 500, color: 'var(--text-main)' }}>
+                                        <div className="flex flex-col gap-1">
+                                            <span>{expense.payee || '---'}</span>
+                                            {expense.customer && (
+                                                <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-sm border border-blue-100 w-fit flex items-center gap-1">
+                                                    <UserCircle2 size={10} /> {expense.customer.name}
+                                                </span>
+                                            )}
+                                            {expense.supplier && (
+                                                <span className="text-[10px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-sm border border-amber-100 w-fit flex items-center gap-1">
+                                                    <Building2 size={10} /> {expense.supplier.name}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span className="inline-block px-2 py-1 bg-slate-100 text-slate-700 text-xs rounded-md">
+                                            {expense.category?.name}
+                                        </span>
+                                    </td>
+                                    <td style={{ color: 'var(--text-muted)' }}>{expense.description}</td>
+                                    <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--danger)' }}>
+                                        -{formatMoney(expense.amount)}
+                                    </td>
+                                    <td style={{ color: 'var(--text-muted)' }}>{expense.paymentMethod === 'BANK_TRANSFER' ? 'Chuyển khoản' : 'Tiền mặt'}</td>
+                                    <td>
+                                        <div className="flex gap-2 justify-center">
+                                            {expense.attachment && (
+                                                <a href={expense.attachment} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', display: 'flex', alignItems: 'center' }} title="Xem đính kèm">
+                                                    <Paperclip size={18} />
+                                                </a>
+                                            )}
+                                            <button onClick={() => openModal(expense)} style={{ color: 'var(--text-muted)' }} title="Sửa">
+                                                <Edit size={18} />
+                                            </button>
+                                            <button onClick={() => handleDelete(expense.id)} style={{ color: 'var(--danger)' }} title="Xóa">
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </Table>
+                </div>
                 <Pagination {...paginationProps} />
 
                 {/* Expense Entry Modal */}
                 <Modal isOpen={isModalOpen} onClose={closeModal} title={editingId ? 'Sửa khoản chi' : 'Thêm khoản chi mới'}>
                     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <Input
                                 label="Ngày chi *"
                                 type="date"
@@ -386,7 +388,7 @@ export default function ExpenseClient({
                             />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="flex flex-col gap-1.5">
                                 <label className="text-sm font-medium text-slate-700 flex items-center gap-1"><LinkIcon size={14} className="text-slate-400" /> Liên kết hệ thống</label>
                                 <select
@@ -453,7 +455,7 @@ export default function ExpenseClient({
                             placeholder="Vd: Mua văn phòng phẩm..."
                         />
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="flex flex-col gap-1.5">
                                 <label className="text-sm font-medium text-slate-700">Phương thức thanh toán</label>
                                 <select
@@ -475,7 +477,7 @@ export default function ExpenseClient({
 
                         <div className="flex flex-col gap-1.5" style={{ marginTop: '0.5rem' }}>
                             <label className="text-sm font-medium text-slate-700">Ảnh / Chứng từ đính kèm (tùy chọn)</label>
-                            <div className="flex items-center gap-4">
+                            <div className="flex flex-wrap items-center gap-4">
                                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: isUploading ? 'not-allowed' : 'pointer', padding: '0.5rem 1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius)', background: 'var(--bg-subtle)' }}>
                                     <Upload size={16} />
                                     <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>{isUploading ? 'Đang tải lên...' : 'Chọn file tải lên'}</span>
