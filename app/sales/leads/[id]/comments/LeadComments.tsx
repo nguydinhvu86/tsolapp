@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { MessageSquare, ImageIcon, Paperclip, Send, Trash2 } from 'lucide-react';
+import { MessageSquare, ImageIcon, Paperclip, Send, Trash2, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { createLeadComment, deleteLeadComment, toggleLeadCommentReaction } from './actions';
 import { Button } from '@/app/components/ui/Button';
 import { useRouter } from 'next/navigation';
@@ -25,7 +25,7 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
     const [attachments, setAttachments] = useState<{ url: string, name: string }[]>([]);
 
     // Lightbox State
-    const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+    const [lightboxData, setLightboxData] = useState<{ images: string[], currentIndex: number } | null>(null);
     const [previewDoc, setPreviewDoc] = useState<{ url: string, name: string } | null>(null);
 
     React.useEffect(() => {
@@ -35,7 +35,25 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
     const handleCommentClick = (e: React.MouseEvent<HTMLDivElement>) => {
         const target = e.target as HTMLElement;
         if (target.tagName.toLowerCase() === 'img') {
-            setLightboxImage((target as HTMLImageElement).src);
+            const container = e.currentTarget;
+            const images = Array.from(container.querySelectorAll('img')).map((img: HTMLImageElement) => img.src);
+            const clickedSrc = (target as HTMLImageElement).src;
+            const currentIndex = images.indexOf(clickedSrc);
+            setLightboxData({ images, currentIndex: currentIndex >= 0 ? currentIndex : 0 });
+        }
+    };
+
+    const handleNextImage = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (lightboxData) {
+            setLightboxData({ ...lightboxData, currentIndex: (lightboxData.currentIndex + 1) % lightboxData.images.length });
+        }
+    };
+
+    const handlePrevImage = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (lightboxData) {
+            setLightboxData({ ...lightboxData, currentIndex: (lightboxData.currentIndex - 1 + lightboxData.images.length) % lightboxData.images.length });
         }
     };
 
@@ -216,13 +234,35 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
     return (
         <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '16px', boxShadow: '0 2px 10px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9' }}>
             {/* Lighbox */}
-            {lightboxImage && (
+            {lightboxData && (
                 <div
                     style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                    onClick={() => setLightboxImage(null)}
+                    onClick={() => setLightboxData(null)}
                 >
+                    <button style={{ position: 'absolute', top: '20px', right: '20px', background: 'none', border: 'none', color: 'white', cursor: 'pointer', zIndex: 10001 }} onClick={() => setLightboxData(null)}>
+                        <X size={32} />
+                    </button>
+
+                    {lightboxData.images.length > 1 && (
+                        <button onClick={handlePrevImage} style={{ position: 'absolute', left: '20px', background: 'rgba(255,255,255,0.2)', color: 'white', border: 'none', borderRadius: '50%', width: '50px', height: '50px', fontSize: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 10000 }} className="hover:bg-white/40">
+                            <ChevronLeft size={32} />
+                        </button>
+                    )}
+
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={lightboxImage} alt="Phóng to" style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain', borderRadius: '8px' }} />
+                    <img src={lightboxData.images[lightboxData.currentIndex]} alt="Phóng to" style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain', borderRadius: '8px' }} />
+
+                    {lightboxData.images.length > 1 && (
+                        <button onClick={handleNextImage} style={{ position: 'absolute', right: '20px', background: 'rgba(255,255,255,0.2)', color: 'white', border: 'none', borderRadius: '50%', width: '50px', height: '50px', fontSize: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 10000 }} className="hover:bg-white/40">
+                            <ChevronRight size={32} />
+                        </button>
+                    )}
+
+                    {lightboxData.images.length > 1 && (
+                        <div style={{ position: 'absolute', bottom: '20px', color: 'white', background: 'rgba(0,0,0,0.5)', padding: '6px 16px', borderRadius: '20px', fontSize: '14px', fontWeight: 500 }}>
+                            {lightboxData.currentIndex + 1} / {lightboxData.images.length}
+                        </div>
+                    )}
                 </div>
             )}
 
