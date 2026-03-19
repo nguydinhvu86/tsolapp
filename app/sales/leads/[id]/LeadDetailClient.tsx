@@ -310,7 +310,7 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [], 
                 </div>
 
                 {/* Left Col: Info & Tasks */}
-                <div style={{ ...styles.mainLayout, ...(window.innerWidth >= 1024 ? styles.mainLayoutDesktop : {}) }}>
+                <div className="flex flex-col lg:grid lg:grid-cols-[2fr_1fr] gap-6">
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                         {/* Tabs */}
                         <div style={{ display: 'flex', backgroundColor: '#f1f5f9', padding: '4px', borderRadius: '12px', gap: '4px' }}>
@@ -417,7 +417,9 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [], 
                                 </div>
                             </>
                         ) : (
-                            <EmailLogTable emailLogs={lead.emailLogs || []} />
+                            <div className="overflow-x-auto w-full">
+                                <EmailLogTable emailLogs={lead.emailLogs || []} />
+                            </div>
                         )}
 
                         {/* Comments Section */}

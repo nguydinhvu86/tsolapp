@@ -240,7 +240,7 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
             <style dangerouslySetInnerHTML={{ __html: premiumCSS }} />
 
             {/* Header / Actions */}
-            <div className="flex justify-between items-center mb-6 gap-4">
+            <div className="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-4">
                 <div className="flex-1">
                     <h2 className="text-xl font-semibold text-slate-800">{t('leads.title')}</h2>
                     <p className="text-sm text-slate-500 mt-1">
@@ -249,10 +249,10 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
                 </div>
 
                 {/* View Toggle and Actions */}
-                <div id="leads-action-container" className="flex items-center gap-2 shrink-0 flex-wrap mt-4 md:mt-0">
+                <div id="leads-action-container" className="flex items-center gap-2 shrink-0 flex-wrap w-full md:w-auto mt-2 md:mt-0">
                     <button
                         onClick={() => setViewMode('table')}
-                        className={`btn ${viewMode === 'table' ? 'btn-primary' : 'btn-secondary'} !py-1 !px-3 font-semibold text-[13px] h-[36px] min-w-[120px]`}
+                        className={`btn flex-1 md:flex-none justify-center ${viewMode === 'table' ? 'btn-primary' : 'btn-secondary'} !py-1 !px-3 font-semibold text-[13px] h-[36px]`}
                         title={t('leads.viewTable')}
                     >
                         <List size={16} className="mr-2 shrink-0" />
@@ -260,14 +260,14 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
                     </button>
                     <button
                         onClick={() => setViewMode('kanban')}
-                        className={`btn ${viewMode === 'kanban' ? 'btn-primary' : 'btn-secondary'} !py-1 !px-3 font-semibold text-[13px] h-[36px] min-w-[120px]`}
+                        className={`btn flex-1 md:flex-none justify-center ${viewMode === 'kanban' ? 'btn-primary' : 'btn-secondary'} !py-1 !px-3 font-semibold text-[13px] h-[36px]`}
                         title={t('leads.viewKanban')}
                     >
                         <LayoutGrid size={16} className="mr-2 shrink-0" />
                         <span>{t('leads.viewKanban')}</span>
                     </button>
-                    <div className="w-[1px] h-6 bg-slate-300 mx-1 sm:mx-2 hidden sm:block"></div>
-                    <Link href="/sales/leads/new" className="btn btn-primary !py-1 !px-3 font-semibold text-[13px] h-[36px] min-w-[140px] shadow-sm flex items-center justify-center">
+                    <div className="w-[1px] h-6 bg-slate-300 mx-1 sm:mx-2 hidden md:block"></div>
+                    <Link href="/sales/leads/new" className="btn btn-primary w-full md:w-auto !py-1 !px-3 font-semibold text-[13px] h-[36px] shadow-sm flex items-center justify-center mt-2 md:mt-0">
                         <Plus size={16} className="mr-2 shrink-0" />
                         <span>{t('leads.createNew')}</span>
                     </Link>
@@ -314,8 +314,8 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
                 </div>
 
                 {/* Date Filter */}
-                <div className="flex items-center gap-2 shrink-0">
-                    <Calendar size={16} className="text-gray-400" />
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 shrink-0 w-full md:w-auto">
+                    <span className="text-sm text-gray-500 sm:hidden">{t('leads.fromDate')}:</span>
                     <input
                         type="date"
                         className="h-[40px] px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-700 outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
@@ -323,7 +323,8 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
                         onChange={e => setDateFrom(e.target.value)}
                         title={t('leads.fromDate')}
                     />
-                    <span className="text-gray-400">-</span>
+                    <span className="text-gray-400 hidden sm:inline">-</span>
+                    <span className="text-sm text-gray-500 sm:hidden mt-1">{t('leads.toDate')}:</span>
                     <input
                         type="date"
                         className="h-[40px] px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-700 outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
@@ -335,7 +336,7 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
 
                 {/* Employee Filter */}
                 {isAdminOrManager && users && users.length > 0 && (
-                    <div className="shrink-0 min-w-[200px]">
+                    <div className="shrink-0 w-full md:w-auto md:min-w-[200px]">
                         <select
                             className="h-[40px] w-full px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-700 outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
                             defaultValue={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('employeeId') || '' : ''}
@@ -359,7 +360,7 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
                 )}
 
                 {/* Status Filter */}
-                <div className="shrink-0 min-w-[200px]">
+                <div className="shrink-0 w-full md:w-auto md:min-w-[200px]">
                     <select
                         className="h-[40px] w-full px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-700 outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
                         value={statusFilter}
@@ -472,9 +473,9 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
 
             {/* TABLE VIEW */}
             {viewMode === 'table' && (
-                <div className="w-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    <Table>
-                        <thead>
+                <div className="w-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden overflow-x-auto mb-4">
+                    <Table className="min-w-[900px]">
+                        <thead className="whitespace-nowrap">
                             <tr>
                                 <th className="text-left font-medium text-gray-500 pb-3 cursor-pointer hover:text-indigo-600 transition-colors select-none" onClick={() => handleSort('code')}>
                                     <div className="flex items-center gap-1">
