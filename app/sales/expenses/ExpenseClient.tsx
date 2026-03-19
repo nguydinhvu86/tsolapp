@@ -63,6 +63,7 @@ export default function ExpenseClient({
         supplierId: ''
     });
     const [isUploading, setIsUploading] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     const [sortField, setSortField] = useState<keyof ExpenseWithDetails>('date');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -161,9 +162,12 @@ export default function ExpenseClient({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isSaving) return;
+        setIsSaving(true);
         try {
             if (!formData.categoryId) {
                 alert("Vui lòng chọn hoặc tạo danh mục chi phí.");
+                setIsSaving(false);
                 return;
             }
             if (editingId) {
@@ -193,9 +197,12 @@ export default function ExpenseClient({
                     supplierId: formData.systemLinkType === 'SUPPLIER' ? formData.supplierId : null,
                 });
             }
+            closeModal();
             router.refresh();
         } catch (error) {
             alert("Có lỗi xảy ra, vui lòng thử lại.");
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -474,8 +481,8 @@ export default function ExpenseClient({
                         </div>
 
                         <div className="flex gap-2" style={{ marginTop: '1rem', justifyContent: 'flex-end' }}>
-                            <Button type="button" variant="secondary" onClick={closeModal}>Hủy</Button>
-                            <Button type="submit">Lưu khoản chi</Button>
+                            <Button type="button" variant="secondary" onClick={closeModal} disabled={isSaving}>Hủy</Button>
+                            <Button type="submit" disabled={isSaving}>{isSaving ? 'Đang lưu...' : 'Lưu khoản chi'}</Button>
                         </div>
                     </form>
                 </Modal>
