@@ -132,7 +132,7 @@ export function CustomerStatementPanel({ customerId, customerName }: CustomerSta
 
             {/* Summary Cards */}
             {summary && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.5rem' }} className="statement-summary-grid">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 statement-summary-grid">
                     <Card style={{ padding: '1.25rem', borderLeft: '4px solid #94a3b8' }}>
                         <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>Dư nợ đầu kỳ</p>
                         <p style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#334155' }}>
