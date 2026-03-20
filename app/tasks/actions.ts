@@ -683,11 +683,47 @@ export async function toggleReaction(commentId: string, emoji: string, userId: s
 
     // We need to revalidate the task page, but we only have commentId. 
     // Find the taskId:
-    const comment = await prisma.taskComment.findUnique({ where: { id: commentId }, select: { taskId: true } });
+    const comment = await prisma.taskComment.findUnique({
+        where: { id: commentId },
+        select: { taskId: true, userId: true, user: { select: { name: true } }, task: { select: { title: true } } }
+    });
     if (comment) {
         logActivity(comment.taskId, userId, existing ? 'REACTION_REMOVED' : 'REACTION_ADDED', JSON.stringify({ item: emoji }));
+
+        // Notifications
+        if (!existing && comment.userId !== userId) {
+            const reactor = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+            const message = `${reactor?.name || 'Ai đó'} đã bày tỏ cảm xúc ${emoji} về bình luận của bạn trong công việc: "${comment.task?.title}".`;
+
+            await createManyNotifications([{
+                userId: comment.userId,
+                title: 'Có người tương tác bình luận',
+                message,
+                type: 'INFO',
+                link: `/tasks/${comment.taskId}`
+            }]);
+
+            sendWebPushNotification(comment.userId, {
+                title: 'Tương tác mới',
+                body: message,
+                url: `/tasks/${comment.taskId}`
+            });
+        }
+
         revalidatePath(`/tasks/${comment.taskId}`);
     }
+}
+
+export async function getTaskComments(taskId: string) {
+    const comments = await prisma.taskComment.findMany({
+        where: { taskId },
+        orderBy: { createdAt: 'asc' },
+        include: {
+            user: { select: { id: true, name: true, email: true } },
+            reactions: { include: { user: { select: { id: true, name: true, email: true } } } }
+        }
+    });
+    return comments;
 }
 
 export async function updateTaskLinks(taskId: string, linkData: { customerId?: string | null, contractId?: string | null, quoteId?: string | null, handoverId?: string | null, paymentReqId?: string | null, dispatchId?: string | null, salesOrderId?: string | null, salesInvoiceId?: string | null, salesEstimateId?: string | null, salesPaymentId?: string | null }, userId: string) {

@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "@/lib/authOptions";
 import { revalidatePath } from 'next/cache';
+import { createManyNotifications } from '@/app/notifications/actions';
+import { sendWebPushNotification } from '@/lib/notifications/webPush';
 
 export async function getLeadComments(leadId: string) {
     try {
@@ -157,8 +159,31 @@ export async function toggleLeadCommentReaction(commentId: string, emoji: string
             });
         }
 
-        const comment = await prisma.leadComment.findUnique({ where: { id: commentId }, select: { leadId: true } });
+        const comment = await prisma.leadComment.findUnique({
+            where: { id: commentId },
+            select: { leadId: true, userId: true, user: { select: { name: true } }, lead: { select: { name: true } } }
+        });
         if (comment) {
+            // Notifications
+            if (!existing && comment.userId !== userId) {
+                const reactor = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+                const message = `${reactor?.name || 'Ai đó'} đã bày tỏ cảm xúc ${emoji} về bình luận của bạn trong Cơ hội: "${comment.lead?.name || 'Không tên'}".`;
+
+                await createManyNotifications([{
+                    userId: comment.userId,
+                    title: 'Có người tương tác bình luận',
+                    message,
+                    type: 'INFO',
+                    link: `/sales/leads/${comment.leadId}`
+                }]);
+
+                sendWebPushNotification(comment.userId, {
+                    title: 'Tương tác mới',
+                    body: message,
+                    url: `/sales/leads/${comment.leadId}`
+                });
+            }
+
             revalidatePath(`/sales/leads/${comment.leadId}`);
         }
         return { success: true };
