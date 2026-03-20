@@ -62,6 +62,7 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
 
     // Comment & Note Attachments State
     const [commentImages, setCommentImages] = useState<{ url: string, file: File }[]>([]);
+    const [commentFiles, setCommentFiles] = useState<{ url: string, name: string, file: File }[]>([]);
     const [isAddingNote, setIsAddingNote] = useState(false);
     const [newNoteContent, setNewNoteContent] = useState('');
 
@@ -170,6 +171,29 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
 
     const removeCommentImage = (index: number) => {
         setCommentImages(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleCommentFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files?.length) return;
+        Array.from(e.target.files).forEach(file => {
+            if (file.size > 15728640) { // 15MB max for files
+                alert(`File ${file.name} quá lớn (Tối đa 15MB)`);
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                if (event.target?.result) {
+                    const url = event.target.result as string;
+                    setCommentFiles(prev => [...prev, { url, name: file.name, file }]);
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+        e.target.value = ''; // Reset input
+    };
+
+    const removeCommentFile = (index: number) => {
+        setCommentFiles(prev => prev.filter((_, i) => i !== index));
     };
 
     const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -442,6 +466,11 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
             finalHtml += `<div>${imgTags}</div>`;
         }
 
+        if (commentFiles.length > 0) {
+            const fileTags = commentFiles.map(f => `<br/><a href="${f.url}" download="${f.name}" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;text-decoration:none;color:#475569;font-size:0.85rem;margin-top:6px;margin-right:6px;font-weight:500;" onmouseover="this.style.borderColor='#94a3b8'" onmouseout="this.style.borderColor='#e2e8f0'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> ${f.name}</a>`).join(' ');
+            finalHtml += `<div>${fileTags}</div>`;
+        }
+
         setIsSaving(true);
         // Optimistic Update
         const optimisticComment = {
@@ -458,6 +487,7 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
         // Clear input early
         setNewComment('');
         setCommentImages([]);
+        setCommentFiles([]);
         const parentId = replyTo;
         setReplyTo(null);
 
@@ -906,7 +936,11 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                                     }}
                                     placeholder="Gõ phím @ để nhắc tên ai đó, hoặc chia sẻ hình ảnh..."
                                 />
-                                <div style={{ position: 'absolute', bottom: '1rem', right: '0.75rem' }}>
+                                <div style={{ position: 'absolute', bottom: '1rem', right: '0.75rem', display: 'flex', gap: '0.75rem' }}>
+                                    <label style={{ cursor: 'pointer', color: 'var(--text-muted)' }} title="Đính kèm tài liệu">
+                                        <Paperclip size={20} className="hover:text-primary transition-colors" />
+                                        <input type="file" hidden multiple onChange={handleCommentFileSelect} disabled={isSaving} />
+                                    </label>
                                     <label style={{ cursor: 'pointer', color: 'var(--text-muted)' }} title="Đính kèm ảnh">
                                         <ImageIcon size={20} className="hover:text-primary transition-colors" />
                                         <input type="file" hidden multiple accept="image/*" onChange={handleCommentImageSelect} disabled={isSaving} />
@@ -962,8 +996,26 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                             </div>
                         )}
 
+                        {/* File Preview List */}
+                        {commentFiles.length > 0 && (
+                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                                {commentFiles.map((file, i) => (
+                                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '4px 8px', backgroundColor: '#f1f5f9', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '0.85rem' }}>
+                                        <Paperclip size={14} color="var(--text-muted)" />
+                                        <span style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={file.name}>{file.name}</span>
+                                        <button
+                                            onClick={() => removeCommentFile(i)}
+                                            style={{ background: 'none', color: 'var(--danger)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '2px' }}
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                            <Button onClick={() => handleAddComment()} disabled={isSaving || (!newComment.trim() && commentImages.length === 0)}>
+                            <Button onClick={() => handleAddComment()} disabled={isSaving || (!newComment.trim() && commentImages.length === 0 && commentFiles.length === 0)}>
                                 Gửi bình luận
                             </Button>
                         </div>
