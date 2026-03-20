@@ -424,12 +424,12 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                 amount: baseFilteredEstimates.filter((e: any) => e.status === 'DRAFT').reduce((sum: number, e: any) => sum + (e.totalAmount || 0), 0)
             },
             SENT: {
-                count: baseFilteredEstimates.filter((e: any) => e.status === 'SENT' && (!e.validUntil || new Date(e.validUntil).setHours(0, 0, 0, 0) >= new Date().setHours(0, 0, 0, 0))).length,
-                amount: baseFilteredEstimates.filter((e: any) => e.status === 'SENT' && (!e.validUntil || new Date(e.validUntil).setHours(0, 0, 0, 0) >= new Date().setHours(0, 0, 0, 0))).reduce((sum: number, e: any) => sum + (e.totalAmount || 0), 0)
+                count: baseFilteredEstimates.filter((e: any) => e.status === 'SENT').length,
+                amount: baseFilteredEstimates.filter((e: any) => e.status === 'SENT').reduce((sum: number, e: any) => sum + (e.totalAmount || 0), 0)
             },
             EXPIRED: {
-                count: baseFilteredEstimates.filter((e: any) => e.status === 'SENT' && e.validUntil && new Date(e.validUntil).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0)).length,
-                amount: baseFilteredEstimates.filter((e: any) => e.status === 'SENT' && e.validUntil && new Date(e.validUntil).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0)).reduce((sum: number, e: any) => sum + (e.totalAmount || 0), 0)
+                count: baseFilteredEstimates.filter((e: any) => e.status === 'EXPIRED').length,
+                amount: baseFilteredEstimates.filter((e: any) => e.status === 'EXPIRED').reduce((sum: number, e: any) => sum + (e.totalAmount || 0), 0)
             },
             ACCEPTED: {
                 count: baseFilteredEstimates.filter((e: any) => e.status === 'ACCEPTED').length,
@@ -465,13 +465,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         let result = baseFilteredEstimates;
 
         if (statusFilter !== 'ALL') {
-            if (statusFilter === 'SENT') {
-                result = result.filter((e: any) => e.status === 'SENT' && (!e.validUntil || new Date(e.validUntil).setHours(0, 0, 0, 0) >= new Date().setHours(0, 0, 0, 0)));
-            } else if (statusFilter === 'EXPIRED') {
-                result = result.filter((e: any) => e.status === 'SENT' && e.validUntil && new Date(e.validUntil).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0));
-            } else {
-                result = result.filter((e: any) => e.status === statusFilter);
-            }
+            result = result.filter((e: any) => e.status === statusFilter);
         }
 
         result.sort((a: any, b: any) => {
