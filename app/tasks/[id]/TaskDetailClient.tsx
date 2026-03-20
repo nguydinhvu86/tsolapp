@@ -13,7 +13,9 @@ import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
 import { DocumentPreviewModal } from '@/app/components/ui/DocumentPreviewModal';
-import { toggleReaction, updateTaskLinks, searchEntities } from '../actions';
+import {
+    toggleReaction, updateTaskLinks, searchEntities, getTaskComments
+} from '../actions';
 import { autoLinkHtml, autoLinkText } from '@/lib/utils/formatters';
 
 const EMOJIS = ['👍', '❤️', '😂', '🔥', '👀', '🎉', '😢', '🚀'];
@@ -99,6 +101,23 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
     React.useEffect(() => {
         setPausedPopupDismissed(false);
     }, [task.id]);
+
+    React.useEffect(() => {
+        const interval = setInterval(async () => {
+            if (task?.id) {
+                const updatedComments = await getTaskComments(task.id);
+                setTask((prev: any) => {
+                    const hasTemp = prev.comments?.some((c: any) => c.id.toString().startsWith('temp-'));
+                    if (hasTemp) return prev;
+                    if (JSON.stringify(prev.comments) !== JSON.stringify(updatedComments)) {
+                        return { ...prev, comments: updatedComments };
+                    }
+                    return prev;
+                });
+            }
+        }, 3000);
+        return () => clearInterval(interval);
+    }, [task?.id]);
 
     // Quick search effect
     React.useEffect(() => {

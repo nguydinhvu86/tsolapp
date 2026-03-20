@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { MessageSquare, ImageIcon, Paperclip, Send, Trash2, ChevronLeft, ChevronRight, X } from 'lucide-react';
-import { createLeadComment, deleteLeadComment, toggleLeadCommentReaction } from './actions';
+import { createLeadComment, deleteLeadComment, toggleLeadCommentReaction, getLeadComments } from './actions';
 import { autoLinkHtml } from '@/lib/utils/formatters';
 import { Button } from '@/app/components/ui/Button';
 import { useRouter } from 'next/navigation';
@@ -32,6 +32,23 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
     React.useEffect(() => {
         setComments(initialComments);
     }, [initialComments]);
+
+    React.useEffect(() => {
+        const interval = setInterval(async () => {
+            if (leadId) {
+                const updatedComments = await getLeadComments(leadId);
+                setComments((prev: any) => {
+                    const hasTemp = prev.some((c: any) => c.id.toString().startsWith('temp-'));
+                    if (hasTemp) return prev;
+                    if (JSON.stringify(prev) !== JSON.stringify(updatedComments)) {
+                        return updatedComments;
+                    }
+                    return prev;
+                });
+            }
+        }, 3000);
+        return () => clearInterval(interval);
+    }, [leadId]);
 
     const handleCommentClick = (e: React.MouseEvent<HTMLDivElement>) => {
         const target = e.target as HTMLElement;
