@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Search, Loader2, User, Building2, FileText, ShoppingCart, Receipt, Calculator, Briefcase, FileSignature, CheckSquare, X } from 'lucide-react';
+import { Search, Loader2, User, Building2, FileText, ShoppingCart, Receipt, Calculator, Briefcase, FileSignature, CheckSquare, X, Target } from 'lucide-react';
 import { globalSearch, SearchResult } from './actions';
 import { formatDate } from '@/lib/utils/formatters';
 
@@ -61,6 +61,7 @@ export function GlobalSearch() {
             case 'QUOTE': return <FileText size={16} className="text-cyan-500" />;
             case 'CONTRACT': return <FileSignature size={16} className="text-indigo-500" />;
             case 'TASK': return <CheckSquare size={16} className="text-violet-500" />;
+            case 'LEAD': return <Target size={16} className="text-pink-500" />;
             default: return <FileText size={16} className="text-gray-500" />;
         }
     };
@@ -77,6 +78,7 @@ export function GlobalSearch() {
             case 'QUOTE': return 'Báo giá';
             case 'CONTRACT': return 'Hợp đồng';
             case 'TASK': return 'Nhiệm vụ';
+            case 'LEAD': return 'Cơ hội bán hàng (Lead)';
             default: return 'Khác';
         }
     };
