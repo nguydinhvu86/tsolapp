@@ -71,7 +71,8 @@ export function TaskPanel({ initialTasks, users, entityType, entityId, initialTi
 
     // Filter tasks logic
     const currentUserTasks = initialTasks.filter((t: any) => {
-        if (isAdmin) return true; // Admins see all for context
+        const canViewAllTasks = isAdmin || session?.user?.role === 'MANAGER' || permissions.includes('TASKS_VIEW_ALL');
+        if (canViewAllTasks) return true; // Admins, Managers, and ViewAll see all for context
         const userId = session?.user?.id;
         if (!userId) return false;
 

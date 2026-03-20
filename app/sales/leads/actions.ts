@@ -84,6 +84,9 @@ export async function getLeadById(id: string) {
                     include: {
                         assignees: {
                             include: { user: { select: { name: true, avatar: true } } }
+                        },
+                        observers: {
+                            include: { user: { select: { name: true, avatar: true } } }
                         }
                     },
                     orderBy: {
