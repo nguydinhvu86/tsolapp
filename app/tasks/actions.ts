@@ -83,8 +83,33 @@ const addFrequency = (date: Date, freq: string, step: number) => {
     return d;
 };
 
+// Helper to auto-resolve customerId or supplierId from related entities
+async function resolveParentEntityIds(data: any) {
+    if (!data.customerId) {
+        if (data.contractId) { const doc = await prisma.contract.findUnique({ where: { id: data.contractId }, select: { customerId: true } }); if (doc) data.customerId = doc.customerId; }
+        else if (data.quoteId) { const doc = await prisma.quote.findUnique({ where: { id: data.quoteId }, select: { customerId: true } }); if (doc) data.customerId = doc.customerId; }
+        else if (data.handoverId) { const doc = await prisma.handover.findUnique({ where: { id: data.handoverId }, select: { customerId: true } }); if (doc) data.customerId = doc.customerId; }
+        else if (data.paymentReqId) { const doc = await prisma.paymentRequest.findUnique({ where: { id: data.paymentReqId }, select: { customerId: true } }); if (doc) data.customerId = doc.customerId; }
+        else if (data.dispatchId) { const doc = await prisma.dispatch.findUnique({ where: { id: data.dispatchId }, select: { customerId: true } }); if (doc) data.customerId = doc.customerId; }
+        else if (data.salesOrderId) { const doc = await prisma.salesOrder.findUnique({ where: { id: data.salesOrderId }, select: { customerId: true } }); if (doc) data.customerId = doc.customerId; }
+        else if (data.salesInvoiceId) { const doc = await prisma.salesInvoice.findUnique({ where: { id: data.salesInvoiceId }, select: { customerId: true } }); if (doc) data.customerId = doc.customerId; }
+        else if (data.salesEstimateId) { const doc = await prisma.salesEstimate.findUnique({ where: { id: data.salesEstimateId }, select: { customerId: true } }); if (doc) data.customerId = doc.customerId; }
+        else if (data.salesPaymentId) { const doc = await prisma.salesPayment.findUnique({ where: { id: data.salesPaymentId }, select: { customerId: true } }); if (doc) data.customerId = doc.customerId; }
+        else if (data.leadId) { const doc = await prisma.lead.findUnique({ where: { id: data.leadId }, select: { customerId: true } }); if (doc && doc.customerId) data.customerId = doc.customerId; }
+    }
+
+    if (!data.supplierId) {
+        if (data.purchaseOrderId) { const doc = await prisma.purchaseOrder.findUnique({ where: { id: data.purchaseOrderId }, select: { supplierId: true } }); if (doc) data.supplierId = doc.supplierId; }
+        else if (data.purchaseBillId) { const doc = await prisma.purchaseBill.findUnique({ where: { id: data.purchaseBillId }, select: { supplierId: true } }); if (doc) data.supplierId = doc.supplierId; }
+        else if (data.purchasePaymentId) { const doc = await prisma.purchasePayment.findUnique({ where: { id: data.purchasePaymentId }, select: { supplierId: true } }); if (doc) data.supplierId = doc.supplierId; }
+    }
+
+    return data;
+}
+
 export async function createTask(data: any, creatorId: string) {
-    const { assignees, observers, recurrence, ...restData } = data;
+    const { assignees, observers, recurrence, ...restDataUnresolved } = data;
+    const restData = await resolveParentEntityIds(restDataUnresolved);
 
     const isRecurringMode = recurrence && recurrence.isRecurring && recurrence.count > 1;
     const taskCount = isRecurringMode ? recurrence.count : 1;
@@ -726,21 +751,23 @@ export async function getTaskComments(taskId: string) {
     return comments;
 }
 
-export async function updateTaskLinks(taskId: string, linkData: { customerId?: string | null, contractId?: string | null, quoteId?: string | null, handoverId?: string | null, paymentReqId?: string | null, dispatchId?: string | null, salesOrderId?: string | null, salesInvoiceId?: string | null, salesEstimateId?: string | null, salesPaymentId?: string | null }, userId: string) {
+export async function updateTaskLinks(taskId: string, linkData: { customerId?: string | null, contractId?: string | null, quoteId?: string | null, handoverId?: string | null, paymentReqId?: string | null, dispatchId?: string | null, salesOrderId?: string | null, salesInvoiceId?: string | null, salesEstimateId?: string | null, salesPaymentId?: string | null, supplierId?: string | null, purchaseOrderId?: string | null, purchaseBillId?: string | null, purchasePaymentId?: string | null }, userId: string) {
     const oldTask = await prisma.task.findUnique({ where: { id: taskId } });
+
+    const resolvedLinkData = await resolveParentEntityIds(linkData);
 
     await prisma.task.update({
         where: { id: taskId },
-        data: linkData
+        data: resolvedLinkData
     });
 
     if (oldTask) {
         const changes: string[] = [];
         const keysMap: any = { customerId: 'Khách hàng', contractId: 'Hợp đồng', quoteId: 'Báo giá', handoverId: 'Biên bản bàn giao', paymentReqId: 'Đề nghị thanh toán', dispatchId: 'Công văn', salesOrderId: 'Đơn hàng', salesInvoiceId: 'Hóa đơn', salesEstimateId: 'Báo giá (Sales)', salesPaymentId: 'Phiếu thu', leadId: 'Cơ hội bán hàng' };
 
-        for (const key of Object.keys(linkData)) {
+        for (const key of Object.keys(resolvedLinkData)) {
             const oldVal = (oldTask as any)[key];
-            const newVal = (linkData as any)[key] ?? null;
+            const newVal = (resolvedLinkData as any)[key] ?? null;
             if (oldVal !== newVal) {
                 if (newVal) changes.push(`Gắn liên kết ${keysMap[key]}`);
                 else changes.push(`Gỡ liên kết ${keysMap[key]}`);
