@@ -228,11 +228,17 @@ export default function ChatWindow({ currentUser, onClose }: { currentUser: any,
                                                 <div style={{ fontWeight: isUnread ? 700 : 600, fontSize: '14px', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                                     {getRoomName(room)}
                                                 </div>
-                                                {lastMsg && (
-                                                    <div style={{ fontSize: '11px', color: isUnread ? '#3b82f6' : '#94a3b8', fontWeight: isUnread ? 600 : 400 }}>
-                                                        {new Date(lastMsg.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-                                                    </div>
-                                                )}
+                                                {lastMsg && (() => {
+                                                    const msgDate = new Date(lastMsg.createdAt);
+                                                    const isToday = msgDate.toDateString() === new Date().toDateString();
+                                                    const timeStr = msgDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                                                    const dateStr = msgDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+                                                    return (
+                                                        <div style={{ fontSize: '11px', color: isUnread ? '#3b82f6' : '#94a3b8', fontWeight: isUnread ? 600 : 400 }}>
+                                                            {isToday ? timeStr : `${timeStr} ${dateStr}`}
+                                                        </div>
+                                                    );
+                                                })()}
                                             </div>
                                             {lastMsg && (
                                                 <div style={{ fontSize: '13px', color: isUnread ? '#1e293b' : '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: isUnread ? 500 : 400 }}>
@@ -404,38 +410,50 @@ export default function ChatWindow({ currentUser, onClose }: { currentUser: any,
                                 </div>
                             ) : (
                                 messages.map((msg: any, index: number) => {
+                                    const msgDate = new Date(msg.createdAt);
+                                    const prevMsg = index > 0 ? messages[index - 1] : null;
+                                    const prevDate = prevMsg ? new Date(prevMsg.createdAt) : null;
+                                    const isNewDay = !prevDate || msgDate.toDateString() !== prevDate.toDateString();
+
                                     const isMine = msg.senderId === currentUser.id;
                                     const showName = !isMine && (index === 0 || messages[index - 1].senderId !== msg.senderId);
 
                                     return (
-                                        <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: isMine ? 'flex-end' : 'flex-start' }}>
-                                            {showName && <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '4px', marginLeft: '12px' }}>{msg.sender.name}</div>}
-                                            <div style={{
-                                                maxWidth: '75%',
-                                                padding: msg.content ? '10px 14px' : '4px',
-                                                borderRadius: isMine ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                                                backgroundColor: msg.content ? (isMine ? '#3b82f6' : 'white') : 'transparent',
-                                                color: isMine ? 'white' : '#1e293b',
-                                                boxShadow: msg.content ? '0 1px 2px 0 rgba(0, 0, 0, 0.05)' : 'none',
-                                                border: (isMine || !msg.content) ? 'none' : '1px solid #e2e8f0',
-                                                fontSize: '14.5px',
-                                                lineHeight: 1.5,
-                                                wordBreak: 'break-word',
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                gap: '8px'
-                                            }}>
-                                                {msg.attachmentUrl && (
-                                                    <img src={msg.attachmentUrl} alt="attachment" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '12px', border: '1px solid #e2e8f0', objectFit: 'contain', backgroundColor: 'white' }} />
-                                                )}
-                                                {msg.content && msg.content.split('\n').map((line: string, i: number) => (
-                                                    <React.Fragment key={i}>{line}<br /></React.Fragment>
-                                                ))}
+                                        <React.Fragment key={msg.id}>
+                                            {isNewDay && (
+                                                <div style={{ alignSelf: 'center', margin: '8px 0', padding: '4px 12px', backgroundColor: '#e2e8f0', color: '#64748b', borderRadius: '12px', fontSize: '11px', fontWeight: 600 }}>
+                                                    {msgDate.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' })}
+                                                </div>
+                                            )}
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: isMine ? 'flex-end' : 'flex-start' }}>
+                                                {showName && <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '4px', marginLeft: '12px' }}>{msg.sender.name}</div>}
+                                                <div style={{
+                                                    maxWidth: '75%',
+                                                    padding: msg.content ? '10px 14px' : '4px',
+                                                    borderRadius: isMine ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                                                    backgroundColor: msg.content ? (isMine ? '#3b82f6' : 'white') : 'transparent',
+                                                    color: isMine ? 'white' : '#1e293b',
+                                                    boxShadow: msg.content ? '0 1px 2px 0 rgba(0, 0, 0, 0.05)' : 'none',
+                                                    border: (isMine || !msg.content) ? 'none' : '1px solid #e2e8f0',
+                                                    fontSize: '14.5px',
+                                                    lineHeight: 1.5,
+                                                    wordBreak: 'break-word',
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    gap: '8px'
+                                                }}>
+                                                    {msg.attachmentUrl && (
+                                                        <img src={msg.attachmentUrl} alt="attachment" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '12px', border: '1px solid #e2e8f0', objectFit: 'contain', backgroundColor: 'white' }} />
+                                                    )}
+                                                    {msg.content && msg.content.split('\n').map((line: string, i: number) => (
+                                                        <React.Fragment key={i}>{line}<br /></React.Fragment>
+                                                    ))}
+                                                </div>
+                                                <div style={{ fontSize: '10px', color: '#cbd5e1', marginTop: '4px', marginRight: isMine ? '4px' : '0', marginLeft: isMine ? '0' : '4px' }}>
+                                                    {new Date(msg.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                                                </div>
                                             </div>
-                                            <div style={{ fontSize: '10px', color: '#cbd5e1', marginTop: '4px', marginRight: isMine ? '4px' : '0', marginLeft: isMine ? '0' : '4px' }}>
-                                                {new Date(msg.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-                                            </div>
-                                        </div>
+                                        </React.Fragment>
                                     );
                                 })
                             )}
