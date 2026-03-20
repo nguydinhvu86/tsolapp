@@ -47,7 +47,7 @@ export default async function DispatchPrintView({ params }: { params: { id: stri
 
     return (
         <div style={{ paddingBottom: '3rem' }}>
-            <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+            <div className="w-full px-4 lg:px-8">
                 {/* Header Area (No Print) */}
                 <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>

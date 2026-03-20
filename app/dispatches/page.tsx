@@ -27,7 +27,7 @@ export default async function DispatchesPage() {
     });
 
     return (
-        <div>
+        <div className="w-full px-4 md:px-8 pb-12">
             <DispatchListClient initialData={dispatches} />
         </div>
     );
