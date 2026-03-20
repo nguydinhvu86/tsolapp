@@ -15,7 +15,7 @@ export default async function NewDispatchPage({ searchParams }: { searchParams: 
     });
 
     return (
-        <div style={{ maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
+        <div className="w-full px-4 md:px-8 pb-12">
             <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1.5rem', color: 'var(--text-main)', letterSpacing: '-0.025em' }}>
                 Soạn Công Văn / Thông Báo
             </h1>
