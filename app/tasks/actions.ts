@@ -655,6 +655,40 @@ export async function addComment(taskId: string, content: string, userId: string
         });
 
         await createManyNotifications(notifications);
+
+        // --- Bổ sung: Gửi Push và Email ---
+        const emailUsers = await prisma.user.findMany({ where: { id: { in: Array.from(usersToNotify) } }, select: { id: true, email: true, name: true } });
+        const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+        emailUsers.forEach(user => {
+            const notif = notifications.find((n: any) => n.userId === user.id);
+            if (notif) {
+                // Web Push
+                sendWebPushNotification(user.id, {
+                    title: notif.title,
+                    body: notif.message,
+                    url: notif.link as string
+                }).catch((e: any) => console.error("Web Push Error:", e));
+
+                // Email
+                if (user.email) {
+                    sendEmailWithTracking({
+                        to: user.email,
+                        subject: `[Thông báo] ${notif.title} - ${taskData.title}`,
+                        htmlBody: `
+                            <div style="font-family: sans-serif; line-height: 1.5;">
+                                <p>Chào <strong>${user.name || 'bạn'}</strong>,</p>
+                                <p>${notif.message}</p>
+                                <br/>
+                                <p><a href="${baseUrl}${notif.link}" style="display:inline-block;padding:8px 16px;background:#0d6efd;color:#fff;text-decoration:none;border-radius:4px;font-weight:bold;">Xem chi tiết công việc</a></p>
+                            </div>
+                        `,
+                        senderId: userId
+                    }).catch((e: any) => console.error("Email Error:", e));
+                }
+            }
+        });
+        // ------------------------------------
     }
 
     logActivity(taskId, userId, 'COMMENT_ADDED', JSON.stringify({ summary: parentId ? 'Đã trả lời một bình luận' : 'Đã thêm bình luận mới' }));
@@ -676,6 +710,59 @@ export async function uploadTaskAttachment(taskId: string, fileName: string, fil
             uploadedById: userId
         }
     });
+
+    const uploader = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+    const usersToNotify = new Set<string>();
+
+    // Add creator, assignees, observers
+    usersToNotify.add(taskData.creatorId);
+    const assignees = await prisma.taskAssignee.findMany({ where: { taskId } });
+    const observers = await prisma.taskObserver.findMany({ where: { taskId } });
+    assignees.forEach(a => usersToNotify.add(a.userId));
+    observers.forEach(o => usersToNotify.add(o.userId));
+
+    usersToNotify.delete(userId);
+
+    if (usersToNotify.size > 0) {
+        const notifications = Array.from(usersToNotify).map(uId => ({
+            userId: uId,
+            title: 'Tài liệu đính kèm mới',
+            message: `${uploader?.name || 'Ai đó'} đã tải lên tài liệu mới "${fileName}" vào công việc: "${taskData.title}"`,
+            type: 'INFO',
+            link: `/tasks/${taskId}`
+        }));
+        await createManyNotifications(notifications);
+
+        const emailUsers = await prisma.user.findMany({ where: { id: { in: Array.from(usersToNotify) } }, select: { id: true, email: true, name: true } });
+        const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+        emailUsers.forEach(user => {
+            const notif = notifications.find((n: any) => n.userId === user.id);
+            if (notif) {
+                sendWebPushNotification(user.id, {
+                    title: notif.title,
+                    body: notif.message,
+                    url: notif.link as string
+                }).catch((e: any) => console.error("Web Push error:", e));
+
+                if (user.email) {
+                    sendEmailWithTracking({
+                        to: user.email,
+                        subject: `[Thông báo] ${notif.title} - ${taskData.title}`,
+                        htmlBody: `
+                            <div style="font-family: sans-serif; line-height: 1.5;">
+                                <p>Chào <strong>${user.name || 'bạn'}</strong>,</p>
+                                <p>${notif.message}</p>
+                                <br/>
+                                <p><a href="${baseUrl}${notif.link}" style="display:inline-block;padding:8px 16px;background:#0d6efd;color:#fff;text-decoration:none;border-radius:4px;font-weight:bold;">Xem chi tiết công việc</a></p>
+                            </div>
+                        `,
+                        senderId: userId
+                    }).catch((e: any) => console.error("Email Error:", e));
+                }
+            }
+        });
+    }
 
     logActivity(taskId, userId, 'ATTACHMENT_ADDED', JSON.stringify({ summary: `Đã tải lên tài liệu: ${fileName}` }));
     revalidatePath(`/tasks/${taskId}`);
@@ -732,7 +819,26 @@ export async function toggleReaction(commentId: string, emoji: string, userId: s
                 title: 'Tương tác mới',
                 body: message,
                 url: `/tasks/${comment.taskId}`
-            });
+            }).catch((e: any) => console.error("Web Push Error:", e));
+
+            // Email
+            const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+            const commentedUser = await prisma.user.findUnique({ where: { id: comment.userId }, select: { email: true, name: true } });
+            if (commentedUser?.email) {
+                sendEmailWithTracking({
+                    to: commentedUser.email,
+                    subject: `[Thông báo] Tương tác mới - ${comment.task?.title}`,
+                    htmlBody: `
+                        <div style="font-family: sans-serif; line-height: 1.5;">
+                            <p>Chào <strong>${commentedUser.name || 'bạn'}</strong>,</p>
+                            <p>${message}</p>
+                            <br/>
+                            <p><a href="${baseUrl}/tasks/${comment.taskId}" style="display:inline-block;padding:8px 16px;background:#0d6efd;color:#fff;text-decoration:none;border-radius:4px;font-weight:bold;">Xem chi tiết</a></p>
+                        </div>
+                    `,
+                    senderId: userId
+                }).catch((e: any) => console.error("Email Error:", e));
+            }
         }
 
         revalidatePath(`/tasks/${comment.taskId}`);
