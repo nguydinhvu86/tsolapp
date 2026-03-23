@@ -532,8 +532,16 @@ function DocumentRow({ doc, type, getStatusColor }: { doc: any, type: string, ge
     const statusObj = getStatusColor(doc.status);
     return (
         <tr>
-            <td style={{ fontWeight: 600, color: 'var(--text-muted)', fontSize: '0.875rem' }}>#{doc.code || doc.id.slice(-6).toUpperCase()}</td>
-            <td style={{ fontWeight: 500, color: 'var(--text-main)' }}>{doc.title || doc.name}</td>
+            <td style={{ fontWeight: 600, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                <Link href={`/${type}/${doc.id}`} className="hover:text-primary hover:underline" style={{ color: 'inherit', textDecoration: 'none' }}>
+                    #{doc.code || doc.id.slice(-6).toUpperCase()}
+                </Link>
+            </td>
+            <td style={{ fontWeight: 500, color: 'var(--text-main)' }}>
+                <Link href={`/${type}/${doc.id}`} className="hover:text-primary hover:underline" style={{ color: 'inherit', textDecoration: 'none' }}>
+                    {doc.title || doc.name}
+                </Link>
+            </td>
             <td>
                 <span style={{
                     backgroundColor: statusObj.bg, color: statusObj.color,

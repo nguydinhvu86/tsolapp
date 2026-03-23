@@ -428,6 +428,17 @@ export function QuoteDashboardClient({ initialData }: { initialData: QuoteWithRe
                                                 <Printer size={18} />
                                             </button>
                                         </Link>
+                                        <button
+                                            onClick={() => {
+                                                const url = `${window.location.origin}/public/quotes/${q.id}`;
+                                                navigator.clipboard.writeText(url);
+                                                alert('Đã copy link public: ' + url);
+                                            }}
+                                            style={{ color: 'var(--primary)', padding: '0.25rem' }}
+                                            title="Copy Link xem trước cho Khách hàng"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                                        </button>
                                         <button onClick={() => handleExportExcel(q)} style={{ color: 'var(--success, #16a34a)', padding: '0.25rem' }} title="Xuất Excel">
                                             <FileSpreadsheet size={18} />
                                         </button>

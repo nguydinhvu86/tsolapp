@@ -1,8 +1,8 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, X, Plus, Search, Users, UserRound, ArrowLeft, MessageCircle, Paperclip } from 'lucide-react';
-import { getChatRooms, getChatMessages, sendMessage, createDirectChat, createGroupChat, getActiveUsersForChat } from '@/app/chat/actions';
+import { Send, X, Plus, Search, Users, UserRound, ArrowLeft, MessageCircle, Paperclip, Reply, SmilePlus, ThumbsUp, Heart } from 'lucide-react';
+import { getChatRooms, getChatMessages, sendMessage, createDirectChat, createGroupChat, getActiveUsersForChat, toggleReaction } from '@/app/chat/actions';
 
 export default function ChatWindow({ currentUser, onClose }: { currentUser: any, onClose: () => void }) {
     const [rooms, setRooms] = useState<any[]>([]);
@@ -11,6 +11,9 @@ export default function ChatWindow({ currentUser, onClose }: { currentUser: any,
     const [newMessage, setNewMessage] = useState('');
     const [attachment, setAttachment] = useState<File | null>(null);
     const [isSending, setIsSending] = useState(false);
+    const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+    const [replyingTo, setReplyingTo] = useState<any>(null);
+    const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
 
     // New Chat State
     const [isCreatingChat, setIsCreatingChat] = useState(false);
@@ -60,6 +63,37 @@ export default function ChatWindow({ currentUser, onClose }: { currentUser: any,
         }, 100);
     };
 
+    const handlePaste = (e: React.ClipboardEvent) => {
+        const items = e.clipboardData?.items;
+        if (!items) return;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image/') !== -1) {
+                e.preventDefault();
+                const file = items[i].getAsFile();
+                if (file) {
+                    setAttachment(file);
+                }
+                break;
+            }
+        }
+    };
+
+    const handleToggleReaction = async (msgId: string, emoji: string) => {
+        try {
+            const res = await toggleReaction(msgId, emoji);
+            setMessages(prev => prev.map(m => {
+                if (m.id !== msgId) return m;
+                let currentReactions = m.reactions || [];
+                if (res.action === 'added') {
+                    currentReactions = [...currentReactions, res.reaction];
+                } else {
+                    currentReactions = currentReactions.filter((r: any) => !(r.userId === currentUser.id && r.emoji === emoji));
+                }
+                return { ...m, reactions: currentReactions };
+            }));
+        } catch (err) { console.error('Reaction error', err); }
+    };
+
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!activeRoomId || (!newMessage.trim() && !attachment)) return;
@@ -75,9 +109,10 @@ export default function ChatWindow({ currentUser, onClose }: { currentUser: any,
                 attachmentUrl = data.url;
             }
 
-            await sendMessage(activeRoomId, newMessage, attachmentUrl);
+            await sendMessage(activeRoomId, newMessage, attachmentUrl, replyingTo?.id);
             setNewMessage('');
             setAttachment(null);
+            setReplyingTo(null);
             await fetchMessages();
             await fetchRooms();
             scrollToBottom();
@@ -425,16 +460,30 @@ export default function ChatWindow({ currentUser, onClose }: { currentUser: any,
                                                     {msgDate.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' })}
                                                 </div>
                                             )}
-                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: isMine ? 'flex-end' : 'flex-start' }}>
+                                            <div
+                                                style={{ display: 'flex', flexDirection: 'column', alignItems: isMine ? 'flex-end' : 'flex-start', position: 'relative' }}
+                                                className="group"
+                                                onMouseEnter={() => setHoveredMessageId(msg.id)}
+                                                onMouseLeave={() => setHoveredMessageId(null)}
+                                            >
+                                                {hoveredMessageId === msg.id && (
+                                                    <div style={{ position: 'absolute', top: '-16px', [isMine ? 'right' : 'left']: '50%', display: 'flex', gap: '4px', padding: '2px 6px', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '16px', zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                                                        <button type="button" onClick={() => handleToggleReaction(msg.id, '👍')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Thích"><ThumbsUp size={14} color="#3b82f6" /></button>
+                                                        <button type="button" onClick={() => handleToggleReaction(msg.id, '❤️')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Yêu thích"><Heart size={14} color="#ef4444" /></button>
+                                                        <button type="button" onClick={() => handleToggleReaction(msg.id, '😄')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Cười"><SmilePlus size={14} color="#f59e0b" /></button>
+                                                        <div style={{ width: '1px', backgroundColor: '#e2e8f0', margin: '0 2px' }}></div>
+                                                        <button type="button" onClick={() => setReplyingTo(msg)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Trả lời"><Reply size={14} color="#64748b" /></button>
+                                                    </div>
+                                                )}
                                                 {showName && <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '4px', marginLeft: '12px' }}>{msg.sender.name}</div>}
                                                 <div style={{
                                                     maxWidth: '75%',
-                                                    padding: msg.content ? '10px 14px' : '4px',
+                                                    padding: msg.content || msg.replyTo ? '10px 14px' : '4px',
                                                     borderRadius: isMine ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                                                    backgroundColor: msg.content ? (isMine ? '#3b82f6' : 'white') : 'transparent',
+                                                    backgroundColor: msg.content || msg.replyTo ? (isMine ? '#3b82f6' : 'white') : 'transparent',
                                                     color: isMine ? 'white' : '#1e293b',
-                                                    boxShadow: msg.content ? '0 1px 2px 0 rgba(0, 0, 0, 0.05)' : 'none',
-                                                    border: (isMine || !msg.content) ? 'none' : '1px solid #e2e8f0',
+                                                    boxShadow: msg.content || msg.replyTo ? '0 1px 2px 0 rgba(0, 0, 0, 0.05)' : 'none',
+                                                    border: (isMine || !(msg.content || msg.replyTo)) ? 'none' : '1px solid #e2e8f0',
                                                     fontSize: '14.5px',
                                                     lineHeight: 1.5,
                                                     wordBreak: 'break-word',
@@ -442,15 +491,43 @@ export default function ChatWindow({ currentUser, onClose }: { currentUser: any,
                                                     flexDirection: 'column',
                                                     gap: '8px'
                                                 }}>
+                                                    {msg.replyTo && (
+                                                        <div style={{ borderLeft: `3px solid ${isMine ? 'rgba(255,255,255,0.4)' : '#3b82f6'}`, paddingLeft: '8px', marginBottom: '4px', fontSize: '12px', opacity: 0.9 }}>
+                                                            <div style={{ fontWeight: 600, marginBottom: '2px' }}>{msg.replyTo.sender?.name || 'Ai đó'}</div>
+                                                            <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }}>{msg.replyTo.content || '[Hình ảnh]'}</div>
+                                                        </div>
+                                                    )}
                                                     {msg.attachmentUrl && (
-                                                        <img src={msg.attachmentUrl} alt="attachment" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '12px', border: '1px solid #e2e8f0', objectFit: 'contain', backgroundColor: 'white' }} />
+                                                        <img
+                                                            src={msg.attachmentUrl}
+                                                            alt="attachment"
+                                                            onClick={() => setZoomedImage(msg.attachmentUrl)}
+                                                            className="hover:opacity-90"
+                                                            style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '12px', border: '1px solid #e2e8f0', objectFit: 'contain', backgroundColor: 'white', cursor: 'zoom-in', transition: 'opacity 0.2s' }}
+                                                        />
                                                     )}
                                                     {msg.content && msg.content.split('\n').map((line: string, i: number) => (
                                                         <React.Fragment key={i}>{line}<br /></React.Fragment>
                                                     ))}
                                                 </div>
-                                                <div style={{ fontSize: '10px', color: '#cbd5e1', marginTop: '4px', marginRight: isMine ? '4px' : '0', marginLeft: isMine ? '0' : '4px' }}>
-                                                    {new Date(msg.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                                                {msg.reactions && msg.reactions.length > 0 && (
+                                                    <div style={{ display: 'flex', gap: '4px', alignSelf: isMine ? 'flex-end' : 'flex-start', marginTop: '-12px', zIndex: 1 }}>
+                                                        {Array.from(new Set(msg.reactions.map((r: any) => r.emoji))).map((emoji: any) => {
+                                                            const count = msg.reactions.filter((r: any) => r.emoji === emoji).length;
+                                                            const iReacted = msg.reactions.some((r: any) => r.emoji === emoji && r.userId === currentUser.id);
+                                                            return (
+                                                                <div key={emoji} onClick={() => handleToggleReaction(msg.id, emoji)} style={{ display: 'flex', alignItems: 'center', gap: '2px', backgroundColor: iReacted ? '#bfdbfe' : 'white', border: `1px solid ${iReacted ? '#60a5fa' : '#e2e8f0'}`, borderRadius: '12px', padding: '0px 6px', fontSize: '11px', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                                                                    <span>{emoji}</span>
+                                                                    {count > 1 && <span style={{ color: '#475569', fontWeight: 600, marginLeft: '2px' }}>{count}</span>}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                                <div style={{ fontSize: '10px', color: '#cbd5e1', marginTop: msg.reactions?.length ? '2px' : '4px', marginRight: isMine ? '4px' : '0', marginLeft: isMine ? '0' : '4px' }}>
+                                                    {msgDate.toDateString() !== new Date().toDateString()
+                                                        ? `${msgDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} ${msgDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}`
+                                                        : msgDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                                                 </div>
                                             </div>
                                         </React.Fragment>
@@ -469,6 +546,17 @@ export default function ChatWindow({ currentUser, onClose }: { currentUser: any,
                                         {attachment.name}
                                     </span>
                                     <button type="button" onClick={() => setAttachment(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
+                                        <X size={16} />
+                                    </button>
+                                </div>
+                            )}
+                            {replyingTo && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', backgroundColor: '#f1f5f9', borderLeft: '3px solid #3b82f6', borderRadius: '4px 8px 8px 4px', marginBottom: '12px', fontSize: '13px' }}>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ color: '#3b82f6', fontWeight: 600, fontSize: '11px', marginBottom: '2px' }}>Đang trả lời {replyingTo.sender?.name}</div>
+                                        <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#475569', maxWidth: '300px' }}>{replyingTo.content || '[Hình ảnh đính kèm]'}</div>
+                                    </div>
+                                    <button type="button" onClick={() => setReplyingTo(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
                                         <X size={16} />
                                     </button>
                                 </div>
@@ -507,6 +595,7 @@ export default function ChatWindow({ currentUser, onClose }: { currentUser: any,
                                 <textarea
                                     value={newMessage}
                                     onChange={e => setNewMessage(e.target.value)}
+                                    onPaste={handlePaste}
                                     placeholder="Nhập tin nhắn..."
                                     style={{
                                         flex: 1,
@@ -552,6 +641,37 @@ export default function ChatWindow({ currentUser, onClose }: { currentUser: any,
                     </>
                 )}
             </div>
+
+            {/* Zoomed Image Modal */}
+            {zoomedImage && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        backgroundColor: 'rgba(0,0,0,0.85)',
+                        zIndex: 9999,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'zoom-out',
+                        padding: '24px'
+                    }}
+                    onClick={() => setZoomedImage(null)}
+                >
+                    <button
+                        style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}
+                        onClick={(e) => { e.stopPropagation(); setZoomedImage(null); }}
+                    >
+                        <X size={32} />
+                    </button>
+                    <img
+                        src={zoomedImage}
+                        style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '8px' }}
+                        alt="Zoomed attachment"
+                        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking the image itself
+                    />
+                </div>
+            )}
         </div>
     );
 }

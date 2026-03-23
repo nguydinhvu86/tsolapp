@@ -45,3 +45,9 @@ self.addEventListener('notificationclick', (event) => {
         })
     );
 });
+
+// Thêm sự kiện fetch trống để đáp ứng tiêu chí cài đặt PWA của Chrome/Edge.
+// Việc này giúp hiển thị nút "Install App" trên thanh địa chỉ mà không làm ảnh hưởng Next.js cache.
+self.addEventListener('fetch', (event) => {
+    // Không làm gì cả, để trình duyệt tự xử lý request (Pass-through)
+});

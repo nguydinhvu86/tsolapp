@@ -60,7 +60,7 @@ model User {
   notifications         Notification[]
   inventoryTransactions InventoryTransaction[]
   purchaseRequisitions  PurchaseRequisition[]
-  pushSubscriptions     PushSubscription[]      @relation("UserPushSubscriptions")
+  pushSubscriptions     PushSubscription[]     @relation("UserPushSubscriptions")
   purchaseOrders        PurchaseOrder[]        @relation("POCreator")
   purchaseBills         PurchaseBill[]         @relation("BillCreator")
   purchasePayments      PurchasePayment[]      @relation("PaymentCreator")
@@ -118,6 +118,7 @@ model User {
   salespersonEstimates SalesEstimate[]       @relation("EstimateSalesperson")
   salespersonInvoices  SalesInvoice[]        @relation("InvoiceSalesperson")
   LeadCommentReaction  LeadCommentReaction[]
+  ChatMessageReaction  ChatMessageReaction[]
 }
 
 model SystemSetting {
@@ -1400,11 +1401,31 @@ model ChatMessage {
   content       String  @db.Text
   attachmentUrl String? @db.Text
 
+  replyToId String?
+  replyTo   ChatMessage?  @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies   ChatMessage[] @relation("MessageReplies")
+
   room   ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
   sender User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
+  reactions ChatMessageReaction[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model ChatMessageReaction {
+  id        String @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String // e.g., 'like', 'love', 'smile', etc.
+
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([messageId, userId, emoji])
 }
 
 // ==========================================
