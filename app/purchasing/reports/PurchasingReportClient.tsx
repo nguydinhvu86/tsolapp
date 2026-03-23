@@ -344,20 +344,22 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
     const paymentPag = usePagination(displayPayments);
 
     return (
-        <div className="p-6 w-full mx-auto">
+        <div className="p-4 md:p-6 w-full mx-auto max-w-[100vw] overflow-hidden">
             <style>{premiumStyles}</style>
 
             {/* Header */}
-            <div className="page-header">
+            <div className="page-header flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                 <div>
                     <h1 className="text-xl font-bold mb-1">Báo Cáo Phân Tích Mua Hàng</h1>
                     <p className="text-gray-500 text-sm">Theo dõi hiệu suất chuỗi cung ứng và lịch sử thanh toán</p>
                 </div>
-                <div className="filter-group">
-                    <Calendar size={16} className="text-gray-400" />
-                    <input type="date" className="filter-input" value={startDate} onChange={e => setStartDate(e.target.value)} />
-                    <span className="text-gray-400 font-bold">→</span>
-                    <input type="date" className="filter-input" value={endDate} onChange={e => setEndDate(e.target.value)} />
+                <div className="filter-group w-full md:w-auto justify-between md:justify-start overflow-hidden">
+                    <div className="flex items-center gap-2">
+                        <Calendar size={16} className="text-gray-400 shrink-0" />
+                        <input type="date" className="filter-input w-full min-w-[110px]" value={startDate} onChange={e => setStartDate(e.target.value)} />
+                    </div>
+                    <span className="text-gray-400 font-bold shrink-0">→</span>
+                    <input type="date" className="filter-input w-full min-w-[110px]" value={endDate} onChange={e => setEndDate(e.target.value)} />
                 </div>
             </div>
 
@@ -491,29 +493,29 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
                     </div>
 
                     <div className="card" style={{ padding: 0 }}>
-                        <div className="search-card" style={{ padding: '1.25rem', marginBottom: 0, borderBottom: '1px solid var(--border)' }}>
+                        <div className="search-card flex flex-col sm:flex-row justify-between gap-4" style={{ padding: '1.25rem', marginBottom: 0, borderBottom: '1px solid var(--border)' }}>
                             <h3 className="font-bold text-lg">Bảng Hiệu Suất</h3>
-                            <div className="flex gap-2 items-center">
-                                <div className="search-input-wrapper">
+                            <div className="flex flex-wrap gap-2 items-center w-full sm:w-auto">
+                                <div className="search-input-wrapper flex-1 sm:flex-none min-w-[200px]">
                                     <Search size={16} className="search-icon" />
-                                    <input type="text" placeholder="Tìm tên, mã đối tác..." value={supplierSearch} onChange={(e) => setSupplierSearch(e.target.value)} className="input" />
+                                    <input type="text" placeholder="Tìm tên, mã đối tác..." value={supplierSearch} onChange={(e) => setSupplierSearch(e.target.value)} className="input w-full" />
                                 </div>
                                 <button
                                     onClick={() => exportToExcel(
                                         supplierReportData.map(s => ({ "Mã NCC": s.code, "Tên NCC": s.name, "Tổng Mua": s.totalPurchased, "Đã Trả": s.totalPaid, "Nợ Tồn": s.currentDebt })),
                                         `Bao_Cao_NCC_${startDate}_to_${endDate}`
                                     )}
-                                    className="btn btn-secondary flex items-center gap-2"
+                                    className="btn btn-secondary flex items-center gap-2 flex-1 sm:flex-none justify-center"
                                     title="Xuất Excel"
                                 >
-                                    <Download size={16} /> Excel
+                                    <Download size={16} /> <span className="hidden sm:inline">Excel</span>
                                 </button>
-                                <button onClick={() => window.print()} className="btn btn-secondary flex items-center gap-2" title="In / Xuất PDF">
-                                    <Printer size={16} /> Print
+                                <button onClick={() => window.print()} className="btn btn-secondary flex items-center gap-2 flex-1 sm:flex-none justify-center" title="In / Xuất PDF">
+                                    <Printer size={16} /> <span className="hidden sm:inline">Print</span>
                                 </button>
                             </div>
                         </div>
-                        <div className="table-wrapper" style={{ border: 'none', borderRadius: '0 0 var(--radius) var(--radius)' }}>
+                        <div className="table-wrapper overflow-x-auto w-full" style={{ border: 'none', borderRadius: '0 0 var(--radius) var(--radius)' }}>
                             <table>
                                 <thead>
                                     <tr>
@@ -573,28 +575,28 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
             {activeTab === 'product' && (
                 <div className="grid lg:grid-cols-3 gap-6">
                     <div className="card lg:col-span-2" style={{ padding: 0 }}>
-                        <div className="search-card" style={{ padding: '1.25rem', marginBottom: 0, borderBottom: '1px solid var(--border)' }}>
+                        <div className="search-card flex flex-col sm:flex-row justify-between gap-4" style={{ padding: '1.25rem', marginBottom: 0, borderBottom: '1px solid var(--border)' }}>
                             <h3 className="font-bold text-lg">Chi Tiết Sản Phẩm Nhập</h3>
-                            <div className="flex gap-2 items-center">
-                                <div className="search-input-wrapper">
+                            <div className="flex flex-wrap gap-2 items-center w-full sm:w-auto">
+                                <div className="search-input-wrapper flex-1 sm:flex-none min-w-[200px]">
                                     <Search size={16} className="search-icon" />
-                                    <input type="text" placeholder="Tìm tên, mã sản phẩm..." value={productSearch} onChange={(e) => setProductSearch(e.target.value)} className="input" />
+                                    <input type="text" placeholder="Tìm mã SP..." value={productSearch} onChange={(e) => setProductSearch(e.target.value)} className="input w-full" />
                                 </div>
                                 <button
                                     onClick={() => exportToExcel(
                                         productReportData.map(p => ({ "Mã SP": p.sku, "Tên Sản Phẩm": p.name, "ĐVT": p.unit, "Số Lượng": p.totalQuantity, "Giá TB": p.avgPrice, "Thành Tiền": p.totalValue })),
                                         `Chi_Tiet_San_Pham_Nhap_${startDate}_to_${endDate}`
                                     )}
-                                    className="btn btn-secondary flex items-center gap-2"
+                                    className="btn btn-secondary flex items-center gap-2 flex-1 sm:flex-none justify-center"
                                 >
-                                    <Download size={16} /> Excel
+                                    <Download size={16} /> <span className="hidden sm:inline">Excel</span>
                                 </button>
-                                <button onClick={() => window.print()} className="btn btn-secondary flex items-center gap-2">
-                                    <Printer size={16} /> Print
+                                <button onClick={() => window.print()} className="btn btn-secondary flex items-center gap-2 flex-1 sm:flex-none justify-center">
+                                    <Printer size={16} /> <span className="hidden sm:inline">Print</span>
                                 </button>
                             </div>
                         </div>
-                        <div className="table-wrapper" style={{ border: 'none', borderRadius: '0', maxHeight: '500px' }}>
+                        <div className="table-wrapper overflow-x-auto w-full" style={{ border: 'none', borderRadius: '0', maxHeight: '500px' }}>
                             <table>
                                 <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
                                     <tr>
@@ -674,29 +676,29 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
             {/* 4. BILLS TAB */}
             {activeTab === 'bill' && (
                 <div className="card" style={{ padding: 0 }}>
-                    <div className="search-card" style={{ padding: '1.25rem', marginBottom: 0, borderBottom: '1px solid var(--border)' }}>
+                    <div className="search-card flex flex-col sm:flex-row justify-between gap-4" style={{ padding: '1.25rem', marginBottom: 0, borderBottom: '1px solid var(--border)' }}>
                         <h3 className="font-bold text-lg"><FileText size={18} className="inline mr-2 text-primary" /> Hóa Đơn Mua Hàng</h3>
-                        <div className="flex gap-2 items-center">
-                            <div className="search-input-wrapper">
+                        <div className="flex flex-wrap gap-2 items-center w-full sm:w-auto">
+                            <div className="search-input-wrapper flex-1 sm:flex-none min-w-[200px]">
                                 <Search size={16} className="search-icon" />
-                                <input type="text" placeholder="Tìm mã, NCC..." value={billSearch} onChange={e => setBillSearch(e.target.value)} className="input" />
+                                <input type="text" placeholder="Tìm mã, NCC..." value={billSearch} onChange={e => setBillSearch(e.target.value)} className="input w-full" />
                             </div>
                             <button
                                 onClick={() => exportToExcel(
                                     displayBills.map(b => ({ "Mã/Ngày": `${b.code} (${formatDate(b.date)})`, "Nhà Cung Cấp": b.supplier?.name, "Tổng Tiền": b.totalAmount, "Đã Trả": b.paidAmount, "Trạng Thái": b.totalAmount > b.paidAmount ? 'Nợ' : 'Đã trả đủ' })),
                                     `Hoa_Don_Mua_${startDate}_to_${endDate}`
                                 )}
-                                className="btn btn-secondary flex items-center gap-2"
+                                className="btn btn-secondary flex items-center gap-2 flex-1 sm:flex-none justify-center"
                                 title="Xuất Excel"
                             >
-                                <Download size={16} /> Excel
+                                <Download size={16} /> <span className="hidden sm:inline">Excel</span>
                             </button>
-                            <button onClick={() => window.print()} className="btn btn-secondary flex items-center gap-2" title="In / Xuất PDF">
-                                <Printer size={16} /> Print
+                            <button onClick={() => window.print()} className="btn btn-secondary flex items-center gap-2 flex-1 sm:flex-none justify-center" title="In / Xuất PDF">
+                                <Printer size={16} /> <span className="hidden sm:inline">Print</span>
                             </button>
                         </div>
                     </div>
-                    <div className="table-wrapper" style={{ border: 'none', borderRadius: '0 0 var(--radius) var(--radius)', maxHeight: '500px' }}>
+                    <div className="table-wrapper overflow-x-auto w-full" style={{ border: 'none', borderRadius: '0 0 var(--radius) var(--radius)', maxHeight: '500px' }}>
                         <table>
                             <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
                                 <tr>
@@ -758,36 +760,36 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
             {/* 5. ORDERS TAB */}
             {activeTab === 'order' && (
                 <div className="card" style={{ padding: 0 }}>
-                    <div className="search-card" style={{ padding: '1.25rem', marginBottom: 0, borderBottom: '1px solid var(--border)' }}>
+                    <div className="search-card flex flex-col xl:flex-row justify-between gap-4" style={{ padding: '1.25rem', marginBottom: 0, borderBottom: '1px solid var(--border)' }}>
                         <h3 className="font-bold text-lg"><Package size={18} className="inline mr-2 text-primary" /> Đơn Đặt Hàng</h3>
-                        <div className="flex gap-2">
-                            <select className="input" style={{ width: '130px', padding: '0.4rem' }} value={orderStatus} onChange={e => setOrderStatus(e.target.value)}>
+                        <div className="flex flex-wrap gap-2 items-center w-full xl:w-auto">
+                            <select className="input flex-1 sm:flex-none" style={{ minWidth: '130px', padding: '0.4rem' }} value={orderStatus} onChange={e => setOrderStatus(e.target.value)}>
                                 <option value="ALL">Mọi TT</option>
                                 <option value="DRAFT">Nháp</option>
                                 <option value="PENDING">Chờ Duyệt</option>
                                 <option value="APPROVED">Đã Duyệt</option>
                                 <option value="COMPLETED">Hoàn Thành</option>
                             </select>
-                            <div className="search-input-wrapper">
+                            <div className="search-input-wrapper flex-1 sm:flex-none min-w-[200px]">
                                 <Search size={16} className="search-icon" />
-                                <input type="text" placeholder="Tìm..." value={orderSearch} onChange={e => setOrderSearch(e.target.value)} className="input" />
+                                <input type="text" placeholder="Tìm..." value={orderSearch} onChange={e => setOrderSearch(e.target.value)} className="input w-full" />
                             </div>
                             <button
                                 onClick={() => exportToExcel(
                                     displayOrders.map(o => ({ "Mã/Ngày": `${o.code} (${formatDate(o.date)})`, "Nhà Cung Cấp": o.supplier?.name, "Trạng Thái": o.status, "Tổng Tiền": o.totalAmount })),
                                     `Don_Dat_Hang_${startDate}_to_${endDate}`
                                 )}
-                                className="btn btn-secondary flex items-center gap-2"
+                                className="btn btn-secondary flex items-center gap-2 flex-1 sm:flex-none justify-center"
                                 title="Xuất Excel"
                             >
-                                <Download size={16} /> Excel
+                                <Download size={16} /> <span className="hidden sm:inline">Excel</span>
                             </button>
-                            <button onClick={() => window.print()} className="btn btn-secondary flex items-center gap-2" title="In / Xuất PDF">
-                                <Printer size={16} /> Print
+                            <button onClick={() => window.print()} className="btn btn-secondary flex items-center gap-2 flex-1 sm:flex-none justify-center" title="In / Xuất PDF">
+                                <Printer size={16} /> <span className="hidden sm:inline">Print</span>
                             </button>
                         </div>
                     </div>
-                    <div className="table-wrapper" style={{ border: 'none', borderRadius: '0 0 var(--radius) var(--radius)', maxHeight: '500px' }}>
+                    <div className="table-wrapper overflow-x-auto w-full" style={{ border: 'none', borderRadius: '0 0 var(--radius) var(--radius)', maxHeight: '500px' }}>
                         <table>
                             <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
                                 <tr>
@@ -835,37 +837,37 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
             {/* 6. PAYMENT TAB */}
             {activeTab === 'payment' && (
                 <div className="card" style={{ padding: 0 }}>
-                    <div className="search-card" style={{ padding: '1.5rem', marginBottom: 0, borderBottom: '1px solid var(--border)' }}>
+                    <div className="search-card flex flex-col gap-4" style={{ padding: '1.5rem', marginBottom: 0, borderBottom: '1px solid var(--border)' }}>
                         <div>
                             <h3 className="font-bold text-xl mb-1">Sổ Phụ Chi Tiền</h3>
                             <p className="text-sm text-gray-500">Danh sách giao dịch chi trả nhà cung cấp</p>
                         </div>
-                        <div className="flex items-center gap-4">
-                            <select className="input" style={{ width: '180px' }} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
+                        <div className="flex flex-wrap gap-2 items-center w-full">
+                            <select className="input flex-1 sm:flex-none" style={{ minWidth: '180px' }} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
                                 <option value="ALL">Mọi Hình Thức</option>
                                 <option value="BANK_TRANSFER">Chuyển Khoản</option>
                                 <option value="CASH">Tiền Mặt</option>
                             </select>
-                            <div className="search-input-wrapper">
+                            <div className="search-input-wrapper flex-1 sm:flex-none min-w-[200px]">
                                 <Search size={16} className="search-icon" />
-                                <input type="text" placeholder="Tìm tham chiếu, NCC..." value={paymentSearch} onChange={e => setPaymentSearch(e.target.value)} className="input" />
+                                <input type="text" placeholder="Tìm tham chiếu, NCC..." value={paymentSearch} onChange={e => setPaymentSearch(e.target.value)} className="input w-full" />
                             </div>
                             <button
                                 onClick={() => exportToExcel(
                                     displayPayments.map(p => ({ "Mã GD": p.code, "Ngày": formatDate(p.date), "Nhà Cung Cấp": p.supplier?.name, "Hình Thức": p.paymentMethod, "Tham Chiếu": p.reference || '', "Số Tiền": p.amount })),
                                     `So_Phu_Chi_Tien_${startDate}_to_${endDate}`
                                 )}
-                                className="btn btn-secondary flex items-center gap-2"
+                                className="btn btn-secondary flex items-center gap-2 flex-1 sm:flex-none justify-center"
                                 title="Xuất Excel"
                             >
-                                <Download size={16} /> Excel
+                                <Download size={16} /> <span className="hidden sm:inline">Excel</span>
                             </button>
-                            <button onClick={() => window.print()} className="btn btn-secondary flex items-center gap-2" title="In / Xuất PDF">
-                                <Printer size={16} /> Print
+                            <button onClick={() => window.print()} className="btn btn-secondary flex items-center gap-2 flex-1 sm:flex-none justify-center" title="In / Xuất PDF">
+                                <Printer size={16} /> <span className="hidden sm:inline">Print</span>
                             </button>
                         </div>
                     </div>
-                    <div className="table-wrapper" style={{ border: 'none', borderRadius: '0 0 var(--radius) var(--radius)' }}>
+                    <div className="table-wrapper overflow-x-auto w-full" style={{ border: 'none', borderRadius: '0 0 var(--radius) var(--radius)' }}>
                         <table>
                             <thead>
                                 <tr>
