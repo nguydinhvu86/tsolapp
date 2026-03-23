@@ -911,7 +911,7 @@ export function DashboardClient({
                                                                                 {t("dashboard.leads.emptyStats")}
                                                                             </div>
                                                                         ) : (
-                                                                            <div className="flex-1 min-h-[250px] w-full mt-2 relative">
+                                                                            <div className="w-full mt-4 relative" style={{ height: '280px' }}>
                                                                                 <ResponsiveContainer width="100%" height="100%">
                                                                                     <PieChart>
                                                                                         <Pie
@@ -994,7 +994,7 @@ export function DashboardClient({
                                                                     <div className="w-full xl:w-[65%]">
                                                                         <div className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm h-full flex flex-col">
                                                                             <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-100 pb-3">{t("dashboard.cashFlow.title")} {new Date().getFullYear()}</h3>
-                                                                            <div className="flex-1 min-h-[350px]" style={{ width: '100%', marginLeft: '-15px' }}>
+                                                                            <div className="w-full" style={{ height: '350px', marginLeft: '-15px' }}>
                                                                                 <ResponsiveContainer width="100%" height="100%">
                                                                                     <AreaChart data={kpiData?.cashFlow || []} margin={{ top: 10, right: 10, left: 20, bottom: 0 }}>
                                                                                         <defs>
