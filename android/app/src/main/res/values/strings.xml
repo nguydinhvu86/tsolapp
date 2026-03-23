@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">tsolapp</string>
+    <string name="title_activity_main">tsolapp</string>
+    <string name="package_name">com.tsolapp.app</string>
+    <string name="custom_url_scheme">com.tsolapp.app</string>
+</resources>

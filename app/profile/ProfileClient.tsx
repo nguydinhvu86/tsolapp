@@ -4,13 +4,15 @@ import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Input } from '@/app/components/ui/Input';
 import { Button } from '@/app/components/ui/Button';
-import { Save, CheckCircle2, UserCircle2, ShieldCheck, ShieldAlert, Upload, QrCode } from 'lucide-react';
+import { Save, CheckCircle2, UserCircle2, ShieldCheck, ShieldAlert, Upload, Wallet, CircleDollarSign, CalendarClock, Activity, ArrowRight, ListTodo } from 'lucide-react';
 import { updateProfile } from './actions';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { formatMoney, formatDate } from '@/lib/utils/formatters';
+import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
 
-export function ProfileClient({ initialProfile }: { initialProfile: any }) {
+export function ProfileClient({ initialProfile, initialStats }: { initialProfile: any, initialStats: any }) {
     const router = useRouter();
     const { update } = useSession();
     const [formData, setFormData] = useState({
@@ -161,151 +163,269 @@ export function ProfileClient({ initialProfile }: { initialProfile: any }) {
     };
 
     return (
-        <Card style={{ maxWidth: '600px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem' }}>
-                <div style={{ position: 'relative' }}>
-                    {avatarUrl ? (
-                        <img src={avatarUrl} alt="Avatar" style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border)' }} />
-                    ) : (
-                        <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>
-                            <UserCircle2 size={50} />
+        <div className="flex flex-col lg:flex-row gap-6">
+            {/* Left Column: Settings & Identity */}
+            <div className="w-full lg:w-1/3 flex flex-col gap-6">
+                <Card className="p-6">
+                    <div className="flex items-center gap-4 mb-6 relative">
+                        <div className="relative shrink-0">
+                            {avatarUrl ? (
+                                <img src={avatarUrl} alt="Avatar" className="w-20 h-20 rounded-full object-cover border-2 border-slate-200" />
+                            ) : (
+                                <div className="w-20 h-20 rounded-full bg-indigo-500 text-white flex items-center justify-center text-4xl shadow-sm">
+                                    <UserCircle2 size={40} />
+                                </div>
+                            )}
+                            <label className="absolute -bottom-1 -right-1 bg-white rounded-full p-1.5 cursor-pointer shadow-md border border-slate-200 hover:bg-slate-50 transition-colors" title="Tải ảnh lên">
+                                {isUploading ? <CheckCircle2 size={16} className="text-primary" /> : <Upload size={16} className="text-slate-600" />}
+                                <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} disabled={isUploading} />
+                            </label>
                         </div>
-                    )}
-                    <label style={{
-                        position: 'absolute', bottom: -5, right: -5, background: 'white', borderRadius: '50%',
-                        padding: '6px', cursor: 'pointer', boxShadow: '0 2px 5px rgba(0,0,0,0.2)', border: '1px solid var(--border)'
-                    }} title="Tải ảnh lên">
-                        {isUploading ? <CheckCircle2 size={16} color="var(--primary)" /> : <Upload size={16} color="var(--text-main)" />}
-                        <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} disabled={isUploading} />
-                    </label>
-                </div>
-                <div>
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: '0 0 0.25rem 0', color: 'var(--text-main)' }}>{initialProfile.email}</h2>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', margin: 0 }}>
-                        Quyền hạn: <strong style={{ color: 'var(--primary)' }}>{initialProfile.role}</strong>
-                    </p>
-                </div>
-            </div>
-
-            {error && <div style={{ padding: '0.75rem 1rem', background: '#fee2e2', color: '#b91c1c', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.875rem' }}>{error}</div>}
-
-            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-                <Input
-                    label="Họ và tên hiển thị"
-                    value={formData.name}
-                    onChange={e => setFormData({ ...formData, name: e.target.value })}
-                    required
-                />
-
-                <div style={{ padding: '1.5rem', background: 'rgba(0,0,0,0.02)', borderRadius: '8px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>Đổi Mật Khẩu</h3>
-                    <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', margin: 0 }}>Bỏ trống nếu không muốn thay đổi mật khẩu hiện tại.</p>
-
-                    <Input
-                        label="Mật khẩu hiện tại"
-                        type="password"
-                        value={formData.currentPassword}
-                        onChange={e => setFormData({ ...formData, currentPassword: e.target.value })}
-                        placeholder="Nhập mật khẩu hiện tại để xác minh"
-                    />
-                    <Input
-                        label="Mật khẩu mới"
-                        type="password"
-                        value={formData.newPassword}
-                        onChange={e => setFormData({ ...formData, newPassword: e.target.value })}
-                        placeholder="Mật khẩu mới (tối thiểu 6 ký tự)"
-                    />
-                    <Input
-                        label="Xác nhận mật khẩu mới"
-                        type="password"
-                        value={formData.confirmPassword}
-                        onChange={e => setFormData({ ...formData, confirmPassword: e.target.value })}
-                        placeholder="Nhập lại mật khẩu mới"
-                    />
-                </div>
-
-                <div style={{ padding: '1.5rem', background: 'rgba(0,0,0,0.02)', borderRadius: '8px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                    <div>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            {twoFactorEnabled ? <ShieldCheck size={20} color="#16a34a" /> : <ShieldAlert size={20} color="#eab308" />}
-                            Xác Thực 2 Yếu Tố (2FA)
-                        </h3>
-                        <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', margin: '0.5rem 0 0 0' }}>
-                            Bảo vệ tài khoản của bạn bằng mã xuất ra từ ứng dụng Authenticator (Google Authenticator, Authy, v.v...)
-                        </p>
+                        <div className="overflow-hidden">
+                            <h2 className="text-lg font-bold text-slate-800 truncate mb-1" title={initialProfile.name || initialProfile.email}>{initialProfile.name || initialProfile.email}</h2>
+                            <p className="text-sm text-slate-500 mb-1 truncate" title={initialProfile.email}>{initialProfile.email}</p>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                                {initialProfile.role}
+                            </span>
+                        </div>
                     </div>
 
-                    {!twoFactorEnabled && !setup2Fa && (
-                        <div>
-                            <Button type="button" onClick={generate2FA} disabled={isGenerating2Fa}>
-                                {isGenerating2Fa ? 'Đang tạo...' : 'Bật 2FA ngay bây giờ'}
-                            </Button>
-                        </div>
-                    )}
+                    {error && <div className="p-3 bg-red-50 text-red-700 rounded-lg mb-6 border border-red-100 text-sm">{error}</div>}
 
-                    {!twoFactorEnabled && setup2Fa && (
-                        <div style={{ background: 'white', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-                            <p style={{ margin: 0, fontWeight: 500, textAlign: 'center' }}>Quét mã QR dưới đây bằng ứng dụng Authenticator</p>
-                            <div style={{ padding: '1rem', background: 'white', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
-                                <QRCodeSVG value={setup2Fa.uri} size={160} />
+                    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                        <Input
+                            label="Họ và tên hiển thị"
+                            value={formData.name}
+                            onChange={e => setFormData({ ...formData, name: e.target.value })}
+                            required
+                        />
+
+                        <div className="p-4 bg-slate-50/50 rounded-xl border border-slate-200 flex flex-col gap-4">
+                            <div>
+                                <h3 className="text-sm font-semibold text-slate-800">Đổi Mật Khẩu</h3>
+                                <p className="text-xs text-slate-500">Bỏ trống nếu không đổi</p>
                             </div>
-                            <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-                                Hoặc nhập mã bí mật tự công này: <strong style={{ userSelect: 'all', color: 'var(--primary)' }}>{setup2Fa.secret}</strong>
-                            </p>
-                            <div style={{ width: '100%', marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
-                                <Input
-                                    placeholder="Nhập mã 6 chữ số từ app"
-                                    value={token2Fa}
-                                    onChange={e => setToken2Fa(e.target.value)}
-                                    maxLength={6}
-                                    style={{ flex: 1, textAlign: 'center', letterSpacing: '0.2rem', fontWeight: 'bold' }}
-                                />
-                                <Button type="button" onClick={verifyAndEnable2FA} disabled={isVerifying2Fa || token2Fa.length < 6}>
-                                    Xác nhận
+                            <Input
+                                type="password"
+                                value={formData.currentPassword}
+                                onChange={e => setFormData({ ...formData, currentPassword: e.target.value })}
+                                placeholder="Mật khẩu hiện tại"
+                            />
+                            <Input
+                                type="password"
+                                value={formData.newPassword}
+                                onChange={e => setFormData({ ...formData, newPassword: e.target.value })}
+                                placeholder="Mật khẩu mới (tối thiểu 6 ký tự)"
+                            />
+                            <Input
+                                type="password"
+                                value={formData.confirmPassword}
+                                onChange={e => setFormData({ ...formData, confirmPassword: e.target.value })}
+                                placeholder="Xác nhận mật khẩu mới"
+                            />
+                        </div>
+
+                        <div className="p-4 bg-slate-50/50 rounded-xl border border-slate-200 flex flex-col gap-4">
+                            <div>
+                                <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+                                    {twoFactorEnabled ? <ShieldCheck size={18} className="text-emerald-600" /> : <ShieldAlert size={18} className="text-amber-500" />}
+                                    Bảo mật 2 Lớp (2FA)
+                                </h3>
+                                <p className="text-xs text-slate-500 mt-1">Dùng app Authenticator để bảo vệ tài khoản</p>
+                            </div>
+
+                            {!twoFactorEnabled && !setup2Fa && (
+                                <Button type="button" onClick={generate2FA} disabled={isGenerating2Fa} className="w-full text-sm">
+                                    {isGenerating2Fa ? 'Đang tạo...' : 'Thiết lập ngay'}
                                 </Button>
-                            </div>
-                            <Button type="button" variant="secondary" onClick={() => setSetup2Fa(null)} style={{ width: '100%' }}>Hủy bỏ</Button>
-                        </div>
-                    )}
+                            )}
 
-                    {twoFactorEnabled && !showDisableForm && (
-                        <div>
-                            <Button type="button" variant="secondary" style={{ color: '#dc2626', borderColor: '#fecaca' }} onClick={() => setShowDisableForm(true)}>
-                                Tắt Xác thực 2 yếu tố
+                            {!twoFactorEnabled && setup2Fa && (
+                                <div className="bg-white p-4 rounded-lg border border-slate-200 flex flex-col items-center gap-4 shadow-sm">
+                                    <p className="text-sm font-medium text-center text-slate-700">Quét mã QR bằng Authenticator</p>
+                                    <div className="p-2 bg-white rounded-lg shadow-sm border border-slate-100">
+                                        <QRCodeSVG value={setup2Fa.uri} size={140} />
+                                    </div>
+                                    <p className="text-xs text-slate-500 text-center">
+                                        Hoặc nhập mã bí mật: <strong className="text-indigo-600 truncate block mt-1 select-all">{setup2Fa.secret}</strong>
+                                    </p>
+                                    <div className="flex gap-2 w-full mt-2">
+                                        <input
+                                            type="text"
+                                            placeholder="Gồm 6 chữ số"
+                                            value={token2Fa}
+                                            onChange={e => setToken2Fa(e.target.value)}
+                                            maxLength={6}
+                                            className="flex-1 text-center font-bold tracking-widest text-lg border border-slate-300 rounded-lg outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                                        />
+                                        <Button type="button" onClick={verifyAndEnable2FA} disabled={isVerifying2Fa || token2Fa.length < 6}>
+                                            Xác nhận
+                                        </Button>
+                                    </div>
+                                    <Button type="button" variant="secondary" onClick={() => setSetup2Fa(null)} className="w-full text-sm">Hủy bỏ</Button>
+                                </div>
+                            )}
+
+                            {twoFactorEnabled && !showDisableForm && (
+                                <Button type="button" variant="secondary" onClick={() => setShowDisableForm(true)} className="w-full text-sm !text-red-600 !border-red-200 hover:!bg-red-50">
+                                    Tắt 2FA
+                                </Button>
+                            )}
+
+                            {twoFactorEnabled && showDisableForm && (
+                                <div className="flex flex-col gap-3">
+                                    <Input
+                                        type="password"
+                                        placeholder="Nhập mật khẩu để tắt"
+                                        value={disablePassword}
+                                        onChange={e => setDisablePassword(e.target.value)}
+                                    />
+                                    <div className="flex gap-2">
+                                        <Button type="button" onClick={disable2FA} disabled={!disablePassword} className="flex-1 text-sm bg-red-600 hover:bg-red-700 text-white border-transparent">
+                                            Xác nhận Tắt
+                                        </Button>
+                                        <Button type="button" variant="secondary" onClick={() => setShowDisableForm(false)} className="px-3">Hủy</Button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex justify-end gap-3 mt-2 pt-4 border-t border-slate-100 items-center">
+                            {saveSuccess && (
+                                <div className="flex items-center gap-1.5 text-emerald-600 text-sm font-medium mr-auto">
+                                    <CheckCircle2 size={16} /> Đã lưu hồ sơ
+                                </div>
+                            )}
+                            <Button type="submit" disabled={isSaving} className="gap-2">
+                                <Save size={16} /> {isSaving ? 'Đang lưu...' : 'Lưu Thay Đổi'}
                             </Button>
                         </div>
-                    )}
+                    </form>
+                </Card>
+            </div>
 
-                    {twoFactorEnabled && showDisableForm && (
-                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}>
-                            <div style={{ flex: 1 }}>
-                                <Input
-                                    label="Xác nhận mật khẩu để tắt"
-                                    type="password"
-                                    placeholder="Nhập mật khẩu hiện tại"
-                                    value={disablePassword}
-                                    onChange={e => setDisablePassword(e.target.value)}
-                                />
+            {/* Right Column: Dashboard & Real-time Stats */}
+            {initialStats && (
+                <div className="w-full lg:w-2/3 flex flex-col gap-6">
+                    {/* Top KPI row */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <Card className="p-4 flex flex-col relative overflow-hidden group hover:border-emerald-200 transition-colors">
+                            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                                <Wallet size={60} className="text-emerald-500" />
                             </div>
-                            <Button type="button" variant="primary" style={{ background: '#dc2626' }} onClick={disable2FA} disabled={!disablePassword}>
-                                Tắt 2FA
-                            </Button>
-                            <Button type="button" variant="secondary" onClick={() => setShowDisableForm(false)}>Hủy</Button>
-                        </div>
-                    )}
-                </div>
+                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Doanh thu (Bạn Thu)</span>
+                            <span className="text-xl font-bold text-slate-800 break-words">{formatMoney(initialStats.revenue)}</span>
+                        </Card>
 
-                <div className="flex gap-4 items-center justify-end" style={{ marginTop: '1rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
-                    {saveSuccess && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#16a34a', fontSize: '0.875rem', fontWeight: 500 }}>
-                            <CheckCircle2 size={18} /> Đã cập nhật thành công
-                        </div>
-                    )}
-                    <Button type="submit" disabled={isSaving} className="gap-2">
-                        <Save size={18} /> {isSaving ? 'Đang lưu...' : 'Lưu Hồ sơ'}
-                    </Button>
+                        <Card className="p-4 flex flex-col relative overflow-hidden group hover:border-rose-200 transition-colors">
+                            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                                <CircleDollarSign size={60} className="text-rose-500" />
+                            </div>
+                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Công nợ tồn</span>
+                            <span className="text-xl font-bold text-rose-600 break-words">{formatMoney(initialStats.debt)}</span>
+                        </Card>
+
+                        <Card className="p-4 flex flex-col relative overflow-hidden group hover:border-indigo-200 transition-colors">
+                            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                                <ListTodo size={60} className="text-indigo-500" />
+                            </div>
+                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Tác vụ đang xử lý</span>
+                            <span className="text-2xl font-bold text-slate-800">{initialStats.tasks?.length || 0}</span>
+                        </Card>
+
+                        <Card className="p-4 flex flex-col relative overflow-hidden group hover:border-blue-200 transition-colors">
+                            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                                <Activity size={60} className="text-blue-500" />
+                            </div>
+                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Hoạt động gần đây</span>
+                            <span className="text-2xl font-bold text-slate-800">{initialStats.activities?.length || 0}</span>
+                        </Card>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-6">
+                        {/* Tasks Section */}
+                        <Card className="p-0 overflow-hidden flex flex-col max-h-[500px]">
+                            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                                <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+                                    <CalendarClock size={18} className="text-indigo-500" />
+                                    Lịch trình & Nhiệm vụ
+                                </h3>
+                                <Link href="/tasks" className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                                    Xem tất cả <ArrowRight size={14} />
+                                </Link>
+                            </div>
+                            <div className="overflow-y-auto p-4 flex flex-col gap-3 custom-scrollbar">
+                                {(!initialStats.tasks || initialStats.tasks.length === 0) ? (
+                                    <div className="text-center py-8 text-slate-400 text-sm">
+                                        Không có nhiệm vụ nào đang chờ xử lý
+                                    </div>
+                                ) : (
+                                    initialStats.tasks.map((task: any) => (
+                                        <Link key={task.id} href={`/tasks/${task.id}`} className="block p-3 rounded-lg border border-slate-100 hover:border-indigo-200 hover:shadow-sm transition-all group">
+                                            <div className="flex justify-between items-start mb-1.5">
+                                                <h4 className="text-sm font-semibold text-slate-800 group-hover:text-indigo-700 line-clamp-1">{task.title}</h4>
+                                                <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded ml-2 ${task.priority === 'URGENT' ? 'bg-red-100 text-red-700' : task.priority === 'HIGH' ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-600'}`}>
+                                                    {task.priority === 'URGENT' ? 'CẤP BÁCH' : task.priority === 'HIGH' ? 'CAO' : task.priority === 'MEDIUM' ? 'T.BÌNH' : 'THẤP'}
+                                                </span>
+                                            </div>
+                                            {task.customer && (
+                                                <p className="text-xs text-slate-500 mb-2 truncate">Khách hàng: {task.customer.name}</p>
+                                            )}
+                                            <div className="flex items-center gap-2 justify-between mt-2">
+                                                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${task.status === 'TODO' ? 'bg-amber-100 text-amber-800' : task.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}`}>
+                                                    {task.status === 'TODO' ? 'Cần làm' : task.status === 'IN_PROGRESS' ? 'Đang thực hiện' : 'Đang duyệt'}
+                                                </span>
+                                                {task.dueDate && (
+                                                    <span className={`text-[11px] font-medium flex items-center gap-1.5 ${new Date(task.dueDate) < new Date() ? 'text-red-600' : 'text-slate-500'}`}>
+                                                        Hạn: {formatDate(task.dueDate)}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </Link>
+                                    ))
+                                )}
+                            </div>
+                        </Card>
+
+                        {/* Activity Timeline */}
+                        <Card className="p-0 overflow-hidden flex flex-col max-h-[500px]">
+                            <div className="p-4 border-b border-slate-100 bg-slate-50/50">
+                                <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+                                    <Activity size={18} className="text-blue-500" />
+                                    Hoạt động gần đây
+                                </h3>
+                            </div>
+                            <div className="overflow-y-auto p-5 custom-scrollbar">
+                                {(!initialStats.activities || initialStats.activities.length === 0) ? (
+                                    <div className="text-center py-8 text-slate-400 text-sm">
+                                        Chưa có hoạt động nào được ghi nhận
+                                    </div>
+                                ) : (
+                                    <div className="relative border-l border-slate-200 ml-3 space-y-6">
+                                        {initialStats.activities.map((act: any) => (
+                                            <div key={act.id} className="relative pl-6">
+                                                <div className={`absolute w-3 h-3 rounded-full -left-[6.5px] top-1.5 border-2 border-white ${act.type === 'INVOICE' || act.type === 'ESTIMATE' ? 'bg-emerald-400' : act.type === 'CUSTOMER' ? 'bg-blue-400' : 'bg-indigo-400'}`} />
+                                                <p className="text-xs font-medium text-slate-400 mb-1" suppressHydrationWarning>
+                                                    {formatDate(act.date)}
+                                                </p>
+                                                <p className="text-sm text-slate-800 font-medium">
+                                                    {act.action}
+                                                    {act.entity && <span className="font-bold text-slate-900 ml-1">({act.entity})</span>}
+                                                </p>
+                                                {act.details && (
+                                                    <p className="text-xs text-slate-500 mt-1 line-clamp-2 bg-slate-50 rounded p-1.5 border border-slate-100 italic">
+                                                        {act.details}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </Card>
+                    </div>
                 </div>
-            </form>
-        </Card>
+            )}
+        </div>
     );
 }
