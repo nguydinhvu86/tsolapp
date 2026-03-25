@@ -153,13 +153,13 @@ export default function TransactionsClient({ initialTransactions }: { initialTra
                         </tr>
                     </thead>
                     <tbody>
-                        {paginatedItems.length > 0 ? paginatedItems.map((t) => {
-                            const typeObj = getTypeColor(t.type);
-                            const statusObj = getStatusColor(t.status);
+                        {paginatedItems.length > 0 ? paginatedItems.map((tx) => {
+                            const typeObj = getTypeColor(tx.type);
+                            const statusObj = getStatusColor(tx.status);
 
                             return (
-                                <tr key={t.id}>
-                                    <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>{t.code}</td>
+                                <tr key={tx.id}>
+                                    <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>{tx.code}</td>
                                     <td>
                                         <span style={{
                                             padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600,
@@ -176,16 +176,16 @@ export default function TransactionsClient({ initialTransactions }: { initialTra
                                             {statusObj.label}
                                         </span>
                                     </td>
-                                    <td>{t.fromWarehouse?.name || '-'}</td>
-                                    <td>{t.toWarehouse?.name || '-'}</td>
-                                    <td>{formatDate(t.date)}</td>
-                                    <td>{t.creator?.name || '-'}</td>
+                                    <td>{tx.fromWarehouse?.name || '-'}</td>
+                                    <td>{tx.toWarehouse?.name || '-'}</td>
+                                    <td>{formatDate(tx.date)}</td>
+                                    <td>{tx.creator?.name || '-'}</td>
                                     <td>
                                         <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                                            <button onClick={() => router.push(`/inventory/transactions/${t.id}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)' }} title={t('transactions.tooltipView')}>
+                                            <button onClick={() => router.push(`/inventory/transactions/${tx.id}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)' }} title={t('transactions.tooltipView')}>
                                                 <Eye size={18} />
                                             </button>
-                                            <button onClick={() => handleDelete(t.id, t.code)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', opacity: t.status === 'COMPLETED' ? 0.3 : 1 }} disabled={t.status === 'COMPLETED'} title={t('transactions.tooltipDelete')}>
+                                            <button onClick={() => handleDelete(tx.id, tx.code)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', opacity: tx.status === 'COMPLETED' ? 0.3 : 1 }} disabled={tx.status === 'COMPLETED'} title={t('transactions.tooltipDelete')}>
                                                 <Trash2 size={18} />
                                             </button>
                                         </div>

@@ -115,7 +115,7 @@ export async function createTask(data: any, creatorId: string) {
     const taskCount = isRecurringMode ? recurrence.count : 1;
     const frequency = isRecurringMode ? recurrence.frequency : null;
     let baseDueDate = restData.dueDate ? new Date(restData.dueDate) : null;
-    let baseStartDate = restData.startDate ? new Date(restData.startDate) : null;
+    let baseStartDate = restData.startDate ? new Date(restData.startDate) : new Date();
 
     const createdTasks: any[] = [];
     let firstTaskId: string | null = null;

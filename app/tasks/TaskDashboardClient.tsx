@@ -178,6 +178,12 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
         });
 
         return initialTasks.filter((task: any) => {
+            // Hide tasks that start > 10 days in the future
+            if (task.startDate) {
+                const threshold = new Date().getTime() + 10 * 24 * 60 * 60 * 1000;
+                if (new Date(task.startDate).getTime() > threshold) return false;
+            }
+
             // Hide future/past recurring tasks unless in RECURRING tab
             if (filterStatus !== 'RECURRING' && task.isRecurring) {
                 if (!activeRecurringIds.has(task.id)) return false;
@@ -686,6 +692,7 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                             {paginatedItems.map((task: any) => {
                                 const assigneesNames = task.assignees?.map((a: any) => a.user.name || a.user.email).join(', ') || 'Chưa gán';
                                 const isDueSoon = task.dueDate && new Date(task.dueDate).getTime() - new Date().getTime() < 86400000 && task.status !== 'DONE';
+                                const overdue = isOverdue(task.dueDate, task.status);
 
                                 let rowClass = 'transition-colors';
                                 let rowStyle: React.CSSProperties = {};
@@ -705,10 +712,15 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                                 return (
                                     <tr key={task.id} className={rowClass} style={rowStyle}>
                                         <td>
-                                            <div style={{ fontWeight: 500, color: isDueSoon ? 'var(--danger)' : 'var(--text-main)', display: 'flex', alignItems: 'center' }}>
+                                            <div style={{ fontWeight: 500, color: isDueSoon ? 'var(--danger)' : 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                 <Link href={`/tasks/${task.id}`} className="text-blue-600 hover:underline">
                                                     {task.title}
                                                 </Link>
+                                                {overdue && (
+                                                    <span className="animate-pulse bg-red-600 text-white px-2 py-0.5 rounded text-xs font-bold block" style={{ whiteSpace: 'nowrap' }}>
+                                                        QUÁ HẠN
+                                                    </span>
+                                                )}
                                             </div>
                                             {task.contract && <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Hợp đồng: {task.contract.title}</div>}
                                             {task.customer && <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Khách hàng: {task.customer.name}</div>}
@@ -724,7 +736,7 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                                             </span>
                                         </td>
                                         <td style={{ color: 'var(--text-main)' }}>
-                                            {task.startDate ? formatDate(new Date(task.startDate)) : '-'}
+                                            {task.startDate ? formatDate(new Date(task.startDate)) : (task.createdAt ? formatDate(new Date(task.createdAt)) : '-')}
                                         </td>
                                         <td style={{ color: isDueSoon ? 'var(--danger)' : 'inherit' }}>
                                             {task.dueDate ? formatDate(new Date(task.dueDate)) : '-'}

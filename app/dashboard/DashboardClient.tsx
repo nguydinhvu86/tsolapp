@@ -478,7 +478,18 @@ export function DashboardClient({
     };
 
     useEffect(() => {
-        setTasks(userTasks || []);
+        if (!userTasks) {
+            setTasks([]);
+            return;
+        }
+        const threshold = new Date().getTime() + 10 * 24 * 60 * 60 * 1000;
+        const validTasks = userTasks.filter((task: any) => {
+            if (task.startDate) {
+                return new Date(task.startDate).getTime() <= threshold;
+            }
+            return true;
+        });
+        setTasks(validTasks);
     }, [userTasks]);
 
     const handleDateClick = (date: Date, dayTasks: any[], dayQuotes: any[] = [], dayInvoices: any[] = []) => {
@@ -714,6 +725,7 @@ export function DashboardClient({
                                                                                         {tasks.map((task: any) => {
                                                                                             const relatedEntityName = task.customer?.name || task.contract?.code || task.salesInvoice?.code || task.salesOrder?.code || '';
                                                                                             const isDueSoon = task.dueDate && new Date(task.dueDate).getTime() - new Date().getTime() < 86400000 && task.status !== 'DONE';
+                                                                                            const overdue = task.dueDate && task.status !== 'DONE' && task.status !== 'CANCELLED' && new Date(task.dueDate).getTime() < new Date().getTime();
 
                                                                                             let rowClass = 'hover:bg-gray-50/50 transition-colors group';
                                                                                             let rowStyle: React.CSSProperties = {};
@@ -729,10 +741,15 @@ export function DashboardClient({
                                                                                             return (
                                                                                                 <tr key={task.id} className={rowClass} style={rowStyle}>
                                                                                                     <td>
-                                                                                                        <div style={{ fontWeight: 500, color: isDueSoon ? 'var(--danger)' : 'var(--text-main)', display: 'flex', alignItems: 'center' }}>
+                                                                                                        <div style={{ fontWeight: 500, color: isDueSoon ? 'var(--danger)' : 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                                                                             <a href={`/tasks/${task.id}`} className="text-blue-600 hover:underline text-sm truncate max-w-[200px]" title={task.title}>
                                                                                                                 {task.title}
                                                                                                             </a>
+                                                                                                            {overdue && (
+                                                                                                                <span className="animate-pulse bg-red-600 text-white px-2 py-0.5 rounded text-xs font-bold block" style={{ whiteSpace: 'nowrap' }}>
+                                                                                                                    QUÁ HẠN
+                                                                                                                </span>
+                                                                                                            )}
                                                                                                         </div>
                                                                                                     </td>
                                                                                                     <td>

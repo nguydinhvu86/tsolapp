@@ -396,9 +396,9 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
     return (
         <>
             <Card className="p-6">
-                <div className="flex justify-between items-center mb-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                     <h2 className="text-xl font-semibold">Danh sách Đơn Hỏi Mua / Đặt Hàng</h2>
-                    <Button onClick={handleOpenCreate} className="flex items-center gap-2">
+                    <Button onClick={handleOpenCreate} className="flex justify-center items-center gap-2 w-full sm:w-auto">
                         <Plus size={16} /> Tạo Đơn Đặt Hàng Mới
                     </Button>
                 </div>
