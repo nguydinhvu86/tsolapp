@@ -1,11 +1,12 @@
 import React from 'react';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
-import { Folder, File, BookOpen, Search, PlayCircle, Layers, FileText, Image as ImageIcon, Link2, MessageSquare } from 'lucide-react';
+import { Folder, File, BookOpen, Search, PlayCircle, Layers, FileText, Image as ImageIcon, Link2, MessageSquare, Presentation } from 'lucide-react';
 import { getLibraryCategories, getLibraryDocuments } from './actions';
 import Link from 'next/link';
 import { LibraryActionButtons, CreateCategoryButton } from './LibraryActionButtons';
 import { MoveDocumentButton } from './MoveDocumentButton';
+import { DeleteDocumentButton } from './DeleteDocumentButton';
 import { ShareButton } from './document/[id]/ShareButton';
 import styles from './library.module.css';
 
@@ -17,6 +18,7 @@ const getFileIcon = (type: string, size = 64) => {
         case 'VIDEO': return <PlayCircle size={size} />;
         case 'PDF': return <FileText size={size} />;
         case 'LINK': return <Link2 size={size} />;
+        case 'PPT': return <Presentation size={size} />;
         default: return <File size={size} />;
     }
 }
@@ -149,6 +151,7 @@ export default async function LibraryPage({
                                 if (doc.fileType === 'PDF') typeClass = styles.typePdf;
                                 if (doc.fileType === 'VIDEO') typeClass = styles.typeVideo;
                                 if (doc.fileType === 'LINK') typeClass = styles.typeLink;
+                                if (doc.fileType === 'PPT') typeClass = styles.typePpt;
 
                                 return (
                                     <Link key={doc.id} href={`/library/document/${doc.id}`} className={styles.bookCard}>
@@ -183,9 +186,14 @@ export default async function LibraryPage({
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                                                     {canManage && (
-                                                        <div style={{ border: '1px solid #e2e8f0', borderRadius: '6px', background: '#f8fafc' }}>
-                                                            <MoveDocumentButton documentId={doc.id} currentCategoryId={doc.categoryId} categories={categories} isIconOnly />
-                                                        </div>
+                                                        <>
+                                                            <div style={{ border: '1px solid #e2e8f0', borderRadius: '6px', background: '#f8fafc' }}>
+                                                                <MoveDocumentButton documentId={doc.id} currentCategoryId={doc.categoryId} categories={categories} isIconOnly />
+                                                            </div>
+                                                            <div style={{ border: '1px solid #fecaca', borderRadius: '6px', background: '#fef2f2' }}>
+                                                                <DeleteDocumentButton documentId={doc.id} isIconOnly />
+                                                            </div>
+                                                        </>
                                                     )}
                                                     <div style={{ border: '1px solid #e2e8f0', borderRadius: '6px', background: '#f8fafc' }}>
                                                         <ShareButton documentId={doc.id} isIconOnly />

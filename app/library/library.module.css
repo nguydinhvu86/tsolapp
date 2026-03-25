@@ -359,6 +359,11 @@
     color: white;
 }
 
+.typePpt {
+    background: rgba(249, 115, 22, 0.9);
+    color: white;
+}
+
 .typeOther {
     background: rgba(100, 116, 139, 0.9);
     color: white;
