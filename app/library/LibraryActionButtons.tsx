@@ -170,6 +170,7 @@ export function LibraryActionButtons({ currentCategoryId, canManage, categories 
                                         <option value="PDF">Tài liệu PDF</option>
                                         <option value="WORD">Tài liệu Word (DOCX)</option>
                                         <option value="EXCEL">Bảng tính (XLSX)</option>
+                                        <option value="PPT">Bản trình bày (PPT/PPTX)</option>
                                         <option value="IMAGE">Hình ảnh</option>
                                         <option value="VIDEO">Video Đào tạo (MP4/Youtube)</option>
                                         <option value="LINK">Đường dẫn Website</option>
@@ -184,7 +185,7 @@ export function LibraryActionButtons({ currentCategoryId, canManage, categories 
                                     ) : (
                                         <>
                                             <label className="block text-sm font-medium text-slate-700 mb-1">Tải file từ máy tính *</label>
-                                            <input type="file" required accept={docType === 'PDF' ? '.pdf' : docType === 'WORD' ? '.doc,.docx' : docType === 'EXCEL' ? '.xls,.xlsx' : 'image/*'} onChange={e => { if (e.target.files && e.target.files.length > 0) setDocFile(e.target.files[0]) }} className="w-full p-1.5 border border-slate-300 rounded focus:ring-2 focus:ring-primary/20 outline-none text-slate-600 bg-slate-50 text-sm" />
+                                            <input type="file" required accept={docType === 'PDF' ? '.pdf' : docType === 'WORD' ? '.doc,.docx' : docType === 'EXCEL' ? '.xls,.xlsx' : docType === 'PPT' ? '.ppt,.pptx' : 'image/*'} onChange={e => { if (e.target.files && e.target.files.length > 0) setDocFile(e.target.files[0]) }} className="w-full p-1.5 border border-slate-300 rounded focus:ring-2 focus:ring-primary/20 outline-none text-slate-600 bg-slate-50 text-sm" />
                                         </>
                                     )}
                                 </div>

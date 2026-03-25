@@ -8,6 +8,7 @@ import { notFound } from 'next/navigation';
 import DocumentSidebar from './DocumentSidebar';
 import { ShareButton } from './ShareButton';
 import { MoveDocumentButton } from '../../MoveDocumentButton';
+import { DeleteDocumentButton } from '../../DeleteDocumentButton';
 import styles from '../../library.module.css';
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
@@ -56,7 +57,12 @@ export default async function DocumentDetailPage({ params }: { params: { id: str
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        {canManage && <MoveDocumentButton documentId={document.id} currentCategoryId={document.categoryId} categories={categories} />}
+                        {canManage && (
+                            <>
+                                <MoveDocumentButton documentId={document.id} currentCategoryId={document.categoryId} categories={categories} />
+                                <DeleteDocumentButton documentId={document.id} />
+                            </>
+                        )}
                         <ShareButton documentId={document.id} />
                         {document.fileUrl && !document.fileUrl.includes('youtube') && (
                             <a href={document.fileUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', height: '36px', fontSize: '0.875rem', fontWeight: 500, padding: '0 1rem', background: '#3b82f6', color: '#ffffff', border: 'none', borderRadius: '8px', textDecoration: 'none' }}>
