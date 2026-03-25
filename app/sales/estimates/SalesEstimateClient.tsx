@@ -523,14 +523,14 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
     return (
         <>
             <Card className="p-6">
-                <div className="flex justify-between items-center mb-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                     <h2 className="text-xl font-semibold">Báo Giá ERP</h2>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
                         {isAdminOrManager && users && users.length > 0 && (
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm text-gray-500 font-medium">Lọc nhân viên:</span>
+                            <div className="flex items-center gap-2 w-full sm:w-auto">
+                                <span className="text-sm text-gray-500 font-medium whitespace-nowrap">Lọc nhân viên:</span>
                                 <select
-                                    className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 outline-none focus:border-blue-500"
+                                    className="flex-1 sm:flex-initial px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 outline-none focus:border-blue-500"
                                     defaultValue={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('employeeId') || '' : ''}
                                     onChange={(e) => {
                                         const newEmployeeId = e.target.value;
@@ -550,7 +550,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                 </select>
                             </div>
                         )}
-                        <Button onClick={handleOpenCreate} className="flex items-center gap-2">
+                        <Button onClick={handleOpenCreate} className="flex justify-center items-center gap-2 w-full sm:w-auto">
                             <Plus size={16} /> Tạo Báo Giá Mới
                         </Button>
                     </div>

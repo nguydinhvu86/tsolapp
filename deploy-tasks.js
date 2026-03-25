@@ -5,7 +5,9 @@ const path = require('path');
 const conn = new Client();
 
 const FILES_TO_SYNC = [
-    { local: './app/tasks/actions.ts', remote: '/www/wwwroot/inside.tsol.vn/tsolapp/app/tasks/actions.ts' }
+    { local: './app/tasks/actions.ts', remote: '/www/wwwroot/inside.tsol.vn/tsolapp/app/tasks/actions.ts' },
+    { local: './app/tasks/TaskDashboardClient.tsx', remote: '/www/wwwroot/inside.tsol.vn/tsolapp/app/tasks/TaskDashboardClient.tsx' },
+    { local: './app/dashboard/DashboardClient.tsx', remote: '/www/wwwroot/inside.tsol.vn/tsolapp/app/dashboard/DashboardClient.tsx' }
 ];
 
 console.log('Connecting to server...');
