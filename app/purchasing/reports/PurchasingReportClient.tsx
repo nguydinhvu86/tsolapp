@@ -439,7 +439,7 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
                         <h3 className="font-bold text-lg mb-4">Lưu Chuyển Tiền Tệ</h3>
                         <div style={{ height: '350px', width: '100%' }}>
                             {timelineData.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="100%">
+                                <ResponsiveContainer width="100%" height="100%" minHeight={1} minWidth={1}>
                                     <AreaChart data={timelineData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                                         <defs>
                                             <linearGradient id="colorMua" x1="0" y1="0" x2="0" y2="1">
@@ -475,7 +475,7 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
                         <h3 className="font-bold text-lg mb-4">Top 5 Đối Tác Mua Hàng</h3>
                         <div style={{ height: '300px', width: '100%' }}>
                             {topSuppliersChartData.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="100%">
+                                <ResponsiveContainer width="100%" height="100%" minHeight={1} minWidth={1}>
                                     <BarChart data={topSuppliersChartData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }} barGap={6}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
                                         <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} dy={10} />
@@ -654,7 +654,7 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
                         <h3 className="font-bold text-lg mb-6 w-full text-center">Cơ Cấu Giá Trị Nhập</h3>
                         <div style={{ height: '300px', width: '100%' }}>
                             {topProductsChartData.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="100%">
+                                <ResponsiveContainer width="100%" height="100%" minHeight={1} minWidth={1}>
                                     <PieChart>
                                         <Pie data={topProductsChartData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={2} dataKey="value" stroke="none">
                                             {topProductsChartData.map((entry, index) => (

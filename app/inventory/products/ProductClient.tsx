@@ -196,7 +196,7 @@ export default function ProductClient({ initialProducts, warehouses = [], produc
                 <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)', backgroundColor: '#fff' }}>
                     <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--text-main)' }}>{t('products.chartTitle')}</h3>
                     <div style={{ height: '220px', width: '100%' }}>
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minHeight={1} minWidth={1}>
                             <PieChart>
                                 <Pie
                                     data={warehouseStockData}
