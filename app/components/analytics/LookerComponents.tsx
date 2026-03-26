@@ -74,7 +74,7 @@ export function StatusPieChart({ data, title = "Tỷ lệ trạng thái" }: { da
     return (
         <LookerChartBox title={title} className="h-full">
             <div style={{ height: '300px', width: '100%' }}>
-                <ResponsiveContainer width="100%" height="100%" minHeight={1} minWidth={1}>
+                <ResponsiveContainer width="100%" height="100%" minHeight={50} minWidth={50}>
                     <PieChart>
                         <Pie
                             data={data}
@@ -108,7 +108,7 @@ export function RevenueBarChart({ data, title = "Doanh thu (Tháng)" }: { data: 
     return (
         <LookerChartBox title={title} className="h-full">
             <div style={{ height: '350px', width: '100%', marginLeft: '-15px' }}>
-                <ResponsiveContainer width="100%" height="100%" minHeight={1} minWidth={1}>
+                <ResponsiveContainer width="100%" height="100%" minHeight={50} minWidth={50}>
                     <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 13 }} dy={10} />
                         <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 13 }} dx={-10} tickFormatter={(val) => `₫${val / 1000000}tr`} />
