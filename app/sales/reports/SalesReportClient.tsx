@@ -559,7 +559,7 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
                         <h3 className="font-bold text-lg mb-4">Lưu Chuyển Dòng Tiền (Kinh Doanh)</h3>
                         <div style={{ height: '350px', width: '100%' }}>
                             {timelineData.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="100%" minHeight={1} minWidth={1}>
+                                <ResponsiveContainer width="100%" height="100%" minHeight={50} minWidth={50}>
                                     <AreaChart data={timelineData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                                         <defs>
                                             <linearGradient id="colorDoanhThu" x1="0" y1="0" x2="0" y2="1">
@@ -607,7 +607,7 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
                         <h3 className="font-bold text-lg mb-4">Top 5 Khách Hàng (Theo Doanh Thu)</h3>
                         <div style={{ height: '300px', width: '100%' }}>
                             {topCustomersChartData.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="100%" minHeight={1} minWidth={1}>
+                                <ResponsiveContainer width="100%" height="100%" minHeight={50} minWidth={50}>
                                     <BarChart data={topCustomersChartData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }} barGap={6}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
                                         <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} dy={10} />
@@ -788,7 +788,7 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
                         <h3 className="font-bold text-lg mb-6 w-full text-center">Cơ Cấu Doanh Thu</h3>
                         <div style={{ height: '300px', width: '100%' }}>
                             {topProductsChartData.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="100%" minHeight={1} minWidth={1}>
+                                <ResponsiveContainer width="100%" height="100%" minHeight={50} minWidth={50}>
                                     <PieChart>
                                         <Pie data={topProductsChartData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={2} dataKey="value" stroke="none">
                                             {topProductsChartData.map((entry, index) => (

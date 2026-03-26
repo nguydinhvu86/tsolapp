@@ -336,7 +336,7 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
                             <div style={{ padding: '1.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', backgroundColor: '#fff' }}>
                                 <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--text-main)' }}>Cơ Cấu Giá Trị Theo Nhóm Sản Phẩm</h3>
                                 <div style={{ height: '300px', width: '100%' }}>
-                                    <ResponsiveContainer width="100%" height="100%" minHeight={1} minWidth={1}>
+                                    <ResponsiveContainer width="100%" height="100%" minHeight={50} minWidth={50}>
                                         <PieChart>
                                             <Pie
                                                 data={valuationChartData}
@@ -610,7 +610,7 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
                             <div style={{ padding: '1.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', backgroundColor: '#fff', overflowX: 'auto' }}>
                                 <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--text-main)' }}>Biểu Đồ Lưu Lượng Giao Dịch</h3>
                                 <div style={{ height: '300px', width: '100%', minWidth: '600px' }}>
-                                    <ResponsiveContainer width="100%" height="100%" minHeight={1} minWidth={1}>
+                                    <ResponsiveContainer width="100%" height="100%" minHeight={50} minWidth={50}>
                                         <BarChart data={txnChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                                             <XAxis dataKey="date" tick={{ fontSize: 12, fill: 'var(--text-muted)' }} tickLine={false} axisLine={{ stroke: '#cbd5e1' }} />
@@ -708,7 +708,7 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
                             <div style={{ padding: '1.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', backgroundColor: '#fff', overflowX: 'auto' }}>
                                 <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--text-main)' }}>Top Sản Phẩm Biến Động Nhiều Nhất</h3>
                                 <div style={{ height: '350px', width: '100%', minWidth: '600px' }}>
-                                    <ResponsiveContainer width="100%" height="100%" minHeight={1} minWidth={1}>
+                                    <ResponsiveContainer width="100%" height="100%" minHeight={50} minWidth={50}>
                                         <BarChart data={iobChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                                             <XAxis dataKey="name" tick={{ fontSize: 12, fill: 'var(--text-muted)' }} tickLine={false} axisLine={{ stroke: '#cbd5e1' }} />
