@@ -174,28 +174,9 @@ export default function ChatWindow({ currentUser, onClose }: { currentUser: any,
     const filteredUsers = allUsers.filter(u => (u.name || '').toLowerCase().includes(searchTerm.toLowerCase()));
 
     return (
-        <div style={{
-            width: '600px',
-            minWidth: '400px',
-            height: '560px',
-            minHeight: '400px',
-            backgroundColor: 'white',
-            borderRadius: '12px',
-            boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
-            border: '1px solid #e2e8f0',
-            display: 'flex',
-            overflow: 'hidden',
-            fontFamily: 'Inter, sans-serif',
-            resize: 'both' // Allow user to resize the popover
-        }}>
+        <div className="w-full h-full sm:w-[600px] sm:min-w-[400px] sm:h-[560px] sm:min-h-[400px] bg-white sm:rounded-[12px] shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)] border-0 sm:border border-slate-200 flex overflow-hidden font-sans" style={{ resize: 'both' }}>
             {/* LEFT SIDEBAR - ROOMS */}
-            <div style={{
-                width: '240px',
-                borderRight: '1px solid #e2e8f0',
-                display: 'flex',
-                flexDirection: 'column',
-                backgroundColor: '#f8fafc'
-            }}>
+            <div className={`${activeRoomId || isCreatingChat ? 'hidden sm:flex' : 'flex'} w-full sm:w-[240px] flex-col border-r border-[#e2e8f0] bg-[#f8fafc] shrink-0`}>
                 {/* Header Tabs */}
                 <div style={{ padding: '16px', borderBottom: '1px solid #e2e8f0', display: 'flex', gap: '16px', backgroundColor: 'white' }}>
                     <button
@@ -343,7 +324,7 @@ export default function ChatWindow({ currentUser, onClose }: { currentUser: any,
             </div>
 
             {/* RIGHT MAIN AREA */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', backgroundColor: 'white', position: 'relative' }}>
+            <div className={`${activeRoomId || isCreatingChat ? 'flex' : 'hidden sm:flex'} flex-1 flex-col bg-white relative`}>
                 {/* Close Button Top Right */}
                 <button onClick={onClose} style={{ position: 'absolute', top: '16px', right: '16px', zIndex: 10, background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }} className="hover:text-slate-700">
                     <X size={20} />
@@ -352,7 +333,10 @@ export default function ChatWindow({ currentUser, onClose }: { currentUser: any,
                 {isCreatingChat ? (
                     // --- CREATE CHAT VIEW ---
                     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '24px' }}>
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1e293b', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <h2 className="flex items-center gap-2 mb-6" style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1e293b' }}>
+                            <button className="sm:hidden -ml-2 p-2 text-slate-500 hover:bg-slate-100 rounded-full" onClick={() => setIsCreatingChat(false)}>
+                                <ArrowLeft size={20} />
+                            </button>
                             <MessageCircle size={24} color="#3b82f6" /> Tin nhắn mới
                         </h2>
 
@@ -424,6 +408,9 @@ export default function ChatWindow({ currentUser, onClose }: { currentUser: any,
                     <>
                         {/* Chat Header */}
                         <div style={{ padding: '16px 48px 16px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <button className="sm:hidden -ml-4 p-2 text-slate-500 hover:bg-slate-100 rounded-full" onClick={() => { setActiveRoomId(null); setIsCreatingChat(false); }}>
+                                <ArrowLeft size={20} />
+                            </button>
                             <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
                                 {rooms.find(r => r.id === activeRoomId)?.isGroup ? <Users size={20} /> : <UserRound size={20} />}
                             </div>
