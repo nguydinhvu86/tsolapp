@@ -544,7 +544,17 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                             {onlineUsers.slice(0, 5).map(u => (
-                                <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} title={u.os ? `OS: ${u.os}` : ''}>
+                                <div 
+                                    key={u.id} 
+                                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: u.id === session?.user?.id ? 'default' : 'pointer' }} 
+                                    title={u.os ? `OS: ${u.os}` : ''}
+                                    className={u.id === session?.user?.id ? "" : "hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors rounded-lg p-1.5 -mx-1.5"}
+                                    onClick={() => {
+                                        if (u.id !== session?.user?.id) {
+                                            window.dispatchEvent(new CustomEvent('open-chat', { detail: { userId: u.id } }));
+                                        }
+                                    }}
+                                >
                                     <div style={{ position: 'relative' }}>
                                         {u.avatar ? (
                                             <img src={u.avatar} alt={u.name} style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} />

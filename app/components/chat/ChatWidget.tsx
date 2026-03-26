@@ -8,9 +8,20 @@ import ChatWindow from './ChatWindow';
 
 export default function ChatWidget({ currentUser }: { currentUser: any }) {
     const [isOpen, setIsOpen] = useState(false);
+    const [targetChatUserId, setTargetChatUserId] = useState<string | null>(null);
     const [unreadCount, setUnreadCount] = useState(0);
     const prevUnreadCountRef = React.useRef(-1);
     const [showToast, setShowToast] = useState(false);
+
+    useEffect(() => {
+        const handleOpenChatAction = (e: any) => {
+            const userId = e.detail?.userId;
+            if (userId) setTargetChatUserId(userId);
+            setIsOpen(true);
+        };
+        window.addEventListener('open-chat', handleOpenChatAction);
+        return () => window.removeEventListener('open-chat', handleOpenChatAction);
+    }, []);
 
     const fetchUnread = async () => {
         try {
@@ -183,7 +194,7 @@ export default function ChatWidget({ currentUser }: { currentUser: any }) {
 
             {isOpen && typeof window !== 'undefined' && createPortal(
                 <div className="fixed inset-0 sm:inset-auto sm:bottom-6 sm:right-6 z-[99999] flex flex-col sm:block overflow-hidden bg-white sm:bg-transparent">
-                    <ChatWindow currentUser={currentUser} onClose={() => setIsOpen(false)} />
+                    <ChatWindow currentUser={currentUser} onClose={() => { setIsOpen(false); setTargetChatUserId(null); }} initialTargetUserId={targetChatUserId} />
                 </div>,
                 document.body
             )}
