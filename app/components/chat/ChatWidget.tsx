@@ -182,12 +182,7 @@ export default function ChatWidget({ currentUser }: { currentUser: any }) {
             )}
 
             {isOpen && typeof window !== 'undefined' && createPortal(
-                <div style={{
-                    position: 'fixed',
-                    bottom: '24px',
-                    right: '24px',
-                    zIndex: 99999
-                }}>
+                <div className="fixed inset-0 sm:inset-auto sm:bottom-6 sm:right-6 z-[99999] flex flex-col sm:block overflow-hidden bg-white sm:bg-transparent">
                     <ChatWindow currentUser={currentUser} onClose={() => setIsOpen(false)} />
                 </div>,
                 document.body
