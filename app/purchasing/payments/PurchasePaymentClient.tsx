@@ -263,49 +263,45 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
     };
 
     return (
-        <div className="p-8">
-            <div className="page-header">
+        <div className="p-4 md:p-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <div>
-                    <h1 className="text-2xl mb-1">{t('purchasePayments.title')}</h1>
+                    <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">{t('purchasePayments.title')}</h1>
                     <p className="text-sm text-gray-500">{t('purchasePayments.description')}</p>
                 </div>
-                <button onClick={handleOpenCreate} className="btn btn-primary">
-                    <Plus size={20} style={{ marginRight: '8px' }} />
+                <button onClick={handleOpenCreate} className="btn btn-primary flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition">
+                    <Plus size={18} />
                     <span>{t('purchasePayments.createPayment')}</span>
                 </button>
             </div>
 
-            <div className="card search-card">
-                <div className="search-input-wrapper">
-                    <Search className="search-icon" size={20} />
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center mb-6">
+                <div className="relative w-full md:max-w-md">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input
                         type="text"
                         placeholder={t('purchasePayments.searchPlaceholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="input"
+                        className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     />
                 </div>
-                <div className="flex gap-4 w-full sm:w-auto text-sm mt-4 sm:mt-0">
-                    <div className="stat-card stat-card-blue" style={{ minWidth: '160px' }}>
-                        <div className="stat-info">
-                            <span className="stat-title">{t('purchasePayments.totalPayments')}</span>
-                            <span className="stat-value">{payments.length}</span>
-                        </div>
+                <div className="flex gap-3 w-full md:w-auto overflow-x-auto hide-scrollbar pb-1 md:pb-0">
+                    <div className="bg-blue-50 border border-blue-100 text-blue-800 px-4 py-3 rounded-lg flex-1 md:flex-none min-w-[140px]">
+                        <div className="text-[10px] font-bold mb-1 uppercase tracking-wider text-blue-600">{t('purchasePayments.totalPayments')}</div>
+                        <div className="text-xl font-bold">{payments.length}</div>
                     </div>
-                    <div className="stat-card stat-card-green" style={{ minWidth: '160px' }}>
-                        <div className="stat-info">
-                            <span className="stat-title">{t('purchasePayments.totalPaidAmount')}</span>
-                            <span className="stat-value">
-                                {formatMoney(payments.reduce((sum, p) => sum + (p.amount || 0), 0))}
-                            </span>
+                    <div className="bg-emerald-50 border border-emerald-100 text-emerald-800 px-4 py-3 rounded-lg flex-1 md:flex-none min-w-[150px]">
+                        <div className="text-[10px] font-bold mb-1 uppercase tracking-wider text-emerald-600">{t('purchasePayments.totalPaidAmount')}</div>
+                        <div className="text-xl font-bold">
+                            {formatMoney(payments.reduce((sum, p) => sum + (p.amount || 0), 0))}
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className="table-wrapper">
-                <table>
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto">
+                <table className="w-full text-left whitespace-nowrap">
                     <thead>
                         <tr>
                             <th onClick={() => requestSort('code')} className="cursor-pointer hover:bg-gray-100">
