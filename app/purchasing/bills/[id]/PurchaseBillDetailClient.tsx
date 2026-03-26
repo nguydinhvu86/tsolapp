@@ -81,36 +81,30 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
     ] as const;
 
     return (
-        <div style={{ padding: '2rem', maxWidth: '100%', margin: '0 auto', fontFamily: 'Inter, sans-serif', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div className="p-4 md:p-8 max-w-full mx-auto font-sans bg-slate-50 min-h-screen">
+            <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 mb-8">
+                <div className="flex items-start sm:items-center gap-4">
                     <button
                         onClick={() => router.back()}
-                        style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            width: '40px', height: '40px', borderRadius: '50%', border: '1px solid #e2e8f0',
-                            backgroundColor: 'white', color: '#64748b', cursor: 'pointer', transition: 'all 0.2s'
-                        }}
-                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.color = '#0f172a'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'white'; e.currentTarget.style.color = '#64748b'; }}
+                        className="flex items-center justify-center w-10 h-10 rounded-full border border-gray-200 bg-white text-gray-500 cursor-pointer transition-all hover:bg-gray-100 hover:text-gray-900 shrink-0"
                     >
                         <ArrowLeft size={20} />
                     </button>
                     <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.25rem' }}>
-                            <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#0f172a', margin: 0, letterSpacing: '-0.025em' }}>
+                        <div className="flex flex-wrap items-center gap-3 mb-1">
+                            <h1 className="text-xl md:text-2xl font-bold text-gray-900 m-0 tracking-tight">
                                 Hóa Đơn {bill.code}
                             </h1>
                             {getStatusBadge(bill.status)}
                         </div>
-                        <p style={{ color: '#64748b', margin: 0, fontSize: '0.875rem' }}>Quản lý chi tiết hóa đơn, xác nhận tiền chi trả cho nhà cung cấp.</p>
+                        <p className="text-gray-500 m-0 text-sm">Quản lý chi tiết hóa đơn, xác nhận tiền chi trả cho nhà cung cấp.</p>
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <div className="flex flex-wrap gap-3 w-full lg:w-auto">
                     <button
                         onClick={handleCopyPublicLink}
-                        className="btn btn-secondary"
+                        className="btn btn-secondary flex-1 sm:flex-none justify-center"
                         style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: 'white', color: '#475569', border: '1px solid #cbd5e1', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
                     >
                         <Copy size={16} /> {copied ? 'Đã sao chép' : 'Copy Link Gửi KH'}
@@ -118,7 +112,7 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
                     <Link
                         href={`/public/purchasing/bills/${bill.id}`}
                         target="_blank"
-                        className="btn btn-secondary"
+                        className="btn btn-secondary flex-1 sm:flex-none justify-center"
                         style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#f1f5f9', color: '#3b82f6', border: '1px solid #bfdbfe', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
                     >
                         <ExternalLink size={16} /> Xem Bản In
@@ -127,7 +121,7 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
                         <button
                             onClick={handleCancel}
                             disabled={isSubmitting}
-                            className="btn btn-secondary"
+                            className="btn btn-secondary w-full sm:w-auto justify-center"
                             style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: 'white', color: '#ea580c', border: '1px solid #fdba74', cursor: isSubmitting ? 'not-allowed' : 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
                         >
                             <XCircle size={16} /> {isSubmitting ? 'Đang xử lý...' : 'Hủy Hóa Đơn'}
@@ -136,7 +130,7 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
                     {bill.totalAmount > bill.paidAmount && (
                         <Link
                             href={`/purchasing/payments?supplierId=${bill.supplierId}`}
-                            className="btn btn-primary"
+                            className="btn btn-primary w-full sm:w-auto justify-center"
                             style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.25rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#10b981', color: 'white', border: 'none', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
                         >
                             <CreditCard size={18} /> Tạo lệnh Chi tiền
@@ -155,56 +149,56 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
                 </div>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 5fr) minmax(0, 3fr)', gap: '2rem' }}>
+            <div className="flex flex-col xl:flex-row gap-8 w-full items-start">
                 {/* Left Column: Details & Tabs */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                <div className="flex flex-col gap-8 flex-1 min-w-0 w-full">
 
                     {/* Summary Card */}
-                    <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '1.5rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}>
-                        <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#1e293b', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <FileText size={20} color="#6366f1" /> Thông tin chung
+                    <div className="bg-white rounded-2xl p-4 md:p-6 border border-gray-200 shadow-sm">
+                        <h2 className="text-lg font-semibold text-slate-800 mb-5 flex items-center gap-2">
+                            <FileText size={20} className="text-indigo-500" /> Thông tin chung
                         </h2>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                            <div>
-                                <p style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600, color: '#94a3b8', marginBottom: '0.25rem' }}>Nhà Cung Cấp</p>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Building size={16} color="#64748b" />
-                                    <Link href={`/suppliers/${bill.supplierId}`} style={{ fontWeight: 600, color: '#4f46e5', textDecoration: 'none', fontSize: '1rem' }} className="hover:underline">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div className="sm:col-span-2">
+                                <p className="text-xs uppercase font-semibold text-slate-400 mb-1">Nhà Cung Cấp</p>
+                                <div className="flex items-center gap-2 overflow-hidden">
+                                    <Building size={16} className="text-slate-500 shrink-0" />
+                                    <Link href={`/suppliers/${bill.supplierId}`} className="font-semibold text-indigo-600 no-underline hover:underline text-base truncate">
                                         {bill.supplier?.name}
                                     </Link>
                                 </div>
                             </div>
                             <div>
-                                <p style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600, color: '#94a3b8', marginBottom: '0.25rem' }}>Tham Chiếu Đơn Hàng</p>
+                                <p className="text-xs uppercase font-semibold text-slate-400 mb-1">Tham Chiếu Đơn Hàng</p>
                                 {bill.order ? (
-                                    <Link href={`/purchasing/orders/${bill.order.id}`} style={{ fontWeight: 600, color: '#4f46e5', textDecoration: 'none', fontSize: '1rem' }} className="hover:underline">
+                                    <Link href={`/purchasing/orders/${bill.order.id}`} className="font-semibold text-indigo-600 no-underline hover:underline text-base">
                                         {bill.order.code}
                                     </Link>
-                                ) : <span style={{ color: '#94a3b8' }}>-- Không có --</span>}
+                                ) : <span className="text-slate-400 text-base">-- Không có --</span>}
                             </div>
                             <div>
-                                <p style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600, color: '#94a3b8', marginBottom: '0.25rem' }}>Ngày Hóa Đơn</p>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#334155', fontWeight: 500 }}>
-                                    <Calendar size={16} color="#64748b" />
+                                <p className="text-xs uppercase font-semibold text-slate-400 mb-1">Ngày Hóa Đơn</p>
+                                <div className="flex items-center gap-2 text-slate-700 font-medium text-base">
+                                    <Calendar size={16} className="text-slate-500" />
                                     {formatDate(bill.date)}
                                 </div>
                             </div>
-                            <div>
-                                <p style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600, color: '#94a3b8', marginBottom: '0.25rem' }}>Tình Trạng Kế Toán</p>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div className="sm:col-span-2 lg:col-span-4 mt-2">
+                                <p className="text-xs uppercase font-semibold text-slate-400 mb-3">Tình Trạng Kế Toán</p>
+                                <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
                                     <div>
-                                        <p style={{ margin: 0, fontWeight: 700, color: '#1e293b', fontSize: '1rem' }}>{formatMoney(bill.totalAmount)}</p>
-                                        <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b' }}>Cần thanh toán</p>
+                                        <p className="m-0 font-bold text-slate-800 text-lg">{formatMoney(bill.totalAmount)}</p>
+                                        <p className="m-0 text-xs text-slate-500">Cần thanh toán</p>
                                     </div>
-                                    <div style={{ color: '#e2e8f0' }}>|</div>
+                                    <div className="text-slate-200 hidden sm:block">|</div>
                                     <div>
-                                        <p style={{ margin: 0, fontWeight: 700, color: '#10b981', fontSize: '1rem' }}>{formatMoney(bill.paidAmount)}</p>
-                                        <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b' }}>Đã chi (Đã thanh toán)</p>
+                                        <p className="m-0 font-bold text-emerald-500 text-lg">{formatMoney(bill.paidAmount)}</p>
+                                        <p className="m-0 text-xs text-slate-500">Đã chi (Đã thanh toán)</p>
                                     </div>
-                                    <div style={{ color: '#e2e8f0' }}>|</div>
+                                    <div className="text-slate-200 hidden sm:block">|</div>
                                     <div>
-                                        <p style={{ margin: 0, fontWeight: 700, color: '#ef4444', fontSize: '1rem' }}>{formatMoney(bill.totalAmount - bill.paidAmount)}</p>
-                                        <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b' }}>Dư nợ</p>
+                                        <p className="m-0 font-bold text-red-500 text-lg">{formatMoney(bill.totalAmount - bill.paidAmount)}</p>
+                                        <p className="m-0 text-xs text-slate-500">Dư nợ</p>
                                     </div>
                                 </div>
                             </div>
@@ -219,22 +213,20 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
                     </div>
 
                     {/* Tabs area */}
-                    <div style={{ backgroundColor: 'white', borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }}>
-                        <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0' }}>
+                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm w-full overflow-hidden">
+                        <div className="flex border-b border-gray-200 overflow-x-auto hide-scrollbar px-2">
                             {tabs.map((tab) => {
                                 const isActive = activeTab === tab.id;
                                 return (
                                     <button
                                         key={tab.id}
                                         onClick={() => setActiveTab(tab.id as any)}
-                                        style={{
-                                            flex: 1, padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                                            backgroundColor: 'transparent', border: 'none', borderBottom: isActive ? '2px solid #6366f1' : '2px solid transparent',
-                                            color: isActive ? '#4f46e5' : '#64748b', fontWeight: isActive ? 600 : 500, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.2s'
-                                        }}
+                                        className={`flex items-center justify-center gap-2 px-6 py-4 border-none bg-transparent cursor-pointer text-sm whitespace-nowrap transition-all relative
+                                            ${isActive ? 'font-semibold text-indigo-600 border-b-2 border-indigo-600' : 'font-medium text-slate-500 border-b-2 border-transparent hover:text-slate-700'}`}
                                     >
                                         {tab.icon} {tab.label}
-                                        <span style={{ backgroundColor: isActive ? '#e0e7ff' : '#f1f5f9', color: isActive ? '#4f46e5' : '#64748b', padding: '0.1rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 600 }}>
+                                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold
+                                            ${isActive ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-500'}`}>
                                             {tab.count}
                                         </span>
                                     </button>
@@ -346,8 +338,7 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
                 </div>
 
                 {/* Right Column: Tasks Panel and Documents */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                    <div style={{ position: 'sticky', top: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div className="w-full xl:w-[400px] shrink-0 xl:sticky xl:top-4 flex flex-col gap-6">
                         <div style={{ backgroundColor: 'white', borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }}>
                             <TaskPanel
                                 initialTasks={tasks}
@@ -429,7 +420,6 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
                         </div>
                     </div>
                 </div>
-            </div>
 
             {previewDoc && (
                 <DocumentPreviewModal
