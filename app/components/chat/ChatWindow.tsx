@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Send, X, Plus, Search, Users, UserRound, ArrowLeft, MessageCircle, Paperclip, Reply, SmilePlus, ThumbsUp, Heart } from 'lucide-react';
 import { getChatRooms, getChatMessages, sendMessage, createDirectChat, createGroupChat, getActiveUsersForChat, toggleReaction } from '@/app/chat/actions';
 
-export default function ChatWindow({ currentUser, onClose }: { currentUser: any, onClose: () => void }) {
+export default function ChatWindow({ currentUser, onClose, initialTargetUserId }: { currentUser: any, onClose: () => void, initialTargetUserId?: string | null }) {
     const [rooms, setRooms] = useState<any[]>([]);
     const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
     const [messages, setMessages] = useState<any[]>([]);
@@ -154,11 +154,24 @@ export default function ChatWindow({ currentUser, onClose }: { currentUser: any,
                 if (isMounted) {
                     const activeMembers = users.filter((u: any) => u.id !== currentUser.id);
                     setAllUsers(activeMembers);
+
+                    // Automatically start direct chat if triggered via CustomEvent
+                    if (initialTargetUserId) {
+                        setIsSending(true);
+                        createDirectChat(initialTargetUserId).then(roomId => {
+                            if (isMounted) {
+                                setActiveRoomId(roomId);
+                                setActiveTab('rooms');
+                                setIsCreatingChat(false);
+                            }
+                        }).catch(e => console.error('Error auto-opening direct chat:', e))
+                          .finally(() => { if (isMounted) setIsSending(false); });
+                    }
                 }
             }).catch(e => console.error('Failed to load users:', e));
         }
         return () => { isMounted = false; };
-    }, []);
+    }, [initialTargetUserId]);
 
     // Helpers
     const getRoomName = (room: any) => {
