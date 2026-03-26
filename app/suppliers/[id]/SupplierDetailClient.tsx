@@ -112,68 +112,68 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks }
     };
 
     return (
-        <div style={{ padding: '2rem', maxWidth: '100%', margin: '0 auto', backgroundColor: '#f8fafc', minHeight: 'calc(100vh - 64px)' }}>
+        <div className="p-4 md:p-8 max-w-full mx-auto bg-slate-50 min-h-[calc(100vh-64px)]">
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <button onClick={() => router.push('/suppliers')} style={{ padding: '0.5rem', borderRadius: '50%', background: 'white', border: '1px solid #e5e7eb', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151' }}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div className="flex items-start sm:items-center gap-4">
+                    <button onClick={() => router.push('/suppliers')} className="p-2 rounded-full bg-white border border-gray-200 cursor-pointer flex items-center justify-center text-gray-700 hover:bg-gray-50 flex-shrink-0">
                         <ArrowLeft size={20} />
                     </button>
                     <div>
-                        <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, color: '#111827' }}>Chi tiết Nhà cung cấp</h1>
-                        <p style={{ color: '#6b7280', margin: '0.25rem 0 0 0', fontSize: '0.875rem' }}>Quản lý thông tin và tài liệu liên kết.</p>
+                        <h1 className="text-xl md:text-2xl font-extrabold m-0 text-gray-900 leading-tight">Chi tiết Nhà cung cấp</h1>
+                        <p className="text-gray-500 mt-1 text-sm">Quản lý thông tin và tài liệu liên kết.</p>
                     </div>
                 </div>
-                <button onClick={handleOpenEdit} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: '1px solid #d1d5db', backgroundColor: 'white', fontWeight: 500, cursor: 'pointer' }}>
+                <button onClick={handleOpenEdit} className="btn btn-secondary flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white font-medium cursor-pointer sm:w-auto w-full justify-center">
                     <Edit2 size={16} /> Chỉnh sửa
                 </button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: '1.5rem', alignItems: 'start' }}>
+            <div className="flex flex-col xl:flex-row gap-6 items-start w-full">
                 {/* Left Column */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div className="flex flex-col gap-6 flex-1 min-w-0 w-full">
                     {/* Top Info Card */}
-                    <div style={{ padding: '1.5rem', backgroundColor: 'white', borderRadius: '0.5rem', display: 'flex', gap: '1.5rem', alignItems: 'center', border: '1px solid #e5e7eb' }}>
-                        <div style={{ width: '64px', height: '64px', borderRadius: '0.5rem', backgroundColor: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4f46e5', flexShrink: 0 }}>
+                    <div className="p-4 md:p-6 bg-white rounded-lg border border-gray-200 flex flex-col md:flex-row gap-4 md:gap-6 items-start md:items-center">
+                        <div className="w-16 h-16 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 flex-shrink-0">
                             <Building size={32} />
                         </div>
-                        <div style={{ flex: 1 }}>
-                            <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: '0 0 1rem 0', color: '#111827' }}>{supplier.name}</h2>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem' }}>
-                                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                                    <div style={{ padding: '0.5rem', backgroundColor: '#f3f4f6', borderRadius: '50%', color: '#6b7280' }}><Mail size={16} /></div>
-                                    <div>
-                                        <span style={{ display: 'block', fontSize: '0.65rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Email</span>
-                                        <span style={{ fontSize: '0.875rem', fontWeight: 500, color: '#111827' }}>{supplier.email || '--'}</span>
+                        <div className="flex-1 min-w-0 w-full">
+                            <h2 className="text-lg md:text-xl font-bold mb-4 text-gray-900 truncate" title={supplier.name}>{supplier.name}</h2>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                                <div className="flex gap-3 items-center min-w-0">
+                                    <div className="p-2 bg-gray-100 rounded-full text-gray-500 shrink-0"><Mail size={16} /></div>
+                                    <div className="min-w-0">
+                                        <span className="block text-[0.65rem] text-gray-500 uppercase tracking-wider font-semibold">Email</span>
+                                        <span className="text-sm font-medium text-gray-900 truncate block">{supplier.email || '--'}</span>
                                     </div>
                                 </div>
-                                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                                    <div style={{ padding: '0.5rem', backgroundColor: '#f3f4f6', borderRadius: '50%', color: '#6b7280' }}><Phone size={16} /></div>
-                                    <div>
-                                        <span style={{ display: 'block', fontSize: '0.65rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Số Điện Thoại</span>
-                                        <span style={{ fontSize: '0.875rem', fontWeight: 500, color: '#111827' }}>{supplier.phone || '--'}</span>
+                                <div className="flex gap-3 items-center min-w-0">
+                                    <div className="p-2 bg-gray-100 rounded-full text-gray-500 shrink-0"><Phone size={16} /></div>
+                                    <div className="min-w-0">
+                                        <span className="block text-[0.65rem] text-gray-500 uppercase tracking-wider font-semibold">Số Điện Thoại</span>
+                                        <span className="text-sm font-medium text-gray-900 truncate block">{supplier.phone || '--'}</span>
                                     </div>
                                 </div>
-                                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                                    <div style={{ padding: '0.5rem', backgroundColor: '#f3f4f6', borderRadius: '50%', color: '#6b7280' }}><FileText size={16} /></div>
-                                    <div>
-                                        <span style={{ display: 'block', fontSize: '0.65rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Mã Số Thuế</span>
-                                        <span style={{ fontSize: '0.875rem', fontWeight: 500, color: '#111827' }}>{supplier.taxCode || '--'}</span>
+                                <div className="flex gap-3 items-center min-w-0">
+                                    <div className="p-2 bg-gray-100 rounded-full text-gray-500 shrink-0"><FileText size={16} /></div>
+                                    <div className="min-w-0">
+                                        <span className="block text-[0.65rem] text-gray-500 uppercase tracking-wider font-semibold">Mã Số Thuế</span>
+                                        <span className="text-sm font-medium text-gray-900 truncate block">{supplier.taxCode || '--'}</span>
                                     </div>
                                 </div>
-                                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                                    <div style={{ padding: '0.5rem', backgroundColor: '#f3f4f6', borderRadius: '50%', color: '#6b7280' }}><MapPin size={16} /></div>
-                                    <div>
-                                        <span style={{ display: 'block', fontSize: '0.65rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Địa Chỉ</span>
-                                        <span style={{ fontSize: '0.875rem', fontWeight: 500, color: '#111827' }}>{supplier.address || '--'}</span>
+                                <div className="flex gap-3 items-center min-w-0">
+                                    <div className="p-2 bg-gray-100 rounded-full text-gray-500 shrink-0"><MapPin size={16} /></div>
+                                    <div className="min-w-0">
+                                        <span className="block text-[0.65rem] text-gray-500 uppercase tracking-wider font-semibold">Địa Chỉ</span>
+                                        <span className="text-sm font-medium text-gray-900 truncate block" title={supplier.address || ''}>{supplier.address || '--'}</span>
                                     </div>
                                 </div>
                                 {supplier.website && (
-                                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                                        <div style={{ padding: '0.5rem', backgroundColor: '#f3f4f6', borderRadius: '50%', color: '#6b7280' }}><Building size={16} /></div>
-                                        <div>
-                                            <span style={{ display: 'block', fontSize: '0.65rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Website</span>
-                                            <span style={{ fontSize: '0.875rem', fontWeight: 500, color: '#111827' }}>{supplier.website || '--'}</span>
+                                    <div className="flex gap-3 items-center min-w-0 sm:col-span-2">
+                                        <div className="p-2 bg-gray-100 rounded-full text-gray-500 shrink-0"><Building size={16} /></div>
+                                        <div className="min-w-0">
+                                            <span className="block text-[0.65rem] text-gray-500 uppercase tracking-wider font-semibold">Website</span>
+                                            <span className="text-sm font-medium text-gray-900 truncate block">{supplier.website || '--'}</span>
                                         </div>
                                     </div>
                                 )}
@@ -182,31 +182,22 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks }
                     </div>
 
                     {/* Tabs area */}
-                    <div style={{ backgroundColor: 'white', borderRadius: '0.5rem', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
-                        <div style={{ display: 'flex', borderBottom: '1px solid #e5e7eb', overflowX: 'auto', padding: '0 1rem' }}>
+                    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden w-full">
+                        <div className="flex border-b border-gray-200 overflow-x-auto px-4 hide-scrollbar">
                             {tabs.map((tab) => {
                                 const isActive = activeTab === tab.id;
                                 return (
                                     <button
                                         key={tab.id}
                                         onClick={() => setActiveTab(tab.id)}
-                                        style={{
-                                            display: 'flex', gap: '0.5rem', alignItems: 'center',
-                                            padding: '1rem 1.5rem', border: 'none', background: 'transparent',
-                                            cursor: 'pointer', fontSize: '0.875rem', fontWeight: isActive ? 600 : 500,
-                                            color: isActive ? '#4f46e5' : '#6b7280',
-                                            borderBottom: isActive ? '2px solid #4f46e5' : '2px solid transparent',
-                                            whiteSpace: 'nowrap', transition: 'all 0.2s', position: 'relative'
-                                        }}
+                                        className={`flex gap-2 items-center px-4 py-4 border-none bg-transparent cursor-pointer text-sm whitespace-nowrap transition-all relative
+                                            ${isActive ? 'font-semibold text-indigo-600 border-b-2 border-indigo-600' : 'font-medium text-gray-500 border-b-2 border-transparent'}`}
                                     >
-                                        <span style={{ color: isActive ? '#4f46e5' : '#9ca3af' }}>{tab.icon}</span>
+                                        <span className={isActive ? 'text-indigo-600' : 'text-gray-400'}>{tab.icon}</span>
                                         {tab.label}
                                         {tab.count !== null && (
-                                            <span style={{
-                                                backgroundColor: isActive ? '#e0e7ff' : '#f3f4f6',
-                                                color: isActive ? '#4f46e5' : '#6b7280',
-                                                padding: '0.125rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 600
-                                            }}>
+                                            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold
+                                                ${isActive ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-500'}`}>
                                                 {tab.count}
                                             </span>
                                         )}
@@ -216,15 +207,15 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks }
                         </div>
 
                         {/* Tab Content Header */}
-                        <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f3f4f6' }}>
-                            <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>Danh sách hồ sơ</h3>
-                            {activeTab === 'orders' && <Link href={`/purchasing/orders?supplierId=${supplier.id}`} className="btn btn-primary" style={{ padding: '0.5rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem' }}>+ Tạo Đơn Hàng</Link>}
-                            {activeTab === 'bills' && <Link href={`/purchasing/bills?supplierId=${supplier.id}`} className="btn btn-primary" style={{ padding: '0.5rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem' }}>+ Tạo Hóa Đơn</Link>}
-                            {activeTab === 'payments' && <Link href={`/purchasing/payments?supplierId=${supplier.id}`} className="btn btn-primary" style={{ padding: '0.5rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem' }}>+ Tạo Phiếu Chi</Link>}
+                        <div className="p-4 md:p-6 flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-4 border-b border-gray-100">
+                            <h3 className="text-base font-semibold m-0">Danh sách hồ sơ</h3>
+                            {activeTab === 'orders' && <Link href={`/purchasing/orders?supplierId=${supplier.id}`} className="btn btn-primary px-4 py-2 rounded-lg text-sm w-full sm:w-auto text-center">+ Tạo Đơn Hàng</Link>}
+                            {activeTab === 'bills' && <Link href={`/purchasing/bills?supplierId=${supplier.id}`} className="btn btn-primary px-4 py-2 rounded-lg text-sm w-full sm:w-auto text-center">+ Tạo Hóa Đơn</Link>}
+                            {activeTab === 'payments' && <Link href={`/purchasing/payments?supplierId=${supplier.id}`} className="btn btn-primary px-4 py-2 rounded-lg text-sm w-full sm:w-auto text-center">+ Tạo Phiếu Chi</Link>}
                         </div>
 
                         {/* Tab Content Grid */}
-                        <div style={{ padding: '1rem 1.5rem' }}>
+                        <div className="p-4 md:p-6 overflow-x-auto w-full">
                             {activeTab === 'orders' && (
                                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
                                     <thead style={{ borderBottom: '1px solid #e5e7eb', color: '#6b7280', fontSize: '0.75rem', textTransform: 'uppercase' }}>
@@ -395,7 +386,7 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks }
                 </div>
 
                 {/* Right Column: Tasks Box */}
-                <div style={{ position: 'sticky', top: '1rem' }}>
+                <div className="w-full xl:w-[340px] shrink-0 xl:sticky xl:top-4">
                     <TaskPanel initialTasks={tasks} users={users} entityType="SUPPLIER" entityId={supplier.id} />
                 </div>
             </div>
