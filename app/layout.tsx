@@ -45,7 +45,6 @@ export async function generateMetadata(): Promise<Metadata> {
             images: [finalLogo],
         },
         appleWebApp: {
-            capable: true,
             statusBarStyle: 'default',
             title: brandName || title,
         },
@@ -71,6 +70,9 @@ export default async function RootLayout({
 
     return (
         <html lang={locale}>
+            <head>
+                <meta name="mobile-web-app-capable" content="yes" />
+            </head>
             <body style={{ minHeight: '100vh', backgroundColor: 'var(--background)', margin: 0 }}>
                 <NextAuthProvider>
                     <LanguageProvider dictionary={dictionary} locale={locale}>

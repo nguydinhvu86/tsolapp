@@ -929,7 +929,7 @@ export function DashboardClient({
                                                                             </div>
                                                                         ) : (
                                                                             <div className="w-full mt-4 relative" style={{ height: '280px' }}>
-                                                                                <ResponsiveContainer width="100%" height="100%">
+                                                                                <ResponsiveContainer width="100%" height="100%" minHeight={1} minWidth={1}>
                                                                                     <PieChart>
                                                                                         <Pie
                                                                                             data={(() => {
@@ -1012,7 +1012,7 @@ export function DashboardClient({
                                                                         <div className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm h-full flex flex-col">
                                                                             <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-100 pb-3">{t("dashboard.cashFlow.title")} {new Date().getFullYear()}</h3>
                                                                             <div className="w-full" style={{ height: '350px', marginLeft: '-15px' }}>
-                                                                                <ResponsiveContainer width="100%" height="100%">
+                                                                                <ResponsiveContainer width="100%" height="100%" minHeight={1} minWidth={1}>
                                                                                     <AreaChart data={kpiData?.cashFlow || []} margin={{ top: 10, right: 10, left: 20, bottom: 0 }}>
                                                                                         <defs>
                                                                                             <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
