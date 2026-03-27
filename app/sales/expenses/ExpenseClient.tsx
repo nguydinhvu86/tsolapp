@@ -68,6 +68,8 @@ export default function ExpenseClient({
     const [sortField, setSortField] = useState<keyof ExpenseWithDetails>('date');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
     const [searchTerm, setSearchTerm] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
 
     React.useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -100,6 +102,17 @@ export default function ExpenseClient({
     const filteredExpenses = React.useMemo(() => {
         let result = [...expenses];
 
+        if (startDate) {
+            const startDay = new Date(startDate);
+            startDay.setHours(0, 0, 0, 0);
+            result = result.filter(e => new Date(e.date) >= startDay);
+        }
+        if (endDate) {
+            const endDay = new Date(endDate);
+            endDay.setHours(23, 59, 59, 999);
+            result = result.filter(e => new Date(e.date) <= endDay);
+        }
+
         if (searchTerm) {
             const lowerSearch = searchTerm.toLowerCase();
             result = result.filter(e =>
@@ -128,6 +141,10 @@ export default function ExpenseClient({
     }, [expenses, searchTerm, sortField, sortOrder]);
 
     const { paginatedItems, paginationProps } = usePagination(filteredExpenses, 25);
+
+    const totalExpenseAmount = React.useMemo(() => {
+        return filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
+    }, [filteredExpenses]);
 
     const openModal = (expense?: ExpenseWithDetails) => {
         if (expense) {
@@ -258,18 +275,57 @@ export default function ExpenseClient({
 
     return (
         <div className="flex flex-col gap-6">
-            <Card>
-                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
-                    <div className="flex gap-2 items-center w-full sm:w-[300px]" style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '0.5rem 1rem', background: '#fff' }}>
-                        <Search size={18} color="var(--text-muted)" />
-                        <input
-                            style={{ border: 'none', outline: 'none', background: 'transparent', width: '100%', fontSize: '0.9375rem' }}
-                            placeholder="Tìm theo mã, mô tả, danh mục..."
-                            value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
-                        />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="p-5 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)', border: '1px solid #fecaca' }}>
+                    <div>
+                        <p className="text-sm font-semibold text-red-600 mb-1">Tổng chi phí</p>
+                        <h3 className="text-2xl font-bold text-red-700">{formatMoney(totalExpenseAmount)}</h3>
                     </div>
-                    <Button onClick={() => openModal()} className="w-full sm:w-auto gap-2">
+                    <div className="h-12 w-12 bg-red-100 rounded-full flex items-center justify-center text-red-600">
+                        <DollarSign size={24} />
+                    </div>
+                </Card>
+            </div>
+
+            <Card>
+                <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-4 mb-6">
+                    <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+                        <div className="flex gap-2 items-center w-full sm:w-[250px]" style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '0.5rem 1rem', background: '#fff' }}>
+                            <Search size={18} color="var(--text-muted)" />
+                            <input
+                                style={{ border: 'none', outline: 'none', background: 'transparent', width: '100%', fontSize: '0.9375rem' }}
+                                placeholder="Tìm mã, mô tả..."
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <input 
+                                type="date" 
+                                value={startDate}
+                                onChange={e => setStartDate(e.target.value)}
+                                style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '0.5rem 1rem', background: '#fff', fontSize: '0.9375rem', outline: 'none' }}
+                                title="Từ ngày"
+                            />
+                            <span className="text-slate-400">-</span>
+                            <input 
+                                type="date" 
+                                value={endDate}
+                                onChange={e => setEndDate(e.target.value)}
+                                style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '0.5rem 1rem', background: '#fff', fontSize: '0.9375rem', outline: 'none' }}
+                                title="Đến ngày"
+                            />
+                            {(startDate || endDate) && (
+                                <button 
+                                    onClick={() => { setStartDate(''); setEndDate(''); }}
+                                    className="text-sm text-blue-600 hover:text-blue-800 ml-2 whitespace-nowrap font-medium"
+                                >
+                                    Xóa lọc
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                    <Button onClick={() => openModal()} className="w-full lg:w-auto gap-2">
                         <Plus size={18} /> Thêm Phiếu Chi
                     </Button>
                 </div>
