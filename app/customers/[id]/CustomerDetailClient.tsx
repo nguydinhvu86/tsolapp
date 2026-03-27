@@ -196,17 +196,26 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                 </div>
             </Card>
 
-            {/* Responsive Grid: 1 col on mobile, 2 cols on laptop (lg), 3 cols on widescreen (xl/2xl) */}
-            <div className="flex flex-col lg:grid lg:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[250px_minmax(0,1fr)_320px] 2xl:grid-cols-[260px_minmax(0,1fr)_350px] gap-6 items-start">
-                {/* Column 1: Sidebar Menu */}
-                <Card style={{ padding: '0', overflow: 'hidden', position: 'sticky', top: '1.5rem', background: '#ffffff', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem 0' }}>
-                        {isMounted ? (
-                            <DragDropContext onDragEnd={handleDragEnd}>
-                                <Droppable droppableId="customer-menu">
-                                    {(provided) => (
-                                        <div {...provided.droppableProps} ref={provided.innerRef}>
-                                            {orderedTabs.map((tab, index) => {
+            {/* Navigation Menu (2 Horizontal Rows) */}
+            <Card style={{ padding: '0.5rem', background: '#ffffff', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                <div style={{ overflowX: 'auto', paddingBottom: '0.25rem' }} className="custom-scrollbar">
+                    {isMounted ? (
+                        <DragDropContext onDragEnd={handleDragEnd}>
+                            <Droppable droppableId="customer-menu" direction="horizontal">
+                                {(provided) => (
+                                    <div 
+                                        {...provided.droppableProps} 
+                                        ref={provided.innerRef}
+                                        style={{ 
+                                            display: 'grid', 
+                                            gridTemplateRows: 'repeat(2, auto)', 
+                                            gridAutoColumns: 'minmax(180px, 1fr)',
+                                            gridAutoFlow: 'column', 
+                                            gap: '0.5rem', 
+                                            minWidth: 'max-content' 
+                                        }}
+                                    >
+                                        {orderedTabs.map((tab, index) => {
                                                 const isActive = activeTab === tab.id;
                                                 const Icon = tab.icon;
                                                 return (
@@ -224,26 +233,29 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                                                 }}
                                                                 style={{
                                                                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                                    padding: '0.75rem 1.25rem', border: 'none', background: snapshot.isDragging ? '#f8fafc' : 'transparent',
+                                                                    padding: '0.625rem 0.875rem', border: '1px solid', 
+                                                                    borderColor: isActive ? '#2563eb' : 'transparent',
+                                                                    borderRadius: '8px',
+                                                                    background: isActive ? '#eff6ff' : snapshot.isDragging ? '#f8fafc' : '#f8fafc',
                                                                     cursor: snapshot.isDragging ? 'grabbing' : 'pointer',
-                                                                    borderLeft: isActive ? '3px solid #2563eb' : '3px solid transparent',
-                                                                    color: isActive ? '#2563eb' : '#64748b',
-                                                                    fontWeight: isActive ? 500 : 400, fontSize: '0.9rem', transition: 'all 0.2s ease',
+                                                                    color: isActive ? '#2563eb' : '#475569',
+                                                                    fontWeight: isActive ? 600 : 500, fontSize: '0.85rem', transition: 'all 0.2s ease',
                                                                     outline: 'none', textAlign: 'left',
                                                                     width: '100%',
-                                                                    boxShadow: snapshot.isDragging ? '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' : 'none',
+                                                                    whiteSpace: 'nowrap',
+                                                                    boxShadow: snapshot.isDragging ? '0 4px 6px -1px rgb(0 0 0 / 0.1)' : 'none',
                                                                     ...provided.draggableProps.style
                                                                 }}
-                                                                className={`hover:bg-slate-50 ${snapshot.isDragging ? 'ring-2 ring-blue-500 ring-inset z-50' : ''}`}
+                                                                className={`hover:bg-slate-100 ${snapshot.isDragging ? 'ring-2 ring-blue-500 ring-inset z-50' : ''}`}
                                                             >
-                                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+                                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
                                                                     <Icon size={16} style={{ color: isActive ? '#2563eb' : '#94a3b8' }} />
                                                                     {tab.name}
                                                                 </span>
                                                                 <span style={{
-                                                                    background: '#f1f5f9',
-                                                                    color: '#64748b',
-                                                                    padding: '0.125rem 0.5rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 600,
+                                                                    background: isActive ? '#bfdbfe' : '#e2e8f0',
+                                                                    color: isActive ? '#1d4ed8' : '#475569',
+                                                                    padding: '0.125rem 0.5rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 700,
                                                                     minWidth: '24px', textAlign: 'center'
                                                                 }}>
                                                                     {tab.count}
@@ -259,44 +271,52 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                 </Droppable>
                             </DragDropContext>
                         ) : (
-                            orderedTabs.map((tab) => {
-                                const isActive = activeTab === tab.id;
-                                const Icon = tab.icon;
-                                return (
-                                    <button
-                                        key={tab.id}
-                                        onClick={() => setActiveTab(tab.id as any)}
-                                        style={{
-                                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                            padding: '0.75rem 1.25rem', border: 'none', background: 'transparent', cursor: 'pointer',
-                                            borderLeft: isActive ? '3px solid #2563eb' : '3px solid transparent',
-                                            color: isActive ? '#2563eb' : '#64748b',
-                                            fontWeight: isActive ? 500 : 400, fontSize: '0.9rem', transition: 'all 0.2s ease',
-                                            outline: 'none', textAlign: 'left',
-                                            width: '100%'
-                                        }}
-                                        className="hover:bg-slate-50"
-                                    >
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
-                                            <Icon size={16} style={{ color: isActive ? '#2563eb' : '#94a3b8' }} />
-                                            {tab.name}
-                                        </span>
-                                        <span style={{
-                                            background: '#f1f5f9',
-                                            color: '#64748b',
-                                            padding: '0.125rem 0.5rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 600,
-                                            minWidth: '24px', textAlign: 'center'
-                                        }}>
-                                            {tab.count}
-                                        </span>
-                                    </button>
-                                );
-                            })
+                            <div style={{ display: 'grid', gridTemplateRows: 'repeat(2, auto)', gridAutoColumns: 'minmax(180px, 1fr)', gridAutoFlow: 'column', gap: '0.5rem', minWidth: 'max-content' }}>
+                                {orderedTabs.map((tab) => {
+                                    const isActive = activeTab === tab.id;
+                                    const Icon = tab.icon;
+                                    return (
+                                        <button
+                                            key={tab.id}
+                                            onClick={() => setActiveTab(tab.id as any)}
+                                            style={{
+                                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                padding: '0.625rem 0.875rem', border: '1px solid', 
+                                                borderColor: isActive ? '#2563eb' : 'transparent',
+                                                borderRadius: '8px',
+                                                background: isActive ? '#eff6ff' : '#f8fafc',
+                                                cursor: 'pointer',
+                                                color: isActive ? '#2563eb' : '#475569',
+                                                fontWeight: isActive ? 600 : 500, fontSize: '0.85rem', transition: 'all 0.2s ease',
+                                                outline: 'none', textAlign: 'left',
+                                                width: '100%',
+                                                whiteSpace: 'nowrap'
+                                            }}
+                                            className="hover:bg-slate-100"
+                                        >
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
+                                                <Icon size={16} style={{ color: isActive ? '#2563eb' : '#94a3b8' }} />
+                                                {tab.name}
+                                            </span>
+                                            <span style={{
+                                                background: isActive ? '#bfdbfe' : '#e2e8f0',
+                                                color: isActive ? '#1d4ed8' : '#475569',
+                                                padding: '0.125rem 0.5rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 700,
+                                                minWidth: '24px', textAlign: 'center'
+                                            }}>
+                                                {tab.count}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         )}
-                    </div>
-                </Card>
+                </div>
+            </Card>
 
-                {/* Column 2: Content Area */}
+            {/* Responsive Grid: Sub Layout */}
+            <div className="flex flex-col xl:grid xl:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,1fr)_350px] gap-6 items-start">
+                {/* Column: Content Area */}
                 <div className="flex flex-col min-w-0 w-full">
                     {/* Header */}
                     <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
