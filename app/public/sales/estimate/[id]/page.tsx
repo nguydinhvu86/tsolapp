@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import { PrintButton } from '@/app/components/ui/PrintButton';
 import { Watermark } from '@/app/components/ui/Watermark';
+import { DocumentSignatureBlock } from '@/app/components/ui/DocumentSignatureBlock';
 
 export default async function PublicSalesEstimatePage({ params }: { params: { id: string } }) {
     const estimate = await prisma.salesEstimate.findUnique({
@@ -221,18 +222,33 @@ export default async function PublicSalesEstimatePage({ params }: { params: { id
                 )}
 
                 {/* Signatures */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 2rem', marginTop: '4rem' }}>
-                    <div style={{ textAlign: 'center' }}>
-                        <strong style={{ display: 'block', fontSize: '1rem' }}>ĐẠI DIỆN KHÁCH HÀNG</strong>
-                        <i style={{ fontSize: '0.85rem', color: '#64748b' }}>(Ký và ghi rõ họ tên)</i>
-                        <div style={{ height: '80px' }}></div>
-                    </div>
-                    <div style={{ textAlign: 'center' }}>
-                        <strong style={{ display: 'block', fontSize: '1rem' }}>NGƯỜI LẬP BÁO GIÁ</strong>
-                        <i style={{ fontSize: '0.85rem', color: '#64748b' }}>(Ký và ghi rõ họ tên)</i>
-                        <div style={{ height: '100px' }}></div>
-                        <strong>{estimate.creator?.name}</strong>
-                    </div>
+                <div className="no-break" style={{ display: 'flex', justifyContent: 'space-between', padding: '0 2rem', marginTop: '4rem', pageBreakInside: 'avoid' }}>
+                    <DocumentSignatureBlock 
+                        entityType="SALES_ESTIMATE" 
+                        entityId={estimate.id} 
+                        role="CUSTOMER" 
+                        title="ĐẠI DIỆN KHÁCH HÀNG" 
+                        subtitle="(Ký tên)" 
+                        canSign={true} 
+                        initialSignature={estimate.customerSignature} 
+                        initialSignedAt={estimate.customerSignedAt}
+                            metadata={{
+                                ip: estimate.customerSignIP,
+                                device: estimate.customerSignDevice,
+                                location: estimate.customerSignLocation
+                            }} 
+                    />
+                    <DocumentSignatureBlock 
+                        entityType="SALES_ESTIMATE" 
+                        entityId={estimate.id} 
+                        role="COMPANY" 
+                        title="NGƯỜI LẬP BÁO GIÁ" 
+                        subtitle="(Ký tên)" 
+                        canSign={false} 
+                        initialSignature={estimate.companySignature} 
+                        initialSignedAt={estimate.companySignedAt} 
+                        signerName={estimate.creator?.name} 
+                    />
                 </div>
 
             </div>
