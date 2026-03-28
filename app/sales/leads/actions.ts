@@ -554,10 +554,11 @@ export async function convertLeadToCustomer(id: string) {
                 });
             }
 
+            const rawName = lead.company || lead.contactName || lead.name || "";
             const newCustomer = await tx.customer.create({
                 data: {
-                    name: lead.company || lead.contactName || lead.name,
-                    email: lead.email,
+                    name: rawName.normalize('NFC'),
+                    email: lead.email ? lead.email.normalize('NFC') : null,
                     phone: lead.phone,
                     managers: { connect: managerIds }
                 }
