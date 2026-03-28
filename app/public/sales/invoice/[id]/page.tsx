@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import { PrintButton } from '@/app/components/ui/PrintButton';
 import { Watermark } from '@/app/components/ui/Watermark';
+import { DocumentSignatureBlock } from '@/app/components/ui/DocumentSignatureBlock';
 
 export default async function PublicSalesInvoicePage({ params }: { params: { id: string } }) {
     const invoice = await prisma.salesInvoice.findUnique({
@@ -207,18 +208,33 @@ export default async function PublicSalesInvoicePage({ params }: { params: { id:
                 )}
 
                 {/* Signatures */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 2rem', marginTop: '4rem' }}>
-                    <div style={{ textAlign: 'center' }}>
-                        <strong style={{ display: 'block', fontSize: '1rem' }}>NGƯỜI MUA HÀNG</strong>
-                        <i style={{ fontSize: '0.85rem', color: '#64748b' }}>(Ký và ghi rõ họ tên)</i>
-                        <div style={{ height: '80px' }}></div>
-                    </div>
-                    <div style={{ textAlign: 'center' }}>
-                        <strong style={{ display: 'block', fontSize: '1rem' }}>NGƯỜI LẬP BIỂU</strong>
-                        <i style={{ fontSize: '0.85rem', color: '#64748b' }}>(Ký và ghi rõ họ tên)</i>
-                        <div style={{ height: '100px' }}></div>
-                        <strong>{invoice.creator?.name}</strong>
-                    </div>
+                <div className="no-break" style={{ display: 'flex', justifyContent: 'space-between', padding: '0 2rem', marginTop: '4rem', pageBreakInside: 'avoid' }}>
+                    <DocumentSignatureBlock 
+                        entityType="SALES_INVOICE" 
+                        entityId={invoice.id} 
+                        role="CUSTOMER" 
+                        title="NGƯỜI MUA HÀNG" 
+                        subtitle="(Ký tên)" 
+                        canSign={true} 
+                        initialSignature={invoice.customerSignature} 
+                        initialSignedAt={invoice.customerSignedAt}
+                            metadata={{
+                                ip: invoice.customerSignIP,
+                                device: invoice.customerSignDevice,
+                                location: invoice.customerSignLocation
+                            }} 
+                    />
+                    <DocumentSignatureBlock 
+                        entityType="SALES_INVOICE" 
+                        entityId={invoice.id} 
+                        role="COMPANY" 
+                        title="NGƯỜI LẬP BIỂU" 
+                        subtitle="(Ký tên)" 
+                        canSign={false} 
+                        initialSignature={invoice.companySignature} 
+                        initialSignedAt={invoice.companySignedAt} 
+                        signerName={invoice.creator?.name} 
+                    />
                 </div>
 
             </div>

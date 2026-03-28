@@ -139,56 +139,56 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
             </div>
 
             {/* Customer Info Card */}
-            <Card style={{ padding: '2rem' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '2rem' }}>
-                    <div style={{ width: '80px', height: '80px', borderRadius: '16px', background: 'rgba(79, 70, 229, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', flexShrink: 0 }}>
+            <Card className="p-5 sm:p-8">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-8">
+                    <div className="flex-shrink-0 w-20 h-20 rounded-2xl bg-indigo-100 flex items-center justify-center text-indigo-600">
                         <User size={40} />
                     </div>
-                    <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
-                            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>{customer.name}</h2>
+                    <div className="flex-1 w-full flex flex-col items-center sm:items-start text-center sm:text-left">
+                        <div className="flex flex-col sm:flex-row sm:justify-between items-center sm:items-start gap-4 mb-6 w-full">
+                            <h2 className="text-xl sm:text-2xl font-bold m-0 text-slate-800 break-words">{customer.name}</h2>
                             <Button
                                 onClick={() => setIsEmailModalOpen(true)}
-                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#3b82f6', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.5rem', cursor: 'pointer' }}
+                                className="w-full sm:w-auto flex-shrink-0 flex items-center justify-center gap-2 bg-blue-500 text-white border-none px-4 py-2 rounded-lg cursor-pointer hover:bg-blue-600 transition-colors"
                             >
                                 <Mail size={16} /> Gửi Email Công Nợ
                             </Button>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--background)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}><Mail size={16} /></div>
-                                <div>
-                                    <p style={{ margin: 0, fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Email</p>
-                                    <p style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 500 }}>{customer.email || 'Chưa cập nhật'}</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 w-full text-left">
+                            <div className="flex items-start gap-3">
+                                <div className="mt-0.5 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 flex-shrink-0"><Mail size={16} /></div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="m-0 text-xs font-semibold text-slate-500 uppercase">Email</p>
+                                    <p className="m-0 text-[15px] font-medium break-words">{customer.email || 'Chưa cập nhật'}</p>
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--background)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}><Phone size={16} /></div>
-                                <div>
-                                    <p style={{ margin: 0, fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Số Điện Thoại</p>
-                                    <p style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 500 }}>{customer.phone || 'Chưa cập nhật'}</p>
+                            <div className="flex items-start gap-3">
+                                <div className="mt-0.5 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 flex-shrink-0"><Phone size={16} /></div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="m-0 text-xs font-semibold text-slate-500 uppercase">Số Điện Thoại</p>
+                                    <p className="m-0 text-[15px] font-medium break-words">{customer.phone || 'Chưa cập nhật'}</p>
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--background)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}><Building2 size={16} /></div>
-                                <div>
-                                    <p style={{ margin: 0, fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Mã Số Thuế</p>
-                                    <p style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 500 }}>{customer.taxCode || 'Chưa cập nhật'}</p>
+                            <div className="flex items-start gap-3">
+                                <div className="mt-0.5 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 flex-shrink-0"><Building2 size={16} /></div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="m-0 text-xs font-semibold text-slate-500 uppercase">Mã Số Thuế</p>
+                                    <p className="m-0 text-[15px] font-medium break-words">{customer.taxCode || 'Chưa cập nhật'}</p>
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(220, 38, 38, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#dc2626' }}><HandCoins size={16} /></div>
-                                <div>
-                                    <p style={{ margin: 0, fontSize: '0.75rem', fontWeight: 600, color: '#dc2626', textTransform: 'uppercase' }}>Tổng Dư Nợ Hóa Đơn</p>
-                                    <p style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#dc2626' }}>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(computedDebt)}</p>
+                            <div className="flex items-start gap-3">
+                                <div className="mt-0.5 w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600 flex-shrink-0"><HandCoins size={16} /></div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="m-0 text-xs font-semibold text-red-600 uppercase">Tổng Dư Nợ Hóa Đơn</p>
+                                    <p className="m-0 text-[16px] font-bold text-red-600 break-words">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(computedDebt)}</p>
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--background)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}><MapPin size={16} /></div>
-                                <div>
-                                    <p style={{ margin: 0, fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Địa Chỉ</p>
-                                    <p style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 500 }}>{customer.address || 'Chưa cập nhật'}</p>
+                            <div className="flex items-start gap-3 lg:col-span-2">
+                                <div className="mt-0.5 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 flex-shrink-0"><MapPin size={16} /></div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="m-0 text-xs font-semibold text-slate-500 uppercase">Địa Chỉ</p>
+                                    <p className="m-0 text-[15px] font-medium break-words">{customer.address || 'Chưa cập nhật'}</p>
                                 </div>
                             </div>
                         </div>

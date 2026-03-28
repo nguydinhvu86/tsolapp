@@ -907,6 +907,15 @@ model SalesEstimate {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   EmailLog  EmailLog[]
+  customerSignature String?   @db.LongText
+  customerSignedAt  DateTime?
+  customerSignIP      String?
+  customerSignDevice  String?
+  customerSignLocation String?  @db.Text
+  companySignature  String?   @db.LongText
+  companySignedAt   DateTime?
+  companySignerId   String?
+
 }
 
 model SalesEstimateActivityLog {
@@ -961,6 +970,15 @@ model SalesOrder {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  customerSignature String?   @db.LongText
+  customerSignedAt  DateTime?
+  customerSignIP      String?
+  customerSignDevice  String?
+  customerSignLocation String?  @db.Text
+  companySignature  String?   @db.LongText
+  companySignedAt   DateTime?
+  companySignerId   String?
+
 }
 
 model SalesOrderItem {
@@ -1017,6 +1035,15 @@ model SalesInvoice {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  customerSignature String?   @db.LongText
+  customerSignedAt  DateTime?
+  customerSignIP      String?
+  customerSignDevice  String?
+  customerSignLocation String?  @db.Text
+  companySignature  String?   @db.LongText
+  companySignedAt   DateTime?
+  companySignerId   String?
+
 }
 
 model SalesInvoiceItem {

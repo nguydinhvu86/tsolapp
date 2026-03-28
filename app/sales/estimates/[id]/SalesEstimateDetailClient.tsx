@@ -15,6 +15,7 @@ import { Mail, UserCheck } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { DocumentManagersPanel } from '@/app/components/shared/DocumentManagersPanel';
 import { EmailLogTable } from '@/app/components/ui/EmailLogTable';
+import { DocumentSignatureBlock } from '@/app/components/ui/DocumentSignatureBlock';
 
 export default function SalesEstimateDetailClient({ initialData, customers, products, users, emailTemplates }: any) {
     const router = useRouter();
@@ -393,8 +394,42 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
 
                         </div>
                     </div>
+                    {/* Signatures Card */}
+                    <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '1.5rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}>
+                        <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#1e293b', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <FileText size={20} color="#10b981" /> Chữ ký xác nhận
+                        </h2>
+                        <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'nowrap', gap: '2rem' }}>
+                            <DocumentSignatureBlock 
+                                entityType="SALES_ESTIMATE" 
+                                entityId={estimate.id} 
+                                role="CUSTOMER" 
+                                title="ĐẠI DIỆN KHÁCH HÀNG" 
+                                subtitle="(Khách hàng ký qua link public)" 
+                                canSign={false} 
+                                initialSignature={estimate.customerSignature} 
+                                initialSignedAt={estimate.customerSignedAt}
+                            metadata={{
+                                ip: estimate.customerSignIP,
+                                device: estimate.customerSignDevice,
+                                location: estimate.customerSignLocation
+                            }} 
+                            />
+                            <DocumentSignatureBlock 
+                                entityType="SALES_ESTIMATE" 
+                                entityId={estimate.id} 
+                                role="COMPANY" 
+                                title="NGƯỜI LẬP BÁO GIÁ" 
+                                subtitle="(Ký xác nhận nội bộ)" 
+                                canSign={true} 
+                                initialSignature={estimate.companySignature} 
+                                initialSignedAt={estimate.companySignedAt} 
+                                signerName={estimate.creator?.name} 
+                                companySignerId={session?.user?.id}
+                            />
+                        </div>
+                    </div>
                 </div>
-
 
                 {/* Column 2: TaskPanel and Timeline */}
                 <div className="lg:col-span-1 flex flex-col gap-6">
