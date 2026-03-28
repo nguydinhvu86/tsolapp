@@ -509,7 +509,8 @@ export async function convertLeadToCustomer(id: string) {
 
     try {
         const lead = await prisma.lead.findUnique({
-            where: { id }
+            where: { id },
+            include: { assignees: true }
         });
 
         if (!lead) throw new Error('Lead not found');
@@ -540,11 +541,25 @@ export async function convertLeadToCustomer(id: string) {
 
         // CREATE NEW CUSTOMER
         const result = await prisma.$transaction(async (tx) => {
+            const managerIds = [{ id: session.user.id }];
+            if (lead.assignedToId && lead.assignedToId !== session.user.id) {
+                managerIds.push({ id: lead.assignedToId });
+            }
+            if ((lead as any).creatorId && (lead as any).creatorId !== session.user.id && !managerIds.find(m => m.id === (lead as any).creatorId)) {
+                managerIds.push({ id: (lead as any).creatorId });
+            }
+            if (lead.assignees) {
+                lead.assignees.forEach((a: any) => {
+                    if (!managerIds.find(m => m.id === a.userId)) managerIds.push({ id: a.userId });
+                });
+            }
+
             const newCustomer = await tx.customer.create({
                 data: {
                     name: lead.company || lead.contactName || lead.name,
                     email: lead.email,
                     phone: lead.phone,
+                    managers: { connect: managerIds }
                 }
             });
 
@@ -564,6 +579,16 @@ export async function convertLeadToCustomer(id: string) {
                     userId: session.user.id,
                     action: "CHUYỂN_ĐỔI",
                     details: `Đã chuyển đổi thành Khách Hàng mới: ${newCustomer.name}`
+                }
+            });
+
+            // Create mandatory Customer Activity Log for Intrinsic Ownership
+            await tx.customerActivityLog.create({
+                data: {
+                    customerId: newCustomer.id,
+                    userId: session.user.id,
+                    action: "TẠO_MỚI_TỪ_LEAD",
+                    details: `Hồ sơ khách hàng được chuyển đổi từ Cơ hội bán hàng: ${lead.code}`
                 }
             });
 
