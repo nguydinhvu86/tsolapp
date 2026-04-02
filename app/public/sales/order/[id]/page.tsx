@@ -77,10 +77,11 @@ export default async function PublicSalesOrderPage({ params }: { params: { id: s
                     .a4-document {
                         position: static !important;
                         margin: 0 !important;
-                        padding: 0 !important;
+                        padding: 0 1px !important;
                         box-shadow: none !important;
                         width: 100% !important;
                         max-width: none !important;
+                        min-height: auto !important;
                     }
                     .no-print {
                         display: none !important;
@@ -104,7 +105,7 @@ export default async function PublicSalesOrderPage({ params }: { params: { id: s
                 backgroundColor: 'white',
                 padding: '20mm',
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                fontFamily: 'Arial, sans-serif'
+                fontFamily: '"Times New Roman", Times, serif'
             }}>
                 <Watermark settings={settingsMap} documentType="SALES_ORDER" />
                 {/* Header: Company Info */}
@@ -207,7 +208,7 @@ export default async function PublicSalesOrderPage({ params }: { params: { id: s
                 )}
 
                 {/* Signatures */}
-                <div className="no-break" style={{ display: 'flex', justifyContent: 'space-between', padding: '0 2rem', marginTop: '4rem', pageBreakInside: 'avoid' }}>
+                <div className="no-break" style={{ display: 'flex', justifyContent: 'space-between', padding: '0 2rem', marginTop: '2rem', pageBreakInside: 'avoid' }}>
                     <DocumentSignatureBlock 
                         entityType="SALES_ORDER" 
                         entityId={order.id} 

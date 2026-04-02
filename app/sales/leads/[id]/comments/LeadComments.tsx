@@ -21,9 +21,11 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
     const [replyTo, setReplyTo] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
 
-    // Attachments
     const [commentImages, setCommentImages] = useState<{ url: string, file: File }[]>([]);
     const [attachments, setAttachments] = useState<{ url: string, name: string }[]>([]);
+
+    // Upload Progress State
+    const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
 
     // Lightbox State
     const [lightboxData, setLightboxData] = useState<{ images: string[], currentIndex: number } | null>(null);
@@ -78,8 +80,8 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
     const handleCommentImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files?.length) return;
         Array.from(e.target.files).forEach(file => {
-            if (file.size > 5242880) {
-                alert(`File ${file.name} quá lớn (Tối đa 5MB)`);
+            if (file.size > 52428800) {
+                alert(`File ${file.name} quá lớn (Tối đa 50MB)`);
                 return;
             }
             const reader = new FileReader();
@@ -104,8 +106,8 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
             if (items[i].type.indexOf('image') !== -1) {
                 const file = items[i].getAsFile();
                 if (file) {
-                    if (file.size > 5242880) {
-                        alert(`File ảnh dán vào quá lớn (Tối đa 5MB)`);
+                    if (file.size > 52428800) {
+                        alert(`File ảnh dán vào quá lớn (Tối đa 50MB)`);
                         return;
                     }
                     const reader = new FileReader();
@@ -128,12 +130,37 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
         try {
             const newAttachments = [...attachments];
             for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (file.size > 52428800) continue; // 50MB check just in case
+                
+                setUploadProgress(prev => ({ ...prev, [file.name]: 0 }));
                 const formData = new FormData();
-                formData.append('file', files[i]);
-                const res = await fetch('/api/upload', { method: 'POST', body: formData });
-                if (!res.ok) throw new Error('Upload failed');
-                const data = await res.json();
-                newAttachments.push({ url: data.url, name: files[i].name });
+                formData.append('file', file);
+                
+                try {
+                    const url = await new Promise<string>((resolve, reject) => {
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('POST', '/api/upload', true);
+                        xhr.upload.onprogress = (event) => {
+                            if (event.lengthComputable) {
+                                const percentComplete = Math.round((event.loaded / event.total) * 100);
+                                setUploadProgress(prev => ({ ...prev, [file.name]: percentComplete }));
+                            }
+                        };
+                        xhr.onload = () => {
+                            if (xhr.status === 200) {
+                                try { resolve(JSON.parse(xhr.responseText).url); } catch (e) { reject(new Error()); }
+                            } else { reject(new Error()); }
+                        };
+                        xhr.onerror = () => reject(new Error());
+                        xhr.send(formData);
+                    });
+                    newAttachments.push({ url, name: file.name });
+                } catch (err) {
+                    throw new Error('Upload failed');
+                } finally {
+                    setUploadProgress(prev => { const next = { ...prev }; delete next[file.name]; return next; });
+                }
             }
             setAttachments(newAttachments);
         } catch (err) {
@@ -159,12 +186,34 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
             if (commentImages.length > 0) {
                 const uploadedImages = [];
                 for (const img of commentImages) {
+                    setUploadProgress(prev => ({ ...prev, [img.file.name]: 0 }));
                     const formData = new FormData();
                     formData.append('file', img.file);
-                    const res = await fetch('/api/upload', { method: 'POST', body: formData });
-                    if (!res.ok) throw new Error('Ảnh tải lên thất bại');
-                    const data = await res.json();
-                    uploadedImages.push(data.url);
+                    
+                    try {
+                        const url = await new Promise<string>((resolve, reject) => {
+                            const xhr = new XMLHttpRequest();
+                            xhr.open('POST', '/api/upload', true);
+                            xhr.upload.onprogress = (event) => {
+                                if (event.lengthComputable) {
+                                    const percentComplete = Math.round((event.loaded / event.total) * 100);
+                                    setUploadProgress(prev => ({ ...prev, [img.file.name]: percentComplete }));
+                                }
+                            };
+                            xhr.onload = () => {
+                                if (xhr.status === 200) {
+                                    try { resolve(JSON.parse(xhr.responseText).url); } catch (e) { reject(new Error()); }
+                                } else { reject(new Error()); }
+                            };
+                            xhr.onerror = () => reject(new Error());
+                            xhr.send(formData);
+                        });
+                        uploadedImages.push(url);
+                    } catch (err) {
+                        throw new Error('Ảnh tải lên thất bại');
+                    } finally {
+                        setUploadProgress(prev => { const next = { ...prev }; delete next[img.file.name]; return next; });
+                    }
                 }
 
                 const imgTags = uploadedImages.map(url => `<img src="${url}" style="max-width: 100%; max-height: 200px; border-radius: 8px; margin-top: 8px; cursor: pointer; border: 1px solid #e2e8f0;"/>`).join('');
@@ -334,6 +383,23 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
                             </Button>
                         </div>
                     </div>
+
+                    {/* Upload Progress */}
+                    {Object.keys(uploadProgress).length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '12px' }}>
+                            {Object.entries(uploadProgress).map(([fileName, progress]) => (
+                                <div key={fileName} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '0.5rem', backgroundColor: '#f1f5f9', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
+                                        <span style={{ color: 'var(--primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '80%' }}>Đang tải: <strong>{fileName}</strong></span>
+                                        <span style={{ color: 'var(--primary)', fontWeight: 500 }}>{progress}%</span>
+                                    </div>
+                                    <div style={{ width: '100%', height: '4px', backgroundColor: '#cbd5e1', borderRadius: '2px', overflow: 'hidden' }}>
+                                        <div style={{ width: `${progress}%`, height: '100%', backgroundColor: 'var(--primary)', transition: 'width 0.2s ease-out' }} />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
 
                     {/* Pending Items */}
                     {(attachments.length > 0 || commentImages.length > 0) && (

@@ -100,8 +100,13 @@ const mainNavItems: any[] = [
         children: [
             { name: 'Công Của Tôi', nameKey: 'sidebar.my_attendance', href: '/my-attendance' },
             { name: 'Đơn Nghỉ Phép', nameKey: 'sidebar.leave_requests', href: '/leave-requests' },
-            { name: 'Bảng Công', nameKey: 'sidebar.attendance', href: '/hr/attendance', permission: 'SETTINGS_VIEW' }, // using SETTINGS_VIEW for admin/hr bypass for now
+            { name: 'Bảng Công', nameKey: 'sidebar.attendance', href: '/hr/attendance', permission: 'SETTINGS_VIEW' }, 
             { name: 'Duyệt Đơn', nameKey: 'sidebar.approvals', href: '/hr/approvals', permission: 'SETTINGS_VIEW' },
+            { name: 'Hồ sơ Nhân sự', nameKey: 'sidebar.employees', href: '/hr/employees', permission: 'SETTINGS_VIEW' },
+            { name: 'Tính Lương', nameKey: 'sidebar.payroll', href: '/hr/payroll', permission: 'SETTINGS_VIEW' },
+            { name: 'Yêu Cầu Tuyển Dụng', nameKey: 'sidebar.recruitment_req', href: '/hr/recruitment/requisitions', permission: 'SETTINGS_VIEW' },
+            { name: 'Tin Đăng Tuyển (Jobs)', nameKey: 'sidebar.recruitment_postings', href: '/hr/recruitment/postings', permission: 'SETTINGS_VIEW' },
+            { name: 'Bảng Tuyển Dụng (Pipeline)', nameKey: 'sidebar.recruitment_pipeline', href: '/hr/recruitment/pipeline', permission: 'SETTINGS_VIEW' },
             { name: 'Giám Sát (Ping)', nameKey: 'sidebar.monitoring', href: '/hr/monitoring', permission: 'SETTINGS_VIEW' }
         ]
     },

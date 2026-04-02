@@ -67,7 +67,13 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
                 </Link>
 
                 <div
-                    onClick={() => signOut({ callbackUrl: '/login' })}
+                    onClick={async () => {
+                        try {
+                            const { logUserLogout } = await import('@/app/actions/auth');
+                            await logUserLogout();
+                        } catch(e) { console.error('Logout error', e) }
+                        signOut({ callbackUrl: '/login' });
+                    }}
                     style={{
                         cursor: 'pointer',
                         color: 'var(--danger)',

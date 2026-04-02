@@ -70,6 +70,9 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
     const [lightboxImage, setLightboxImage] = useState<string | null>(null);
     const [previewDoc, setPreviewDoc] = useState<{ url: string, name: string } | null>(null);
 
+    // Upload Progress State
+    const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
+
     const handleCommentClick = (e: React.MouseEvent<HTMLDivElement>) => {
         const target = e.target as HTMLElement;
         if (target.tagName.toLowerCase() === 'img') {
@@ -153,8 +156,8 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
     const handleCommentImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files?.length) return;
         Array.from(e.target.files).forEach(file => {
-            if (file.size > 5242880) {
-                alert(`File ${file.name} quá lớn (Tối đa 5MB)`);
+            if (file.size > 52428800) {
+                alert(`File ${file.name} quá lớn (Tối đa 50MB)`);
                 return;
             }
             const reader = new FileReader();
@@ -176,8 +179,8 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
     const handleCommentFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files?.length) return;
         Array.from(e.target.files).forEach(file => {
-            if (file.size > 15728640) { // 15MB max for files
-                alert(`File ${file.name} quá lớn (Tối đa 15MB)`);
+            if (file.size > 52428800) { // 50MB max for files
+                alert(`File ${file.name} quá lớn (Tối đa 50MB)`);
                 return;
             }
             const reader = new FileReader();
@@ -201,23 +204,65 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
         setIsSaving(true);
         try {
             for (const file of Array.from(e.target.files)) {
-                if (file.size > 15 * 1024 * 1024) {
-                    alert(`Tài liệu ${file.name} quá lớn (Tối đa 15MB)`);
+                if (file.size > 50 * 1024 * 1024) {
+                    alert(`Tài liệu ${file.name} quá lớn (Tối đa 50MB)`);
                     continue;
                 }
-                const reader = new FileReader();
-                reader.onload = async (event) => {
-                    if (event.target?.result) {
-                        await uploadTaskAttachment(task.id, file.name, event.target.result as string, file.type, session.user.id);
-                    }
-                };
-                reader.readAsDataURL(file);
+                
+                setUploadProgress(prev => ({ ...prev, [file.name]: 0 }));
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                try {
+                    const url = await new Promise<string>((resolve, reject) => {
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('POST', '/api/upload', true);
+                        
+                        xhr.upload.onprogress = (event) => {
+                            if (event.lengthComputable) {
+                                const percentComplete = Math.round((event.loaded / event.total) * 100);
+                                setUploadProgress(prev => ({ ...prev, [file.name]: percentComplete }));
+                            }
+                        };
+                        
+                        xhr.onload = () => {
+                            if (xhr.status === 200) {
+                                try {
+                                    const response = JSON.parse(xhr.responseText);
+                                    if (response.url) {
+                                        resolve(response.url);
+                                    } else {
+                                        reject(new Error(response.error || 'Upload failed'));
+                                    }
+                                } catch (e) {
+                                    reject(new Error('Invalid response'));
+                                }
+                            } else {
+                                reject(new Error('Upload failed'));
+                            }
+                        };
+                        
+                        xhr.onerror = () => reject(new Error('Network error'));
+                        xhr.send(formData);
+                    });
+                    
+                    await uploadTaskAttachment(task.id, file.name, url, file.type, session.user.id);
+                } catch (err: any) {
+                    console.error("Upload failed for", file.name, err);
+                    alert(`Tải lên thất bại: ${file.name}`);
+                } finally {
+                    setUploadProgress(prev => { 
+                        const next = { ...prev }; 
+                        delete next[file.name]; 
+                        return next; 
+                    });
+                }
             }
-            // Wait a moment for async readers to complete database actions
-            setTimeout(() => router.refresh(), 1000);
+            setTimeout(() => router.refresh(), 500);
         } catch (error) {
             console.error(error);
-            alert("Lỗi tải lên tài liệu");
+            alert("Lỗi quá trình tải lên");
         } finally {
             setIsSaving(false);
             e.target.value = ''; // Reset
@@ -587,26 +632,26 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
 
             {/* LEFT COLUMN: Main Content */}
             <div className="lg:col-span-2 flex flex-col gap-6">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <Button variant="secondary" onClick={() => router.back()} style={{ padding: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', backgroundColor: 'white', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 2px 10px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9' }}>
+                    <button onClick={() => router.back()} style={{ padding: '0.5rem', borderRadius: '12px', border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', color: '#64748b', cursor: 'pointer', transition: 'all 0.2s' }} className="hover:bg-slate-200 hover:text-slate-900">
                         <ChevronLeft size={20} />
-                    </Button>
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    </button>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                         <div>
-                            <h1 style={{ margin: '0 0 0.25rem 0', fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <h1 style={{ margin: '0 0 0.5rem 0', fontSize: '1.75rem', fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                                 {task.title}
                                 {canEdit && (
                                     <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                        <button onClick={() => setIsEditModalOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center' }} title="Sửa chi tiết chung">
+                                        <button onClick={() => setIsEditModalOpen(true)} style={{ background: '#f1f5f9', border: 'none', borderRadius: '8px', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '6px', transition: 'all 0.2s' }} className="hover:bg-slate-200 hover:text-slate-900" title="Sửa chi tiết chung">
                                             <Edit2 size={16} />
                                         </button>
-                                        <button onClick={() => setIsEmailModalOpen(true)} style={{ background: 'none', border: '1px solid #bfdbfe', borderRadius: '4px', color: '#3b82f6', cursor: 'pointer', display: 'flex', alignItems: 'center', fontSize: '0.85rem', gap: '4px', padding: '0.2rem 0.5rem', marginLeft: '0.5rem' }} title="Gửi Email Thông Báo">
-                                            <Mail size={14} /> Gửi Email
+                                        <button onClick={() => setIsEmailModalOpen(true)} style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', color: '#2563eb', cursor: 'pointer', display: 'flex', alignItems: 'center', fontSize: '0.85rem', fontWeight: 500, gap: '6px', padding: '6px 12px', transition: 'all 0.2s' }} className="hover:bg-blue-100 hover:shadow-sm" title="Gửi Email Thông Báo">
+                                            <Mail size={16} /> Gửi Email
                                         </button>
                                     </div>
                                 )}
                             </h1>
-                            <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                            <span style={{ color: '#64748b', fontSize: '0.9rem', fontWeight: 500 }}>
                                 Tạo bởi: {task.creator?.name || task.creator?.email} • {new Date(task.createdAt).toLocaleString('vi-VN')}
                             </span>
                         </div>
@@ -658,19 +703,20 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                     </div>
                 )}
 
-                <Card>
-                    <div style={{ padding: '1.5rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border)' }}>
+                <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', overflow: 'hidden' }}>
+                    <div style={{ padding: '2rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid #f1f5f9' }}>
                             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                                 <span style={{
-                                    padding: '4px 12px', borderRadius: '16px', fontSize: '0.85rem', fontWeight: 600,
-                                    backgroundColor: task.priority === 'URGENT' ? 'var(--danger)' : (task.priority === 'HIGH' ? 'var(--warning)' : '#e2e8f0'),
-                                    color: task.priority === 'URGENT' || task.priority === 'HIGH' ? '#fff' : '#000'
+                                    padding: '6px 16px', borderRadius: '99px', fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.5px',
+                                    backgroundColor: task.priority === 'URGENT' ? '#fee2e2' : (task.priority === 'HIGH' ? '#fef3c7' : '#f1f5f9'),
+                                    color: task.priority === 'URGENT' ? '#b91c1c' : (task.priority === 'HIGH' ? '#b45309' : '#475569'),
+                                    border: `1px solid ${task.priority === 'URGENT' ? '#fca5a5' : (task.priority === 'HIGH' ? '#fde68a' : '#e2e8f0')}`
                                 }}>
                                     {task.priority}
                                 </span>
                                 {task.dueDate && (
-                                    <span style={{ fontSize: '0.9rem', color: new Date(task.dueDate) < new Date() ? 'var(--danger)' : 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <span style={{ fontSize: '0.9rem', fontWeight: 500, color: new Date(task.dueDate) < new Date() ? '#ef4444' : '#64748b', display: 'flex', alignItems: 'center', gap: '0.4rem', backgroundColor: new Date(task.dueDate) < new Date() ? '#fef2f2' : '#f8fafc', padding: '6px 12px', borderRadius: '8px', border: `1px solid ${new Date(task.dueDate) < new Date() ? '#fecaca' : '#e2e8f0'}` }}>
                                         <Clock size={16} /> Hạn chót: {new Date(task.dueDate).toLocaleDateString('vi-VN')}
                                     </span>
                                 )}
@@ -682,10 +728,13 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                                     onChange={handleStatusChange}
                                     disabled={!canEdit}
                                     style={{
-                                        padding: '6px 12px', borderRadius: 'var(--radius)',
-                                        border: '1px solid var(--border)', fontSize: '0.9rem',
-                                        backgroundColor: 'var(--surface)', fontWeight: 600
+                                        padding: '8px 16px', borderRadius: '8px',
+                                        border: '1px solid #cbd5e1', fontSize: '0.95rem',
+                                        backgroundColor: '#f8fafc', color: '#0f172a', fontWeight: 600,
+                                        outline: 'none', cursor: 'pointer', transition: 'border-color 0.2s',
+                                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
                                     }}
+                                    className="focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                                 >
                                     <option value="TODO">Cần Làm</option>
                                     <option value="IN_PROGRESS">Đang Xử Lý</option>
@@ -698,27 +747,28 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                         </div>
 
                         {task.description && (
-                            <div style={{ marginBottom: '2rem', lineHeight: 1.6, color: 'var(--text-main)', whiteSpace: 'pre-wrap' }}>
+                            <div style={{ marginBottom: '2.5rem', lineHeight: 1.7, color: '#334155', whiteSpace: 'pre-wrap', fontSize: '1rem' }}>
                                 {task.description}
                             </div>
                         )}
 
                         {/* CHECKLIST */}
-                        <div style={{ marginBottom: '2rem' }}>
-                            <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <CheckCircle2 size={18} color="var(--primary)" /> Danh sách công việc con (Checklist)
+                        <div style={{ marginBottom: '1rem' }}>
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1e293b', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <CheckCircle2 size={20} color="#4f46e5" /> Danh sách công việc con (Checklist)
                             </h3>
 
                             {task.checklists.length > 0 && (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
                                     {task.checklists.map((item: any) => (
-                                        <div key={item.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.5rem', borderRadius: 'var(--radius)', backgroundColor: item.isCompleted ? 'var(--background)' : 'transparent' }}>
+                                        <div key={item.id} className="group" style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', padding: '0.75rem 1rem', borderRadius: '12px', backgroundColor: item.isCompleted ? '#f8fafc' : '#ffffff', border: `1px solid ${item.isCompleted ? '#e2e8f0' : '#e2e8f0'}`, transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.01)' }}>
                                             <button
                                                 onClick={() => handleToggleChecklist(item.id, item.isCompleted)}
                                                 disabled={!canEdit}
-                                                style={{ marginTop: '0.1rem', color: item.isCompleted ? 'var(--success)' : 'var(--text-muted)' }}
+                                                style={{ marginTop: '0.1rem', color: item.isCompleted ? '#10b981' : '#cbd5e1', cursor: canEdit ? 'pointer' : 'default', transition: 'color 0.2s' }}
+                                                className={canEdit && !item.isCompleted ? "hover:text-indigo-400" : ""}
                                             >
-                                                {item.isCompleted ? <CheckCircle2 size={20} /> : <Circle size={20} />}
+                                                {item.isCompleted ? <CheckCircle2 size={22} /> : <Circle size={22} />}
                                             </button>
                                             <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                                 {editingChecklistId === item.id ? (
@@ -732,22 +782,25 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                                                                 if (e.key === 'Enter') handleSaveEditChecklist(item.id);
                                                                 if (e.key === 'Escape') setEditingChecklistId(null);
                                                             }}
-                                                            style={{ flex: 1, padding: '0.4rem 0.5rem', borderRadius: '4px', border: '1px solid var(--primary)', outline: 'none', fontSize: '0.9rem' }}
+                                                            style={{ flex: 1, padding: '0.5rem 0.75rem', borderRadius: '8px', border: '2px solid #6366f1', outline: 'none', fontSize: '0.95rem', backgroundColor: '#fff' }}
                                                         />
-                                                        <Button onClick={() => handleSaveEditChecklist(item.id)} style={{ padding: '0.2rem 0.5rem', fontSize: '0.8rem' }}>Lưu</Button>
-                                                        <Button onClick={() => setEditingChecklistId(null)} variant="secondary" style={{ padding: '0.2rem 0.5rem', fontSize: '0.8rem' }}>Hủy</Button>
+                                                        <Button onClick={() => handleSaveEditChecklist(item.id)} style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', borderRadius: '8px', backgroundColor: '#4f46e5', color: 'white' }}>Lưu</Button>
+                                                        <Button onClick={() => setEditingChecklistId(null)} variant="secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', borderRadius: '8px' }}>Hủy</Button>
                                                     </div>
                                                 ) : (
                                                     <div style={{ flex: 1 }}>
                                                         <div style={{
                                                             textDecoration: item.isCompleted ? 'line-through' : 'none',
-                                                            color: item.isCompleted ? 'var(--text-muted)' : 'var(--text-main)'
+                                                            color: item.isCompleted ? '#94a3b8' : '#334155',
+                                                            fontWeight: item.isCompleted ? 400 : 500,
+                                                            fontSize: '0.95rem',
+                                                            lineHeight: 1.5
                                                         }}>
                                                             {item.title}
                                                         </div>
                                                         {item.isCompleted && item.completedBy && (
-                                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                                                                Hoàn thành bởi: {item.completedBy.name} lúc {new Date(item.completedAt).toLocaleString('vi-VN')}
+                                                            <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.25rem' }}>
+                                                                Hoàn thành bởi: <strong>{item.completedBy.name}</strong> lúc {new Date(item.completedAt).toLocaleString('vi-VN')}
                                                             </div>
                                                         )}
                                                     </div>
@@ -755,22 +808,22 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
 
                                                 {/* Actions */}
                                                 {!item.isCompleted && canEdit && editingChecklistId !== item.id && (
-                                                    <div style={{ display: 'flex', gap: '0.25rem' }}>
+                                                    <div style={{ display: 'flex', gap: '0.25rem', opacity: 0, transition: 'opacity 0.2s' }} className="group-hover:opacity-100">
                                                         <button
                                                             onClick={() => {
                                                                 setEditingChecklistId(item.id);
                                                                 setEditChecklistTitle(item.title);
                                                             }}
-                                                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '0.25rem' }}
-                                                            className="hover:text-primary transition-colors"
+                                                            style={{ background: '#f1f5f9', border: 'none', cursor: 'pointer', color: '#64748b', padding: '0.4rem', borderRadius: '6px' }}
+                                                            className="hover:bg-indigo-100 hover:text-indigo-600 transition-colors"
                                                             title="Sửa"
                                                         >
                                                             <Edit2 size={16} />
                                                         </button>
                                                         <button
                                                             onClick={() => handleDeleteChecklist(item.id)}
-                                                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '0.25rem' }}
-                                                            className="hover:text-danger transition-colors"
+                                                            style={{ background: '#fef2f2', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '0.4rem', borderRadius: '6px' }}
+                                                            className="hover:bg-red-100 hover:text-red-700 transition-colors"
                                                             title="Xóa"
                                                         >
                                                             <Trash2 size={16} />
@@ -784,31 +837,32 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                             )}
 
                             {canEdit && (
-                                <form onSubmit={handleAddChecklist} style={{ display: 'flex', gap: '0.5rem' }}>
+                                <form onSubmit={handleAddChecklist} style={{ display: 'flex', gap: '0.75rem' }}>
                                     <input
                                         type="text"
                                         value={newChecklist}
                                         onChange={e => setNewChecklist(e.target.value)}
                                         placeholder="Thêm mục checklist mới..."
-                                        style={{ flex: 1, padding: '0.5rem 0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}
+                                        style={{ flex: 1, padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.95rem', outline: 'none', transition: 'border-color 0.2s' }}
+                                        className="focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                                     />
-                                    <Button type="submit" disabled={isSaving || !newChecklist.trim()} variant="secondary" style={{ padding: '0.5rem 1rem' }}>
+                                    <Button type="submit" disabled={isSaving || !newChecklist.trim()} variant="secondary" style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', fontWeight: 600 }}>
                                         Thêm
                                     </Button>
                                 </form>
                             )}
                         </div>
                     </div>
-                </Card>
+                </div>
 
                 {/* COMMENTS SECTION */}
-                <Card>
-                    <div style={{ padding: '1.5rem' }}>
-                        <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <MessageSquare size={18} color="var(--primary)" /> Bình luận & Thảo luận
+                <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', overflow: 'hidden' }}>
+                    <div style={{ padding: '2rem' }}>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                            <MessageSquare size={22} color="#4f46e5" /> Bình luận & Thảo luận
                         </h3>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '2rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem', marginBottom: '2.5rem' }}>
                             {rootComments.length === 0 ? (
                                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', textAlign: 'center' }}>Chưa có bình luận nào.</p>
                             ) : (
@@ -827,25 +881,25 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
 
                                         return (
                                             <div key={c.id} style={{ display: 'flex', gap: '1rem', marginTop: isReply ? '1rem' : '0' }}>
-                                                <div style={{ width: isReply ? '28px' : '36px', height: isReply ? '28px' : '36px', borderRadius: '50%', backgroundColor: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', flexShrink: 0, fontSize: isReply ? '0.75rem' : '1rem' }}>
+                                                <div style={{ width: isReply ? '32px' : '40px', height: isReply ? '32px' : '40px', borderRadius: '50%', backgroundColor: '#4f46e5', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', flexShrink: 0, fontSize: isReply ? '0.85rem' : '1.1rem', boxShadow: '0 2px 4px rgba(79, 70, 229, 0.2)' }}>
                                                     {c.user.name?.[0]?.toUpperCase() || 'U'}
                                                 </div>
                                                 <div style={{ flex: 1 }}>
-                                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', marginBottom: '0.25rem' }}>
-                                                        <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>{c.user.name || c.user.email}</span>
-                                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', marginBottom: '0.4rem' }}>
+                                                        <span style={{ fontWeight: 600, color: '#1e293b', fontSize: '0.95rem' }}>{c.user.name || c.user.email}</span>
+                                                        <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
                                                             {c.createdAt ? formatDistanceToNow(new Date(c.createdAt), { addSuffix: true, locale: vi }) : 'Vừa xong'}
                                                         </span>
                                                     </div>
 
                                                     <div
-                                                        style={{ padding: '0.75rem', backgroundColor: isReply ? '#f8fafc' : 'var(--background)', borderRadius: '0.5rem', lineHeight: 1.5, fontSize: '0.95rem', overflowWrap: 'anywhere' }}
+                                                        style={{ padding: '1rem', backgroundColor: isReply ? '#f8fafc' : '#f1f5f9', borderRadius: '12px', lineHeight: 1.6, fontSize: '0.95rem', overflowWrap: 'anywhere', color: '#334155', border: isReply ? '1px solid #f1f5f9' : 'none' }}
                                                         dangerouslySetInnerHTML={{ __html: autoLinkHtml(c.content) }}
                                                         className="sun-editor-output custom-comment-content"
                                                         onClick={handleCommentClick}
                                                     />
 
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.75rem' }}>
                                                         {/* Reaction Summary */}
                                                         {Object.keys(reactionCounts).length > 0 && (
                                                             <div style={{ display: 'flex', gap: '0.25rem' }}>
@@ -890,11 +944,11 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                         </div>
 
                         {/* Comment Form */}
-                        <div style={{ backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                        <div style={{ backgroundColor: '#ffffff', padding: '1.25rem', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
                             {replyTo && (
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', padding: '0.5rem', backgroundColor: '#e2e8f0', borderRadius: '4px', fontSize: '0.85rem' }}>
-                                    <span>Đang trả lời bình luận...</span>
-                                    <button onClick={() => setReplyTo(null)} style={{ color: 'var(--danger)', cursor: 'pointer', background: 'none', border: 'none' }}>Hủy</button>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', padding: '0.75rem 1rem', backgroundColor: '#f1f5f9', borderRadius: '8px', fontSize: '0.9rem', color: '#334155' }}>
+                                    <span style={{ fontWeight: 500 }}>Đang trả lời bình luận...</span>
+                                    <button onClick={() => setReplyTo(null)} style={{ color: '#ef4444', cursor: 'pointer', background: '#fee2e2', border: 'none', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 600 }} className="hover:bg-red-200">Hủy</button>
                                 </div>
                             )}
 
@@ -924,25 +978,29 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                                     }}
                                     style={{
                                         width: '100%',
-                                        minHeight: '100px',
-                                        padding: '0.75rem',
-                                        paddingRight: '2.5rem',
+                                        minHeight: '120px',
+                                        padding: '1rem',
+                                        paddingRight: '3rem',
                                         borderRadius: '8px',
-                                        border: '1px solid var(--border)',
+                                        border: '1px solid #cbd5e1',
                                         resize: 'vertical',
                                         fontSize: '0.95rem',
-                                        lineHeight: 1.5,
-                                        boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.05)'
+                                        lineHeight: 1.6,
+                                        backgroundColor: '#f8fafc',
+                                        outline: 'none',
+                                        transition: 'all 0.2s',
+                                        color: '#0f172a'
                                     }}
-                                    placeholder="Gõ phím @ để nhắc tên ai đó, hoặc chia sẻ hình ảnh..."
+                                    className="focus:border-indigo-500 focus:bg-white focus:ring-1 focus:ring-indigo-500"
+                                    placeholder="Gõ phím @ để nhắc tên ai đó, hoặc chia sẻ hình ảnh (ctrl+V)..."
                                 />
-                                <div style={{ position: 'absolute', bottom: '1rem', right: '0.75rem', display: 'flex', gap: '0.75rem' }}>
-                                    <label style={{ cursor: 'pointer', color: 'var(--text-muted)' }} title="Đính kèm tài liệu">
-                                        <Paperclip size={20} className="hover:text-primary transition-colors" />
+                                <div style={{ position: 'absolute', bottom: '1rem', right: '0.75rem', display: 'flex', gap: '0.5rem' }}>
+                                    <label style={{ cursor: 'pointer', color: '#64748b', padding: '0.4rem', borderRadius: '6px' }} className="hover:bg-slate-200 hover:text-indigo-600 transition-colors" title="Đính kèm tài liệu">
+                                        <Paperclip size={18} />
                                         <input type="file" hidden multiple onChange={handleCommentFileSelect} disabled={isSaving} />
                                     </label>
-                                    <label style={{ cursor: 'pointer', color: 'var(--text-muted)' }} title="Đính kèm ảnh">
-                                        <ImageIcon size={20} className="hover:text-primary transition-colors" />
+                                    <label style={{ cursor: 'pointer', color: '#64748b', padding: '0.4rem', borderRadius: '6px' }} className="hover:bg-slate-200 hover:text-indigo-600 transition-colors" title="Đính kèm ảnh">
+                                        <ImageIcon size={18} />
                                         <input type="file" hidden multiple accept="image/*" onChange={handleCommentImageSelect} disabled={isSaving} />
                                     </label>
                                 </div>
@@ -1015,28 +1073,33 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                         )}
 
                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                            <Button onClick={() => handleAddComment()} disabled={isSaving || (!newComment.trim() && commentImages.length === 0 && commentFiles.length === 0)}>
-                                Gửi bình luận
+                            <Button
+                                onClick={() => handleAddComment()}
+                                disabled={isSaving || (!newComment.trim() && commentImages.length === 0 && commentFiles.length === 0)}
+                                style={{ padding: '0.6rem 1.5rem', borderRadius: '8px', backgroundColor: '#4f46e5', color: '#ffffff', fontWeight: 600, fontSize: '0.95rem', border: 'none', transition: 'all 0.2s' }}
+                                className="hover:bg-indigo-600 hover:shadow-md disabled:bg-slate-300 disabled:cursor-not-allowed"
+                            >
+                                {isSaving ? 'Đang gửi...' : 'Gửi bình luận'}
                             </Button>
                         </div>
                     </div>
-                </Card>
+                </div>
             </div>
 
             {/* RIGHT COLUMN: Sidebar Info */}
             <div className="lg:col-span-1 flex flex-col gap-6">
 
                 {/* Related Links */}
-                <Card>
+                <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', overflow: 'hidden' }}>
+                    <div style={{ backgroundColor: '#f8fafc', padding: '1rem 1.25rem', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#1e293b' }}>Liên kết hệ thống</h4>
+                        {canEdit && (
+                            <button onClick={() => setIsLinkModalOpen(true)} style={{ background: '#e0e7ff', border: 'none', color: '#4f46e5', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 600, padding: '6px 12px', borderRadius: '6px', transition: 'all 0.2s' }} className="hover:bg-indigo-200 hover:text-indigo-900">
+                                <Plus size={14} /> Thêm / Cập nhật
+                            </button>
+                        )}
+                    </div>
                     <div style={{ padding: '1.25rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                            <h4 style={{ margin: 0, fontSize: '1rem' }}>Liên kết hệ thống</h4>
-                            {canEdit && (
-                                <button onClick={() => setIsLinkModalOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem' }}>
-                                    <Plus size={14} /> Thêm / Cập nhật
-                                </button>
-                            )}
-                        </div>
                         {relatedLinks.length === 0 ? (
                             <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Chưa có liên kết</div>
                         ) : (
@@ -1059,27 +1122,27 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                             </div>
                         )}
                     </div>
-                </Card >
+                </div>
 
                 {/* Documents & Notes */}
-                < Card >
+                <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', overflow: 'hidden' }}>
+                    <div style={{ backgroundColor: '#f8fafc', padding: '1rem 1.25rem', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Paperclip size={18} color="#64748b" /> Tài liệu & Ghi chú
+                        </h4>
+                        {canEdit && (
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <button onClick={() => setIsAddingNote(!isAddingNote)} style={{ background: 'none', border: '1px solid #cbd5e1', cursor: 'pointer', color: '#475569', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', fontWeight: 600, padding: '4px 8px', borderRadius: '6px', transition: 'all 0.2s' }} className="hover:bg-slate-100">
+                                    <Plus size={14} /> Ghi chú
+                                </button>
+                                <label style={{ cursor: 'pointer', color: '#4f46e5', background: '#e0e7ff', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', fontWeight: 600, padding: '4px 8px', borderRadius: '6px', transition: 'all 0.2s', margin: 0 }} className="hover:bg-indigo-200">
+                                    <Plus size={14} /> Tài liệu
+                                    <input type="file" multiple hidden onChange={handleDocUpload} disabled={isSaving} />
+                                </label>
+                            </div>
+                        )}
+                    </div>
                     <div style={{ padding: '1.25rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                            <h4 style={{ margin: 0, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <Paperclip size={16} /> Tài liệu và Ghi chú
-                            </h4>
-                            {canEdit && (
-                                <div style={{ display: 'flex', gap: '1rem' }}>
-                                    <button onClick={() => setIsAddingNote(!isAddingNote)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem' }}>
-                                        <Plus size={14} /> Ghi chú
-                                    </button>
-                                    <label style={{ cursor: 'pointer', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem' }}>
-                                        <Plus size={14} /> Tài liệu
-                                        <input type="file" multiple hidden onChange={handleDocUpload} disabled={isSaving} />
-                                    </label>
-                                </div>
-                            )}
-                        </div>
 
                         {isAddingNote && (
                             <div style={{ marginBottom: '1rem', padding: '0.75rem', backgroundColor: '#f8fafc', borderRadius: '6px', border: '1px solid var(--border)' }}>
@@ -1096,14 +1159,25 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                             </div>
                         )}
 
-                        {(!task.attachments || task.attachments.length === 0) ? (
+                        {(!task.attachments || task.attachments.length === 0) && Object.keys(uploadProgress).length === 0 ? (
                             <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', padding: '1rem 0' }}>
                                 <FileIcon size={32} opacity={0.2} style={{ margin: '0 auto 0.5rem' }} />
                                 Chưa có tài liệu nào tải lên.
                             </div>
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                {task.attachments.map((doc: any) => {
+                                {Object.entries(uploadProgress).map(([fileName, progress]) => (
+                                    <div key={fileName} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '0.75rem', backgroundColor: '#f8f9fa', borderRadius: '6px', border: '1px dashed var(--primary)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                                            <span style={{ color: 'var(--primary)' }}>Đang tải lên: <strong>{fileName}</strong></span>
+                                            <span style={{ color: 'var(--primary)', fontWeight: 500 }}>{progress}%</span>
+                                        </div>
+                                        <div style={{ width: '100%', height: '6px', backgroundColor: '#e2e8f0', borderRadius: '3px', overflow: 'hidden' }}>
+                                            <div style={{ width: `${progress}%`, height: '100%', backgroundColor: 'var(--primary)', transition: 'width 0.2s ease-out' }} />
+                                        </div>
+                                    </div>
+                                ))}
+                                {task.attachments?.map((doc: any) => {
                                     const isImage = doc.fileType?.startsWith('image/');
                                     const isNote = doc.fileType === 'TEXT_NOTE';
 
@@ -1175,28 +1249,28 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                             </div>
                         )}
                     </div>
-                </Card >
+                </div>
 
                 {/* People */}
-                < Card >
+                <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', overflow: 'hidden' }}>
+                    <div style={{ backgroundColor: '#f8fafc', padding: '1rem 1.25rem', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <UserIcon size={18} color="#64748b" /> Người tham gia
+                        </h4>
+                        {canEdit && (
+                            <button
+                                onClick={() => {
+                                    setEditAssignees(task.assignees?.map((a: any) => a.userId) || []);
+                                    setEditObservers(task.observers?.map((o: any) => o.userId) || []);
+                                    setIsParticipantModalOpen(true);
+                                }}
+                                style={{ background: '#e0e7ff', border: 'none', color: '#4f46e5', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 600, padding: '4px 8px', borderRadius: '6px', transition: 'all 0.2s' }} className="hover:bg-indigo-200"
+                            >
+                                <Edit2 size={14} /> Chỉnh sửa
+                            </button>
+                        )}
+                    </div>
                     <div style={{ padding: '1.25rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                            <h4 style={{ margin: 0, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <UserIcon size={16} /> Người tham gia
-                            </h4>
-                            {canEdit && (
-                                <button
-                                    onClick={() => {
-                                        setEditAssignees(task.assignees?.map((a: any) => a.userId) || []);
-                                        setEditObservers(task.observers?.map((o: any) => o.userId) || []);
-                                        setIsParticipantModalOpen(true);
-                                    }}
-                                    style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem' }}
-                                >
-                                    <Edit2 size={14} /> Chỉnh sửa
-                                </button>
-                            )}
-                        </div>
 
                         <div style={{ marginBottom: '1rem' }}>
                             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Người phụ trách</div>
@@ -1234,19 +1308,19 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                             )}
                         </div>
                     </div>
-                </Card >
+                </div>
 
                 {/* Activity Log KPI */}
-                < Card >
+                <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', overflow: 'hidden' }}>
+                    <div style={{ backgroundColor: '#f8fafc', padding: '1rem 1.25rem', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Clock size={18} color="#64748b" /> Nhật ký hoạt động (KPI)
+                        </h4>
+                        <Button variant="secondary" onClick={handleExportActivityLog} style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem', height: 'auto', borderRadius: '6px', fontWeight: 600 }}>
+                            Xuất CSV
+                        </Button>
+                    </div>
                     <div style={{ padding: '1.25rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                            <h4 style={{ margin: 0, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <Clock size={16} /> Nhật ký hoạt động (KPI)
-                            </h4>
-                            <Button variant="secondary" onClick={handleExportActivityLog} style={{ padding: '0.25rem 0.75rem', fontSize: '0.8rem', height: 'auto' }}>
-                                Xuất CSV
-                            </Button>
-                        </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '300px', overflowY: 'auto', paddingRight: '0.5rem' }}>
                             {task.activityLogs.length === 0 ? (
@@ -1298,7 +1372,7 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                             )}
                         </div>
                     </div>
-                </Card >
+                </div>
 
             </div >
 

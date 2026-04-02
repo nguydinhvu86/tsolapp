@@ -17,7 +17,7 @@ import { DocumentManagersPanel } from '@/app/components/shared/DocumentManagersP
 import { EmailLogTable } from '@/app/components/ui/EmailLogTable';
 import { DocumentSignatureBlock } from '@/app/components/ui/DocumentSignatureBlock';
 
-export default function SalesEstimateDetailClient({ initialData, customers, products, users, emailTemplates }: any) {
+export default function SalesEstimateDetailClient({ initialData, customers, products, users, emailTemplates, settings }: any) {
     const router = useRouter();
     const { data: session } = useSession();
     const [estimate, setEstimate] = useState(initialData);
@@ -394,6 +394,30 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
 
                         </div>
                     </div>
+                    {/* Bank Info Card */}
+                    {settings?.BANK_INFO_ENABLED === 'true' && settings?.BANK_INFO_CONTENT && (
+                        <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '1.5rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                                <h2 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <Building size={20} color="#3b82f6" /> Thông tin thanh toán (Chuyển khoản)
+                                </h2>
+                                <button
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(settings.BANK_INFO_CONTENT || '');
+                                        alert('Đã copy thông tin thanh toán');
+                                    }}
+                                    className="btn btn-secondary hover:bg-slate-200"
+                                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.375rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: 500, backgroundColor: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', cursor: 'pointer', transition: 'all 0.2s' }}
+                                >
+                                    <Copy size={14} /> Copy thông tin
+                                </button>
+                            </div>
+                            <div style={{ whiteSpace: 'pre-wrap', color: '#334155', fontSize: '0.9rem', lineHeight: 1.6, padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '0.5rem', borderLeft: '4px solid #3b82f6' }}>
+                                {settings.BANK_INFO_CONTENT}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Signatures Card */}
                     <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '1.5rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}>
                         <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#1e293b', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

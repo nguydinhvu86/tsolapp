@@ -36,7 +36,7 @@ export default function PrintSalesInvoiceClient({ invoice, companyInfo, settings
             position: 'fixed',
             top: 0,
             left: 0,
-            width: '100vw',
+            width: '100%',
             height: '100vh',
             backgroundColor: '#cbd5e1', // slate-300
             zIndex: 9999, // Cover entire Main Layout
@@ -73,7 +73,7 @@ export default function PrintSalesInvoiceClient({ invoice, companyInfo, settings
                     .print-container {
                         position: static !important;
                         margin: 0 !important;
-                        padding: 0 !important;
+                        padding: 0 1px !important;
                         box-shadow: none !important;
                         width: 100% !important;
                         max-width: none !important;
@@ -189,9 +189,9 @@ export default function PrintSalesInvoiceClient({ invoice, companyInfo, settings
                             <th style={{ border: '1px solid #cbd5e1', padding: '12px 6px', textAlign: 'center', width: '5%' }}>STT</th>
                             <th style={{ border: '1px solid #cbd5e1', padding: '12px 6px', textAlign: 'left', width: '57%' }}>Sản Phẩm / Dịch Vụ</th>
                             <th style={{ border: '1px solid #cbd5e1', padding: '12px 6px', textAlign: 'center', width: '5%' }}>SL</th>
-                            <th style={{ border: '1px solid #cbd5e1', padding: '12px 6px', textAlign: 'right', width: '13%', whiteSpace: 'nowrap' }}>Đơn Giá (VNĐ)</th>
+                            <th style={{ border: '1px solid #cbd5e1', padding: '12px 6px', textAlign: 'right', width: '13%' }}>Đơn Giá (VNĐ)</th>
                             <th style={{ border: '1px solid #cbd5e1', padding: '12px 6px', textAlign: 'center', width: '6%' }}>Thuế (%)</th>
-                            <th style={{ border: '1px solid #cbd5e1', padding: '12px 6px', textAlign: 'right', width: '14%', whiteSpace: 'nowrap' }}>Thành Tiền (VNĐ)</th>
+                            <th style={{ border: '1px solid #cbd5e1', padding: '12px 6px', textAlign: 'right', width: '14%' }}>Thành Tiền (VNĐ)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -232,6 +232,16 @@ export default function PrintSalesInvoiceClient({ invoice, companyInfo, settings
                         <h4 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 0.5rem 0', textDecoration: 'underline' }}>Ghi chú:</h4>
                         <div style={{ fontSize: '0.95rem', whiteSpace: 'pre-line', fontStyle: 'italic', padding: '10px 15px', backgroundColor: '#f8fafc', borderLeft: '4px solid #94a3b8' }}>
                             {invoice.notes}
+                        </div>
+                    </div>
+                )}
+
+                {/* Bank Info */}
+                {settings?.BANK_INFO_ENABLED === 'true' && settings?.BANK_INFO_CONTENT && (
+                    <div style={{ marginBottom: '3rem' }}>
+                        <h4 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 0.5rem 0', textDecoration: 'underline' }}>Thông tin Thanh toán:</h4>
+                        <div style={{ fontSize: '0.95rem', whiteSpace: 'pre-line', fontStyle: 'italic', padding: '10px 15px', backgroundColor: '#f8fafc', borderLeft: '4px solid #10b981' }}>
+                            {settings.BANK_INFO_CONTENT}
                         </div>
                     </div>
                 )}

@@ -45,3 +45,23 @@ export async function toggleUserActiveStatus(userId: string) {
         return { success: false, error: error.message || 'Lỗi hệ thống' };
     }
 }
+
+export async function getUserLoginLogs(userId: string) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session || session.user.role !== 'ADMIN') {
+            return { success: false, error: 'Unauthorized' };
+        }
+
+        const logs = await prisma.loginLog.findMany({
+            where: { userId },
+            orderBy: { loginAt: 'desc' },
+            take: 50
+        });
+
+        return { success: true, data: logs };
+    } catch (error: any) {
+        console.error('Get Login Logs Error:', error);
+        return { success: false, error: 'Lỗi hệ thống khi tải lịch sử' };
+    }
+}

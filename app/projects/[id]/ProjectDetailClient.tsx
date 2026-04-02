@@ -27,6 +27,9 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
     // Discussion State
     const [newComment, setNewComment] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    
+    // Upload Progress State
+    const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
 
     // Calculate Project Progress
     const totalTasks = project.childTasks?.length || 0;
@@ -69,16 +72,52 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
         setIsSaving(true);
         try {
             for (const file of Array.from(e.target.files)) {
-                if (file.size > 15 * 1024 * 1024) continue;
-                const reader = new FileReader();
-                reader.onload = async (event) => {
-                    if (event.target?.result) {
-                        await uploadTaskAttachment(project.id, file.name, event.target.result as string, file.type, session.user!.id);
-                    }
-                };
-                reader.readAsDataURL(file);
+                if (file.size > 50 * 1024 * 1024) continue;
+                
+                setUploadProgress(prev => ({ ...prev, [file.name]: 0 }));
+                const formData = new FormData();
+                formData.append('file', file);
+
+                try {
+                    const url = await new Promise<string>((resolve, reject) => {
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('POST', '/api/upload', true);
+                        
+                        xhr.upload.onprogress = (event) => {
+                            if (event.lengthComputable) {
+                                const percentComplete = Math.round((event.loaded / event.total) * 100);
+                                setUploadProgress(prev => ({ ...prev, [file.name]: percentComplete }));
+                            }
+                        };
+                        
+                        xhr.onload = () => {
+                            if (xhr.status === 200) {
+                                try {
+                                    const response = JSON.parse(xhr.responseText);
+                                    if (response.url) resolve(response.url);
+                                    else reject(new Error('Upload failed'));
+                                } catch (e) {
+                                    reject(new Error('Invalid response'));
+                                }
+                            } else {
+                                reject(new Error('Upload failed'));
+                            }
+                        };
+                        
+                        xhr.onerror = () => reject(new Error('Network error'));
+                        xhr.send(formData);
+                    });
+                    
+                    await uploadTaskAttachment(project.id, file.name, url, file.type, session.user.id);
+                } catch (err: any) {
+                    console.error("Upload failed for", file.name, err);
+                } finally {
+                    setUploadProgress(prev => { 
+                        const next = { ...prev }; delete next[file.name]; return next; 
+                    });
+                }
             }
-            setTimeout(() => router.refresh(), 1000);
+            setTimeout(() => router.refresh(), 500);
         } catch (error) {
             console.error(error);
         } finally {
@@ -387,8 +426,8 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
                                                     if (items[i].type.indexOf('image') !== -1) {
                                                         const file = items[i].getAsFile();
                                                         if (file) {
-                                                            if (file.size > 5242880) {
-                                                                alert(`File ảnh dán vào quá lớn (Tối đa 5MB)`);
+                                                            if (file.size > 52428800) {
+                                                                alert(`File ảnh dán vào quá lớn (Tối đa 50MB)`);
                                                                 return;
                                                             }
                                                             setIsSaving(true);
@@ -441,14 +480,25 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
                             />
                         </div>
 
-                        {(!project.attachments || project.attachments.length === 0) ? (
+                        {(!project.attachments || project.attachments.length === 0) && Object.keys(uploadProgress).length === 0 ? (
                             <Card style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
                                 <FileText size={48} style={{ margin: '0 auto 1rem', opacity: 0.5 }} />
                                 <p>Chưa có tài liệu nào trong tủ hồ sơ của dự án.</p>
                             </Card>
                         ) : (
                             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                                {project.attachments.map((doc: any) => (
+                                {Object.entries(uploadProgress).map(([fileName, progress]) => (
+                                    <Card key={fileName} style={{ padding: '1rem', width: '250px', display: 'flex', flexDirection: 'column', gap: '0.5rem', border: '1px dashed var(--primary)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                                            <span style={{ color: 'var(--primary)' }}>Đang tải lên: <strong>{fileName}</strong></span>
+                                            <span style={{ color: 'var(--primary)', fontWeight: 500 }}>{progress}%</span>
+                                        </div>
+                                        <div style={{ width: '100%', height: '6px', backgroundColor: '#e2e8f0', borderRadius: '3px', overflow: 'hidden', marginTop: 'auto' }}>
+                                            <div style={{ width: `${progress}%`, height: '100%', backgroundColor: 'var(--primary)', transition: 'width 0.2s ease-out' }} />
+                                        </div>
+                                    </Card>
+                                ))}
+                                {project.attachments?.map((doc: any) => (
                                     <Card key={doc.id} style={{ padding: '1rem', width: '250px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                                         <div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>

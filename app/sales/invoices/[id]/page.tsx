@@ -87,6 +87,12 @@ export default async function SalesInvoiceDetailPage({ params }: { params: { id:
     const generalTemplates = await getTemplatesByModule('GENERAL');
     const allTemplates = [...templates, ...generalTemplates];
 
+    const settingsRaw = await prisma.systemSetting.findMany({
+        where: { key: { in: ['BANK_INFO_ENABLED', 'BANK_INFO_CONTENT'] } }
+    });
+    const settingsMap: Record<string, string> = {};
+    settingsRaw.forEach(s => settingsMap[s.key] = s.value);
+
     return (
         <SalesInvoiceDetailClient
             initialData={invoice}
@@ -94,6 +100,7 @@ export default async function SalesInvoiceDetailPage({ params }: { params: { id:
             products={products.filter((p: any) => p.isActive)}
             users={users.filter((u: any) => u.role !== 'SYSTEM')}
             emailTemplates={allTemplates}
+            settings={settingsMap}
         />
     );
 }

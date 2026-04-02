@@ -36,7 +36,7 @@ export default function PrintSalesOrderClient({ order, settings }: any) {
             position: 'fixed',
             top: 0,
             left: 0,
-            width: '100vw',
+            width: '100%',
             height: '100vh',
             backgroundColor: '#cbd5e1', // slate-300
             zIndex: 9999, // Cover entire Main Layout
@@ -73,7 +73,7 @@ export default function PrintSalesOrderClient({ order, settings }: any) {
                     .print-container {
                         position: static !important;
                         margin: 0 !important;
-                        padding: 0 !important;
+                        padding: 0 1px !important;
                         box-shadow: none !important;
                         width: 100% !important;
                         max-width: none !important;
@@ -188,9 +188,9 @@ export default function PrintSalesOrderClient({ order, settings }: any) {
                             <th style={{ border: '1px solid #cbd5e1', padding: '12px 6px', textAlign: 'center', width: '5%' }}>STT</th>
                             <th style={{ border: '1px solid #cbd5e1', padding: '12px 6px', textAlign: 'left', width: '57%' }}>Sản Phẩm / Dịch Vụ</th>
                             <th style={{ border: '1px solid #cbd5e1', padding: '12px 6px', textAlign: 'center', width: '5%' }}>SL</th>
-                            <th style={{ border: '1px solid #cbd5e1', padding: '12px 6px', textAlign: 'right', width: '13%', whiteSpace: 'nowrap' }}>Đơn Giá (VNĐ)</th>
+                            <th style={{ border: '1px solid #cbd5e1', padding: '12px 6px', textAlign: 'right', width: '13%' }}>Đơn Giá (VNĐ)</th>
                             <th style={{ border: '1px solid #cbd5e1', padding: '12px 6px', textAlign: 'center', width: '6%' }}>Thuế (%)</th>
-                            <th style={{ border: '1px solid #cbd5e1', padding: '12px 6px', textAlign: 'right', width: '14%', whiteSpace: 'nowrap' }}>Thành Tiền (VNĐ)</th>
+                            <th style={{ border: '1px solid #cbd5e1', padding: '12px 6px', textAlign: 'right', width: '14%' }}>Thành Tiền (VNĐ)</th>
                         </tr>
                     </thead>
                     <tbody>
