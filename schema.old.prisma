@@ -1,0 +1,1616 @@
+﻿datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider      = "prisma-client-js"
+  engineType    = "binary"
+  binaryTargets = ["native", "windows"]
+}
+
+model PermissionGroup {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?  @db.Text
+  permissions String   @db.Text // JSON string of granted permissions for the group
+  isSystem    Boolean  @default(false) // True for default groups (User, Manager, Admin)
+  users       User[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model User {
+  id                    String                 @id @default(cuid())
+  email                 String                 @unique
+  password              String // Th├¬m tr╞░ß╗¥ng mß║¡t khß║⌐u ─æ├ú m├ú h├│a (hashed)
+  resetToken            String?                @unique // M├ú kh├┤i phß╗Ñc mß║¡t khß║⌐u
+  resetTokenExpiry      DateTime? // Hß║ín sß╗¡ dß╗Ñng cß╗ºa m├ú kh├┤i phß╗Ñc
+  name                  String?
+  avatar                String? // ─É╞░ß╗¥ng dß║½n ß║únh ─æß║íi diß╗çn
+  role                  String                 @default("USER") // ADMIN or USER
+  permissions           String                 @db.Text // JSON string of granted permissions (legacy, to be deprecated or kept as overrides)
+  dashboardConfig       String                 @db.Text // JSON string for Dashboard customized layout
+  sidebarOrder          String                 @db.Text // JSON string for custom Sidebar menu ordering
+  customerMenuOrder     String                 @db.Text // JSON for custom Customer Menu ordering
+  permissionGroupId     String?
+  permissionGroup       PermissionGroup?       @relation(fields: [permissionGroupId], references: [id])
+  twoFactorSecret       String? // Kh├│a b├¡ mß║¡t 2FA
+  twoFactorEnabled      Boolean                @default(false) // Trß║íng th├íi 2FA
+  isActive              Boolean                @default(true) // Trß║íng th├íi kh├│a t├ái khoß║ún
+  lastLoginAt           DateTime? // Thß╗¥i gian ─æ─âng nhß║¡p gß║ºn nhß║Ñt
+  lastActiveAt          DateTime? // Thß╗¥i gian c├│ hoß║ít ─æß╗Öng (ping) tr├¬n hß╗ç thß╗æng gß║ºn nhß║Ñt
+  currentPlatform       String? // Th├┤ng tin thiß║┐t bß╗ï/tr├¼nh duyß╗çt ─æ─âng nhß║¡p gß║ºn nhß║Ñt
+  loginLogs             LoginLog[]             @relation("UserLoginLogs")
+  managedCustomers      Customer[]             @relation("CustomerManagers")
+  managedSalesEstimates SalesEstimate[]        @relation("SalesEstimateManagers")
+  managedSalesInvoices  SalesInvoice[]         @relation("SalesInvoiceManagers")
+  managedDispatches     Dispatch[]             @relation("DispatchManagers")
+  createdTasks          Task[]                 @relation("TaskCreator")
+  completedTasks        Task[]                 @relation("TaskCompleter")
+  assignedTasks         TaskAssignee[]
+  observedTasks         TaskObserver[]
+  completedChecklists   TaskChecklist[]        @relation("ChecklistCompleter")
+  taskActivityLogs      TaskActivityLog[]
+  taskComments          TaskComment[]
+  uploadedAttachments   TaskAttachment[]
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  TaskCommentReaction   TaskCommentReaction[]
+  notifications         Notification[]
+  inventoryTransactions InventoryTransaction[]
+  purchaseRequisitions  PurchaseRequisition[]
+  pushSubscriptions     PushSubscription[]     @relation("UserPushSubscriptions")
+  purchaseOrders        PurchaseOrder[]        @relation("POCreator")
+  purchaseBills         PurchaseBill[]         @relation("BillCreator")
+  purchasePayments      PurchasePayment[]      @relation("PaymentCreator")
+
+  salesEstimates           SalesEstimate[]            @relation("EstimateCreator")
+  salesOrders              SalesOrder[]               @relation("SalesOrderCreator")
+  salesInvoices            SalesInvoice[]             @relation("SalesInvoiceCreator")
+  salesPayments            SalesPayment[]             @relation("SalesPaymentCreator")
+  SalesEstimateActivityLog SalesEstimateActivityLog[]
+  SalesInvoiceNote         SalesInvoiceNote[]
+  SalesInvoiceActivityLog  SalesInvoiceActivityLog[]
+  CustomerNote             CustomerNote[]
+
+  // Phase 7 Document Creators
+  quotes                Quote[]               @relation("QuoteCreator")
+  contracts             Contract[]            @relation("ContractCreator")
+  handovers             Handover[]            @relation("HandoverCreator")
+  paymentRequests       PaymentRequest[]      @relation("PaymentRequestCreator")
+  createdLeads          Lead[]                @relation("LeadCreator")
+  CustomerActivityLog   CustomerActivityLog[]
+  todos                 Todo[]
+  createdEmailTemplates EmailTemplate[]       @relation("EmailTemplateCreator")
+  sentEmails            EmailLog[]            @relation("EmailSender")
+
+  // Expenses
+  expenses           Expense[]            @relation("ExpenseCreator")
+  ExpenseNote        ExpenseNote[]
+  ExpenseActivityLog ExpenseActivityLog[]
+
+  // Leads
+  assignedLeads   Lead[]            @relation("LeadAssignee")
+  leadForms       LeadForm[]        @relation("LeadFormAssignee")
+  LeadActivityLog LeadActivityLog[]
+  leadAssignees   LeadAssignee[]
+  leadComments    LeadComment[]
+  leadNotes       LeadNote[]
+
+  // Internal Chat
+  chatParticipants ChatParticipant[]
+  chatMessages     ChatMessage[]
+
+  // HR & Attendance
+  shiftConfigId         String?
+  shiftConfig           ShiftConfig?       @relation("UserShiftConfig", fields: [shiftConfigId], references: [id], onDelete: SetNull)
+  attendances           AttendanceRecord[] @relation("UserAttendance")
+  leaveRequests         LeaveRequest[]     @relation("UserLeaveRequests")
+  approvedLeaveRequests LeaveRequest[]     @relation("ApprovedLeaveRequests")
+
+  // Documents (Library/Knowledge Base)
+  documents   Document[]        @relation("DocumentCreator")
+  docComments DocumentComment[] @relation("DocumentCommenter")
+  docNotes    DocumentNote[]    @relation("DocumentNoter")
+
+  // Salesperson relations
+  salespersonEstimates SalesEstimate[]       @relation("EstimateSalesperson")
+  salespersonInvoices  SalesInvoice[]        @relation("InvoiceSalesperson")
+  LeadCommentReaction  LeadCommentReaction[]
+  ChatMessageReaction  ChatMessageReaction[]
+}
+
+model SystemSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique // vd: COMPANY_NAME, COMPANY_LOGO
+  value       String   @db.Text // Gi├í trß╗ï cß║Ñu h├¼nh
+  description String?  @db.Text
+  updatedAt   DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String   @default("Th├┤ng b├ío mß╗¢i")
+  message   String   @db.Text
+  type      String   @default("INFO") // INFO, WARNING, SUCCESS, ERROR
+  link      String?  @db.Text
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Customer {
+  id              String           @id @default(cuid())
+  name            String
+  email           String?          @unique
+  phone           String?
+  address         String?
+  taxCode         String?
+  totalDebt       Float            @default(0) // Positive means they owe us money
+  contracts       Contract[]
+  quotes          Quote[]
+  handovers       Handover[]
+  paymentRequests PaymentRequest[]
+  dispatches      Dispatch[]
+  tasks           Task[]
+
+  // Sales & Expenses Relations
+  salesEstimates SalesEstimate[]
+  salesOrders    SalesOrder[]
+  salesInvoices  SalesInvoice[]
+  salesPayments  SalesPayment[]
+  expenses       Expense[]
+  leads          Lead[]
+  leadSources    LeadSource[]
+
+  notes        CustomerNote[]
+  activityLogs CustomerActivityLog[]
+  emailLogs    EmailLog[]
+  contacts     CustomerContact[] // Relation to CustomerContact model
+  managers     User[]                @relation("CustomerManagers")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CustomerContact {
+  id         String    @id @default(cuid())
+  customerId String
+  name       String
+  email      String?
+  position   String? // Role or Title in the company (e.g., CEO, Accountant)
+  phone      String?
+  otherPhone String? // Optional secondary phone number
+  birthday   DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model CustomerActivityLog {
+  id         String   @id @default(cuid())
+  customerId String
+  userId     String
+  action     String // e.g. "Tß║áO_Mß╗ÜI", "Cß║¼P_NHß║¼T_TH├öNG_TIN", "Tß║áO_B├üO_GI├ü", "TH├èM_GHI_CH├Ü"
+  details    String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id])
+}
+
+model CustomerNote {
+  id         String   @id @default(cuid())
+  customerId String
+  userId     String
+  content    String   @db.Text
+  attachment String?  @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id])
+}
+
+model ContractTemplate {
+  id          String     @id @default(cuid())
+  name        String // e.g. Hß╗úp ─æß╗ông nguy├¬n tß║»c, Hß╗úp ─æß╗ông ─æß║íi l├╜
+  description String?    @db.Text
+  content     String     @db.LongText // The format string with placeholders
+  editorType  String     @default("RICH_TEXT") // "RICH_TEXT" | "DRAG_DROP"
+  contracts   Contract[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Contract {
+  id         String             @id @default(cuid())
+  title      String
+  content    String             @db.LongText // The final generated content
+  variables  String             @db.Text // JSON string storing the exact variables used
+  status     String             @default("DRAFT") // DRAFT, SIGNED, CANCELLED
+  customerId String
+  templateId String
+  customer   Customer           @relation(fields: [customerId], references: [id])
+  template   ContractTemplate   @relation(fields: [templateId], references: [id])
+  appendices ContractAppendix[]
+  tasks      Task[]
+  creatorId  String?
+  creator    User?              @relation("ContractCreator", fields: [creatorId], references: [id])
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+}
+
+model ContractAppendixTemplate {
+  id          String             @id @default(cuid())
+  name        String // e.g. Phß╗Ñ lß╗Ñc thiß║┐t bß╗ï, Phß╗Ñ lß╗Ñc gia hß║ín
+  description String?            @db.Text
+  content     String             @db.LongText // The format string with placeholders
+  editorType  String             @default("RICH_TEXT") // "RICH_TEXT" | "DRAG_DROP"
+  appendices  ContractAppendix[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+}
+
+model ContractAppendix {
+  id         String                   @id @default(cuid())
+  title      String
+  content    String                   @db.LongText // The final generated content
+  variables  String                   @db.Text // JSON string storing the exact variables used
+  status     String                   @default("DRAFT") // DRAFT, SIGNED, CANCELLED
+  contractId String
+  templateId String
+  contract   Contract                 @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  template   ContractAppendixTemplate @relation(fields: [templateId], references: [id])
+  tasks      Task[]
+  createdAt  DateTime                 @default(now())
+  updatedAt  DateTime                 @updatedAt
+}
+
+model QuoteTemplate {
+  id          String   @id @default(cuid())
+  name        String // e.g. B├ío gi├í lß║»p ─æß║╖t Camera, B├ío gi├í dß╗ïch vß╗Ñ
+  description String?  @db.Text
+  content     String   @db.LongText // The format string with placeholders and Mini-Excel tables
+  editorType  String   @default("RICH_TEXT") // "RICH_TEXT" | "DRAG_DROP"
+  quotes      Quote[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Quote {
+  id         String        @id @default(cuid())
+  title      String
+  content    String        @db.LongText // The final generated content
+  variables  String        @db.Text // JSON string storing the exact variables used
+  status     String        @default("DRAFT") // DRAFT, SENT, ACCEPTED, REJECTED
+  customerId String
+  templateId String
+  customer   Customer      @relation(fields: [customerId], references: [id])
+  template   QuoteTemplate @relation(fields: [templateId], references: [id])
+  tasks      Task[]
+  creatorId  String?
+  creator    User?         @relation("QuoteCreator", fields: [creatorId], references: [id])
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+}
+
+model HandoverTemplate {
+  id          String     @id @default(cuid())
+  name        String // e.g. Bi├¬n bß║ún b├án giao thiß║┐t bß╗ï
+  description String?    @db.Text
+  content     String     @db.LongText
+  editorType  String     @default("RICH_TEXT") // "RICH_TEXT" | "DRAG_DROP"
+  handovers   Handover[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Handover {
+  id         String           @id @default(cuid())
+  title      String
+  content    String           @db.LongText
+  variables  String           @db.Text
+  status     String           @default("DRAFT")
+  customerId String
+  templateId String
+  customer   Customer         @relation(fields: [customerId], references: [id])
+  template   HandoverTemplate @relation(fields: [templateId], references: [id])
+  tasks      Task[]
+  creatorId  String?
+  creator    User?            @relation("HandoverCreator", fields: [creatorId], references: [id])
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+}
+
+model PaymentRequestTemplate {
+  id              String           @id @default(cuid())
+  name            String // e.g. ─Éß╗ü nghß╗ï thanh to├ín lß║ºn 1
+  description     String?          @db.Text
+  content         String           @db.LongText
+  editorType      String           @default("RICH_TEXT") // "RICH_TEXT" | "DRAG_DROP"
+  paymentRequests PaymentRequest[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model PaymentRequest {
+  id         String                 @id @default(cuid())
+  title      String
+  content    String                 @db.LongText
+  variables  String                 @db.Text
+  status     String                 @default("DRAFT")
+  customerId String
+  templateId String
+  customer   Customer               @relation(fields: [customerId], references: [id])
+  template   PaymentRequestTemplate @relation(fields: [templateId], references: [id])
+  tasks      Task[]
+  creatorId  String?
+  creator    User?                  @relation("PaymentRequestCreator", fields: [creatorId], references: [id])
+  createdAt  DateTime               @default(now())
+  updatedAt  DateTime               @updatedAt
+}
+
+model DispatchTemplate {
+  id          String     @id @default(cuid())
+  name        String // e.g. C├┤ng v─ân nhß║»c nß╗ú, Th├┤ng b├ío nghß╗ë lß╗à
+  description String?    @db.Text
+  content     String     @db.LongText // The format string with placeholders
+  editorType  String     @default("RICH_TEXT") // "RICH_TEXT" | "DRAG_DROP"
+  dispatches  Dispatch[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Dispatch {
+  id         String           @id @default(cuid())
+  title      String
+  content    String           @db.LongText // The final generated content
+  variables  String           @db.Text // JSON string storing the exact variables used
+  status     String           @default("DRAFT") // DRAFT, SENT, CANCELLED
+  customerId String
+  templateId String
+  customer   Customer         @relation(fields: [customerId], references: [id])
+  template   DispatchTemplate @relation(fields: [templateId], references: [id])
+  tasks      Task[]
+  managers   User[]           @relation("DispatchManagers")
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+}
+
+// --- TASKS MODULE ---
+model Task {
+  id                String    @id @default(cuid())
+  title             String
+  description       String?   @db.Text
+  status            String    @default("TODO") // TODO, IN_PROGRESS, REVIEW, DONE, CANCELLED, PAUSED
+  priority          String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  dueDate           DateTime?
+  isPublic          Boolean   @default(true) // true: Public, false: Private
+  isProject         Boolean   @default(false)
+  startDate         DateTime?
+  estimatedValue    Float?    @default(0)
+  estimatedDuration String?
+  tags              String?
+
+  isRecurring    Boolean @default(false)
+  recurrenceRule String? // vd: "DAILY", "WEEKLY", "MONTHLY"
+
+  parentTaskId String?
+  parentTask   Task?   @relation("TaskRecurrence", fields: [parentTaskId], references: [id])
+  childTasks   Task[]  @relation("TaskRecurrence")
+
+  assignees TaskAssignee[]
+
+  creatorId String
+  creator   User   @relation("TaskCreator", fields: [creatorId], references: [id])
+
+  observers TaskObserver[]
+
+  completedById String?
+  completedBy   User?     @relation("TaskCompleter", fields: [completedById], references: [id])
+  completedAt   DateTime?
+
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+
+  contractId String?
+  contract   Contract? @relation(fields: [contractId], references: [id], onDelete: SetNull)
+
+  quoteId String?
+  quote   Quote?  @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+
+  appendixId String?
+  appendix   ContractAppendix? @relation(fields: [appendixId], references: [id], onDelete: SetNull)
+
+  handoverId String?
+  handover   Handover? @relation(fields: [handoverId], references: [id], onDelete: SetNull)
+
+  paymentReqId String?
+  paymentReq   PaymentRequest? @relation(fields: [paymentReqId], references: [id], onDelete: SetNull)
+
+  dispatchId String?
+  dispatch   Dispatch? @relation(fields: [dispatchId], references: [id], onDelete: SetNull)
+
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  expenseId String?
+  expense   Expense? @relation(fields: [expenseId], references: [id], onDelete: SetNull)
+
+  purchaseOrderId String?
+  purchaseOrder   PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id], onDelete: SetNull)
+
+  purchaseBillId String?
+  purchaseBill   PurchaseBill? @relation(fields: [purchaseBillId], references: [id], onDelete: SetNull)
+
+  purchasePaymentId String?
+  purchasePayment   PurchasePayment? @relation(fields: [purchasePaymentId], references: [id], onDelete: SetNull)
+
+  salesEstimateId String?
+  salesEstimate   SalesEstimate? @relation(fields: [salesEstimateId], references: [id], onDelete: SetNull)
+
+  salesOrderId String?
+  salesOrder   SalesOrder? @relation(fields: [salesOrderId], references: [id], onDelete: SetNull)
+
+  salesInvoiceId String?
+  salesInvoice   SalesInvoice? @relation(fields: [salesInvoiceId], references: [id], onDelete: SetNull)
+
+  salesPaymentId String?
+  salesPayment   SalesPayment? @relation(fields: [salesPaymentId], references: [id], onDelete: SetNull)
+
+  leadId String?
+  lead   Lead?   @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  checklists   TaskChecklist[]
+  comments     TaskComment[]
+  attachments  TaskAttachment[]
+  activityLogs TaskActivityLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TaskAssignee {
+  taskId String
+  userId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, userId])
+}
+
+model TaskObserver {
+  taskId String
+  userId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, userId])
+}
+
+model TaskChecklist {
+  id          String  @id @default(cuid())
+  title       String
+  isCompleted Boolean @default(false)
+
+  completedById String?
+  completedBy   User?     @relation("ChecklistCompleter", fields: [completedById], references: [id])
+  completedAt   DateTime?
+
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TaskActivityLog {
+  id        String   @id @default(cuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  action    String
+  details   String?  @db.Text
+  createdAt DateTime @default(now())
+}
+
+model TaskComment {
+  id      String @id @default(cuid())
+  content String @db.LongText
+  taskId  String
+  userId  String
+  task    Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Nested Replies Support
+  parentId String?
+  parent   TaskComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  TaskComment[] @relation("CommentReplies")
+
+  images String? @db.LongText
+  files  String? @db.LongText
+
+  reactions TaskCommentReaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TaskCommentReaction {
+  id        String      @id @default(cuid())
+  commentId String
+  userId    String
+  emoji     String // e.g., 'like', 'heart', 'haha'
+  comment   TaskComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+
+  @@unique([commentId, userId, emoji])
+}
+
+model TaskAttachment {
+  id           String   @id @default(cuid())
+  fileName     String
+  fileUrl      String   @db.LongText
+  fileType     String
+  taskId       String
+  task         Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  uploadedById String
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now())
+}
+
+// --- INVENTORY MANAGEMENT MODULE ---
+
+model Warehouse {
+  id              String                 @id @default(cuid())
+  name            String
+  location        String?
+  isDefault       Boolean                @default(false)
+  inventories     Inventory[]
+  transactionsOut InventoryTransaction[] @relation("WarehouseOut")
+  transactionsIn  InventoryTransaction[] @relation("WarehouseIn")
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+}
+
+// Enums mapped to String for SQLite compatibility
+
+model ProductGroup {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?   @db.Text
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Product {
+  id               String                     @id @default(cuid())
+  sku              String                     @unique
+  name             String
+  type             String                     @default("PRODUCT") // "PRODUCT" | "SERVICE"
+  unit             String                     @default("C├íi")
+  taxRate          Float                      @default(0) // Default VAT (%)
+  importPrice      Float                      @default(0)
+  salePrice        Float                      @default(0)
+  description      String?                    @db.Text
+  notes            String?                    @db.Text
+  minStockLevel    Int                        @default(10)
+  isActive         Boolean                    @default(true)
+  groupId          String?
+  group            ProductGroup?              @relation(fields: [groupId], references: [id])
+  inventories      Inventory[]
+  transactionItems InventoryTransactionItem[]
+
+  supplierProducts         SupplierProduct[]
+  purchaseRequisitionItems PurchaseRequisitionItem[]
+  purchaseOrderItems       PurchaseOrderItem[]
+  purchaseBillItems        PurchaseBillItem[]
+
+  salesEstimateItems SalesEstimateItem[]
+  salesOrderItems    SalesOrderItem[]
+  salesInvoiceItems  SalesInvoiceItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Inventory {
+  id          String    @id @default(cuid())
+  productId   String
+  warehouseId String
+  quantity    Int       @default(0)
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([productId, warehouseId])
+}
+
+// Enums mapped to String for SQLite compatibility
+
+model InventoryTransaction {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  type            String // "IN" | "OUT" | "TRANSFER" | "ADJUSTMENT"
+  status          String   @default("DRAFT") // "DRAFT" | "COMPLETED" | "CANCELLED"
+  date            DateTime @default(now())
+  notes           String?  @db.Text
+  fromWarehouseId String?
+  toWarehouseId   String?
+  supplierId      String?
+
+  fromWarehouse Warehouse? @relation("WarehouseOut", fields: [fromWarehouseId], references: [id])
+  toWarehouse   Warehouse? @relation("WarehouseIn", fields: [toWarehouseId], references: [id])
+  supplier      Supplier?  @relation(fields: [supplierId], references: [id])
+
+  items InventoryTransactionItem[]
+
+  creatorId String
+  creator   User   @relation(fields: [creatorId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model InventoryTransactionItem {
+  id            String @id @default(cuid())
+  transactionId String
+  productId     String
+  quantity      Int
+  price         Float  @default(0)
+
+  transaction InventoryTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  product     Product              @relation(fields: [productId], references: [id])
+}
+
+// --- PROCUREMENT & SUPPLIER MANAGEMENT MODULE ---
+
+model Supplier {
+  id           String  @id @default(cuid())
+  code         String  @unique
+  name         String
+  contactName  String?
+  email        String?
+  phone        String?
+  address      String?
+  taxCode      String?
+  website      String?
+  businessType String?
+  bankAccount  String?
+  bankName     String?
+  notes        String? @db.Text
+
+  // Financials
+  totalDebt Float @default(0) // Positive means we owe them money
+
+  // Relations
+  products    SupplierProduct[]
+  orders      PurchaseOrder[]
+  bills       PurchaseBill[]
+  payments    PurchasePayment[]
+  expenses    Expense[]
+  inventoryTx InventoryTransaction[] // IN transactions from this supplier
+  tasks       Task[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SupplierProduct {
+  id          String  @id @default(cuid())
+  supplierId  String
+  productId   String
+  supplierSku String?
+  price       Float   @default(0)
+
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([supplierId, productId])
+}
+
+model PurchaseRequisition {
+  id     String   @id @default(cuid())
+  code   String   @unique
+  date   DateTime @default(now())
+  status String   @default("DRAFT") // DRAFT, PENDING_APPROVAL, APPROVED, REJECTED
+  notes  String?  @db.Text
+
+  creatorId String
+  creator   User   @relation(fields: [creatorId], references: [id])
+
+  items PurchaseRequisitionItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PurchaseRequisitionItem {
+  id            String  @id @default(cuid())
+  requisitionId String
+  productId     String
+  quantity      Int
+  notes         String? @db.Text
+
+  requisition PurchaseRequisition @relation(fields: [requisitionId], references: [id], onDelete: Cascade)
+  product     Product             @relation(fields: [productId], references: [id])
+}
+
+model PurchaseOrder {
+  id     String   @id @default(cuid())
+  code   String   @unique
+  date   DateTime @default(now())
+  status String   @default("DRAFT") // DRAFT, SENT, PARTIAL_RECEIVED, COMPLETED, CANCELLED
+  notes  String?  @db.Text
+
+  subTotal    Float @default(0)
+  taxAmount   Float @default(0)
+  totalAmount Float @default(0)
+
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
+
+  creatorId String
+  creator   User   @relation("POCreator", fields: [creatorId], references: [id])
+
+  items PurchaseOrderItem[]
+  bills PurchaseBill[] // Bills linked to this PO
+  tasks Task[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PurchaseOrderItem {
+  id          String  @id @default(cuid())
+  orderId     String
+  productId   String? // Made optional for external products
+  productName String? // Added for external product custom names
+  quantity    Int
+  unitPrice   Float   @default(0)
+  taxRate     Float   @default(0)
+  taxAmount   Float   @default(0)
+  totalPrice  Float   @default(0)
+
+  order   PurchaseOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product?      @relation(fields: [productId], references: [id])
+}
+
+model PurchaseBill {
+  id              String    @id @default(cuid())
+  code            String    @unique // Internal Bill Code
+  supplierInvoice String? // Supplier's physical invoice number
+  date            DateTime  @default(now())
+  dueDate         DateTime? // Hß║ín thanh to├ín
+  status          String    @default("DRAFT") // DRAFT, APPROVED (creates IN Tx & Debt), PARTIAL_PAID, PAID
+  notes           String?   @db.Text
+  attachment      String?   @db.Text // Chuß╗ùi JSON chß╗⌐a mß║úng t├ái liß╗çu ─æ├¡nh k├¿m
+  tags            String? // Commas separated list of tags
+
+  subTotal    Float @default(0)
+  taxAmount   Float @default(0)
+  totalAmount Float @default(0)
+  paidAmount  Float @default(0)
+
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
+
+  orderId String?
+  order   PurchaseOrder? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  creatorId String
+  creator   User   @relation("BillCreator", fields: [creatorId], references: [id])
+
+  items       PurchaseBillItem[]
+  allocations PurchasePaymentAllocation[] // Payments allocated to this bill
+  tasks       Task[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PurchaseBillItem {
+  id          String  @id @default(cuid())
+  billId      String
+  productId   String? // Made optional for external products
+  productName String? // Added for external product custom names
+  quantity    Int
+  unitPrice   Float   @default(0)
+  taxRate     Float   @default(0)
+  taxAmount   Float   @default(0)
+  totalPrice  Float   @default(0)
+
+  bill    PurchaseBill @relation(fields: [billId], references: [id], onDelete: Cascade)
+  product Product?     @relation(fields: [productId], references: [id])
+}
+
+model PurchasePayment {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  date          DateTime @default(now())
+  amount        Float
+  paymentMethod String   @default("CASH") // CASH, BANK_TRANSFER
+  reference     String? // Transaction ID
+  notes         String?  @db.Text
+  attachment    String?  @db.Text
+
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
+
+  creatorId String
+  creator   User   @relation("PaymentCreator", fields: [creatorId], references: [id])
+
+  allocations PurchasePaymentAllocation[]
+  tasks       Task[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PurchasePaymentAllocation {
+  id        String @id @default(cuid())
+  paymentId String
+  billId    String
+  amount    Float
+
+  payment PurchasePayment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  bill    PurchaseBill    @relation(fields: [billId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([paymentId, billId])
+}
+
+// --- SALES MANAGEMENT MODULE ---
+
+model SalesEstimate {
+  id         String    @id @default(cuid())
+  code       String    @unique
+  date       DateTime  @default(now())
+  validUntil DateTime?
+  status     String    @default("DRAFT") // DRAFT, SENT, ACCEPTED, REJECTED
+  notes      String?   @db.Text
+  tags       String? // Commas separated list of tags
+
+  subTotal    Float @default(0)
+  taxAmount   Float @default(0)
+  totalAmount Float @default(0)
+
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  creatorId String
+  creator   User   @relation("EstimateCreator", fields: [creatorId], references: [id])
+
+  salespersonId String?
+  salesperson   User?   @relation("EstimateSalesperson", fields: [salespersonId], references: [id])
+
+  items        SalesEstimateItem[]
+  activityLogs SalesEstimateActivityLog[]
+  tasks        Task[]
+  managers     User[]                     @relation("SalesEstimateManagers")
+
+  leadId String?
+  lead   Lead?   @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  EmailLog  EmailLog[]
+  customerSignature String?   @db.LongText
+  customerSignedAt  DateTime?
+  customerSignIP      String?
+  customerSignDevice  String?
+  customerSignLocation String?  @db.Text
+  companySignature  String?   @db.LongText
+  companySignedAt   DateTime?
+  companySignerId   String?
+
+}
+
+model SalesEstimateActivityLog {
+  id         String   @id @default(cuid())
+  estimateId String
+  userId     String
+  action     String // e.g., CREATED, STATUS_CHANGED
+  details    String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  estimate SalesEstimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+  user     User          @relation(fields: [userId], references: [id])
+}
+
+model SalesEstimateItem {
+  id          String  @id @default(cuid())
+  estimateId  String
+  productId   String?
+  customName  String?
+  description String? @db.Text
+  unit        String?
+  quantity    Int
+  unitPrice   Float   @default(0)
+  taxRate     Float   @default(0)
+  taxAmount   Float   @default(0)
+  totalPrice  Float   @default(0)
+
+  estimate SalesEstimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+  product  Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
+}
+
+model SalesOrder {
+  id     String   @id @default(cuid())
+  code   String   @unique
+  date   DateTime @default(now())
+  status String   @default("DRAFT") // DRAFT, SENT, CONFIRMED, COMPLETED, CANCELLED
+  notes  String?  @db.Text
+
+  subTotal    Float @default(0)
+  taxAmount   Float @default(0)
+  totalAmount Float @default(0)
+
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  creatorId String
+  creator   User   @relation("SalesOrderCreator", fields: [creatorId], references: [id])
+
+  items    SalesOrderItem[]
+  invoices SalesInvoice[] // Invoices linked to this Sales Order
+  tasks    Task[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  customerSignature String?   @db.LongText
+  customerSignedAt  DateTime?
+  customerSignIP      String?
+  customerSignDevice  String?
+  customerSignLocation String?  @db.Text
+  companySignature  String?   @db.LongText
+  companySignedAt   DateTime?
+  companySignerId   String?
+
+}
+
+model SalesOrderItem {
+  id          String  @id @default(cuid())
+  orderId     String
+  productId   String?
+  customName  String?
+  description String? @db.Text
+  unit        String?
+  quantity    Int
+  unitPrice   Float   @default(0)
+  taxRate     Float   @default(0)
+  taxAmount   Float   @default(0)
+  totalPrice  Float   @default(0)
+
+  order   SalesOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product?   @relation(fields: [productId], references: [id], onDelete: SetNull)
+}
+
+model SalesInvoice {
+  id         String    @id @default(cuid())
+  code       String    @unique
+  date       DateTime  @default(now())
+  dueDate    DateTime?
+  status     String    @default("DRAFT") // DRAFT, ISSUED (creates OUT Tx & Debt), PARTIAL_PAID, PAID
+  notes      String?   @db.Text
+  attachment String?   @db.Text
+  tags       String? // Commas separated list of tags
+
+  subTotal    Float @default(0)
+  taxAmount   Float @default(0)
+  totalAmount Float @default(0)
+  paidAmount  Float @default(0)
+
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  orderId String?
+  order   SalesOrder? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  creatorId String
+  creator   User   @relation("SalesInvoiceCreator", fields: [creatorId], references: [id])
+
+  salespersonId String?
+  salesperson   User?   @relation("InvoiceSalesperson", fields: [salespersonId], references: [id])
+
+  items        SalesInvoiceItem[]
+  allocations  SalesPaymentAllocation[]
+  tasks        Task[]
+  invoiceNotes SalesInvoiceNote[]
+  activityLogs SalesInvoiceActivityLog[]
+  emailLogs    EmailLog[]
+  managers     User[]                    @relation("SalesInvoiceManagers")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  customerSignature String?   @db.LongText
+  customerSignedAt  DateTime?
+  customerSignIP      String?
+  customerSignDevice  String?
+  customerSignLocation String?  @db.Text
+  companySignature  String?   @db.LongText
+  companySignedAt   DateTime?
+  companySignerId   String?
+
+}
+
+model SalesInvoiceItem {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  productId   String?
+  customName  String?
+  description String? @db.Text
+  unit        String?
+  quantity    Int
+  unitPrice   Float   @default(0)
+  taxRate     Float   @default(0)
+  taxAmount   Float   @default(0)
+  totalPrice  Float   @default(0)
+
+  invoice SalesInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product Product?     @relation(fields: [productId], references: [id], onDelete: SetNull)
+}
+
+model SalesInvoiceNote {
+  id         String   @id @default(cuid())
+  invoiceId  String
+  userId     String
+  content    String   @db.Text
+  attachment String?  @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  invoice SalesInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  user    User         @relation(fields: [userId], references: [id])
+}
+
+model SalesInvoiceActivityLog {
+  id        String   @id @default(cuid())
+  invoiceId String
+  userId    String
+  action    String // e.g. "CREATED", "UPDATED", "STATUS_CHANGED", "APPROVED"
+  details   String?  @db.Text
+  createdAt DateTime @default(now())
+
+  invoice SalesInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  user    User         @relation(fields: [userId], references: [id])
+}
+
+model SalesPayment {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  date          DateTime @default(now())
+  status        String   @default("COMPLETED") // COMPLETED, CANCELLED
+  amount        Float
+  paymentMethod String   @default("CASH") // CASH, BANK_TRANSFER
+  reference     String?
+  notes         String?  @db.Text
+  attachment    String?  @db.Text
+
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  creatorId String
+  creator   User   @relation("SalesPaymentCreator", fields: [creatorId], references: [id])
+
+  allocations SalesPaymentAllocation[]
+  tasks       Task[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SalesPaymentAllocation {
+  id        String @id @default(cuid())
+  paymentId String
+  invoiceId String
+  amount    Float
+
+  payment SalesPayment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  invoice SalesInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([paymentId, invoiceId])
+}
+
+model Todo {
+  id        String   @id @default(cuid())
+  text      String
+  completed Boolean  @default(false)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// --- EXPENSE MANAGEMENT MODULE ---
+
+model ExpenseCategory {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?   @db.Text
+  expenses    Expense[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Expense {
+  id            String   @id @default(cuid())
+  code          String   @unique // e.g. EXP-202310-001
+  date          DateTime @default(now())
+  amount        Float
+  payee         String? // ─Éß╗æi t╞░ß╗úng nhß║¡n chi
+  description   String   @db.Text
+  paymentMethod String   @default("CASH") // CASH, BANK_TRANSFER, CREDIT_CARD
+  status        String   @default("COMPLETED") // PENDING, COMPLETED, CANCELLED
+  reference     String? // Receipt number or transaction ID
+  attachment    String?  @db.Text // JSON string or URL
+
+  categoryId String
+  category   ExpenseCategory @relation(fields: [categoryId], references: [id])
+
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  creatorId String
+  creator   User   @relation("ExpenseCreator", fields: [creatorId], references: [id])
+
+  tasks        Task[]
+  notes        ExpenseNote[]
+  activityLogs ExpenseActivityLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ExpenseNote {
+  id         String   @id @default(cuid())
+  expenseId  String
+  userId     String
+  content    String   @db.Text
+  attachment String?  @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
+}
+
+model ExpenseActivityLog {
+  id        String   @id @default(cuid())
+  expenseId String
+  userId    String
+  action    String // e.g. "CREATED", "UPDATED", "STATUS_CHANGED", "APPROVED"
+  details   String?  @db.Text
+  createdAt DateTime @default(now())
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
+}
+
+// --- LEAD MANAGEMENT MODULE ---
+
+model Lead {
+  id   String @id @default(cuid())
+  code String @unique // M├ú c╞í hß╗Öi, dß║íng LEAD-YYMM-XXXX
+  name String // T├¬n c╞í hß╗Öi (VD: "Lß║»p ─æß║╖t hß╗ç thß╗æng Camera nh├á x╞░ß╗ƒng A")
+
+  // Th├┤ng tin li├¬n hß╗ç (D├ánh cho Lead Mß╗ÜI ch╞░a l├á Kh├ích H├áng)
+  company     String? // T├¬n kh├ích h├áng / C├┤ng ty mß╗¢i
+  contactName String? // Ng╞░ß╗¥i li├¬n hß╗ç ch├¡nh mß╗¢i
+  email       String? @unique
+  phone       String?
+
+  // Li├¬n kß║┐t vß╗¢i Kh├ích H├áng HIß╗åN Tß║áI (Nß║┐u l├á c╞í hß╗Öi tß╗½ KH c┼⌐ b├ín th├¬m)
+  // HOß║╢C li├¬n kß║┐t sau khi chuyß╗ân ─æß╗òi Lead Mß╗¢i th├ánh Kh├ích h├áng ch├¡nh thß╗⌐c
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+
+  source       String? // Nguß╗ôn kh├ích h├áng dß║íng Text (l╞░u lß║íi cho t╞░╞íng th├¡ch ng╞░ß╗úc)
+  sourceId     String?
+  sourceEntity LeadSource? @relation(fields: [sourceId], references: [id])
+
+  status String @default("NEW") // Trß║íng th├íi Kanban: NEW, CONTACTED, QUALIFIED, PROPOSAL, WON, LOST
+
+  estimatedValue    Float?    @default(0) // Gi├í trß╗ï ╞░ß╗¢c t├¡nh
+  expectedCloseDate DateTime? // Ng├áy dß╗▒ kiß║┐n chß╗æt hß╗úp ─æß╗ông/─æ╞ín h├áng
+  notes             String?   @db.Text
+
+  // Ng╞░ß╗¥i phß╗Ñ tr├ích
+  assignedToId String?
+  assignedTo   User?   @relation("LeadAssignee", fields: [assignedToId], references: [id])
+
+  // Danh s├ích Ng╞░ß╗¥i phß╗Ñ tr├ích chung (nhiß╗üu ng╞░ß╗¥i)
+  assignees LeadAssignee[]
+
+  // Thß║úo luß║¡n/B├¼nh luß║¡n & Ghi ch├║
+  comments  LeadComment[]
+  leadNotes LeadNote[]
+
+  // Ng╞░ß╗¥i tß║ío
+  creatorId String?
+  creator   User?   @relation("LeadCreator", fields: [creatorId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  activityLogs   LeadActivityLog[]
+  tasks          Task[] // C├┤ng viß╗çc li├¬n quan (gß╗ìi ─æiß╗çn, hß║╣n gß║╖p...)
+  EmailLog       EmailLog[]
+  salesEstimates SalesEstimate[]
+}
+
+model LeadNote {
+  id         String   @id @default(cuid())
+  leadId     String
+  userId     String
+  content    String   @db.Text
+  attachment String?  @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+}
+
+model LeadAssignee {
+  leadId String
+  userId String
+  lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([leadId, userId])
+}
+
+model LeadComment {
+  id      String @id @default(cuid())
+  content String @db.LongText
+  leadId  String
+  userId  String
+  lead    Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  parentId String?
+  parent   LeadComment?  @relation("LeadCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  LeadComment[] @relation("LeadCommentReplies")
+
+  reactions LeadCommentReaction[]
+
+  images String? @db.LongText
+  files  String? @db.LongText
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LeadCommentReaction {
+  id        String      @id @default(cuid())
+  emoji     String
+  commentId String
+  userId    String
+  comment   LeadComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([commentId, userId, emoji])
+}
+
+model LeadSource {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  description String? @db.Text
+  isActive    Boolean @default(true)
+
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+
+  leads Lead[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LeadForm {
+  id             String  @id @default(cuid())
+  title          String // T├¬n nß╗Öi bß╗Ö, v├¡ dß╗Ñ: "Form Landing Page M├íy Lß╗ìc N╞░ß╗¢c"
+  isActive       Boolean @default(true)
+  source         String  @default("Website") // Nguß╗ôn kh├ích h├áng g├ín mß║╖c ─æß╗ïnh (Website, Zalo, Landing Page...)
+  successMessage String? // C├óu th├┤ng b├ío sau khi ─æiß╗ün th├ánh c├┤ng
+
+  assigneeId String? // ID Nh├ón vi├¬n mß║╖c ─æß╗ïnh sß║╜ ─æ╞░ß╗úc nhß║¡n/assigned cho Lead n├áy
+  assignee   User?   @relation("LeadFormAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LeadActivityLog {
+  id        String   @id @default(cuid())
+  leadId    String
+  userId    String
+  action    String // VD: "Tß║áO_Mß╗ÜI", "CHUYß╗éN_TRß║áNG_TH├üI", "TH├èM_GHI_CH├Ü"
+  details   String?  @db.Text
+  createdAt DateTime @default(now())
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+}
+
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  name      String
+  subject   String
+  body      String   @db.Text
+  module    String?
+  creatorId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  creator User @relation("EmailTemplateCreator", fields: [creatorId], references: [id])
+}
+
+model EmailLog {
+  id      String @id @default(cuid())
+  subject String
+  body    String @db.Text
+  toEmail String
+  status  String @default("SENT") // SENT, OPENED, FAILED
+
+  senderId   String?
+  customerId String?
+  estimateId String?
+  invoiceId  String?
+  leadId     String?
+
+  trackingId String    @unique @default(cuid())
+  openedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sender   User?          @relation("EmailSender", fields: [senderId], references: [id])
+  customer Customer?      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  estimate SalesEstimate? @relation(fields: [estimateId], references: [id], onDelete: SetNull)
+  invoice  SalesInvoice?  @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  lead     Lead?          @relation(fields: [leadId], references: [id], onDelete: SetNull)
+}
+
+// --- INTERNAL CHAT MODULE ---
+
+model ChatRoom {
+  id      String  @id @default(cuid())
+  name    String? // Optional name for group chats
+  isGroup Boolean @default(false)
+
+  participants ChatParticipant[]
+  messages     ChatMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ChatParticipant {
+  id       String   @id @default(cuid())
+  roomId   String
+  userId   String
+  lastRead DateTime @default(now())
+
+  room ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([roomId, userId])
+}
+
+model ChatMessage {
+  id            String  @id @default(cuid())
+  roomId        String
+  senderId      String
+  content       String  @db.Text
+  attachmentUrl String? @db.Text
+
+  replyToId String?
+  replyTo   ChatMessage?  @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies   ChatMessage[] @relation("MessageReplies")
+
+  room   ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  sender User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  reactions ChatMessageReaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ChatMessageReaction {
+  id        String @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String // e.g., 'like', 'love', 'smile', etc.
+
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([messageId, userId, emoji])
+}
+
+// ==========================================
+// HR & ATTENDANCE MODULE
+// ==========================================
+
+model ShiftConfig {
+  id             String  @id @default(cuid())
+  name           String // T├¬n ca l├ám viß╗çc
+  startTime      String  @default("08:00")
+  endTime        String  @default("17:00")
+  lunchStart     String  @default("12:00")
+  lunchEnd       String  @default("13:00")
+  lateThreshold  Int     @default(0) // Sß╗æ ph├║t cho ph├⌐p ─æi muß╗Ön
+  earlyThreshold Int     @default(0) // Sß╗æ ph├║t cho ph├⌐p vß╗ü sß╗¢m
+  isActive       Boolean @default(true)
+
+  users User[] @relation("UserShiftConfig")
+}
+
+model AttendanceRecord {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation("UserAttendance", fields: [userId], references: [id], onDelete: Cascade)
+
+  date DateTime @db.Date // Ng├áy chß║Ñm c├┤ng (chß╗ë lß║Ñy phß║ºn ng├áy, ko lß║Ñy giß╗¥)
+
+  checkInTime     DateTime?
+  checkInPhotoUrl String?   @db.LongText
+  checkInLocation String?
+
+  checkOutTime     DateTime?
+  checkOutPhotoUrl String?   @db.LongText
+  checkOutLocation String?
+
+  status String  @default("PRESENT") // PRESENT, LATE, HALF_DAY, ABSENT
+  notes  String?
+
+  totalWorkMinutes Int? // T├¡nh bß║▒ng ph├║t
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date]) // Mß╗ùi nh├ón vi├¬n chß╗ë c├│ 1 bß║ún ghi chß║Ñm c├┤ng mß╗ùi ng├áy
+}
+
+model LeaveRequest {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation("UserLeaveRequests", fields: [userId], references: [id])
+  type      String // SICK_LEAVE, ANNUAL_LEAVE, UNPAID_LEAVE
+  startDate DateTime
+  endDate   DateTime
+  reason    String
+  imageUrl  String?  @db.LongText
+  status    String   @default("PENDING") // PENDING, APPROVED, REJECTED
+
+  approverId   String?
+  approver     User?   @relation("ApprovedLeaveRequests", fields: [approverId], references: [id])
+  approverNote String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ==========================================
+// LIBRARY & TRAINING (KNOWLEDGE BASE) MODULE
+// ==========================================
+
+model DocumentCategory {
+  id          String             @id @default(cuid())
+  name        String
+  description String?            @db.Text
+  parentId    String?
+  parent      DocumentCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children    DocumentCategory[] @relation("CategoryHierarchy")
+
+  documents Document[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Document {
+  id          String  @id @default(cuid())
+  title       String
+  description String? @db.Text
+  fileUrl     String? @db.Text
+  fileType    String? // PDF, MP4, LINK, DOCX, v.v.
+  thumbnail   String? @db.Text // ß║ónh b├¼a (bß║»t buß╗Öc vß╗¢i video)
+  size        Int? // K├¡ch th╞░ß╗¢c byte
+  isPublic    Boolean @default(true) // true: Ai c┼⌐ng xem ─æ╞░ß╗úc
+
+  categoryId String?
+  category   DocumentCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  creatorId String
+  creator   User   @relation("DocumentCreator", fields: [creatorId], references: [id])
+
+  comments DocumentComment[]
+  notes    DocumentNote[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DocumentComment {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation("DocumentCommenter", fields: [userId], references: [id])
+
+  content String @db.Text
+
+  parentId String?
+  parent   DocumentComment?  @relation("DocumentCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  DocumentComment[] @relation("DocumentCommentReplies")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DocumentNote {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation("DocumentNoter", fields: [userId], references: [id])
+
+  content    String @db.Text // Ghi ch├║ c├í nh├ón (chß╗ë user ─æ├│ xem ─æ╞░ß╗úc)
+  pageNumber Int? // L╞░u vß║┐t trang sß╗æ mß║Ñy (nß║┐u ─æß╗ìc PDF)
+  videoTime  Int? // L╞░u vß║┐t gi├óy thß╗⌐ mß║Ñy (nß║┐u xem Video)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LoginLog {
+  id        String   @id @default(cuid())
+  userId    String
+  ipAddress String?
+  userAgent String?  @db.Text
+  platform  String? // Th├┤ng tin OS/Browser sau khi ph├ón t├¡ch
+  loginAt   DateTime @default(now())
+
+  user User @relation("UserLoginLogs", fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation("UserPushSubscriptions", fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @db.Text
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}

@@ -1,0 +1,55 @@
+﻿diff --git a/app/sales/estimates/[id]/SalesEstimateDetailClient.tsx b/app/sales/estimates/[id]/SalesEstimateDetailClient.tsx
+index 623b722..0cfa63c 100644
+--- a/app/sales/estimates/[id]/SalesEstimateDetailClient.tsx
++++ b/app/sales/estimates/[id]/SalesEstimateDetailClient.tsx
+@@ -15,6 +15,7 @@ import { Mail, UserCheck } from 'lucide-react';
+ import { useSession } from 'next-auth/react';
+ import { DocumentManagersPanel } from '@/app/components/shared/DocumentManagersPanel';
+ import { EmailLogTable } from '@/app/components/ui/EmailLogTable';
++import { DocumentSignatureBlock } from '@/app/components/ui/DocumentSignatureBlock';
+ 
+ export default function SalesEstimateDetailClient({ initialData, customers, products, users, emailTemplates }: any) {
+     const router = useRouter();
+@@ -408,6 +409,42 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
+ 
+                     <SalesEstimateActivityLog logs={estimate.activityLogs || []} />
+ 
++                    {/* Signatures Card */}
++                    <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '1.5rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}>
++                        <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#1e293b', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
++                            <FileText size={20} color="#10b981" /> Chß╗» k├╜ x├íc nhß║¡n
++                        </h2>
++                        <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: '2rem' }}>
++                            <DocumentSignatureBlock 
++                                entityType="SALES_ESTIMATE" 
++                                entityId={estimate.id} 
++                                role="COMPANY" 
++                                title="NG╞»ß╗£I Lß║¼P B├üO GI├ü" 
++                                subtitle="(K├╜ x├íc nhß║¡n nß╗Öi bß╗Ö)" 
++                                canSign={true} 
++                                initialSignature={estimate.companySignature} 
++                                initialSignedAt={estimate.companySignedAt} 
++                                signerName={estimate.creator?.name} 
++                                companySignerId={session?.user?.id}
++                            />
++                            <DocumentSignatureBlock 
++                                entityType="SALES_ESTIMATE" 
++                                entityId={estimate.id} 
++                                role="CUSTOMER" 
++                                title="─Éß║áI DIß╗åN KH├üCH H├ÇNG" 
++                                subtitle="(Kh├ích h├áng k├╜ qua link public)" 
++                                canSign={false} 
++                                initialSignature={estimate.customerSignature} 
++                                initialSignedAt={estimate.customerSignedAt}
++                            metadata={{
++                                ip: estimate.customerSignIP,
++                                device: estimate.customerSignDevice,
++                                location: estimate.customerSignLocation
++                            }} 
++                            />
++                        </div>
++                    </div>
++
+                 </div>
+             </div>
+             {/* Convert Modal */}

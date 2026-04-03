@@ -1,0 +1,10 @@
+DROP TABLE IF EXISTS \`Payroll\`;
+DROP TABLE IF EXISTS \`LaborContract\`;
+DROP TABLE IF EXISTS \`EmployeeProfile\`;
+DROP TABLE IF EXISTS \`InterviewEvaluation\`;
+DROP TABLE IF EXISTS \`InterviewInterviewer\`;
+DROP TABLE IF EXISTS \`Interview\`;
+DROP TABLE IF EXISTS \`JobApplication\`;
+DROP TABLE IF EXISTS \`AtsCandidate\`;
+DROP TABLE IF EXISTS \`JobPosting\`;
+DROP TABLE IF EXISTS \`JobRequisition\`;

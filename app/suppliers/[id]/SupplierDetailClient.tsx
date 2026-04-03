@@ -168,6 +168,13 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks }
                                         <span className="text-sm font-medium text-gray-900 truncate block" title={supplier.address || ''}>{supplier.address || '--'}</span>
                                     </div>
                                 </div>
+                                <div className="flex gap-3 items-center min-w-0">
+                                    <div className="p-2 bg-red-50 rounded-full text-red-500 shrink-0"><DollarSign size={16} /></div>
+                                    <div className="min-w-0">
+                                        <span className="block text-[0.65rem] text-gray-500 uppercase tracking-wider font-semibold">Công Nợ Hiện Tại</span>
+                                        <span className="text-sm font-bold text-red-600 truncate block">{formatMoney(computedDebt)}</span>
+                                    </div>
+                                </div>
                                 {supplier.website && (
                                     <div className="flex gap-3 items-center min-w-0 sm:col-span-2">
                                         <div className="p-2 bg-gray-100 rounded-full text-gray-500 shrink-0"><Building size={16} /></div>

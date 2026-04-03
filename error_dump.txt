@@ -1,0 +1,39 @@
+
+Invalid `prisma.customer.findFirst()` invocation in
+C:\Users\admin\Documents\CONTRACT\test-customer.js:8:44
+
+  5 async function main() {
+  6   const customerId = 'cmn9vl29v0000thwku8so7rff';
+  7   try {
+→ 8     const customer = await prisma.customer.findFirst({
+          where: {
+            id: "cmn9vl29v0000thwku8so7rff"
+          },
+          include: {
+            salesPayments: true,
+            ~~~~~~~~~~~~~
+            salesOrders: true,
+            salesInvoices: true,
+            salesEstimates: true,
+        ?   contract?: true,
+        ?   customeractivitylog?: true,
+        ?   customercontact?: true,
+        ?   customernote?: true,
+        ?   dispatch?: true,
+        ?   emaillog?: true,
+        ?   expense?: true,
+        ?   handover?: true,
+        ?   lead?: true,
+        ?   leadsource?: true,
+        ?   paymentrequest?: true,
+        ?   quote?: true,
+        ?   salesestimate?: true,
+        ?   salesinvoice?: true,
+        ?   salesorder?: true,
+        ?   salespayment?: true,
+        ?   task?: true,
+        ?   user?: true
+          }
+        })
+
+Unknown field `salesPayments` for include statement on model `customer`. Available options are marked with ?.
