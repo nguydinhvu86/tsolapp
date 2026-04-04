@@ -13,6 +13,48 @@ import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
 import { AvatarImage } from '@/app/components/ui/AvatarImage';
 
+const compressImage = (file: File, maxWidth: number, maxHeight: number, quality: number = 0.8): Promise<File> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target?.result as string;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > maxWidth) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    }
+                } else {
+                    if (height > maxHeight) {
+                        width = Math.round((width * maxHeight) / height);
+                        height = maxHeight;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return reject(new Error('Canvas context failed'));
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob((blob) => {
+                    if (!blob) return reject(new Error('Canvas to Blob failed'));
+                    const newFile = new File([blob], file.name, { type: 'image/jpeg', lastModified: Date.now() });
+                    resolve(newFile);
+                }, 'image/jpeg', quality);
+            };
+            img.onerror = (error) => reject(error);
+        };
+        reader.onerror = (error) => reject(error);
+    });
+};
+
 export function ProfileClient({ initialProfile, initialStats }: { initialProfile: any, initialStats: any }) {
     const router = useRouter();
     const { update } = useSession();
@@ -85,8 +127,11 @@ export function ProfileClient({ initialProfile, initialStats }: { initialProfile
 
         setIsUploading(true);
         try {
+            // Compress the image before uploading to bypass NGINX 413 Payload Too Large limits
+            const compressedFile = await compressImage(file, 500, 500, 0.8);
+
             const formData = new FormData();
-            formData.append('avatar', file);
+            formData.append('avatar', compressedFile);
 
             const res = await fetch('/api/users/avatar', {
                 method: 'POST',
@@ -98,9 +143,10 @@ export function ProfileClient({ initialProfile, initialStats }: { initialProfile
             await update({ avatar: data.url });
             router.refresh(); // Refresh session
         } catch (err: any) {
-            alert(err.message || 'Upload thất bại');
+            alert(err.message || 'Upload thất bại (có thể do lỗi cấu hình mạng hoặc file không hỗ trợ)');
         } finally {
             setIsUploading(false);
+            e.target.value = ''; // Reset input to allow re-uploading the same file
         }
     };
 
