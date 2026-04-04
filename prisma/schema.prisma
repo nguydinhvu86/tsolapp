@@ -159,6 +159,9 @@ model Customer {
   id              String           @id @default(cuid())
   name            String
   email           String?          @unique
+  password        String? // To support Customer Portal login
+  resetToken      String?          @unique // To support Password Reset
+  lastLoginAt     DateTime? // To track Portal active times
   phone           String?
   address         String?
   taxCode         String?

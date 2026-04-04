@@ -2,7 +2,7 @@ const { Client } = require('ssh2');
 
 const conn = new Client();
 conn.on('ready', () => {
-    conn.exec('tail -n 200 /www/wwwlogs/inside.tsol.vn.error.log', (err, stream) => {
+    conn.exec('curl -I http://127.0.0.1:6688/uploads/avatars/7c7-1775301732227.jpg', (err, stream) => {
         if (err) throw err;
         stream.on('close', () => conn.end())
         .on('data', data => process.stdout.write(data))

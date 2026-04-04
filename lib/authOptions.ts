@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { authenticator } from "@otplib/preset-default";
+import { triggerPusherEvent } from "@/lib/pusher-server";
 
 export const authOptions: NextAuthOptions = {
     providers: [
@@ -24,6 +25,58 @@ export const authOptions: NextAuthOptions = {
                 });
 
                 if (!user || !user.password) {
+                    // Cố gắng tìm và chứng thực quyền truy cập Customer
+                    const customer = await prisma.customer.findUnique({
+                        where: { email: credentials.email },
+                    });
+                    if (customer && customer.password) {
+                        const isCustomerValid = await bcrypt.compare(credentials.password, customer.password);
+                        if (!isCustomerValid) throw new Error("Mật khẩu khách hàng không đúng");
+                        
+                        await prisma.customer.update({
+                            where: { id: customer.id },
+                            data: { lastLoginAt: new Date() }
+                        });
+
+                        // Thông báo cho admin theo yêu cầu
+                        try {
+                            const managers = await prisma.user.findMany({
+                                where: {
+                                    OR: [
+                                        { role: 'ADMIN' },
+                                        { managedCustomers: { some: { id: customer.id } } }
+                                    ]
+                                },
+                                select: { id: true }
+                            });
+                            
+                            const notifs = managers.map(m => ({
+                                userId: m.id,
+                                title: "Khách hàng đăng nhập",
+                                message: `Khách hàng ${customer.name} vừa đăng nhập vào hệ thống khách hàng.`,
+                                type: "INFO",
+                                link: `/customers/${customer.id}`
+                            }));
+                            if (notifs.length > 0) {
+                                await prisma.notification.createMany({ data: notifs });
+                            }
+                            await triggerPusherEvent('admin-channel', 'customer-login', {
+                                customerId: customer.id,
+                                customerName: customer.name,
+                                message: `Khách hàng ${customer.name} vửa đăng nhập.`
+                            });
+                        } catch (e) { console.error("Notification Error:", e) }
+
+                        return {
+                            id: customer.id,
+                            email: customer.email,
+                            name: customer.name,
+                            role: "CUSTOMER",
+                            avatar: null,
+                            twoFactorEnabled: false,
+                            permissions: []
+                        };
+                    }
                     throw new Error("Tài khoản không tồn tại");
                 }
 
@@ -143,6 +196,16 @@ export const authOptions: NextAuthOptions = {
             // LIVE SYNC: On every session check, query DB to ensure role/permissions are still valid
             if (token?.id) {
                 try {
+                    if (token.role === 'CUSTOMER') {
+                        const dbCustomer = await prisma.customer.findUnique({
+                            where: { id: token.id as string }
+                        });
+                        if (!dbCustomer) {
+                            token.id = "";
+                        }
+                        return token; // Bỏ qua DB User Sync đối với Customer
+                    }
+
                     const dbUser = await prisma.user.findUnique({
                         where: { id: token.id as string },
                         include: { permissionGroup: true }

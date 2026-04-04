@@ -15,3 +15,8 @@ export function formatCurrencyInHtml(html: string): string {
 
     return formatted;
 }
+
+export function formatCurrency(value: number): string {
+    if (isNaN(value)) return '0 đ';
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+}

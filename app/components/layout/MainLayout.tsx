@@ -8,9 +8,10 @@ import { Header } from './Header';
 export function MainLayout({ children, brandName, logoUrl, initialSidebarOrder }: { children: React.ReactNode, brandName: string, logoUrl?: string | null, initialSidebarOrder?: string[] }) {
     const pathname = usePathname();
     const isAuthPage = ['/login', '/forgot-password', '/reset-password'].includes(pathname || '');
+    const isClientPortal = pathname?.startsWith('/portal') || pathname?.startsWith('/public');
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    if (isAuthPage) {
+    if (isAuthPage || isClientPortal) {
         return <>{children}</>;
     }
 

@@ -2,7 +2,7 @@ const { Client } = require('ssh2');
 
 const conn = new Client();
 conn.on('ready', () => {
-    conn.exec('tail -n 200 /www/wwwlogs/inside.tsol.vn.error.log', (err, stream) => {
+    conn.exec('export PATH=/www/server/nvm/versions/node/v24.14.0/bin:$PATH && pm2 logs inside.tsol.vn --lines 50 --nostream', (err, stream) => {
         if (err) throw err;
         stream.on('close', () => conn.end())
         .on('data', data => process.stdout.write(data))

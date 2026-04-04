@@ -1,0 +1,177 @@
+[
+  {
+    "id": "cmmtriy4l000010eb0kl15op9",
+    "key": "COMPANY_NAME",
+    "value": "Công ty TNHH Phần mềm Trường Thịnh",
+    "description": null,
+    "updatedAt": "2026-03-16T23:07:24.128Z"
+  },
+  {
+    "id": "cmmtriy4l000110ebc4qvrsmj",
+    "key": "COMPANY_PHONE",
+    "value": "0901 234 567",
+    "description": null,
+    "updatedAt": "2026-03-16T23:07:24.167Z"
+  },
+  {
+    "id": "cmmtriy4l000210eb1hmnuyeh",
+    "key": "COMPANY_EMAIL",
+    "value": "contact@truongthinh.com",
+    "description": null,
+    "updatedAt": "2026-03-16T23:07:24.174Z"
+  },
+  {
+    "id": "cmmtriy4l000310ebjvpdn5eu",
+    "key": "COMPANY_ADDRESS",
+    "value": "123 Đường Nam Kỳ Khởi Nghĩa, Quận 3, TP.HCM",
+    "description": null,
+    "updatedAt": "2026-03-16T23:07:24.181Z"
+  },
+  {
+    "id": "cmmtriy4l000410ebcypkumrx",
+    "key": "COMPANY_TAX",
+    "value": "0312000123",
+    "description": null,
+    "updatedAt": "2026-03-16T23:07:24.194Z"
+  },
+  {
+    "id": "cmmtrlq6y000fzkol2kmkvoqd",
+    "key": "COMPANY_DISPLAY_NAME",
+    "value": "",
+    "description": null,
+    "updatedAt": "2026-03-16T23:07:24.142Z"
+  },
+  {
+    "id": "cmmtrlq7o000gzkol7o5rtet7",
+    "key": "COMPANY_FULL_NAME",
+    "value": "",
+    "description": null,
+    "updatedAt": "2026-03-16T23:07:24.152Z"
+  },
+  {
+    "id": "cmmtrlq7u000hzkol7dzysa8y",
+    "key": "COMPANY_LOGO",
+    "value": "",
+    "description": null,
+    "updatedAt": "2026-03-16T23:07:24.159Z"
+  },
+  {
+    "id": "cmmtrlq8u000mzkol797frp5v",
+    "key": "ESTIMATE_CODE_FORMAT",
+    "value": "BG{SEQ}",
+    "description": null,
+    "updatedAt": "2026-03-16T23:07:24.202Z"
+  },
+  {
+    "id": "cmmtrlq91000nzkol11yhz5nt",
+    "key": "INVOICE_CODE_FORMAT",
+    "value": "INV{SEQ}",
+    "description": null,
+    "updatedAt": "2026-03-16T23:07:24.209Z"
+  },
+  {
+    "id": "cmmtrlqa6000ozkol47iyhtha",
+    "key": "PUSHER_APP_ID",
+    "value": "",
+    "description": null,
+    "updatedAt": "2026-03-16T23:07:24.218Z"
+  },
+  {
+    "id": "cmmtrlqak000pzkoldmfp4sf4",
+    "key": "PUSHER_KEY",
+    "value": "",
+    "description": null,
+    "updatedAt": "2026-03-16T23:07:24.225Z"
+  },
+  {
+    "id": "cmmtrlqb6000qzkol70xdc37c",
+    "key": "PUSHER_SECRET",
+    "value": "",
+    "description": null,
+    "updatedAt": "2026-03-16T23:07:24.234Z"
+  },
+  {
+    "id": "cmmtrlqbk000rzkol42ztv5h9",
+    "key": "PUSHER_CLUSTER",
+    "value": "",
+    "description": null,
+    "updatedAt": "2026-03-16T23:07:24.240Z"
+  },
+  {
+    "id": "cmmtrlqbr000szkolf8sewnez",
+    "key": "WATERMARK_ENABLED",
+    "value": "true",
+    "description": null,
+    "updatedAt": "2026-03-16T23:07:24.247Z"
+  },
+  {
+    "id": "cmmtrlqbx000tzkol2ks7m18a",
+    "key": "WATERMARK_TYPE",
+    "value": "TEXT",
+    "description": null,
+    "updatedAt": "2026-03-16T23:07:24.255Z"
+  },
+  {
+    "id": "cmmtrlqc7000uzkolzr7b19im",
+    "key": "WATERMARK_TEXT",
+    "value": "T-SOLUTION",
+    "description": null,
+    "updatedAt": "2026-03-16T23:07:24.261Z"
+  },
+  {
+    "id": "cmmtrlqcd000vzkol6o05jf5w",
+    "key": "WATERMARK_IMAGE_URL",
+    "value": "",
+    "description": null,
+    "updatedAt": "2026-03-16T23:07:24.269Z"
+  },
+  {
+    "id": "cmmtrlqck000wzkolpvxsv3ml",
+    "key": "WATERMARK_OPACITY",
+    "value": "0.1",
+    "description": null,
+    "updatedAt": "2026-03-16T23:07:24.275Z"
+  },
+  {
+    "id": "cmmtrlqcs000xzkol3zft7qng",
+    "key": "WATERMARK_ROTATION",
+    "value": "-58",
+    "description": null,
+    "updatedAt": "2026-03-16T23:07:24.285Z"
+  },
+  {
+    "id": "cmmtrlqde000yzkoljxrvcqhz",
+    "key": "WATERMARK_COLOR",
+    "value": "#30e8a2",
+    "description": null,
+    "updatedAt": "2026-03-16T23:07:24.292Z"
+  },
+  {
+    "id": "cmmtrlqdl000zzkollqrtbj0p",
+    "key": "WATERMARK_SIZE",
+    "value": "150",
+    "description": null,
+    "updatedAt": "2026-03-16T23:07:24.301Z"
+  },
+  {
+    "id": "cmmtrlqdt0010zkol98hgnhwj",
+    "key": "ESTIMATE_START_SEQ",
+    "value": "1",
+    "description": null,
+    "updatedAt": "2026-03-16T23:07:24.315Z"
+  },
+  {
+    "id": "cmmtrlqe20011zkolfdiebsgk",
+    "key": "INVOICE_START_SEQ",
+    "value": "1",
+    "description": null,
+    "updatedAt": "2026-03-16T23:07:24.321Z"
+  },
+  {
+    "id": "cmmtsda7o001alzr6gg11hg9r",
+    "key": "WATERMARK_DOCUMENTS",
+    "value": "[\"SALES_ORDER\",\"SALES_PAYMENT\",\"PURCHASE_ORDER\",\"PURCHASE_BILL\",\"PURCHASE_PAYMENT\",\"CONTRACT\",\"CONTRACT_APPENDIX\",\"HANDOVER\",\"PAYMENT_REQUEST\",\"DISPATCH\",\"SALES_ESTIMATE\",\"SALES_INVOICE\"]",
+    "description": null,
+    "updatedAt": "2026-03-16T23:07:24.308Z"
+  }
+]
