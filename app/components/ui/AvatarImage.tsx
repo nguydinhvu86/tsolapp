@@ -12,10 +12,14 @@ interface AvatarImageProps {
 
 export function AvatarImage({ src, name, size = 40, className, style, fallbackStyle }: AvatarImageProps) {
     const [error, setError] = useState(false);
+    const imgRef = React.useRef<HTMLImageElement>(null);
 
     // Reset error if src changes
     useEffect(() => {
         setError(false);
+        if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth === 0) {
+            setError(true);
+        }
     }, [src]);
 
     if (!src || error) {
@@ -51,6 +55,7 @@ export function AvatarImage({ src, name, size = 40, className, style, fallbackSt
 
     return (
         <img
+            ref={imgRef}
             src={finalSrc}
             alt={name || "Avatar"}
             className={className}
