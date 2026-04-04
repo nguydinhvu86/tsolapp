@@ -17,7 +17,10 @@ export async function getDashboardStats(userId?: string, employeeId?: string) {
         const conFilter = buildViewFilter(currentUserId, perms, 'CONTRACTS', 'creatorId');
         const hanFilter = buildViewFilter(currentUserId, perms, 'HANDOVERS', 'creatorId');
         const payFilter = buildViewFilter(currentUserId, perms, 'PAYMENTS', 'creatorId');
-        const disFilter = buildViewFilter(currentUserId, perms, 'DISPATCHES', 'creatorId');
+        let disFilter: any = buildViewFilter(currentUserId, perms, 'DISPATCHES', 'creatorId');
+        if (disFilter.creatorId) {
+            disFilter = { managers: { some: { id: currentUserId } } };
+        }
         let cusFilter: any = buildViewFilter(currentUserId, perms, 'CUSTOMERS', 'creatorId');
         if (cusFilter.creatorId) {
             cusFilter = {

@@ -127,7 +127,8 @@ export function LeadFormsClient({ initialForms, users }: { initialForms: any[], 
                             </tr>
                         ) : (
                             forms.map((form) => {
-                                const publicUrl = `${window.location.origin}/f/${form.id}`;
+                                const origin = typeof window !== 'undefined' ? window.location.origin : '';
+                                const publicUrl = `${origin}/f/${form.id}`;
                                 const iframeCode = `<iframe src="${publicUrl}" width="100%" height="600px" frameborder="0"></iframe>`;
 
                                 return (
