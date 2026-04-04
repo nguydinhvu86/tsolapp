@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
 
         fs.writeFileSync(filepath, buffer);
 
-        const avatarUrl = `/uploads/avatars/${filename}`;
+        const avatarUrl = `/api/files/avatars/${filename}`;
 
         await prisma.user.update({
             where: { id: session.user.id },
@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({ url: avatarUrl });
     } catch (e: any) {
+        console.error('AVATAR_UPLOAD_ERROR:', e);
         return NextResponse.json({ error: e.message || "Something went wrong" }, { status: 500 });
     }
 }
