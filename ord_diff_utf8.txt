@@ -1,0 +1,57 @@
+﻿diff --git a/app/sales/orders/[id]/SalesOrderDetailClient.tsx b/app/sales/orders/[id]/SalesOrderDetailClient.tsx
+index 2e54c65..0cef2c2 100644
+--- a/app/sales/orders/[id]/SalesOrderDetailClient.tsx
++++ b/app/sales/orders/[id]/SalesOrderDetailClient.tsx
+@@ -11,8 +11,11 @@ import { Modal } from '@/app/components/ui/Modal';
+ import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
+ import { sendOrderEmail } from '../actions';
+ import { Mail } from 'lucide-react';
++import { useSession } from 'next-auth/react';
++import { DocumentSignatureBlock } from '@/app/components/ui/DocumentSignatureBlock';
+ 
+ export default function SalesOrderDetailClient({ initialData, customers, products, users, emailTemplates }: any) {
++    const { data: session } = useSession() as any;
+     const router = useRouter();
+     const [order, setOrder] = useState(initialData);
+     const [activeTab, setActiveTab] = useState<'items'>('items');
+@@ -295,6 +298,40 @@ export default function SalesOrderDetailClient({ initialData, customers, product
+                             )}
+ 
+                         </div>
++                    {/* Signatures Card */}
++                    <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '1.5rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}>
++                        <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#1e293b', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
++                            <FileText size={20} color="#10b981" /> Chß╗» k├╜ x├íc nhß║¡n
++                        </h2>
++                        <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'nowrap', gap: '2rem' }}>
++                            <DocumentSignatureBlock 
++                                entityType="SALES_ORDER" 
++                                entityId={order.id} 
++                                role="COMPANY" 
++                                title="NG╞»ß╗£I Lß║¼P ─É╞áN H├ÇNG" 
++                                subtitle="(K├╜ x├íc nhß║¡n nß╗Öi bß╗Ö)" 
++                                canSign={true} 
++                                initialSignature={order.companySignature} 
++                                initialSignedAt={order.companySignedAt} 
++                                signerName={order.creator?.name} 
++                                companySignerId={session?.user?.id}
++                            />
++                            <DocumentSignatureBlock 
++                                entityType="SALES_ORDER" 
++                                entityId={order.id} 
++                                role="CUSTOMER" 
++                                title="─Éß║áI DIß╗åN KH├üCH H├ÇNG" 
++                                subtitle="(Kh├ích h├áng k├╜ qua link public)" 
++                                canSign={false} 
++                                initialSignature={order.customerSignature} 
++                                initialSignedAt={order.customerSignedAt}
++                            metadata={{
++                                ip: order.customerSignIP,
++                                device: order.customerSignDevice,
++                                location: order.customerSignLocation
++                            }} 
++                            />
++                        </div>
+                     </div>
+                 </div>
+ 

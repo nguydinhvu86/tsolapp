@@ -7,6 +7,7 @@ import { MessageSquare, Paperclip, Send, Trash2, User as UserIcon, FileText } fr
 import { createCustomerNote, deleteCustomerNote } from '../../customers/[id]/actions';
 import { DocumentPreviewModal } from '@/app/components/ui/DocumentPreviewModal';
 import { autoLinkText } from '@/lib/utils/formatters';
+import { AvatarImage } from '@/app/components/ui/AvatarImage';
 
 interface CustomerNotesPanelProps {
     customerId: string;
@@ -258,13 +259,7 @@ export function CustomerNotesPanel({ customerId, notes, currentUserId, currentUs
                         notes.map((note) => (
                             <div key={note.id} style={{ display: 'flex', gap: '1rem' }}>
                                 <div style={{ flexShrink: 0 }}>
-                                    <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                                        {note.user?.avatar ? (
-                                            <img src={note.user.avatar} alt={note.user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                        ) : (
-                                            <UserIcon size={18} color="#64748b" />
-                                        )}
-                                    </div>
+                                    <AvatarImage src={note.user?.avatar} name={note.user?.name} size={40} />
                                 </div>
                                 <div style={{ flex: 1, backgroundColor: '#f1f5f9', padding: '1rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.375rem' }}>

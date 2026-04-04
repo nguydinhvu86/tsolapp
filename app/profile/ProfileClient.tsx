@@ -11,6 +11,7 @@ import { useSession } from 'next-auth/react';
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
+import { AvatarImage } from '@/app/components/ui/AvatarImage';
 
 export function ProfileClient({ initialProfile, initialStats }: { initialProfile: any, initialStats: any }) {
     const router = useRouter();
@@ -169,13 +170,12 @@ export function ProfileClient({ initialProfile, initialStats }: { initialProfile
                 <Card className="p-6">
                     <div className="flex items-center gap-4 mb-6 relative">
                         <div className="relative shrink-0">
-                            {avatarUrl ? (
-                                <img src={avatarUrl} alt="Avatar" className="w-20 h-20 rounded-full object-cover border-2 border-slate-200" />
-                            ) : (
-                                <div className="w-20 h-20 rounded-full bg-indigo-500 text-white flex items-center justify-center text-4xl shadow-sm">
-                                    <UserCircle2 size={40} />
-                                </div>
-                            )}
+                            <AvatarImage
+                                src={avatarUrl}
+                                name={initialProfile.name || initialProfile.email}
+                                size={80}
+                                className="border-2 border-slate-200"
+                            />
                             <label className="absolute -bottom-1 -right-1 bg-white rounded-full p-1.5 cursor-pointer shadow-md border border-slate-200 hover:bg-slate-50 transition-colors" title="Tải ảnh lên">
                                 {isUploading ? <CheckCircle2 size={16} className="text-primary" /> : <Upload size={16} className="text-slate-600" />}
                                 <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} disabled={isUploading} />

@@ -14,6 +14,7 @@ import { submitSalesInvoice, approveSalesInvoice, deleteSalesInvoice, updateSale
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { TagDisplay } from '@/app/components/ui/TagDisplay';
 import { useTranslation } from '@/app/i18n/LanguageContext';
+import { AvatarImage } from '@/app/components/ui/AvatarImage';
 
 export default function SalesInvoiceClient({ initialInvoices, customers, products, orders, nextCode, initialAction, initialCustomerId, users, currentUserId, isAdminOrManager }: any) {
     const { t } = useTranslation();
@@ -1067,13 +1068,11 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                             </td>
                             <td className="py-3">
                                 <div className="flex items-center gap-2">
-                                    {inv.salesperson?.avatarUrl ? (
-                                        <img src={inv.salesperson.avatarUrl} alt="Avatar" className="w-6 h-6 rounded-full object-cover" />
-                                    ) : (
-                                        <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600">
-                                            {(inv.salesperson?.name || inv.creator?.name || '?').charAt(0).toUpperCase()}
-                                        </div>
-                                    )}
+                                    <AvatarImage
+                                        src={inv.salesperson?.avatarUrl}
+                                        name={inv.salesperson?.name || inv.creator?.name || '?'}
+                                        size={24}
+                                    />
                                     <span className="text-sm font-medium text-slate-700">{inv.salesperson?.name || inv.creator?.name || t('invoices.unknown') || 'Không rõ'}</span>
                                 </div>
                             </td>

@@ -9,6 +9,7 @@ import { MoveDocumentButton } from './MoveDocumentButton';
 import { DeleteDocumentButton } from './DeleteDocumentButton';
 import { ShareButton } from './document/[id]/ShareButton';
 import styles from './library.module.css';
+import { AvatarImage } from '@/app/components/ui/AvatarImage';
 
 export const metadata = { title: "Thư Viện Điện Tử" };
 
@@ -177,11 +178,7 @@ export default async function LibraryPage({
                                             <p className={styles.bookDesc}>{doc.description || "Không có mô tả chi tiết."}</p>
                                             <div className={styles.bookFooter}>
                                                 <div className={styles.bookAuthor}>
-                                                    {doc.creator.avatar ? (
-                                                        <img src={doc.creator.avatar} className={styles.authorAvatar} alt="Author" style={{ border: 'none' }} />
-                                                    ) : (
-                                                        <div className={styles.authorAvatar}>{doc.creator.name?.charAt(0) || 'U'}</div>
-                                                    )}
+                                                    <AvatarImage src={doc.creator?.avatar} name={doc.creator?.name} size={24} className={styles.authorAvatar} />
                                                     <span style={{ fontSize: '0.75rem', fontWeight: 500, color: '#475569' }}>{doc.creator.name}</span>
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>

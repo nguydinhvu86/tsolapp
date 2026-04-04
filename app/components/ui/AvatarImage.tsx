@@ -44,9 +44,14 @@ export function AvatarImage({ src, name, size = 40, className, style, fallbackSt
         );
     }
 
+    let finalSrc = src;
+    if (src && !src.startsWith('http') && !src.startsWith('data:') && !src.startsWith('/')) {
+        finalSrc = '/' + src;
+    }
+
     return (
         <img
-            src={src}
+            src={finalSrc}
             alt={name || "Avatar"}
             className={className}
             style={{

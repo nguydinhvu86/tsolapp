@@ -10,6 +10,7 @@ import { ShareButton } from './ShareButton';
 import { MoveDocumentButton } from '../../MoveDocumentButton';
 import { DeleteDocumentButton } from '../../DeleteDocumentButton';
 import styles from '../../library.module.css';
+import { AvatarImage } from '@/app/components/ui/AvatarImage';
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
     const doc = await getDocumentById(params.id);
@@ -117,13 +118,7 @@ export default async function DocumentDetailPage({ params }: { params: { id: str
                     <div style={{ background: '#1e293b', padding: '1.5rem', borderTop: '1px solid #334155', flexShrink: 0 }}>
                         <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', gap: '1.5rem', flexDirection: 'row' }}>
                             <div style={{ flexShrink: 0 }}>
-                                {document.creator.avatar ? (
-                                    <img src={document.creator.avatar} style={{ width: '48px', height: '48px', borderRadius: '50%', border: '2px solid #334155', objectFit: 'cover' }} alt="avatar" />
-                                ) : (
-                                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#334155', color: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '1.125rem', border: '2px solid #475569' }}>
-                                        {document.creator.name?.charAt(0)}
-                                    </div>
-                                )}
+                                <AvatarImage src={document.creator?.avatar} name={document.creator?.name} size={48} className="border-2 border-[#334155]" />
                             </div>
                             <div style={{ flex: 1 }}>
                                 <h2 style={{ fontSize: '1.125rem', fontWeight: 500, color: '#f8fafc', margin: '0 0 0.5rem 0' }}>{document.title}</h2>

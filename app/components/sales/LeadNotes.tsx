@@ -8,6 +8,7 @@ import { createLeadNote, deleteLeadNote } from '../../sales/leads/actions';
 import { Modal } from '@/app/components/ui/Modal';
 import { DocumentPreviewModal } from '@/app/components/ui/DocumentPreviewModal';
 import { autoLinkText } from '@/lib/utils/formatters';
+import { AvatarImage } from '@/app/components/ui/AvatarImage';
 
 interface LeadNotesProps {
     leadId: string;
@@ -214,13 +215,11 @@ export function LeadNotes({ leadId, notes, currentUserId, currentUserRole }: Lea
                         displayNotes.map((note) => (
                             <div key={note.id} style={{ display: 'flex', gap: '1rem', minWidth: 0, width: '100%' }}>
                                 <div style={{ flexShrink: 0 }}>
-                                    <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                                        {note.user?.avatar ? (
-                                            <img src={note.user.avatar} alt={note.user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                        ) : (
-                                            <UserIcon size={18} color="#64748b" />
-                                        )}
-                                    </div>
+                                    <AvatarImage
+                                        src={note.user?.avatar}
+                                        name={note.user?.name}
+                                        size={40}
+                                    />
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                     {note.content && note.content.trim() ? (
@@ -346,13 +345,11 @@ export function LeadNotes({ leadId, notes, currentUserId, currentUserRole }: Lea
                         {notes?.map((note) => (
                             <div key={note.id} style={{ display: 'flex', gap: '1rem', minWidth: 0, width: '100%' }}>
                                 <div style={{ flexShrink: 0 }}>
-                                    <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                                        {note.user?.avatar ? (
-                                            <img src={note.user.avatar} alt={note.user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                        ) : (
-                                            <UserIcon size={18} color="#64748b" />
-                                        )}
-                                    </div>
+                                    <AvatarImage
+                                        src={note.user?.avatar}
+                                        name={note.user?.name}
+                                        size={40}
+                                    />
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                     {note.content && note.content.trim() ? (

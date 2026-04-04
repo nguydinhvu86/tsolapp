@@ -8,6 +8,7 @@ import styles from '../../library.module.css';
 import { Modal } from '@/app/components/ui/Modal';
 import { Button } from '@/app/components/ui/Button';
 import { autoLinkText } from '@/lib/utils/formatters';
+import { AvatarImage } from '@/app/components/ui/AvatarImage';
 
 interface DocumentSidebarProps { } // Added as per instruction, though not fully used in the provided snippet
 
@@ -104,7 +105,7 @@ export default function DocumentSidebar({ documentId, initialComments, initialNo
                             initialComments.map((comment: any) => (
                                 <div key={comment.id} className={styles.chatMessage} style={{ flexDirection: 'column', gap: '0.25rem', marginBottom: '1.5rem' }}>
                                     <div style={{ display: 'flex', gap: '0.75rem' }}>
-                                        <img src={comment.user.avatar || `https://ui-avatars.com/api/?name=${comment.user.name}&background=random`} alt="avatar" className={styles.chatAvatar} />
+                                        <AvatarImage src={comment.user?.avatar} name={comment.user?.name} size={32} className={styles.chatAvatar} />
                                         <div style={{ flex: 1 }}>
                                             <div className={styles.chatBubble}>
                                                 <div className={styles.chatMeta} style={{ justifyContent: 'space-between' }}>
@@ -123,7 +124,7 @@ export default function DocumentSidebar({ documentId, initialComments, initialNo
                                                 <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', borderLeft: '2px solid #e2e8f0', paddingLeft: '1rem', marginLeft: '0.5rem' }}>
                                                     {comment.replies.map((reply: any) => (
                                                         <div key={reply.id} style={{ display: 'flex', gap: '0.5rem' }}>
-                                                            <img src={reply.user.avatar || `https://ui-avatars.com/api/?name=${reply.user.name}&background=random`} alt="avatar" style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} />
+                                                            <AvatarImage src={reply.user?.avatar} name={reply.user?.name} size={24} />
                                                             <div style={{ flex: 1, background: '#f8fafc', padding: '0.5rem 0.75rem', borderRadius: '12px', borderTopLeftRadius: '2px', fontSize: '0.8rem', color: '#334155' }}>
                                                                 <div style={{ fontWeight: 600, color: '#0f172a', marginBottom: '0.125rem' }}>{reply.user.name}</div>
                                                                 <div style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>{reply.content}</div>
