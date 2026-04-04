@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 
         fs.writeFileSync(filepath, buffer);
 
-        const url = `/uploads/documents/${filename}`;
+        const url = `/api/files/documents/${filename}`;
 
         return NextResponse.json({ url });
     } catch (e: any) {
