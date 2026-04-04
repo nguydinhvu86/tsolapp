@@ -4,10 +4,10 @@ import path from 'path';
 
 export async function GET(req: NextRequest, { params }: { params: { path: string[] } }) {
     try {
-        const filePath = path.join(process.cwd(), 'public', 'uploads', ...params.path);
+        const filePath = path.join(process.cwd(), 'uploads_data', ...params.path);
 
-        // Security check: ensure path is within public/uploads
-        const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+        // Security check: ensure path is within uploads_data
+        const uploadsDir = path.join(process.cwd(), 'uploads_data');
         if (!filePath.startsWith(uploadsDir)) {
             return new NextResponse('Forbidden', { status: 403 });
         }

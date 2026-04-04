@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
         const buffer = Buffer.from(bytes);
 
         // create uploads directory if it doesn't exist
-        const uploadDir = path.join(process.cwd(), "public", "uploads", "avatars");
+        const uploadDir = path.join(process.cwd(), "uploads_data", "avatars");
         if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir, { recursive: true });
         }
