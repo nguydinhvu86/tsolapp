@@ -22,7 +22,10 @@ export function AvatarImage({ src, name, size = 40, className, style, fallbackSt
         }
     }, [src]);
 
-    if (!src || error) {
+// Fallback extraction
+    const fallbackChar = (typeof name === 'string' && name.length > 0) ? name.charAt(0).toUpperCase() : 'U';
+
+    if (!src || typeof src !== 'string' || error) {
         return (
             <div
                 className={className}
@@ -43,21 +46,25 @@ export function AvatarImage({ src, name, size = 40, className, style, fallbackSt
                     ...fallbackStyle
                 }}
             >
-                {name ? name.charAt(0).toUpperCase() : 'U'}
+                {fallbackChar}
             </div>
         );
     }
 
     let finalSrc = src;
-    if (src && !src.startsWith('http') && !src.startsWith('data:') && !src.startsWith('/')) {
-        finalSrc = '/' + src;
+    try {
+        if (typeof src === 'string' && !src.startsWith('http') && !src.startsWith('data:') && !src.startsWith('/')) {
+            finalSrc = '/' + src;
+        }
+    } catch (e) {
+        // Ignore fallback
     }
 
     return (
         <img
             ref={imgRef}
             src={finalSrc}
-            alt={name || "Avatar"}
+            alt={typeof name === 'string' ? name : "Avatar"}
             className={className}
             style={{
                 width: `${size}px`,
