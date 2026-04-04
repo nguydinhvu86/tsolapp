@@ -76,10 +76,11 @@ export default async function PublicPurchaseOrderPage({ params }: { params: { id
                     .a4-document {
                         position: static !important;
                         margin: 0 !important;
-                        padding: 0 !important;
+                        padding: 0 1px !important;
                         box-shadow: none !important;
                         width: 100% !important;
                         max-width: none !important;
+                        min-height: auto !important;
                     }
                     .no-print {
                         display: none !important;

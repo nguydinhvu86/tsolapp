@@ -11,12 +11,13 @@ interface SendEmailParams {
     estimateId?: string;
     invoiceId?: string;
     leadId?: string;
+    taskId?: string;
     attachmentName?: string;
     attachmentBase64?: string;
 }
 
 export async function sendEmailWithTracking(params: SendEmailParams) {
-    const { to, subject, htmlBody, senderId, customerId, estimateId, invoiceId, leadId, attachmentName, attachmentBase64 } = params;
+    const { to, subject, htmlBody, senderId, customerId, estimateId, invoiceId, leadId, taskId, attachmentName, attachmentBase64 } = params;
 
     // Fetch Email Configuration from Database
     const settings = await prisma.systemSetting.findMany({
@@ -70,6 +71,7 @@ export async function sendEmailWithTracking(params: SendEmailParams) {
             estimateId,
             invoiceId,
             leadId,
+            taskId,
         }
     });
 

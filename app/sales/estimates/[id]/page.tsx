@@ -85,6 +85,12 @@ export default async function SalesEstimateDetailPage({ params }: { params: { id
         emailLogs: estimate.EmailLog || []
     };
 
+    const settingsRaw = await prisma.systemSetting.findMany({
+        where: { key: { in: ['BANK_INFO_ENABLED', 'BANK_INFO_CONTENT'] } }
+    });
+    const settingsMap: Record<string, string> = {};
+    settingsRaw.forEach(s => settingsMap[s.key] = s.value);
+
     return (
         <SalesEstimateDetailClient
             initialData={mappedEstimate}
@@ -92,6 +98,7 @@ export default async function SalesEstimateDetailPage({ params }: { params: { id
             products={products.filter((p: any) => p.isActive)}
             users={users.filter((u: any) => u.role !== 'SYSTEM')}
             emailTemplates={allTemplates}
+            settings={settingsMap}
         />
     );
 }

@@ -9,6 +9,7 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSo
 import { CSS } from '@dnd-kit/utilities';
 import { updateSidebarOrder } from './actions';
 import { useTranslation } from '../../i18n/LanguageContext';
+import { AvatarImage } from '../ui/AvatarImage';
 
 // Define the interface for Online User data
 interface OnlineUser {
@@ -100,9 +101,14 @@ const mainNavItems: any[] = [
         children: [
             { name: 'Công Của Tôi', nameKey: 'sidebar.my_attendance', href: '/my-attendance' },
             { name: 'Đơn Nghỉ Phép', nameKey: 'sidebar.leave_requests', href: '/leave-requests' },
-            { name: 'Bảng Công', nameKey: 'sidebar.attendance', href: '/hr/attendance', permission: 'SETTINGS_VIEW' }, // using SETTINGS_VIEW for admin/hr bypass for now
-            { name: 'Duyệt Đơn', nameKey: 'sidebar.approvals', href: '/hr/approvals', permission: 'SETTINGS_VIEW' },
-            { name: 'Giám Sát (Ping)', nameKey: 'sidebar.monitoring', href: '/hr/monitoring', permission: 'SETTINGS_VIEW' }
+            { name: 'Bảng Công', nameKey: 'sidebar.attendance', href: '/hr/attendance', permission: 'ATTENDANCE_VIEW' }, 
+            { name: 'Duyệt Đơn', nameKey: 'sidebar.approvals', href: '/hr/approvals', permission: 'ATTENDANCE_VIEW' },
+            { name: 'Hồ sơ Nhân sự', nameKey: 'sidebar.employees', href: '/hr/employees', permission: 'EMPLOYEES_VIEW' },
+            { name: 'Tính Lương', nameKey: 'sidebar.payroll', href: '/hr/payroll', permission: 'PAYROLL_VIEW' },
+            { name: 'Yêu Cầu Tuyển Dụng', nameKey: 'sidebar.recruitment_req', href: '/hr/recruitment/requisitions', permission: 'RECRUITMENT_VIEW' },
+            { name: 'Tin Đăng Tuyển (Jobs)', nameKey: 'sidebar.recruitment_postings', href: '/hr/recruitment/postings', permission: 'RECRUITMENT_VIEW' },
+            { name: 'Bảng Tuyển Dụng (Pipeline)', nameKey: 'sidebar.recruitment_pipeline', href: '/hr/recruitment/pipeline', permission: 'RECRUITMENT_VIEW' },
+            { name: 'Giám Sát (Ping)', nameKey: 'sidebar.monitoring', href: '/hr/monitoring', permission: 'MONITORING_VIEW' }
         ]
     },
     {
@@ -556,13 +562,11 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
                                     }}
                                 >
                                     <div style={{ position: 'relative' }}>
-                                        {u.avatar ? (
-                                            <img src={u.avatar} alt={u.name} style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} />
-                                        ) : (
-                                            <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: 'var(--bg-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                <Users size={14} color="var(--text-muted)" />
-                                            </div>
-                                        )}
+                                        <AvatarImage
+                                            src={u.avatar?.startsWith('http') ? u.avatar : u.avatar ? `/${u.avatar.replace(/^\//, '')}` : null}
+                                            name={u.name}
+                                            size={28}
+                                        />
                                         <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#22c55e', border: '2px solid white' }}></div>
                                     </div>
                                     <div style={{ flex: 1, minWidth: 0 }}>

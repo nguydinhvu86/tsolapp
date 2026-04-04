@@ -196,6 +196,8 @@ export async function createPurchaseOrder(data: any) {
                     return {
                         productId: isExternal ? null : item.productId,
                         productName: isExternal ? item.productName || item.customName : null,
+                        unit: item.unit || null,
+                        description: item.description || null,
                         quantity: item.quantity,
                         unitPrice: item.unitPrice,
                         taxRate: item.taxRate || 0,
@@ -236,6 +238,8 @@ export async function updatePurchaseOrder(id: string, data: any) {
                     return {
                         productId: isExternal ? null : item.productId,
                         productName: isExternal ? item.productName || item.customName : null,
+                        unit: item.unit || null,
+                        description: item.description || null,
                         quantity: item.quantity,
                         unitPrice: item.unitPrice,
                         taxRate: item.taxRate || 0,
@@ -286,7 +290,10 @@ export async function getPurchaseBills() {
             supplier: true,
             creator: true,
             order: true,
-            _count: { select: { items: true } }
+            _count: { select: { items: true } },
+            items: {
+                include: { product: true }
+            }
         },
         orderBy: { date: 'desc' }
     });
@@ -345,6 +352,8 @@ export async function createPurchaseBill(data: any) {
                     return {
                         productId: isExternal ? null : item.productId,
                         productName: isExternal ? item.productName || item.customName : null,
+                        unit: item.unit || null,
+                        description: item.description || null,
                         quantity: item.quantity,
                         unitPrice: item.unitPrice,
                         taxRate: item.taxRate || 0,
@@ -474,6 +483,8 @@ export async function updatePurchaseBill(id: string, data: any) {
                     return {
                         productId: isExternal ? null : item.productId,
                         productName: isExternal ? item.productName || item.customName : null,
+                        unit: item.unit || null,
+                        description: item.description || null,
                         quantity: item.quantity,
                         unitPrice: item.unitPrice,
                         taxRate: item.taxRate || 0,
@@ -493,6 +504,29 @@ export async function updatePurchaseBill(id: string, data: any) {
     revalidatePath(`/purchasing/bills/${id}`);
     return bill;
 }
+
+export async function updatePurchaseBillNotes(id: string, notes: string) {
+    await getUser();
+
+    const existing = await prisma.purchaseBill.findUnique({ where: { id } });
+    if (!existing) throw new Error("Không tìm thấy hóa đơn");
+
+    const bill = await prisma.purchaseBill.update({
+        where: { id },
+        data: { notes },
+        include: {
+            supplier: true,
+            creator: true,
+            items: { include: { product: true } },
+            allocations: { include: { payment: true } }
+        }
+    });
+
+    revalidatePath('/purchasing/bills');
+    revalidatePath(`/purchasing/bills/${id}`);
+    return bill;
+}
+
 
 export async function deletePurchaseBill(id: string) {
     await getUser();

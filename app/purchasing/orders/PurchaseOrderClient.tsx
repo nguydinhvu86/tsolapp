@@ -166,8 +166,8 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
             quantity: i.quantity,
             unitPrice: i.unitPrice,
             taxRate: i.taxRate || 0,
-            unit: i.product?.unit || 'Cái',
-            description: i.notes || ''
+            unit: i.unit || i.product?.unit || 'Cái',
+            description: i.description || i.notes || ''
         })) || []);
 
         // Reset sub-form

@@ -33,7 +33,9 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
         WATERMARK_ROTATION: initialSettings.WATERMARK_ROTATION || '-45',
         WATERMARK_COLOR: initialSettings.WATERMARK_COLOR || '#000000',
         WATERMARK_SIZE: initialSettings.WATERMARK_SIZE || '150',
-        WATERMARK_DOCUMENTS: initialSettings.WATERMARK_DOCUMENTS || '["SALES_ESTIMATE","SALES_INVOICE","SALES_ORDER","SALES_PAYMENT","PURCHASE_ORDER","PURCHASE_BILL","PURCHASE_PAYMENT","CONTRACT","CONTRACT_APPENDIX","HANDOVER","PAYMENT_REQUEST","DISPATCH","QUOTE"]'
+        WATERMARK_DOCUMENTS: initialSettings.WATERMARK_DOCUMENTS || '["SALES_ESTIMATE","SALES_INVOICE","SALES_ORDER","SALES_PAYMENT","PURCHASE_ORDER","PURCHASE_BILL","PURCHASE_PAYMENT","CONTRACT","CONTRACT_APPENDIX","HANDOVER","PAYMENT_REQUEST","DISPATCH","QUOTE"]',
+        BANK_INFO_ENABLED: initialSettings.BANK_INFO_ENABLED || 'false',
+        BANK_INFO_CONTENT: initialSettings.BANK_INFO_CONTENT || 'Số tài khoản (Bank account): \nCTK: '
     });
 
     const [estStartSeq, setEstStartSeq] = useState(() => {
@@ -315,6 +317,38 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
                                     placeholder="Vd: ******"
                                 />
                             </div>
+                        </div>
+
+                        {/* BANK PAYMENT INFO SETTINGS */}
+                        <div style={{ marginTop: '0.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    Thông tin Thanh toán (Bank Account)
+                                </h3>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600, color: formData.BANK_INFO_ENABLED === 'true' ? 'var(--primary)' : 'var(--text-muted)' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={formData.BANK_INFO_ENABLED === 'true'}
+                                        onChange={(e) => setFormData({ ...formData, BANK_INFO_ENABLED: e.target.checked ? 'true' : 'false' })}
+                                        style={{ width: 18, height: 18, accentColor: 'var(--primary)', cursor: 'pointer' }}
+                                    />
+                                    Hiển thị trên Báo Giá / Hóa Đơn
+                                </label>
+                            </div>
+                            
+                            {formData.BANK_INFO_ENABLED === 'true' && (
+                                <div style={{ padding: '1.25rem', backgroundColor: 'var(--bg-subtle)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
+                                        Nội dung (Hiển thị ngay trên phần Chữ ký trong bản in)
+                                    </label>
+                                    <textarea
+                                        value={formData.BANK_INFO_CONTENT}
+                                        onChange={e => setFormData({ ...formData, BANK_INFO_CONTENT: e.target.value })}
+                                        style={{ width: '100%', minHeight: '120px', padding: '0.75rem', border: '1px solid var(--border)', borderRadius: 'var(--radius)', backgroundColor: 'var(--bg-main)', resize: 'vertical' }}
+                                        placeholder="Ví dụ:&#10;Số tài khoản (Bank account): 1040052222 - Vietcombank - Chi nhánh Bình Dương&#10;CTK: CÔNG TY TNHH GIẢI PHÁP ĐÀO TẠO TRỊNH GIA"
+                                    />
+                                </div>
+                            )}
                         </div>
 
                         {/* WATERMARK SETTINGS */}

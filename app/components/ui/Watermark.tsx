@@ -65,7 +65,7 @@ export function Watermark({ settings, documentType }: WatermarkProps) {
                 position: 'absolute',
                 top: 0, left: 0, right: 0, bottom: 0,
                 pointerEvents: 'none',
-                zIndex: 9998,
+                zIndex: 1,
                 overflow: 'hidden',
                 WebkitPrintColorAdjust: 'exact',
                 printColorAdjust: 'exact'
@@ -83,7 +83,7 @@ export function Watermark({ settings, documentType }: WatermarkProps) {
             right: 0,
             bottom: 0,
             pointerEvents: 'none',
-            zIndex: 9998,
+            zIndex: 1,
             overflow: 'hidden',
             WebkitPrintColorAdjust: 'exact',
             printColorAdjust: 'exact',

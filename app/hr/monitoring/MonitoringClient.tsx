@@ -2,8 +2,10 @@
 
 import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
-import { toggleUserActiveStatus } from './actions';
-import { Activity, MonitorSmartphone, Wifi, WifiOff } from 'lucide-react';
+import { toggleUserActiveStatus, getUserLoginLogs } from './actions';
+import { Activity, MonitorSmartphone, Wifi, WifiOff, List, X } from 'lucide-react';
+import { Modal } from '@/app/components/ui/Modal';
+import { AvatarImage } from '@/app/components/ui/AvatarImage';
 
 const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('vi-VN', {
@@ -34,6 +36,10 @@ export default function MonitoringClient({ users }: { users: UserData[] }) {
     const [data, setData] = useState(users);
     const [loadingId, setLoadingId] = useState<string | null>(null);
 
+    const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
+    const [logs, setLogs] = useState<any[]>([]);
+    const [logsLoading, setLogsLoading] = useState(false);
+
     // Calculate online status (active within last 15 minutes)
     const isOnline = (lastActiveAt: Date | null) => {
         if (!lastActiveAt) return false;
@@ -56,6 +62,24 @@ export default function MonitoringClient({ users }: { users: UserData[] }) {
             alert('Lỗi gửi request');
         } finally {
             setLoadingId(null);
+        }
+    };
+
+    const handleViewLogs = async (user: UserData) => {
+        setSelectedUser(user);
+        setLogsLoading(true);
+        setLogs([]);
+        try {
+            const res = await getUserLoginLogs(user.id);
+            if (res.success && res.data) {
+                setLogs(res.data);
+            } else {
+                alert(res.error || 'Lỗi tải lịch sử');
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLogsLoading(false);
         }
     };
 
@@ -87,13 +111,11 @@ export default function MonitoringClient({ users }: { users: UserData[] }) {
                                     <td className="p-4 whitespace-nowrap">
                                         <div className="flex items-center gap-3">
                                             <div className="relative flex-shrink-0">
-                                                {user.avatar ? (
-                                                    <img src={user.avatar} alt={user.name || ''} className="w-10 h-10 rounded-full object-cover border border-gray-200" />
-                                                ) : (
-                                                    <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm">
-                                                        {user.name?.charAt(0) || user.email.charAt(0).toUpperCase()}
-                                                    </div>
-                                                )}
+                                                <AvatarImage 
+                                                    src={user.avatar?.startsWith('http') ? user.avatar : user.avatar ? `/${user.avatar.replace(/^\//, '')}` : null} 
+                                                    name={user.name || user.email} 
+                                                    size={40} 
+                                                />
                                                 <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${online ? 'bg-green-500' : 'bg-slate-300'}`}></div>
                                             </div>
                                             <div>
@@ -131,16 +153,24 @@ export default function MonitoringClient({ users }: { users: UserData[] }) {
                                         </div>
                                     </td>
                                     <td className="p-4 whitespace-nowrap text-right">
-                                        <button
-                                            onClick={() => handleToggleStatus(user.id, user.isActive)}
-                                            disabled={loadingId === user.id}
-                                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${user.isActive ? 'bg-blue-600' : 'bg-gray-200'
-                                                } ${loadingId === user.id ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                            aria-label="Kích hoạt tài khoản"
-                                        >
-                                            <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${user.isActive ? 'translate-x-5' : 'translate-x-0'
-                                                }`} />
-                                        </button>
+                                        <div className="flex items-center justify-end gap-4">
+                                            <button
+                                                onClick={() => handleViewLogs(user)}
+                                                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 transition-colors font-medium border border-blue-200 bg-blue-50 px-2 py-1.5 rounded"
+                                            >
+                                                <List size={14} /> Chi tiết
+                                            </button>
+                                            <button
+                                                onClick={() => handleToggleStatus(user.id, user.isActive)}
+                                                disabled={loadingId === user.id}
+                                                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${user.isActive ? 'bg-blue-600' : 'bg-gray-200'
+                                                    } ${loadingId === user.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                aria-label="Kích hoạt tài khoản"
+                                            >
+                                                <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${user.isActive ? 'translate-x-5' : 'translate-x-0'
+                                                    }`} />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             );
@@ -165,13 +195,11 @@ export default function MonitoringClient({ users }: { users: UserData[] }) {
                             <div className="flex justify-between items-start gap-2">
                                 <div className="flex-1 min-w-0 flex items-center gap-3">
                                     <div className="relative flex-shrink-0">
-                                        {user.avatar ? (
-                                            <img src={user.avatar} alt={user.name || ''} className="w-10 h-10 rounded-full object-cover border border-gray-200" />
-                                        ) : (
-                                            <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm">
-                                                {user.name?.charAt(0) || user.email.charAt(0).toUpperCase()}
-                                            </div>
-                                        )}
+                                        <AvatarImage 
+                                            src={user.avatar?.startsWith('http') ? user.avatar : user.avatar ? `/${user.avatar.replace(/^\//, '')}` : null} 
+                                            name={user.name || user.email} 
+                                            size={40} 
+                                        />
                                         <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${online ? 'bg-green-500' : 'bg-slate-300'}`}></div>
                                     </div>
                                     <div className="min-w-0">
@@ -209,7 +237,12 @@ export default function MonitoringClient({ users }: { users: UserData[] }) {
                             </div>
 
                             <div className="flex justify-between items-center mt-2 pt-3 border-t border-gray-100">
-                                <span className="text-sm font-semibold text-gray-700">Trạng thái Khóa/Mở</span>
+                                <button
+                                    onClick={() => handleViewLogs(user)}
+                                    className="flex items-center gap-1.5 text-xs text-blue-600 font-semibold bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100"
+                                >
+                                    <List size={14} /> Lịch sử
+                                </button>
                                 <div className="flex items-center gap-3">
                                     <span className={`text-sm font-medium ${user.isActive ? 'text-green-600' : 'text-red-500'}`}>
                                         {user.isActive ? 'Đang Kính hoạt' : 'Đã Khóa'}
@@ -235,6 +268,56 @@ export default function MonitoringClient({ users }: { users: UserData[] }) {
                     </div>
                 )}
             </div>
+
+            <Modal
+                isOpen={!!selectedUser}
+                onClose={() => setSelectedUser(null)}
+                title={`Lịch sử truy cập - ${selectedUser?.name || selectedUser?.email}`}
+                maxWidth="max-w-4xl"
+            >
+                <div className="p-4" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+                    {logsLoading ? (
+                        <div className="flex justify-center p-8 text-gray-500">Đang tải dữ liệu...</div>
+                    ) : logs.length === 0 ? (
+                        <div className="text-center p-8 text-gray-500 bg-gray-50 rounded-lg">Không có lịch sử đăng nhập nào được ghi nhận.</div>
+                    ) : (
+                        <div className="overflow-x-auto rounded-lg border border-gray-200">
+                            <table className="w-full border-collapse text-left text-sm">
+                                <thead>
+                                    <tr className="bg-gray-50 border-b border-gray-200">
+                                        <th className="py-2 px-3 font-semibold text-gray-600">Đăng nhập</th>
+                                        <th className="py-2 px-3 font-semibold text-gray-600">Thời gian kết thúc</th>
+                                        <th className="py-2 px-3 font-semibold text-gray-600">Thiết bị</th>
+                                        <th className="py-2 px-3 font-semibold text-gray-600">IP</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200">
+                                    {logs.map((log) => (
+                                        <tr key={log.id} className="hover:bg-slate-50">
+                                            <td className="py-2 px-3 whitespace-nowrap text-gray-900 font-medium">
+                                                {formatDate(new Date(log.loginAt))}
+                                            </td>
+                                            <td className="py-2 px-3 whitespace-nowrap">
+                                                {log.logoutAt ? (
+                                                    <span className="text-gray-900">{formatDate(new Date(log.logoutAt))}</span>
+                                                ) : (
+                                                    <span className="text-green-600 font-medium italic text-sm">Đang giữ phiên</span>
+                                                )}
+                                            </td>
+                                            <td className="py-2 px-3 whitespace-nowrap text-gray-500">
+                                                {log.platform || 'Bị ẩn'}
+                                            </td>
+                                            <td className="py-2 px-3 whitespace-nowrap text-gray-500">
+                                                {log.ipAddress || '---'}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            </Modal>
         </Card>
     );
 }

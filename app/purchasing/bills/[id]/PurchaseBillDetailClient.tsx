@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, CreditCard, Clock, Plus, Trash2, FileDown, ExternalLink, Copy, XCircle, AlertTriangle } from 'lucide-react';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import Link from 'next/link';
-import { uploadPurchaseBillDocument, cancelPurchaseBill } from '@/app/purchasing/actions';
+import { uploadPurchaseBillDocument, cancelPurchaseBill, updatePurchaseBillNotes } from '@/app/purchasing/actions';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { DocumentPreviewModal } from '@/app/components/ui/DocumentPreviewModal';
 
@@ -20,6 +20,53 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [copied, setCopied] = useState(false);
     const [previewDoc, setPreviewDoc] = useState<{ url: string, name: string } | null>(null);
+
+    // Notes State
+    const [noteText, setNoteText] = useState(bill.notes || '');
+    const [isSavingNotes, setIsSavingNotes] = useState(false);
+
+    const handleSaveNotes = async () => {
+        if (noteText === localBill.notes) return;
+        setIsSavingNotes(true);
+        try {
+            const updated = await updatePurchaseBillNotes(localBill.id, noteText);
+            setLocalBill(updated);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsSavingNotes(false);
+        }
+    };
+
+    const handleImagePaste = async (e: React.ClipboardEvent) => {
+        const items = e.clipboardData.items;
+        if (!items) return;
+        
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+                e.preventDefault();
+                const file = items[i].getAsFile();
+                if (!file) continue;
+                
+                setIsUploading(true);
+                try {
+                    const uploadData = new FormData();
+                    const fileName = `clipboard_${new Date().getTime()}.${file.type.split('/')[1]}`;
+                    uploadData.append('file', file, fileName);
+                    const res = await fetch('/api/upload', { method: 'POST', body: uploadData });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error);
+
+                    const updatedBill = await uploadPurchaseBillDocument(localBill.id, data.url, Object.hasOwn(file, 'name') && file.name !== 'image.png' ? file.name : fileName);
+                    setLocalBill(updatedBill);
+                } catch (err: any) {
+                    alert(err.message || 'Lỗi tải ảnh Clipboard');
+                } finally {
+                    setIsUploading(false);
+                }
+            }
+        }
+    };
 
     // Pagination hooks
     const itemsPag = usePagination(bill.items || []);
@@ -203,10 +250,10 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
                                 </div>
                             </div>
 
-                            {bill.notes && (
+                            {localBill.notes && (
                                 <div style={{ gridColumn: '1 / -1' }}>
                                     <p style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600, color: '#94a3b8', marginBottom: '0.25rem' }}>Ghi Chú</p>
-                                    <p style={{ margin: 0, color: '#475569', fontSize: '0.875rem', backgroundColor: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>{bill.notes}</p>
+                                    <p style={{ margin: 0, color: '#475569', fontSize: '0.875rem', backgroundColor: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', whiteSpace: 'pre-wrap' }}>{localBill.notes}</p>
                                 </div>
                             )}
                         </div>
@@ -416,6 +463,26 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
                                         ))}
                                     </div>
                                 )}
+                            </div>
+                        </div>
+
+                        {/* GHI CHÚ PANEL */}
+                        <div style={{ backgroundColor: 'white', borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)', overflow: 'hidden' }}>
+                            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #e2e8f0' }}>
+                                <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <FileText size={20} className="text-emerald-500" /> Ghi chú Hóa Đơn
+                                </h2>
+                            </div>
+                            <div style={{ padding: '1.5rem' }}>
+                                <textarea
+                                    className="w-full text-sm p-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 min-h-[120px] resize-y"
+                                    placeholder="Nhập ghi chú... (Hỗ trợ dán ảnh trực tiếp Ctrl+V)"
+                                    value={noteText}
+                                    onChange={(e) => setNoteText(e.target.value)}
+                                    onBlur={handleSaveNotes}
+                                    onPaste={handleImagePaste}
+                                />
+                                {isSavingNotes && <p className="text-xs text-slate-400 mt-2">Đang lưu ghi chú...</p>}
                             </div>
                         </div>
                     </div>

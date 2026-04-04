@@ -14,7 +14,7 @@ export default async function TaskDetailPage({ params }: { params: { id: string 
 
     if (!isViewAll && !isViewOwn) return notFound();
 
-    const task = await prisma.task.findUnique({
+    const task: any = await prisma.task.findUnique({
         where: { id: params.id },
         include: {
             creator: { select: { id: true, name: true } },
@@ -46,6 +46,8 @@ export default async function TaskDetailPage({ params }: { params: { id: string 
             salesInvoice: { select: { id: true, code: true } },
             salesEstimate: { select: { id: true, code: true } },
             salesPayment: { select: { id: true, code: true } },
+            // @ts-ignore
+            emailLogs: { orderBy: { createdAt: 'desc' }, select: { id: true, subject: true, toEmail: true, status: true, openedAt: true, createdAt: true } },
             lead: { select: { id: true, name: true, code: true } }
         }
     });

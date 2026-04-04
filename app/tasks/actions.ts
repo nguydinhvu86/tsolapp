@@ -260,7 +260,8 @@ export async function triggerAutoTaskEmail(taskId: string, newAssigneeIds: strin
                 to: assignee.email,
                 subject,
                 htmlBody,
-                senderId: creatorId
+                senderId: creatorId,
+                taskId
             });
         }));
     } catch (err: any) {
@@ -529,7 +530,7 @@ export async function updateTaskStatus(id: string, status: string, userId: strin
                 }
 
                 await sendEmailWithTracking({
-                    to: u.email, subject, htmlBody, senderId: userId
+                    to: u.email, subject, htmlBody, senderId: userId, taskId: id
                 });
             })).catch(console.error);
         }
@@ -683,7 +684,8 @@ export async function addComment(taskId: string, content: string, userId: string
                                 <p><a href="${baseUrl}${notif.link}" style="display:inline-block;padding:8px 16px;background:#0d6efd;color:#fff;text-decoration:none;border-radius:4px;font-weight:bold;">Xem chi tiết công việc</a></p>
                             </div>
                         `,
-                        senderId: userId
+                        senderId: userId,
+                        taskId
                     }).catch((e: any) => console.error("Email Error:", e));
                 }
             }
@@ -757,7 +759,8 @@ export async function uploadTaskAttachment(taskId: string, fileName: string, fil
                                 <p><a href="${baseUrl}${notif.link}" style="display:inline-block;padding:8px 16px;background:#0d6efd;color:#fff;text-decoration:none;border-radius:4px;font-weight:bold;">Xem chi tiết công việc</a></p>
                             </div>
                         `,
-                        senderId: userId
+                        senderId: userId,
+                        taskId
                     }).catch((e: any) => console.error("Email Error:", e));
                 }
             }
@@ -836,7 +839,8 @@ export async function toggleReaction(commentId: string, emoji: string, userId: s
                             <p><a href="${baseUrl}/tasks/${comment.taskId}" style="display:inline-block;padding:8px 16px;background:#0d6efd;color:#fff;text-decoration:none;border-radius:4px;font-weight:bold;">Xem chi tiết</a></p>
                         </div>
                     `,
-                    senderId: userId
+                    senderId: userId,
+                    taskId: comment.taskId
                 }).catch((e: any) => console.error("Email Error:", e));
             }
         }
@@ -1055,7 +1059,8 @@ export async function sendTaskEmail(taskId: string, to: string, subject: string,
             subject,
             htmlBody,
             senderId: session.user.id,
-            customerId: task.customerId || undefined
+            customerId: task.customerId || undefined,
+            taskId
         });
 
         if (res.success) {

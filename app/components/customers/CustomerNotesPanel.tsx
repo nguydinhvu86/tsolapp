@@ -23,6 +23,9 @@ export function CustomerNotesPanel({ customerId, notes, currentUserId, currentUs
     const [attachments, setAttachments] = useState<{ url: string, name: string }[]>([]);
     const [previewDoc, setPreviewDoc] = useState<{ url: string, name: string } | null>(null);
 
+    // Upload Progress State
+    const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!content.trim() && attachments.length === 0) return;
@@ -74,29 +77,57 @@ export function CustomerNotesPanel({ customerId, notes, currentUserId, currentUs
                             onChange={(e) => setContent(e.target.value)}
                             onPaste={async (e) => {
                                 const items = e.clipboardData.items;
+                                let hasImage = false;
                                 for (let i = 0; i < items.length; i++) {
-                                    if (items[i].type.indexOf('image') !== -1) {
-                                        const file = items[i].getAsFile();
-                                        if (file) {
-                                            if (file.size > 5242880) {
-                                                alert(`File ảnh dán vào quá lớn (Tối đa 5MB)`);
-                                                return;
-                                            }
-                                            setIsUploading(true);
-                                            try {
-                                                const formData = new FormData();
-                                                formData.append('file', file);
-                                                const res = await fetch('/api/upload', { method: 'POST', body: formData });
-                                                if (!res.ok) throw new Error('Upload failed');
-                                                const data = await res.json();
-                                                setAttachments(prev => [...prev, { url: data.url, name: file.name || 'image.png' }]);
-                                            } catch (err) {
-                                                alert('Lỗi tải hình ảnh từ clipboard');
-                                            } finally {
-                                                setIsUploading(false);
+                                    if (items[i].type.indexOf('image') !== -1) hasImage = true;
+                                }
+                                if (!hasImage) return;
+
+                                setIsUploading(true);
+                                try {
+                                    for (let i = 0; i < items.length; i++) {
+                                        if (items[i].type.indexOf('image') !== -1) {
+                                            const file = items[i].getAsFile();
+                                            if (file) {
+                                                if (file.size > 52428800) {
+                                                    alert(`File ảnh dán vào quá lớn (Tối đa 50MB)`);
+                                                    continue;
+                                                }
+                                                setUploadProgress(prev => ({ ...prev, [file.name]: 0 }));
+                                                
+                                                try {
+                                                    const formData = new FormData();
+                                                    formData.append('file', file);
+                                                    
+                                                    const url = await new Promise<string>((resolve, reject) => {
+                                                        const xhr = new XMLHttpRequest();
+                                                        xhr.open('POST', '/api/upload', true);
+                                                        xhr.upload.onprogress = (event) => {
+                                                            if (event.lengthComputable) {
+                                                                const percentComplete = Math.round((event.loaded / event.total) * 100);
+                                                                setUploadProgress(prev => ({ ...prev, [file.name]: percentComplete }));
+                                                            }
+                                                        };
+                                                        xhr.onload = () => {
+                                                            if (xhr.status === 200) {
+                                                                try { resolve(JSON.parse(xhr.responseText).url); } catch (e) { reject(new Error()); }
+                                                            } else { reject(new Error()); }
+                                                        };
+                                                        xhr.onerror = () => reject(new Error());
+                                                        xhr.send(formData);
+                                                    });
+                                                    
+                                                    setAttachments(prev => [...prev, { url, name: file.name || 'image.png' }]);
+                                                } catch (err) {
+                                                    alert('Lỗi tải hình ảnh từ clipboard');
+                                                } finally {
+                                                    setUploadProgress(prev => { const next = { ...prev }; delete next[file.name]; return next; });
+                                                }
                                             }
                                         }
                                     }
+                                } finally {
+                                    setIsUploading(false);
                                 }
                             }}
                             placeholder="Ghi chú sở thích khách hàng, tóm tắt cuộc gọi, lịch sử làm việc... (Có thể dán trực tiếp ảnh ctrl+V)"
@@ -117,12 +148,37 @@ export function CustomerNotesPanel({ customerId, notes, currentUserId, currentUs
                                             try {
                                                 const newAttachments = [...attachments];
                                                 for (let i = 0; i < files.length; i++) {
+                                                    const file = files[i];
+                                                    if (file.size > 52428800) continue;
+                                                    
+                                                    setUploadProgress(prev => ({ ...prev, [file.name]: 0 }));
                                                     const formData = new FormData();
-                                                    formData.append('file', files[i]);
-                                                    const res = await fetch('/api/upload', { method: 'POST', body: formData });
-                                                    if (!res.ok) throw new Error('Upload failed');
-                                                    const data = await res.json();
-                                                    newAttachments.push({ url: data.url, name: files[i].name });
+                                                    formData.append('file', file);
+                                                    
+                                                    try {
+                                                        const url = await new Promise<string>((resolve, reject) => {
+                                                            const xhr = new XMLHttpRequest();
+                                                            xhr.open('POST', '/api/upload', true);
+                                                            xhr.upload.onprogress = (event) => {
+                                                                if (event.lengthComputable) {
+                                                                    const percentComplete = Math.round((event.loaded / event.total) * 100);
+                                                                    setUploadProgress(prev => ({ ...prev, [file.name]: percentComplete }));
+                                                                }
+                                                            };
+                                                            xhr.onload = () => {
+                                                                if (xhr.status === 200) {
+                                                                    try { resolve(JSON.parse(xhr.responseText).url); } catch (e) { reject(new Error()); }
+                                                                } else { reject(new Error()); }
+                                                            };
+                                                            xhr.onerror = () => reject(new Error());
+                                                            xhr.send(formData);
+                                                        });
+                                                        newAttachments.push({ url, name: file.name });
+                                                    } catch (err) {
+                                                        throw new Error('Upload failed');
+                                                    } finally {
+                                                        setUploadProgress(prev => { const next = { ...prev }; delete next[file.name]; return next; });
+                                                    }
                                                 }
                                                 setAttachments(newAttachments);
                                             } catch (err) {
@@ -150,6 +206,23 @@ export function CustomerNotesPanel({ customerId, notes, currentUserId, currentUs
                         </div>
                     </div>
                 </form>
+
+                {/* Upload Progress */}
+                {Object.keys(uploadProgress).length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
+                        {Object.entries(uploadProgress).map(([fileName, progress]) => (
+                            <div key={fileName} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '0.5rem', backgroundColor: '#f1f5f9', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
+                                    <span style={{ color: 'var(--primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '80%' }}>Đang tải: <strong>{fileName}</strong></span>
+                                    <span style={{ color: 'var(--primary)', fontWeight: 500 }}>{progress}%</span>
+                                </div>
+                                <div style={{ width: '100%', height: '4px', backgroundColor: '#cbd5e1', borderRadius: '2px', overflow: 'hidden' }}>
+                                    <div style={{ width: `${progress}%`, height: '100%', backgroundColor: 'var(--primary)', transition: 'width 0.2s ease-out' }} />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
 
                 {/* Pending Attachments List */}
                 {attachments.length > 0 && (

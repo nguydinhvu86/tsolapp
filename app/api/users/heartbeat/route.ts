@@ -18,12 +18,46 @@ export async function POST(req: NextRequest) {
         else if (userAgent.includes('iPhone') || userAgent.includes('iPad')) os = 'iOS';
         else if (userAgent.includes('Linux')) os = 'Linux';
 
+        const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { lastLoginAt: true } });
+        const now = new Date();
+        const updateData: any = {
+            lastActiveAt: now,
+            currentPlatform: os 
+        };
+
+        let isNewDaySession = false;
+        if (!user?.lastLoginAt) {
+            isNewDaySession = true;
+        } else {
+            const lastLoginDate = new Date(user.lastLoginAt);
+            if (lastLoginDate.getDate() !== now.getDate() ||
+                lastLoginDate.getMonth() !== now.getMonth() ||
+                lastLoginDate.getFullYear() !== now.getFullYear()) {
+                isNewDaySession = true;
+            }
+        }
+
+        if (isNewDaySession) {
+            updateData.lastLoginAt = now;
+            const ipAddress = req.headers.get('x-forwarded-for') || '127.0.0.1';
+            try {
+                await (prisma as any).loginLog.create({
+                    data: {
+                        userId: session.user.id,
+                        ipAddress,
+                        userAgent,
+                        platform: os,
+                        loginAt: now
+                    }
+                });
+            } catch(e) {
+                console.error("Error creating login log in heartbeat:", e);
+            }
+        }
+
         await (prisma as any).user.update({
             where: { id: session.user.id },
-            data: { 
-                lastActiveAt: new Date(),
-                currentPlatform: os 
-            }
+            data: updateData
         });
 
         return NextResponse.json({ success: true });

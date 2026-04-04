@@ -71,11 +71,11 @@ export function DocumentPreviewModal({ isOpen, onClose, fileUrl, fileName }: Doc
         switch (fileType) {
             case 'image':
                 return (
-                    <div className="flex items-center justify-center w-full h-full p-4">
+                    <div className="flex items-center justify-center w-full h-full p-4 overflow-auto">
                         <img
                             src={fileUrl}
                             alt={fileName}
-                            className="max-w-full max-h-full object-contain"
+                            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
                             onLoad={() => setIsLoading(false)}
                             onError={() => setIsLoading(false)} // Handle error as well
                         />
@@ -216,7 +216,9 @@ export function DocumentPreviewModal({ isOpen, onClose, fileUrl, fileName }: Doc
                 flex: 1, position: 'relative',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 padding: isFullscreen ? '0' : '2rem',
-                transition: 'padding 0.3s ease'
+                transition: 'padding 0.3s ease',
+                minHeight: 0,
+                overflow: 'hidden'
             }}>
                 <div style={{
                     width: '100%', height: '100%',

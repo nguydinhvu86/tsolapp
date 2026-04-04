@@ -6,17 +6,17 @@ const password = 'P@ssw0rdVu';
 conn.on('ready', () => {
     console.log('Connected to server. Fetching raw error logs...');
 
-    const cmd = `cat ~/.pm2/logs/inside.tsol.vn-error.log | tail -n 100`;
+    const cmd = `grep '362551552' -B 50 -A 20 ~/.pm2/logs/inside.tsol.vn-error.log`;
 
     conn.exec(cmd, (err, stream) => {
         if (err) throw err;
-
+        let dataStr = '';
         stream.on('close', (code, signal) => {
+            require('fs').writeFileSync('prod-error.log', dataStr);
+            console.log('Done writing prod-error.log');
             conn.end();
         }).on('data', (data) => {
-            process.stdout.write(data.toString());
-        }).stderr.on('data', (data) => {
-            process.stderr.write(data.toString());
+            dataStr += data.toString();
         });
     });
 }).connect({
