@@ -191,14 +191,15 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                             </div>
                         </div>
 
-                        {/* Tách phần nút nhấn xuống dưới */}
-                        <div className="flex gap-3 w-full sm:w-auto mt-8 pt-6 border-t border-slate-100">
+                        {/* Khu vực nút chức năng tối ưu Mobile */}
+                        <div className="grid grid-cols-3 gap-2 sm:gap-4 w-full mt-6 pt-6 border-t border-slate-100">
                             <Button
                                 onClick={() => setIsPasswordModalOpen(true)}
-                                className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-indigo-600 text-white border-none px-5 py-2.5 rounded-lg cursor-pointer hover:bg-indigo-700 transition-colors shadow-sm font-semibold"
+                                className="flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 bg-[#5A5CE1] text-white border-none py-2.5 sm:py-3 px-2 sm:px-4 rounded-[10px] sm:rounded-xl hover:bg-indigo-700 transition-all shadow-sm font-semibold h-full w-full"
                                 title="Cấp quyền đăng nhập Customer Portal"
                             >
-                                <UserCheck size={16} /> Tài khoản Portal
+                                <UserCheck size={16} className="flex-shrink-0" />
+                                <span className="text-[11px] sm:text-[14px] leading-tight text-left whitespace-normal break-words min-w-0">Tài khoản<br className="hidden sm:block"/> Portal</span>
                             </Button>
                             <Button
                                 onClick={(e) => {
@@ -206,16 +207,19 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                     navigator.clipboard.writeText(window.location.origin + '/portal/login');
                                     alert('Đã copy link: ' + window.location.origin + '/portal/login');
                                 }}
-                                className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-indigo-600 text-white border-none px-5 py-2.5 rounded-lg cursor-pointer hover:bg-indigo-700 transition-colors shadow-sm font-semibold"
+                                className="flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 bg-[#5A5CE1] text-white border-none py-2.5 sm:py-3 px-2 sm:px-4 rounded-[10px] sm:rounded-xl hover:bg-indigo-700 transition-all shadow-sm font-semibold h-full w-full"
                                 title="Copy đường dẫn đăng nhập Portal"
                             >
-                                <LinkIcon size={16} /> Link Portal
+                                <LinkIcon size={16} className="flex-shrink-0" />
+                                <span className="text-[11px] sm:text-[14px] leading-tight text-left whitespace-normal break-words min-w-0">Link<br className="hidden sm:block"/> Portal</span>
                             </Button>
                             <Button
                                 onClick={() => setIsEmailModalOpen(true)}
-                                className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-indigo-600 text-white border-none px-5 py-2.5 rounded-lg cursor-pointer hover:bg-indigo-700 transition-colors shadow-sm font-semibold"
+                                className="flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 bg-[#5A5CE1] text-white border-none py-2.5 sm:py-3 px-2 sm:px-4 rounded-[10px] sm:rounded-xl hover:bg-indigo-700 transition-all shadow-sm font-semibold h-full w-full"
+                                title="Gửi Email"
                             >
-                                <Mail size={16} /> Gửi Email
+                                <Mail size={16} className="flex-shrink-0" />
+                                <span className="text-[11px] sm:text-[14px] leading-tight text-left whitespace-normal break-words min-w-0">Gửi<br className="hidden sm:block"/> Email</span>
                             </Button>
                         </div>
                     </div>
