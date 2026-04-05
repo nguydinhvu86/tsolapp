@@ -1,0 +1,23 @@
+COLLISION: 
+ - /www/wwwroot/inside.tsol.vn/tsolapp/app/portal/invoices/page.tsx
+ - /www/wwwroot/inside.tsol.vn/tsolapp/app/portal/(protected)/invoices/page.tsx
+
+COLLISION: 
+ - /www/wwwroot/inside.tsol.vn/tsolapp/app/portal/orders/page.tsx
+ - /www/wwwroot/inside.tsol.vn/tsolapp/app/portal/(protected)/orders/page.tsx
+
+COLLISION: 
+ - /www/wwwroot/inside.tsol.vn/tsolapp/app/portal/(protected)/quotes/page.tsx
+ - /www/wwwroot/inside.tsol.vn/tsolapp/app/portal/quotes/page.tsx
+
+COLLISION: 
+ - /www/wwwroot/inside.tsol.vn/tsolapp/app/portal/(protected)/documents/page.tsx
+ - /www/wwwroot/inside.tsol.vn/tsolapp/app/portal/documents/page.tsx
+
+COLLISION: 
+ - /www/wwwroot/inside.tsol.vn/tsolapp/app/portal/(protected)/dashboard/page.tsx
+ - /www/wwwroot/inside.tsol.vn/tsolapp/app/portal/dashboard/page.tsx
+
+COLLISION: 
+ - /www/wwwroot/inside.tsol.vn/tsolapp/app/portal/(protected)/payments/page.tsx
+ - /www/wwwroot/inside.tsol.vn/tsolapp/app/portal/payments/page.tsx

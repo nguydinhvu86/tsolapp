@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Table } from '@/app/components/ui/Table';
 import { Button } from '@/app/components/ui/Button';
-import { ArrowLeft, User, Users, Mail, Phone, MapPin, Building2, FileSpreadsheet, FileText, FileOutput, FilePlus2, Eye, Edit, FileStack, Plus, ShoppingCart, SearchCode, Ticket, HandCoins, Search, Target, UserCheck } from 'lucide-react';
+import { ArrowLeft, User, Users, Mail, Phone, MapPin, Building2, FileSpreadsheet, FileText, FileOutput, FilePlus2, Eye, Edit, FileStack, Plus, ShoppingCart, SearchCode, Ticket, HandCoins, Search, Target, UserCheck, Link as LinkIcon, Copy } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
@@ -197,7 +197,26 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                     <p className="m-0 text-[16px] font-bold text-red-600 break-words">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(computedDebt)}</p>
                                 </div>
                             </div>
-                            <div className="flex items-start gap-3 lg:col-span-2">
+                            <div className="flex items-start gap-3">
+                                <div className="mt-0.5 w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 flex-shrink-0"><LinkIcon size={16} /></div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="m-0 text-xs font-semibold text-blue-600 uppercase">Customer Portal</p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <a href="/portal/login" target="_blank" className="m-0 text-[14px] font-medium text-blue-600 hover:text-blue-800 transition-colors uppercase">Login Portal</a>
+                                        <button 
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(window.location.origin + '/portal/login');
+                                                alert('Đã copy link: ' + window.location.origin + '/portal/login');
+                                            }}
+                                            className="flex items-center gap-1 bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-0.5 rounded text-[11px] font-bold uppercase transition-colors"
+                                            title="Copy link gửi khách hàng"
+                                        >
+                                            <Copy size={12} /> COPY
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-3 lg:col-span-1">
                                 <div className="mt-0.5 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 flex-shrink-0"><MapPin size={16} /></div>
                                 <div className="min-w-0 flex-1">
                                     <p className="m-0 text-xs font-semibold text-slate-500 uppercase">Địa Chỉ</p>
