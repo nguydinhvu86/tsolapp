@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/app/components/ui/Card';
 import { Table } from '@/app/components/ui/Table';
@@ -17,6 +17,18 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
     const router = useRouter();
     const [orders, setOrders] = useState(initialOrders);
     const [isFormOpen, setIsFormOpen] = useState(initialAction === 'new');
+
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const editId = urlParams.get('edit');
+        if (editId) {
+            const orderToEdit = orders.find((o: any) => o.id === editId);
+            if (orderToEdit) {
+                handleEdit(orderToEdit);
+                window.history.replaceState({}, '', '/sales/orders');
+            }
+        }
+    }, [orders]);
 
     // Convert to Invoice state
     const [convertModalId, setConvertModalId] = useState<string | null>(null);
