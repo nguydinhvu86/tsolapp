@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card } from '@/app/components/ui/Card';
@@ -179,6 +179,21 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         setCustomTaxRate(0);
         setIsFormOpen(true);
     };
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            const editId = params.get('edit');
+            if (editId && estimates.length > 0) {
+                const estToEdit = estimates.find((e: any) => e.id === editId);
+                if (estToEdit && estToEdit.status === 'DRAFT') {
+                    handleEdit(estToEdit);
+                    window.history.replaceState({}, '', '/sales/estimates');
+                }
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [estimates]);
 
     // Quick Item state
     const [selectedProduct, setSelectedProduct] = useState('');

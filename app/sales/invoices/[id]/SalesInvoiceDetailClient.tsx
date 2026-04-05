@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ExternalLink, Copy, CheckCircle2, User, FileText, ShoppingCart, Info, CheckSquare, XCircle, Undo2, History, ArrowRight, Clock, AlertTriangle, PackageCheck, Activity, Edit, Building } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Copy, CheckCircle2, User, FileText, ShoppingCart, Info, CheckSquare, XCircle, Undo2, History, ArrowRight, Clock, AlertTriangle, PackageCheck, Activity, Edit2, Edit, Building } from 'lucide-react';
 import Link from 'next/link';
 import { approveSalesInvoice, updateSalesInvoiceStatus, cancelSalesInvoice, restoreSalesInvoice, paySalesInvoice } from '../actions';
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
@@ -262,6 +262,13 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                     >
                         <ExternalLink size={16} /> Xem Bản In
                     </Link>
+                    <button
+                        onClick={() => router.push(`/sales/invoices?edit=${invoice.id}`)}
+                        className="btn btn-secondary hover:bg-slate-100 transition-colors"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                    >
+                        <Edit2 size={16} /> Chỉnh Sửa
+                    </button>
                     <button
                         onClick={() => setIsEmailModalOpen(true)}
                         className="btn btn-primary"

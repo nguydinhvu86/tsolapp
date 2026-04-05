@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card } from '@/app/components/ui/Card';
@@ -155,6 +155,22 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         setCustomTaxRate(0);
         setIsFormOpen(true);
     };
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            const editId = params.get('edit');
+            if (editId && invoices.length > 0) {
+                const invToEdit = invoices.find((inv: any) => inv.id === editId);
+                // Allow edit if draft or anything you want, let's say draft
+                if (invToEdit && invToEdit.status === 'DRAFT') {
+                    handleEdit(invToEdit);
+                    window.history.replaceState({}, '', '/sales/invoices');
+                }
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [invoices]);
 
     const handleCopy = (inv: any) => {
         const mappedItems = inv.items ? inv.items.map((i: any) => ({

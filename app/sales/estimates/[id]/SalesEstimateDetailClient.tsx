@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, FileDown, Plus, ExternalLink, Copy, User, ArrowRightLeft } from 'lucide-react';
+import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, FileDown, Plus, ExternalLink, Copy, User, ArrowRightLeft, Edit2 } from 'lucide-react';
 import Link from 'next/link';
 import { updateSalesEstimateStatus, convertEstimateToInvoice, convertEstimateToOrder } from '../actions';
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
@@ -166,6 +166,13 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                     >
                         <ExternalLink size={16} /> Xem Bản In
                     </Link>
+                    <button
+                        onClick={() => router.push(`/sales/estimates?edit=${estimate.id}`)}
+                        className="btn btn-secondary hover:bg-slate-100 transition-colors"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                    >
+                        <Edit2 size={16} /> Chỉnh Sửa
+                    </button>
                     <button
                         onClick={() => setIsEmailModalOpen(true)}
                         className="btn btn-primary"

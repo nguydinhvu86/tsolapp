@@ -1,56 +1,5 @@
 [TAILING] Tailing last 200 lines for [all] processes (change the value with --lines option)
 /home/incall/.pm2/pm2.log last 200 lines:
-PM2        | 2026-03-30T09:06:49: PM2 log: pid=3737339 msg=process killed
-PM2        | 2026-03-30T09:06:49: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-03-30T09:06:49: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-03-30T22:45:47: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-03-30T22:45:47: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-03-30T22:45:47: PM2 log: pid=3739417 msg=process killed
-PM2        | 2026-03-30T22:45:47: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-03-30T22:45:47: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-03-30T22:54:08: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-03-30T22:54:08: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-03-30T22:54:08: PM2 log: pid=3764235 msg=process killed
-PM2        | 2026-03-30T22:54:08: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-03-30T22:54:08: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-03-30T22:58:31: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-03-30T22:58:31: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-03-30T22:58:31: PM2 log: pid=3764704 msg=process killed
-PM2        | 2026-03-30T22:58:31: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-03-30T22:58:31: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-03-30T23:04:18: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-03-30T23:04:18: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-03-30T23:04:18: PM2 log: pid=3765034 msg=process killed
-PM2        | 2026-03-30T23:04:18: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-03-30T23:04:18: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-03-31T05:15:23: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-03-31T05:15:23: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-03-31T05:15:23: PM2 log: pid=3765500 msg=process killed
-PM2        | 2026-03-31T05:15:23: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-03-31T05:15:23: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-03-31T05:22:41: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-03-31T05:22:41: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-03-31T05:22:41: PM2 log: pid=3779695 msg=process killed
-PM2        | 2026-03-31T05:22:41: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-03-31T05:22:41: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-03-31T05:29:32: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-03-31T05:29:32: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-03-31T05:29:32: PM2 log: pid=3780178 msg=process killed
-PM2        | 2026-03-31T05:29:32: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-03-31T05:29:32: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-03-31T05:36:12: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-03-31T05:36:12: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-03-31T05:36:12: PM2 log: pid=3780627 msg=process killed
-PM2        | 2026-03-31T05:36:12: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-03-31T05:36:12: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-01T06:36:46: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-01T06:36:46: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-01T06:36:46: PM2 log: pid=3781077 msg=process killed
-PM2        | 2026-04-01T06:36:46: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-01T06:36:46: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-01T06:44:05: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-01T06:44:06: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-01T06:44:06: PM2 log: pid=3847043 msg=process killed
 PM2        | 2026-04-01T06:44:06: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
 PM2        | 2026-04-01T06:44:06: PM2 log: App [inside.tsol.vn:0] online
 PM2        | 2026-04-01T10:33:33: PM2 log: Stopping app:inside.tsol.vn id:0
@@ -200,6 +149,57 @@ PM2        | 2026-04-04T11:36:52: PM2 log: App [inside.tsol.vn:0] exited with co
 PM2        | 2026-04-04T11:36:53: PM2 log: pid=4061200 msg=process killed
 PM2        | 2026-04-04T11:36:53: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
 PM2        | 2026-04-04T11:36:53: PM2 log: App [inside.tsol.vn:0] online
+PM2        | 2026-04-04T23:28:33: PM2 log: Stopping app:inside.tsol.vn id:0
+PM2        | 2026-04-04T23:28:34: PM2 log: pid=4062191 msg=failed to kill - retrying in 100ms
+PM2        | 2026-04-04T23:28:34: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
+PM2        | 2026-04-04T23:28:34: PM2 log: pid=4062191 msg=process killed
+PM2        | 2026-04-04T23:28:34: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
+PM2        | 2026-04-04T23:28:34: PM2 log: App [inside.tsol.vn:0] online
+PM2        | 2026-04-04T23:32:18: PM2 log: Stopping app:inside.tsol.vn id:0
+PM2        | 2026-04-04T23:32:18: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
+PM2        | 2026-04-04T23:32:18: PM2 log: pid=4084689 msg=process killed
+PM2        | 2026-04-04T23:32:18: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
+PM2        | 2026-04-04T23:32:18: PM2 log: App [inside.tsol.vn:0] online
+PM2        | 2026-04-05T00:35:03: PM2 log: Stopping app:inside.tsol.vn id:0
+PM2        | 2026-04-05T00:35:03: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
+PM2        | 2026-04-05T00:35:03: PM2 log: pid=4085245 msg=process killed
+PM2        | 2026-04-05T00:35:03: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
+PM2        | 2026-04-05T00:35:03: PM2 log: App [inside.tsol.vn:0] online
+PM2        | 2026-04-05T00:51:21: PM2 log: Stopping app:inside.tsol.vn id:0
+PM2        | 2026-04-05T00:51:22: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
+PM2        | 2026-04-05T00:51:22: PM2 log: pid=4088042 msg=process killed
+PM2        | 2026-04-05T00:51:22: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
+PM2        | 2026-04-05T00:51:22: PM2 log: App [inside.tsol.vn:0] online
+PM2        | 2026-04-05T00:54:30: PM2 log: Stopping app:inside.tsol.vn id:0
+PM2        | 2026-04-05T00:54:30: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
+PM2        | 2026-04-05T00:54:30: PM2 log: pid=4088912 msg=process killed
+PM2        | 2026-04-05T00:54:30: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
+PM2        | 2026-04-05T00:54:30: PM2 log: App [inside.tsol.vn:0] online
+PM2        | 2026-04-05T00:58:53: PM2 log: Stopping app:inside.tsol.vn id:0
+PM2        | 2026-04-05T00:58:53: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
+PM2        | 2026-04-05T00:58:54: PM2 log: pid=4089392 msg=process killed
+PM2        | 2026-04-05T00:58:54: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
+PM2        | 2026-04-05T00:58:54: PM2 log: App [inside.tsol.vn:0] online
+PM2        | 2026-04-05T01:03:14: PM2 log: Stopping app:inside.tsol.vn id:0
+PM2        | 2026-04-05T01:03:14: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
+PM2        | 2026-04-05T01:03:14: PM2 log: pid=4089899 msg=process killed
+PM2        | 2026-04-05T01:03:14: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
+PM2        | 2026-04-05T01:03:14: PM2 log: App [inside.tsol.vn:0] online
+PM2        | 2026-04-05T01:07:22: PM2 log: Stopping app:inside.tsol.vn id:0
+PM2        | 2026-04-05T01:07:22: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
+PM2        | 2026-04-05T01:07:22: PM2 log: pid=4090411 msg=process killed
+PM2        | 2026-04-05T01:07:22: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
+PM2        | 2026-04-05T01:07:22: PM2 log: App [inside.tsol.vn:0] online
+PM2        | 2026-04-05T01:19:12: PM2 log: Stopping app:inside.tsol.vn id:0
+PM2        | 2026-04-05T01:19:12: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
+PM2        | 2026-04-05T01:19:12: PM2 log: pid=4090930 msg=process killed
+PM2        | 2026-04-05T01:19:12: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
+PM2        | 2026-04-05T01:19:12: PM2 log: App [inside.tsol.vn:0] online
+PM2        | 2026-04-05T01:28:29: PM2 log: Stopping app:inside.tsol.vn id:0
+PM2        | 2026-04-05T01:28:29: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
+PM2        | 2026-04-05T01:28:29: PM2 log: pid=4091930 msg=process killed
+PM2        | 2026-04-05T01:28:29: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
+PM2        | 2026-04-05T01:28:29: PM2 log: App [inside.tsol.vn:0] online
 
 /home/incall/.pm2/logs/makevideo-ai-out.log last 200 lines:
 5|makevide | 
@@ -382,410 +382,6 @@ PM2        | 2026-04-04T11:36:53: PM2 log: App [inside.tsol.vn:0] online
 5|makevide | 
 5|makevide | ✓ Starting...
 5|makevide | ✓ Ready in 1327ms
-
-/home/incall/.pm2/logs/inside.tsol.vn-error.log last 200 lines:
-0|inside.t |     at NoopContextManager.with (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
-0|inside.t |     at ContextAPI.with (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
-0|inside.t |     at NoopTracer.startActiveSpan (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
-0|inside.t |     at ProxyTracer.startActiveSpan (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/trace/tracer.js:122:103
-0|inside.t |     at NoopContextManager.with (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
-0|inside.t |     at ContextAPI.with (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
-0|inside.t |  ⨯ TypeError: Cannot read properties of undefined (reading 'entryCSSFiles')
-0|inside.t |     at rH (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:3566)
-0|inside.t |     at rK (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:11861)
-0|inside.t |     at r7 (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:15099)
-0|inside.t |     at no (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:22633)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:726
-0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
-0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:17831)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:616
-0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
-0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:16935)
-0|inside.t |  ⨯ TypeError: Cannot read properties of undefined (reading 'entryCSSFiles')
-0|inside.t |     at rH (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:3566)
-0|inside.t |     at rK (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:11861)
-0|inside.t |     at r7 (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:15099)
-0|inside.t |     at no (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:22633)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:726
-0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
-0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:17831)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:616
-0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
-0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:16935)
-0|inside.t |  ⨯ TypeError: Cannot read properties of undefined (reading 'entryCSSFiles')
-0|inside.t |     at rH (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:3566)
-0|inside.t |     at rK (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:11861)
-0|inside.t |     at r7 (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:15099)
-0|inside.t |     at no (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:22633)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:726
-0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
-0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:17831)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:616
-0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
-0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:16935)
-0|inside.t |  ⨯ TypeError: Cannot read properties of undefined (reading 'entryCSSFiles')
-0|inside.t |     at rH (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:3566)
-0|inside.t |     at rK (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:11861)
-0|inside.t |     at r7 (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:15099)
-0|inside.t |     at no (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:22633)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:726
-0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
-0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:17831)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:616
-0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
-0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:16935)
-0|inside.t |  ⨯ TypeError: Cannot read properties of undefined (reading 'clientModules')
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:24397
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/trace/tracer.js:191:62
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/trace/tracer.js:140:36
-0|inside.t |     at NoopContextManager.with (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
-0|inside.t |     at ContextAPI.with (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
-0|inside.t |     at NoopTracer.startActiveSpan (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
-0|inside.t |     at ProxyTracer.startActiveSpan (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/trace/tracer.js:122:103
-0|inside.t |     at NoopContextManager.with (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
-0|inside.t |     at ContextAPI.with (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
-0|inside.t |  ⨯ TypeError: Cannot read properties of undefined (reading 'entryCSSFiles')
-0|inside.t |     at rH (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:3566)
-0|inside.t |     at rK (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:11861)
-0|inside.t |     at r7 (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:15099)
-0|inside.t |     at no (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:22633)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:726
-0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
-0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:17831)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:616
-0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
-0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:16935)
-0|inside.t |  ⨯ TypeError: Cannot read properties of undefined (reading 'entryCSSFiles')
-0|inside.t |     at rH (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:3566)
-0|inside.t |     at rK (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:11861)
-0|inside.t |     at r7 (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:15099)
-0|inside.t |     at no (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:22633)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:726
-0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
-0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:17831)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:616
-0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
-0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:16935)
-0|inside.t |  ⨯ TypeError: Cannot read properties of undefined (reading 'entryCSSFiles')
-0|inside.t |     at rH (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:3566)
-0|inside.t |     at rK (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:11861)
-0|inside.t |     at r7 (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:15099)
-0|inside.t |     at no (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:22633)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:726
-0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
-0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:17831)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:616
-0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
-0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:16935)
-0|inside.t |  ⨯ TypeError: Cannot read properties of undefined (reading 'entryCSSFiles')
-0|inside.t |     at rH (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:3566)
-0|inside.t |     at rK (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:11861)
-0|inside.t |     at r7 (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:15099)
-0|inside.t |     at no (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:22633)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:726
-0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
-0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:17831)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:616
-0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
-0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:16935)
-0|inside.t |  ⨯ TypeError: Cannot read properties of undefined (reading 'entryCSSFiles')
-0|inside.t |     at rH (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:3566)
-0|inside.t |     at rK (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:11861)
-0|inside.t |     at r7 (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:15099)
-0|inside.t |     at no (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:22633)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:726
-0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
-0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:17831)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:616
-0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
-0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:16935)
-0|inside.t |  ⨯ TypeError: Cannot read properties of undefined (reading 'entryCSSFiles')
-0|inside.t |     at rH (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:3566)
-0|inside.t |     at rK (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:11861)
-0|inside.t |     at r7 (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:15099)
-0|inside.t |     at no (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:22633)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:726
-0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
-0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:17831)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:616
-0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
-0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:16935)
-0|inside.t |  ⨯ TypeError: Cannot read properties of undefined (reading 'entryCSSFiles')
-0|inside.t |     at rH (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:3566)
-0|inside.t |     at rK (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:11861)
-0|inside.t |     at r7 (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:15099)
-0|inside.t |     at no (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:22633)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:726
-0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
-0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:17831)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:616
-0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
-0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:16935)
-0|inside.t |  ⨯ TypeError: Cannot read properties of undefined (reading 'entryCSSFiles')
-0|inside.t |     at rH (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:3566)
-0|inside.t |     at rK (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:11861)
-0|inside.t |     at r7 (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:15099)
-0|inside.t |     at no (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:22633)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:726
-0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
-0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:17831)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:616
-0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
-0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:16935)
-0|inside.t |  ⨯ TypeError: Cannot read properties of undefined (reading 'entryCSSFiles')
-0|inside.t |     at rH (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:3566)
-0|inside.t |     at rK (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:11861)
-0|inside.t |     at r7 (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:15099)
-0|inside.t |     at no (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:22633)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:726
-0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
-0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:17831)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:616
-0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
-0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:16935)
-0|inside.t |  ⨯ TypeError: Cannot read properties of undefined (reading 'entryCSSFiles')
-0|inside.t |     at rH (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:3566)
-0|inside.t |     at rK (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:11861)
-0|inside.t |     at r7 (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:15099)
-0|inside.t |     at no (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:22633)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:726
-0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
-0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:17831)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:616
-0|inside.t |     at AsyncLocalStorage.run (node:async_hooks:338:14)
-0|inside.t |     at Object.wrap (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:13:16935)
-0|inside.t |  ⨯ TypeError: Cannot read properties of undefined (reading 'clientModules')
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:24397
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/trace/tracer.js:191:62
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/trace/tracer.js:140:36
-0|inside.t |     at NoopContextManager.with (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
-0|inside.t |     at ContextAPI.with (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
-0|inside.t |     at NoopTracer.startActiveSpan (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
-0|inside.t |     at ProxyTracer.startActiveSpan (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/trace/tracer.js:122:103
-0|inside.t |     at NoopContextManager.with (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
-0|inside.t |     at ContextAPI.with (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
-0|inside.t |  ⨯ TypeError: Cannot read properties of undefined (reading 'clientModules')
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:24397
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/trace/tracer.js:191:62
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/trace/tracer.js:140:36
-0|inside.t |     at NoopContextManager.with (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
-0|inside.t |     at ContextAPI.with (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
-0|inside.t |     at NoopTracer.startActiveSpan (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
-0|inside.t |     at ProxyTracer.startActiveSpan (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/trace/tracer.js:122:103
-0|inside.t |     at NoopContextManager.with (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
-0|inside.t |     at ContextAPI.with (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
-0|inside.t | (node:4060548) ExperimentalWarning: buffer.File is an experimental feature and might change at any time
-0|inside.t | (Use `node --trace-warnings ...` to show where the warning was created)
-0|inside.t | (node:4061211) ExperimentalWarning: buffer.File is an experimental feature and might change at any time
-0|inside.t | (Use `node --trace-warnings ...` to show where the warning was created)
-0|inside.t | (node:4062203) ExperimentalWarning: buffer.File is an experimental feature and might change at any time
-0|inside.t | (Use `node --trace-warnings ...` to show where the warning was created)
-
-/home/incall/.pm2/logs/inside.tsol.vn-out.log last 200 lines:
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 706ms
-0|inside.t | Message sent: <1db86dc3-9afc-f855-7953-965319f10fb8@trinhgiatelecom.vn>
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 701ms
-0|inside.t | Message sent: <bf61e6f1-05d2-bc46-eb8e-86a7b4e6e8ab@trinhgiatelecom.vn>
-0|inside.t | Message sent: <516ec28b-eacc-c354-20b8-175c68c31ced@trinhgiatelecom.vn>
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 716ms
-0|inside.t | Message sent: <b422e9d6-69b4-439b-0136-006463a32ac0@trinhgiatelecom.vn>
-0|inside.t | Message sent: <977e3839-3808-063b-f4a5-97d68f5365de@trinhgiatelecom.vn>
-0|inside.t | Message sent: <4774d332-897c-208b-554b-bc4bdae1cdd5@trinhgiatelecom.vn>
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 703ms
-0|inside.t | DEBUG CheckIn User ID: cmmeqs3nh000b11o7ys9ro7c7
-0|inside.t | Message sent: <b5cedf92-0209-bcad-5d76-cb7a3cf127c1@trinhgiatelecom.vn>
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 774ms
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 686ms
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 682ms
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 764ms
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 697ms
-0|inside.t | Message sent: <f5587b2c-ab94-46fa-3fa4-fda8600536dc@trinhgiatelecom.vn>
-0|inside.t | Message sent: <0ae2a5b9-ffe7-5cc0-fbfa-3fce2e9400f3@trinhgiatelecom.vn>
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 712ms
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 688ms
-0|inside.t | Message sent: <4c85b752-58c2-31e3-43aa-3d6634057c3a@trinhgiatelecom.vn>
-0|inside.t | Message sent: <9c655a7a-8190-c095-48e9-edbc74d7cd86@trinhgiatelecom.vn>
-0|inside.t | Message sent: <2807dbb1-e711-e0ba-537f-5e3f558a8e48@trinhgiatelecom.vn>
-0|inside.t | Message sent: <99184536-1c96-1325-9846-edca31f9ea35@trinhgiatelecom.vn>
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 694ms
-0|inside.t | Message sent: <48f37a4e-dfaf-f3e6-1eef-71e003025f61@trinhgiatelecom.vn>
-0|inside.t | Message sent: <9530a167-03df-f2c7-b070-8d16da8b42c1@trinhgiatelecom.vn>
-0|inside.t | Message sent: <9beee88f-9cd9-698f-c6fa-d8da3a42b87f@trinhgiatelecom.vn>
-0|inside.t | Message sent: <d27cc869-b997-93ad-912b-e38ca39b0b39@trinhgiatelecom.vn>
-0|inside.t | Message sent: <21375c57-8109-3c3a-f1ed-0831629ec18f@trinhgiatelecom.vn>
-0|inside.t | Message sent: <1db73c62-e68e-c02e-662d-cf158893bee7@trinhgiatelecom.vn>
-0|inside.t | Message sent: <cb51d0d2-023c-966c-61ce-38d8a086e36c@trinhgiatelecom.vn>
-0|inside.t | Message sent: <ceefb047-dd7c-400f-a75f-dccb4a6735ab@trinhgiatelecom.vn>
-0|inside.t | Message sent: <49b52ec7-8cb8-ba89-ac16-f75e2935337a@trinhgiatelecom.vn>
-0|inside.t | Message sent: <37f4cee6-d643-4637-e0ce-ce73cd728b87@trinhgiatelecom.vn>
-0|inside.t | Message sent: <050bd0a1-101b-5533-358f-891c35fad3e4@trinhgiatelecom.vn>
-0|inside.t | Message sent: <fc73edd0-a4ff-5aef-bd8e-657664bb59c7@trinhgiatelecom.vn>
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 711ms
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 708ms
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 713ms
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 693ms
-0|inside.t | Message sent: <57f5df04-4497-2977-22d8-6b119c3e1135@trinhgiatelecom.vn>
-0|inside.t | Message sent: <eb0b62bb-7a62-d6c9-eff2-31f4fba70d52@trinhgiatelecom.vn>
-0|inside.t | Message sent: <3cafec4b-0666-49fe-3ec5-243396d8a88e@trinhgiatelecom.vn>
-0|inside.t | Message sent: <3b953c8d-5d68-0b83-d652-2976f8c606d8@trinhgiatelecom.vn>
-0|inside.t | Message sent: <f0d70a0a-4a2f-58b4-02df-101daf4f4dfc@trinhgiatelecom.vn>
-0|inside.t | Message sent: <00279606-9442-33d4-4bd2-e9bb6ed607ff@trinhgiatelecom.vn>
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 710ms
-0|inside.t | Message sent: <3ac4587f-d79d-36c2-a9e8-73dbfba91a25@trinhgiatelecom.vn>
-0|inside.t | Message sent: <73744085-593b-096e-2b9d-7b937cdd49ba@trinhgiatelecom.vn>
-0|inside.t | Message sent: <ab04fb26-6c76-293c-fb47-5b9a7c7f251e@trinhgiatelecom.vn>
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 704ms
-0|inside.t | Message sent: <891a541b-613d-f127-d000-ce42fffa16cf@trinhgiatelecom.vn>
-0|inside.t | Message sent: <de3d3211-9de0-7ac9-750b-d7a6c515aec9@trinhgiatelecom.vn>
-0|inside.t | Message sent: <950f3a14-9859-9bf2-8e87-9c6d84de0e0b@trinhgiatelecom.vn>
-0|inside.t | Message sent: <fdf64001-21fa-ffc6-dd27-482a1b499265@trinhgiatelecom.vn>
 
 /home/incall/.pm2/logs/makevideo-ai-error.log last 200 lines:
 5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
@@ -988,4 +584,408 @@ PM2        | 2026-04-04T11:36:53: PM2 log: App [inside.tsol.vn:0] online
 5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
 5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
 5|makevide |     at ignore-listed frames
+
+/home/incall/.pm2/logs/inside.tsol.vn-out.log last 200 lines:
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t |  ✓ Ready in 712ms
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t |  ✓ Ready in 688ms
+0|inside.t | Message sent: <4c85b752-58c2-31e3-43aa-3d6634057c3a@trinhgiatelecom.vn>
+0|inside.t | Message sent: <9c655a7a-8190-c095-48e9-edbc74d7cd86@trinhgiatelecom.vn>
+0|inside.t | Message sent: <2807dbb1-e711-e0ba-537f-5e3f558a8e48@trinhgiatelecom.vn>
+0|inside.t | Message sent: <99184536-1c96-1325-9846-edca31f9ea35@trinhgiatelecom.vn>
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t |  ✓ Ready in 694ms
+0|inside.t | Message sent: <48f37a4e-dfaf-f3e6-1eef-71e003025f61@trinhgiatelecom.vn>
+0|inside.t | Message sent: <9530a167-03df-f2c7-b070-8d16da8b42c1@trinhgiatelecom.vn>
+0|inside.t | Message sent: <9beee88f-9cd9-698f-c6fa-d8da3a42b87f@trinhgiatelecom.vn>
+0|inside.t | Message sent: <d27cc869-b997-93ad-912b-e38ca39b0b39@trinhgiatelecom.vn>
+0|inside.t | Message sent: <21375c57-8109-3c3a-f1ed-0831629ec18f@trinhgiatelecom.vn>
+0|inside.t | Message sent: <1db73c62-e68e-c02e-662d-cf158893bee7@trinhgiatelecom.vn>
+0|inside.t | Message sent: <cb51d0d2-023c-966c-61ce-38d8a086e36c@trinhgiatelecom.vn>
+0|inside.t | Message sent: <ceefb047-dd7c-400f-a75f-dccb4a6735ab@trinhgiatelecom.vn>
+0|inside.t | Message sent: <49b52ec7-8cb8-ba89-ac16-f75e2935337a@trinhgiatelecom.vn>
+0|inside.t | Message sent: <37f4cee6-d643-4637-e0ce-ce73cd728b87@trinhgiatelecom.vn>
+0|inside.t | Message sent: <050bd0a1-101b-5533-358f-891c35fad3e4@trinhgiatelecom.vn>
+0|inside.t | Message sent: <fc73edd0-a4ff-5aef-bd8e-657664bb59c7@trinhgiatelecom.vn>
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t |  ✓ Ready in 711ms
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t |  ✓ Ready in 708ms
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t |  ✓ Ready in 713ms
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t |  ✓ Ready in 693ms
+0|inside.t | Message sent: <57f5df04-4497-2977-22d8-6b119c3e1135@trinhgiatelecom.vn>
+0|inside.t | Message sent: <eb0b62bb-7a62-d6c9-eff2-31f4fba70d52@trinhgiatelecom.vn>
+0|inside.t | Message sent: <3cafec4b-0666-49fe-3ec5-243396d8a88e@trinhgiatelecom.vn>
+0|inside.t | Message sent: <3b953c8d-5d68-0b83-d652-2976f8c606d8@trinhgiatelecom.vn>
+0|inside.t | Message sent: <f0d70a0a-4a2f-58b4-02df-101daf4f4dfc@trinhgiatelecom.vn>
+0|inside.t | Message sent: <00279606-9442-33d4-4bd2-e9bb6ed607ff@trinhgiatelecom.vn>
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t |  ✓ Ready in 710ms
+0|inside.t | Message sent: <3ac4587f-d79d-36c2-a9e8-73dbfba91a25@trinhgiatelecom.vn>
+0|inside.t | Message sent: <73744085-593b-096e-2b9d-7b937cdd49ba@trinhgiatelecom.vn>
+0|inside.t | Message sent: <ab04fb26-6c76-293c-fb47-5b9a7c7f251e@trinhgiatelecom.vn>
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t |  ✓ Ready in 704ms
+0|inside.t | Message sent: <891a541b-613d-f127-d000-ce42fffa16cf@trinhgiatelecom.vn>
+0|inside.t | Message sent: <de3d3211-9de0-7ac9-750b-d7a6c515aec9@trinhgiatelecom.vn>
+0|inside.t | Message sent: <950f3a14-9859-9bf2-8e87-9c6d84de0e0b@trinhgiatelecom.vn>
+0|inside.t | Message sent: <fdf64001-21fa-ffc6-dd27-482a1b499265@trinhgiatelecom.vn>
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t |  ✓ Ready in 802ms
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t |  ✓ Ready in 699ms
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t |  ✓ Ready in 703ms
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t |  ✓ Ready in 699ms
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t |  ✓ Ready in 692ms
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t |  ✓ Ready in 723ms
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t |  ✓ Ready in 678ms
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t |  ✓ Ready in 696ms
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t |  ✓ Ready in 689ms
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t |  ✓ Ready in 702ms
+
+/home/incall/.pm2/logs/inside.tsol.vn-error.log last 200 lines:
+0|inside.t |     at async p (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/api/users/heartbeat/route.js:1:2108)
+0|inside.t |     at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
+0|inside.t |     at async e_.execute (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
+0|inside.t |     at async e_.handle (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943)
+0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1366:42) {
+0|inside.t |   code: 'P2003',
+0|inside.t |   clientVersion: '5.22.0',
+0|inside.t |   meta: { modelName: 'LoginLog', field_name: 'userId' }
+0|inside.t | }
+0|inside.t | Error creating login log in heartbeat: PrismaClientKnownRequestError: 
+0|inside.t | Invalid `prisma.loginLog.create()` invocation:
+0|inside.t | 
+0|inside.t | 
+0|inside.t | Foreign key constraint violated: `userId`
+0|inside.t |     at Vg.handleRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:7317)
+0|inside.t |     at Vg.handleAndLogRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6624)
+0|inside.t |     at Vg.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6308)
+0|inside.t |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|inside.t |     at async a (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:191:9642)
+0|inside.t |     at async p (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/api/users/heartbeat/route.js:1:2108)
+0|inside.t |     at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
+0|inside.t |     at async e_.execute (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
+0|inside.t |     at async e_.handle (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943)
+0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1366:42) {
+0|inside.t |   code: 'P2003',
+0|inside.t |   clientVersion: '5.22.0',
+0|inside.t |   meta: { modelName: 'LoginLog', field_name: 'userId' }
+0|inside.t | }
+0|inside.t | PrismaClientKnownRequestError: 
+0|inside.t | Invalid `prisma.chatRoom.create()` invocation:
+0|inside.t | 
+0|inside.t | 
+0|inside.t | Foreign key constraint violated: `userId`
+0|inside.t |     at Vg.handleRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:7317)
+0|inside.t |     at Vg.handleAndLogRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6624)
+0|inside.t |     at Vg.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6308)
+0|inside.t |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|inside.t |     at async a (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:191:9642)
+0|inside.t |     at async u (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/chunks/4024.js:53:53509)
+0|inside.t |     at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:286
+0|inside.t |     at async rE (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:15:8297)
+0|inside.t |     at async no (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:19:1144)
+0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1427:30) {
+0|inside.t |   code: 'P2003',
+0|inside.t |   clientVersion: '5.22.0',
+0|inside.t |   meta: { modelName: 'ChatRoom', field_name: 'userId' },
+0|inside.t |   digest: '3804213785'
+0|inside.t | }
+0|inside.t | Error creating login log in heartbeat: PrismaClientKnownRequestError: 
+0|inside.t | Invalid `prisma.loginLog.create()` invocation:
+0|inside.t | 
+0|inside.t | 
+0|inside.t | Foreign key constraint violated: `userId`
+0|inside.t |     at Vg.handleRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:7317)
+0|inside.t |     at Vg.handleAndLogRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6624)
+0|inside.t |     at Vg.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6308)
+0|inside.t |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|inside.t |     at async a (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:191:9642)
+0|inside.t |     at async p (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/api/users/heartbeat/route.js:1:2108)
+0|inside.t |     at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
+0|inside.t |     at async e_.execute (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
+0|inside.t |     at async e_.handle (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943)
+0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1366:42) {
+0|inside.t |   code: 'P2003',
+0|inside.t |   clientVersion: '5.22.0',
+0|inside.t |   meta: { modelName: 'LoginLog', field_name: 'userId' }
+0|inside.t | }
+0|inside.t | Error creating login log in heartbeat: PrismaClientKnownRequestError: 
+0|inside.t | Invalid `prisma.loginLog.create()` invocation:
+0|inside.t | 
+0|inside.t | 
+0|inside.t | Foreign key constraint violated: `userId`
+0|inside.t |     at Vg.handleRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:7317)
+0|inside.t |     at Vg.handleAndLogRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6624)
+0|inside.t |     at Vg.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6308)
+0|inside.t |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|inside.t |     at async a (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:191:9642)
+0|inside.t |     at async p (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/api/users/heartbeat/route.js:1:2108)
+0|inside.t |     at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
+0|inside.t |     at async e_.execute (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
+0|inside.t |     at async e_.handle (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943)
+0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1366:42) {
+0|inside.t |   code: 'P2003',
+0|inside.t |   clientVersion: '5.22.0',
+0|inside.t |   meta: { modelName: 'LoginLog', field_name: 'userId' }
+0|inside.t | }
+0|inside.t | Error creating login log in heartbeat: PrismaClientKnownRequestError: 
+0|inside.t | Invalid `prisma.loginLog.create()` invocation:
+0|inside.t | 
+0|inside.t | 
+0|inside.t | Foreign key constraint violated: `userId`
+0|inside.t |     at Vg.handleRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:7317)
+0|inside.t |     at Vg.handleAndLogRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6624)
+0|inside.t |     at Vg.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6308)
+0|inside.t |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|inside.t |     at async a (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:191:9642)
+0|inside.t |     at async p (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/api/users/heartbeat/route.js:1:2108)
+0|inside.t |     at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
+0|inside.t |     at async e_.execute (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
+0|inside.t |     at async e_.handle (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943)
+0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1366:42) {
+0|inside.t |   code: 'P2003',
+0|inside.t |   clientVersion: '5.22.0',
+0|inside.t |   meta: { modelName: 'LoginLog', field_name: 'userId' }
+0|inside.t | }
+0|inside.t | Error creating login log in heartbeat: PrismaClientKnownRequestError: 
+0|inside.t | Invalid `prisma.loginLog.create()` invocation:
+0|inside.t | 
+0|inside.t | 
+0|inside.t | Foreign key constraint violated: `userId`
+0|inside.t |     at Vg.handleRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:7317)
+0|inside.t |     at Vg.handleAndLogRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6624)
+0|inside.t |     at Vg.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6308)
+0|inside.t |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|inside.t |     at async a (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:191:9642)
+0|inside.t |     at async p (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/api/users/heartbeat/route.js:1:2108)
+0|inside.t |     at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
+0|inside.t |     at async e_.execute (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
+0|inside.t |     at async e_.handle (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943)
+0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1366:42) {
+0|inside.t |   code: 'P2003',
+0|inside.t |   clientVersion: '5.22.0',
+0|inside.t |   meta: { modelName: 'LoginLog', field_name: 'userId' }
+0|inside.t | }
+0|inside.t | Error creating login log in heartbeat: PrismaClientKnownRequestError: 
+0|inside.t | Invalid `prisma.loginLog.create()` invocation:
+0|inside.t | 
+0|inside.t | 
+0|inside.t | Foreign key constraint violated: `userId`
+0|inside.t |     at Vg.handleRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:7317)
+0|inside.t |     at Vg.handleAndLogRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6624)
+0|inside.t |     at Vg.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6308)
+0|inside.t |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|inside.t |     at async a (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:191:9642)
+0|inside.t |     at async p (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/api/users/heartbeat/route.js:1:2108)
+0|inside.t |     at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
+0|inside.t |     at async e_.execute (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
+0|inside.t |     at async e_.handle (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943)
+0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1366:42) {
+0|inside.t |   code: 'P2003',
+0|inside.t |   clientVersion: '5.22.0',
+0|inside.t |   meta: { modelName: 'LoginLog', field_name: 'userId' }
+0|inside.t | }
+0|inside.t | Error creating login log in heartbeat: PrismaClientKnownRequestError: 
+0|inside.t | Invalid `prisma.loginLog.create()` invocation:
+0|inside.t | 
+0|inside.t | 
+0|inside.t | Foreign key constraint violated: `userId`
+0|inside.t |     at Vg.handleRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:7317)
+0|inside.t |     at Vg.handleAndLogRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6624)
+0|inside.t |     at Vg.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6308)
+0|inside.t |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|inside.t |     at async a (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:191:9642)
+0|inside.t |     at async p (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/api/users/heartbeat/route.js:1:2108)
+0|inside.t |     at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
+0|inside.t |     at async e_.execute (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
+0|inside.t |     at async e_.handle (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943)
+0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1366:42) {
+0|inside.t |   code: 'P2003',
+0|inside.t |   clientVersion: '5.22.0',
+0|inside.t |   meta: { modelName: 'LoginLog', field_name: 'userId' }
+0|inside.t | }
+0|inside.t | Error creating login log in heartbeat: PrismaClientKnownRequestError: 
+0|inside.t | Invalid `prisma.loginLog.create()` invocation:
+0|inside.t | 
+0|inside.t | 
+0|inside.t | Foreign key constraint violated: `userId`
+0|inside.t |     at Vg.handleRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:7317)
+0|inside.t |     at Vg.handleAndLogRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6624)
+0|inside.t |     at Vg.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6308)
+0|inside.t |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|inside.t |     at async a (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:191:9642)
+0|inside.t |     at async p (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/api/users/heartbeat/route.js:1:2108)
+0|inside.t |     at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
+0|inside.t |     at async e_.execute (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
+0|inside.t |     at async e_.handle (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943)
+0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1366:42) {
+0|inside.t |   code: 'P2003',
+0|inside.t |   clientVersion: '5.22.0',
+0|inside.t |   meta: { modelName: 'LoginLog', field_name: 'userId' }
+0|inside.t | }
+0|inside.t | Error creating login log in heartbeat: PrismaClientKnownRequestError: 
+0|inside.t | Invalid `prisma.loginLog.create()` invocation:
+0|inside.t | 
+0|inside.t | 
+0|inside.t | Foreign key constraint violated: `userId`
+0|inside.t |     at Vg.handleRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:7317)
+0|inside.t |     at Vg.handleAndLogRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6624)
+0|inside.t |     at Vg.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6308)
+0|inside.t |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|inside.t |     at async a (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:191:9642)
+0|inside.t |     at async p (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/api/users/heartbeat/route.js:1:2108)
+0|inside.t |     at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
+0|inside.t |     at async e_.execute (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
+0|inside.t |     at async e_.handle (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943)
+0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1366:42) {
+0|inside.t |   code: 'P2003',
+0|inside.t |   clientVersion: '5.22.0',
+0|inside.t |   meta: { modelName: 'LoginLog', field_name: 'userId' }
+0|inside.t | }
 

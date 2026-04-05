@@ -4,7 +4,7 @@ const conn = new Client();
 const password = 'P@ssw0rdVu';
 
 conn.on('ready', () => {
-    const cmd = `cd /www/wwwroot/inside.tsol.vn/tsolapp && ls -laR app/portal`;
+    const cmd = `cat /www/server/panel/vhost/nginx/inside.tsol.vn.conf`;
     conn.exec(cmd, (err, stream) => {
         if (err) throw err;
         stream.on('close', () => conn.end()).on('data', (d) => process.stdout.write(d.toString())).stderr.on('data', (d) => process.stderr.write(d.toString()));
