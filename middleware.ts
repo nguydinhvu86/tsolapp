@@ -3,14 +3,16 @@ import { NextResponse } from "next/server";
 
 export default withAuth(
     function middleware(req) {
-        // Có thể xử lý logic chi tiết ở đây nếu cần, ví dụ check Role:
-        // if (req.nextUrl.pathname.startsWith("/settings") && req.nextauth.token?.role !== "ADMIN") {
-        //     return NextResponse.rewrite(new URL("/dashboard", req.url))
-        // }
+        if (req.nextUrl.pathname.startsWith('/portal/login')) {
+            return NextResponse.next();
+        }
     },
     {
         callbacks: {
-            authorized: ({ token }) => !!token,
+            authorized: ({ req, token }) => {
+                if (req.nextUrl.pathname.startsWith('/portal/login')) return true;
+                return !!token;
+            },
         },
     }
 );
