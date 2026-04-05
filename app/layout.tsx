@@ -30,7 +30,7 @@ export async function generateMetadata(): Promise<Metadata> {
             siteName: brandName || title,
             images: [
                 {
-                    url: 'https://inside.tsol.vn/api/og-image',
+                    url: 'https://inside.tsol.vn/og-image.png',
                     width: 1200,
                     height: 630,
                 },
@@ -42,7 +42,7 @@ export async function generateMetadata(): Promise<Metadata> {
             card: 'summary_large_image',
             title: brandName || title,
             description,
-            images: ['https://inside.tsol.vn/api/og-image'],
+            images: ['https://inside.tsol.vn/og-image.png'],
         },
         appleWebApp: {
             statusBarStyle: 'default',
