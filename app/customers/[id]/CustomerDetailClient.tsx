@@ -149,8 +149,35 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                         <User size={40} />
                     </div>
                     <div className="flex-1 w-full flex flex-col items-center sm:items-start text-center sm:text-left">
-                        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 mb-6 w-full">
+                        <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center gap-4 mb-6 w-full">
                             <h2 className="text-xl sm:text-2xl font-bold m-0 text-slate-800 break-words">{customer.name}</h2>
+                            <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                                <Button
+                                    onClick={() => setIsPasswordModalOpen(true)}
+                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-[#5A5CE1] text-white border-none px-4 py-2 rounded-lg cursor-pointer hover:bg-indigo-700 transition-colors shadow-sm font-medium text-sm h-[36px]"
+                                    title="Cấp quyền đăng nhập Customer Portal"
+                                >
+                                    <UserCheck size={16} /> Tài khoản Portal
+                                </Button>
+                                <Button
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        navigator.clipboard.writeText(window.location.origin + '/portal/login');
+                                        alert('Đã copy link: ' + window.location.origin + '/portal/login');
+                                    }}
+                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-[#5A5CE1] text-white border-none px-4 py-2 rounded-lg cursor-pointer hover:bg-indigo-700 transition-colors shadow-sm font-medium text-sm h-[36px]"
+                                    title="Copy đường dẫn đăng nhập Portal"
+                                >
+                                    <LinkIcon size={16} /> Link Portal
+                                </Button>
+                                <Button
+                                    onClick={() => setIsEmailModalOpen(true)}
+                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-[#5A5CE1] text-white border-none px-4 py-2 rounded-lg cursor-pointer hover:bg-indigo-700 transition-colors shadow-sm font-medium text-sm h-[36px]"
+                                    title="Gửi Email"
+                                >
+                                    <Mail size={16} /> Gửi Email
+                                </Button>
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 w-full text-left">
@@ -191,37 +218,6 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                             </div>
                         </div>
 
-                        {/* Khu vực nút chức năng tối ưu Mobile */}
-                        <div className="grid grid-cols-3 gap-2 sm:gap-4 w-full mt-6 pt-6 border-t border-slate-100">
-                            <Button
-                                onClick={() => setIsPasswordModalOpen(true)}
-                                className="flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 bg-[#5A5CE1] text-white border-none py-2.5 sm:py-3 px-2 sm:px-4 rounded-[10px] sm:rounded-xl hover:bg-indigo-700 transition-all shadow-sm font-semibold h-full w-full"
-                                title="Cấp quyền đăng nhập Customer Portal"
-                            >
-                                <UserCheck size={16} className="flex-shrink-0" />
-                                <span className="text-[11px] sm:text-[14px] leading-tight text-left whitespace-normal break-words min-w-0">Tài khoản<br className="hidden sm:block"/> Portal</span>
-                            </Button>
-                            <Button
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    navigator.clipboard.writeText(window.location.origin + '/portal/login');
-                                    alert('Đã copy link: ' + window.location.origin + '/portal/login');
-                                }}
-                                className="flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 bg-[#5A5CE1] text-white border-none py-2.5 sm:py-3 px-2 sm:px-4 rounded-[10px] sm:rounded-xl hover:bg-indigo-700 transition-all shadow-sm font-semibold h-full w-full"
-                                title="Copy đường dẫn đăng nhập Portal"
-                            >
-                                <LinkIcon size={16} className="flex-shrink-0" />
-                                <span className="text-[11px] sm:text-[14px] leading-tight text-left whitespace-normal break-words min-w-0">Link<br className="hidden sm:block"/> Portal</span>
-                            </Button>
-                            <Button
-                                onClick={() => setIsEmailModalOpen(true)}
-                                className="flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 bg-[#5A5CE1] text-white border-none py-2.5 sm:py-3 px-2 sm:px-4 rounded-[10px] sm:rounded-xl hover:bg-indigo-700 transition-all shadow-sm font-semibold h-full w-full"
-                                title="Gửi Email"
-                            >
-                                <Mail size={16} className="flex-shrink-0" />
-                                <span className="text-[11px] sm:text-[14px] leading-tight text-left whitespace-normal break-words min-w-0">Gửi<br className="hidden sm:block"/> Email</span>
-                            </Button>
-                        </div>
                     </div>
                 </div>
             </Card>
