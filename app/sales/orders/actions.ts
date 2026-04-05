@@ -91,9 +91,15 @@ export async function submitSalesOrder(creatorId: string, formData: any) {
             return { success: false, error: "Thiếu thông tin bắt buộc." };
         }
 
+        let finalCode = formData.code;
+        const existingOrder = await prisma.salesOrder.findUnique({ where: { code: finalCode } });
+        if (existingOrder) {
+            finalCode = await getNextOrderCode();
+        }
+
         const order = await prisma.salesOrder.create({
             data: {
-                code: formData.code,
+                code: finalCode,
                 date: new Date(formData.date),
                 status: formData.status || "DRAFT",
                 notes: formData.notes,

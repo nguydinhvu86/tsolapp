@@ -81,6 +81,40 @@ export async function getCustomerWithRelations(id: string) {
     }
 }
 
+export async function updateCustomerPassword(customerId: string, newPassword: string) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) return { success: false, error: "Unauthorized" };
+        const permissions = (session.user.permissions as string[]) || [];
+        const canEdit = permissions.includes('CUSTOMERS_EDIT_ALL') || permissions.includes('CUSTOMERS_EDIT_OWN');
+        
+        if (!canEdit && session.user.role !== 'ADMIN') {
+            return { success: false, error: "Bạn không có quyền cấp mật khẩu khách hàng" };
+        }
+
+        const bcrypt = require('bcryptjs');
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        await prisma.customer.update({
+            where: { id: customerId },
+            data: { password: hashedPassword } as any
+        });
+
+        await logCustomerActivity(
+            customerId,
+            session.user.id,
+            'CẬP_NHẬT_MẬT_KHẨU_PORTAL',
+            `Đã cấp mới/thay đổi mật khẩu truy cập Customer Portal`
+        );
+
+        revalidatePath(`/customers/${customerId}`);
+        return { success: true };
+    } catch (error: any) {
+        console.error("Failed to update password:", error);
+        return { success: false, error: error.message };
+    }
+}
+
 // --- CUSTOMER NOTE ACTIONS ---
 
 export async function createCustomerNote(customerId: string, content: string, attachment?: string) {

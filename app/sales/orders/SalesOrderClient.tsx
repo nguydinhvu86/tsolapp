@@ -273,6 +273,8 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
         }
 
         if (res.success) {
+            alert('Lưu thành công!');
+            setIsFormOpen(false);
             router.refresh();
         } else {
             alert('Lỗi: ' + res.error);

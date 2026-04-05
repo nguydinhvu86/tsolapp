@@ -16,8 +16,9 @@ import { CustomerContactsPanel } from '@/app/components/customers/CustomerContac
 import { CustomerManagersPanel } from '@/app/components/customers/CustomerManagersPanel';
 import { CustomerHistoryTimeline } from '@/app/components/customers/CustomerHistoryTimeline';
 import { useSession } from 'next-auth/react';
-import { sendDebtConfirmationEmail, saveCustomerMenuOrder } from '../actions';
 import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
+import { sendDebtConfirmationEmail, saveCustomerMenuOrder } from '../actions';
+import { updateCustomerPassword } from './actions';
 import { EmailLogTable } from '@/app/components/ui/EmailLogTable';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 
@@ -29,6 +30,9 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
     const [activeTab, setActiveTab] = useState<'documents' | 'statement' | 'quotes' | 'contracts' | 'handovers' | 'payments' | 'appendices' | 'dispatches' | 'salesEstimates' | 'salesOrders' | 'salesInvoices' | 'salesPayments' | 'leads' | 'emailLogs' | 'contacts' | 'managers'>('leads');
     const [searchQuery, setSearchQuery] = useState('');
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+    const [newPassword, setNewPassword] = useState('');
+    const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
 
     const now = new Date();
@@ -147,12 +151,21 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                     <div className="flex-1 w-full flex flex-col items-center sm:items-start text-center sm:text-left">
                         <div className="flex flex-col sm:flex-row sm:justify-between items-center sm:items-start gap-4 mb-6 w-full">
                             <h2 className="text-xl sm:text-2xl font-bold m-0 text-slate-800 break-words">{customer.name}</h2>
-                            <Button
-                                onClick={() => setIsEmailModalOpen(true)}
-                                className="w-full sm:w-auto flex-shrink-0 flex items-center justify-center gap-2 bg-blue-500 text-white border-none px-4 py-2 rounded-lg cursor-pointer hover:bg-blue-600 transition-colors"
-                            >
-                                <Mail size={16} /> Gửi Email Công Nợ
-                            </Button>
+                            <div className="flex gap-2 w-full sm:w-auto">
+                                <Button
+                                    onClick={() => setIsPasswordModalOpen(true)}
+                                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-emerald-500 text-white border-none px-4 py-2 rounded-lg cursor-pointer hover:bg-emerald-600 transition-colors"
+                                    title="Cấp quyền đăng nhập Customer Portal"
+                                >
+                                    <UserCheck size={16} /> Tài khoản Portal
+                                </Button>
+                                <Button
+                                    onClick={() => setIsEmailModalOpen(true)}
+                                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-blue-500 text-white border-none px-4 py-2 rounded-lg cursor-pointer hover:bg-blue-600 transition-colors"
+                                >
+                                    <Mail size={16} /> Gửi Email
+                                </Button>
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 w-full text-left">
@@ -543,6 +556,55 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                     else alert("Lỗi khi gửi email: " + res?.error);
                 }}
             />
+
+            {/* Password Modal */}
+            {isPasswordModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+                        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                            <h3 className="text-lg font-bold text-slate-800 m-0">Tài khoản Customer Portal</h3>
+                            <button onClick={() => setIsPasswordModalOpen(false)} className="text-slate-400 hover:text-slate-700 bg-transparent border-none cursor-pointer">✕</button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <p className="text-sm text-slate-600">
+                                Khách hàng sẽ sử dụng <strong>{customer.email || 'Email (chưa cấu hình)'}</strong> để đăng nhập.
+                                <br/>Link đăng nhập: <span className="font-semibold text-indigo-600">/portal/login</span>
+                            </p>
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1">Mật khẩu mới</label>
+                                <input 
+                                    type="text" 
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    placeholder="Nhập mật khẩu cho khách hàng..." 
+                                    className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                />
+                            </div>
+                        </div>
+                        <div className="p-6 pt-0 flex justify-end gap-3 bg-slate-50 border-t border-slate-100">
+                            <Button onClick={() => setIsPasswordModalOpen(false)} style={{ background: '#f1f5f9', color: '#475569', border: 'none' }}>Hủy</Button>
+                            <Button 
+                                disabled={!newPassword || isUpdatingPassword || !customer.email}
+                                onClick={async () => {
+                                    setIsUpdatingPassword(true);
+                                    const res = await updateCustomerPassword(customer.id, newPassword);
+                                    setIsUpdatingPassword(false);
+                                    if (res?.success) {
+                                        alert("Đã cấp mật khẩu tài khoản thành công!");
+                                        setNewPassword('');
+                                        setIsPasswordModalOpen(false);
+                                    } else {
+                                        alert("Lỗi: " + res?.error);
+                                    }
+                                }}
+                                style={{ background: '#10b981', color: 'white', border: 'none' }}
+                            >
+                                {isUpdatingPassword ? 'Đang lưu...' : 'Xác nhận tạo khẩu'}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
         </div >
     );

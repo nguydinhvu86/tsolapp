@@ -8,14 +8,23 @@ export const metadata = {
     title: "Tài liệu - Customer Portal",
 };
 
-export default async function PortalDocumentsPage() {
+export default async function PortalDocumentsPage({ searchParams }: { searchParams: { from?: string, to?: string } }) {
     const session = await getServerSession(authOptions);
     if (!session || session.user.role !== "CUSTOMER") redirect("/portal/login");
 
+    const { from, to } = searchParams;
+    const dateFilter: any = {};
+    if (from) dateFilter.gte = new Date(from);
+    if (to) {
+        const toDate = new Date(to);
+        toDate.setHours(23, 59, 59, 999);
+        dateFilter.lte = toDate;
+    }
+
     // Lấy các Handovers (Bàn giao) như là "Tài liệu" cho khách hàng, hoặc danh sách Contract.
     const [contracts, handovers] = await Promise.all([
-        prisma.contract.findMany({ where: { customerId: session.user.id }, orderBy: { createdAt: 'desc' }}),
-        prisma.handover.findMany({ where: { customerId: session.user.id }, orderBy: { createdAt: 'desc' }})
+        prisma.contract.findMany({ where: { customerId: session.user.id, ...(Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {}) }, orderBy: { createdAt: 'desc' }}),
+        prisma.handover.findMany({ where: { customerId: session.user.id, ...(Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {}) }, orderBy: { createdAt: 'desc' }})
     ]);
 
     const statusMap: Record<string, { label: string, color: string }> = {
@@ -26,14 +35,24 @@ export default async function PortalDocumentsPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center">
-                    <Folder size={20} />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center">
+                        <Folder size={20} />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-800">Tài Liệu Của Tôi</h1>
+                        <p className="text-slate-500 text-sm">Tra cứu hợp đồng và các biên bản bàn giao lưu trữ.</p>
+                    </div>
                 </div>
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-800">Tài Liệu Của Tôi</h1>
-                    <p className="text-slate-500 text-sm">Tra cứu hợp đồng và các biên bản bàn giao lưu trữ.</p>
-                </div>
+
+                <form className="flex items-center gap-2 bg-white p-2 rounded-xl shadow-sm border border-slate-200">
+                    <input type="date" name="from" defaultValue={from || ''} className="text-sm px-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
+                    <span className="text-slate-400">-</span>
+                    <input type="date" name="to" defaultValue={to || ''} className="text-sm px-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
+                    <button type="submit" className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition-colors">Lọc</button>
+                    {(from || to) && <a href="?" className="px-3 py-1.5 text-slate-500 hover:text-slate-700 text-sm font-medium">Xóa</a>}
+                </form>
             </div>
 
             {/* Hợp Đồng */}

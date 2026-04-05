@@ -39,55 +39,63 @@ export default function PortalLoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-100 flex items-center justify-center p-4">
-            <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-100">
-                <div className="flex flex-col items-center mb-8">
-                    <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center mb-4 shadow-lg shadow-indigo-600/30">
+        <div className="fixed inset-0 w-full min-h-screen flex items-center justify-center p-4 sm:p-8 bg-[#0a0f1e] overflow-hidden">
+            {/* Dynamic Animated Mesh Background */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+                <div className="absolute -top-32 -right-32 w-[600px] h-[600px] bg-indigo-600/20 rounded-full blur-[100px] mix-blend-screen animate-pulse" style={{ animationDuration: '8s' }}></div>
+                <div className="absolute -bottom-32 -left-32 w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-[100px] mix-blend-screen animate-pulse" style={{ animationDuration: '6s', animationDelay: '2s' }}></div>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[300px] bg-cyan-400/10 rounded-full blur-[120px] mix-blend-screen"></div>
+            </div>
+
+            {/* Premium Glass Card */}
+            <div className="relative z-10 w-full max-w-[420px] bg-slate-900/50 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-8 sm:p-10 shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] transition-all duration-300 hover:shadow-[0_8px_40px_0_rgba(0,0,0,0.45)]">
+                <div className="flex flex-col items-center mb-10">
+                    <div className="w-16 h-16 bg-gradient-to-tr from-indigo-500 to-cyan-400 rounded-2xl flex items-center justify-center mb-5 shadow-lg shadow-indigo-500/30 transform transition-transform duration-500 hover:scale-105 hover:rotate-3">
                         <Building2 className="text-white" size={32} />
                     </div>
-                    <h1 className="text-2xl font-bold text-slate-800">Cổng Thông Tin Khách Hàng</h1>
-                    <p className="text-slate-500 mt-2 text-center text-sm">
-                        Đăng nhập để xem báo giá, đơn hàng, hóa đơn và tình trạng công nợ của bạn.
+                    <h1 className="text-2xl font-bold text-white tracking-tight">Customer Portal</h1>
+                    <p className="text-slate-400 mt-2 text-center text-[15px] leading-relaxed">
+                        Chạm để xem thông tin dự án, đơn hàng và lịch sử thanh toán của bạn.
                     </p>
                 </div>
 
                 {error && (
-                    <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r text-red-700 flex items-start text-sm">
-                        <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0" />
+                    <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 flex items-start text-sm backdrop-blur-md">
+                        <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0 mt-0.5" />
                         <span>{error}</span>
                     </div>
                 )}
 
-                <form onSubmit={handleLogin} className="space-y-6">
+                <form onSubmit={handleLogin} className="space-y-5">
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">Email Đăng Nhập</label>
-                        <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Mail className="h-5 w-5 text-slate-400" />
+                        <label className="block text-[13px] font-semibold text-slate-300 mb-2 uppercase tracking-wide">Tài khoản Email</label>
+                        <div className="relative group">
+                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none transition-colors duration-300 group-focus-within:text-indigo-400 text-slate-500">
+                                <Mail className="h-5 w-5" />
                             </div>
                             <input
                                 type="email"
                                 required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all"
-                                placeholder="customer@example.com"
+                                className="block w-full pl-11 pr-4 py-3.5 bg-slate-900/50 border border-slate-700/50 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-200 placeholder-slate-600 outline-none transition-all duration-300 shadow-inner group-hover:border-slate-500"
+                                placeholder="name@company.com"
                             />
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">Mật Khẩu</label>
-                        <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Lock className="h-5 w-5 text-slate-400" />
+                        <label className="block text-[13px] font-semibold text-slate-300 mb-2 uppercase tracking-wide">Mật khẩu</label>
+                        <div className="relative group">
+                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none transition-colors duration-300 group-focus-within:text-indigo-400 text-slate-500">
+                                <Lock className="h-5 w-5" />
                             </div>
                             <input
                                 type="password"
                                 required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all"
+                                className="block w-full pl-11 pr-4 py-3.5 bg-slate-900/50 border border-slate-700/50 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-200 placeholder-slate-600 outline-none transition-all duration-300 shadow-inner group-hover:border-slate-500"
                                 placeholder="••••••••"
                             />
                         </div>
@@ -96,7 +104,7 @@ export default function PortalLoginPage() {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                        className="w-full relative mt-3 flex justify-center items-center py-3.5 px-4 border border-transparent rounded-xl text-[15px] font-bold text-white bg-gradient-to-r from-indigo-600 to-blue-500 hover:from-indigo-500 hover:to-blue-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-indigo-500 transition-all duration-300 shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:shadow-[0_0_30px_rgba(79,70,229,0.5)] transform hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none disabled:hover:shadow-none"
                     >
                         {isLoading ? (
                             <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -106,12 +114,12 @@ export default function PortalLoginPage() {
                         ) : (
                             <LogIn className="mr-2 h-5 w-5" />
                         )}
-                        {isLoading ? 'Đang Đăng Nhập...' : 'Đăng Nhập'}
+                        {isLoading ? 'Đang Đăng Nhập...' : 'Truy Cập Hệ Thống'}
                     </button>
                     
-                    <div className="mt-4 text-center">
-                        <Link href="/login" className="text-xs text-slate-400 hover:text-indigo-600 transition-colors">
-                            Khu vực dành cho nhân viên (Internal)
+                    <div className="mt-8 pt-6 border-t border-white/10 text-center">
+                        <Link href="/login" className="text-[13px] text-slate-500 hover:text-indigo-400 transition-colors duration-200 font-medium">
+                            Truy cập khu vực Nhân sự (Internal)
                         </Link>
                     </div>
                 </form>

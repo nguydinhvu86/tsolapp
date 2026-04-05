@@ -214,24 +214,27 @@ export const authOptions: NextAuthOptions = {
                         token.role = dbUser.role;
                         token.name = dbUser.name;
                         token.avatar = dbUser.avatar;
-                        const userPerms = JSON.parse(dbUser.permissions || "[]");
-                        const groupPerms = dbUser.permissionGroup ? JSON.parse(dbUser.permissionGroup.permissions || "[]") : [];
-                        const rawPerms = Array.from(new Set([...userPerms, ...groupPerms]));
+                        // Bảo vệ quyền của ADMIN khỏi bị ghi đè, vì quyền ADMIN được cấp động lúc đăng nhập (không lưu vào DB mảng array)
+                        if (dbUser.role !== 'ADMIN') {
+                            const userPerms = JSON.parse(dbUser.permissions || "[]");
+                            const groupPerms = dbUser.permissionGroup ? JSON.parse(dbUser.permissionGroup.permissions || "[]") : [];
+                            const rawPerms = Array.from(new Set([...userPerms, ...groupPerms]));
 
-                        const upgradedPerms = new Set<string>();
-                        for (const p of rawPerms) {
-                            if (p.endsWith('_VIEW')) {
-                                const base = p.replace('_VIEW', '');
-                                // Only grant legacy VIEW_ALL access if the role hasn't been reconfigured with granular controls yet
-                                if (!rawPerms.includes(`${base}_VIEW_ALL`) && !rawPerms.includes(`${base}_VIEW_OWN`)) {
-                                    upgradedPerms.add(`${base}_VIEW_ALL`);
-                                    upgradedPerms.add(`${base}_VIEW_OWN`);
+                            const upgradedPerms = new Set<string>();
+                            for (const p of rawPerms) {
+                                if (p.endsWith('_VIEW')) {
+                                    const base = p.replace('_VIEW', '');
+                                    // Only grant legacy VIEW_ALL access if the role hasn't been reconfigured with granular controls yet
+                                    if (!rawPerms.includes(`${base}_VIEW_ALL`) && !rawPerms.includes(`${base}_VIEW_OWN`)) {
+                                        upgradedPerms.add(`${base}_VIEW_ALL`);
+                                        upgradedPerms.add(`${base}_VIEW_OWN`);
+                                    }
+                                } else {
+                                    upgradedPerms.add(p);
                                 }
-                            } else {
-                                upgradedPerms.add(p);
                             }
+                            token.permissions = Array.from(upgradedPerms);
                         }
-                        token.permissions = Array.from(upgradedPerms);
 
                         // If user is deactivated during active session, invalidate them
                         if (!dbUser.isActive) {

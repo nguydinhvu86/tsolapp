@@ -17,11 +17,12 @@ export default function PortalSidebar({ customerName, avatar }: SidebarProps) {
 
     const navItems = [
         { name: 'Tổng quan', href: '/portal/dashboard', icon: LayoutDashboard },
-        { name: 'Lịch sử mua hàng', href: '/portal/orders', icon: ShoppingCart },
-        { name: 'Khách hàng', href: '#', icon: FileText, label: 'LOCKED' }, // Will route to specific views
+        { name: 'Lịch sử giao dịch', href: '/portal/orders', icon: LayoutDashboard }, 
         { name: 'Báo giá', href: '/portal/quotes', icon: FileSignature },
+        { name: 'Đơn hàng', href: '/portal/sales-orders', icon: ShoppingCart },
         { name: 'Hóa đơn', href: '/portal/invoices', icon: Receipt },
-        { name: 'Thanh toán & Công nợ', href: '/portal/payments', icon: CreditCard },
+        { name: 'Thanh toán', href: '/portal/payments', icon: CreditCard },
+        { name: 'Sao kê công nợ', href: '/portal/statement', icon: FileSignature },
         { name: 'Tài liệu', href: '/portal/documents', icon: Folder },
     ];
 
@@ -41,7 +42,7 @@ export default function PortalSidebar({ customerName, avatar }: SidebarProps) {
             {/* Mobile menu button */}
             <div className="md:hidden fixed top-0 left-0 w-full h-16 bg-white border-b border-slate-200 z-50 flex items-center justify-between px-4">
                 <div className="flex items-center gap-2">
-                    <Building2 className="text-indigo-600" size={24} />
+                    <Building2 className="text-emerald-600" size={24} />
                     <span className="font-bold text-slate-800 truncate max-w-[200px]">{customerName}</span>
                 </div>
                 <button onClick={toggleSidebar} className="p-2 bg-slate-100 rounded-md text-slate-600">
@@ -64,36 +65,34 @@ export default function PortalSidebar({ customerName, avatar }: SidebarProps) {
                 flex flex-col flex-shrink-0
             `}>
                 <div className="p-6 border-b border-slate-800 flex flex-col items-center justify-center">
-                    <div className="w-16 h-16 bg-slate-800 rounded-full flex flex-col items-center justify-center overflow-hidden mb-3 border-2 border-indigo-500 shadow-lg">
+                    <div className="w-16 h-16 bg-slate-800 rounded-full flex flex-col items-center justify-center overflow-hidden mb-3 border-2 border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]">
                         {avatar ? (
                             <img src={avatar} alt={customerName} className="w-full h-full object-cover" />
                         ) : (
-                            <span className="text-xl font-bold text-indigo-400">{customerName.substring(0, 2).toUpperCase()}</span>
+                            <span className="text-xl font-bold text-emerald-400">{customerName.substring(0, 2).toUpperCase()}</span>
                         )}
                     </div>
-                    <h2 className="text-white font-semibold text-center leading-tight">{customerName}</h2>
-                    <span className="text-xs text-indigo-400 mt-1 px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20">Client Portal</span>
+                    <h2 className="text-white font-semibold text-center leading-tight tracking-wide">{customerName}</h2>
+                    <span className="text-[10px] uppercase font-bold text-emerald-400 mt-2 px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 tracking-wider">Client Portal</span>
                 </div>
 
                 <div className="flex-1 overflow-y-auto py-4">
                     <nav className="px-3 space-y-1">
                         {navItems.map((item) => (
-                            item.label === 'LOCKED' ? null : (
                             <Link
                                 key={item.name}
                                 href={item.href}
                                 onClick={() => setIsOpen(false)}
                                 className={`
-                                    flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors font-medium text-sm
+                                    flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors font-semibold text-sm tracking-wide
                                     ${isActive(item.href) 
-                                        ? 'bg-indigo-600 text-white shadow-md' 
+                                        ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20' 
                                         : 'hover:bg-slate-800 hover:text-white'}
                                 `}
                             >
                                 <item.icon size={18} className={isActive(item.href) ? 'text-white' : 'text-slate-400'} />
                                 <span>{item.name}</span>
                             </Link>
-                            )
                         ))}
                     </nav>
                 </div>
