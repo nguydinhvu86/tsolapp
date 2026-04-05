@@ -17,7 +17,9 @@ import { CustomerManagersPanel } from '@/app/components/customers/CustomerManage
 import { CustomerHistoryTimeline } from '@/app/components/customers/CustomerHistoryTimeline';
 import { useSession } from 'next-auth/react';
 import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
-import { sendDebtConfirmationEmail, saveCustomerMenuOrder } from '../actions';
+import { Modal } from '@/app/components/ui/Modal';
+import { Input } from '@/app/components/ui/Input';
+import { sendDebtConfirmationEmail, saveCustomerMenuOrder, updateCustomer } from '../actions';
 import { updateCustomerPassword } from './actions';
 import { EmailLogTable } from '@/app/components/ui/EmailLogTable';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
@@ -31,9 +33,28 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
     const [searchQuery, setSearchQuery] = useState('');
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editFormData, setEditFormData] = useState({ 
+        name: customer?.name || '', 
+        email: customer?.email || '', 
+        phone: customer?.phone || '', 
+        address: customer?.address || '', 
+        taxCode: customer?.taxCode || '' 
+    });
     const [newPassword, setNewPassword] = useState('');
     const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
+
+    const handleEditSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            await updateCustomer(customer.id, editFormData);
+            setIsEditModalOpen(false);
+            router.refresh();
+        } catch (error: any) {
+            alert(error.message || 'Lỗi hệ thống khi cập nhật thông tin.');
+        }
+    };
 
     const now = new Date();
     now.setHours(0, 0, 0, 0);
@@ -152,6 +173,22 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                         <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center gap-4 mb-6 w-full">
                             <h2 className="text-xl sm:text-2xl font-bold m-0 text-slate-800 break-words">{customer.name}</h2>
                             <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                                <Button
+                                    onClick={() => {
+                                        setEditFormData({
+                                            name: customer?.name || '',
+                                            email: customer?.email || '',
+                                            phone: customer?.phone || '',
+                                            address: customer?.address || '',
+                                            taxCode: customer?.taxCode || ''
+                                        });
+                                        setIsEditModalOpen(true);
+                                    }}
+                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-slate-100 text-slate-700 border-none px-4 py-2 rounded-lg cursor-pointer hover:bg-slate-200 transition-colors shadow-sm font-medium text-sm h-[36px]"
+                                    title="Sửa thông tin khách hàng"
+                                >
+                                    <Edit size={16} /> Edit
+                                </Button>
                                 <Button
                                     onClick={() => setIsPasswordModalOpen(true)}
                                     className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-[#5A5CE1] text-white border-none px-4 py-2 rounded-lg cursor-pointer hover:bg-indigo-700 transition-colors shadow-sm font-medium text-sm h-[36px]"
@@ -619,6 +656,63 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                 </div>
             )}
 
+            {/* Edit Customer Modal */}
+            <Modal
+                isOpen={isEditModalOpen}
+                title="Sửa Thông Tin Khách Hàng"
+                onClose={() => setIsEditModalOpen(false)}
+            >
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Tên khách hàng / Công ty <span className="text-red-500">*</span></label>
+                        <Input
+                            value={editFormData.name || ''}
+                            onChange={e => setEditFormData({ ...editFormData, name: e.target.value })}
+                            placeholder="Tên khách hàng"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <Input
+                            value={editFormData.email || ''}
+                            onChange={e => setEditFormData({ ...editFormData, email: e.target.value })}
+                            placeholder="Email"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
+                        <Input
+                            value={editFormData.phone || ''}
+                            onChange={e => setEditFormData({ ...editFormData, phone: e.target.value })}
+                            placeholder="Số điện thoại"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Địa chỉ</label>
+                        <Input
+                            value={editFormData.address || ''}
+                            onChange={e => setEditFormData({ ...editFormData, address: e.target.value })}
+                            placeholder="Địa chỉ"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Mã số thuế</label>
+                        <Input
+                            value={editFormData.taxCode || ''}
+                            onChange={e => setEditFormData({ ...editFormData, taxCode: e.target.value })}
+                            placeholder="Mã số thuế"
+                        />
+                    </div>
+                    <div className="flex justify-end gap-3 mt-6">
+                        <Button variant="secondary" onClick={() => setIsEditModalOpen(false)}>
+                            Hủy
+                        </Button>
+                        <Button onClick={(e: any) => handleEditSubmit(e)}>
+                            Lưu thay đổi
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
         </div >
     );
 }
