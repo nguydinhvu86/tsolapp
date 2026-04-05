@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, FileDown, Plus, ExternalLink, Copy, User, ArrowRightLeft } from 'lucide-react';
+import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, FileDown, Plus, ExternalLink, Copy, User, ArrowRightLeft, Edit2 } from 'lucide-react';
 import Link from 'next/link';
 import { updateSalesOrderStatus, convertOrderToInvoice } from '../actions';
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
@@ -130,6 +130,13 @@ export default function SalesOrderDetailClient({ initialData, customers, product
                         <ExternalLink size={16} /> Xem Bản In
                     </Link>
                     <button
+                        onClick={() => router.push(`/sales/orders?edit=${order.id}`)}
+                        className="btn btn-secondary hover:bg-slate-100 transition-colors"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                    >
+                        <Edit2 size={16} /> Chỉnh Sửa
+                    </button>
+                    <button
                         onClick={() => setIsEmailModalOpen(true)}
                         className="btn btn-primary"
                         style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#10b981', color: 'white', border: 'none', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
@@ -175,16 +182,16 @@ export default function SalesOrderDetailClient({ initialData, customers, product
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 5fr) minmax(0, 3fr)', gap: '2rem' }}>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 mt-6">
                 {/* Left Column: Details & Tabs */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                <div className="lg:col-span-2 flex flex-col gap-6">
 
                     {/* Summary Card */}
                     <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '1.5rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}>
                         <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#1e293b', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <FileText size={20} color="#6366f1" /> Thông tin chung
                         </h2>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                             <div>
                                 <p style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600, color: '#94a3b8', marginBottom: '0.25rem' }}>KHÁCH HÀNG</p>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -223,7 +230,7 @@ export default function SalesOrderDetailClient({ initialData, customers, product
 
                     {/* Tabs area */}
                     <div style={{ backgroundColor: 'white', borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }}>
-                        <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0' }}>
+                        <div className="flex overflow-x-auto whitespace-nowrap border-b border-gray-200 px-2 pb-1 sm:pb-0 scrollbar-hide">
                             {tabs.map((tab) => {
                                 const isActive = activeTab === tab.id;
                                 return (
@@ -245,10 +252,10 @@ export default function SalesOrderDetailClient({ initialData, customers, product
                             })}
                         </div>
 
-                        <div style={{ padding: '1.5rem' }}>
+                        <div className="p-4 sm:p-6">
                             {activeTab === 'items' && (
-                                <div style={{ overflowX: 'auto' }}>
-                                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+                                <div className="overflow-x-auto w-full">
+                                    <table className="w-full min-w-[700px] text-left text-sm border-collapse">
                                         <thead>
                                             <tr style={{ backgroundColor: '#f8fafc', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>
                                                 <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Sản Phẩm</th>
@@ -299,46 +306,47 @@ export default function SalesOrderDetailClient({ initialData, customers, product
 
                         </div>
                     </div>
-                </div>
 
-                {/* Signatures Card */}
-                <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '1.5rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}>
-                    <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#1e293b', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <FileText size={20} color="#10b981" /> Chữ ký xác nhận
-                    </h2>
-                    <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'nowrap', gap: '2rem' }}>
-                        <DocumentSignatureBlock 
-                            entityType="SALES_ORDER" 
-                            entityId={order.id} 
-                            role="CUSTOMER" 
-                            title="ĐẠI DIỆN KHÁCH HÀNG" 
-                            subtitle="(Khách hàng ký qua link public)" 
-                            canSign={false} 
-                            initialSignature={order.customerSignature} 
-                            initialSignedAt={order.customerSignedAt}
-                        metadata={{
-                            ip: order.customerSignIP,
-                            device: order.customerSignDevice,
-                            location: order.customerSignLocation
-                        }} 
-                        />
-                        <DocumentSignatureBlock 
-                            entityType="SALES_ORDER" 
-                            entityId={order.id} 
-                            role="COMPANY" 
-                            title="NGƯỜI LẬP ĐƠN HÀNG" 
-                            subtitle="(Ký xác nhận nội bộ)" 
-                            canSign={true} 
-                            initialSignature={order.companySignature} 
-                            initialSignedAt={order.companySignedAt} 
-                            signerName={order.creator?.name} 
-                            companySignerId={session?.user?.id}
-                        />
+                    {/* Signatures Card */}
+                    <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '1.5rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}>
+                        <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#1e293b', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <FileText size={20} color="#10b981" /> Chữ ký xác nhận
+                        </h2>
+                        <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'nowrap', gap: '2rem' }}>
+                            <DocumentSignatureBlock 
+                                entityType="SALES_ORDER" 
+                                entityId={order.id} 
+                                role="CUSTOMER" 
+                                title="ĐẠI DIỆN KHÁCH HÀNG" 
+                                subtitle="(Khách hàng ký qua link public)" 
+                                canSign={false} 
+                                initialSignature={order.customerSignature} 
+                                initialSignedAt={order.customerSignedAt}
+                            metadata={{
+                                ip: order.customerSignIP,
+                                device: order.customerSignDevice,
+                                location: order.customerSignLocation
+                            }} 
+                            />
+                            <DocumentSignatureBlock 
+                                entityType="SALES_ORDER" 
+                                entityId={order.id} 
+                                role="COMPANY" 
+                                title="NGƯỜI LẬP ĐƠN HÀNG" 
+                                subtitle="(Ký xác nhận nội bộ)" 
+                                canSign={true} 
+                                initialSignature={order.companySignature} 
+                                initialSignedAt={order.companySignedAt} 
+                                signerName={order.creator?.name} 
+                                companySignerId={session?.user?.id}
+                            />
+                        </div>
                     </div>
+
                 </div>
 
                 {/* Right Column: Related Tasks */}
-                <div>
+                <div className="lg:col-span-1 flex flex-col gap-6">
                     <TaskPanel
                         initialTasks={order.tasks || []}
                         users={users || []}
