@@ -1,30 +1,5 @@
 [TAILING] Tailing last 200 lines for [all] processes (change the value with --lines option)
 /home/incall/.pm2/pm2.log last 200 lines:
-PM2        | 2026-04-01T06:44:06: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-01T06:44:06: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-01T10:33:33: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-01T10:33:33: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-01T10:33:33: PM2 log: pid=3847537 msg=process killed
-PM2        | 2026-04-01T10:33:33: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-01T10:33:33: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-01T10:52:06: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-01T10:52:06: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-01T10:52:06: PM2 log: pid=3857498 msg=process killed
-PM2        | 2026-04-01T10:52:06: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-01T10:52:06: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-01T10:56:23: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-01T10:56:23: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-01T10:56:23: PM2 log: pid=3858416 msg=process killed
-PM2        | 2026-04-01T10:56:23: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-01T10:56:23: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-01T23:16:28: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-01T23:16:29: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-01T23:16:29: PM2 log: pid=3858803 msg=process killed
-PM2        | 2026-04-01T23:16:29: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-01T23:16:29: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-01T23:46:06: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-01T23:46:06: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-01T23:46:06: PM2 log: pid=3894600 msg=process killed
 PM2        | 2026-04-01T23:46:06: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
 PM2        | 2026-04-01T23:46:06: PM2 log: App [inside.tsol.vn:0] online
 PM2        | 2026-04-02T08:53:10: PM2 log: Stopping app:inside.tsol.vn id:0
@@ -200,6 +175,31 @@ PM2        | 2026-04-05T01:28:29: PM2 log: App [inside.tsol.vn:0] exited with co
 PM2        | 2026-04-05T01:28:29: PM2 log: pid=4091930 msg=process killed
 PM2        | 2026-04-05T01:28:29: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
 PM2        | 2026-04-05T01:28:29: PM2 log: App [inside.tsol.vn:0] online
+PM2        | 2026-04-05T01:43:44: PM2 log: Stopping app:inside.tsol.vn id:0
+PM2        | 2026-04-05T01:43:44: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
+PM2        | 2026-04-05T01:43:44: PM2 log: pid=4092576 msg=process killed
+PM2        | 2026-04-05T01:43:44: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
+PM2        | 2026-04-05T01:43:44: PM2 log: App [inside.tsol.vn:0] online
+PM2        | 2026-04-05T01:49:43: PM2 log: Stopping app:inside.tsol.vn id:0
+PM2        | 2026-04-05T01:49:43: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
+PM2        | 2026-04-05T01:49:43: PM2 log: pid=4093723 msg=process killed
+PM2        | 2026-04-05T01:49:43: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
+PM2        | 2026-04-05T01:49:43: PM2 log: App [inside.tsol.vn:0] online
+PM2        | 2026-04-05T01:56:15: PM2 log: Stopping app:inside.tsol.vn id:0
+PM2        | 2026-04-05T01:56:15: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
+PM2        | 2026-04-05T01:56:15: PM2 log: pid=4094279 msg=process killed
+PM2        | 2026-04-05T01:56:15: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
+PM2        | 2026-04-05T01:56:15: PM2 log: App [inside.tsol.vn:0] online
+PM2        | 2026-04-05T02:07:10: PM2 log: Stopping app:inside.tsol.vn id:0
+PM2        | 2026-04-05T02:07:10: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
+PM2        | 2026-04-05T02:07:10: PM2 log: pid=4094860 msg=process killed
+PM2        | 2026-04-05T02:07:10: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
+PM2        | 2026-04-05T02:07:10: PM2 log: App [inside.tsol.vn:0] online
+PM2        | 2026-04-05T02:12:16: PM2 log: Stopping app:inside.tsol.vn id:0
+PM2        | 2026-04-05T02:12:16: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
+PM2        | 2026-04-05T02:12:16: PM2 log: pid=4096106 msg=process killed
+PM2        | 2026-04-05T02:12:16: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
+PM2        | 2026-04-05T02:12:16: PM2 log: App [inside.tsol.vn:0] online
 
 /home/incall/.pm2/logs/makevideo-ai-out.log last 200 lines:
 5|makevide | 
@@ -586,51 +586,6 @@ PM2        | 2026-04-05T01:28:29: PM2 log: App [inside.tsol.vn:0] online
 5|makevide |     at ignore-listed frames
 
 /home/incall/.pm2/logs/inside.tsol.vn-out.log last 200 lines:
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 712ms
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 688ms
-0|inside.t | Message sent: <4c85b752-58c2-31e3-43aa-3d6634057c3a@trinhgiatelecom.vn>
-0|inside.t | Message sent: <9c655a7a-8190-c095-48e9-edbc74d7cd86@trinhgiatelecom.vn>
-0|inside.t | Message sent: <2807dbb1-e711-e0ba-537f-5e3f558a8e48@trinhgiatelecom.vn>
-0|inside.t | Message sent: <99184536-1c96-1325-9846-edca31f9ea35@trinhgiatelecom.vn>
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 694ms
-0|inside.t | Message sent: <48f37a4e-dfaf-f3e6-1eef-71e003025f61@trinhgiatelecom.vn>
-0|inside.t | Message sent: <9530a167-03df-f2c7-b070-8d16da8b42c1@trinhgiatelecom.vn>
-0|inside.t | Message sent: <9beee88f-9cd9-698f-c6fa-d8da3a42b87f@trinhgiatelecom.vn>
-0|inside.t | Message sent: <d27cc869-b997-93ad-912b-e38ca39b0b39@trinhgiatelecom.vn>
-0|inside.t | Message sent: <21375c57-8109-3c3a-f1ed-0831629ec18f@trinhgiatelecom.vn>
-0|inside.t | Message sent: <1db73c62-e68e-c02e-662d-cf158893bee7@trinhgiatelecom.vn>
-0|inside.t | Message sent: <cb51d0d2-023c-966c-61ce-38d8a086e36c@trinhgiatelecom.vn>
-0|inside.t | Message sent: <ceefb047-dd7c-400f-a75f-dccb4a6735ab@trinhgiatelecom.vn>
-0|inside.t | Message sent: <49b52ec7-8cb8-ba89-ac16-f75e2935337a@trinhgiatelecom.vn>
-0|inside.t | Message sent: <37f4cee6-d643-4637-e0ce-ce73cd728b87@trinhgiatelecom.vn>
-0|inside.t | Message sent: <050bd0a1-101b-5533-358f-891c35fad3e4@trinhgiatelecom.vn>
-0|inside.t | Message sent: <fc73edd0-a4ff-5aef-bd8e-657664bb59c7@trinhgiatelecom.vn>
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
 0|inside.t | > next start -p 6688
 0|inside.t | 
 0|inside.t |   ▲ Next.js 14.2.35
@@ -786,206 +741,251 @@ PM2        | 2026-04-05T01:28:29: PM2 log: App [inside.tsol.vn:0] online
 0|inside.t | 
 0|inside.t |  ✓ Starting...
 0|inside.t |  ✓ Ready in 702ms
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t |  ✓ Ready in 703ms
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t |  ✓ Ready in 701ms
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t |  ✓ Ready in 694ms
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t |  ✓ Ready in 708ms
+0|inside.t | 
+0|inside.t | > contract-app@0.1.0 start
+0|inside.t | > next start -p 6688
+0|inside.t | 
+0|inside.t |   ▲ Next.js 14.2.35
+0|inside.t |   - Local:        http://localhost:6688
+0|inside.t | 
+0|inside.t |  ✓ Starting...
+0|inside.t |  ✓ Ready in 683ms
 
 /home/incall/.pm2/logs/inside.tsol.vn-error.log last 200 lines:
-0|inside.t |     at async p (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/api/users/heartbeat/route.js:1:2108)
-0|inside.t |     at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
-0|inside.t |     at async e_.execute (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
-0|inside.t |     at async e_.handle (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943)
-0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1366:42) {
-0|inside.t |   code: 'P2003',
-0|inside.t |   clientVersion: '5.22.0',
-0|inside.t |   meta: { modelName: 'LoginLog', field_name: 'userId' }
-0|inside.t | }
-0|inside.t | Error creating login log in heartbeat: PrismaClientKnownRequestError: 
-0|inside.t | Invalid `prisma.loginLog.create()` invocation:
-0|inside.t | 
-0|inside.t | 
-0|inside.t | Foreign key constraint violated: `userId`
-0|inside.t |     at Vg.handleRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:7317)
-0|inside.t |     at Vg.handleAndLogRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6624)
-0|inside.t |     at Vg.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6308)
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require.js
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next.js
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/cli/next-start.js
+0|inside.t |     at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require-hook.js:55:36
+0|inside.t |     at Module._load (node:internal/modules/cjs/loader:981:27)
+0|inside.t |     at Module.require (node:internal/modules/cjs/loader:1231:19)
+0|inside.t |     at mod.require (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require-hook.js:65:28)
+0|inside.t |     at require (node:internal/modules/helpers:177:18)
+0|inside.t |     at requirePage (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require.js:109:84)
+0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/load-components.js:103:84
 0|inside.t |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-0|inside.t |     at async a (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:191:9642)
-0|inside.t |     at async p (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/api/users/heartbeat/route.js:1:2108)
-0|inside.t |     at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
-0|inside.t |     at async e_.execute (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
-0|inside.t |     at async e_.handle (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943)
-0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1366:42) {
-0|inside.t |   code: 'P2003',
-0|inside.t |   clientVersion: '5.22.0',
-0|inside.t |   meta: { modelName: 'LoginLog', field_name: 'userId' }
+0|inside.t |     at async loadComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/load-components.js:103:26) {
+0|inside.t |   code: 'MODULE_NOT_FOUND',
+0|inside.t |   requireStack: [
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require.js',
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js',
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next.js',
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js',
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/cli/next-start.js'
+0|inside.t |   ]
+0|inside.t | }
+0|inside.t |  ⨯ Error: Cannot find module '/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/_not-found/page.js'
+0|inside.t | Require stack:
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require.js
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next.js
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js
+0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/cli/next-start.js
+0|inside.t |     at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require-hook.js:55:36
+0|inside.t |     at Module._load (node:internal/modules/cjs/loader:981:27)
+0|inside.t |     at Module.require (node:internal/modules/cjs/loader:1231:19)
+0|inside.t |     at mod.require (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require-hook.js:65:28)
+0|inside.t |     at require (node:internal/modules/helpers:177:18)
+0|inside.t |     at requirePage (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require.js:109:84)
+0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/load-components.js:103:84
+0|inside.t |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|inside.t |     at async loadComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/load-components.js:103:26) {
+0|inside.t |   code: 'MODULE_NOT_FOUND',
+0|inside.t |   requireStack: [
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require.js',
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js',
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next.js',
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js',
+0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/cli/next-start.js'
+0|inside.t |   ]
+0|inside.t | }
+0|inside.t | ReferenceError: window is not defined
+0|inside.t |     at C (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/sales/orders/[id]/page.js:1:33986)
+0|inside.t |     at nj (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:46252)
+0|inside.t |     at nM (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:47572)
+0|inside.t |     at nM (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:61547)
+0|inside.t |     at nL (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:64547)
+0|inside.t |     at nL (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:64826)
+0|inside.t |     at nG (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:71973)
+0|inside.t |     at Timeout._onTimeout (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:44373)
+0|inside.t |     at listOnTimeout (node:internal/timers:569:17)
+0|inside.t |     at process.processTimers (node:internal/timers:512:7) {
+0|inside.t |   digest: '3749048415'
 0|inside.t | }
 0|inside.t | PrismaClientKnownRequestError: 
-0|inside.t | Invalid `prisma.chatRoom.create()` invocation:
+0|inside.t | Invalid `prisma.customer.delete()` invocation:
 0|inside.t | 
 0|inside.t | 
-0|inside.t | Foreign key constraint violated: `userId`
+0|inside.t | Foreign key constraint violated: `customerId`
 0|inside.t |     at Vg.handleRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:7317)
 0|inside.t |     at Vg.handleAndLogRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6624)
 0|inside.t |     at Vg.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6308)
 0|inside.t |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
 0|inside.t |     at async a (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:191:9642)
-0|inside.t |     at async u (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/chunks/4024.js:53:53509)
+0|inside.t |     at async b (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/customers/page.js:1:32879)
 0|inside.t |     at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:286
 0|inside.t |     at async rE (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:15:8297)
 0|inside.t |     at async no (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:19:1144)
-0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1427:30) {
+0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1427:30)
+0|inside.t |     at async cacheEntry.responseCache.get.routeKind (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1588:28)
+0|inside.t |     at async NextNodeServer.renderToResponseWithComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1496:28)
+0|inside.t |     at async NextNodeServer.renderPageComponent (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1924:24)
+0|inside.t |     at async NextNodeServer.renderToResponseImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1962:32)
+0|inside.t |     at async NextNodeServer.pipeImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:922:25)
+0|inside.t |     at async NextNodeServer.handleCatchallRenderRequest (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js:272:17) {
 0|inside.t |   code: 'P2003',
 0|inside.t |   clientVersion: '5.22.0',
-0|inside.t |   meta: { modelName: 'ChatRoom', field_name: 'userId' },
-0|inside.t |   digest: '3804213785'
+0|inside.t |   meta: { modelName: 'Customer', field_name: 'customerId' },
+0|inside.t |   digest: '1637452481'
 0|inside.t | }
-0|inside.t | Error creating login log in heartbeat: PrismaClientKnownRequestError: 
-0|inside.t | Invalid `prisma.loginLog.create()` invocation:
-0|inside.t | 
-0|inside.t | 
-0|inside.t | Foreign key constraint violated: `userId`
-0|inside.t |     at Vg.handleRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:7317)
-0|inside.t |     at Vg.handleAndLogRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6624)
-0|inside.t |     at Vg.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6308)
+0|inside.t | Can't load image https://localhost:6688/uploads/documents/cmmdibfp0000041p926ag2j47-1772839158213.png: fetch failed
+0|inside.t |  ⨯ Error: failed to pipe response
+0|inside.t |     at pipeToNodeResponse (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/pipe-readable.js:126:15)
 0|inside.t |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-0|inside.t |     at async a (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:191:9642)
-0|inside.t |     at async p (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/api/users/heartbeat/route.js:1:2108)
-0|inside.t |     at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
-0|inside.t |     at async e_.execute (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
-0|inside.t |     at async e_.handle (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943)
-0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1366:42) {
-0|inside.t |   code: 'P2003',
-0|inside.t |   clientVersion: '5.22.0',
-0|inside.t |   meta: { modelName: 'LoginLog', field_name: 'userId' }
+0|inside.t |     at async sendResponse (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/send-response.js:44:13)
+0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1396:25)
+0|inside.t |     at async cacheEntry.responseCache.get.routeKind (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1588:28)
+0|inside.t |     at async NextNodeServer.renderToResponseWithComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1496:28)
+0|inside.t |     at async NextNodeServer.renderPageComponent (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1924:24)
+0|inside.t |     at async NextNodeServer.renderToResponseImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1962:32)
+0|inside.t |     at async NextNodeServer.pipeImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:922:25)
+0|inside.t |     at async NextNodeServer.handleCatchallRenderRequest (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js:272:17) {
+0|inside.t |   [cause]: Error: Image size cannot be determined. Please provide the width and height of the image.
+0|inside.t |       at Pn (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:15275:15)
+0|inside.t |       at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|inside.t |       at async qt (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:16185:16)
+0|inside.t |       at async qt (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:16193:21)
+0|inside.t |       at async wl (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:17111:14)
+0|inside.t |       at async render (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:18774:15)
+0|inside.t |       at async Object.start (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:19010:25)
 0|inside.t | }
-0|inside.t | Error creating login log in heartbeat: PrismaClientKnownRequestError: 
-0|inside.t | Invalid `prisma.loginLog.create()` invocation:
-0|inside.t | 
-0|inside.t | 
-0|inside.t | Foreign key constraint violated: `userId`
-0|inside.t |     at Vg.handleRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:7317)
-0|inside.t |     at Vg.handleAndLogRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6624)
-0|inside.t |     at Vg.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6308)
+0|inside.t |  ⨯ Error: failed to pipe response
+0|inside.t |     at pipeToNodeResponse (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/pipe-readable.js:126:15)
 0|inside.t |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-0|inside.t |     at async a (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:191:9642)
-0|inside.t |     at async p (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/api/users/heartbeat/route.js:1:2108)
-0|inside.t |     at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
-0|inside.t |     at async e_.execute (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
-0|inside.t |     at async e_.handle (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943)
-0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1366:42) {
-0|inside.t |   code: 'P2003',
-0|inside.t |   clientVersion: '5.22.0',
-0|inside.t |   meta: { modelName: 'LoginLog', field_name: 'userId' }
+0|inside.t |     at async sendResponse (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/send-response.js:44:13)
+0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1396:25)
+0|inside.t |     at async cacheEntry.responseCache.get.routeKind (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1588:28)
+0|inside.t |     at async NextNodeServer.renderToResponseWithComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1496:28)
+0|inside.t |     at async NextNodeServer.renderPageComponent (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1924:24)
+0|inside.t |     at async NextNodeServer.renderToResponseImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1962:32)
+0|inside.t |     at async NextNodeServer.pipeImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:922:25)
+0|inside.t |     at async NextNodeServer.handleCatchallRenderRequest (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js:272:17) {
+0|inside.t |   [cause]: Error: Image size cannot be determined. Please provide the width and height of the image.
+0|inside.t |       at Pn (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:15275:15)
+0|inside.t |       at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|inside.t |       at async qt (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:16185:16)
+0|inside.t |       at async qt (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:16193:21)
+0|inside.t |       at async wl (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:17111:14)
+0|inside.t |       at async render (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:18774:15)
+0|inside.t |       at async Object.start (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:19010:25)
 0|inside.t | }
-0|inside.t | Error creating login log in heartbeat: PrismaClientKnownRequestError: 
-0|inside.t | Invalid `prisma.loginLog.create()` invocation:
-0|inside.t | 
-0|inside.t | 
-0|inside.t | Foreign key constraint violated: `userId`
-0|inside.t |     at Vg.handleRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:7317)
-0|inside.t |     at Vg.handleAndLogRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6624)
-0|inside.t |     at Vg.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6308)
+0|inside.t |  ⨯ Error: failed to pipe response
+0|inside.t |     at pipeToNodeResponse (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/pipe-readable.js:126:15)
 0|inside.t |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-0|inside.t |     at async a (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:191:9642)
-0|inside.t |     at async p (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/api/users/heartbeat/route.js:1:2108)
-0|inside.t |     at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
-0|inside.t |     at async e_.execute (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
-0|inside.t |     at async e_.handle (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943)
-0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1366:42) {
-0|inside.t |   code: 'P2003',
-0|inside.t |   clientVersion: '5.22.0',
-0|inside.t |   meta: { modelName: 'LoginLog', field_name: 'userId' }
+0|inside.t |     at async sendResponse (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/send-response.js:44:13)
+0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1396:25)
+0|inside.t |     at async cacheEntry.responseCache.get.routeKind (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1588:28)
+0|inside.t |     at async NextNodeServer.renderToResponseWithComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1496:28)
+0|inside.t |     at async NextNodeServer.renderPageComponent (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1924:24)
+0|inside.t |     at async NextNodeServer.renderToResponseImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1962:32)
+0|inside.t |     at async NextNodeServer.pipeImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:922:25)
+0|inside.t |     at async NextNodeServer.handleCatchallRenderRequest (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js:272:17) {
+0|inside.t |   [cause]: Error: Image size cannot be determined. Please provide the width and height of the image.
+0|inside.t |       at Pn (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:15275:15)
+0|inside.t |       at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|inside.t |       at async qt (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:16185:16)
+0|inside.t |       at async qt (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:16193:21)
+0|inside.t |       at async wl (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:17111:14)
+0|inside.t |       at async render (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:18774:15)
+0|inside.t |       at async Object.start (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:19010:25)
 0|inside.t | }
-0|inside.t | Error creating login log in heartbeat: PrismaClientKnownRequestError: 
-0|inside.t | Invalid `prisma.loginLog.create()` invocation:
-0|inside.t | 
-0|inside.t | 
-0|inside.t | Foreign key constraint violated: `userId`
-0|inside.t |     at Vg.handleRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:7317)
-0|inside.t |     at Vg.handleAndLogRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6624)
-0|inside.t |     at Vg.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6308)
+0|inside.t |  ⨯ Error: failed to pipe response
+0|inside.t |     at pipeToNodeResponse (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/pipe-readable.js:126:15)
 0|inside.t |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-0|inside.t |     at async a (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:191:9642)
-0|inside.t |     at async p (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/api/users/heartbeat/route.js:1:2108)
-0|inside.t |     at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
-0|inside.t |     at async e_.execute (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
-0|inside.t |     at async e_.handle (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943)
-0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1366:42) {
-0|inside.t |   code: 'P2003',
-0|inside.t |   clientVersion: '5.22.0',
-0|inside.t |   meta: { modelName: 'LoginLog', field_name: 'userId' }
+0|inside.t |     at async sendResponse (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/send-response.js:44:13)
+0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1396:25)
+0|inside.t |     at async cacheEntry.responseCache.get.routeKind (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1588:28)
+0|inside.t |     at async NextNodeServer.renderToResponseWithComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1496:28)
+0|inside.t |     at async NextNodeServer.renderPageComponent (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1924:24)
+0|inside.t |     at async NextNodeServer.renderToResponseImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1962:32)
+0|inside.t |     at async NextNodeServer.pipeImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:922:25)
+0|inside.t |     at async NextNodeServer.handleCatchallRenderRequest (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js:272:17)
+0|inside.t |     at async NextNodeServer.handleRequestImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:818:17)
+0|inside.t |     at async invokeRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:179:21)
+0|inside.t |     at async handleRequest (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:359:24)
+0|inside.t |     at async requestHandlerImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:383:13)
+0|inside.t |     at async Server.requestListener (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:141:13) {
+0|inside.t |   [cause]: Error: Image size cannot be determined. Please provide the width and height of the image.
+0|inside.t |       at Pn (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:15275:15)
+0|inside.t |       at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|inside.t |       at async qt (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:16185:16)
+0|inside.t |       at async qt (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:16193:21)
+0|inside.t |       at async wl (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:17111:14)
+0|inside.t |       at async render (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:18774:15)
+0|inside.t |       at async Object.start (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:19010:25)
 0|inside.t | }
-0|inside.t | Error creating login log in heartbeat: PrismaClientKnownRequestError: 
-0|inside.t | Invalid `prisma.loginLog.create()` invocation:
-0|inside.t | 
-0|inside.t | 
-0|inside.t | Foreign key constraint violated: `userId`
-0|inside.t |     at Vg.handleRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:7317)
-0|inside.t |     at Vg.handleAndLogRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6624)
-0|inside.t |     at Vg.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6308)
+0|inside.t |  ⨯ Error: failed to pipe response
+0|inside.t |     at pipeToNodeResponse (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/pipe-readable.js:126:15)
 0|inside.t |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-0|inside.t |     at async a (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:191:9642)
-0|inside.t |     at async p (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/api/users/heartbeat/route.js:1:2108)
-0|inside.t |     at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
-0|inside.t |     at async e_.execute (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
-0|inside.t |     at async e_.handle (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943)
-0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1366:42) {
-0|inside.t |   code: 'P2003',
-0|inside.t |   clientVersion: '5.22.0',
-0|inside.t |   meta: { modelName: 'LoginLog', field_name: 'userId' }
-0|inside.t | }
-0|inside.t | Error creating login log in heartbeat: PrismaClientKnownRequestError: 
-0|inside.t | Invalid `prisma.loginLog.create()` invocation:
-0|inside.t | 
-0|inside.t | 
-0|inside.t | Foreign key constraint violated: `userId`
-0|inside.t |     at Vg.handleRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:7317)
-0|inside.t |     at Vg.handleAndLogRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6624)
-0|inside.t |     at Vg.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6308)
-0|inside.t |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-0|inside.t |     at async a (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:191:9642)
-0|inside.t |     at async p (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/api/users/heartbeat/route.js:1:2108)
-0|inside.t |     at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
-0|inside.t |     at async e_.execute (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
-0|inside.t |     at async e_.handle (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943)
-0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1366:42) {
-0|inside.t |   code: 'P2003',
-0|inside.t |   clientVersion: '5.22.0',
-0|inside.t |   meta: { modelName: 'LoginLog', field_name: 'userId' }
-0|inside.t | }
-0|inside.t | Error creating login log in heartbeat: PrismaClientKnownRequestError: 
-0|inside.t | Invalid `prisma.loginLog.create()` invocation:
-0|inside.t | 
-0|inside.t | 
-0|inside.t | Foreign key constraint violated: `userId`
-0|inside.t |     at Vg.handleRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:7317)
-0|inside.t |     at Vg.handleAndLogRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6624)
-0|inside.t |     at Vg.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6308)
-0|inside.t |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-0|inside.t |     at async a (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:191:9642)
-0|inside.t |     at async p (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/api/users/heartbeat/route.js:1:2108)
-0|inside.t |     at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
-0|inside.t |     at async e_.execute (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
-0|inside.t |     at async e_.handle (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943)
-0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1366:42) {
-0|inside.t |   code: 'P2003',
-0|inside.t |   clientVersion: '5.22.0',
-0|inside.t |   meta: { modelName: 'LoginLog', field_name: 'userId' }
-0|inside.t | }
-0|inside.t | Error creating login log in heartbeat: PrismaClientKnownRequestError: 
-0|inside.t | Invalid `prisma.loginLog.create()` invocation:
-0|inside.t | 
-0|inside.t | 
-0|inside.t | Foreign key constraint violated: `userId`
-0|inside.t |     at Vg.handleRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:7317)
-0|inside.t |     at Vg.handleAndLogRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6624)
-0|inside.t |     at Vg.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6308)
-0|inside.t |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-0|inside.t |     at async a (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:191:9642)
-0|inside.t |     at async p (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/api/users/heartbeat/route.js:1:2108)
-0|inside.t |     at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
-0|inside.t |     at async e_.execute (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
-0|inside.t |     at async e_.handle (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943)
-0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1366:42) {
-0|inside.t |   code: 'P2003',
-0|inside.t |   clientVersion: '5.22.0',
-0|inside.t |   meta: { modelName: 'LoginLog', field_name: 'userId' }
+0|inside.t |     at async sendResponse (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/send-response.js:44:13)
+0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1396:25)
+0|inside.t |     at async cacheEntry.responseCache.get.routeKind (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1588:28)
+0|inside.t |     at async NextNodeServer.renderToResponseWithComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1496:28)
+0|inside.t |     at async NextNodeServer.renderPageComponent (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1924:24)
+0|inside.t |     at async NextNodeServer.renderToResponseImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1962:32)
+0|inside.t |     at async NextNodeServer.pipeImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:922:25)
+0|inside.t |     at async NextNodeServer.handleCatchallRenderRequest (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js:272:17)
+0|inside.t |     at async NextNodeServer.handleRequestImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:818:17)
+0|inside.t |     at async invokeRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:179:21)
+0|inside.t |     at async handleRequest (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:359:24)
+0|inside.t |     at async requestHandlerImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:383:13)
+0|inside.t |     at async Server.requestListener (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:141:13) {
+0|inside.t |   [cause]: Error: Image size cannot be determined. Please provide the width and height of the image.
+0|inside.t |       at Pn (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:15275:15)
+0|inside.t |       at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|inside.t |       at async qt (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:16185:16)
+0|inside.t |       at async qt (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:16193:21)
+0|inside.t |       at async wl (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:17111:14)
+0|inside.t |       at async render (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:18774:15)
+0|inside.t |       at async Object.start (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:19010:25)
 0|inside.t | }
 

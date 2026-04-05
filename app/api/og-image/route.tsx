@@ -29,9 +29,9 @@ export async function GET(request: Request) {
                 >
                     <img
                         src={logoUrl}
+                        width="800"
+                        height="400"
                         style={{
-                            maxWidth: '800px',
-                            maxHeight: '400px',
                             objectFit: 'contain'
                         }}
                     />
