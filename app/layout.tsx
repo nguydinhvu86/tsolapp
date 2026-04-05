@@ -30,19 +30,19 @@ export async function generateMetadata(): Promise<Metadata> {
             siteName: brandName || title,
             images: [
                 {
-                    url: finalLogo,
-                    width: 512,
-                    height: 512,
+                    url: 'https://inside.tsol.vn/api/og-image',
+                    width: 1200,
+                    height: 630,
                 },
             ],
             locale: 'vi_VN',
             type: 'website',
         },
         twitter: {
-            card: 'summary',
+            card: 'summary_large_image',
             title: brandName || title,
             description,
-            images: [finalLogo],
+            images: ['https://inside.tsol.vn/api/og-image'],
         },
         appleWebApp: {
             statusBarStyle: 'default',
