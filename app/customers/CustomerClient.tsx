@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { formatMoney } from '@/lib/utils/formatters';
 import { useTranslation } from '@/app/i18n/LanguageContext';
+import { ClickToCallButton } from '@/app/components/ClickToCallButton';
 
 export type CustomerWithStats = Customer & { revenue?: number, lastActivityAt?: Date | string };
 
@@ -310,7 +311,14 @@ export function CustomerClient({ initialData, users, isAdminOrManager }: { initi
                                         ) : null}
                                     </td>
                                     <td style={{ color: 'var(--text-muted)' }}>{customer.email || '-'}</td>
-                                    <td style={{ color: 'var(--text-muted)' }}>{customer.phone || '-'}</td>
+                                    <td style={{ color: 'var(--text-muted)' }}>
+                                        {customer.phone ? (
+                                            <div className="flex items-center gap-2">
+                                                <span>{customer.phone}</span>
+                                                <ClickToCallButton phoneNumber={customer.phone} className="scale-90 origin-left" />
+                                            </div>
+                                        ) : '-'}
+                                    </td>
                                     <td>{customer.taxCode || '-'}</td>
                                     <td>
                                         <div className="flex gap-2">

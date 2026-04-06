@@ -60,6 +60,10 @@ export async function getCustomerWithRelations(id: string) {
                 salesInvoices: { orderBy: { createdAt: 'desc' } },
                 salesPayments: { orderBy: { createdAt: 'desc' } },
                 leads: { orderBy: { createdAt: 'desc' } },
+                callLogs: {
+                    include: { user: { select: { name: true, extension: true } } },
+                    orderBy: { startedAt: 'desc' }
+                },
                 notes: {
                     include: { user: { select: { name: true, avatar: true } } },
                     orderBy: { createdAt: 'desc' }
@@ -86,7 +90,7 @@ export async function updateCustomerPassword(customerId: string, newPassword: st
         const session = await getServerSession(authOptions);
         if (!session?.user?.id) return { success: false, error: "Unauthorized" };
         const permissions = (session.user.permissions as string[]) || [];
-        const canEdit = permissions.includes('CUSTOMERS_EDIT_ALL') || permissions.includes('CUSTOMERS_EDIT_OWN');
+        const canEdit = permissions.includes('CUSTOMERS_EDIT');
         
         if (!canEdit && session.user.role !== 'ADMIN') {
             return { success: false, error: "Bạn không có quyền cấp mật khẩu khách hàng" };

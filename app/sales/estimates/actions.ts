@@ -137,7 +137,8 @@ export async function submitSalesEstimate(creatorId: string, formData: any) {
                         unitPrice: item.unitPrice,
                         taxRate: item.taxRate || 0,
                         taxAmount: item.taxAmount || 0,
-                        totalPrice: item.totalPrice
+                        totalPrice: item.totalPrice,
+                        isSubItem: item.isSubItem || false
                     }))
                 }
             },
@@ -290,7 +291,8 @@ export async function updateSalesEstimate(id: string, formData: any) {
                         unitPrice: item.unitPrice,
                         taxRate: item.taxRate || 0,
                         taxAmount: item.taxAmount || 0,
-                        totalPrice: item.totalPrice
+                        totalPrice: item.totalPrice,
+                        isSubItem: item.isSubItem || false
                     }))
                 }
             },
@@ -532,7 +534,8 @@ export async function convertEstimateToInvoice(estimateId: string) {
                             unitPrice: i.unitPrice,
                             taxRate: i.taxRate,
                             taxAmount: i.taxAmount,
-                            totalPrice: i.totalPrice
+                            totalPrice: i.totalPrice,
+                            isSubItem: i.isSubItem || false
                         }))
                     }
                 }
@@ -623,7 +626,8 @@ export async function convertEstimateToOrder(estimateId: string) {
                             unitPrice: i.unitPrice,
                             taxRate: i.taxRate,
                             taxAmount: i.taxAmount,
-                            totalPrice: i.totalPrice
+                            totalPrice: i.totalPrice,
+                            isSubItem: i.isSubItem || false
                         }))
                     }
                 }
@@ -731,7 +735,8 @@ export async function cloneSalesEstimate(estimateId: string) {
                         unitPrice: i.unitPrice,
                         taxRate: i.taxRate,
                         taxAmount: i.taxAmount,
-                        totalPrice: i.totalPrice
+                        totalPrice: i.totalPrice,
+                        isSubItem: i.isSubItem || false
                     }))
                 }
             }

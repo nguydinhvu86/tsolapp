@@ -99,7 +99,8 @@ export async function submitSalesInvoice(creatorId: string, formData: any) {
                         unitPrice: item.unitPrice,
                         taxRate: item.taxRate || 0,
                         taxAmount: item.taxAmount || 0,
-                        totalPrice: item.totalPrice
+                        totalPrice: item.totalPrice,
+                        isSubItem: item.isSubItem || false
                     }))
                 }
             },
@@ -181,7 +182,8 @@ export async function updateSalesInvoice(id: string, formData: any) {
                         unitPrice: item.unitPrice,
                         taxRate: item.taxRate || 0,
                         taxAmount: item.taxAmount || 0,
-                        totalPrice: item.totalPrice
+                        totalPrice: item.totalPrice,
+                        isSubItem: item.isSubItem || false
                     }))
                 }
             },

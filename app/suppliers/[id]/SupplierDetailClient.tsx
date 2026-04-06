@@ -6,12 +6,15 @@ import Link from 'next/link';
 import {
     ArrowLeft, Building, Phone, Mail, FileText,
     ShoppingCart, FileDown, Wallet, DollarSign,
-    CheckSquare, MapPin, Search, Edit2, FileSpreadsheet
+    CheckSquare, MapPin, Search, Edit2, FileSpreadsheet, Users, AlertCircle
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import { updateSupplier } from '@/app/purchasing/actions';
 import { SupplierStatementPanel } from '@/app/components/suppliers/SupplierStatementPanel';
+import { SupplierContactsPanel } from '@/app/components/suppliers/SupplierContactsPanel';
+import { ClickToCallButton } from '@/app/components/ClickToCallButton';
+import { CustomerCallLogsPanel } from '@/app/components/customers/CustomerCallLogsPanel';
 
 export function SupplierDetailClient({ supplier: initialSupplier, users, tasks }: { supplier: any, users: any[], tasks: any[] }) {
     const router = useRouter();
@@ -82,10 +85,13 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks }
 
     const tabs = [
         { id: 'orders', label: 'Đơn Đặt Hàng', count: supplier.orders?.length || 0, icon: <ShoppingCart size={16} /> },
-        { id: 'bills', label: 'Hóa Đơn', count: supplier.bills?.length || 0, icon: <FileDown size={16} /> },
+        { id: 'bills', label: 'Hóa Đơn Cũ', count: supplier.bills?.length || 0, icon: <FileDown size={16} /> },
+        { id: 'invoices', label: 'Hóa Đơn VAT', count: supplier.invoices?.length || 0, icon: <FileText size={16} /> },
         { id: 'payments', label: 'Thanh Toán', count: supplier.payments?.length || 0, icon: <Wallet size={16} /> },
+        { id: 'contacts', label: 'Người Liên Hệ', count: supplier.contacts?.length || 0, icon: <Users size={16} /> },
         { id: 'debt', label: 'Tổng Công Nợ', count: null, icon: <DollarSign size={16} /> },
         { id: 'statement', label: 'Sao Kê Công Nợ', count: '-', icon: <FileSpreadsheet size={16} /> },
+        { id: 'calllogs', label: 'Gọi Điện (PBX)', count: supplier.callLogs?.length || 0, icon: <Phone size={16} /> },
     ];
 
     const getStatusBadge = (status: string, type: 'order' | 'bill') => {
@@ -151,7 +157,10 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks }
                                     <div className="p-2 bg-gray-100 rounded-full text-gray-500 shrink-0"><Phone size={16} /></div>
                                     <div className="min-w-0">
                                         <span className="block text-[0.65rem] text-gray-500 uppercase tracking-wider font-semibold">Số Điện Thoại</span>
-                                        <span className="text-sm font-medium text-gray-900 truncate block">{supplier.phone || '--'}</span>
+                                        <div className="text-sm font-medium text-gray-900 truncate flex items-center gap-2">
+                                            {supplier.phone || '--'}
+                                            {supplier.phone && <ClickToCallButton phoneNumber={supplier.phone} />}
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="flex gap-3 items-center min-w-0">
@@ -313,6 +322,59 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks }
                                 </table>
                             )}
 
+                            {activeTab === 'invoices' && (
+                                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+                                    <thead style={{ borderBottom: '1px solid #e5e7eb', color: '#6b7280', fontSize: '0.75rem', textTransform: 'uppercase' }}>
+                                        <tr>
+                                            <th style={{ padding: '1rem 0', fontWeight: 600 }}>Ngày Xuất</th>
+                                            <th style={{ padding: '1rem 0', fontWeight: 600 }}>Số Hóa Đơn</th>
+                                            <th style={{ padding: '1rem 0', fontWeight: 600 }}>Tổng Tiền</th>
+                                            <th style={{ padding: '1rem 0', fontWeight: 600 }}>Trạng Thái</th>
+                                            <th style={{ padding: '1rem 0', fontWeight: 600, textAlign: 'right' }}>Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {(!supplier.invoices || supplier.invoices.length === 0) && <tr><td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>Chưa có hóa đơn điện tử nào được đồng bộ.</td></tr>}
+                                        {supplier.invoices?.map((inv: any) => (
+                                            <tr key={inv.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                                <td style={{ padding: '1rem 0', color: '#4b5563' }}>{inv.issueDate ? formatDate(inv.issueDate) : 'N/A'}</td>
+                                                <td style={{ padding: '1rem 0', fontWeight: 500, color: '#4f46e5' }}>{inv.invoiceNumber}</td>
+                                                <td style={{ padding: '1rem 0', fontWeight: 600 }}>
+                                                    <div style={{ marginBottom: '0.25rem' }}>{formatMoney(inv.totalAmount)}</div>
+                                                    {inv.items?.some((i: any) => i.unitPriceDiscrepancy > 0) && (
+                                                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', background: '#fef2f2', color: '#dc2626', padding: '0.125rem 0.375rem', borderRadius: '0.25rem', fontSize: '0.7rem', fontWeight: 500 }} title="Cảnh báo: Giá trên hóa đơn điện tử cao hơn so với Đơn đặt hàng đã duyệt!">
+                                                            <AlertCircle size={10} /> Chênh Giá ({inv.items.filter((i:any) => i.unitPriceDiscrepancy > 0).length} SP)
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td style={{ padding: '1rem 0' }}>
+                                                    {inv.status === 'INVENTORY_IMPORTED' ? (
+                                                        <span style={{ background: '#dcfce7', color: '#15803d', padding: '0.25rem 0.5rem', borderRadius: '0.25rem', fontSize: '0.75rem' }}>Đã Nhập Kho</span>
+                                                    ) : (
+                                                        <span style={{ background: '#dbeafe', color: '#1d4ed8', padding: '0.25rem 0.5rem', borderRadius: '0.25rem', fontSize: '0.75rem' }}>Mới Tải Về</span>
+                                                    )}
+                                                </td>
+                                                <td style={{ padding: '1rem 0', textAlign: 'right', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                                                    {inv.status !== 'INVENTORY_IMPORTED' && (
+                                                        <button 
+                                                            style={{ display: 'inline-block', border: 'none', background: '#e0e7ff', color: '#4f46e5', padding: '0.4rem 0.6rem', borderRadius: '0.25rem', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}
+                                                            onClick={() => alert('Chức năng nhập kho đang cập nhật (Local)')}
+                                                        >
+                                                            Nhập Kho
+                                                        </button>
+                                                    )}
+                                                    {inv.xmlUrl && (
+                                                        <a href={inv.xmlUrl} download style={{ display: 'inline-block', border: 'none', background: '#f1f5f9', color: '#475569', padding: '0.4rem 0.6rem', borderRadius: '0.25rem', cursor: 'pointer', fontSize: '0.75rem', textDecoration: 'none' }}>
+                                                            XML
+                                                        </a>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+
                             {activeTab === 'payments' && (
                                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
                                     <thead style={{ borderBottom: '1px solid #e5e7eb', color: '#6b7280', fontSize: '0.75rem', textTransform: 'uppercase' }}>
@@ -379,6 +441,18 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks }
                             {activeTab === 'statement' && (
                                 <div style={{ paddingTop: '1rem' }}>
                                     <SupplierStatementPanel supplierId={supplier.id} supplierName={supplier.name} />
+                                </div>
+                            )}
+
+                            {activeTab === 'calllogs' && (
+                                <div style={{ paddingTop: '1rem' }}>
+                                    <CustomerCallLogsPanel logs={supplier.callLogs || []} />
+                                </div>
+                            )}
+
+                            {activeTab === 'contacts' && (
+                                <div style={{ paddingTop: '1rem' }}>
+                                    <SupplierContactsPanel supplierId={supplier.id} initialContacts={supplier.contacts || []} />
                                 </div>
                             )}
 

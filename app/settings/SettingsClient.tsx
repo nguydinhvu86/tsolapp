@@ -25,6 +25,9 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
         PUSHER_KEY: initialSettings.PUSHER_KEY || '',
         PUSHER_SECRET: initialSettings.PUSHER_SECRET || '',
         PUSHER_CLUSTER: initialSettings.PUSHER_CLUSTER || '',
+        PBX_URL: initialSettings.PBX_URL || '',
+        PBX_KEY: initialSettings.PBX_KEY || '',
+        PBX_DOMAIN: initialSettings.PBX_DOMAIN || '',
         WATERMARK_ENABLED: initialSettings.WATERMARK_ENABLED || 'false',
         WATERMARK_TYPE: initialSettings.WATERMARK_TYPE || 'TEXT',
         WATERMARK_TEXT: initialSettings.WATERMARK_TEXT || 'BẢN SAO',
@@ -316,6 +319,39 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
                                     onChange={e => setFormData({ ...formData, PUSHER_SECRET: e.target.value })}
                                     placeholder="Vd: ******"
                                 />
+                            </div>
+                        </div>
+
+                        {/* PBX CONFIGURATION */}
+                        <div style={{ marginTop: '0.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: '0 0 1rem 0', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                Tích hợp Tổng đài (PBX Endpoint)
+                            </h3>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+                                Cấu hình kết nối tới hệ thống Cloud PBX (ví dụ: VoiceCloud) để thực hiện cuộc gọi.
+                            </p>
+                            <div className="flex flex-col gap-4">
+                                <Input
+                                    label="PBX Endpoint (URL)"
+                                    value={formData.PBX_URL}
+                                    onChange={e => setFormData({ ...formData, PBX_URL: e.target.value })}
+                                    placeholder="Vd: portal.voicecloud.vn"
+                                />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Input
+                                        label="API Key"
+                                        type="password"
+                                        value={formData.PBX_KEY}
+                                        onChange={e => setFormData({ ...formData, PBX_KEY: e.target.value })}
+                                        placeholder="Vd: 2d63a..."
+                                    />
+                                    <Input
+                                        label="Domain"
+                                        value={formData.PBX_DOMAIN}
+                                        onChange={e => setFormData({ ...formData, PBX_DOMAIN: e.target.value })}
+                                        placeholder="Vd: trinhgia.incall.vn"
+                                    />
+                                </div>
                             </div>
                         </div>
 

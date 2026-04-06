@@ -350,9 +350,12 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                                                 <tr><td colSpan={4} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Chưa có sản phẩm nào.</td></tr>
                                             ) : (
                                                 estimate.items?.map((item: any) => (
-                                                    <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                                        <td style={{ padding: '1rem', fontWeight: 500, color: '#1e293b' }}>
-                                                            {item.customName || item.product?.name || 'Sản phẩm tự do'}
+                                                    <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: item.isSubItem ? '#f8fafc' : 'transparent' }}>
+                                                        <td style={{ padding: '1rem', paddingLeft: item.isSubItem ? '3rem' : '1rem', fontWeight: 500, color: item.isSubItem ? '#64748b' : '#1e293b' }}>
+                                                            <div className="flex items-center gap-2">
+                                                                {item.isSubItem && <span className="text-gray-400">↳</span>}
+                                                                <span>{item.customName || item.product?.name || 'Sản phẩm tự do'}</span>
+                                                            </div>
                                                             {item.product?.sku && <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>SKU: {item.product.sku}</div>}
                                                             {item.description && <div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.25rem', whiteSpace: 'pre-wrap', fontWeight: 400 }}>{item.description}</div>}
                                                         </td>

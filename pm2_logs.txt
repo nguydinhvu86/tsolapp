@@ -1,991 +1,1000 @@
-[TAILING] Tailing last 200 lines for [all] processes (change the value with --lines option)
-/home/incall/.pm2/pm2.log last 200 lines:
-PM2        | 2026-04-01T23:46:06: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-01T23:46:06: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-02T08:53:10: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-02T08:53:11: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-02T08:53:11: PM2 log: pid=3900948 msg=process killed
-PM2        | 2026-04-02T08:53:11: PM2 log: Stopping app:makevideo-ai id:5
-PM2        | 2026-04-02T08:53:11: PM2 log: pid=3629162 msg=failed to kill - retrying in 100ms
-PM2        | 2026-04-02T08:53:11: PM2 log: pid=3629162 msg=failed to kill - retrying in 100ms
-PM2        | 2026-04-02T08:53:11: PM2 log: pid=3629162 msg=failed to kill - retrying in 100ms
-PM2        | 2026-04-02T08:53:11: PM2 log: App [makevideo-ai:5] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-02T08:53:11: PM2 log: pid=3629162 msg=process killed
-PM2        | 2026-04-02T09:01:16: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-02T09:01:16: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-02T09:01:16: PM2 log: App [makevideo-ai:5] starting in -fork mode-
-PM2        | 2026-04-02T09:01:16: PM2 log: App [makevideo-ai:5] online
-PM2        | 2026-04-03T01:33:45: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-03T01:33:46: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-03T01:33:46: PM2 log: pid=3931137 msg=process killed
-PM2        | 2026-04-03T01:33:46: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-03T01:33:46: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-03T01:44:40: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-03T01:44:40: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-03T01:44:40: PM2 log: pid=3973642 msg=process killed
-PM2        | 2026-04-03T01:44:40: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-03T01:44:40: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-03T23:37:22: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-03T23:37:22: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-03T23:37:22: PM2 log: pid=3975874 msg=process killed
-PM2        | 2026-04-03T23:37:22: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-03T23:37:22: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-03T23:49:56: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-03T23:49:56: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-03T23:49:56: PM2 log: pid=4025388 msg=process killed
-PM2        | 2026-04-03T23:49:56: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-03T23:49:56: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-04T00:21:53: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-04T00:21:53: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-04T00:21:54: PM2 log: pid=4026335 msg=process killed
-PM2        | 2026-04-04T00:21:54: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-04T00:21:54: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-04T00:27:00: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-04T00:27:01: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-04T00:27:01: PM2 log: pid=4028612 msg=process killed
-PM2        | 2026-04-04T00:27:01: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-04T00:27:01: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-04T00:44:12: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-04T00:44:13: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-04T00:44:13: PM2 log: pid=4029418 msg=process killed
-PM2        | 2026-04-04T00:44:13: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-04T00:44:13: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-04T01:06:19: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-04T01:06:20: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-04T01:06:20: PM2 log: pid=4031206 msg=process killed
-PM2        | 2026-04-04T01:06:20: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-04T01:06:20: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-04T01:12:05: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-04T01:12:05: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-04T01:12:05: PM2 log: pid=4032218 msg=process killed
-PM2        | 2026-04-04T01:12:05: PM2 log: Stopping app:makevideo-ai id:5
-PM2        | 2026-04-04T01:12:06: PM2 log: pid=3931138 msg=failed to kill - retrying in 100ms
-PM2        | 2026-04-04T01:12:06: PM2 log: pid=3931138 msg=failed to kill - retrying in 100ms
-PM2        | 2026-04-04T01:12:06: PM2 log: pid=3931138 msg=failed to kill - retrying in 100ms
-PM2        | 2026-04-04T01:12:06: PM2 log: App [makevideo-ai:5] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-04T01:12:06: PM2 log: pid=3931138 msg=process killed
-PM2        | 2026-04-04T01:15:11: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-04T01:15:11: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-04T01:15:11: PM2 log: App [makevideo-ai:5] starting in -fork mode-
-PM2        | 2026-04-04T01:15:11: PM2 log: App [makevideo-ai:5] online
-PM2        | 2026-04-04T01:21:35: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-04T01:21:36: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-04T01:21:36: PM2 log: pid=4032849 msg=process killed
-PM2        | 2026-04-04T01:21:36: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-04T01:21:36: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-04T06:29:03: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-04T06:29:03: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-04T06:29:04: PM2 log: pid=4033566 msg=process killed
-PM2        | 2026-04-04T06:29:04: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-04T06:29:04: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-04T06:38:14: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-04T06:38:14: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-04T06:38:14: PM2 log: pid=4043990 msg=process killed
-PM2        | 2026-04-04T06:38:14: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-04T06:38:14: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-04T07:18:26: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-04T07:18:26: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-04T07:18:26: PM2 log: pid=4044533 msg=process killed
-PM2        | 2026-04-04T07:18:26: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-04T07:18:26: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-04T10:44:25: PM2 log: Process 0 in a stopped status, starting it
-PM2        | 2026-04-04T10:44:25: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-04T10:44:25: PM2 log: pid=4047453 msg=failed to kill - retrying in 100ms
-PM2        | 2026-04-04T10:44:25: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-04T10:44:25: PM2 log: pid=4047453 msg=process killed
-PM2        | 2026-04-04T10:44:25: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-04T10:44:25: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-04T10:52:35: PM2 log: Process 0 in a stopped status, starting it
-PM2        | 2026-04-04T10:52:35: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-04T10:52:35: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-04T10:52:35: PM2 log: pid=4058453 msg=process killed
-PM2        | 2026-04-04T10:52:35: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-04T10:52:35: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-04T11:14:19: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-04T11:14:20: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-04T11:14:20: PM2 log: pid=4059007 msg=process killed
-PM2        | 2026-04-04T11:14:20: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-04T11:14:20: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-04T11:18:00: PM2 log: Process 0 in a stopped status, starting it
-PM2        | 2026-04-04T11:18:00: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-04T11:18:00: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-04T11:18:00: PM2 log: pid=4060015 msg=process killed
-PM2        | 2026-04-04T11:18:00: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-04T11:18:00: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-04T11:27:52: PM2 log: Process 0 in a stopped status, starting it
-PM2        | 2026-04-04T11:27:52: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-04T11:27:52: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-04T11:27:52: PM2 log: pid=4060537 msg=process killed
-PM2        | 2026-04-04T11:27:52: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-04T11:27:52: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-04T11:36:52: PM2 log: Process 0 in a stopped status, starting it
-PM2        | 2026-04-04T11:36:52: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-04T11:36:52: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-04T11:36:53: PM2 log: pid=4061200 msg=process killed
-PM2        | 2026-04-04T11:36:53: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-04T11:36:53: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-04T23:28:33: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-04T23:28:34: PM2 log: pid=4062191 msg=failed to kill - retrying in 100ms
-PM2        | 2026-04-04T23:28:34: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-04T23:28:34: PM2 log: pid=4062191 msg=process killed
-PM2        | 2026-04-04T23:28:34: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-04T23:28:34: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-04T23:32:18: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-04T23:32:18: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-04T23:32:18: PM2 log: pid=4084689 msg=process killed
-PM2        | 2026-04-04T23:32:18: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-04T23:32:18: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-05T00:35:03: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-05T00:35:03: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-05T00:35:03: PM2 log: pid=4085245 msg=process killed
-PM2        | 2026-04-05T00:35:03: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-05T00:35:03: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-05T00:51:21: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-05T00:51:22: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-05T00:51:22: PM2 log: pid=4088042 msg=process killed
-PM2        | 2026-04-05T00:51:22: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-05T00:51:22: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-05T00:54:30: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-05T00:54:30: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-05T00:54:30: PM2 log: pid=4088912 msg=process killed
-PM2        | 2026-04-05T00:54:30: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-05T00:54:30: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-05T00:58:53: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-05T00:58:53: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-05T00:58:54: PM2 log: pid=4089392 msg=process killed
-PM2        | 2026-04-05T00:58:54: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-05T00:58:54: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-05T01:03:14: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-05T01:03:14: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-05T01:03:14: PM2 log: pid=4089899 msg=process killed
-PM2        | 2026-04-05T01:03:14: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-05T01:03:14: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-05T01:07:22: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-05T01:07:22: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-05T01:07:22: PM2 log: pid=4090411 msg=process killed
-PM2        | 2026-04-05T01:07:22: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-05T01:07:22: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-05T01:19:12: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-05T01:19:12: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-05T01:19:12: PM2 log: pid=4090930 msg=process killed
-PM2        | 2026-04-05T01:19:12: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-05T01:19:12: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-05T01:28:29: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-05T01:28:29: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-05T01:28:29: PM2 log: pid=4091930 msg=process killed
-PM2        | 2026-04-05T01:28:29: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-05T01:28:29: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-05T01:43:44: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-05T01:43:44: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-05T01:43:44: PM2 log: pid=4092576 msg=process killed
-PM2        | 2026-04-05T01:43:44: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-05T01:43:44: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-05T01:49:43: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-05T01:49:43: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-05T01:49:43: PM2 log: pid=4093723 msg=process killed
-PM2        | 2026-04-05T01:49:43: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-05T01:49:43: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-05T01:56:15: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-05T01:56:15: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-05T01:56:15: PM2 log: pid=4094279 msg=process killed
-PM2        | 2026-04-05T01:56:15: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-05T01:56:15: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-05T02:07:10: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-05T02:07:10: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-05T02:07:10: PM2 log: pid=4094860 msg=process killed
-PM2        | 2026-04-05T02:07:10: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-05T02:07:10: PM2 log: App [inside.tsol.vn:0] online
-PM2        | 2026-04-05T02:12:16: PM2 log: Stopping app:inside.tsol.vn id:0
-PM2        | 2026-04-05T02:12:16: PM2 log: App [inside.tsol.vn:0] exited with code [0] via signal [SIGINT]
-PM2        | 2026-04-05T02:12:16: PM2 log: pid=4096106 msg=process killed
-PM2        | 2026-04-05T02:12:16: PM2 log: App [inside.tsol.vn:0] starting in -fork mode-
-PM2        | 2026-04-05T02:12:16: PM2 log: App [inside.tsol.vn:0] online
+Message sent: <61e36152-d524-4efa-4106-f06678dd9f7f@trinhgiatelecom.vn>
 
-/home/incall/.pm2/logs/makevideo-ai-out.log last 200 lines:
-5|makevide | 
-5|makevide | > ai-video-marketing@0.1.0 start
-5|makevide | > next start -p 3000
-5|makevide | 
-5|makevide | ▲ Next.js 16.1.6
-5|makevide | - Local:         http://localhost:3000
-5|makevide | - Network:       http://124.158.9.5:3000
-5|makevide | 
-5|makevide | ✓ Starting...
-5|makevide | ✓ Ready in 993ms
-5|makevide | 
-5|makevide | > ai-video-marketing@0.1.0 start
-5|makevide | > next start -p 3000
-5|makevide | 
-5|makevide | ▲ Next.js 16.1.6
-5|makevide | - Local:         http://localhost:3000
-5|makevide | - Network:       http://124.158.9.5:3000
-5|makevide | 
-5|makevide | ✓ Starting...
-5|makevide | ✓ Ready in 1012ms
-5|makevide | 
-5|makevide | > ai-video-marketing@0.1.0 start
-5|makevide | > next start -p 3000
-5|makevide | 
-5|makevide | ▲ Next.js 16.1.6
-5|makevide | - Local:         http://localhost:3000
-5|makevide | - Network:       http://124.158.9.5:3000
-5|makevide | 
-5|makevide | ✓ Starting...
-5|makevide | ✓ Ready in 952ms
-5|makevide | 
-5|makevide | > ai-video-marketing@0.1.0 start
-5|makevide | > next start -p 3000
-5|makevide | 
-5|makevide | ▲ Next.js 16.1.6
-5|makevide | - Local:         http://localhost:3000
-5|makevide | - Network:       http://124.158.9.5:3000
-5|makevide | 
-5|makevide | ✓ Starting...
-5|makevide | ✓ Ready in 1324ms
-5|makevide | 
-5|makevide | > ai-video-marketing@0.1.0 start
-5|makevide | > next start -p 3000
-5|makevide | 
-5|makevide | ▲ Next.js 16.1.6
-5|makevide | - Local:         http://localhost:3000
-5|makevide | - Network:       http://124.158.9.5:3000
-5|makevide | 
-5|makevide | ✓ Starting...
-5|makevide | ✓ Ready in 1080ms
-5|makevide | 
-5|makevide | > ai-video-marketing@0.1.0 start
-5|makevide | > next start -p 3000
-5|makevide | 
-5|makevide | ▲ Next.js 16.1.6
-5|makevide | - Local:         http://localhost:3000
-5|makevide | - Network:       http://124.158.9.5:3000
-5|makevide | 
-5|makevide | ✓ Starting...
-5|makevide | ✓ Ready in 1073ms
-5|makevide | 
-5|makevide | > ai-video-marketing@0.1.0 start
-5|makevide | > next start -p 3000
-5|makevide | 
-5|makevide | ▲ Next.js 16.1.6
-5|makevide | - Local:         http://localhost:3000
-5|makevide | - Network:       http://124.158.9.5:3000
-5|makevide | 
-5|makevide | ✓ Starting...
-5|makevide | ✓ Ready in 1072ms
-5|makevide | 
-5|makevide | > ai-video-marketing@0.1.0 start
-5|makevide | > next start -p 3000
-5|makevide | 
-5|makevide | ▲ Next.js 16.1.6
-5|makevide | - Local:         http://localhost:3000
-5|makevide | - Network:       http://124.158.9.5:3000
-5|makevide | 
-5|makevide | ✓ Starting...
-5|makevide | ✓ Ready in 1057ms
-5|makevide | 
-5|makevide | > ai-video-marketing@0.1.0 start
-5|makevide | > next start -p 3000
-5|makevide | 
-5|makevide | ▲ Next.js 16.1.6
-5|makevide | - Local:         http://localhost:3000
-5|makevide | - Network:       http://124.158.9.5:3000
-5|makevide | 
-5|makevide | ✓ Starting...
-5|makevide | ✓ Ready in 1112ms
-5|makevide | 
-5|makevide | > ai-video-marketing@0.1.0 start
-5|makevide | > next start -p 3000
-5|makevide | 
-5|makevide | ▲ Next.js 16.1.6
-5|makevide | - Local:         http://localhost:3000
-5|makevide | - Network:       http://124.158.9.5:3000
-5|makevide | 
-5|makevide | ✓ Starting...
-5|makevide | ✓ Ready in 1049ms
-5|makevide | 
-5|makevide | > ai-video-marketing@0.1.0 start
-5|makevide | > next start -p 3000
-5|makevide | 
-5|makevide | ▲ Next.js 16.1.6
-5|makevide | - Local:         http://localhost:3000
-5|makevide | - Network:       http://124.158.9.5:3000
-5|makevide | 
-5|makevide | ✓ Starting...
-5|makevide | ✓ Ready in 1021ms
-5|makevide | 
-5|makevide | > ai-video-marketing@0.1.0 start
-5|makevide | > next start -p 3000
-5|makevide | 
-5|makevide | ▲ Next.js 16.1.6
-5|makevide | - Local:         http://localhost:3000
-5|makevide | - Network:       http://124.158.9.5:3000
-5|makevide | 
-5|makevide | ✓ Starting...
-5|makevide | ✓ Ready in 1089ms
-5|makevide | 
-5|makevide | > ai-video-marketing@0.1.0 start
-5|makevide | > next start -p 3000
-5|makevide | 
-5|makevide | ▲ Next.js 16.1.6
-5|makevide | - Local:         http://localhost:3000
-5|makevide | - Network:       http://124.158.9.5:3000
-5|makevide | 
-5|makevide | ✓ Starting...
-5|makevide | ✓ Ready in 1293ms
-5|makevide | 
-5|makevide | > ai-video-marketing@0.1.0 start
-5|makevide | > next start -p 3000
-5|makevide | 
-5|makevide | ▲ Next.js 16.1.6
-5|makevide | - Local:         http://localhost:3000
-5|makevide | - Network:       http://124.158.9.5:3000
-5|makevide | 
-5|makevide | ✓ Starting...
-5|makevide | ✓ Ready in 1092ms
-5|makevide | 
-5|makevide | > ai-video-marketing@0.1.0 start
-5|makevide | > next start -p 3000
-5|makevide | 
-5|makevide | ▲ Next.js 16.1.6
-5|makevide | - Local:         http://localhost:3000
-5|makevide | - Network:       http://124.158.9.5:3000
-5|makevide | 
-5|makevide | ✓ Starting...
-5|makevide | ✓ Ready in 1091ms
-5|makevide | 
-5|makevide | > ai-video-marketing@0.1.0 start
-5|makevide | > next start -p 3000
-5|makevide | 
-5|makevide | ▲ Next.js 16.1.6
-5|makevide | - Local:         http://localhost:3000
-5|makevide | - Network:       http://124.158.9.5:3000
-5|makevide | 
-5|makevide | ✓ Starting...
-5|makevide | ✓ Ready in 1019ms
-5|makevide | 
-5|makevide | > ai-video-marketing@0.1.0 start
-5|makevide | > next start -p 3000
-5|makevide | 
-5|makevide | ▲ Next.js 16.1.6
-5|makevide | - Local:         http://localhost:3000
-5|makevide | - Network:       http://124.158.9.5:3000
-5|makevide | 
-5|makevide | ✓ Starting...
-5|makevide | ✓ Ready in 1396ms
-5|makevide | 
-5|makevide | > ai-video-marketing@0.1.0 start
-5|makevide | > next start -p 3000
-5|makevide | 
-5|makevide | ▲ Next.js 16.1.6
-5|makevide | - Local:         http://localhost:3000
-5|makevide | - Network:       http://124.158.9.5:3000
-5|makevide | 
-5|makevide | ✓ Starting...
-5|makevide | ✓ Ready in 1327ms
+> contract-app@0.1.0 start
+> next start -p 6688
 
-/home/incall/.pm2/logs/makevideo-ai-error.log last 200 lines:
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "dontcare". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "dontcare". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
-5|makevide | Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-5|makevide | Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
-5|makevide |     at ignore-listed frames
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
 
-/home/incall/.pm2/logs/inside.tsol.vn-out.log last 200 lines:
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 711ms
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 708ms
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 713ms
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 693ms
-0|inside.t | Message sent: <57f5df04-4497-2977-22d8-6b119c3e1135@trinhgiatelecom.vn>
-0|inside.t | Message sent: <eb0b62bb-7a62-d6c9-eff2-31f4fba70d52@trinhgiatelecom.vn>
-0|inside.t | Message sent: <3cafec4b-0666-49fe-3ec5-243396d8a88e@trinhgiatelecom.vn>
-0|inside.t | Message sent: <3b953c8d-5d68-0b83-d652-2976f8c606d8@trinhgiatelecom.vn>
-0|inside.t | Message sent: <f0d70a0a-4a2f-58b4-02df-101daf4f4dfc@trinhgiatelecom.vn>
-0|inside.t | Message sent: <00279606-9442-33d4-4bd2-e9bb6ed607ff@trinhgiatelecom.vn>
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 710ms
-0|inside.t | Message sent: <3ac4587f-d79d-36c2-a9e8-73dbfba91a25@trinhgiatelecom.vn>
-0|inside.t | Message sent: <73744085-593b-096e-2b9d-7b937cdd49ba@trinhgiatelecom.vn>
-0|inside.t | Message sent: <ab04fb26-6c76-293c-fb47-5b9a7c7f251e@trinhgiatelecom.vn>
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 704ms
-0|inside.t | Message sent: <891a541b-613d-f127-d000-ce42fffa16cf@trinhgiatelecom.vn>
-0|inside.t | Message sent: <de3d3211-9de0-7ac9-750b-d7a6c515aec9@trinhgiatelecom.vn>
-0|inside.t | Message sent: <950f3a14-9859-9bf2-8e87-9c6d84de0e0b@trinhgiatelecom.vn>
-0|inside.t | Message sent: <fdf64001-21fa-ffc6-dd27-482a1b499265@trinhgiatelecom.vn>
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 802ms
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 699ms
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 703ms
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 699ms
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 692ms
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 723ms
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 678ms
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 696ms
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 689ms
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 702ms
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 703ms
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 701ms
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 694ms
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 708ms
-0|inside.t | 
-0|inside.t | > contract-app@0.1.0 start
-0|inside.t | > next start -p 6688
-0|inside.t | 
-0|inside.t |   ▲ Next.js 14.2.35
-0|inside.t |   - Local:        http://localhost:6688
-0|inside.t | 
-0|inside.t |  ✓ Starting...
-0|inside.t |  ✓ Ready in 683ms
+ ✓ Starting...
+ ✓ Ready in 696ms
+Message sent: <52660c6b-5ded-a9d0-9254-f74b9d08cc57@trinhgiatelecom.vn>
+Message sent: <af79dad6-e19a-3c4e-4bed-1e70822e7c00@trinhgiatelecom.vn>
+Message sent: <120997e0-28d8-e755-819a-fb5f5ddec30f@trinhgiatelecom.vn>
 
-/home/incall/.pm2/logs/inside.tsol.vn-error.log last 200 lines:
-0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require.js
-0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js
-0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next.js
-0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js
-0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/cli/next-start.js
-0|inside.t |     at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require-hook.js:55:36
-0|inside.t |     at Module._load (node:internal/modules/cjs/loader:981:27)
-0|inside.t |     at Module.require (node:internal/modules/cjs/loader:1231:19)
-0|inside.t |     at mod.require (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require-hook.js:65:28)
-0|inside.t |     at require (node:internal/modules/helpers:177:18)
-0|inside.t |     at requirePage (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require.js:109:84)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/load-components.js:103:84
-0|inside.t |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-0|inside.t |     at async loadComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/load-components.js:103:26) {
-0|inside.t |   code: 'MODULE_NOT_FOUND',
-0|inside.t |   requireStack: [
-0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require.js',
-0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js',
-0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next.js',
-0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js',
-0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/cli/next-start.js'
-0|inside.t |   ]
-0|inside.t | }
-0|inside.t |  ⨯ Error: Cannot find module '/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/_not-found/page.js'
-0|inside.t | Require stack:
-0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require.js
-0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js
-0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next.js
-0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js
-0|inside.t | - /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/cli/next-start.js
-0|inside.t |     at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require-hook.js:55:36
-0|inside.t |     at Module._load (node:internal/modules/cjs/loader:981:27)
-0|inside.t |     at Module.require (node:internal/modules/cjs/loader:1231:19)
-0|inside.t |     at mod.require (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require-hook.js:65:28)
-0|inside.t |     at require (node:internal/modules/helpers:177:18)
-0|inside.t |     at requirePage (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require.js:109:84)
-0|inside.t |     at /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/load-components.js:103:84
-0|inside.t |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-0|inside.t |     at async loadComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/load-components.js:103:26) {
-0|inside.t |   code: 'MODULE_NOT_FOUND',
-0|inside.t |   requireStack: [
-0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/require.js',
-0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js',
-0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next.js',
-0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js',
-0|inside.t |     '/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/cli/next-start.js'
-0|inside.t |   ]
-0|inside.t | }
-0|inside.t | ReferenceError: window is not defined
-0|inside.t |     at C (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/sales/orders/[id]/page.js:1:33986)
-0|inside.t |     at nj (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:46252)
-0|inside.t |     at nM (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:47572)
-0|inside.t |     at nM (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:61547)
-0|inside.t |     at nL (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:64547)
-0|inside.t |     at nL (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:64826)
-0|inside.t |     at nG (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:71973)
-0|inside.t |     at Timeout._onTimeout (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:44373)
-0|inside.t |     at listOnTimeout (node:internal/timers:569:17)
-0|inside.t |     at process.processTimers (node:internal/timers:512:7) {
-0|inside.t |   digest: '3749048415'
-0|inside.t | }
-0|inside.t | PrismaClientKnownRequestError: 
-0|inside.t | Invalid `prisma.customer.delete()` invocation:
-0|inside.t | 
-0|inside.t | 
-0|inside.t | Foreign key constraint violated: `customerId`
-0|inside.t |     at Vg.handleRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:7317)
-0|inside.t |     at Vg.handleAndLogRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6624)
-0|inside.t |     at Vg.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6308)
-0|inside.t |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-0|inside.t |     at async a (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:191:9642)
-0|inside.t |     at async b (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/customers/page.js:1:32879)
-0|inside.t |     at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:286
-0|inside.t |     at async rE (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:15:8297)
-0|inside.t |     at async no (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:19:1144)
-0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1427:30)
-0|inside.t |     at async cacheEntry.responseCache.get.routeKind (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1588:28)
-0|inside.t |     at async NextNodeServer.renderToResponseWithComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1496:28)
-0|inside.t |     at async NextNodeServer.renderPageComponent (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1924:24)
-0|inside.t |     at async NextNodeServer.renderToResponseImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1962:32)
-0|inside.t |     at async NextNodeServer.pipeImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:922:25)
-0|inside.t |     at async NextNodeServer.handleCatchallRenderRequest (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js:272:17) {
-0|inside.t |   code: 'P2003',
-0|inside.t |   clientVersion: '5.22.0',
-0|inside.t |   meta: { modelName: 'Customer', field_name: 'customerId' },
-0|inside.t |   digest: '1637452481'
-0|inside.t | }
-0|inside.t | Can't load image https://localhost:6688/uploads/documents/cmmdibfp0000041p926ag2j47-1772839158213.png: fetch failed
-0|inside.t |  ⨯ Error: failed to pipe response
-0|inside.t |     at pipeToNodeResponse (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/pipe-readable.js:126:15)
-0|inside.t |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-0|inside.t |     at async sendResponse (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/send-response.js:44:13)
-0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1396:25)
-0|inside.t |     at async cacheEntry.responseCache.get.routeKind (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1588:28)
-0|inside.t |     at async NextNodeServer.renderToResponseWithComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1496:28)
-0|inside.t |     at async NextNodeServer.renderPageComponent (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1924:24)
-0|inside.t |     at async NextNodeServer.renderToResponseImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1962:32)
-0|inside.t |     at async NextNodeServer.pipeImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:922:25)
-0|inside.t |     at async NextNodeServer.handleCatchallRenderRequest (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js:272:17) {
-0|inside.t |   [cause]: Error: Image size cannot be determined. Please provide the width and height of the image.
-0|inside.t |       at Pn (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:15275:15)
-0|inside.t |       at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-0|inside.t |       at async qt (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:16185:16)
-0|inside.t |       at async qt (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:16193:21)
-0|inside.t |       at async wl (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:17111:14)
-0|inside.t |       at async render (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:18774:15)
-0|inside.t |       at async Object.start (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:19010:25)
-0|inside.t | }
-0|inside.t |  ⨯ Error: failed to pipe response
-0|inside.t |     at pipeToNodeResponse (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/pipe-readable.js:126:15)
-0|inside.t |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-0|inside.t |     at async sendResponse (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/send-response.js:44:13)
-0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1396:25)
-0|inside.t |     at async cacheEntry.responseCache.get.routeKind (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1588:28)
-0|inside.t |     at async NextNodeServer.renderToResponseWithComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1496:28)
-0|inside.t |     at async NextNodeServer.renderPageComponent (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1924:24)
-0|inside.t |     at async NextNodeServer.renderToResponseImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1962:32)
-0|inside.t |     at async NextNodeServer.pipeImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:922:25)
-0|inside.t |     at async NextNodeServer.handleCatchallRenderRequest (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js:272:17) {
-0|inside.t |   [cause]: Error: Image size cannot be determined. Please provide the width and height of the image.
-0|inside.t |       at Pn (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:15275:15)
-0|inside.t |       at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-0|inside.t |       at async qt (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:16185:16)
-0|inside.t |       at async qt (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:16193:21)
-0|inside.t |       at async wl (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:17111:14)
-0|inside.t |       at async render (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:18774:15)
-0|inside.t |       at async Object.start (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:19010:25)
-0|inside.t | }
-0|inside.t |  ⨯ Error: failed to pipe response
-0|inside.t |     at pipeToNodeResponse (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/pipe-readable.js:126:15)
-0|inside.t |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-0|inside.t |     at async sendResponse (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/send-response.js:44:13)
-0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1396:25)
-0|inside.t |     at async cacheEntry.responseCache.get.routeKind (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1588:28)
-0|inside.t |     at async NextNodeServer.renderToResponseWithComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1496:28)
-0|inside.t |     at async NextNodeServer.renderPageComponent (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1924:24)
-0|inside.t |     at async NextNodeServer.renderToResponseImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1962:32)
-0|inside.t |     at async NextNodeServer.pipeImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:922:25)
-0|inside.t |     at async NextNodeServer.handleCatchallRenderRequest (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js:272:17) {
-0|inside.t |   [cause]: Error: Image size cannot be determined. Please provide the width and height of the image.
-0|inside.t |       at Pn (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:15275:15)
-0|inside.t |       at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-0|inside.t |       at async qt (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:16185:16)
-0|inside.t |       at async qt (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:16193:21)
-0|inside.t |       at async wl (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:17111:14)
-0|inside.t |       at async render (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:18774:15)
-0|inside.t |       at async Object.start (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:19010:25)
-0|inside.t | }
-0|inside.t |  ⨯ Error: failed to pipe response
-0|inside.t |     at pipeToNodeResponse (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/pipe-readable.js:126:15)
-0|inside.t |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-0|inside.t |     at async sendResponse (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/send-response.js:44:13)
-0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1396:25)
-0|inside.t |     at async cacheEntry.responseCache.get.routeKind (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1588:28)
-0|inside.t |     at async NextNodeServer.renderToResponseWithComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1496:28)
-0|inside.t |     at async NextNodeServer.renderPageComponent (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1924:24)
-0|inside.t |     at async NextNodeServer.renderToResponseImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1962:32)
-0|inside.t |     at async NextNodeServer.pipeImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:922:25)
-0|inside.t |     at async NextNodeServer.handleCatchallRenderRequest (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js:272:17)
-0|inside.t |     at async NextNodeServer.handleRequestImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:818:17)
-0|inside.t |     at async invokeRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:179:21)
-0|inside.t |     at async handleRequest (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:359:24)
-0|inside.t |     at async requestHandlerImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:383:13)
-0|inside.t |     at async Server.requestListener (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:141:13) {
-0|inside.t |   [cause]: Error: Image size cannot be determined. Please provide the width and height of the image.
-0|inside.t |       at Pn (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:15275:15)
-0|inside.t |       at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-0|inside.t |       at async qt (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:16185:16)
-0|inside.t |       at async qt (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:16193:21)
-0|inside.t |       at async wl (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:17111:14)
-0|inside.t |       at async render (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:18774:15)
-0|inside.t |       at async Object.start (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:19010:25)
-0|inside.t | }
-0|inside.t |  ⨯ Error: failed to pipe response
-0|inside.t |     at pipeToNodeResponse (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/pipe-readable.js:126:15)
-0|inside.t |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-0|inside.t |     at async sendResponse (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/send-response.js:44:13)
-0|inside.t |     at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1396:25)
-0|inside.t |     at async cacheEntry.responseCache.get.routeKind (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1588:28)
-0|inside.t |     at async NextNodeServer.renderToResponseWithComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1496:28)
-0|inside.t |     at async NextNodeServer.renderPageComponent (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1924:24)
-0|inside.t |     at async NextNodeServer.renderToResponseImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1962:32)
-0|inside.t |     at async NextNodeServer.pipeImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:922:25)
-0|inside.t |     at async NextNodeServer.handleCatchallRenderRequest (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js:272:17)
-0|inside.t |     at async NextNodeServer.handleRequestImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:818:17)
-0|inside.t |     at async invokeRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:179:21)
-0|inside.t |     at async handleRequest (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:359:24)
-0|inside.t |     at async requestHandlerImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/router-server.js:383:13)
-0|inside.t |     at async Server.requestListener (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/lib/start-server.js:141:13) {
-0|inside.t |   [cause]: Error: Image size cannot be determined. Please provide the width and height of the image.
-0|inside.t |       at Pn (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:15275:15)
-0|inside.t |       at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-0|inside.t |       at async qt (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:16185:16)
-0|inside.t |       at async qt (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:16193:21)
-0|inside.t |       at async wl (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:17111:14)
-0|inside.t |       at async render (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:18774:15)
-0|inside.t |       at async Object.start (file:///www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/@vercel/og/index.node.js:19010:25)
-0|inside.t | }
+> contract-app@0.1.0 start
+> next start -p 6688
 
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 770ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 702ms
+Message sent: <97c37406-7a93-082e-c728-178320afff8e@trinhgiatelecom.vn>
+Message sent: <bcf2033a-20de-7d15-45f1-d4ed88f3044f@trinhgiatelecom.vn>
+Message sent: <8675347e-8df3-fbcf-cb8c-02706643bb6f@trinhgiatelecom.vn>
+Message sent: <faf168b5-fe98-1334-4c73-89b1bb238cd4@trinhgiatelecom.vn>
+Message sent: <26900474-0fb4-f99e-3388-5fdcc3cd9216@trinhgiatelecom.vn>
+Message sent: <9248b460-421c-3ee8-0803-c6be3add0ede@trinhgiatelecom.vn>
+Message sent: <9e63031d-3697-4a02-f3c0-4f616db7ab71@trinhgiatelecom.vn>
+Message sent: <120b9de6-b374-bc4b-b56e-38f9386fa56b@trinhgiatelecom.vn>
+Message sent: <859a9248-82cf-3c52-45c8-7b21bfda6e54@trinhgiatelecom.vn>
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 719ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 701ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 681ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 727ms
+Message sent: <ffb27e8d-2d57-65e1-808c-c6de585d5465@trinhgiatelecom.vn>
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 873ms
+Message sent: <83e522f5-4cfe-e674-53c9-1a389e0299d6@trinhgiatelecom.vn>
+Message sent: <4371f18e-498e-9493-9dad-c4dc133712c7@trinhgiatelecom.vn>
+Message sent: <1455f926-0373-3408-9520-91f6f9567cbd@trinhgiatelecom.vn>
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 817ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 799ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 823ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 698ms
+Message sent: <2fa9ec6b-840c-252d-3ab8-d31b43a729a4@trinhgiatelecom.vn>
+Message sent: <7d50f390-d710-f78e-9373-cc153cdc77a1@trinhgiatelecom.vn>
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 722ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 712ms
+Message sent: <e90538c2-fe1a-2fff-4a3a-cdc8f7aa3786@trinhgiatelecom.vn>
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 684ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 691ms
+Message sent: <559d8689-b31b-d7f5-1267-787fa54dfde2@trinhgiatelecom.vn>
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 694ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 693ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 700ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 734ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 697ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 706ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 707ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 707ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 708ms
+Message sent: <4497db21-ea95-fd93-574b-68f93e850c96@trinhgiatelecom.vn>
+Message sent: <d44073dc-6bd4-9035-a44c-47c0e1f8bbbb@trinhgiatelecom.vn>
+Message sent: <2eb9bf2a-8e3a-a54f-8ced-685806f56e18@trinhgiatelecom.vn>
+Message sent: <4d0624e3-3598-e68e-8544-eaf814c96f5a@trinhgiatelecom.vn>
+Message sent: <18f08d5e-c7a7-9903-b68a-6048bcbfc1db@trinhgiatelecom.vn>
+Message sent: <9eab17b2-b831-0a21-b4bf-cbe209dc6137@trinhgiatelecom.vn>
+Message sent: <cf5b293c-04db-ce05-a9be-ef62d3102b0f@trinhgiatelecom.vn>
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 812ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 693ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 704ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 717ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 716ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 713ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 699ms
+Message sent: <eadb245a-374f-12c8-6fca-d30703a23b77@trinhgiatelecom.vn>
+Message sent: <82ca6d92-b46d-39dd-4954-fa98a3f00310@trinhgiatelecom.vn>
+Message sent: <eb6fd062-3875-4d4b-b5fd-962650aebe4c@trinhgiatelecom.vn>
+Message sent: <8e6869c4-a71f-84f3-e5e1-035981b9f69d@trinhgiatelecom.vn>
+Message sent: <965666a8-9e86-140f-2241-565d9a84738b@trinhgiatelecom.vn>
+Message sent: <f7775b98-89a4-b283-8c71-8628ac60a2db@trinhgiatelecom.vn>
+Message sent: <33b1f385-8c9f-ff43-d5f2-45e1b41f82c1@trinhgiatelecom.vn>
+Message sent: <eb5fe2d2-86a5-bc44-24d3-4f01d03d8813@trinhgiatelecom.vn>
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 875ms
+Message sent: <0613f216-105b-d12d-8537-aeac13c9c9e3@trinhgiatelecom.vn>
+Message sent: <3b09a2ec-d563-693a-5809-2ff3dc29b42c@trinhgiatelecom.vn>
+Message sent: <3e627af0-d02c-cfb5-0eaa-0dfca6790bae@trinhgiatelecom.vn>
+Message sent: <ef7a83c4-9d82-6b71-d62d-4597205a0a7b@trinhgiatelecom.vn>
+Message sent: <7411695f-5b25-25b8-9e36-adcdc964b27c@trinhgiatelecom.vn>
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 726ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 706ms
+Message sent: <1db86dc3-9afc-f855-7953-965319f10fb8@trinhgiatelecom.vn>
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 701ms
+Message sent: <bf61e6f1-05d2-bc46-eb8e-86a7b4e6e8ab@trinhgiatelecom.vn>
+Message sent: <516ec28b-eacc-c354-20b8-175c68c31ced@trinhgiatelecom.vn>
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 716ms
+Message sent: <b422e9d6-69b4-439b-0136-006463a32ac0@trinhgiatelecom.vn>
+Message sent: <977e3839-3808-063b-f4a5-97d68f5365de@trinhgiatelecom.vn>
+Message sent: <4774d332-897c-208b-554b-bc4bdae1cdd5@trinhgiatelecom.vn>
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 703ms
+DEBUG CheckIn User ID: cmmeqs3nh000b11o7ys9ro7c7
+Message sent: <b5cedf92-0209-bcad-5d76-cb7a3cf127c1@trinhgiatelecom.vn>
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 774ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 686ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 682ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 764ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 697ms
+Message sent: <f5587b2c-ab94-46fa-3fa4-fda8600536dc@trinhgiatelecom.vn>
+Message sent: <0ae2a5b9-ffe7-5cc0-fbfa-3fce2e9400f3@trinhgiatelecom.vn>
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 712ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 688ms
+Message sent: <4c85b752-58c2-31e3-43aa-3d6634057c3a@trinhgiatelecom.vn>
+Message sent: <9c655a7a-8190-c095-48e9-edbc74d7cd86@trinhgiatelecom.vn>
+Message sent: <2807dbb1-e711-e0ba-537f-5e3f558a8e48@trinhgiatelecom.vn>
+Message sent: <99184536-1c96-1325-9846-edca31f9ea35@trinhgiatelecom.vn>
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 694ms
+Message sent: <48f37a4e-dfaf-f3e6-1eef-71e003025f61@trinhgiatelecom.vn>
+Message sent: <9530a167-03df-f2c7-b070-8d16da8b42c1@trinhgiatelecom.vn>
+Message sent: <9beee88f-9cd9-698f-c6fa-d8da3a42b87f@trinhgiatelecom.vn>
+Message sent: <d27cc869-b997-93ad-912b-e38ca39b0b39@trinhgiatelecom.vn>
+Message sent: <21375c57-8109-3c3a-f1ed-0831629ec18f@trinhgiatelecom.vn>
+Message sent: <1db73c62-e68e-c02e-662d-cf158893bee7@trinhgiatelecom.vn>
+Message sent: <cb51d0d2-023c-966c-61ce-38d8a086e36c@trinhgiatelecom.vn>
+Message sent: <ceefb047-dd7c-400f-a75f-dccb4a6735ab@trinhgiatelecom.vn>
+Message sent: <49b52ec7-8cb8-ba89-ac16-f75e2935337a@trinhgiatelecom.vn>
+Message sent: <37f4cee6-d643-4637-e0ce-ce73cd728b87@trinhgiatelecom.vn>
+Message sent: <050bd0a1-101b-5533-358f-891c35fad3e4@trinhgiatelecom.vn>
+Message sent: <fc73edd0-a4ff-5aef-bd8e-657664bb59c7@trinhgiatelecom.vn>
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 711ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 708ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 713ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 693ms
+Message sent: <57f5df04-4497-2977-22d8-6b119c3e1135@trinhgiatelecom.vn>
+Message sent: <eb0b62bb-7a62-d6c9-eff2-31f4fba70d52@trinhgiatelecom.vn>
+Message sent: <3cafec4b-0666-49fe-3ec5-243396d8a88e@trinhgiatelecom.vn>
+Message sent: <3b953c8d-5d68-0b83-d652-2976f8c606d8@trinhgiatelecom.vn>
+Message sent: <f0d70a0a-4a2f-58b4-02df-101daf4f4dfc@trinhgiatelecom.vn>
+Message sent: <00279606-9442-33d4-4bd2-e9bb6ed607ff@trinhgiatelecom.vn>
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 710ms
+Message sent: <3ac4587f-d79d-36c2-a9e8-73dbfba91a25@trinhgiatelecom.vn>
+Message sent: <73744085-593b-096e-2b9d-7b937cdd49ba@trinhgiatelecom.vn>
+Message sent: <ab04fb26-6c76-293c-fb47-5b9a7c7f251e@trinhgiatelecom.vn>
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 704ms
+Message sent: <891a541b-613d-f127-d000-ce42fffa16cf@trinhgiatelecom.vn>
+Message sent: <de3d3211-9de0-7ac9-750b-d7a6c515aec9@trinhgiatelecom.vn>
+Message sent: <950f3a14-9859-9bf2-8e87-9c6d84de0e0b@trinhgiatelecom.vn>
+Message sent: <fdf64001-21fa-ffc6-dd27-482a1b499265@trinhgiatelecom.vn>
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 802ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 699ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 703ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 699ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 692ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 723ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 678ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 696ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 689ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 702ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 703ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 701ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 694ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 708ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 683ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 699ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 728ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 685ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 683ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 720ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 708ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 689ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 706ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 721ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 694ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 701ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 698ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 708ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 758ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 684ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 880ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 927ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 943ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 928ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 1260ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 916ms
+[CALL_IN] Incoming PBX Webhook: {
+  url: 'http://localhost:6688/api/callcenter/call_in?callid=sim-1775375815108&phone=0999888777&extension=102&event=RING',
+  method: 'GET',
+  headers: {
+    connection: 'upgrade',
+    host: 'inside.tsol.vn',
+    'x-forwarded-for': '42.114.140.16',
+    'x-forwarded-host': 'inside.tsol.vn',
+    'x-forwarded-port': '6688',
+    'x-forwarded-proto': 'http',
+    'x-real-ip': '42.114.140.16'
+  },
+  parsedBody: {}
+}
+[CALL_IN] Incoming PBX Webhook: {
+  url: 'http://localhost:6688/api/callcenter/call_in?callid=sim-1775375815217&phone=0999888777&extension=201&event=RING',
+  method: 'GET',
+  headers: {
+    connection: 'upgrade',
+    host: 'inside.tsol.vn',
+    'x-forwarded-for': '42.114.140.16',
+    'x-forwarded-host': 'inside.tsol.vn',
+    'x-forwarded-port': '6688',
+    'x-forwarded-proto': 'http',
+    'x-real-ip': '42.114.140.16'
+  },
+  parsedBody: {}
+}
+[CALL_IN] Incoming PBX Webhook: {
+  url: 'http://localhost:6688/api/callcenter/call_in',
+  method: 'GET',
+  headers: {
+    accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+    'accept-encoding': 'gzip',
+    'accept-language': 'vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7,fr-FR;q=0.6,fr;q=0.5',
+    'cache-control': 'max-age=259200',
+    connection: 'upgrade',
+    host: 'inside.tsol.vn',
+    'user-agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php) _zbot',
+    'x-forwarded-for': '15.235.162.55',
+    'x-forwarded-host': 'inside.tsol.vn',
+    'x-forwarded-port': '6688',
+    'x-forwarded-proto': 'http',
+    'x-real-ip': '15.235.162.55'
+  },
+  parsedBody: {}
+}
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 891ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 937ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 929ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 973ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 944ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 872ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 880ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 1404ms
+
+> contract-app@0.1.0 start
+> next start -p 6688
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:6688
+
+ ✓ Starting...
+ ✓ Ready in 967ms

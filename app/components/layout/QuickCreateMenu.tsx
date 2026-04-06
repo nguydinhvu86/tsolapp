@@ -2,9 +2,11 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { Plus, CheckSquare, Users, FileText, FileSpreadsheet, Box, Building, CreditCard, Banknote, DollarSign, ExternalLink } from 'lucide-react';
 
 export function QuickCreateMenu() {
+    const { data: session } = useSession();
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
@@ -20,18 +22,24 @@ export function QuickCreateMenu() {
     }, []);
 
     const menuItems = [
-        { label: 'Tạo Công Việc', href: '/tasks?action=new', icon: <CheckSquare size={16} /> },
-        { label: 'Thêm Khách Hàng', href: '/customers?action=new', icon: <Users size={16} /> },
-        { label: 'Thêm Báo Giá ERP', href: '/sales/estimates?action=new', icon: <FileText size={16} /> },
-        { label: 'Thêm Lead', href: '/sales/leads/new', icon: <ExternalLink size={16} /> },
-        { label: 'Thêm Hóa Đơn (Bán)', href: '/sales/invoices?action=new', icon: <FileSpreadsheet size={16} /> },
-        { label: 'Thêm Sản Phẩm Mới', href: '/inventory/products?action=new', icon: <Box size={16} /> },
-        { label: 'Thêm Nhà Cung Cấp', href: '/suppliers?action=new', icon: <Building size={16} /> },
-        { label: 'Thêm Hóa Đơn (Mua)', href: '/purchasing/bills?action=new', icon: <FileSpreadsheet size={16} /> },
-        { label: 'Thêm Thanh Toán NCC', href: '/purchasing/payments?action=new', icon: <CreditCard size={16} /> },
-        { label: 'Thêm Thu Tiền (Khách)', href: '/sales/payments?action=new', icon: <Banknote size={16} /> },
-        { label: 'Thêm Chi Phí', href: '/sales/expenses?action=new', icon: <DollarSign size={16} /> },
+        { label: 'Tạo Công Việc', href: '/tasks?action=new', icon: <CheckSquare size={16} />, perm: 'TASKS_CREATE' },
+        { label: 'Thêm Khách Hàng', href: '/customers?action=new', icon: <Users size={16} />, perm: 'CUSTOMERS_CREATE' },
+        { label: 'Thêm Báo Giá ERP', href: '/sales/estimates?action=new', icon: <FileText size={16} />, perm: 'SALES_ESTIMATES_CREATE' },
+        { label: 'Thêm Lead', href: '/sales/leads/new', icon: <ExternalLink size={16} />, perm: 'CUSTOMERS_CREATE' },
+        { label: 'Thêm Hóa Đơn (Bán)', href: '/sales/invoices?action=new', icon: <FileSpreadsheet size={16} />, perm: 'SALES_INVOICES_CREATE' },
+        { label: 'Thêm Sản Phẩm Mới', href: '/inventory/products?action=new', icon: <Box size={16} />, perm: 'PRODUCTS_CREATE' },
+        { label: 'Thêm Nhà Cung Cấp', href: '/suppliers?action=new', icon: <Building size={16} />, perm: 'SUPPLIERS_CREATE' },
+        { label: 'Thêm Hóa Đơn (Mua)', href: '/purchasing/bills?action=new', icon: <FileSpreadsheet size={16} />, perm: 'PURCHASE_BILLS_CREATE' },
+        { label: 'Thêm Thanh Toán NCC', href: '/purchasing/payments?action=new', icon: <CreditCard size={16} />, perm: 'PURCHASE_PAYMENTS_CREATE' },
+        { label: 'Thêm Thu Tiền (Khách)', href: '/sales/payments?action=new', icon: <Banknote size={16} />, perm: 'SALES_PAYMENTS_CREATE' },
+        { label: 'Thêm Chi Phí', href: '/sales/expenses?action=new', icon: <DollarSign size={16} />, perm: 'SALES_EXPENSES_CREATE' },
     ];
+
+    const userPerms = (session?.user as any)?.permissions || [];
+    const isAdmin = (session?.user as any)?.role === 'ADMIN';
+    const filteredItems = menuItems.filter(item => isAdmin || userPerms.includes(item.perm));
+
+    if (!session || filteredItems.length === 0) return null;
 
     return (
         <div className="relative ml-2" ref={menuRef}>
@@ -55,7 +63,7 @@ export function QuickCreateMenu() {
                     </div>
                     <div className="max-h-[60vh] overflow-y-auto">
                         <div className="grid grid-cols-1 gap-1 px-2">
-                            {menuItems.map((item, index) => (
+                            {filteredItems.map((item, index) => (
                                 <Link
                                     key={index}
                                     href={item.href}

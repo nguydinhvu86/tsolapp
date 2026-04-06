@@ -30,8 +30,8 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
     // canEdit allows changing task details/status (Assignees can do this)
     const canEdit = isAdmin || permissions.includes('TASKS_EDIT') || isAssignee;
 
-    // canDelete allows removing documents, links, etc. (Strictly Admin / TASKS_EDIT)
-    const canDelete = isAdmin || permissions.includes('TASKS_EDIT');
+    // canDelete allows removing documents, links, etc. (Strictly Admin / TASKS_DELETE)
+    const canDelete = isAdmin || permissions.includes('TASKS_DELETE');
 
     const [task, setTask] = useState(initialTask);
 

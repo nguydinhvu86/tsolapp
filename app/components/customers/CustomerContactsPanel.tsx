@@ -7,6 +7,7 @@ import { Modal } from '@/app/components/ui/Modal';
 import { Plus, Users, Edit3, Trash2, Mail, Phone, Briefcase, Calendar, Smartphone } from 'lucide-react';
 import { createCustomerContact, updateCustomerContact, deleteCustomerContact } from '@/app/customers/actions';
 import { formatDate } from '@/lib/utils/formatters';
+import { ClickToCallButton } from '@/app/components/ClickToCallButton';
 
 interface CustomerContactsPanelProps {
     customerId: string;
@@ -156,13 +157,19 @@ export function CustomerContactsPanel({ customerId, contacts }: CustomerContacts
                                     {contact.phone && (
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                             <Phone size={14} color="#94a3b8" />
-                                            <a href={`tel:${contact.phone}`} style={{ color: 'inherit', textDecoration: 'none' }} className="hover:text-blue-600">{contact.phone}</a>
+                                            <div className="flex items-center gap-2">
+                                                <a href={`tel:${contact.phone}`} style={{ color: 'inherit', textDecoration: 'none' }} className="hover:text-blue-600">{contact.phone}</a>
+                                                <ClickToCallButton phoneNumber={contact.phone} className="scale-90 origin-left" />
+                                            </div>
                                         </div>
                                     )}
                                     {contact.otherPhone && (
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                             <Smartphone size={14} color="#94a3b8" />
-                                            <a href={`tel:${contact.otherPhone}`} style={{ color: 'inherit', textDecoration: 'none' }} className="hover:text-blue-600">{contact.otherPhone}</a>
+                                            <div className="flex items-center gap-2">
+                                                <a href={`tel:${contact.otherPhone}`} style={{ color: 'inherit', textDecoration: 'none' }} className="hover:text-blue-600">{contact.otherPhone}</a>
+                                                <ClickToCallButton phoneNumber={contact.otherPhone} className="scale-90 origin-left" />
+                                            </div>
                                         </div>
                                     )}
                                     {contact.email && (

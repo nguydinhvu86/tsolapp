@@ -216,7 +216,15 @@ export function SupplierStatementPanel({ supplierId, supplierName }: SupplierSta
                                                     </Link>
                                                 </div>
                                             </td>
-                                            <td>{tx.description}</td>
+                                            <td>
+                                                {tx.description && tx.description.startsWith('[NỘI BỘ]') ? (
+                                                    <span className="print-hide text-gray-400 italic">
+                                                        {tx.description.replace('[NỘI BỘ]', '').trim()}
+                                                    </span>
+                                                ) : (
+                                                    tx.description
+                                                )}
+                                            </td>
                                             <td style={{ textAlign: 'right', color: '#ef4444', fontWeight: tx.debit > 0 ? 500 : 400 }}>
                                                 {tx.debit > 0 ? formatCurrency(tx.debit) : '-'}
                                             </td>

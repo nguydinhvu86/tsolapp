@@ -99,7 +99,8 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
             unitPrice: i.unitPrice,
             taxRate: i.taxRate || 0,
             taxAmount: i.taxAmount || 0,
-            totalPrice: i.totalPrice
+            totalPrice: i.totalPrice,
+            isSubItem: i.isSubItem || false
         })) : [];
 
         const calcSubTotal = mappedItems.reduce((acc: number, curr: any) => acc + (curr.quantity * curr.unitPrice), 0);
@@ -126,6 +127,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
         setCustomDescription('');
         setCustomUnit('Cái');
         setCustomTaxRate(0);
+        setIsSubItem(false);
         setIsFormOpen(true);
     };
 
@@ -139,6 +141,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
     const [customTaxRate, setCustomTaxRate] = useState(0);
     const [customDescription, setCustomDescription] = useState('');
     const [useInventoryDescription, setUseInventoryDescription] = useState(true);
+    const [isSubItem, setIsSubItem] = useState(false);
 
     const handleProductSelect = (pid: string) => {
         const prod = products.find((p: any) => p.id === pid);
@@ -197,7 +200,8 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                 unitPrice: price,
                 taxRate,
                 taxAmount: taxItemAmount,
-                totalPrice: total
+                totalPrice: total,
+                isSubItem: isSubItem
             }];
 
             const calcSubTotal = newItems.reduce((acc: number, curr: any) => acc + (curr.quantity * curr.unitPrice), 0);
@@ -219,6 +223,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
         setCustomUnit('Cái');
         setQty(1);
         setPrice(0);
+        setIsSubItem(false);
     };
 
     const handleRemoveItem = (index: number) => {
@@ -267,6 +272,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
         }
         setPrice(item.unitPrice);
         setQty(item.quantity);
+        setIsSubItem(item.isSubItem || false);
 
         handleRemoveItem(index);
     };
@@ -727,6 +733,12 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                                     <label className="block text-sm font-medium text-gray-700 mb-1.5">SL</label>
                                     <input type="number" min="1" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-center text-gray-900 bg-white" value={qty} onChange={e => setQty(Number(e.target.value))} />
                                 </div>
+                                <div className="w-24 shrink-0 flex flex-col items-center justify-center">
+                                    <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wide text-center">T/Phần bộ?</label>
+                                    <div className="h-[46px] flex items-center justify-center">
+                                        <input type="checkbox" className="w-6 h-6 outline-none cursor-pointer accent-indigo-600 rounded" checked={isSubItem} onChange={e => setIsSubItem(e.target.checked)} />
+                                    </div>
+                                </div>
                                 <Button onClick={handleAddItem} variant="secondary" className="shrink-0 mb-[2px] h-[46px] px-6 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 shadow-sm font-semibold rounded-lg">Thêm</Button>
                             </div>
                             <div>
@@ -759,9 +771,12 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                                         </thead>
                                         <tbody className="divide-y divide-gray-100">
                                             {formData.items.map((item: any, i: number) => (
-                                                <tr key={i} className="hover:bg-slate-50 transition-colors">
-                                                    <td className="p-3 text-gray-800">
-                                                        <div className="font-semibold">{item.productName || item.customName}</div>
+                                                <tr key={i} className={`hover:bg-slate-50 transition-colors ${item.isSubItem ? 'bg-slate-50/50' : ''}`}>
+                                                    <td className="p-3 text-gray-800" style={item.isSubItem ? { paddingLeft: '2rem' } : {}}>
+                                                        <div className="font-semibold flex items-center gap-2">
+                                                            {item.isSubItem && <span className="text-gray-400">↳</span>}
+                                                            <span className={item.isSubItem ? 'text-gray-600 font-medium' : ''}>{item.productName || item.customName}</span>
+                                                        </div>
                                                         {item.description && <div className="text-xs text-gray-500 mt-0.5 max-w-sm whitespace-pre-wrap">{item.description}</div>}
                                                     </td>
                                                     <td className="p-3 text-center text-gray-800">

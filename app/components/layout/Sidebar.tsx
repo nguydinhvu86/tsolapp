@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { LayoutDashboard, Users, FileText, Settings, FileSpreadsheet, FileCode, ChevronDown, ChevronRight, FileOutput, FilePlus2, FileStack, Mail, CheckSquare, Package, ShoppingCart, Target, GripVertical, Clock, BookOpen } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Settings, FileSpreadsheet, FileCode, ChevronDown, ChevronRight, FileOutput, FilePlus2, FileStack, Mail, CheckSquare, Package, ShoppingCart, Target, GripVertical, Clock, BookOpen, Phone, Calculator } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -94,6 +94,14 @@ const mainNavItems: any[] = [
             { name: 'Báo Cáo Doanh Thu', nameKey: 'sidebar.sales_reports', href: '/sales/reports', permission: 'SALES_INVOICES_VIEW' }
         ]
     },
+    {
+        name: 'Kế Toán', nameKey: 'sidebar.accounting',
+        icon: Calculator,
+        children: [
+            { name: 'Hóa Đơn ĐT', nameKey: 'sidebar.accounting_invoices', href: '/accounting/invoices', permission: 'ACCOUNTING_VIEW' },
+            { name: 'Cài Đặt Tự Động', nameKey: 'sidebar.accounting_settings', href: '/accounting/settings', permission: 'ACCOUNTING_VIEW' }
+        ]
+    },
     { name: 'Khách Hàng', nameKey: 'sidebar.customers', href: '/customers', icon: Users, permission: 'CUSTOMERS_VIEW' },
     {
         name: 'Nhân Sự (HR)', nameKey: 'sidebar.hr',
@@ -111,6 +119,7 @@ const mainNavItems: any[] = [
             { name: 'Giám Sát (Ping)', nameKey: 'sidebar.monitoring', href: '/hr/monitoring', permission: 'MONITORING_VIEW' }
         ]
     },
+    { name: 'Tổng Đài', nameKey: 'sidebar.callcenter', href: '/call-center', icon: Phone, permission: 'CALL_CENTER_VIEW' },
     {
         name: 'Thiết Lập', nameKey: 'sidebar.settings',
         icon: Settings,

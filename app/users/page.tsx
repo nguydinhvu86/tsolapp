@@ -7,7 +7,11 @@ import { UserListClient } from './UserListClient';
 export default async function UsersPage() {
     const session = await getServerSession(authOptions);
 
-    if (!session || session.user.role !== 'ADMIN') {
+    const perms = (session?.user?.permissions as string[]) || [];
+    const canView = perms.includes('USERS_VIEW_ALL') || perms.includes('USERS_VIEW_OWN');
+    const noGroupAdmin = session?.user?.role === 'ADMIN' && perms.length === 0;
+
+    if (!session || (!canView && !noGroupAdmin)) {
         redirect('/dashboard');
     }
 

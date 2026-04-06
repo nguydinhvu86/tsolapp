@@ -12,8 +12,15 @@ export default async function CustomersPage({ searchParams }: { searchParams: { 
         redirect('/login');
     }
 
+    const permissions = session.user.permissions as string[] || [];
+    const canCreate = permissions.includes('CUSTOMERS_CREATE') || session.user.role === 'ADMIN';
+    if (searchParams?.action === 'new' && !canCreate) {
+        redirect('/dashboard');
+    }
+
     const employeeIdFromUrl = typeof searchParams?.employeeId === 'string' ? searchParams.employeeId : undefined;
-    const isAdminOrManager = session.user.role === 'ADMIN' || session.user.role === 'MANAGER';
+    const viewAll = permissions.includes('CUSTOMERS_VIEW_ALL');
+    const isAdminOrManager = session.user.role === 'ADMIN' || session.user.role === 'MANAGER' || viewAll;
 
     let effectiveEmployeeId: string | undefined = undefined;
     if (!isAdminOrManager) {

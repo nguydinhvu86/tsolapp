@@ -11,7 +11,9 @@ export async function getLeads(employeeId?: string) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) throw new Error('Unauthorized');
 
-    const isAdminOrManager = session.user.role === 'ADMIN' || session.user.role === 'MANAGER';
+    const permissions = session.user.permissions as string[] || [];
+    const viewAll = permissions.includes('CUSTOMERS_VIEW_ALL');
+    const isAdminOrManager = session.user.role === 'ADMIN' || session.user.role === 'MANAGER' || viewAll;
     let effectiveEmployeeId: string | undefined = undefined;
 
     if (!isAdminOrManager) {
@@ -52,7 +54,9 @@ export async function getLeadById(id: string) {
     const session = await getServerSession(authOptions);
     if (!session?.user) throw new Error('Unauthorized');
 
-    const isAdminOrManager = session.user.role === 'ADMIN' || session.user.role === 'MANAGER';
+    const permissions = session.user.permissions as string[] || [];
+    const viewAll = permissions.includes('CUSTOMERS_VIEW_ALL');
+    const isAdminOrManager = session.user.role === 'ADMIN' || session.user.role === 'MANAGER' || viewAll;
     const authFilter = !isAdminOrManager ? {
         OR: [
             { creatorId: session.user.id },

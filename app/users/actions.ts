@@ -6,7 +6,22 @@ import { authOptions } from '@/lib/authOptions';
 import { revalidatePath } from 'next/cache';
 import bcrypt from 'bcryptjs';
 
-// Kiểm tra quyền Admin
+// Kiểm tra quyền với fallback cho Admin chưa gán nhóm
+async function checkUserPermission(action: string) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) throw new Error('Unauthorized');
+
+    const perms = (session.user.permissions as string[]) || [];
+    const hasPerm = perms.includes(`USERS_${action}`);
+    const noGroupAdmin = session.user.role === 'ADMIN' && perms.length === 0;
+
+    if (!hasPerm && !noGroupAdmin) {
+        throw new Error('Unauthorized');
+    }
+    return session;
+}
+
+// Kiểm tra quyền Admin tuyệt đối cho cấu hình Role gốc
 async function checkAdmin() {
     const session = await getServerSession(authOptions);
     if (!session || session.user.role !== 'ADMIN') {
@@ -16,7 +31,7 @@ async function checkAdmin() {
 }
 
 export async function getUsers() {
-    await checkAdmin();
+    await checkUserPermission('VIEW_ALL');
     const users = await prisma.user.findMany({
         orderBy: { createdAt: 'desc' },
         select: {
@@ -58,10 +73,11 @@ export type CreateUserData = {
     password?: string;
     permissionGroupId?: string;
     permissions?: string[]; // Legacy/override
+    extension?: string;
 };
 
 export async function createUser(data: CreateUserData) {
-    await checkAdmin();
+    await checkUserPermission('CREATE');
 
     // Sinh mật khẩu tạm mặc định nếu admin không nhập
     const rawPassword = data.password || '123456';
@@ -84,7 +100,8 @@ export async function createUser(data: CreateUserData) {
         isActive: true,
         dashboardConfig: "{}",
         sidebarOrder: "[]",
-        customerMenuOrder: "[]"
+        customerMenuOrder: "[]",
+        extension: data.extension || null
     };
 
     if (data.permissionGroupId) {
@@ -107,10 +124,17 @@ export type UpdateUserData = {
     password?: string;
     permissionGroupId?: string;
     permissions?: string[];
+    extension?: string;
 };
 
 export async function updateUser(id: string, data: UpdateUserData) {
-    const session = await checkAdmin();
+    const session = (await getServerSession(authOptions)) as any;
+    if (!session?.user) throw new Error('Unauthorized');
+    const perms = (session.user.permissions as string[]) || [];
+    const hasPerm = perms.includes(`USERS_EDIT`);
+    const noGroupAdmin = session.user.role === 'ADMIN' && perms.length === 0;
+
+    if (!hasPerm && !noGroupAdmin) throw new Error('Unauthorized');
 
     const updateData: any = {};
     if (data.email) updateData.email = data.email;
@@ -139,6 +163,10 @@ export async function updateUser(id: string, data: UpdateUserData) {
         // Explicitly avoid passing undefined to Prisma
     }
 
+    if (data.extension !== undefined) {
+        updateData.extension = data.extension || null;
+    }
+
     const updatedUser = await prisma.user.update({
         where: { id },
         data: updateData
@@ -149,7 +177,7 @@ export async function updateUser(id: string, data: UpdateUserData) {
 }
 
 export async function deleteUser(id: string) {
-    const session = await checkAdmin();
+    const session = await checkUserPermission('DELETE');
 
     if (id === session.user.id) {
         throw new Error('Bạn không thể tự xóa tài khoản của chính mình.');
@@ -209,8 +237,8 @@ export async function createPermissionGroup(data: PermissionGroupData) {
     });
 
     // Nơi nào dùng revalidate? Thường ở danh sách
-    revalidatePath('/users');
-    revalidatePath('/settings/roles'); // Giả định
+    revalidatePath('/users', 'layout');
+    revalidatePath('/users/roles');
     return group;
 }
 
@@ -232,8 +260,8 @@ export async function updatePermissionGroup(id: string, data: PermissionGroupDat
         }
     });
 
-    revalidatePath('/users');
-    revalidatePath('/settings/roles');
+    revalidatePath('/users', 'layout');
+    revalidatePath('/users/roles');
     return group;
 }
 
@@ -256,7 +284,7 @@ export async function deletePermissionGroup(id: string) {
         where: { id }
     });
 
-    revalidatePath('/users');
-    revalidatePath('/settings/roles');
+    revalidatePath('/users', 'layout');
+    revalidatePath('/users/roles');
     return true;
 }

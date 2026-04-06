@@ -21,9 +21,27 @@ async function getUser() {
 
 export async function getSuppliers() {
     const session = await getServerSession(authOptions);
-    if (!session) throw new Error("Unauthorized");
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    const permissions = session.user.permissions as string[] || [];
+    const viewAll = permissions.includes('SUPPLIERS_VIEW_ALL');
+    const viewOwn = permissions.includes('SUPPLIERS_VIEW_OWN');
+
+    if (!viewAll && !viewOwn) return [];
+
+    let filter: any = {};
+    if (!viewAll && viewOwn) {
+        filter = {
+            OR: [
+                { orders: { some: { creatorId: session.user.id } } },
+                { bills: { some: { creatorId: session.user.id } } },
+                { payments: { some: { creatorId: session.user.id } } }
+            ]
+        };
+    }
 
     return prisma.supplier.findMany({
+        where: filter,
         orderBy: { updatedAt: 'desc' },
         include: {
             bills: {
@@ -38,10 +56,27 @@ export async function getSuppliers() {
 
 export async function getSupplier(id: string) {
     const session = await getServerSession(authOptions);
-    if (!session) throw new Error("Unauthorized");
+    if (!session?.user?.id) throw new Error("Unauthorized");
 
-    return prisma.supplier.findUnique({
-        where: { id },
+    const permissions = session.user.permissions as string[] || [];
+    const viewAll = permissions.includes('SUPPLIERS_VIEW_ALL');
+    const viewOwn = permissions.includes('SUPPLIERS_VIEW_OWN');
+
+    if (!viewAll && !viewOwn) return null;
+
+    let filter: any = {};
+    if (!viewAll && viewOwn) {
+        filter = {
+            OR: [
+                { orders: { some: { creatorId: session.user.id } } },
+                { bills: { some: { creatorId: session.user.id } } },
+                { payments: { some: { creatorId: session.user.id } } }
+            ]
+        };
+    }
+
+    return prisma.supplier.findFirst({
+        where: { id, ...filter },
         include: {
             products: {
                 include: { product: true }
@@ -124,6 +159,43 @@ export async function deleteSupplier(id: string) {
     await getUser();
     await prisma.supplier.delete({ where: { id } });
     revalidatePath('/suppliers');
+}
+
+// ---------------------------------------------------------------------------
+// SUPPLIER CONTACTS
+// ---------------------------------------------------------------------------
+
+export async function createSupplierContact(data: { supplierId: string, name: string, position?: string, phone?: string, email?: string, notes?: string }) {
+    await getUser();
+    const contact = await prisma.supplierContact.create({ data });
+    revalidatePath(`/purchasing/suppliers/${data.supplierId}`);
+    return contact;
+}
+
+export async function updateSupplierContact(id: string, data: any) {
+    await getUser();
+    const contact = await prisma.supplierContact.update({
+        where: { id },
+        data: {
+            name: data.name,
+            position: data.position,
+            phone: data.phone,
+            email: data.email,
+            notes: data.notes
+        }
+    });
+    revalidatePath(`/purchasing/suppliers/${contact.supplierId}`);
+    return contact;
+}
+
+export async function deleteSupplierContact(id: string) {
+    await getUser();
+    const contact = await prisma.supplierContact.findUnique({ where: { id } });
+    if (contact) {
+        await prisma.supplierContact.delete({ where: { id } });
+        revalidatePath(`/purchasing/suppliers/${contact.supplierId}`);
+    }
+    return true;
 }
 
 // ---------------------------------------------------------------------------

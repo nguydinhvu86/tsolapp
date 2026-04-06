@@ -9,6 +9,13 @@ export default async function SalesPaymentsPage({ searchParams }: { searchParams
     const session = await getServerSession(authOptions);
     if (!session) return null;
 
+    const permissions = (session?.user as any)?.permissions as string[] || [];
+    const canCreate = permissions.includes('SALES_PAYMENTS_CREATE') || (session?.user as any)?.role === 'ADMIN';
+    if (searchParams?.action === 'new' && !canCreate) {
+        const { redirect } = await import('next/navigation');
+        redirect('/dashboard');
+    }
+
     const [payments, customers, allInvoices] = await Promise.all([
         getSalesPayments(),
         getCustomers(),

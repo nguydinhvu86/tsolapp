@@ -4,9 +4,16 @@ import { PurchaseBillClient } from './PurchaseBillClient';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 
-export default async function PurchaseBillsPage() {
+export default async function PurchaseBillsPage({ searchParams }: { searchParams: { action?: string } }) {
     const session = await getServerSession(authOptions);
     if (!session) return null;
+
+    const permissions = (session?.user as any)?.permissions as string[] || [];
+    const canCreate = permissions.includes('PURCHASE_BILLS_CREATE') || (session?.user as any)?.role === 'ADMIN';
+    if (searchParams?.action === 'new' && !canCreate) {
+        const { redirect } = await import('next/navigation');
+        redirect('/dashboard');
+    }
 
     const bills = await getPurchaseBills();
     const suppliers = await getSuppliers();

@@ -11,15 +11,20 @@ export const metadata = {
     title: 'Quản lý Chi Phí | ContractMgr',
 };
 
-export default async function ExpensesPage() {
+export default async function ExpensesPage({ searchParams }: { searchParams: { action?: string } }) {
     const session = await getServerSession(authOptions);
 
     if (!session || !session.user) {
         redirect("/login");
     }
 
-    const permissions = session.user.permissions || [];
+    const permissions = session.user.permissions as string[] || [];
     const isAdmin = session.user.role === 'ADMIN';
+
+    const canCreate = permissions.includes('SALES_EXPENSES_CREATE') || isAdmin;
+    if (searchParams?.action === 'new' && !canCreate) {
+        redirect('/dashboard');
+    }
     const viewAll = permissions.includes('SALES_EXPENSES_VIEW_ALL');
     const viewOwn = permissions.includes('SALES_EXPENSES_VIEW_OWN');
 

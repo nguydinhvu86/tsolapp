@@ -13,7 +13,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
     }
 
     const employeeIdFromUrl = typeof searchParams?.employeeId === 'string' ? searchParams.employeeId : undefined;
-    const isAdminOrManager = session.user.role === 'ADMIN' || session.user.role === 'MANAGER';
+    const permissions = session.user.permissions as string[] || [];
+    const viewAll = permissions.includes('SALES_INVOICES_VIEW_ALL') || permissions.includes('CUSTOMERS_VIEW_ALL');
+    const isAdminOrManager = session.user.role === 'ADMIN' || session.user.role === 'MANAGER' || viewAll;
 
     let effectiveEmployeeId: string | undefined = undefined;
     if (!isAdminOrManager) {

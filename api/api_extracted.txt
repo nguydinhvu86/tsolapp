@@ -1,0 +1,306 @@
+DOCUMENT API 
+ 
+CRM sẽ thiết kế link Webhook để nhận API từ PBX ( URL hoặc 
+JSON tuỳ vào CRM ) 
+ 
+Dưới đây là các ví dụ theo dạng URL tham khảo : 
+ 
+ 
+  CUỘC GỌI ĐẾN 
+ 
+Khi có cuộc gọi vào tổng đài sẽ đổ chuông tới máy nhân viên (ví dụ extension: 101): 
+ 
+https://{CRM_URL}/api/callcenter/call_in?phone=0938
+363739&queue=999&extension=101&callid=5e052a75-
+121b-4c10-bdb4-c4b235b6a677&event=ANSWER 
+ 
+Trong đó: 
+ 
+o  {CRM_URL} : Do CRM cung cấp  
+o  phone : Số điện thoại gọi đến 
+o  queue : Nhóm trực của số nội bộ ( Nếu Có ) 
+o  extension : Số nội bộ của agent 
+o  callid : ID của cuộc gọi (mỗi cuộc gọi sẽ có call id khác nhau) 
+o  event : Trạng thái cuộc gọi ( RING, ANSWER ) 
+ 
+ 
+ 
+  KẾT THÚC CUỘC GỌI  
+ 
+Đây là sự kiện báo cho CRM biết là kết thúc cuộc gọi : 
+ 
+https://{CRM_URL}/api/callcenter/hangup?callid=5e052a75-
+121b-4c10-bdb4-c4b235b6a677 
+ 
+Trong đó : 
+ 
+o  {CRM_URL} : do CRM cung cấp 
+o  callid : ID của cuộc gọi (mỗi cuộc gọi sẽ có call id khác nhau)
+----------------Page (0) Break----------------
+  THÔNG TIN CUỘC GỌI  
+ 
+Khi kết thúc cuộc gọi thì tổng đài có thể trả về thông tin chi tiết cuộc gọi: 
+ 
+https://{CRM_URL}/api/callcenter/calldata?callid=5e052a75-121b-
+4c10-bdb4-c4b235b6a677&calldate=2022-10-10 
+10:10:10&duration=11 &billsec=7&status=ANSWER&extension=1
+01&phone=0938363739&recordingfile=https://ip_tong_dai/link_file
+_ghi_am 
+ 
+Trong đó : 
+ 
+o  {CRM_URL} : Do CRM cung cấp 
+o  callid : ID của cuộc gọi (mỗi cuộc gọi sẽ có call id khác nhau) 
+o  calldate : Thời gian bắt đầu thực hiện cuộc gọi ( định dạng y-m-d h:m:s ) 
+o  duration : Thời gian bắt đầu cuộc gọi 
+o  billsec : Thời gian bắt đầu thoại 
+o  status : Trạng thái cuộc gọi ( ANSWER, BUSY, ...) 
+o  extension : Số nội bộ của agent 
+o  phone : Số điện thoại khách hàng 
+o  recordingfile : Đường dẫn file ghi âm cuộc gọi 
+ 
+ 
+  CUỘC GỌI NHỠ  
+ 
+https://{CRM_URL}/api/callcenter/ calldata?holdtime=30&status=
+ABANDON&queue=999&phone= 0938363739& callid=5e052a75 -
+121b-4c10-bdb4-c4b235b6a677 
+ 
+Trong đó : 
+ 
+o  {CRM_URL} : Do CRM cung cấp 
+o  holdtime : Thời gian chờ của khách 
+o  status : Trạng thái cuộc gọi ( ABANDON ) 
+o  queue : Tên nhóm trực 
+o  phone : Số điện thoại khách hang 
+o  callid : ID của cuộc gọi (mỗi cuộc gọi sẽ có call id khác nhau) 
+ 
+ 
+ 
+----------------Page (1) Break----------------
+  AGENT KHÔNG TRẢ LỜI  
+ 
+https://{CRM_URL}/api/callcenter/calldata?status=NOANSWER&
+queue=999&extension=100&phone=0938363739&callid=5e052a75-
+121b-4c10-bdb4-c4b235b6a677 
+ 
+Trong đó : 
+ 
+o  {CRM_URL} : Do CRM cung cấp 
+o  status : Trạng thái cuộc gọi ( NOANSWER ) 
+o  queue : Tên nhóm trực 
+o  extension : Số nội bộ của agent 
+o  phone : Số điện thoại khách hang 
+o  callid : ID của cuộc gọi (mỗi cuộc gọi sẽ có call id khác nhau) 
+ 
+ 
+ 
+  SỰ KIỆN GỌI RA  
+ 
+Đồng bộ dữ liệu cho CRM biết có cuộc gọi ra từ Tổng Đài : 
+ 
+https://{CRM_URL}/api/callcenter/init?extension=100&
+phone=0938363739&callid=
+ 
+5e052a75-121b-4c10-bdb4-
+c4b235b6a677&event=ANSWER 
+ 
+Trong đó : 
+ 
+o  {CRM_URL} : Do CRM cung cấp 
+o  extension : Số nội bộ của agent 
+o  phone : Số điện thoại gọi ra 
+o  callid : ID cuộc gọi (mỗi cuộc gọi sẽ có call id khác nhau) 
+o  event : Trạng thái cuộc gọi (RING, ANSWER) 
+                                                                                              
+ 
+ 
+----------------Page (2) Break----------------
+  SỰ KIỆN CẬP NHẬT TRẠNG THÁI  CUỘC GỌI 
+CỦA AGENT 
+ 
+https://{CRM_URL}/api/Agent/ChangeStatus?extension=101
+&status=talk 
+ 
+Trong đó : 
+o  {CRM_URL} : Do CRM cung cấp 
+o  extension : Số nội bộ của agent 
+o  status : Trạng thái của agent (*) 
+ 
+(*) Giá trị trạng thái Agent 
+ 
+Giá trị             Mô tả 
+off                 Agent (phone) chưa online 
+on                 Agent (phone) sẵn sàng 
+pause              Agent (phone) tạm nghỉ 
+ring                Agent (phone) đang ring 
+talk                Agent (phone) đang talk 
+ 
+  TRẠNG THÁI TRẢ VỀ : 
+ 
+-   Dựa theo HTTP Status Code, Ví dụ : 
+ 
+o  200 : Thành Công 
+{“status code” : 200 , “message” : “OK”} 
+ 
+o  404 : Có Lỗi 
+{“status code” : 404 , “message” : “Not Found”} 
+ 
+         
+ 
+ 
+ 
+ 
+----------------Page (3) Break----------------
+API TỪ  TỔNG ĐÀI   
+ 
+  SỰ KIỆN CLICK2CALL   
+ 
+CRM chạy đường dẫn này method GET kiểu dữ liệu URL :
+ 
+ 
+https://{PBX_URL}/api/CallControl/dial/from_number/100/
+to_number/093xxxxxxx/key/98589afb123863cf4d5cd4ec2c41
+072/domain/abc.com 
+ 
+Trong đó :  
+ 
+o  {PBX_URL} : Do tổng đài cung cấp. 
+o  api/CallControl/dial : Tên phương thức gọi API của hệ thống. 
+o  from_number : Số nội bộ do hệ thống CRM cung cấp. ( vd : 100 ) 
+o  to_number : Số khách hàng do hệ thống CRM cung cấp. 
+o  key : Khóa của công ty do tổng đài cung cấp. 
+o  domain : Tên miền của công ty do tổng đài cung cấp. 
+ 
+ 
+ 
+                                                                                                                                                                
+  KIỂM TRA TRẠNG THÁI EXTENSION   
+ 
+CRM chạy đường dẫn này method POST kiểu dữ liệu JSON : 
+ 
+https://{PBX_URL}/api/Agent/status/format/json 
+---- 
+Data : 
+{ 
+         “key” : “98589afb123863cf4d5cd4ec2c41072”, 
+         “list” :  
+[ 
+         {“ext” : “100”}, 
+         {“ext” : “200”} 
+] 
+} 
+ 
+----------------Page (4) Break----------------
+Trong đó : 
+ 
+o  {PBX_URL} : Do tổng đài cung cấp. 
+o  api/Agent/status/format/json : Tên phương thức gọi API của hệ thống. 
+o  key : Khóa của công ty do tổng đài cung cấp. 
+o  ext : Extension muốn kiểm tra. 
+                                                                                                                
+ 
+  SỰ KIỆN SPY CALL  
+ 
+CRM chạy đường dẫn này method POST kiểu dữ liệu JSON : 
+ 
+https://{PBX_URL}/api/Agent/spy/format/json 
+---- 
+Data : 
+{ 
+         “key” : “98589afb123863cf4d5cd4ec2c41072”, 
+         “src” : “100”, 
+         “dst” : “101”, 
+         “mode” : “whisper” 
+} 
+ 
+Trong đó : 
+ 
+o  {PBX_URL} : Do tổng đài cung cấp. 
+o  api/Agent/spy/format/json : Tên phương thức gọi API của hệ thống. 
+o  key : Khóa của công ty tổng đài cung cấp. 
+o  src : Extension người thực hiện. 
+o  dst : Extension người bị nghe. 
+o  mode : 
+o  whisper : chỉ nghe. 
+o  threeway : nói với cả hai. 
+o  caller : nói với người gọi ( caller ) 
+o  callee : nói với người nghe 
+ 
+ 
+ 
+                                                                                                         
+----------------Page (5) Break----------------
+  SỰ KIỆN LẤY DANH SÁCH EXTENSION 
+TRONG QUEUE 
+ 
+CRM chạy đường dẫn này method POST kiểu dữ liệu JSON : 
+ 
+https://{PBX_URL}/api/Agent/all_members/format/json 
+---- 
+Data : 
+{ 
+         “key” : “98589afb123863cf4d5cd4ec2c41072” 
+} 
+ 
+Trong đó : 
+ 
+o  {PBX_URL} : Do tổng đài cung cấp. 
+o  api/Agent/all_members/format/json : Tên phương thức gọi API của hệ 
+thống. 
+o  key : Khóa của công ty do tổng đài cung cấp. 
+ 
+ 
+                                                                                                          
+ 
+  THAY ĐỔI TRẠNG THÁI EXTENSION   TRONG 
+QUEUE 
+ 
+CRM chạy đường dẫn này method POST kiểu dữ liệu JSON : 
+ 
+https://{PBX_URL}/api/Agent/update_status  
+--- 
+Data : 
+{ 
+         “key” : “98589afb123863cf4d5cd4ec2c41072”, 
+         “exten” : “100”, 
+         “status” : “0” 
+} 
+ 
+ 
+----------------Page (6) Break----------------
+Trong đó : 
+ 
+o  {PBX_URL} : Do tổng đài cung cấp. 
+o  api/Agent/update_status : Tên phương thức gọi API của hệ thống. 
+o  key : Khóa của công ty do tổng đài cung cấp. 
+o  exten : Số extension muốn thay đổi. 
+o  status : Trạng thái của extension. ( 0 : unpaused , 1 : paused ) 
+ 
+                                                                                                       
+ 
+  LẤY DỮ LIỆU CUỘC GỌI  
+ 
+CRM chạy đường dẫn này method POST kiểu dữ liệu JSON : 
+ 
+https://{PBX_URL}/internal/Reports/cdr/format/json  
+--- 
+Data : 
+{ 
+         “key” : “98589afb123863cf4d5cd4ec2c41072”, 
+         “callid” : “fb80cc79-e179-1234-92d7-04748b9bb475”, 
+         “startdate” : “2022-09-23”, 
+         “enddate”:” 2022-09-23” 
+} 
+ 
+Trong đó : 
+ 
+o  {PBX_URL} : Do tổng đài cung cấp. 
+o  api/Report/calllog/format/json : Tên phương thức gọi API của hệ thống. 
+o  key : Khóa của công ty do tổng đài cung cấp. 
+o  callid : ID của cuộc gọi. 
+o  startdate - enddate : Ngày thực hiện cuộc gọi ( Format : YYYY-MM-DD ) 
+ 
+ 
+ 
+----------------Page (7) Break----------------

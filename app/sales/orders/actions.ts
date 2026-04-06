@@ -118,7 +118,8 @@ export async function submitSalesOrder(creatorId: string, formData: any) {
                         unitPrice: item.unitPrice,
                         taxRate: item.taxRate || 0,
                         taxAmount: item.taxAmount || 0,
-                        totalPrice: item.totalPrice
+                        totalPrice: item.totalPrice,
+                        isSubItem: item.isSubItem || false
                     }))
                 }
             },
@@ -164,7 +165,8 @@ export async function updateSalesOrder(id: string, formData: any) {
                         unitPrice: item.unitPrice,
                         taxRate: item.taxRate || 0,
                         taxAmount: item.taxAmount || 0,
-                        totalPrice: item.totalPrice
+                        totalPrice: item.totalPrice,
+                        isSubItem: item.isSubItem || false
                     }))
                 }
             },
@@ -315,7 +317,8 @@ export async function convertOrderToInvoice(orderId: string) {
                         unitPrice: i.unitPrice,
                         taxRate: i.taxRate,
                         taxAmount: i.taxAmount,
-                        totalPrice: i.totalPrice
+                        totalPrice: i.totalPrice,
+                        isSubItem: i.isSubItem || false
                     }))
                 }
             }

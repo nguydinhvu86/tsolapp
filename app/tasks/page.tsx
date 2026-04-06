@@ -6,7 +6,7 @@ import { authOptions } from '@/lib/authOptions';
 export default async function TasksPage({
     searchParams,
 }: {
-    searchParams: { status?: string; assigneeId?: string; priority?: string; }
+    searchParams: { status?: string; assigneeId?: string; priority?: string; action?: string; }
 }) {
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
@@ -18,6 +18,12 @@ export default async function TasksPage({
 
     if (!viewAll && !viewOwn) {
         return <div className="p-8 text-center text-red-500 font-bold">Bạn không có quyền truy cập trang này.</div>;
+    }
+
+    const canCreate = permissions.includes('TASKS_CREATE') || session?.user?.role === 'ADMIN';
+    if (searchParams.action === 'new' && !canCreate) {
+        const { redirect } = await import('next/navigation');
+        redirect('/dashboard');
     }
 
     // Build filter map

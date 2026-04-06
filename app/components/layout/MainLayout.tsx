@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
+import { CallListener } from '../CallListener';
 
 export function MainLayout({ children, brandName, logoUrl, initialSidebarOrder }: { children: React.ReactNode, brandName: string, logoUrl?: string | null, initialSidebarOrder?: string[] }) {
     const pathname = usePathname();
@@ -44,6 +45,9 @@ export function MainLayout({ children, brandName, logoUrl, initialSidebarOrder }
                     className="hide-on-desktop show-on-mobile"
                 />
             )}
+
+            {/* Global PBX Event Listener & Toast */}
+            <CallListener />
         </>
     );
 }

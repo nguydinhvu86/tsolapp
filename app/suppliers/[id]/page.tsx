@@ -38,6 +38,13 @@ export default async function SupplierDetailPage({ params }: { params: { id: str
             },
             tasks: {
                 orderBy: { createdAt: 'desc' }
+            },
+            callLogs: {
+                orderBy: { startedAt: 'desc' },
+                include: { user: { select: { name: true } } }
+            },
+            contacts: {
+                orderBy: { createdAt: 'desc' }
             }
         }
     });

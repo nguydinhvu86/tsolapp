@@ -8,7 +8,9 @@ export async function getSalesReportData(employeeId?: string) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) return { customers: [], invoices: [], payments: [], expenses: [], estimates: [] };
 
-    const isAdminOrManager = session.user.role === 'ADMIN' || session.user.role === 'MANAGER';
+    const permissions = session.user.permissions as string[] || [];
+    const viewAll = permissions.includes('SALES_INVOICES_VIEW_ALL') || permissions.includes('CUSTOMERS_VIEW_ALL');
+    const isAdminOrManager = session.user.role === 'ADMIN' || session.user.role === 'MANAGER' || viewAll;
     let effectiveEmployeeId: string | undefined = undefined;
 
     if (!isAdminOrManager) {

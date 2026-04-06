@@ -12,6 +12,14 @@ export const metadata: Metadata = {
 
 export default async function NewLeadPage() {
     const session = await getServerSession(authOptions);
+
+    const permissions = (session?.user as any)?.permissions as string[] || [];
+    const canCreate = permissions.includes('CUSTOMERS_CREATE') || session?.user?.role === 'ADMIN';
+    if (!canCreate) {
+        const { redirect } = await import('next/navigation');
+        redirect('/dashboard');
+    }
+
     const customers = await getCustomers();
     const { prisma } = await import('@/lib/prisma');
     const users = await prisma.user.findMany({ select: { id: true, name: true, avatar: true } });

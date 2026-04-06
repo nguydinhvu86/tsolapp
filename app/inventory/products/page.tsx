@@ -3,8 +3,22 @@ import ProductClient from './ProductClient';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 
-export default async function ProductsPage() {
+export default async function ProductsPage({ searchParams }: { searchParams: { action?: string } }) {
     const session = await getServerSession(authOptions);
+    
+    const permissions = (session?.user as any)?.permissions as string[] || [];
+    const canCreate = permissions.includes('PRODUCTS_CREATE') || (session?.user as any)?.role === 'ADMIN';
+    if (searchParams?.action === 'new' && !canCreate) {
+        const { redirect } = await import('next/navigation');
+        redirect('/dashboard');
+    }
+
+    const canView = permissions.includes('PRODUCTS_VIEW_ALL') || permissions.includes('PRODUCTS_VIEW_OWN') || (session?.user as any)?.role === 'ADMIN';
+    if (!canView) {
+        const { redirect } = await import('next/navigation');
+        redirect('/dashboard');
+    }
+
     const userRole = session?.user?.role || 'USER';
 
     // Because Prisma generated types might be slightly out of sync in the dev's IDE

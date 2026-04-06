@@ -20,7 +20,10 @@ export const RESOURCES = [
     { id: 'SALES_ORDERS', name: 'Đơn bán hàng' },
     { id: 'SALES_INVOICES', name: 'Hóa đơn bán hàng' },
     { id: 'SALES_PAYMENTS', name: 'Thanh toán bán hàng' },
-    { id: 'SALES_EXPENSES', name: 'Chi phí' }
+    { id: 'SALES_EXPENSES', name: 'Chi phí' },
+    { id: 'CALL_CENTER', name: 'Tổng Đài PBX' },
+    { id: 'ACCOUNTING', name: 'Kế toán' },
+    { id: 'SETTINGS', name: 'Cài đặt hệ thống' },
 ] as const;
 
 export const ACTIONS = [

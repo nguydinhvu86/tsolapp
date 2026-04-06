@@ -196,10 +196,13 @@ export default function PrintSalesInvoiceClient({ invoice, companyInfo, settings
                     </thead>
                     <tbody>
                         {invoice.items?.map((item: any, index: number) => (
-                            <tr key={item.id}>
-                                <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center' }}>{index + 1}</td>
-                                <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px' }}>
-                                    <strong style={{ display: 'block' }}>{item.customName || item.product?.name || 'Sản phẩm tự do'}</strong>
+                            <tr key={item.id} style={{ backgroundColor: item.isSubItem ? '#f8fafc' : 'transparent' }}>
+                                <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center', color: item.isSubItem ? '#94a3b8' : '#000' }}>{item.isSubItem ? '-' : index + 1}</td>
+                                <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', paddingLeft: item.isSubItem ? '30px' : '8px' }}>
+                                    <strong style={{ display: 'flex', alignItems: 'center', gap: '6px', color: item.isSubItem ? '#475569' : '#000' }}>
+                                        {item.isSubItem && <span style={{ color: '#94a3b8', fontWeight: 'normal' }}>↳</span>}
+                                        <span>{item.customName || item.product?.name || 'Sản phẩm tự do'}</span>
+                                    </strong>
                                     {item.product?.sku && <span style={{ fontSize: '0.85rem', color: '#64748b', display: 'block' }}>SKU: {item.product.sku}</span>}
                                     {item.description && <span style={{ fontSize: '0.9rem', color: '#475569', display: 'block', whiteSpace: 'pre-wrap', marginTop: '4px' }}>{item.description}</span>}
                                 </td>

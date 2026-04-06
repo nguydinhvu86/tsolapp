@@ -9,6 +9,12 @@ import SalesInvoiceClient from './SalesInvoiceClient';
 
 export default async function SalesInvoicesPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
     const session = await getServerSession(authOptions);
+    const permissions = (session?.user as any)?.permissions as string[] || [];
+    const canCreate = permissions.includes('SALES_INVOICES_CREATE') || (session?.user as any)?.role === 'ADMIN';
+    if (searchParams?.action === 'new' && !canCreate) {
+        const { redirect } = await import('next/navigation');
+        redirect('/dashboard');
+    }
     const [invoices, customers, products, orders, nextCode, users] = await Promise.all([
         getSalesInvoices(typeof searchParams?.employeeId === 'string' ? searchParams.employeeId : undefined),
         getCustomers(),

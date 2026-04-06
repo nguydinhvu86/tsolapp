@@ -5,7 +5,7 @@ const conn = new Client();
 const password = 'P@ssw0rdVu';
 
 conn.on('ready', () => {
-    const cmd = `export PATH=/www/server/nvm/versions/node/v24.14.0/bin:$PATH && pm2 logs --lines 200 --nostream`;
+    const cmd = `tail -n 1000 /home/incall/.pm2/logs/inside.tsol.vn-out.log`;
     let logData = '';
     conn.exec(cmd, (err, stream) => {
         if (err) throw err;

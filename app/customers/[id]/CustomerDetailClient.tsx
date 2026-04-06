@@ -15,6 +15,7 @@ import { CustomerNotesPanel } from '@/app/components/customers/CustomerNotesPane
 import { CustomerContactsPanel } from '@/app/components/customers/CustomerContactsPanel';
 import { CustomerManagersPanel } from '@/app/components/customers/CustomerManagersPanel';
 import { CustomerHistoryTimeline } from '@/app/components/customers/CustomerHistoryTimeline';
+import { CustomerCallLogsPanel } from '@/app/components/customers/CustomerCallLogsPanel';
 import { useSession } from 'next-auth/react';
 import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
 import { Modal } from '@/app/components/ui/Modal';
@@ -23,13 +24,14 @@ import { sendDebtConfirmationEmail, saveCustomerMenuOrder, updateCustomer } from
 import { updateCustomerPassword } from './actions';
 import { EmailLogTable } from '@/app/components/ui/EmailLogTable';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { ClickToCallButton } from '@/app/components/ClickToCallButton';
 
 export function CustomerDetailClient({ customer, tasks, users, emailTemplates = [], savedMenuOrder = "[]" }: { customer: any, tasks: any[], users: any[], emailTemplates?: any[], savedMenuOrder?: string }) {
     const router = useRouter();
     const { data: session } = useSession();
     const currentUserRole = session?.user?.role || 'USER';
     const currentUserId = session?.user?.id || '';
-    const [activeTab, setActiveTab] = useState<'documents' | 'statement' | 'quotes' | 'contracts' | 'handovers' | 'payments' | 'appendices' | 'dispatches' | 'salesEstimates' | 'salesOrders' | 'salesInvoices' | 'salesPayments' | 'leads' | 'emailLogs' | 'contacts' | 'managers'>('leads');
+    const [activeTab, setActiveTab] = useState<'documents' | 'statement' | 'quotes' | 'contracts' | 'handovers' | 'payments' | 'appendices' | 'dispatches' | 'salesEstimates' | 'salesOrders' | 'salesInvoices' | 'salesPayments' | 'leads' | 'emailLogs' | 'callLogs' | 'contacts' | 'managers'>('leads');
     const [searchQuery, setSearchQuery] = useState('');
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -94,6 +96,7 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
         { id: 'payments', name: 'Đề Nghị TT', count: customer.paymentRequests.length, icon: FilePlus2 },
         { id: 'managers', name: 'Người Phụ Trách', count: customer.managers?.length || 0, icon: UserCheck },
         { id: 'emailLogs', name: 'Lịch Sử Email', count: customer.emailLogs?.length || 0, icon: Mail },
+        { id: 'callLogs', name: 'Calllogs PBX', count: customer.callLogs?.length || 0, icon: Phone },
     ];
 
     const [orderedTabs, setOrderedTabs] = useState<typeof tabs>(() => {
@@ -229,7 +232,10 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                 <div className="mt-0.5 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 flex-shrink-0"><Phone size={16} /></div>
                                 <div className="min-w-0 flex-1">
                                     <p className="m-0 text-xs font-semibold text-slate-500 uppercase">Số Điện Thoại</p>
-                                    <p className="m-0 text-[15px] font-medium break-words">{customer.phone || 'Chưa cập nhật'}</p>
+                                    <div className="flex items-center gap-2">
+                                        <p className="m-0 text-[15px] font-medium break-words">{customer.phone || 'Chưa cập nhật'}</p>
+                                        {customer.phone && <ClickToCallButton phoneNumber={customer.phone} className="ml-1" />}
+                                    </div>
                                 </div>
                             </div>
                             <div className="flex items-start gap-3">
@@ -474,6 +480,8 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                         </Card>
                     ) : activeTab === 'emailLogs' ? (
                         <EmailLogTable emailLogs={customer.emailLogs || []} />
+                    ) : activeTab === 'callLogs' ? (
+                        <CustomerCallLogsPanel logs={customer.callLogs || []} />
                     ) : (
                         <Card style={{ padding: '0', overflow: 'hidden', background: '#ffffff', borderRadius: '12px', border: '1px solid var(--border)' }}>
                             <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)' }}>

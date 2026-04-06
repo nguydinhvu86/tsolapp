@@ -17,19 +17,19 @@ export function UserListClient({ initialUsers, permissionGroups = [] }: { initia
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     const [editingUser, setEditingUser] = useState<any>(null);
-    const [formData, setFormData] = useState({ name: '', email: '', role: 'USER', password: '', permissionGroupId: '', permissions: [] as string[] });
+    const [formData, setFormData] = useState({ name: '', email: '', role: 'USER', password: '', permissionGroupId: '', permissions: [] as string[], extension: '' });
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
     const openAddModal = () => {
-        setFormData({ name: '', email: '', role: 'USER', password: '', permissionGroupId: permissionGroups.find(g => g.name === 'Người dùng')?.id || '', permissions: [] });
+        setFormData({ name: '', email: '', role: 'USER', password: '', permissionGroupId: permissionGroups.find(g => g.name === 'Người dùng')?.id || '', permissions: [], extension: '' });
         setError('');
         setIsAddModalOpen(true);
     };
 
     const openEditModal = (user: any) => {
         setEditingUser(user);
-        setFormData({ name: user.name || '', email: user.email, role: user.role, password: '', permissionGroupId: user.permissionGroupId || '', permissions: user.permissions || [] });
+        setFormData({ name: user.name || '', email: user.email, role: user.role, password: '', permissionGroupId: user.permissionGroupId || '', permissions: user.permissions || [], extension: user.extension || '' });
         setError('');
         setIsEditModalOpen(true);
     };
@@ -98,6 +98,7 @@ export function UserListClient({ initialUsers, permissionGroups = [] }: { initia
                         <tr style={{ background: 'rgba(0,0,0,0.02)' }}>
                             <th style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.875rem' }}>Tên</th>
                             <th style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.875rem' }}>Email</th>
+                            <th style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.875rem' }}>Số máy nhánh (EXT)</th>
                             <th style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.875rem' }}>Quyền hạn</th>
                             <th style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.875rem', textAlign: 'right' }}>Thao tác</th>
                         </tr>
@@ -111,6 +112,9 @@ export function UserListClient({ initialUsers, permissionGroups = [] }: { initia
                                     </button>
                                 </td>
                                 <td style={{ padding: '1rem', color: 'var(--text-muted)' }}>{user.email}</td>
+                                <td style={{ padding: '1rem', color: 'var(--text-muted)' }}>
+                                    <span style={{fontWeight: 600, background: '#f1f5f9', padding: '2px 8px', borderRadius: 4, display: 'inline-block'}}>{user.extension || '---'}</span>
+                                </td>
                                 <td style={{ padding: '1rem' }}>
                                     <span style={{
                                         padding: '0.25rem 0.75rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 600,
@@ -214,6 +218,7 @@ function UserModal({ title, isEdit, error, formData, setFormData, isLoading, onS
                     <form id="user-form" onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         <Input label="Họ và tên" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required />
                         <Input label="Email đăng nhập" type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} required />
+                        <Input label="Số máy PBX nội bộ (Extension)" placeholder="Vd: 101" value={formData.extension || ''} onChange={e => setFormData({ ...formData, extension: e.target.value })} />
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
                             <label style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-main)' }}>Quyền truy cập</label>

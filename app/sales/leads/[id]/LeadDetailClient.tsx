@@ -15,6 +15,7 @@ import { LeadComments } from './comments/LeadComments';
 import { DocumentPreviewModal } from '@/app/components/ui/DocumentPreviewModal';
 import { LeadNotes } from '@/app/components/sales/LeadNotes';
 import { useTranslation } from '@/app/i18n/LanguageContext';
+import { ClickToCallButton } from '@/app/components/ClickToCallButton';
 
 const styles = {
     pageContainer: { padding: '24px', maxWidth: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column' as const, gap: '24px', boxSizing: 'border-box' as const, fontFamily: 'Inter, sans-serif' },
@@ -372,6 +373,9 @@ export function LeadDetailClient({ lead, customers, users, emailTemplates = [], 
                                             <div style={styles.infoValue}>
                                                 <Phone size={16} style={styles.infoIcon} />
                                                 {lead.customer?.phone || lead.phone || '—'}
+                                                {(lead.customer?.phone || lead.phone) && (
+                                                     <ClickToCallButton phoneNumber={lead.customer?.phone || lead.phone} className="ml-2" />
+                                                )}
                                             </div>
                                         </div>
                                         <div style={styles.infoGroup}>
