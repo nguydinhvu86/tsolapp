@@ -41,6 +41,29 @@ export async function clickToCall(to_number: string) {
     try {
         const res = await fetch(url, { method: 'GET' });
         if (res.ok) {
+             try {
+                 const customer = await prisma.customer.findFirst({ where: { phone: { endsWith: safeTo.slice(-9) } } });
+                 const lead = !customer ? await prisma.lead.findFirst({ where: { phone: { endsWith: safeTo.slice(-9) } } }) : null;
+                 
+                 await (prisma as any).callLog.create({
+                     data: {
+                         callId: 'tmp-out-' + Date.now(),
+                         type: 'OUTBOUND',
+                         phone: to_number,
+                         extension: from_number,
+                         userId: user.id,
+                         customerId: customer?.id,
+                         leadId: lead?.id,
+                         startedAt: new Date(),
+                         duration: 0,
+                         billsec: 0,
+                         status: 'RINGING',
+                         recordingUrl: ''
+                     }
+                 });
+             } catch(e) {
+                 console.error("Failed to write temporary clickToCall log", e);
+             }
              return { success: true };
         }
         return { success: false, error: await res.text() };
@@ -112,15 +135,17 @@ export async function getExtensionStatus(exts: string[]) {
     }
 }
 
-export async function syncPbxCallLogs(daysBack = 5) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) throw new Error("Unauthorized");
+export async function syncPbxCallLogs(daysBack = 5, systemBypass = false) {
+    if (!systemBypass) {
+        const session = await getServerSession(authOptions);
+        if (!session?.user) throw new Error("Unauthorized");
 
-    const permissions = session.user.permissions as string[] || [];
-    const viewAll = permissions.includes('CALL_CENTER_VIEW_ALL');
-    
-    if (!viewAll && session.user.role !== 'ADMIN') {
-        throw new Error("Bạn không có quyền đồng bộ dữ liệu Tổng Đài toàn hệ thống.");
+        const permissions = session.user.permissions as string[] || [];
+        const viewAll = permissions.includes('CALL_CENTER_VIEW_ALL');
+        
+        if (!viewAll && session.user.role !== 'ADMIN') {
+            throw new Error("Bạn không có quyền đồng bộ dữ liệu Tổng Đài toàn hệ thống.");
+        }
     }
 
     const settings = await getPbxSettings();

@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect, useMemo } from 'react';
-import { FileText, Download, CheckCircle, PackagePlus, AlertCircle, RefreshCw, Settings, Eye, X, Search, Filter } from 'lucide-react';
-import { importInventoryFromInvoice, triggerManualScan } from './actions';
+import { FileText, Download, CheckCircle, PackagePlus, AlertCircle, RefreshCw, Settings, Eye, X, Search, Filter, Trash } from 'lucide-react';
+import { importInventoryFromInvoice, triggerManualScan, uploadInvoiceFiles, deleteInvoice } from './actions';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -143,8 +143,71 @@ export default function InvoiceDashboardClient({ initialInvoices }: { initialInv
          }
     };
 
+    const handleDelete = async (invoiceId: string) => {
+        if (!confirm("Bạn có chắc chắn muốn xóa vĩnh viễn hóa đơn này không? Hành động này không thể hoàn tác.")) return;
+        
+        setIsProcessing(true);
+        try {
+            await deleteInvoice(invoiceId);
+            setInvoices(invoices.filter(inv => inv.id !== invoiceId));
+        } catch (e: any) {
+            alert(e.message || "Lỗi khi xóa hóa đơn.");
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const [uploadingInvoiceId, setUploadingInvoiceId] = useState<string | null>(null);
+
+    const handleUploadClick = (invoiceId: string) => {
+         setUploadingInvoiceId(invoiceId);
+         fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+         const files = e.target.files;
+         if (!files || files.length === 0 || !uploadingInvoiceId) return;
+
+         const xmlFile = Array.from(files).find(f => f.name.toLowerCase().endsWith('.xml'));
+         const pdfFile = Array.from(files).find(f => f.name.toLowerCase().endsWith('.pdf'));
+
+         if (!xmlFile) {
+             alert("Vui lòng chọn ít nhất 1 file XML gốc của hóa đơn!");
+             e.target.value = '';
+             return;
+         }
+
+         const formData = new FormData();
+         formData.append('xmlFile', xmlFile);
+         if (pdfFile) formData.append('pdfFile', pdfFile);
+
+         setIsProcessing(true);
+         try {
+             await uploadInvoiceFiles(uploadingInvoiceId, formData);
+             alert("Tải lên hóa đơn thành công! Hệ thống đã tự động bóc tách lại toàn bộ dữ liệu.");
+             e.target.value = '';
+             router.refresh();
+         } catch (err: any) {
+             alert(err.message || "Có lỗi xảy ra khi xử lý file tải lên.");
+             e.target.value = '';
+         } finally {
+             setIsProcessing(false);
+             setUploadingInvoiceId(null);
+         }
+    };
+
     return (
         <div className="space-y-4">
+            <input 
+                type="file" 
+                ref={fileInputRef} 
+                multiple 
+                accept=".xml,.pdf"
+                className="hidden" 
+                onChange={handleFileChange} 
+            />
+            
             <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
                 <h2 className="text-lg font-bold text-gray-800">Quản Lý Hóa Đơn VAT Điện Tử</h2>
                 <div className="flex gap-2">
@@ -267,6 +330,14 @@ export default function InvoiceDashboardClient({ initialInvoices }: { initialInv
                                           <AlertCircle size={12}/> Chưa map NCC
                                      </span>
                                 )}
+                                {inv.lookupLink && (
+                                    <div className="mt-2 text-xs text-indigo-600 bg-indigo-50 p-1.5 rounded inline-block">
+                                        <a href={inv.lookupLink} target="_blank" rel="noopener noreferrer" className="hover:underline flex items-center gap-1">
+                                            <Search size={12} /> Link tra cứu
+                                        </a>
+                                        {inv.lookupCode && <span className="font-semibold ml-1">Mã: {inv.lookupCode}</span>}
+                                    </div>
+                                )}
                             </td>
                             <td className="p-3">
                                 <div>{formatVND(inv.totalAmount)}</div>
@@ -286,6 +357,15 @@ export default function InvoiceDashboardClient({ initialInvoices }: { initialInv
                                     >
                                         <Eye size={16} /> Xem
                                     </button>
+                                    {inv.status === 'NEW' && (
+                                        <button 
+                                            onClick={() => handleDelete(inv.id)}
+                                            className="text-red-600 hover:text-red-700 border border-red-200 px-3 py-1.5 rounded-lg flex items-center gap-1 transition"
+                                            title="Xóa hóa đơn"
+                                        >
+                                            <Trash size={16} />
+                                        </button>
+                                    )}
                                     {inv.status === 'NEW' && <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">Mới tải về</span>}
                                     {inv.status === 'INVENTORY_IMPORTED' && <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">Đã Nhập Kho (Chưa Nợ)</span>}
                                     {inv.status === 'DEBT_RECORDED' && <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs">Đã Tính Nợ (Chưa Kho)</span>}
@@ -327,9 +407,27 @@ export default function InvoiceDashboardClient({ initialInvoices }: { initialInv
                                          )}
                                      </div>
                                 )}
-                                <a href={inv.xmlUrl} download className="p-1 px-2 ml-1 border rounded hover:bg-gray-100 text-gray-600 inline-flex items-center gap-1 text-xs" title="Tải XML">
-                                     <Download size={12}/> XML
-                                </a>
+                                <div className="flex flex-col gap-1 items-end ml-2">
+                                    {inv.xmlUrl ? (
+                                        <a href={inv.xmlUrl} download className="p-1 px-2 border rounded hover:bg-gray-100 text-gray-600 inline-flex items-center gap-1 text-xs" title="Tải XML">
+                                             <Download size={12}/> XML
+                                        </a>
+                                    ) : (
+                                        <button 
+                                            onClick={() => handleUploadClick(inv.id)}
+                                            disabled={isProcessing}
+                                            className="p-1 px-2 border border-blue-200 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 inline-flex items-center gap-1 text-xs font-medium cursor-pointer" 
+                                            title="Tải File XML/PDF Lên"
+                                        >
+                                            Chưa có file -&gt; Tải Lên Đính Kèm
+                                        </button>
+                                    )}
+                                    {inv.pdfUrl && (
+                                        <a href={inv.pdfUrl} target="_blank" rel="noreferrer" className="p-1 px-2 border border-red-200 rounded bg-red-50 hover:bg-red-100 text-red-600 inline-flex items-center gap-1 text-xs" title="Xem/Tải PDF">
+                                             <FileText size={12}/> PDF
+                                        </a>
+                                    )}
+                                </div>
                             </td>
                         </tr>
                     ))}
@@ -445,6 +543,13 @@ export default function InvoiceDashboardClient({ initialInvoices }: { initialInv
                                 <p className="text-sm text-gray-500">Tổng Tiền Thanh Toán</p>
                                 <p className="font-bold text-red-600">{formatVND(viewingInvoice.totalAmount)}</p>
                             </div>
+                            {viewingInvoice.lookupLink && (
+                                <div className="col-span-2 mt-2 bg-indigo-50 border border-indigo-100 p-3 rounded-lg">
+                                    <h5 className="font-semibold text-indigo-800 text-sm mb-1">Thông tin tra cứu hóa đơn gốc:</h5>
+                                    <p className="text-sm"><strong>Link:</strong> <a href={viewingInvoice.lookupLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{viewingInvoice.lookupLink}</a></p>
+                                    {viewingInvoice.lookupCode && <p className="text-sm mt-1"><strong>Mã Số Tra Cứu:</strong> <span className="font-mono bg-white px-2 py-0.5 border rounded">{viewingInvoice.lookupCode}</span></p>}
+                                </div>
+                            )}
                         </div>
 
                         <h4 className="font-bold mb-3 border-b pb-2">Chi Tiết Hàng Hóa / Dịch Vụ</h4>
@@ -482,8 +587,13 @@ export default function InvoiceDashboardClient({ initialInvoices }: { initialInv
 
                     <div className="p-4 border-t flex justify-end gap-2 bg-gray-50 rounded-b-xl">
                         {viewingInvoice.xmlUrl && (
-                            <a href={viewingInvoice.xmlUrl} download target="_blank" className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition">
-                                Tải XML Gốc
+                            <a href={viewingInvoice.xmlUrl} download target="_blank" rel="noreferrer" className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition flex items-center gap-2">
+                                <Download size={16} /> Tải XML Gốc
+                            </a>
+                        )}
+                        {viewingInvoice.pdfUrl && (
+                            <a href={viewingInvoice.pdfUrl} target="_blank" rel="noreferrer" className="px-4 py-2 bg-red-100 text-red-700 rounded-lg font-medium hover:bg-red-200 transition flex items-center gap-2">
+                                <FileText size={16} /> Xem PDF Gốc
                             </a>
                         )}
                         <button onClick={() => setViewingInvoice(null)} className="px-5 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition">

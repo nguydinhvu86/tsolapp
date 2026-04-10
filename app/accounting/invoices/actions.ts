@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { revalidatePath } from 'next/cache';
+import fs from 'fs';
+import path from 'path';
 
 export async function importInventoryFromInvoice(invoiceId: string, actionType: 'DEBT_ONLY' | 'INVENTORY_ONLY' | 'BOTH' = 'BOTH', toWarehouseId?: string) {
     const session = await getServerSession(authOptions);
@@ -184,4 +186,160 @@ export async function triggerManualScan() {
     } else {
         throw new Error(result.error || "Có lỗi khi lấy hóa đơn");
     }
+}
+
+export async function uploadInvoiceFiles(invoiceId: string, formData: FormData) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    const xmlFile = formData.get('xmlFile') as File | null;
+    const pdfFile = formData.get('pdfFile') as File | null;
+
+    if (!xmlFile) {
+        throw new Error("Bắt buộc phải tải lên file XML gốc của hóa đơn.");
+    }
+
+    const xmlBuffer = Buffer.from(await xmlFile.arrayBuffer());
+    let pdfBuffer: Buffer | null = null;
+    if (pdfFile) {
+        pdfBuffer = Buffer.from(await pdfFile.arrayBuffer());
+    }
+
+    // 1. Vị trí lưu trữ
+    const invoicesDir = path.join(process.cwd(), 'uploads_data', 'invoices');
+    if (!fs.existsSync(invoicesDir)) {
+        fs.mkdirSync(invoicesDir, { recursive: true });
+    }
+
+    const invoice = await prisma.supplierInvoice.findUnique({ where: { id: invoiceId } });
+    if (!invoice) throw new Error("Không tìm thấy hóa đơn này trong hệ thống.");
+
+    const timestamp = Date.now();
+    let invoiceNumClean = invoice.invoiceNumber || 'HD';
+    // Lọc ký tự lạ nếu có
+    invoiceNumClean = invoiceNumClean.replace(/[^a-zA-Z0-9-]/g, '');
+
+    const xmlFilename = `${invoiceNumClean}_${timestamp}.xml`;
+    const xmlPath = path.join(invoicesDir, xmlFilename);
+    fs.writeFileSync(xmlPath, xmlBuffer);
+    const xmlUrl = `/api/files/invoices/${xmlFilename}`;
+
+    let pdfUrl = '';
+    if (pdfBuffer) {
+        const pdfFilename = `${invoiceNumClean}_${timestamp}.pdf`;
+        const pdfPath = path.join(invoicesDir, pdfFilename);
+        fs.writeFileSync(pdfPath, pdfBuffer);
+        pdfUrl = `/api/files/invoices/${pdfFilename}`;
+    }
+
+    // 2. Parse XML
+    const { parseXmlInvoice } = await import('@/lib/invoice-parser');
+    const xmlString = xmlBuffer.toString('utf8');
+    const invoiceData = parseXmlInvoice(xmlString);
+
+    if (!invoiceData) {
+        throw new Error("Không thể trích xuất dữ liệu từ File XML này. Có thể XML không đúng chuẩn của Tổng cục Thuế.");
+    }
+
+    // 3. Xử lý lại Supplier (Map NCC theo MST thật từ file XML)
+    let finalSupplierId = invoice.supplierId;
+    if (invoiceData.supplierTaxCode) {
+         let existingSup = await prisma.supplier.findFirst({
+             where: { taxCode: { contains: invoiceData.supplierTaxCode } }
+         });
+         
+         if (existingSup) {
+             finalSupplierId = existingSup.id;
+         } else {
+             const count = await prisma.supplier.count();
+             const sCode = `NCC-${(count + 1).toString().padStart(6, '0')}`;
+             existingSup = await prisma.supplier.create({
+                 data: {
+                     code: sCode,
+                     name: invoiceData.supplierName || 'NCC Mới từ Hóa Đơn',
+                     taxCode: invoiceData.supplierTaxCode,
+                     totalDebt: 0
+                 }
+             });
+             finalSupplierId = existingSup.id;
+         }
+    }
+
+    // 4. Update Invoice
+    return prisma.$transaction(async (tx: any) => {
+         // Cập nhật thông tin invoice gốc
+         await tx.supplierInvoice.update({
+             where: { id: invoiceId },
+             data: {
+                 invoiceNumber: invoiceData.invoiceNumber,
+                 issueDate: invoiceData.issueDate || undefined,
+                 totalAmount: invoiceData.totalAmount || 0,
+                 taxAmount: invoiceData.taxAmount || 0,
+                 supplierName: invoiceData.supplierName,
+                 supplierTaxCode: invoiceData.supplierTaxCode,
+                 xmlUrl,
+                 pdfUrl: pdfUrl || invoice.pdfUrl,
+                 supplierId: finalSupplierId,
+                 // Đưa status về bình thường nếu đang bị treo (Wait File không phải 1 cột database logic riêng biệt, 
+                 // nó tự biến mất dựa trên việc xmlUrl != null theo thiết kế view).
+             }
+         });
+
+         // Clear old items if they existed (unlikely for wait file but safe to do)
+         await tx.supplierInvoiceItem.deleteMany({
+             where: { invoiceId: invoiceId }
+         });
+
+         // Insert new items
+         if (invoiceData.items && invoiceData.items.length > 0) {
+             await tx.supplierInvoiceItem.createMany({
+                 data: invoiceData.items.map((item: any) => ({
+                     invoiceId: invoiceId,
+                     productName: item.productName || 'Không có tên',
+                     quantity: item.quantity || 0,
+                     unitPrice: item.unitPrice || 0,
+                     totalPrice: item.totalPrice || 0,
+                     taxRate: item.taxRate || 0
+                 }))
+             });
+         }
+
+         revalidatePath('/accounting/invoices');
+         return { success: true };
+    });
+}
+
+export async function deleteInvoice(invoiceId: string) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    // Chỉ cho phép admin hoặc người có quyền kế toán xóa
+    const permissions = (session.user as any)?.permissions as string[] || [];
+    const canDelete = permissions.includes('ACCOUNTING_DELETE') || (session.user as any)?.role === 'ADMIN';
+
+    if (!canDelete) {
+        throw new Error("Bạn không có quyền xóa hóa đơn đầu vào!");
+    }
+
+    return prisma.$transaction(async (tx: any) => {
+        const inv = await tx.supplierInvoice.findUnique({ where: { id: invoiceId } });
+        if (!inv) throw new Error("Không tìm thấy hóa đơn");
+
+        if (inv.status === 'INVENTORY_IMPORTED' || inv.status === 'DEBT_RECORDED' || inv.status === 'COMPLETED') {
+            throw new Error("Không thể xóa hóa đơn đã được ghi nhận Công Nợ / Nhập Kho!");
+        }
+
+        // Delete items first (though onDelete: Cascade usually handles this, it's safer)
+        await tx.supplierInvoiceItem.deleteMany({
+            where: { invoiceId: invoiceId }
+        });
+
+        // Delete invoice
+        await tx.supplierInvoice.delete({
+            where: { id: invoiceId }
+        });
+
+        revalidatePath('/accounting/invoices');
+        return true;
+    });
 }

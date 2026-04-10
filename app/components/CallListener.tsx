@@ -8,6 +8,7 @@ import { getPusherClientConfig } from '@/app/notifications/actions';
 import { Phone, PhoneOff, User as UserIcon, PlusCircle, CheckCircle, X } from 'lucide-react';
 import Link from 'next/link';
 import { createLead } from '@/app/sales/leads/actions';
+import { getSoftphoneCredentials } from '@/app/components/Softphone/actions';
 
 interface CallEventData {
    callId: string;
@@ -23,6 +24,7 @@ export function CallListener() {
     const router = useRouter();
     const [config, setConfig] = useState<{ key: string, cluster: string } | null>(null);
     const [call, setCall] = useState<CallEventData | null>(null);
+    const [hasSoftphone, setHasSoftphone] = useState(false);
 
     // Quick Add Lead State
     const [quickName, setQuickName] = useState('');
@@ -35,6 +37,9 @@ export function CallListener() {
             getPusherClientConfig().then(res => {
                 if (res.key && res.cluster) setConfig(res);
             });
+            getSoftphoneCredentials().then(res => {
+                if (res.canUseSoftphone) setHasSoftphone(true);
+            }).catch(() => {});
         }
     }, [status]);
 
@@ -73,6 +78,9 @@ export function CallListener() {
         };
     }, [config, session?.user?.id, router]);
 
+    // Turn off legacy PBX listener popup entirely if user has WebRTC access
+    if (hasSoftphone) return null;
+
     if (!call) return null;
 
     const callerName = call.customer?.name || call.lead?.name || 'Khách hàng mới';
@@ -102,7 +110,7 @@ export function CallListener() {
     };
 
     return (
-        <div style={{
+        <div className="print:hidden no-print web-rtc-hide-print" style={{
             position: 'fixed',
             bottom: '100px', 
             right: '24px',
@@ -123,6 +131,9 @@ export function CallListener() {
                     0% { transform: scale(0.95); opacity: 0.5; }
                     50% { transform: scale(1.05); opacity: 1; }
                     100% { transform: scale(0.95); opacity: 0.5; }
+                }
+                @media print {
+                    .web-rtc-hide-print { display: none !important; visibility: hidden !important; opacity: 0 !important; z-index: -9999 !important; }
                 }
             `}</style>
             

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "cmmdibfp0000041p926ag2j47",
+    "name": "Sys Admin",
+    "email": "vutg@tsol.vn",
+    "extension": null
+  },
+  {
+    "id": "cmmdj4db6000bss5ttmyexton",
+    "name": "Ngụy Thị Thanh Mai",
+    "email": "nguydinhvu86@gmail.com",
+    "extension": "109"
+  },
+  {
+    "id": "cmmeqs3nh000b11o7ys9ro7c7",
+    "name": "Ngụy Đình Vũ",
+    "email": "vutg@trinhgiatelecom.vn",
+    "extension": "101"
+  },
+  {
+    "id": "cmmeznb1y000j13xsyb1gfust",
+    "name": "Phạm Thị Chuyên",
+    "email": "chuyen.pham@trinhgiatelecom.vn",
+    "extension": "107"
+  },
+  {
+    "id": "cmmhvndog0001dv8d743ch8lv",
+    "name": "Đặng Văn Phượng",
+    "email": "nguydinhvu88@gmail.com",
+    "extension": null
+  },
+  {
+    "id": "cmmhx7j6o0009z4v02xyh57gt",
+    "name": "Test User",
+    "email": "testown@example.com",
+    "extension": null
+  },
+  {
+    "id": "cmmlkr9mn0022wfxk17b4i231",
+    "name": "Nguyễn Phan Lâm Tuấn",
+    "email": "Tuannpl13@gmail.com",
+    "extension": null
+  },
+  {
+    "id": "cmmtvh53k0024v6gtzrr7nv3d",
+    "name": "Nguyễn Minh Huy",
+    "email": "Minhhuy.d2t@gmail.com",
+    "extension": null
+  },
+  {
+    "id": "cmmwq0jwr000524eftc4ls891",
+    "name": "Lê Thị Ngọc Hiền",
+    "email": "hannah.nh243@gmail.com",
+    "extension": null
+  },
+  {
+    "id": "cmn88q0wp0001pn91icqvcslx",
+    "name": "Trương Thế Học",
+    "email": "truongthehoc@gmail.com",
+    "extension": null
+  }
+]

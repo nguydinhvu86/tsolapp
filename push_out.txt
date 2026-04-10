@@ -1,0 +1,7 @@
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+Datasource "db": MySQL database "tsol_erp_dev" at "192.168.10.40:3306"
+
+Error: P1001: Can't reach database server at `192.168.10.40:3306`
+
+Please make sure your database server is running at `192.168.10.40:3306`.

@@ -31,7 +31,7 @@ export default async function PublicDocumentPage({ params }: { params: { id: str
     const isImage = document.fileUrl?.match(/\.(jpeg|jpg|gif|png)$/) != null;
 
     return (
-        <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#0f172a' }}>
+        <div style={{ width: '100%', flex: 1, height: '100vh', display: 'flex', flexDirection: 'column', background: '#0f172a' }}>
             {/* Header */}
             <div style={{ height: '64px', background: '#0f172a', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.5rem', flexShrink: 0, zIndex: 10 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>

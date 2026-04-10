@@ -29,6 +29,7 @@ model User {
   name                  String?
   avatar                String? // Đường dẫn ảnh đại diện
   extension             String?                @unique // Số nội bộ (PBX Extension)
+  sipPassword           String? // Mật khẩu SIP để softphone đăng nhập WebRTC
   role                  String                 @default("USER") // ADMIN or USER
   permissions           String                 @db.Text // JSON string of granted permissions (legacy, to be deprecated or kept as overrides)
   dashboardConfig       String                 @db.Text // JSON string for Dashboard customized layout
@@ -1911,6 +1912,9 @@ model SupplierInvoice {
   pdfUrl          String?  @db.LongText
   xmlUrl          String?  @db.LongText
   status          String   @default("NEW") // NEW, VERIFIED, REJECTED, INVENTORY_IMPORTED
+
+  lookupLink      String?  @db.LongText
+  lookupCode      String?
 
   supplierId      String?
   supplier        Supplier? @relation(fields: [supplierId], references: [id])

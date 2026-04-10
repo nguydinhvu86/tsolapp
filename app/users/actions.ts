@@ -48,6 +48,8 @@ export async function getUsers() {
                     permissions: true
                 }
             },
+            extension: true,
+            sipPassword: true,
             createdAt: true
         } // Không trả về password hash cho client
     });
@@ -74,6 +76,7 @@ export type CreateUserData = {
     permissionGroupId?: string;
     permissions?: string[]; // Legacy/override
     extension?: string;
+    sipPassword?: string;
 };
 
 export async function createUser(data: CreateUserData) {
@@ -101,7 +104,8 @@ export async function createUser(data: CreateUserData) {
         dashboardConfig: "{}",
         sidebarOrder: "[]",
         customerMenuOrder: "[]",
-        extension: data.extension || null
+        extension: data.extension || null,
+        sipPassword: data.sipPassword || null
     };
 
     if (data.permissionGroupId) {
@@ -125,6 +129,7 @@ export type UpdateUserData = {
     permissionGroupId?: string;
     permissions?: string[];
     extension?: string;
+    sipPassword?: string;
 };
 
 export async function updateUser(id: string, data: UpdateUserData) {
@@ -165,6 +170,10 @@ export async function updateUser(id: string, data: UpdateUserData) {
 
     if (data.extension !== undefined) {
         updateData.extension = data.extension || null;
+    }
+
+    if (data.sipPassword !== undefined) {
+        updateData.sipPassword = data.sipPassword || null;
     }
 
     const updatedUser = await prisma.user.update({

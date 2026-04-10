@@ -80,12 +80,18 @@ export function parseXmlInvoice(xmlString: string): InvoiceExtractedData | null 
 
         for (const prod of productList) {
             if (!prod) continue;
+            
+            const rawQty = parseFloat(prod.SLuong || prod['SLUONG']);
+            const rawPrice = parseFloat(prod.DGia || prod['DGIA']);
+            const rawTotal = parseFloat(prod.ThTien || prod['THTIEN']);
+            let rawTaxRate = parseFloat(prod.TSuat || prod['TSUAT']?.toString()?.replace('%', ''));
+
             items.push({
                 productName: prod.THHDVu || prod['THHDVU'] || prod.Ten || '',
-                quantity: parseFloat(prod.SLuong || prod['SLUONG'] || 0),
-                unitPrice: parseFloat(prod.DGia || prod['DGIA'] || 0),
-                totalPrice: parseFloat(prod.ThTien || prod['THTIEN'] || 0),
-                taxRate: parseFloat(prod.TSuat || prod['TSUAT'] || 0),
+                quantity: isNaN(rawQty) ? 0 : rawQty,
+                unitPrice: isNaN(rawPrice) ? 0 : rawPrice,
+                totalPrice: isNaN(rawTotal) ? 0 : rawTotal,
+                taxRate: isNaN(rawTaxRate) ? 0 : rawTaxRate,
             });
         }
 

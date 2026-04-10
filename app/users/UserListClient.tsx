@@ -17,19 +17,19 @@ export function UserListClient({ initialUsers, permissionGroups = [] }: { initia
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     const [editingUser, setEditingUser] = useState<any>(null);
-    const [formData, setFormData] = useState({ name: '', email: '', role: 'USER', password: '', permissionGroupId: '', permissions: [] as string[], extension: '' });
+    const [formData, setFormData] = useState({ name: '', email: '', role: 'USER', password: '', permissionGroupId: '', permissions: [] as string[], extension: '', sipPassword: '' });
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
     const openAddModal = () => {
-        setFormData({ name: '', email: '', role: 'USER', password: '', permissionGroupId: permissionGroups.find(g => g.name === 'Người dùng')?.id || '', permissions: [], extension: '' });
+        setFormData({ name: '', email: '', role: 'USER', password: '', permissionGroupId: permissionGroups.find(g => g.name === 'Người dùng')?.id || '', permissions: [], extension: '', sipPassword: '' });
         setError('');
         setIsAddModalOpen(true);
     };
 
     const openEditModal = (user: any) => {
         setEditingUser(user);
-        setFormData({ name: user.name || '', email: user.email, role: user.role, password: '', permissionGroupId: user.permissionGroupId || '', permissions: user.permissions || [], extension: user.extension || '' });
+        setFormData({ name: user.name || '', email: user.email, role: user.role, password: '', permissionGroupId: user.permissionGroupId || '', permissions: user.permissions || [], extension: user.extension || '', sipPassword: user.sipPassword || '' });
         setError('');
         setIsEditModalOpen(true);
     };
@@ -218,7 +218,11 @@ function UserModal({ title, isEdit, error, formData, setFormData, isLoading, onS
                     <form id="user-form" onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         <Input label="Họ và tên" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required />
                         <Input label="Email đăng nhập" type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} required />
-                        <Input label="Số máy PBX nội bộ (Extension)" placeholder="Vd: 101" value={formData.extension || ''} onChange={e => setFormData({ ...formData, extension: e.target.value })} />
+                        
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            <Input label="Số nội bộ PBX (Ext)" placeholder="Vd: 101" value={formData.extension || ''} onChange={e => setFormData({ ...formData, extension: e.target.value })} />
+                            <Input label="Mật khẩu WebRTC/SIP" placeholder="Vd: 123456" value={formData.sipPassword || ''} onChange={e => setFormData({ ...formData, sipPassword: e.target.value })} />
+                        </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
                             <label style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-main)' }}>Quyền truy cập</label>

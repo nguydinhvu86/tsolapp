@@ -6,6 +6,7 @@ import { MainLayout } from './components/layout/MainLayout'
 import { getLayoutSettings, getSidebarOrder } from './components/layout/actions'
 import { PushNotificationListener } from './components/PushNotificationListener'
 import { CallListener } from './components/CallListener'
+import { WebRTCDialer } from './components/Softphone/WebRTCDialer'
 import { LanguageProvider } from './i18n/LanguageContext'
 import { getDictionary, getCurrentLocale } from './i18n/getDictionary'
 
@@ -79,6 +80,7 @@ export default async function RootLayout({
                     <LanguageProvider dictionary={dictionary} locale={locale}>
                         <PushNotificationListener />
                         <CallListener />
+                        <WebRTCDialer />
                         <MainLayout brandName={brandName} logoUrl={logoUrl} initialSidebarOrder={initialSidebarOrder}>
                             {children}
                         </MainLayout>

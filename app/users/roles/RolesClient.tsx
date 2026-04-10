@@ -164,7 +164,7 @@ function RoleModal({ title, isSystem, error, formData, setFormData, isLoading, o
                             <div style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem', color: 'var(--text-main)' }}>Thiết lập phân quyền (Ma trận)</div>
 
                             <div style={{ marginBottom: '1rem' }}>
-                                <label className="flex items-center gap-2 cursor-pointer" style={{ fontSize: '0.875rem', color: 'var(--text-main)' }}>
+                                <label className="flex items-center gap-2 cursor-pointer" style={{ fontSize: '0.875rem', color: 'var(--text-main)', marginBottom: '0.5rem' }}>
                                     <input
                                         type="checkbox"
                                         checked={formData.permissions.includes(PermissionHelper.VIEW_DASHBOARD)}
@@ -175,6 +175,18 @@ function RoleModal({ title, isSystem, error, formData, setFormData, isLoading, o
                                         style={{ cursor: 'pointer' }}
                                     />
                                     <strong>Truy cập Bảng điều khiển (Dashboard)</strong>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer" style={{ fontSize: '0.875rem', color: 'var(--text-main)' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={formData.permissions.includes(PermissionHelper.USE_SOFTPHONE)}
+                                        onChange={(e) => {
+                                            if (e.target.checked) setFormData({ ...formData, permissions: [...formData.permissions, PermissionHelper.USE_SOFTPHONE] });
+                                            else setFormData({ ...formData, permissions: formData.permissions.filter((p: string) => p !== PermissionHelper.USE_SOFTPHONE) });
+                                        }}
+                                        style={{ cursor: 'pointer' }}
+                                    />
+                                    <strong>Sử dụng Tổng Đài WebRTC (Softphone)</strong>
                                 </label>
                             </div>
 

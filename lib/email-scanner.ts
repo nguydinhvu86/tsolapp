@@ -3,6 +3,8 @@ import { simpleParser, Attachment } from 'mailparser';
 import { parseXmlInvoice } from './invoice-parser';
 import { PrismaClient } from '@prisma/client';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 
 const prisma = new PrismaClient();
 
@@ -68,21 +70,62 @@ export async function fetchUnreadInvoices() {
             const xmlAttachment = parsedMail.attachments.find(a => a.contentType === 'text/xml' || a.filename?.toLowerCase().endsWith('.xml'));
             const pdfAttachment = parsedMail.attachments.find(a => a.contentType === 'application/pdf' || a.filename?.toLowerCase().endsWith('.pdf'));
 
-            if (!xmlAttachment) continue;
+            let invoiceData: any = null;
+            let lookupLink = '';
+            let lookupCode = '';
 
-            const xmlString = xmlAttachment.content.toString('utf8');
-            const invoiceData = parseXmlInvoice(xmlString);
+            if (xmlAttachment) {
+                const xmlString = xmlAttachment.content.toString('utf8');
+                invoiceData = parseXmlInvoice(xmlString);
+            } else {
+                // Thử bóc tách thông tin Link và Mã tra cứu từ email body nếu không có file XML
+                const textContent = parsedMail.text || parsedMail.html || '';
+                const plainText = textContent.replace(/<[^>]+>/g, ' ').replace(/\&nbsp;/g, ' ').replace(/\s+/g, ' ');
+                
+                // For links, it's safer to grab right from raw text because of href="..."
+                // Find all URLs in the email, filter for those containing common invoice domain words or near "tra cứu"
+                let linkMatch = textContent.match(/href=["'](https?:\/\/[^"']+)["'][^>]*>[\s\S]*?(?:Tra cứu|Xem|Tại đây)/i);
+                if (!linkMatch) linkMatch = plainText.match(/(?:Link tra cứu|Trang tra cứu|địa chỉ tra cứu|URL|Tra cứu hóa đơn tại|Link tải hóa đơn|Tra cứu tại|đường dẫn|truy cập)[\s:;]*(https?:\/\/[^\s]+)/i);
+                
+                // For codes and symbols, strip HTML tags which normally break regexes like <b>ABC</b>
+                const codeMatch = plainText.match(/(?:Mã tra cứu|Mã bảo mật|Mã nhận hóa đơn|Mã kiểm tra|Mã tra cứu hóa đơn|Mã số bí mật|mã số)[\s:;]*([^\s<>]+)/i);
+                
+                console.log(`[InvoiceScan] Trying fallback extraction - Subject: ${parsedMail.subject}`);
+                console.log(`[InvoiceScan] Link found: ${linkMatch ? linkMatch[1] : 'NONE'}, Code found: ${codeMatch ? codeMatch[1] : 'NONE'}`);
+
+                if (linkMatch || codeMatch) {
+                    if (linkMatch) lookupLink = linkMatch[1].trim().replace(/và.*/i, '').replace(/Quý.*/i, '').replace(/[.,:;]+$/, '');
+                    if (codeMatch) lookupCode = codeMatch[1].trim().replace(/Quý.*/i, '').replace(/Quy.*/i, '').replace(/Q$/, '').replace(/[.,:;]+$/, '');
+                    
+                    const taxCodeMatch = plainText.match(/(?:Mã số thuế|MST)[^\d]*([\d\-]+)/i);
+                    const sysTaxCode = taxCodeMatch ? taxCodeMatch[1].replace(/-/g, '') : 'KhongTheTrichXuatMST';
+                    
+                    const invNumberMatch = plainText.match(/(?:Số hóa đơn|Số HĐ|Ký hiệu|Số)[\s:;]*([A-Za-z0-9\-\/]+)/i);
+                    const sysInvNumberRaw = invNumberMatch ? invNumberMatch[1] : `PENDING-${Date.now()}`;
+                    const sysInvNumber = sysInvNumberRaw.replace(/Ngày.*/i, '').replace(/Nga.*/i, '');
+
+                    console.log(`[InvoiceScan] Extracted MST: ${sysTaxCode}, Invoice: ${sysInvNumber}`);
+                    
+                    invoiceData = {
+                        invoiceNumber: sysInvNumber,
+                        supplierTaxCode: sysTaxCode,
+                        supplierName: 'Nhà cung cấp (Bản Nháp Nhận Diện Từ Email)',
+                        issueDate: new Date(),
+                        totalAmount: 0,
+                        taxAmount: 0,
+                        items: []
+                    };
+                } else {
+                     console.log(`[InvoiceScan] Fallback failed. Could not find any link or code pattern in text.`);
+                }
+            }
 
             if (!invoiceData) {
-                console.warn("Could not parse XML from email:", parsedMail.subject);
+                console.warn("Could not parse XML or find sufficient lookup information from email:", parsedMail.subject);
                 continue;
             }
 
-            // Optional: Backup file to disk/S3 returning a URL.
-            // For now, we store them temporarily or leave them blank/base64 (not recommended for DB).
-            // Example:
-            const xmlUrl = '/uploads/invoices/' + invoiceData.invoiceNumber + '.xml';
-            const pdfUrl = pdfAttachment ? '/uploads/invoices/' + invoiceData.invoiceNumber + '.pdf' : '';
+
 
             // Map Supplier by TaxCode
             let supplierId = null;
@@ -112,6 +155,27 @@ export async function fetchUnreadInvoices() {
             });
 
             if (!existing) {
+                // Save XML and PDF to persistent storage
+                const invoicesDir = path.join(process.cwd(), 'uploads_data', 'invoices');
+                if (!fs.existsSync(invoicesDir)) {
+                    fs.mkdirSync(invoicesDir, { recursive: true });
+                }
+
+                const timestamp = Date.now();
+                let xmlUrl = '';
+                if (xmlAttachment) {
+                    const xmlFilename = invoiceData.invoiceNumber + '_' + timestamp + '.xml';
+                    fs.writeFileSync(path.join(invoicesDir, xmlFilename), xmlAttachment.content);
+                    xmlUrl = '/api/files/invoices/' + xmlFilename;
+                }
+
+                let pdfUrl = '';
+                if (pdfAttachment) {
+                    const pdfFilename = invoiceData.invoiceNumber + '_' + timestamp + '.pdf';
+                    fs.writeFileSync(path.join(invoicesDir, pdfFilename), pdfAttachment.content);
+                    pdfUrl = '/api/files/invoices/' + pdfFilename;
+                }
+
                 // Fetch the active PO for price checking
                 let activePoItems: any[] = [];
                 if (supplierId) {
@@ -135,10 +199,12 @@ export async function fetchUnreadInvoices() {
                         supplierTaxCode: invoiceData.supplierTaxCode,
                         xmlUrl: xmlUrl,
                         pdfUrl: pdfUrl,
+                        lookupLink: lookupLink,
+                        lookupCode: lookupCode,
                         status: 'NEW',
                         supplierId: supplierId,
                         items: {
-                            create: invoiceData.items.map(i => {
+                            create: invoiceData.items.map((i: any) => {
                                 let unitPriceDiscrepancy = 0;
                                 let matchedPoItemId = null;
 

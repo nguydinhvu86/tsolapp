@@ -2,15 +2,11 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function main() {
-    try {
-        const customer = await prisma.customer.findFirst({
-            include: { managers: true, activityLogs: true }
-        });
-        console.log("SUCCESS:", !!customer);
-    } catch (e) {
-        console.error("PRISMA ERROR:", e.message);
-    } finally {
-        await prisma.$disconnect();
-    }
+    const logs = await prisma.callLog.findMany({
+        where: { phone: { contains: '0989646861' } },
+        orderBy: { startedAt: 'desc' },
+        take: 10
+    });
+    console.log(JSON.stringify(logs, null, 2));
 }
-main();
+main().catch(console.error).finally(() => prisma.$disconnect());

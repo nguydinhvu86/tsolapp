@@ -45,10 +45,11 @@ export class PermissionHelper {
 
     // Special standalone permissions that don't fit the CRUD matrix
     static readonly VIEW_DASHBOARD = 'VIEW_DASHBOARD';
+    static readonly USE_SOFTPHONE = 'USE_SOFTPHONE';
 
     // Generates a flat list of all possible permission strings
     static getAllPermissions(): string[] {
-        const perms: string[] = [this.VIEW_DASHBOARD];
+        const perms: string[] = [this.VIEW_DASHBOARD, this.USE_SOFTPHONE];
         for (const r of RESOURCES) {
             for (const a of ACTIONS) {
                 perms.push(this.generateCode(r.id, a.id));

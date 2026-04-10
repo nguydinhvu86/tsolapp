@@ -6,7 +6,7 @@ import Link from 'next/link';
 import {
     ArrowLeft, Building, Phone, Mail, FileText,
     ShoppingCart, FileDown, Wallet, DollarSign,
-    CheckSquare, MapPin, Search, Edit2, FileSpreadsheet, Users, AlertCircle
+    CheckSquare, MapPin, Search, Edit2, FileSpreadsheet, Users, AlertCircle, ArrowUpDown, ArrowUp, ArrowDown
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
@@ -20,8 +20,40 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks }
     const router = useRouter();
     const [supplier, setSupplier] = useState(initialSupplier);
     const [activeTab, setActiveTab] = useState('orders');
+    const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>({ key: 'date', direction: 'desc' });
+
+    const handleSort = (key: string) => {
+        let direction: 'asc' | 'desc' = 'desc';
+        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'desc') {
+            direction = 'asc';
+        }
+        setSortConfig({ key, direction });
+    };
 
     const validBills = React.useMemo(() => supplier.bills ? supplier.bills.filter((b: any) => !['DRAFT', 'CANCELLED'].includes(b.status)) : [], [supplier.bills]);
+    
+    const sortedBills = React.useMemo(() => {
+        let sortableBills = [...(supplier.bills || [])];
+        if (sortConfig !== null) {
+            sortableBills.sort((a: any, b: any) => {
+                if (sortConfig.key === 'status') {
+                    const valA = a.status || '';
+                    const valB = b.status || '';
+                    if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+                    if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+                    return 0;
+                } else if (sortConfig.key === 'date') {
+                    const dateA = new Date(a.date || a.createdAt).getTime();
+                    const dateB = new Date(b.date || b.createdAt).getTime();
+                    if (dateA < dateB) return sortConfig.direction === 'asc' ? -1 : 1;
+                    if (dateA > dateB) return sortConfig.direction === 'asc' ? 1 : -1;
+                    return 0;
+                }
+                return 0;
+            });
+        }
+        return sortableBills;
+    }, [supplier.bills, sortConfig]);
     const computedDebt = React.useMemo(() => {
         const exactPurchases = validBills.reduce((acc: number, bill: any) => acc + (bill.totalAmount || 0), 0);
         const exactPayments = (supplier.payments || []).reduce((acc: number, pay: any) => acc + (pay.amount || 0), 0);
@@ -85,7 +117,7 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks }
 
     const tabs = [
         { id: 'orders', label: 'Đơn Đặt Hàng', count: supplier.orders?.length || 0, icon: <ShoppingCart size={16} /> },
-        { id: 'bills', label: 'Hóa Đơn Cũ', count: supplier.bills?.length || 0, icon: <FileDown size={16} /> },
+        { id: 'bills', label: 'Hóa Đơn Mua', count: supplier.bills?.filter((b: any) => ['DRAFT', 'APPROVED', 'PARTIAL_PAID'].includes(b.status)).length || 0, icon: <FileDown size={16} /> },
         { id: 'invoices', label: 'Hóa Đơn VAT', count: supplier.invoices?.length || 0, icon: <FileText size={16} /> },
         { id: 'payments', label: 'Thanh Toán', count: supplier.payments?.length || 0, icon: <Wallet size={16} /> },
         { id: 'contacts', label: 'Người Liên Hệ', count: supplier.contacts?.length || 0, icon: <Users size={16} /> },
@@ -272,15 +304,25 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks }
                                         <tr>
                                             <th style={{ padding: '1rem 0', fontWeight: 600 }}>Mã HS</th>
                                             <th style={{ padding: '1rem 0', fontWeight: 600 }}>Tiêu đề</th>
-                                            <th style={{ padding: '1rem 0', fontWeight: 600 }}>Trạng thái</th>
+                                            <th style={{ padding: '1rem 0', fontWeight: 600, cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('status')}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                                    Trạng thái
+                                                    {sortConfig?.key === 'status' ? (sortConfig.direction === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />) : <ArrowUpDown size={14} className="text-gray-300" />}
+                                                </div>
+                                            </th>
                                             <th style={{ padding: '1rem 0', fontWeight: 600 }}>Thẻ Quản Lý</th>
-                                            <th style={{ padding: '1rem 0', fontWeight: 600 }}>Ngày tạo</th>
+                                            <th style={{ padding: '1rem 0', fontWeight: 600, cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('date')}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                                    Ngày tạo
+                                                    {sortConfig?.key === 'date' ? (sortConfig.direction === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />) : <ArrowUpDown size={14} className="text-gray-300" />}
+                                                </div>
+                                            </th>
                                             <th style={{ padding: '1rem 0', fontWeight: 600, textAlign: 'right' }}>Thao tác</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {supplier.bills?.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>Không có dữ liệu.</td></tr>}
-                                        {supplier.bills?.map((bill: any) => (
+                                        {sortedBills?.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>Không có dữ liệu.</td></tr>}
+                                        {sortedBills?.map((bill: any) => (
                                             <tr key={bill.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
                                                 <td style={{ padding: '1rem 0', fontWeight: 500 }}>
                                                     <Link href={`/purchasing/bills/${bill.id}`} className="hover:text-primary transition-colors text-gray-500">{bill.code}</Link>

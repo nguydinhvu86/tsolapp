@@ -1,0 +1,302 @@
+=== ERR ===
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async a (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:191:9642)
+    at async u (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/api/callcenter/route/route.js:1:1347)
+    at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
+    at async e_.execute (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
+    at async e_.handle (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943) {
+  clientVersion: '5.22.0'
+}
+Call IN error: PrismaClientKnownRequestError: 
+Invalid `prisma.callLog.upsert()` invocation:
+
+
+Unique constraint failed on the constraint: `CallLog_callId_key`
+    at Vg.handleRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:7317)
+    at Vg.handleAndLogRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6624)
+    at Vg.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6308)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async a (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:191:9642)
+    at async c (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/api/callcenter/call_in/route.js:1:2603)
+    at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
+    at async e_.execute (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
+    at async e_.handle (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943)
+    at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1588:28)
+    at async NextNodeServer.renderToResponseWithComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1496:28)
+    at async NextNodeServer.renderPageComponent (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1924:24)
+    at async NextNodeServer.renderToResponseImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1962:32)
+    at async NextNodeServer.pipeImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/next-server.js:272:17) {
+  code: 'P2002',
+  clientVersion: '5.22.0',
+  meta: { modelName: 'CallLog', target: 'CallLog_callId_key' }
+}
+Call IN error: PrismaClientKnownRequestError: 
+Invalid `prisma.callLog.upsert()` invocation:
+
+
+Unique constraint failed on the constraint: `CallLog_callId_key`
+    at Vg.handleRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:7317)
+    at Vg.handleAndLogRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6624)
+    at Vg.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6308)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async a (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:191:9642)
+    at async c (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/api/callcenter/call_in/route.js:1:2603)
+    at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
+    at async e_.execute (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
+    at async e_.handle (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943)
+    at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1366:42) {
+  code: 'P2002',
+  clientVersion: '5.22.0',
+  meta: { modelName: 'CallLog', target: 'CallLog_callId_key' }
+}
+Error: Chỉ có thể sửa hóa đơn Nháp
+    at T (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/chunks/3185.js:1:32435)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:286
+    at async rE (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:15:8297)
+    at async no (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:19:1144)
+    at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1427:30)
+    at async cacheEntry.responseCache.get.routeKind (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1588:28)
+    at async NextNodeServer.renderToResponseWithComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1496:28)
+    at async NextNodeServer.renderPageComponent (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1924:24)
+    at async NextNodeServer.renderToResponseImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1962:32) {
+  digest: '1390666455'
+}
+Error: Hóa đơn đã được duyệt hoặc đang ở trạng thái khác DRAFT
+    at /www/wwwroot/inside.tsol.vn/tsolapp/.next/server/chunks/3185.js:1:31320
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Proxy._transactionWithCallback (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:191:8009)
+    at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:286
+    at async rE (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:15:8297)
+    at async no (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:19:1144)
+    at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1427:30)
+    at async cacheEntry.responseCache.get.routeKind (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1588:28)
+    at async NextNodeServer.renderToResponseWithComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1496:28)
+    at async NextNodeServer.renderPageComponent (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1924:24) {
+  digest: '2277810728'
+}
+Call IN error: PrismaClientKnownRequestError: 
+Invalid `prisma.callLog.upsert()` invocation:
+
+
+Unique constraint failed on the constraint: `CallLog_callId_key`
+    at Vg.handleRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:7317)
+    at Vg.handleAndLogRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6624)
+    at Vg.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6308)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async a (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:191:9642)
+    at async p (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/api/callcenter/call_in/route.js:1:2603)
+    at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
+    at async e_.execute (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
+    at async e_.handle (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943)
+    at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1366:42) {
+  code: 'P2002',
+  clientVersion: '5.22.0',
+  meta: { modelName: 'CallLog', target: 'CallLog_callId_key' }
+}
+JWT live DB sync failed Error: Connection has not been opened
+    at DY (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:162:65)
+    at rr.raw (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:162:368)
+    at rr.post (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:162:618)
+    at Bo.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:173:2459)
+    at async Object.singleLoader (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:5703) {
+  clientVersion: '5.22.0'
+}
+Call IN error: PrismaClientKnownRequestError: 
+Invalid `prisma.callLog.upsert()` invocation:
+
+
+Unique constraint failed on the constraint: `CallLog_callId_key`
+    at Vg.handleRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:7317)
+    at Vg.handleAndLogRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6624)
+    at Vg.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6308)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async a (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:191:9642)
+    at async p (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/api/callcenter/call_in/route.js:1:2603)
+    at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
+    at async e_.execute (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
+    at async e_.handle (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943)
+    at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1366:42) {
+  code: 'P2002',
+  clientVersion: '5.22.0',
+  meta: { modelName: 'CallLog', target: 'CallLog_callId_key' }
+}
+Lỗi khi ghi Lịch sử khách hàng: PrismaClientKnownRequestError: 
+Invalid `prisma.customerActivityLog.create()` invocation:
+
+
+Foreign key constraint violated: `userId`
+    at Vg.handleRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:7317)
+    at Vg.handleAndLogRequestError (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6624)
+    at Vg.request (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:182:6308)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async a (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/@prisma/client/runtime/binary.js:191:9642)
+    at async n (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/app/customers/[id]/page.js:103:69405)
+    at async m (/www/wwwroot/inside.tsol.vn/tsolapp/.next/server/chunks/1655.js:1:15142)
+    at async /www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:286
+    at async rE (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:15:8297)
+    at async no (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:19:1144)
+    at async doRender (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1427:30)
+    at async cacheEntry.responseCache.get.routeKind (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1588:28)
+    at async NextNodeServer.renderToResponseWithComponentsImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1496:28)
+    at async NextNodeServer.renderPageComponent (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1924:24)
+    at async NextNodeServer.renderToResponseImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:1962:32)
+    at async NextNodeServer.pipeImpl (/www/wwwroot/inside.tsol.vn/tsolapp/node_modules/next/dist/server/base-server.js:922:25) {
+  code: 'P2003',
+  clientVersion: '5.22.0',
+  meta: { modelName: 'CustomerActivityLog', field_name: 'userId' }
+}
+
+=== OUT ===
+    'x-forwarded-host': 'inside.tsol.vn',
+    'x-forwarded-port': '6688',
+    'x-forwarded-proto': 'http',
+    'x-real-ip': '103.245.251.97'
+  },
+  parsedBody: {},
+  rawText: ''
+}
+[CALLDATA] Incoming PBX Webhook: {
+  url: 'http://localhost:6688/api/callcenter/calldata?callid=49fe5b14-e11b-4bf7-8f27-6532121f2037&status=',
+  method: 'GET',
+  headers: {
+    accept: '*/*',
+    connection: 'upgrade',
+    'content-type': 'application/x-www-form-urlencoded',
+    host: 'inside.tsol.vn',
+    'user-agent': 'curl/7.64.0',
+    'x-forwarded-for': '103.245.251.97',
+    'x-forwarded-host': 'inside.tsol.vn',
+    'x-forwarded-port': '6688',
+    'x-forwarded-proto': 'http',
+    'x-real-ip': '103.245.251.97'
+  },
+  parsedBody: {},
+  rawText: ''
+}
+[CALLDATA] Incoming PBX Webhook: {
+  url: 'http://localhost:6688/api/callcenter/calldata?callid=49fe5b14-e11b-4bf7-8f27-6532121f2037&calldate=',
+  method: 'GET',
+  headers: {
+    accept: '*/*',
+    connection: 'upgrade',
+    'content-type': 'application/x-www-form-urlencoded',
+    host: 'inside.tsol.vn',
+    'user-agent': 'curl/7.64.0',
+    'x-forwarded-for': '103.245.251.97',
+    'x-forwarded-host': 'inside.tsol.vn',
+    'x-forwarded-port': '6688',
+    'x-forwarded-proto': 'http',
+    'x-real-ip': '103.245.251.97'
+  },
+  parsedBody: {},
+  rawText: ''
+}
+[CALLDATA] Incoming PBX Webhook: {
+  url: 'http://localhost:6688/api/callcenter/calldata?callid=49fe5b14-e11b-4bf7-8f27-6532121f2037&calldate=',
+  method: 'GET',
+  headers: {
+    accept: '*/*',
+    connection: 'upgrade',
+    'content-type': 'application/x-www-form-urlencoded',
+    host: 'inside.tsol.vn',
+    'user-agent': 'curl/7.64.0',
+    'x-forwarded-for': '103.245.251.97',
+    'x-forwarded-host': 'inside.tsol.vn',
+    'x-forwarded-port': '6688',
+    'x-forwarded-proto': 'http',
+    'x-real-ip': '103.245.251.97'
+  },
+  parsedBody: {},
+  rawText: ''
+}
+[HANGUP] Incoming PBX Webhook: {
+  url: 'http://localhost:6688/api/callcenter/hangup?callid=49fe5b14-e11b-4bf7-8f27-6532121f2037',
+  method: 'GET',
+  headers: {
+    accept: '*/*',
+    connection: 'upgrade',
+    'content-type': 'application/x-www-form-urlencoded',
+    host: 'inside.tsol.vn',
+    'user-agent': 'curl/7.64.0',
+    'x-forwarded-for': '103.245.251.97',
+    'x-forwarded-host': 'inside.tsol.vn',
+    'x-forwarded-port': '6688',
+    'x-forwarded-proto': 'http',
+    'x-real-ip': '103.245.251.97'
+  },
+  parsedBody: {}
+}
+[HANGUP] Incoming PBX Webhook: {
+  url: 'http://localhost:6688/api/callcenter/hangup?callid=49fe5b14-e11b-4bf7-8f27-6532121f2037',
+  method: 'GET',
+  headers: {
+    accept: '*/*',
+    connection: 'upgrade',
+    'content-type': 'application/x-www-form-urlencoded',
+    host: 'inside.tsol.vn',
+    'user-agent': 'curl/7.64.0',
+    'x-forwarded-for': '103.245.251.97',
+    'x-forwarded-host': 'inside.tsol.vn',
+    'x-forwarded-port': '6688',
+    'x-forwarded-proto': 'http',
+    'x-real-ip': '103.245.251.97'
+  },
+  parsedBody: {}
+}
+[CALLDATA] Incoming PBX Webhook: {
+  url: 'http://localhost:6688/api/callcenter/calldata?callid=49fe5b14-e11b-4bf7-8f27-6532121f2037&holdtime=',
+  method: 'GET',
+  headers: {
+    accept: '*/*',
+    connection: 'upgrade',
+    'content-type': 'application/x-www-form-urlencoded',
+    host: 'inside.tsol.vn',
+    'user-agent': 'curl/7.64.0',
+    'x-forwarded-for': '103.245.251.97',
+    'x-forwarded-host': 'inside.tsol.vn',
+    'x-forwarded-port': '6688',
+    'x-forwarded-proto': 'http',
+    'x-real-ip': '103.245.251.97'
+  },
+  parsedBody: {},
+  rawText: ''
+}
+[HANGUP] Incoming PBX Webhook: {
+  url: 'http://localhost:6688/api/callcenter/hangup?callid=fbc26de9-36eb-47cf-8abb-56720f5087e6',
+  method: 'GET',
+  headers: {
+    accept: '*/*',
+    connection: 'upgrade',
+    'content-type': 'application/x-www-form-urlencoded',
+    host: 'inside.tsol.vn',
+    'user-agent': 'curl/7.64.0',
+    'x-forwarded-for': '103.245.251.97',
+    'x-forwarded-host': 'inside.tsol.vn',
+    'x-forwarded-port': '6688',
+    'x-forwarded-proto': 'http',
+    'x-real-ip': '103.245.251.97'
+  },
+  parsedBody: {}
+}
+[CALLDATA] Incoming PBX Webhook: {
+  url: 'http://localhost:6688/api/callcenter/calldata?callid=fbc26de9-36eb-47cf-8abb-56720f5087e6&calldate=',
+  method: 'GET',
+  headers: {
+    accept: '*/*',
+    connection: 'upgrade',
+    'content-type': 'application/x-www-form-urlencoded',
+    host: 'inside.tsol.vn',
+    'user-agent': 'curl/7.64.0',
+    'x-forwarded-for': '103.245.251.97',
+    'x-forwarded-host': 'inside.tsol.vn',
+    'x-forwarded-port': '6688',
+    'x-forwarded-proto': 'http',
+    'x-real-ip': '103.245.251.97'
+  },
+  parsedBody: {},
+  rawText: ''
+}
+

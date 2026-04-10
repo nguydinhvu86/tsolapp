@@ -111,7 +111,7 @@ export default function PbxConfigPage() {
                         
                         <div>
                             <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#64748b', marginBottom: '8px' }}>
-                                Cache days
+                                Số ngày ghi nhớ định tuyến (Cache days)
                             </label>
                             <input 
                                 type="number"

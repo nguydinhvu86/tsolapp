@@ -34,6 +34,10 @@ async function handler(request: Request) {
         parsedBody: body
     });
 
+    try {
+        require('fs').appendFileSync('./public/test-webhook.txt', new Date().toISOString() + ' | CALL_IN | ' + request.url + ' | B: ' + JSON.stringify(body) + '\\n');
+    } catch(e) {}
+
     let phone = searchParams.get('phone') || body.phone || searchParams.get('callerid') || body.callerid || searchParams.get('caller') || body.caller;
     let extension = searchParams.get('extension') || body.extension || searchParams.get('destination') || body.destination || searchParams.get('callee') || body.callee || searchParams.get('agent') || body.agent;
     let callId = searchParams.get('callid') || body.callid || searchParams.get('call_id') || body.call_id || searchParams.get('uuid') || body.uuid;
@@ -50,8 +54,15 @@ async function handler(request: Request) {
     }
 
     try {
-        const customer = await prisma.customer.findFirst({ where: { phone } });
-        const lead = !customer ? await prisma.lead.findFirst({ where: { phone } }) : null;
+        let customer = null;
+        let lead = null;
+        if (phone) {
+             const cleanPhone = phone.replace(/\D/g, '').slice(-9);
+             if (cleanPhone) {
+                 customer = await prisma.customer.findFirst({ where: { phone: { endsWith: cleanPhone } } });
+                 if (!customer) lead = await prisma.lead.findFirst({ where: { phone: { endsWith: cleanPhone } } });
+             }
+        }
         
         let targetAgents: any[] = [];
         if (extension) {
@@ -68,6 +79,7 @@ async function handler(request: Request) {
                 where: { callId },
                 update: {
                     status: event || 'RINGING',
+                    ...(extension ? { extension } : {}),
                 },
                 create: {
                     callId,
@@ -92,6 +104,47 @@ async function handler(request: Request) {
                 lead: lead ? { id: lead.id, name: lead.name } : null
             });
         }
+
+        // --- STICKY ROUTING LOGIC ---
+        if (isQueueCall && phone) {
+            const cleanPhone = phone.replace(/\D/g, '').slice(-9);
+            if (cleanPhone) {
+                const pbxConfig = await (prisma as any).pbxConfig.findFirst();
+                const cacheDays = pbxConfig?.cacheDays || 3;
+                const dateLimit = new Date();
+                dateLimit.setDate(dateLimit.getDate() - cacheDays);
+
+                const lastCall = await (prisma as any).callLog.findFirst({
+                    where: {
+                        phone: { endsWith: cleanPhone },
+                        extension: { notIn: ['', 'QUEUE'] },
+                        startedAt: { gte: dateLimit }
+                    },
+                    orderBy: { startedAt: 'desc' }
+                });
+
+                if (lastCall && lastCall.extension) {
+                    let shouldRoute = false;
+                    const status = (lastCall.status || '').toUpperCase();
+
+                    if (lastCall.type === 'OUTBOUND') {
+                        shouldRoute = true;
+                    } else if (lastCall.type === 'INBOUND' && (status === 'ANSWER' || status === 'ANSWERED')) {
+                        shouldRoute = true;
+                    } else {
+                        shouldRoute = false;
+                    }
+
+                    if (shouldRoute) {
+                        return new NextResponse(lastCall.extension, { 
+                            status: 200, 
+                            headers: { 'Content-Type': 'text/plain' } 
+                        });
+                    }
+                }
+            }
+        }
+        // --- END STICKY ROUTING ---
 
         return NextResponse.json({ "status code": 200, message: "OK" });
     } catch (e) {
