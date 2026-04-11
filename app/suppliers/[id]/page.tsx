@@ -7,6 +7,8 @@ import { SupplierDetailClient } from './SupplierDetailClient';
 import { notFound } from 'next/navigation';
 import { buildViewFilter } from '@/lib/permissions';
 
+export const dynamic = 'force-dynamic';
+
 export default async function SupplierDetailPage({ params }: { params: { id: string } }) {
     const session = await getServerSession(authOptions);
 

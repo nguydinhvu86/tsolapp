@@ -5,6 +5,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { buildViewFilter } from '@/lib/permissions';
 
+export const dynamic = 'force-dynamic';
+
 export default async function PurchaseBillDetailPage({ params }: { params: { id: string } }) {
     const session = await getServerSession(authOptions);
     if (!session || !session.user) return null;
