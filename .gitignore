@@ -5,3 +5,6 @@ build_log*
 *.log
 prisma/*.db
 ts_err*
+
+deploy-*.js
+*hotfix*.js
