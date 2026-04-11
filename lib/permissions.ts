@@ -24,6 +24,12 @@ export const RESOURCES = [
     { id: 'CALL_CENTER', name: 'Tổng Đài PBX' },
     { id: 'ACCOUNTING', name: 'Kế toán' },
     { id: 'SETTINGS', name: 'Cài đặt hệ thống' },
+    { id: 'ROLES', name: 'Quản lý Nhóm Quyền' },
+    { id: 'ATTENDANCE', name: 'Chấm Công & Nghỉ Phép' },
+    { id: 'EMPLOYEES', name: 'Hồ Sơ Nhân Sự' },
+    { id: 'PAYROLL', name: 'Bảng Lương' },
+    { id: 'RECRUITMENT', name: 'Tuyển Dụng' },
+    { id: 'MONITORING', name: 'Giám Sát Ping' },
 ] as const;
 
 export const ACTIONS = [
