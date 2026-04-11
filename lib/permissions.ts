@@ -84,3 +84,73 @@ export function buildViewFilter(
     // If no view permission
     return { id: 'UNAUTHORIZED_NO_ACCESS' };
 }
+
+// ---------------------------------------------------------------------------
+// SERVER ACTION AUTHORIZATION HELPERS
+// ---------------------------------------------------------------------------
+
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "./authOptions";
+
+/**
+ * Validates if the current user has the required permission string.
+ * @param requiredPermission e.g., "SUPPLIERS_CREATE"
+ * @param throwError If true, throws Error if unauthorized. If false, returns a boolean.
+ */
+export async function verifyActionPermission(requiredPermission: string, throwError: boolean = true) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user || !session.user.id) {
+        if (throwError) throw new Error("Unauthorized: Phiên đăng nhập không hợp lệ");
+        return false;
+    }
+    
+    const permissions = session.user.permissions as string[] || [];
+    if (!permissions.includes(requiredPermission)) {
+        if (throwError) throw new Error(`Forbidden: Bạn không có quyền thực hiện thao tác này (${requiredPermission})`);
+        return false;
+    }
+    
+    return session.user;
+}
+
+/**
+ * Validates ownership logic for EDIT/DELETE actions.
+ * First checks for _EDIT_ALL or _DELETE_ALL. If present, passes.
+ * If not, checks for _EDIT_OWN or _DELETE_OWN. If present, verifies ownership.
+ * @param actionType 'EDIT' | 'DELETE'
+ * @param resourceId e.g., 'SUPPLIERS'
+ * @param recordCreatorId The ID of the user who created the record
+ * @param recordManagerIds (Optional) Array of manager IDs associated with this record
+ */
+export async function verifyActionOwnership(
+    resourceId: ResourceId,
+    actionType: 'EDIT' | 'DELETE',
+    recordCreatorId: string,
+    recordManagerIds: string[] = []
+) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user || !session.user.id) {
+        throw new Error("Unauthorized: Phiên đăng nhập không hợp lệ");
+    }
+    
+    const permissions = session.user.permissions as string[] || [];
+    const allPerm = `${resourceId}_${actionType}_ALL`;
+    const ownPerm = `${resourceId}_${actionType}_OWN`;
+
+    // 1. Has ALL permission?
+    if (permissions.includes(allPerm)) {
+        return session.user;
+    }
+
+    // 2. Has OWN permission?
+    if (permissions.includes(ownPerm)) {
+        if (session.user.id === recordCreatorId || recordManagerIds.includes(session.user.id)) {
+            return session.user;
+        } else {
+             throw new Error(`Forbidden: Bản ghi này thuộc về người khác, bạn chỉ có quyền thao tác trên dữ liệu của mình (${ownPerm})`);
+        }
+    }
+
+    // 3. No permission at all
+    throw new Error(`Forbidden: Bạn không có quyền thao tác trên tài nguyên này (${allPerm} / ${ownPerm})`);
+}

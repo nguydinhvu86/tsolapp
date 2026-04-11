@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { sendEmailWithTracking } from '@/lib/mailer';
-import { buildViewFilter } from '@/lib/permissions';
+import { buildViewFilter, verifyActionPermission, verifyActionOwnership } from '@/lib/permissions';
 import { getNextInvoiceCode } from '../invoices/actions';
 
 export async function sendOrderEmail(
@@ -84,8 +84,8 @@ const orderSchema = z.object({
 
 export async function submitSalesOrder(creatorId: string, formData: any) {
     try {
-        const session = await getServerSession(authOptions);
-        const actualCreatorId = session?.user?.id || creatorId;
+        const user = await verifyActionPermission('SALES_ORDERS_CREATE');
+        const actualCreatorId = user ? (user as any).id : creatorId;
 
         if (!formData.code || !formData.customerId || !formData.items || formData.items.length === 0) {
             return { success: false, error: "Thiếu thông tin bắt buộc." };
@@ -142,6 +142,10 @@ export async function updateSalesOrder(id: string, formData: any) {
         if (!formData.code || !formData.customerId || !formData.items || formData.items.length === 0) {
             return { success: false, error: "Thiếu thông tin bắt buộc." };
         }
+
+        const existing = await prisma.salesOrder.findUnique({ where: { id } });
+        if (!existing) return { success: false, error: "Đơn đặt hàng không tồn tại" };
+        await verifyActionOwnership('SALES_ORDERS', 'EDIT', existing.creatorId);
 
         const order = await prisma.salesOrder.update({
             where: { id },
@@ -224,6 +228,10 @@ export async function getSalesOrders(employeeId?: string) {
 
 export async function updateSalesOrderStatus(id: string, newStatus: string) {
     try {
+        const existing = await prisma.salesOrder.findUnique({ where: { id } });
+        if (!existing) return { success: false, error: "Đơn hàng không tồn tại" };
+        await verifyActionOwnership('SALES_ORDERS', 'EDIT', existing.creatorId);
+
         const order = await prisma.salesOrder.update({
             where: { id },
             data: { status: newStatus }
@@ -238,6 +246,10 @@ export async function updateSalesOrderStatus(id: string, newStatus: string) {
 
 export async function deleteSalesOrder(id: string) {
     try {
+        const existing = await prisma.salesOrder.findUnique({ where: { id } });
+        if (!existing) return { success: false, error: "Đơn hàng không tồn tại" };
+        await verifyActionOwnership('SALES_ORDERS', 'DELETE', existing.creatorId);
+
         await prisma.salesOrder.delete({ where: { id } });
         revalidatePath('/sales/orders');
         return { success: true };
@@ -280,16 +292,15 @@ export async function getSalesOrderById(id: string) {
 
 export async function convertOrderToInvoice(orderId: string) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) {
-            return { success: false, error: "Unauthorized" };
-        }
-        const actualCreatorId = session.user.id;
-
         const order = await prisma.salesOrder.findUnique({
             where: { id: orderId },
             include: { items: true }
         });
+        if (!order) return { success: false, error: "Đơn đặt hàng không tồn tại." };
+
+        await verifyActionOwnership('SALES_ORDERS', 'EDIT', order.creatorId);
+        const user = await verifyActionPermission('SALES_INVOICES_CREATE');
+        const actualCreatorId = user ? (user as any).id : 'system';
 
         if (!order) return { success: false, error: "Đơn đặt hàng không tồn tại." };
 

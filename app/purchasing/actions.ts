@@ -5,7 +5,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { revalidatePath } from 'next/cache';
 import { sendEmailWithTracking } from '@/lib/mailer';
-import { buildViewFilter } from '@/lib/permissions';
+import { buildViewFilter, verifyActionPermission, verifyActionOwnership } from '@/lib/permissions';
 
 async function getUser() {
     const session = await getServerSession(authOptions);
@@ -99,7 +99,7 @@ export async function getSupplier(id: string) {
 }
 
 export async function createSupplier(data: any) {
-    await getUser();
+    await verifyActionPermission('SUPPLIERS_CREATE');
 
     // Auto-generate code if empty
     let code = data.code;
@@ -130,7 +130,7 @@ export async function createSupplier(data: any) {
 }
 
 export async function updateSupplier(id: string, data: any) {
-    await getUser();
+    await verifyActionPermission('SUPPLIERS_EDIT_ALL');
 
     const supplier = await prisma.supplier.update({
         where: { id },
@@ -156,7 +156,7 @@ export async function updateSupplier(id: string, data: any) {
 }
 
 export async function deleteSupplier(id: string) {
-    await getUser();
+    await verifyActionPermission('SUPPLIERS_DELETE_ALL');
     await prisma.supplier.delete({ where: { id } });
     revalidatePath('/suppliers');
 }
@@ -166,14 +166,14 @@ export async function deleteSupplier(id: string) {
 // ---------------------------------------------------------------------------
 
 export async function createSupplierContact(data: { supplierId: string, name: string, position?: string, phone?: string, email?: string, notes?: string }) {
-    await getUser();
+    await verifyActionPermission('SUPPLIERS_EDIT_ALL');
     const contact = await prisma.supplierContact.create({ data });
     revalidatePath(`/purchasing/suppliers/${data.supplierId}`);
     return contact;
 }
 
 export async function updateSupplierContact(id: string, data: any) {
-    await getUser();
+    await verifyActionPermission('SUPPLIERS_EDIT_ALL');
     const contact = await prisma.supplierContact.update({
         where: { id },
         data: {
@@ -189,7 +189,7 @@ export async function updateSupplierContact(id: string, data: any) {
 }
 
 export async function deleteSupplierContact(id: string) {
-    await getUser();
+    await verifyActionPermission('SUPPLIERS_EDIT_ALL');
     const contact = await prisma.supplierContact.findUnique({ where: { id } });
     if (contact) {
         await prisma.supplierContact.delete({ where: { id } });
@@ -241,7 +241,7 @@ export async function getPurchaseOrder(id: string) {
 }
 
 export async function createPurchaseOrder(data: any) {
-    const user = await getUser();
+    const user = await verifyActionPermission('PURCHASE_ORDERS_CREATE');
 
     let code = data.code;
     if (!code) {
@@ -259,7 +259,7 @@ export async function createPurchaseOrder(data: any) {
             totalAmount: data.totalAmount,
             subTotal: data.subTotal || 0,
             taxAmount: data.taxAmount || 0,
-            creatorId: user.id,
+            creatorId: user ? (user as any).id : null,
             items: {
                 create: data.items.map((item: any) => {
                     const lineSubTotal = item.quantity * item.unitPrice;
@@ -286,10 +286,10 @@ export async function createPurchaseOrder(data: any) {
 }
 
 export async function updatePurchaseOrder(id: string, data: any) {
-    await getUser();
-
     const existing = await prisma.purchaseOrder.findUnique({ where: { id } });
     if (!existing) throw new Error("Đơn đặt hàng không tồn tại");
+
+    await verifyActionOwnership('PURCHASE_ORDERS', 'EDIT', existing.creatorId);
 
     const order = await prisma.purchaseOrder.update({
         where: { id },
@@ -333,9 +333,11 @@ export async function updatePurchaseOrder(id: string, data: any) {
 }
 
 export async function deletePurchaseOrder(id: string) {
-    await getUser();
-
     const existing = await prisma.purchaseOrder.findUnique({ where: { id } });
+    if (!existing) throw new Error("Đơn đặt hàng không tồn tại");
+    
+    await verifyActionOwnership('PURCHASE_ORDERS', 'DELETE', existing.creatorId);
+    
     if (existing?.status !== 'DRAFT') throw new Error("Chỉ có thể xóa đơn hàng Nháp");
 
     await prisma.purchaseOrderItem.deleteMany({ where: { orderId: id } });
@@ -392,7 +394,7 @@ export async function getPurchaseBill(id: string) {
 }
 
 export async function createPurchaseBill(data: any) {
-    const user = await getUser();
+    const user = await verifyActionPermission('PURCHASE_BILLS_CREATE');
 
     let code = data.code;
     if (!code) {
@@ -415,7 +417,7 @@ export async function createPurchaseBill(data: any) {
             totalAmount: data.totalAmount,
             subTotal: data.subTotal || 0,
             taxAmount: data.taxAmount || 0,
-            creatorId: user.id,
+            creatorId: user ? (user as any).id : null,
             items: {
                 create: data.items.map((item: any) => {
                     const lineSubTotal = item.quantity * item.unitPrice;
@@ -442,7 +444,7 @@ export async function createPurchaseBill(data: any) {
 }
 
 export async function approvePurchaseBill(billId: string, toWarehouseId: string) {
-    const user = await getUser();
+    const user = await verifyActionPermission('PURCHASE_BILLS_EDIT_ALL'); // Adjust to generic edit or custom approval perms
 
     return prisma.$transaction(async (tx: any) => {
         // 1. Get the bill
@@ -470,7 +472,7 @@ export async function approvePurchaseBill(billId: string, toWarehouseId: string)
                     notes: `Nhập kho tự động từ Hóa đơn mua hàng ${bill.code}`,
                     toWarehouseId: toWarehouseId,
                     supplierId: bill.supplierId,
-                    creatorId: user.id,
+                    creatorId: user ? (user as any).id : null,
                     items: {
                         create: inventoryItems.map((item: any) => ({
                             productId: item.productId,
@@ -526,9 +528,11 @@ export async function approvePurchaseBill(billId: string, toWarehouseId: string)
 }
 
 export async function updatePurchaseBill(id: string, data: any) {
-    await getUser();
-
     const existing = await prisma.purchaseBill.findUnique({ where: { id } });
+    if (!existing) throw new Error("Không tìm thấy hóa đơn");
+    
+    await verifyActionOwnership('PURCHASE_BILLS', 'EDIT', existing.creatorId);
+
     if (existing?.status !== 'DRAFT') throw new Error("Chỉ có thể sửa hóa đơn Nháp");
 
     const bill = await prisma.purchaseBill.update({
@@ -578,10 +582,10 @@ export async function updatePurchaseBill(id: string, data: any) {
 }
 
 export async function updatePurchaseBillNotes(id: string, notes: string) {
-    await getUser();
-
     const existing = await prisma.purchaseBill.findUnique({ where: { id } });
     if (!existing) throw new Error("Không tìm thấy hóa đơn");
+    
+    await verifyActionOwnership('PURCHASE_BILLS', 'EDIT', existing.creatorId);
 
     const bill = await prisma.purchaseBill.update({
         where: { id },
@@ -601,9 +605,11 @@ export async function updatePurchaseBillNotes(id: string, notes: string) {
 
 
 export async function deletePurchaseBill(id: string) {
-    await getUser();
-
     const existing = await prisma.purchaseBill.findUnique({ where: { id } });
+    if (!existing) throw new Error("Không tìm thấy hóa đơn");
+    
+    await verifyActionOwnership('PURCHASE_BILLS', 'DELETE', existing.creatorId);
+
     if (existing?.status !== 'DRAFT') throw new Error("Chỉ có thể xóa hóa đơn Nháp");
 
     await prisma.purchaseBillItem.deleteMany({ where: { billId: id } });
@@ -614,7 +620,7 @@ export async function deletePurchaseBill(id: string) {
 }
 
 export async function cancelPurchaseBill(id: string) {
-    const user = await getUser();
+    const user = await verifyActionPermission('PURCHASE_BILLS_EDIT_ALL');
 
     return prisma.$transaction(async (tx: any) => {
         const bill = await tx.purchaseBill.findUnique({
@@ -623,6 +629,7 @@ export async function cancelPurchaseBill(id: string) {
         });
 
         if (!bill) throw new Error("Không tìm thấy hóa đơn này");
+        await verifyActionOwnership('PURCHASE_BILLS', 'EDIT', bill.creatorId);
         if (bill.status === 'CANCELLED') throw new Error("Hóa đơn đã bị hủy từ trước");
         if (bill.status === 'PAID' || bill.status === 'PARTIAL_PAID') {
             throw new Error("Hóa đơn đang có phiếu chi thanh toán. Vui lòng hủy phiếu chi liên quan trước khi hủy hóa đơn.");
@@ -675,7 +682,7 @@ export async function cancelPurchaseBill(id: string) {
         // Add an activity log or just update status
         const updatedBill = await tx.purchaseBill.update({
             where: { id },
-            data: { status: 'CANCELLED', notes: `${bill.notes || ''}\n[Đã hủy bởi ${user.name}]`.trim() }
+            data: { status: 'CANCELLED', notes: `${bill.notes || ''}\n[Đã hủy bởi ${(user as any)?.name || 'System'}]`.trim() }
         });
 
         revalidatePath('/purchasing/bills');
