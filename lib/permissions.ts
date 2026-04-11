@@ -110,6 +110,9 @@ export async function verifyActionPermission(requiredPermission: string, throwEr
         return false;
     }
     
+    // ADMIN has universal permission
+    if (session.user.role === 'ADMIN') return session.user;
+
     const permissions = session.user.permissions as string[] || [];
     if (!permissions.includes(requiredPermission)) {
         if (throwError) throw new Error(`Forbidden: Bạn không có quyền thực hiện thao tác này (${requiredPermission})`);
@@ -139,6 +142,9 @@ export async function verifyActionOwnership(
         throw new Error("Unauthorized: Phiên đăng nhập không hợp lệ");
     }
     
+    // ADMIN has universal permission
+    if (session.user.role === 'ADMIN') return session.user;
+
     const permissions = session.user.permissions as string[] || [];
     const allPerm = `${resourceId}_${actionType}_ALL`;
     const ownPerm = `${resourceId}_${actionType}_OWN`;
