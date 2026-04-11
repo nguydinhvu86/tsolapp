@@ -3,9 +3,14 @@
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
+
 // --- REPORTS ---
 
 export async function getStockValuation(warehouseId?: string, productId?: string, groupId?: string) {
+    const session = await getServerSession(authOptions);
+    if (!session) throw new Error("Unauthorized");
     const products = await (prisma as any).product.findMany({
         where: {
             type: 'PRODUCT',
@@ -37,6 +42,9 @@ export async function getStockValuation(warehouseId?: string, productId?: string
 }
 
 export async function getStockLedger(productId: string, warehouseId?: string) {
+    const session = await getServerSession(authOptions);
+    if (!session) throw new Error("Unauthorized");
+
     // A Stock Ledger needs all COMPLETED transactions involving this product (and optionally warehouse)
     // Ordered chronologically to calculate running balance.
 
@@ -129,6 +137,9 @@ export async function getTransactionReport(
     productId?: string,
     groupId?: string
 ) {
+    const session = await getServerSession(authOptions);
+    if (!session) throw new Error("Unauthorized");
+
     let whereClause: any = {
         status: 'COMPLETED'
     };
@@ -194,6 +205,9 @@ export async function getInOutBalanceReport(
     productId?: string,
     groupId?: string
 ) {
+    const session = await getServerSession(authOptions);
+    if (!session) throw new Error("Unauthorized");
+
     // 1. Get all products
     const products = await (prisma as any).product.findMany({
         where: {
@@ -293,6 +307,9 @@ export async function getInOutBalanceReport(
 
 // Fetches current state of warehouse to help user enter actuals
 export async function getWarehouseStockForAdjustment(warehouseId: string) {
+    const session = await getServerSession(authOptions);
+    if (!session) throw new Error("Unauthorized");
+
     return prisma.inventory.findMany({
         where: { warehouseId },
         include: {

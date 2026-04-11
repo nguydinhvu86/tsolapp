@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { verifyActionPermission } from "@/lib/permissions";
 
 export async function createJobPosting(data: {
     title: string;
@@ -12,8 +13,7 @@ export async function createJobPosting(data: {
     channels: string;
 }) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) return { success: false, error: "Unauthorized" };
+        const user = await verifyActionPermission('RECRUITMENT_MANAGE');
 
         const posting = await prisma.jobPosting.create({
             data: {
@@ -22,7 +22,7 @@ export async function createJobPosting(data: {
                 content: data.content,
                 channels: data.channels,
                 status: "DRAFT",
-                posterId: session.user.id
+                posterId: (user as any).id
             },
             include: {
                 requisition: { select: { id: true, code: true, title: true, department: true } },
@@ -40,8 +40,7 @@ export async function createJobPosting(data: {
 
 export async function updatePostingStatus(id: string, status: string) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) return { success: false, error: "Unauthorized" };
+        await verifyActionPermission('RECRUITMENT_MANAGE');
 
         await prisma.jobPosting.update({
             where: { id },

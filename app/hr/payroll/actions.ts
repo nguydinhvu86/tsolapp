@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { verifyActionPermission } from "@/lib/permissions";
 
 // Số tiền phạt chuẩn mỗi lần đi muộn
 const LATE_PENALTY_AMOUNT = 50000;
@@ -12,8 +13,7 @@ const STANDARD_WORK_DAYS = 26;
 
 export async function generatePayroll(month: number, year: number) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) return { success: false, error: "Unauthorized" };
+        await verifyActionPermission('PAYROLL_MANAGE');
 
         const startDate = new Date(year, month - 1, 1);
         const endDate = new Date(year, month, 0, 23, 59, 59);
@@ -100,8 +100,7 @@ export async function generatePayroll(month: number, year: number) {
 
 export async function updatePayrollRecord(id: string, data: { bonus: number, deductions: number, status?: string }) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) return { success: false, error: "Unauthorized" };
+        await verifyActionPermission('PAYROLL_MANAGE');
 
         const existing = await prisma.payroll.findUnique({ where: { id } });
         if (!existing) throw new Error("Payroll record not found");

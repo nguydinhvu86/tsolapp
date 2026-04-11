@@ -7,6 +7,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { createManyNotifications } from '@/app/notifications/actions';
 import { sendWebPushNotification } from '@/lib/notifications/webPush';
+import { buildViewFilter, verifyActionPermission, verifyActionOwnership } from '@/lib/permissions';
 
 export async function getTasks(filters?: any) {
     const session = await getServerSession(authOptions);
@@ -108,6 +109,9 @@ async function resolveParentEntityIds(data: any) {
 }
 
 export async function createTask(data: any, creatorId: string) {
+    const user = await verifyActionPermission('TASKS_CREATE');
+    const uId = user ? (user as any).id : creatorId;
+
     const { assignees, observers, recurrence, ...restDataUnresolved } = data;
     const restData = await resolveParentEntityIds(restDataUnresolved);
 
@@ -141,7 +145,7 @@ export async function createTask(data: any, creatorId: string) {
                 startDate: currentStartDate,
                 isRecurring: isRecurringMode,
                 recurrenceRule: frequency,
-                creatorId,
+                creatorId: uId,
                 parentTaskId: isRecurringMode ? (i > 0 ? firstTaskId : null) : restData.parentTaskId
             }
         });
@@ -159,14 +163,14 @@ export async function createTask(data: any, creatorId: string) {
 
         // Handle Observers (including the creator by default)
         const observerSet = new Set<string>();
-        observerSet.add(creatorId);
+        observerSet.add(uId);
         if (observers) observers.forEach((id: string) => observerSet.add(id));
 
         await prisma.taskObserver.createMany({
             data: Array.from(observerSet).map((userId: string) => ({ taskId: newTask.id, userId }))
         });
 
-        logActivity(newTask.id, creatorId, 'CREATED_TASK', isRecurringMode ? 'Tạo tự động theo chu kỳ' : undefined);
+        logActivity(newTask.id, uId, 'CREATED_TASK', isRecurringMode ? 'Tạo tự động theo chu kỳ' : undefined);
 
         createdTasks.push(newTask);
     }
@@ -174,9 +178,9 @@ export async function createTask(data: any, creatorId: string) {
     // Notify Assignees (only once per assignee, for the first task or in general)
     if (assignees && assignees.length > 0 && createdTasks.length > 0) {
         const firstTask = createdTasks[0];
-        const creator = await prisma.user.findUnique({ where: { id: creatorId }, select: { name: true } });
+        const creator = await prisma.user.findUnique({ where: { id: uId }, select: { name: true } });
 
-        const assigneeIdsToNotify = assignees.filter((userId: string) => userId !== creatorId);
+        const assigneeIdsToNotify = assignees.filter((userId: string) => userId !== uId);
         const notifications = assigneeIdsToNotify.map((userId: string) => ({
             userId,
             title: 'Công việc mới được giao',
@@ -199,7 +203,7 @@ export async function createTask(data: any, creatorId: string) {
         }
 
         // Auto send emails (fire and forget)
-        triggerAutoTaskEmail(firstTask.id, assigneeIdsToNotify, creatorId).catch(console.error);
+        triggerAutoTaskEmail(firstTask.id, assigneeIdsToNotify, uId).catch(console.error);
     }
 
     revalidatePath('/tasks');
@@ -277,6 +281,10 @@ export async function updateTask(id: string, data: any, userId: string) {
         where: { id },
         include: { assignees: true, observers: true }
     });
+    
+    if (!oldTask) throw new Error("Thẻ công việc không tồn tại");
+    const allowedUserIds = oldTask.assignees.map((a: any) => a.userId);
+    await verifyActionOwnership('TASKS', 'EDIT', oldTask.creatorId, allowedUserIds);
 
     const changes = [];
     if (oldTask) {
@@ -448,6 +456,10 @@ export async function updateTaskStatus(id: string, status: string, userId: strin
         where: { id },
         include: { assignees: true, observers: true }
     });
+    
+    if (!oldTask) throw new Error("Thẻ công việc không tồn tại");
+    const allowedUserIds = oldTask.assignees.map((a: any) => a.userId);
+    await verifyActionOwnership('TASKS', 'EDIT', oldTask.creatorId, allowedUserIds);
 
     await prisma.task.update({ where: { id }, data: { status } });
     logActivity(id, userId, 'STATUS_CHANGED', JSON.stringify({ to: status }));
@@ -543,6 +555,8 @@ export async function updateTaskStatus(id: string, status: string, userId: strin
 
 export async function deleteTask(id: string) {
     const task = await prisma.task.findUnique({ where: { id }, include: { childTasks: true } });
+    if (!task) throw new Error("Thẻ công việc không tồn tại");
+    await verifyActionOwnership('TASKS', 'DELETE', task.creatorId);
 
     if (task && task.childTasks && task.childTasks.length > 0) {
         // Xóa các task con chưa hoàn thành để dọn dẹp
@@ -566,6 +580,10 @@ export async function deleteTask(id: string) {
 
 // Sub-features
 export async function addChecklist(taskId: string, title: string, userId: string) {
+    const taskData = await prisma.task.findUnique({ where: {id: taskId}, include: { assignees: true } });
+    if (!taskData) throw new Error("Not found");
+    await verifyActionOwnership('TASKS', 'EDIT', taskData.creatorId, taskData.assignees.map((a:any)=>a.userId));
+
     const cl = await prisma.taskChecklist.create({
         data: { taskId, title }
     });
@@ -611,6 +629,14 @@ export async function deleteChecklist(checklistId: string, userId: string) {
 }
 
 export async function addComment(taskId: string, content: string, userId: string, parentId?: string) {
+    const taskData = await prisma.task.findUnique({
+        where: { id: taskId },
+        include: { assignees: true, observers: true }
+    });
+    if (!taskData) throw new Error("Not found");
+    const allowedUsers = [...taskData.assignees.map((a:any)=>a.userId), ...taskData.observers.map((o:any)=>o.userId)];
+    await verifyActionOwnership('TASKS', 'EDIT', taskData.creatorId, allowedUsers);
+
     const comment = await prisma.taskComment.create({
         data: { taskId, content, userId, parentId }
     });
@@ -621,10 +647,7 @@ export async function addComment(taskId: string, content: string, userId: string
     const sender = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
 
     // Identify people to notify: Assginees, Observers, Mentioned
-    const taskData = await prisma.task.findUnique({
-        where: { id: taskId },
-        include: { assignees: true, observers: true }
-    });
+    // taskData is already fetched above
 
     const usersToNotify = new Set<string>();
 
@@ -700,8 +723,10 @@ export async function addComment(taskId: string, content: string, userId: string
 }
 
 export async function uploadTaskAttachment(taskId: string, fileName: string, fileUrl: string, fileType: string, userId: string) {
-    const taskData = await prisma.task.findUnique({ where: { id: taskId } });
+    const taskData = await prisma.task.findUnique({ where: { id: taskId }, include: { assignees: true } });
     if (!taskData) throw new Error("Thẻ công việc không tồn tại");
+    
+    await verifyActionOwnership('TASKS', 'EDIT', taskData.creatorId, taskData.assignees.map((a:any)=>a.userId));
 
     await prisma.taskAttachment.create({
         data: {
@@ -774,6 +799,11 @@ export async function uploadTaskAttachment(taskId: string, fileName: string, fil
 export async function deleteTaskAttachment(attachmentId: string, userId: string) {
     const attachment = await prisma.taskAttachment.findUnique({ where: { id: attachmentId } });
     if (!attachment) return;
+
+    const taskData = await prisma.task.findUnique({ where: { id: attachment.taskId }, include: { assignees: true }});
+    if (attachment.uploadedById !== userId && taskData) {
+        await verifyActionOwnership('TASKS', 'EDIT', taskData.creatorId, taskData.assignees.map((a:any)=>a.userId));
+    }
 
     await prisma.taskAttachment.delete({ where: { id: attachmentId } });
 
@@ -892,7 +922,7 @@ export async function updateTaskLinks(taskId: string, linkData: { customerId?: s
     revalidatePath(`/tasks/${taskId}`);
 }
 
-import { buildViewFilter, ResourceId } from '@/lib/permissions';
+import { ResourceId } from '@/lib/permissions';
 
 export async function searchEntities(type: string, query: string = '') {
     const session = await getServerSession(authOptions);

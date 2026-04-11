@@ -4,11 +4,11 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { buildViewFilter, verifyActionPermission, verifyActionOwnership } from '@/lib/permissions';
 
 export async function updateEmployeeProfile(userId: string, profileData: any) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) return { success: false, error: "Unauthorized" };
+        await verifyActionOwnership('USERS', 'EDIT', userId);
 
         const updated = await prisma.employeeProfile.upsert({
             where: { userId: userId },
@@ -58,8 +58,7 @@ export async function updateEmployeeProfile(userId: string, profileData: any) {
 
 export async function createLaborContract(userId: string, data: any) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) return { success: false, error: "Unauthorized" };
+        const u = await verifyActionPermission('USERS_EDIT_ALL');
 
         const contract = await prisma.laborContract.create({
             data: {
@@ -70,7 +69,7 @@ export async function createLaborContract(userId: string, data: any) {
                 endDate: data.endDate ? new Date(data.endDate) : null,
                 fileUrl: data.fileUrl,
                 status: "ACTIVE",
-                creatorId: session.user.id
+                creatorId: u ? (u as any).id : 'system'
             }
         });
 

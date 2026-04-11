@@ -3,9 +3,13 @@
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { triggerPusherEvent } from '@/lib/pusher-server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/authOptions';
 
 export async function getUnreadNotifications(userId: string) {
     if (!userId) return [];
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.id !== userId) throw new Error("Unauthorized");
     return prisma.notification.findMany({
         where: { userId, isRead: false },
         orderBy: { createdAt: 'desc' },
@@ -23,6 +27,8 @@ export async function markAsRead(notificationId: string) {
 
 export async function markAllAsRead(userId: string) {
     if (!userId) return;
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.id !== userId) throw new Error("Unauthorized");
     await prisma.notification.updateMany({
         where: { userId, isRead: false },
         data: { isRead: true }
@@ -58,6 +64,8 @@ export async function createNotification(userId: string, title: string, message:
 
 export async function getAllNotifications(userId: string) {
     if (!userId) return [];
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.id !== userId) throw new Error("Unauthorized");
     return prisma.notification.findMany({
         where: { userId },
         orderBy: { createdAt: 'desc' },
@@ -67,6 +75,8 @@ export async function getAllNotifications(userId: string) {
 
 export async function getUnreadCount(userId: string) {
     if (!userId) return 0;
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.id !== userId) return 0;
     return prisma.notification.count({
         where: { userId, isRead: false }
     });

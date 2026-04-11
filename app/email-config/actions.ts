@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { revalidatePath } from 'next/cache';
 import nodemailer from 'nodemailer';
+import { verifyActionPermission } from '@/lib/permissions';
 
 const EMAIL_SETTING_KEYS = [
     'SMTP_HOST',
@@ -18,10 +19,7 @@ const EMAIL_SETTING_KEYS = [
 ];
 
 export async function getEmailSettings() {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'ADMIN') {
-        throw new Error('Unauthorized');
-    }
+    await verifyActionPermission('SETTINGS_VIEW_ALL');
 
     const settings = await prisma.systemSetting.findMany({
         where: { key: { in: EMAIL_SETTING_KEYS } }
@@ -33,10 +31,7 @@ export async function getEmailSettings() {
 }
 
 export async function updateEmailSettings(data: Record<string, string>) {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'ADMIN') {
-        throw new Error('Unauthorized');
-    }
+    await verifyActionPermission('SETTINGS_EDIT');
 
     // Upsert từng key
     for (const key of Object.keys(data)) {
@@ -55,11 +50,9 @@ export async function updateEmailSettings(data: Record<string, string>) {
 }
 
 export async function testEmailConnection(data: Record<string, string>) {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'ADMIN') {
-        throw new Error('Unauthorized');
-    }
-
+    const user = await verifyActionPermission('SETTINGS_EDIT');
+    if (!user) throw new Error('Unauthorized');
+    
     try {
         const transporter = nodemailer.createTransport({
             host: data.SMTP_HOST || '',
@@ -78,7 +71,7 @@ export async function testEmailConnection(data: Record<string, string>) {
         // Optional: Send a test email
         await transporter.sendMail({
             from: `"${data.SMTP_FROM_NAME || 'Test System'}" <${data.SMTP_FROM_EMAIL || data.SMTP_USER}>`,
-            to: session.user.email || data.SMTP_USER, // Gửi về chính email đang đăng nhập hoặc email config
+            to: (user as any).email || data.SMTP_USER, // Gửi về chính email đang đăng nhập hoặc email config
             subject: 'Test Email Configuration - ContractMgr',
             html: '<p>Cấu hình hệ thống Email của bạn đang hoạt động bình thường!</p>',
         });

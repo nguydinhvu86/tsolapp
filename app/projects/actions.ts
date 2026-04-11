@@ -6,6 +6,7 @@ import { authOptions } from '@/lib/authOptions';
 import { logActivity } from '@/app/tasks/actions'; // Reuse task activity logging
 import { sendEmailWithTracking } from '@/lib/mailer';
 import { createNotification } from '@/app/notifications/actions';
+import { buildViewFilter, verifyActionPermission, verifyActionOwnership } from '@/lib/permissions';
 
 export async function getProjects(filters?: any) {
     const session = await getServerSession(authOptions);
@@ -53,6 +54,8 @@ export async function getProjects(filters?: any) {
 }
 
 export async function createProject(data: any, creatorId: string) {
+    const user = await verifyActionPermission('TASKS_CREATE');
+    const uId = user ? (user as any).id : creatorId;
     const { assignees, ...restData } = data;
 
     const newProject = await (prisma.task as any).create({
@@ -60,7 +63,7 @@ export async function createProject(data: any, creatorId: string) {
             ...restData,
             // @ts-ignore: bypass locked client issue
             isProject: true, // Explicitly mark as project
-            creatorId,
+            creatorId: uId,
             status: 'TODO'
         }
     });
@@ -108,10 +111,10 @@ export async function createProject(data: any, creatorId: string) {
 
     // Default observer is creator
     await prisma.taskObserver.create({
-        data: { taskId: newProject.id, userId: creatorId }
+        data: { taskId: newProject.id, userId: uId }
     });
 
-    await logActivity(newProject.id, creatorId, 'CREATED_PROJECT', 'Tạo dự án mới');
+    await logActivity(newProject.id, uId, 'CREATED_PROJECT', 'Tạo dự án mới');
 
     revalidatePath('/projects');
     return newProject;
@@ -126,6 +129,9 @@ export async function updateProject(id: string, data: any, userId: string) {
     });
 
     if (!oldProject) throw new Error("Dự án không tồn tại");
+
+    const assigneesList = oldProject.assignees ? oldProject.assignees.map((a: any) => a.userId) : [];
+    await verifyActionOwnership('TASKS', 'EDIT', oldProject.creatorId, assigneesList);
 
     const updated = await prisma.task.update({
         where: { id },
@@ -186,6 +192,10 @@ export async function updateProject(id: string, data: any, userId: string) {
 }
 
 export async function deleteProject(id: string) {
+    const oldProject = await prisma.task.findUnique({ where: { id } });
+    if (!oldProject) throw new Error("Dự án không tồn tại");
+    await verifyActionOwnership('TASKS', 'DELETE', oldProject.creatorId);
+
     // Rely on Prisma cascade deletes or explicitly delete child tasks if not cascaded
     // Currently Schema has 'TaskRecurrence' relation for parentTaskId but didn't specify onDelete: Cascade
     // Wait, let's check schema: `parentTask Task? @relation("TaskRecurrence", fields: [parentTaskId], references: [id])` -> no Cascade.

@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { verifyActionPermission } from "@/lib/permissions";
 
 export async function createCandidateAndApplication(data: {
     requisitionId: string;
@@ -16,8 +17,7 @@ export async function createCandidateAndApplication(data: {
     cvUrl: string | null;
 }) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) return { success: false, error: "Unauthorized" };
+        await verifyActionPermission('RECRUITMENT_MANAGE');
 
         const transaction = await prisma.$transaction(async (tx: any) => {
             const candidate = await tx.atsCandidate.create({
@@ -53,8 +53,7 @@ export async function createCandidateAndApplication(data: {
 
 export async function updateApplicationStage(applicationId: string, newStage: string) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) return { success: false, error: "Unauthorized" };
+        await verifyActionPermission('RECRUITMENT_MANAGE');
 
         await prisma.jobApplication.update({
             where: { id: applicationId },
@@ -77,8 +76,7 @@ export async function scheduleInterview(data: {
     interviewerIds: string[];
 }) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) return { success: false, error: "Unauthorized" };
+        await verifyActionPermission('RECRUITMENT_MANAGE');
 
         const interview = await prisma.interview.create({
             data: {
@@ -109,6 +107,7 @@ export async function submitEvaluation(data: {
     try {
         const session = await getServerSession(authOptions);
         if (!session?.user?.id) return { success: false, error: "Unauthorized" };
+        // Evaluators might not be HR directly, but are interviewers. We keep basic auth.
 
         await prisma.$transaction(async (tx: any) => {
             await tx.interviewEvaluation.create({

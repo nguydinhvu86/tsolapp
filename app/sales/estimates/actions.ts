@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { logCustomerActivity } from '@/lib/customerLogger';
-import { buildViewFilter } from '@/lib/permissions';
+import { buildViewFilter, verifyActionPermission, verifyActionOwnership } from '@/lib/permissions';
 import { getNextInvoiceCode } from '../invoices/actions';
 import { createNotification } from '@/app/notifications/actions';
 
@@ -102,11 +102,8 @@ export async function sendEstimateEmail(
 
 export async function submitSalesEstimate(creatorId: string, formData: any) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) {
-            return { success: false, error: "Unauthorized" };
-        }
-        const actualCreatorId = session.user.id;
+        const user = await verifyActionPermission('SALES_ESTIMATES_CREATE');
+        const actualCreatorId = user ? (user as any).id : creatorId;
 
         if (!formData.code || !formData.customerId || !formData.items || formData.items.length === 0) {
             return { success: false, error: "Thiếu thông tin bắt buộc." };
@@ -182,6 +179,8 @@ export async function updateSalesEstimate(id: string, formData: any) {
         if (!oldEstimate) {
             return { success: false, error: "Không tìm thấy báo giá." };
         }
+        
+        await verifyActionOwnership('SALES_ESTIMATES', 'EDIT', oldEstimate.creatorId);
 
         const changes: string[] = [];
 
@@ -397,6 +396,10 @@ export async function updateSalesEstimateStatus(id: string, newStatus: string) {
         const session = await getServerSession(authOptions);
         const userId = session?.user?.id;
 
+        const ext = await prisma.salesEstimate.findUnique({ where: { id } });
+        if (!ext) return { success: false, error: "Not found" };
+        await verifyActionOwnership('SALES_ESTIMATES', 'EDIT', ext.creatorId);
+
         const estimate = await prisma.salesEstimate.update({
             where: { id },
             data: { status: newStatus }
@@ -433,6 +436,10 @@ export async function updateSalesEstimateStatus(id: string, newStatus: string) {
 
 export async function deleteSalesEstimate(id: string) {
     try {
+        const ext = await prisma.salesEstimate.findUnique({ where: { id } });
+        if (!ext) return { success: false, error: "Not found" };
+        await verifyActionOwnership('SALES_ESTIMATES', 'DELETE', ext.creatorId);
+
         await prisma.salesEstimate.delete({ where: { id } });
         revalidatePath('/sales/estimates');
         return { success: true };
@@ -493,18 +500,16 @@ export async function getNextEstimateCode() {
 
 export async function convertEstimateToInvoice(estimateId: string) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) {
-            return { success: false, error: "Unauthorized" };
-        }
-        const actualCreatorId = session.user.id;
-
         const estimate = await prisma.salesEstimate.findUnique({
             where: { id: estimateId },
             include: { items: true }
         });
 
         if (!estimate) return { success: false, error: "Báo giá không tồn tại." };
+        
+        await verifyActionOwnership('SALES_ESTIMATES', 'EDIT', estimate.creatorId);
+        const user = await verifyActionPermission('SALES_INVOICES_CREATE');
+        const actualCreatorId = user ? (user as any).id : 'system';
 
         // Lấy mã Invoice tiếp theo dùng config tự động
         const nextCode = await getNextInvoiceCode();
@@ -579,18 +584,16 @@ export async function convertEstimateToInvoice(estimateId: string) {
 
 export async function convertEstimateToOrder(estimateId: string) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) {
-            return { success: false, error: "Unauthorized" };
-        }
-        const actualCreatorId = session.user.id;
-
         const estimate = await prisma.salesEstimate.findUnique({
             where: { id: estimateId },
             include: { items: true }
         });
 
         if (!estimate) return { success: false, error: "Báo giá không tồn tại." };
+        
+        await verifyActionOwnership('SALES_ESTIMATES', 'EDIT', estimate.creatorId);
+        const user = await verifyActionPermission('SALES_ORDERS_CREATE');
+        const actualCreatorId = user ? (user as any).id : 'system';
 
         // Lấy mã Đơn Hàng tiếp theo
         const orders = await prisma.salesOrder.findMany({ select: { code: true } });
@@ -669,8 +672,9 @@ export async function convertEstimateToOrder(estimateId: string) {
 }
 
 export async function assignSalesEstimateManagers(estimateId: string, userIds: string[]) {
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) throw new Error("Unauthorized");
+    const ext = await prisma.salesEstimate.findUnique({ where: { id: estimateId } });
+    if (!ext) throw new Error("Not found");
+    await verifyActionOwnership('SALES_ESTIMATES', 'EDIT', ext.creatorId);
 
     const doc = await prisma.salesEstimate.update({
         where: { id: estimateId },
@@ -683,8 +687,9 @@ export async function assignSalesEstimateManagers(estimateId: string, userIds: s
 }
 
 export async function removeSalesEstimateManager(estimateId: string, userId: string) {
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) throw new Error("Unauthorized");
+    const ext = await prisma.salesEstimate.findUnique({ where: { id: estimateId } });
+    if (!ext) throw new Error("Not found");
+    await verifyActionOwnership('SALES_ESTIMATES', 'EDIT', ext.creatorId);
 
     const doc = await prisma.salesEstimate.update({
         where: { id: estimateId },
@@ -697,9 +702,8 @@ export async function removeSalesEstimateManager(estimateId: string, userId: str
 
 export async function cloneSalesEstimate(estimateId: string) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) return { success: false, error: "Unauthorized" };
-        const creatorId = session.user.id;
+        const user = await verifyActionPermission('SALES_ESTIMATES_CREATE');
+        const creatorId = user ? (user as any).id : 'system';
 
         const estimate = await prisma.salesEstimate.findUnique({
             where: { id: estimateId },

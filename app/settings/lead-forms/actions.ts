@@ -4,14 +4,11 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { revalidatePath } from 'next/cache';
+import { verifyActionPermission } from '@/lib/permissions';
 
 // Require Admin Role for these operations
 async function checkAdmin() {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user?.role !== 'ADMIN') {
-        throw new Error("Unauthorized. Admin access required.");
-    }
-    return session.user;
+    return await verifyActionPermission('SETTINGS_EDIT');
 }
 
 export async function getLeadForms() {

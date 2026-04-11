@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/authOptions";
 import { revalidatePath } from 'next/cache';
 import { createManyNotifications } from '@/app/notifications/actions';
 import { sendWebPushNotification } from '@/lib/notifications/webPush';
+import { verifyActionOwnership } from '@/lib/permissions';
 
 export async function getLeadComments(leadId: string) {
     try {
@@ -44,6 +45,10 @@ export async function createLeadComment(leadId: string, content: string, parentI
         if (!content && !images && !files) {
             throw new Error("Nội dung không được để trống");
         }
+        
+        const lead = await prisma.lead.findUnique({ where: { id: leadId } });
+        if (!lead) throw new Error("Cơ hội không tồn tại");
+        await verifyActionOwnership('CUSTOMERS', 'EDIT', lead.creatorId || '');
 
         const comment = await prisma.leadComment.create({
             data: {
@@ -105,12 +110,13 @@ export async function deleteLeadComment(commentId: string) {
 
         const comment = await prisma.leadComment.findUnique({
             where: { id: commentId },
+            include: { lead: true }
         });
 
         if (!comment) throw new Error("Không tìm thấy bình luận");
 
-        if (comment.userId !== userId && userRole !== 'ADMIN') {
-            throw new Error("Không có quyền xóa");
+        if (comment.userId !== userId) {
+            await verifyActionOwnership('CUSTOMERS', 'EDIT', comment.lead?.creatorId || '');
         }
 
         await prisma.leadComment.delete({

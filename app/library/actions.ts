@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
+import { verifyActionPermission } from '@/lib/permissions';
 import { revalidatePath } from 'next/cache';
 
 // -- CATEGORY ACTIONS --
@@ -23,10 +24,7 @@ export async function getLibraryCategories() {
     });
 }
 export async function createLibraryCategory(data: { name: string, description?: string, parentId?: string }) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || !['ADMIN', 'MANAGER'].includes(session.user.role)) {
-        throw new Error('Chỉ Quản lý mới được tạo Thư mục.');
-    }
+    await verifyActionPermission('LIBRARY_CREATE');
     const category = await (prisma as any).documentCategory.create({
         data: {
             name: data.name,
@@ -38,10 +36,7 @@ export async function createLibraryCategory(data: { name: string, description?: 
     return category;
 }
 export async function deleteLibraryCategory(id: string) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || !['ADMIN', 'MANAGER'].includes(session.user.role)) {
-        throw new Error('Unauthorized');
-    }
+    await verifyActionPermission('LIBRARY_DELETE');
     const category = await (prisma as any).documentCategory.findUnique({
         where: { id },
         include: { children: true, _count: { select: { documents: true } } }
@@ -88,12 +83,12 @@ export async function getDocumentById(id: string) {
 export async function createLibraryDocument(data: {
     title: string, description?: string, fileUrl?: string, fileType?: string, thumbnail?: string, size?: number, categoryId?: string
 }) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) throw new Error('Unauthorized');
+    const user = await verifyActionPermission('LIBRARY_CREATE');
+    const uId = (user as any).id;
     const document = await (prisma as any).document.create({
         data: {
             ...data,
-            creatorId: session.user.id
+            creatorId: uId
         }
     });
     revalidatePath('/library');
@@ -102,10 +97,7 @@ export async function createLibraryDocument(data: {
 }
 
 export async function moveLibraryDocument(documentId: string, newCategoryId: string | null) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || !['ADMIN', 'MANAGER'].includes(session.user.role)) {
-        throw new Error('Unauthorized');
-    }
+    await verifyActionPermission('LIBRARY_EDIT');
 
     const document = await (prisma as any).document.update({
         where: { id: documentId },
@@ -117,10 +109,7 @@ export async function moveLibraryDocument(documentId: string, newCategoryId: str
     return document;
 }
 export async function deleteLibraryDocument(id: string) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || !['ADMIN', 'MANAGER'].includes(session.user.role)) {
-        throw new Error('Bạn không có quyền xóa tài liệu này');
-    }
+    await verifyActionPermission('LIBRARY_DELETE');
     await (prisma as any).document.delete({ where: { id } });
     revalidatePath('/library');
 }

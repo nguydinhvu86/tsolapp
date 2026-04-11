@@ -44,6 +44,8 @@ export async function getSoftphoneCredentials() {
 }
 
 export async function lookupContactByPhone(phone: string) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) throw new Error("Unauthorized");
     if (!phone) return null;
     
     // Get last 9 digits for robust matching (+84 vs 0 prefix)

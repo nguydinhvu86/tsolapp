@@ -6,8 +6,11 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { logCustomerActivity } from "@/lib/customerLogger";
 import { createManyNotifications } from '@/app/notifications/actions';
+import { buildViewFilter, verifyActionPermission, verifyActionOwnership } from '@/lib/permissions';
 
 export async function createContract(data: { title: string, content: string, variables: string, customerId: string, templateId: string, assignedToId?: string }, creatorId?: string) {
+    const user = await verifyActionPermission('CONTRACTS_CREATE');
+    const uId = user ? (user as any).id : creatorId;
     const contract = await prisma.contract.create({ data });
 
     const session = await getServerSession(authOptions);
@@ -55,6 +58,10 @@ export async function createContract(data: { title: string, content: string, var
 }
 
 export async function updateContractStatus(id: string, status: string, actorId?: string) {
+    const ext = await prisma.contract.findUnique({ where: { id } });
+    if (!ext) throw new Error("Not found");
+    await verifyActionOwnership('CONTRACTS', 'EDIT', ext?.creatorId || '');
+
     const contract = await prisma.contract.update({ where: { id }, data: { status } });
 
     const admins = await prisma.user.findMany({ where: { role: 'ADMIN' }, select: { id: true } });
@@ -82,11 +89,19 @@ export async function updateContractStatus(id: string, status: string, actorId?:
 }
 
 export async function deleteContract(id: string) {
+    const ext = await prisma.contract.findUnique({ where: { id } });
+    if (!ext) throw new Error("Not found");
+    await verifyActionOwnership('CONTRACTS', 'DELETE', ext?.creatorId || '');
+
     await prisma.contract.delete({ where: { id } });
     revalidatePath('/contracts');
 }
 
 export async function updateContract(id: string, content: string) {
+    const ext = await prisma.contract.findUnique({ where: { id } });
+    if (!ext) throw new Error("Not found");
+    await verifyActionOwnership('CONTRACTS', 'EDIT', ext?.creatorId || '');
+
     const contract = await prisma.contract.update({
         where: { id },
         data: { content }

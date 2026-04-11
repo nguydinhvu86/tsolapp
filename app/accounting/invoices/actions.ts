@@ -4,12 +4,13 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { revalidatePath } from 'next/cache';
+import { verifyActionPermission } from '@/lib/permissions';
 import fs from 'fs';
 import path from 'path';
 
 export async function importInventoryFromInvoice(invoiceId: string, actionType: 'DEBT_ONLY' | 'INVENTORY_ONLY' | 'BOTH' = 'BOTH', toWarehouseId?: string) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) throw new Error("Unauthorized");
+    const user = await verifyActionPermission('ACCOUNTING_CREATE');
+    const uId = (user as any).id;
 
     let targetWarehouseId = toWarehouseId;
     if (!targetWarehouseId || targetWarehouseId === 'W-0001') {
@@ -83,7 +84,7 @@ export async function importInventoryFromInvoice(invoiceId: string, actionType: 
                     totalAmount: invoice.totalAmount,
                     subTotal: invoice.totalAmount - invoice.taxAmount,
                     taxAmount: invoice.taxAmount,
-                    creatorId: session.user.id,
+                    creatorId: uId,
                     notes: `[NỘI BỘ] Tự động sinh từ hóa đơn điện tử ${invoice.invoiceNumber}. Các sản phẩm mới đã được tự động xuất vào thư viện kho.`,
                     items: {
                         create: resolvedItems.map((item: any) => ({
@@ -119,7 +120,7 @@ export async function importInventoryFromInvoice(invoiceId: string, actionType: 
                     notes: null,
                     toWarehouseId: targetWarehouseId,
                     supplierId: invoice.supplierId,
-                    creatorId: session.user.id,
+                    creatorId: uId,
                     items: {
                         create: resolvedItems.map((item: any) => ({
                             productId: item.productId,
@@ -173,8 +174,7 @@ export async function importInventoryFromInvoice(invoiceId: string, actionType: 
 }
 
 export async function triggerManualScan() {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) throw new Error("Unauthorized");
+    await verifyActionPermission('ACCOUNTING_CREATE');
 
     // We can't import this at the top to avoid circular deps if any, but it's safe to import dynamically
     const { fetchUnreadInvoices } = await import('@/lib/email-scanner');
@@ -189,8 +189,7 @@ export async function triggerManualScan() {
 }
 
 export async function uploadInvoiceFiles(invoiceId: string, formData: FormData) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) throw new Error("Unauthorized");
+    await verifyActionPermission('ACCOUNTING_CREATE');
 
     const xmlFile = formData.get('xmlFile') as File | null;
     const pdfFile = formData.get('pdfFile') as File | null;
@@ -315,7 +314,7 @@ export async function deleteInvoice(invoiceId: string) {
 
     // Chỉ cho phép admin hoặc người có quyền kế toán xóa
     const permissions = (session.user as any)?.permissions as string[] || [];
-    const canDelete = permissions.includes('ACCOUNTING_DELETE') || (session.user as any)?.role === 'ADMIN';
+    const canDelete = permissions.includes('ACCOUNTING_DELETE_ALL') || permissions.includes('ACCOUNTING_DELETE') || (session.user as any)?.role === 'ADMIN';
 
     if (!canDelete) {
         throw new Error("Bạn không có quyền xóa hóa đơn đầu vào!");

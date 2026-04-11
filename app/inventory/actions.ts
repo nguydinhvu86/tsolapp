@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { buildViewFilter, verifyActionPermission, verifyActionOwnership } from '@/lib/permissions';
 
 // --- WAREHOUSE ACTIONS ---
 
@@ -12,6 +13,7 @@ export async function getWarehouses() {
 }
 
 export async function createWarehouse(data: { name: string, location?: string, isDefault?: boolean }) {
+    await verifyActionPermission('INVENTORY_MANAGE');
     if (data.isDefault) {
         // If this is set to default, unset others
         await prisma.warehouse.updateMany({
@@ -26,6 +28,7 @@ export async function createWarehouse(data: { name: string, location?: string, i
 }
 
 export async function updateWarehouse(id: string, data: { name?: string, location?: string, isDefault?: boolean }) {
+    await verifyActionPermission('INVENTORY_MANAGE');
     if (data.isDefault) {
         await prisma.warehouse.updateMany({
             where: { isDefault: true, id: { not: id } },
@@ -50,6 +53,7 @@ export async function getProductGroups() {
 }
 
 export async function createProductGroup(data: { name: string; description?: string }) {
+    await verifyActionPermission('PRODUCTS_CREATE');
     const existing = await prisma.productGroup.findUnique({ where: { name: data.name } });
     if (existing) {
         throw new Error(`Nhóm sản phẩm "${data.name}" đã tồn tại!`);
@@ -62,6 +66,7 @@ export async function createProductGroup(data: { name: string; description?: str
 }
 
 export async function updateProductGroup(id: string, data: { name?: string; description?: string }) {
+    await verifyActionPermission('PRODUCTS_EDIT');
     if (data.name) {
         const existing = await prisma.productGroup.findUnique({ where: { name: data.name } });
         if (existing && existing.id !== id) {
@@ -79,6 +84,7 @@ export async function updateProductGroup(id: string, data: { name?: string; desc
 }
 
 export async function deleteProductGroup(id: string) {
+    await verifyActionPermission('PRODUCTS_DELETE');
     // Check if there are products in this group before deleting
     const productCount = await prisma.product.count({ where: { groupId: id } });
     if (productCount > 0) {
@@ -119,6 +125,7 @@ export async function createProduct(data: {
     isActive?: boolean;
     groupId?: string | null;
 }) {
+    await verifyActionPermission('PRODUCTS_CREATE');
     const existing = await prisma.product.findUnique({ where: { sku: data.sku } });
     if (existing) {
         throw new Error(`Mã sản phẩm (SKU) ${data.sku} đã tồn tại!`);
@@ -143,6 +150,7 @@ export async function updateProduct(id: string, data: Partial<{
     isActive: boolean;
     groupId: string | null;
 }>) {
+    await verifyActionPermission('PRODUCTS_EDIT');
     if (data.sku) {
         const existing = await prisma.product.findUnique({ where: { sku: data.sku } });
         if (existing && existing.id !== id) {
@@ -159,6 +167,7 @@ export async function updateProduct(id: string, data: Partial<{
 }
 
 export async function deleteProduct(id: string) {
+    await verifyActionPermission('PRODUCTS_DELETE');
     await prisma.product.delete({ where: { id } });
     revalidatePath('/inventory/products');
 }

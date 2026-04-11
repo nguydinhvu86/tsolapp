@@ -1,17 +1,17 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
+import { verifyActionPermission } from '@/lib/permissions';
 
 export async function getPbxConfig() {
+    await verifyActionPermission('SETTINGS_VIEW_ALL');
     const config = await (prisma as any).pbxConfig.findFirst();
     return config;
 }
 
 export async function savePbxConfig(data: any) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) throw new Error('Unauthorized');
+    await verifyActionPermission('SETTINGS_EDIT_ALL');
 
     const existing = await (prisma as any).pbxConfig.findFirst();
     if (existing) {

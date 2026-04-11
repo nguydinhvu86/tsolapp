@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { revalidatePath } from "next/cache";
 import { logCustomerActivity } from "@/lib/customerLogger";
+import { verifyActionOwnership } from '@/lib/permissions';
 
 export async function getCustomerWithRelations(id: string) {
     try {
@@ -89,12 +90,12 @@ export async function updateCustomerPassword(customerId: string, newPassword: st
     try {
         const session = await getServerSession(authOptions);
         if (!session?.user?.id) return { success: false, error: "Unauthorized" };
-        const permissions = (session.user.permissions as string[]) || [];
-        const canEdit = permissions.includes('CUSTOMERS_EDIT');
         
-        if (!canEdit && session.user.role !== 'ADMIN') {
-            return { success: false, error: "Bạn không có quyền cấp mật khẩu khách hàng" };
-        }
+        const cust = await prisma.customer.findUnique({ where: { id: customerId }, include: { managers: true } });
+        if (!cust) return { success: false, error: "Khách hàng không tồn tại" };
+        
+        const managers = cust.managers ? cust.managers.map((m: any) => m.id) : [];
+        await verifyActionOwnership('CUSTOMERS', 'EDIT', '', managers);
 
         const bcrypt = require('bcryptjs');
         const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -126,6 +127,11 @@ export async function createCustomerNote(customerId: string, content: string, at
         const session = await getServerSession(authOptions);
         if (!session?.user?.id) return { success: false, error: "Unauthorized" };
         const userId = session.user.id;
+
+        const cust = await prisma.customer.findUnique({ where: { id: customerId }, include: { managers: true } });
+        if (!cust) return { success: false, error: "Không tìm thấy khách hàng" };
+        const managers = cust.managers ? cust.managers.map((m: any) => m.id) : [];
+        await verifyActionOwnership('CUSTOMERS', 'EDIT', '', managers);
 
         const note = await prisma.customerNote.create({
             data: {
@@ -160,14 +166,12 @@ export async function deleteCustomerNote(noteId: string) {
         if (!session?.user?.id) return { success: false, error: "Unauthorized" };
         const userId = session.user.id;
 
-        const note = await prisma.customerNote.findUnique({ where: { id: noteId } });
+        const note = await prisma.customerNote.findUnique({ where: { id: noteId }, include: { customer: { include: { managers: true } } } });
         if (!note) return { success: false, error: "Không tìm thấy ghi chú" };
 
         if (note.userId !== userId) {
-            const user = await prisma.user.findUnique({ where: { id: userId } });
-            if (user?.role !== 'ADMIN') {
-                return { success: false, error: "Bạn không có quyền xóa ghi chú này" };
-            }
+            const managers = note.customer?.managers ? note.customer.managers.map((m: any) => m.id) : [];
+            await verifyActionOwnership('CUSTOMERS', 'EDIT', '', managers);
         }
 
         await prisma.customerNote.delete({ where: { id: noteId } });

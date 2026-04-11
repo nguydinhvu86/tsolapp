@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { revalidatePath } from 'next/cache';
-import { buildViewFilter } from '@/lib/permissions';
+import { buildViewFilter, verifyActionPermission, verifyActionOwnership } from '@/lib/permissions';
 import { logCustomerActivity } from '@/lib/customerLogger';
 import { sendEmailWithTracking } from '@/lib/mailer';
 
@@ -37,7 +37,8 @@ export async function getSalesPayments() {
 }
 
 export async function createSalesPayment(data: any) {
-    const user = await getUser();
+    const user = await verifyActionPermission('SALES_PAYMENTS_CREATE');
+    const uId = (user as any).id;
 
     return prisma.$transaction(async (tx: any) => {
         let code = data.code;
@@ -102,7 +103,7 @@ export async function createSalesPayment(data: any) {
                 notes: data.notes,
                 attachment: data.attachment,
                 customerId: data.customerId,
-                creatorId: user.id,
+                creatorId: uId,
                 allocations: {
                     create: allocationsData
                 }
@@ -115,7 +116,7 @@ export async function createSalesPayment(data: any) {
             data: { totalDebt: customer.totalDebt - data.amount } // totalDebt should go DOWN when we receive payment
         });
 
-        await logCustomerActivity(data.customerId, user.id, 'NHẬN_THANH_TOÁN', `Thu tiền ${data.amount.toLocaleString('vi-VN')} đ (Mã PT: ${code})`, tx);
+        await logCustomerActivity(data.customerId, uId, 'NHẬN_THANH_TOÁN', `Thu tiền ${data.amount.toLocaleString('vi-VN')} đ (Mã PT: ${code})`, tx);
 
         return payment;
     }, {
@@ -134,6 +135,7 @@ export async function updateSalesPayment(id: string, data: any) {
         });
 
         if (!oldPayment) throw new Error("Phiếu thu không tồn tại");
+        await verifyActionOwnership('SALES_PAYMENTS', 'EDIT', oldPayment.creatorId);
         if (oldPayment.status === 'CANCELLED') throw new Error("Không thể sửa phiếu thu đã hủy");
 
         // 1. Hoàn tác tác động của phiếu thu cũ
@@ -227,6 +229,7 @@ export async function cancelSalesPayment(id: string) {
         });
 
         if (!payment) throw new Error("Phiếu thu không tồn tại");
+        await verifyActionOwnership('SALES_PAYMENTS', 'EDIT', payment.creatorId);
         if (payment.status === 'CANCELLED') throw new Error("Phiếu thu đã bị hủy từ trước");
 
         // Reverse debt
@@ -276,6 +279,7 @@ export async function restoreSalesPayment(id: string) {
         });
 
         if (!payment) throw new Error("Phiếu thu không tồn tại");
+        await verifyActionOwnership('SALES_PAYMENTS', 'EDIT', payment.creatorId);
         if (payment.status === 'COMPLETED') throw new Error("Phiếu thu đang ở trạng thái hoàn thành, không thể khôi phục");
 
         // Áp dụng lại công nợ
@@ -325,6 +329,7 @@ export async function deleteSalesPayment(id: string) {
         });
 
         if (!payment) throw new Error("Phiếu thu không tồn tại");
+        await verifyActionOwnership('SALES_PAYMENTS', 'DELETE', payment.creatorId);
 
         if (payment.status !== 'CANCELLED') {
             // Reverse debt: Customer owes us more now
@@ -372,6 +377,7 @@ export async function uploadSalesPaymentDocument(paymentId: string, url: string,
         });
 
         if (!payment) throw new Error("Không tìm thấy Phiếu Thu này");
+        await verifyActionOwnership('SALES_PAYMENTS', 'EDIT', payment.creatorId);
 
         let existingDocs: any[] = [];
         if (payment.attachment) {

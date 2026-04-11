@@ -6,8 +6,10 @@ import { authOptions } from "@/lib/authOptions";
 import { logCustomerActivity } from "@/lib/customerLogger";
 import { revalidatePath } from 'next/cache';
 import { sendEmailWithTracking } from '@/lib/mailer';
+import { buildViewFilter, verifyActionPermission, verifyActionOwnership } from '@/lib/permissions';
 
 export async function createCustomer(data: { name: string, email?: string, phone?: string, address?: string, taxCode?: string }) {
+    await verifyActionPermission('CUSTOMERS_CREATE');
     if (data.email) data.email = data.email.trim();
     if (!data.email) data.email = undefined; // Prisma expects undefined/null to not insert an empty string
 
@@ -35,6 +37,11 @@ export async function createCustomer(data: { name: string, email?: string, phone
 }
 
 export async function updateCustomer(id: string, data: { name: string, email?: string, phone?: string, address?: string, taxCode?: string }) {
+    const cust = await prisma.customer.findUnique({ where: { id }, include: { managers: true } });
+    if (!cust) throw new Error("Not found");
+    const managers = cust.managers ? cust.managers.map((m: any) => m.id) : [];
+    await verifyActionOwnership('CUSTOMERS', 'EDIT', '', managers);
+
     if (data.email) data.email = data.email.trim();
     if (!data.email) data.email = undefined;
 
@@ -62,6 +69,11 @@ export async function updateCustomer(id: string, data: { name: string, email?: s
 }
 
 export async function deleteCustomer(id: string) {
+    const cust = await prisma.customer.findUnique({ where: { id }, include: { managers: true } });
+    if (!cust) throw new Error("Not found");
+    const managers = cust.managers ? cust.managers.map((m: any) => m.id) : [];
+    await verifyActionOwnership('CUSTOMERS', 'DELETE', '', managers);
+
     await prisma.customer.delete({ where: { id } });
     revalidatePath('/customers');
 }
@@ -153,6 +165,11 @@ export async function assignCustomerManagers(customerId: string, userIds: string
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) throw new Error("Unauthorized");
 
+    const cust = await prisma.customer.findUnique({ where: { id: customerId }, include: { managers: true } });
+    if (!cust) throw new Error("Not found");
+    const managers = cust.managers ? cust.managers.map((m: any) => m.id) : [];
+    await verifyActionOwnership('CUSTOMERS', 'EDIT', '', managers);
+
     try {
         const customer = await prisma.customer.update({
             where: { id: customerId },
@@ -183,6 +200,11 @@ export async function assignCustomerManagers(customerId: string, userIds: string
 export async function removeCustomerManager(customerId: string, userId: string) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) throw new Error("Unauthorized");
+
+    const cust = await prisma.customer.findUnique({ where: { id: customerId }, include: { managers: true } });
+    if (!cust) throw new Error("Not found");
+    const managers = cust.managers ? cust.managers.map((m: any) => m.id) : [];
+    await verifyActionOwnership('CUSTOMERS', 'EDIT', '', managers);
 
     try {
         const userToRemove = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
@@ -216,6 +238,11 @@ export async function removeCustomerManager(customerId: string, userId: string) 
 // ==========================================
 
 export async function createCustomerContact(customerId: string, data: { name: string, email?: string, position?: string, phone?: string, otherPhone?: string, birthday?: Date | null }) {
+    const cust = await prisma.customer.findUnique({ where: { id: customerId }, include: { managers: true } });
+    if (!cust) throw new Error("Not found");
+    const managers = cust.managers ? cust.managers.map((m: any) => m.id) : [];
+    await verifyActionOwnership('CUSTOMERS', 'EDIT', '', managers);
+
     try {
         const contact = await prisma.customerContact.create({
             data: {
@@ -249,6 +276,14 @@ export async function createCustomerContact(customerId: string, data: { name: st
 
 export async function updateCustomerContact(contactId: string, data: { name: string, email?: string, position?: string, phone?: string, otherPhone?: string, birthday?: Date | null }) {
     try {
+        const existing = await prisma.customerContact.findUnique({ where: { id: contactId } });
+        if (!existing) throw new Error("Not found");
+
+        const cust = await prisma.customer.findUnique({ where: { id: existing.customerId }, include: { managers: true } });
+        if (!cust) throw new Error("Not found");
+        const managers = cust.managers ? cust.managers.map((m: any) => m.id) : [];
+        await verifyActionOwnership('CUSTOMERS', 'EDIT', '', managers);
+
         const contact = await prisma.customerContact.update({
             where: { id: contactId },
             data: {
@@ -281,6 +316,14 @@ export async function updateCustomerContact(contactId: string, data: { name: str
 
 export async function deleteCustomerContact(contactId: string) {
     try {
+        const existing = await prisma.customerContact.findUnique({ where: { id: contactId } });
+        if (!existing) throw new Error("Not found");
+
+        const cust = await prisma.customer.findUnique({ where: { id: existing.customerId }, include: { managers: true } });
+        if (!cust) throw new Error("Not found");
+        const managers = cust.managers ? cust.managers.map((m: any) => m.id) : [];
+        await verifyActionOwnership('CUSTOMERS', 'EDIT', '', managers);
+
         const contact = await prisma.customerContact.delete({
             where: { id: contactId }
         });

@@ -2,8 +2,16 @@
 
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { verifyActionOwnership } from '@/lib/permissions';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
 
 export async function deleteDispatch(id: string) {
+    const dispatch = await prisma.dispatch.findUnique({ where: { id }, include: { managers: true } });
+    if (!dispatch) throw new Error("Không tìm thấy văn thư");
+    const managers = dispatch.managers ? dispatch.managers.map((m: any) => m.id) : [];
+    await verifyActionOwnership('DISPATCHES', 'DELETE', '', managers);
+
     await prisma.dispatch.delete({
         where: { id }
     });
@@ -11,6 +19,11 @@ export async function deleteDispatch(id: string) {
 }
 
 export async function updateDispatchStatus(id: string, status: string) {
+    const dispatch = await prisma.dispatch.findUnique({ where: { id }, include: { managers: true } });
+    if (!dispatch) throw new Error("Không tìm thấy văn thư");
+    const managers = dispatch.managers ? dispatch.managers.map((m: any) => m.id) : [];
+    await verifyActionOwnership('DISPATCHES', 'EDIT', '', managers);
+
     await prisma.dispatch.update({
         where: { id },
         data: { status }
@@ -18,14 +31,12 @@ export async function updateDispatchStatus(id: string, status: string) {
     revalidatePath('/dispatches');
 }
 
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/authOptions";
-
 export async function assignDispatchManagers(dispatchId: string, userIds: string[]) {
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-        throw new Error("Unauthorized");
-    }
+    const dispatch = await prisma.dispatch.findUnique({ where: { id: dispatchId }, include: { managers: true } });
+    if (!dispatch) throw new Error("Không tìm thấy văn thư");
+    const mIds = dispatch.managers ? dispatch.managers.map((m: any) => m.id) : [];
+    await verifyActionOwnership('DISPATCHES', 'EDIT', '', mIds);
+
     const doc = await prisma.dispatch.update({
         where: { id: dispatchId },
         data: {
@@ -39,10 +50,11 @@ export async function assignDispatchManagers(dispatchId: string, userIds: string
 }
 
 export async function removeDispatchManager(dispatchId: string, userId: string) {
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-        throw new Error("Unauthorized");
-    }
+    const dispatch = await prisma.dispatch.findUnique({ where: { id: dispatchId }, include: { managers: true } });
+    if (!dispatch) throw new Error("Không tìm thấy văn thư");
+    const mIds = dispatch.managers ? dispatch.managers.map((m: any) => m.id) : [];
+    await verifyActionOwnership('DISPATCHES', 'EDIT', '', mIds);
+
     const doc = await prisma.dispatch.update({
         where: { id: dispatchId },
         data: {

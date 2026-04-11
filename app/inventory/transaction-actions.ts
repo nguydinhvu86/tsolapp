@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { buildViewFilter, verifyActionPermission, verifyActionOwnership } from '@/lib/permissions';
 
 export async function getTransactions(filters?: { type?: string; status?: string; warehouseId?: string }) {
     let where: any = {};
@@ -52,6 +53,9 @@ export async function createTransaction(data: {
     creatorId: string;
     items: { productId: string; quantity: number; price?: number }[];
 }) {
+    const user = await verifyActionPermission('INVENTORY_TRANSACTIONS_CREATE');
+    const uId = user ? (user as any).id : data.creatorId;
+
     const existing = await prisma.inventoryTransaction.findUnique({ where: { code: data.code } });
     if (existing) {
         throw new Error(`Mã giao dịch (Phiếu) ${data.code} đã tồn tại!`);
@@ -71,7 +75,7 @@ export async function createTransaction(data: {
             date: data.date || new Date(),
             fromWarehouseId: data.fromWarehouseId,
             toWarehouseId: data.toWarehouseId,
-            creatorId: data.creatorId,
+            creatorId: uId,
             status: 'DRAFT',
             items: {
                 create: data.items.map(item => ({
@@ -94,6 +98,8 @@ export async function updateTransactionStatus(id: string, status: string, userId
     });
 
     if (!transaction) throw new Error("Không tìm thấy giao dịch.");
+    await verifyActionOwnership('INVENTORY_TX', 'EDIT', transaction.creatorId);
+
     if (transaction.status === 'COMPLETED') throw new Error("Giao dịch đã hoàn tất, không thể thay đổi trạng thái.");
 
     if (status === 'COMPLETED') {
@@ -185,6 +191,8 @@ export async function deleteTransaction(id: string) {
     if (transaction?.status === 'COMPLETED') {
         throw new Error("Không thể xóa giao dịch đã hoàn tất.");
     }
+    await verifyActionOwnership('INVENTORY_TX', 'DELETE', transaction?.creatorId || '');
+    
     await prisma.inventoryTransaction.delete({ where: { id } });
     revalidatePath('/inventory/transactions');
 }

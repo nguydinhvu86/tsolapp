@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { verifyActionPermission } from '@/lib/permissions';
 
 export async function createDispatch(data: {
     title: string;
@@ -11,6 +12,8 @@ export async function createDispatch(data: {
     content: string;
     variables: string;
 }) {
+    await verifyActionPermission('DISPATCHES_CREATE');
+
     const dispatch = await prisma.dispatch.create({
         data: {
             title: data.title,

@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "@/lib/authOptions";
+import { buildViewFilter, verifyActionPermission, verifyActionOwnership } from '@/lib/permissions';
 import { sendEmailWithTracking } from '@/lib/mailer';
 import { sendWebPushNotification } from '@/lib/notifications/webPush';
 
@@ -130,6 +131,7 @@ export async function getLeadById(id: string) {
 
 // 3. Create Lead
 export async function createLead(data: {
+    // ... args
     name: string;
     company?: string | null;
     contactName?: string | null;
@@ -143,8 +145,8 @@ export async function createLead(data: {
     notes?: string | null;
     assignedToId?: string | null;
 }) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) throw new Error('Unauthorized');
+    const user = await verifyActionPermission('CUSTOMERS_CREATE');
+    const uId = user ? (user as any).id : 'system';
 
     if (data.email) data.email = data.email.trim();
     if (!data.email) data.email = null;
@@ -201,7 +203,8 @@ export async function createLead(data: {
                     estimatedValue: data.estimatedValue,
                     expectedCloseDate: data.expectedCloseDate,
                     notes: data.notes,
-                    assignedToId: data.assignedToId || session.user.id,
+                    assignedToId: data.assignedToId || uId,
+                    creatorId: uId,
                 }
             });
 
@@ -219,7 +222,7 @@ export async function createLead(data: {
             await tx.leadActivityLog.create({
                 data: {
                     leadId: newLead.id,
-                    userId: session.user.id,
+                    userId: uId,
                     action: "TẠO_MỚI",
                     details: `Tạo cơ hội bán hàng mới: ${newLead.code}`
                 }
@@ -229,7 +232,7 @@ export async function createLead(data: {
         });
 
         // Send push notification to assigned user
-        if (result.assignedToId && result.assignedToId !== session.user.id) {
+        if (result.assignedToId && result.assignedToId !== uId) {
             sendWebPushNotification(result.assignedToId, {
                 title: 'Cơ hội bán hàng mới được giao',
                 body: `Bạn vừa được giao quản lý cơ hội: ${result.name}`,
@@ -250,7 +253,15 @@ export async function createLead(data: {
 // 4. Update Lead
 export async function updateLead(id: string, data: any) {
     const session = await getServerSession(authOptions);
-    if (!session?.user) throw new Error('Unauthorized');
+    if (!session?.user?.id) throw new Error('Unauthorized');
+
+    const oldLead = await prisma.lead.findUnique({ where: { id }, include: { assignees: true } });
+    if (!oldLead) throw new Error("Not found");
+    const managers = [];
+    if (oldLead.assignedToId) managers.push(oldLead.assignedToId);
+    if (oldLead.assignees) oldLead.assignees.forEach(a => managers.push(a.userId));
+    
+    await verifyActionOwnership('CUSTOMERS', 'EDIT', oldLead.creatorId || '', managers);
 
     if (data.email) data.email = data.email.trim();
     if (!data.email) data.email = null;
@@ -314,11 +325,14 @@ export async function updateLeadStatus(id: string, status: string) {
     try {
         const oldLead = await prisma.lead.findUnique({
             where: { id },
-            include: {
-                assignees: true,
-                assignedTo: true
-            }
+            include: { assignees: true, assignedTo: true }
         });
+        if (!oldLead) throw new Error("Not found");
+
+        const managers = [];
+        if (oldLead.assignedToId) managers.push(oldLead.assignedToId);
+        if (oldLead.assignees) oldLead.assignees.forEach(a => managers.push(a.userId));
+        await verifyActionOwnership('CUSTOMERS', 'EDIT', oldLead.creatorId || '', managers);
 
         const lead = await prisma.lead.update({
             where: { id },
@@ -438,6 +452,13 @@ export async function updateLeadAssignees(id: string, assigneeIds: string[]) {
     if (!session?.user) throw new Error('Unauthorized');
 
     try {
+        const oldLead = await prisma.lead.findUnique({ where: { id }, include: { assignees: true } });
+        if (!oldLead) throw new Error("Not found");
+        const managers = [];
+        if (oldLead.assignedToId) managers.push(oldLead.assignedToId);
+        if (oldLead.assignees) oldLead.assignees.forEach(a => managers.push(a.userId));
+        await verifyActionOwnership('CUSTOMERS', 'EDIT', oldLead.creatorId || '', managers);
+
         const result = await prisma.$transaction(async (tx) => {
             // Xóa hết assignees cũ
             await tx.leadAssignee.deleteMany({
@@ -493,9 +514,13 @@ export async function updateLeadAssignees(id: string, assigneeIds: string[]) {
 // 6. Delete Lead
 export async function deleteLead(id: string) {
     const session = await getServerSession(authOptions);
-    if (!session?.user) throw new Error('Unauthorized');
+    if (!session?.user?.id) throw new Error('Unauthorized');
 
     try {
+        const lead = await prisma.lead.findUnique({ where: { id } });
+        if (!lead) throw new Error("Not found");
+        await verifyActionOwnership('CUSTOMERS', 'DELETE', lead.creatorId || '');
+
         await prisma.lead.delete({
             where: { id }
         });
@@ -523,6 +548,12 @@ export async function convertLeadToCustomer(id: string) {
         if (lead.customerId) {
             throw new Error('Cơ hội này đã được liên kết với một Khách Hàng hiện tại.');
         }
+
+        const managers = [];
+        if (lead.assignedToId) managers.push(lead.assignedToId);
+        if (lead.assignees) lead.assignees.forEach(a => managers.push(a.userId));
+        await verifyActionOwnership('CUSTOMERS', 'EDIT', lead.creatorId || '', managers);
+        await verifyActionPermission('CUSTOMERS_CREATE');
 
         // DUPLICATE CHECK
         const existingCustomer = await prisma.customer.findFirst({

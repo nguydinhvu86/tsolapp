@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "@/lib/authOptions";
+import { verifyActionPermission, verifyActionOwnership } from '@/lib/permissions';
 
 export async function getExpenses() {
     const session = await getServerSession(authOptions);
@@ -55,10 +56,7 @@ export async function getExpenseCategories() {
 }
 
 export async function createExpenseCategory(data: { name: string; description?: string }) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-        throw new Error('Unauthorized');
-    }
+    await verifyActionPermission('SALES_EXPENSES_CREATE');
 
     try {
         const newCategory = await prisma.expenseCategory.create({
@@ -86,10 +84,8 @@ export async function createExpense(data: {
     supplierId?: string | null;
     customerId?: string | null;
 }) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-        throw new Error('Unauthorized');
-    }
+    const user = await verifyActionPermission('SALES_EXPENSES_CREATE');
+    const uId = (user as any).id;
 
     try {
         // Generate a code EXP-YYYYMM-001
@@ -127,7 +123,7 @@ export async function createExpense(data: {
                 attachment: data.attachment,
                 supplierId: data.supplierId || null,
                 customerId: data.customerId || null,
-                creatorId: session.user.id,
+                creatorId: uId,
                 status: 'COMPLETED'
             }
         });
@@ -152,10 +148,9 @@ export async function updateExpense(id: string, data: {
     supplierId?: string | null;
     customerId?: string | null;
 }) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-        throw new Error('Unauthorized');
-    }
+    const oldExpense = await prisma.expense.findUnique({ where: { id } });
+    if (!oldExpense) throw new Error("Khoản chi phí không tồn tại");
+    await verifyActionOwnership('SALES_EXPENSES', 'EDIT', oldExpense.creatorId);
 
     try {
         const expense = await prisma.expense.update({
@@ -216,16 +211,18 @@ export async function getExpenseById(id: string) {
 }
 
 export async function addExpenseNote(expenseId: string, content: string, attachment?: string) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-        throw new Error('Unauthorized');
-    }
+    const user = await verifyActionPermission('SALES_EXPENSES_EDIT');
+    const uId = (user as any).id;
+    
+    const oldExpense = await prisma.expense.findUnique({ where: { id: expenseId } });
+    if (!oldExpense) throw new Error("Khoản chi phí không tồn tại");
+    await verifyActionOwnership('SALES_EXPENSES', 'EDIT', oldExpense.creatorId);
 
     try {
         const note = await prisma.expenseNote.create({
             data: {
                 expenseId,
-                userId: session.user.id,
+                userId: uId,
                 content,
                 attachment,
             }
@@ -235,7 +232,7 @@ export async function addExpenseNote(expenseId: string, content: string, attachm
         await prisma.expenseActivityLog.create({
             data: {
                 expenseId,
-                userId: session.user.id,
+                userId: uId,
                 action: 'THÊM_GHI_CHÚ',
                 details: 'Đã thêm ghi chú mới'
             }
@@ -249,10 +246,9 @@ export async function addExpenseNote(expenseId: string, content: string, attachm
 }
 
 export async function deleteExpense(id: string) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-        throw new Error('Unauthorized');
-    }
+    const oldExpense = await prisma.expense.findUnique({ where: { id } });
+    if (!oldExpense) throw new Error("Khoản chi phí không tồn tại");
+    await verifyActionOwnership('SALES_EXPENSES', 'DELETE', oldExpense.creatorId);
 
     try {
         await prisma.expense.delete({

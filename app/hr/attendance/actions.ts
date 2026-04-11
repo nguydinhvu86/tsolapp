@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/authOptions";
 import { revalidatePath, unstable_noStore as noStore } from 'next/cache';
 import { createNotification } from '@/app/notifications/actions';
 import { sendEmailWithTracking } from '@/lib/mailer';
+import { verifyActionPermission } from '@/lib/permissions';
 
 // Helper: Parse HH:mm to minutes from start of day
 function parseTimeToMinutes(timeStr: string) {
@@ -413,11 +414,8 @@ export async function updateLeaveRequest(id: string, data: { type?: string, star
 
 // HR Actions
 async function checkHR() {
-    const session = await getServerSession(authOptions);
-    if (!session || !['ADMIN', 'HR'].includes(session.user?.role || '')) {
-        throw new Error("Chỉ HR hoặc Admin mới có quyền truy cập");
-    }
-    return session.user;
+    const user = await verifyActionPermission('HR_MANAGE');
+    return user as any;
 }
 
 export async function getPendingLeaveRequests() {

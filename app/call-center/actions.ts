@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/authOptions";
+import { verifyActionPermission } from '@/lib/permissions';
 
 async function getPbxSettings() {
     const urlSet = await prisma.systemSetting.findUnique({ where: { key: 'PBX_URL' } });
@@ -73,8 +74,7 @@ export async function clickToCall(to_number: string) {
 }
 
 export async function spyCall(src: string, dst: string, mode: 'whisper' | 'threeway' | 'caller' | 'callee') {
-    const session = await getServerSession(authOptions);
-    if (!session) throw new Error("Unauthorized");
+    await verifyActionPermission('CALL_CENTER_VIEW_ALL');
 
     const settings = await getPbxSettings();
     if (!settings.url || !settings.key) throw new Error("PBX Settings missing.");
@@ -105,6 +105,9 @@ export async function spyCall(src: string, dst: string, mode: 'whisper' | 'three
 }
 
 export async function getExtensionStatus(exts: string[]) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) return [];
+
     if (!exts.length) return [];
     
     const settings = await getPbxSettings();

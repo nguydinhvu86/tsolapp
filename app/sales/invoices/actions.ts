@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { logCustomerActivity } from '@/lib/customerLogger';
-import { buildViewFilter } from '@/lib/permissions';
+import { buildViewFilter, verifyActionPermission, verifyActionOwnership } from '@/lib/permissions';
 import { sendEmailWithTracking } from '@/lib/mailer';
 
 export async function sendInvoiceEmail(
@@ -65,11 +65,8 @@ export async function sendInvoiceEmail(
 
 export async function submitSalesInvoice(creatorId: string, formData: any) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) {
-            return { success: false, error: "Unauthorized" };
-        }
-        const actualCreatorId = session.user.id;
+        const user = await verifyActionPermission('SALES_INVOICES_CREATE');
+        const actualCreatorId = user ? (user as any).id : creatorId;
         if (!formData.code || !formData.customerId || !formData.items || formData.items.length === 0) {
             return { success: false, error: "Thiếu thông tin bắt buộc." };
         }
@@ -152,6 +149,8 @@ export async function updateSalesInvoice(id: string, formData: any) {
         if (!existingInvoice) {
             return { success: false, error: "Không tìm thấy hóa đơn." };
         }
+        await verifyActionOwnership('SALES_INVOICES', 'EDIT', existingInvoice.creatorId);
+
         if (existingInvoice.status !== "DRAFT") {
             return { success: false, error: "Chỉ Hóa Đơn Dự Thảo (DRAFT) mới có thể sửa." };
         }
@@ -251,6 +250,8 @@ export async function updateSalesInvoiceStatus(id: string, newStatus: string) {
 
         const inv = await prisma.salesInvoice.findUnique({ where: { id } });
         if (!inv) return { success: false, error: "Không tìm thấy hóa đơn" };
+
+        await verifyActionOwnership('SALES_INVOICES', 'EDIT', inv.creatorId);
 
         if ((inv.status === 'ISSUED' || inv.status === 'PARTIAL_PAID' || inv.status === 'PAID') && newStatus === 'DRAFT') {
             return { success: false, error: "Không thể tự chuyển hóa đơn đã Ghi Nhận về Dự Thảo. Xin hãy dùng chức năng Hủy Hóa Đơn để hệ thống tự động rollback tồn kho và công nợ." };
@@ -353,6 +354,9 @@ export async function approveSalesInvoice(invoiceId: string, userId: string) {
             });
 
             if (!invoice) throw new Error("Không tìm thấy hóa đơn");
+            
+            await verifyActionOwnership('SALES_INVOICES', 'EDIT', invoice.creatorId);
+
             if (invoice.status === "ISSUED" || invoice.status === "PAID" || invoice.status === "PARTIAL_PAID") {
                 throw new Error("Hóa đơn này đã được duyệt trước đó");
             }
@@ -462,8 +466,11 @@ export async function approveSalesInvoice(invoiceId: string, userId: string) {
 export async function deleteSalesInvoice(id: string) {
     try {
         const inv = await prisma.salesInvoice.findUnique({ where: { id } });
-        if (inv && (inv.status === 'ISSUED' || inv.status === 'PARTIAL_PAID' || inv.status === 'PAID')) {
-            return { success: false, error: "Hóa đơn đã xuất kho và vào công nợ, không thể tự do xóa. Liên hệ admin phục hồi cơ sở dữ liệu." };
+        if (inv) {
+            await verifyActionOwnership('SALES_INVOICES', 'DELETE', inv.creatorId);
+            if (inv.status === 'ISSUED' || inv.status === 'PARTIAL_PAID' || inv.status === 'PAID') {
+                return { success: false, error: "Hóa đơn đã xuất kho và vào công nợ, không thể tự do xóa. Liên hệ admin phục hồi cơ sở dữ liệu." };
+            }
         }
         await prisma.salesInvoice.delete({ where: { id } });
         revalidatePath('/sales/invoices');
@@ -525,6 +532,9 @@ export async function cancelSalesInvoice(invoiceId: string) {
             });
 
             if (!invoice) throw new Error("Không tìm thấy hóa đơn");
+            
+            await verifyActionOwnership('SALES_INVOICES', 'EDIT', invoice.creatorId);
+
             if (invoice.status === "CANCELLED") throw new Error("Hóa đơn đã bị hủy từ trước");
 
             // Nếu hóa đơn đã được duyệt (đã xuất kho, ghi nhận công nợ) -> cần rollback
@@ -608,6 +618,9 @@ export async function restoreSalesInvoice(invoiceId: string) {
             });
 
             if (!invoice) throw new Error("Không tìm thấy hóa đơn");
+
+            await verifyActionOwnership('SALES_INVOICES', 'EDIT', invoice.creatorId);
+
             if (invoice.status !== "CANCELLED") {
                 throw new Error("Chỉ hóa đơn Đã Hủy mới có thể khôi phục.");
             }
@@ -710,9 +723,8 @@ export async function paySalesInvoice(
     notes: string = ''
 ) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) return { success: false, error: "Unauthorized" };
-        const creatorId = session.user.id;
+        const u = await verifyActionPermission('SALES_PAYMENTS_CREATE');
+        const creatorId = u ? (u as any).id : 'system';
 
         const result = await prisma.$transaction(async (tx) => {
             const invoice = await tx.salesInvoice.findUnique({

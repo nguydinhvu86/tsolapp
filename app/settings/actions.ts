@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { revalidatePath } from 'next/cache';
+import { verifyActionPermission } from '@/lib/permissions';
 
 // Các key mặc định
 const SETTING_KEYS = [
@@ -21,10 +22,7 @@ const SETTING_KEYS = [
 ];
 
 export async function getSystemSettings() {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'ADMIN') {
-        throw new Error('Unauthorized');
-    }
+    await verifyActionPermission('SETTINGS_VIEW_ALL');
 
     const settings = await prisma.systemSetting.findMany({
         where: { key: { in: SETTING_KEYS } }
@@ -36,10 +34,7 @@ export async function getSystemSettings() {
 }
 
 export async function updateSystemSettings(data: Record<string, string>) {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'ADMIN') {
-        throw new Error('Unauthorized');
-    }
+    await verifyActionPermission('SETTINGS_EDIT');
 
     // Upsert từng key
     for (const key of Object.keys(data)) {

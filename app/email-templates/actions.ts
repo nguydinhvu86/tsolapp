@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { verifyActionPermission } from '@/lib/permissions';
 
 export async function getEmailTemplates() {
     return prisma.emailTemplate.findMany({
@@ -17,6 +18,7 @@ export async function getEmailTemplate(id: string) {
 }
 
 export async function createEmailTemplate(data: { name: string, subject: string, body: string, module?: string }, creatorId: string) {
+    const user = await verifyActionPermission('TEMPLATES_EDIT');
     const template = await prisma.emailTemplate.create({
         data: {
             ...data,
@@ -28,6 +30,7 @@ export async function createEmailTemplate(data: { name: string, subject: string,
 }
 
 export async function updateEmailTemplate(id: string, data: { name: string, subject: string, body: string, module?: string }) {
+    await verifyActionPermission('TEMPLATES_EDIT');
     const template = await prisma.emailTemplate.update({
         where: { id },
         data
@@ -37,6 +40,7 @@ export async function updateEmailTemplate(id: string, data: { name: string, subj
 }
 
 export async function deleteEmailTemplate(id: string) {
+    await verifyActionPermission('TEMPLATES_EDIT');
     await prisma.emailTemplate.delete({
         where: { id }
     });

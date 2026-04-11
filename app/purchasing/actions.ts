@@ -225,10 +225,13 @@ export async function getPurchaseOrders() {
 
 export async function getPurchaseOrder(id: string) {
     const session = await getServerSession(authOptions);
-    if (!session) throw new Error("Unauthorized");
+    if (!session?.user?.id) throw new Error("Unauthorized");
 
-    return prisma.purchaseOrder.findUnique({
-        where: { id },
+    const viewFilter = buildViewFilter(session.user.id, session.user.permissions as string[] || [], 'PURCHASE_ORDERS', 'creatorId');
+    if (viewFilter.id === 'UNAUTHORIZED_NO_ACCESS') return null;
+
+    return prisma.purchaseOrder.findFirst({
+        where: { id, ...viewFilter },
         include: {
             supplier: true,
             creator: true,
@@ -375,10 +378,13 @@ export async function getPurchaseBills() {
 
 export async function getPurchaseBill(id: string) {
     const session = await getServerSession(authOptions);
-    if (!session) throw new Error("Unauthorized");
+    if (!session?.user?.id) throw new Error("Unauthorized");
 
-    return prisma.purchaseBill.findUnique({
-        where: { id },
+    const viewFilter = buildViewFilter(session.user.id, session.user.permissions as string[] || [], 'PURCHASE_BILLS', 'creatorId');
+    if (viewFilter.id === 'UNAUTHORIZED_NO_ACCESS') return null;
+
+    return prisma.purchaseBill.findFirst({
+        where: { id, ...viewFilter },
         include: {
             supplier: true,
             creator: true,
@@ -715,7 +721,8 @@ export async function getPurchasePayments() {
 }
 
 export async function createPurchasePayment(data: any) {
-    const user = await getUser();
+    const user = await verifyActionPermission('PURCHASE_PAYMENTS_CREATE');
+    const uId = (user as any).id;
 
     return prisma.$transaction(async (tx: any) => {
         let code = data.code;
@@ -781,7 +788,7 @@ export async function createPurchasePayment(data: any) {
                 notes: data.notes,
                 attachment: data.attachment,
                 supplierId: data.supplierId,
-                creatorId: user.id,
+                creatorId: uId,
                 allocations: {
                     create: allocationsData
                 }
@@ -799,7 +806,9 @@ export async function createPurchasePayment(data: any) {
 }
 
 export async function updatePurchasePayment(id: string, data: any) {
-    await getUser();
+    const oldPayment = await prisma.purchasePayment.findUnique({ where: { id } });
+    if (!oldPayment) throw new Error("Phiếu chi không tồn tại");
+    await verifyActionOwnership('PURCHASE_PAYMENTS', 'EDIT', oldPayment.creatorId);
 
     // Simplification: only allow updating notes and reference
     const payment = await prisma.purchasePayment.update({
@@ -826,6 +835,7 @@ export async function deletePurchasePayment(id: string) {
         });
 
         if (!payment) throw new Error("Phiếu chi không tồn tại");
+        await verifyActionOwnership('PURCHASE_PAYMENTS', 'DELETE', payment.creatorId);
 
         // Reverse debt
         const supplier = await tx.supplier.findUnique({ where: { id: payment.supplierId } });
@@ -866,6 +876,7 @@ export async function uploadPurchasePaymentDocument(paymentId: string, url: stri
         });
 
         if (!payment) throw new Error("Không tìm thấy Phiếu Chi này");
+        await verifyActionOwnership('PURCHASE_PAYMENTS', 'EDIT', payment.creatorId);
 
         let existingDocs: any[] = [];
         if (payment.attachment) {
@@ -919,6 +930,7 @@ export async function uploadPurchaseBillDocument(billId: string, url: string, na
         });
 
         if (!bill) throw new Error("Không tìm thấy Hóa đơn này");
+        await verifyActionOwnership('PURCHASE_BILLS', 'EDIT', bill.creatorId);
 
         let existingDocs: any[] = [];
         if (bill.attachment) {
