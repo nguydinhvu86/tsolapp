@@ -14,17 +14,17 @@ If you remove these generic classes (e.g. `stat-card`, `btn-primary`,
 @tailwind utilities;
 
 :root {
-    --primary: #4f46e5;
-    --primary-hover: #4338ca;
+    --primary: #05A613;
+    --primary-hover: #048c10;
     --secondary: #52525b;
-    --background: #f4f4f5;
+    --background: #f8fafc;
     --surface: #ffffff;
     --border: #e4e4e7;
     --text-main: #18181b;
     --text-muted: #71717a;
     --danger: #ef4444;
     --success: #10b981;
-    --radius: 10px;
+    --radius: 12px;
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
@@ -507,15 +507,15 @@ table {
 
 .input:focus {
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+    box-shadow: 0 0 0 4px rgba(5, 166, 19, 0.12);
 }
 
 .card {
     background: var(--surface);
-    border-radius: var(--radius);
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.03), 0 2px 8px -2px rgba(0, 0, 0, 0.02);
     padding: 1.75rem;
-    border: 1px solid rgba(228, 228, 231, 0.6);
+    border: 1px solid #f1f5f9;
 }
 
 /* Premium Stat Cards */
@@ -757,28 +757,29 @@ table {
 }
 
 .table-wrapper table th {
-    background: #fafafa;
+    background: #f8fafc;
     text-align: left;
-    padding: 0.875rem 1.25rem;
-    font-weight: 600;
+    padding: 1rem 1.25rem;
+    font-weight: 700;
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--text-muted);
-    border-bottom: 1px solid var(--border);
+    color: #64748b;
+    border-bottom: 1px solid #f1f5f9;
     white-space: nowrap;
 }
 
 .table-wrapper table td {
     padding: 1rem 1.25rem;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid #f8fafc;
     font-size: 0.9375rem;
+    color: #334155;
     transition: background-color 0.2s ease;
     white-space: nowrap;
 }
 
 .table-wrapper table tr:hover td {
-    background-color: #fafafa;
+    background-color: #f8fafc;
 }
 
 .table-wrapper table tr:last-child td {
@@ -809,8 +810,6 @@ table {
 
 .sidebar-container {
     width: 260px;
-    background-color: var(--surface);
-    border-right: 1px solid var(--border);
     height: 100vh;
     position: fixed;
     top: 0;
@@ -838,8 +837,8 @@ table {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(8px);
 }
 
 .modal-container {
@@ -848,8 +847,9 @@ table {
     max-height: 90vh;
     display: flex;
     flex-direction: column;
-    animation: fadeIn 0.2s ease-out;
-    border-radius: var(--radius);
+    animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    border-radius: 20px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
 }
 
 .hide-on-desktop {

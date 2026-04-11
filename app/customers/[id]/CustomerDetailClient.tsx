@@ -194,7 +194,7 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                 </Button>
                                 <Button
                                     onClick={() => setIsPasswordModalOpen(true)}
-                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-[#5A5CE1] text-white border-none px-4 py-2 rounded-lg cursor-pointer hover:bg-indigo-700 transition-colors shadow-sm font-medium text-sm h-[36px]"
+                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-primary text-white border-none px-4 py-2 rounded-lg cursor-pointer hover:bg-primary-hover transition-colors shadow-sm font-medium text-sm h-[36px]"
                                     title="Cấp quyền đăng nhập Customer Portal"
                                 >
                                     <UserCheck size={16} /> Tài khoản Portal
@@ -205,14 +205,14 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                         navigator.clipboard.writeText(window.location.origin + '/portal/login');
                                         alert('Đã copy link: ' + window.location.origin + '/portal/login');
                                     }}
-                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-[#5A5CE1] text-white border-none px-4 py-2 rounded-lg cursor-pointer hover:bg-indigo-700 transition-colors shadow-sm font-medium text-sm h-[36px]"
+                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-primary text-white border-none px-4 py-2 rounded-lg cursor-pointer hover:bg-primary-hover transition-colors shadow-sm font-medium text-sm h-[36px]"
                                     title="Copy đường dẫn đăng nhập Portal"
                                 >
                                     <LinkIcon size={16} /> Link Portal
                                 </Button>
                                 <Button
                                     onClick={() => setIsEmailModalOpen(true)}
-                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-[#5A5CE1] text-white border-none px-4 py-2 rounded-lg cursor-pointer hover:bg-indigo-700 transition-colors shadow-sm font-medium text-sm h-[36px]"
+                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-primary text-white border-none px-4 py-2 rounded-lg cursor-pointer hover:bg-primary-hover transition-colors shadow-sm font-medium text-sm h-[36px]"
                                     title="Gửi Email"
                                 >
                                     <Mail size={16} /> Gửi Email

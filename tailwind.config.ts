@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import colors from "tailwindcss/colors";
 
 const config: Config = {
     content: [
@@ -16,13 +17,15 @@ const config: Config = {
         extend: {
             colors: {
                 primary: {
-                    DEFAULT: '#4f46e5',
-                    hover: '#4338ca',
+                    DEFAULT: '#05A613',
+                    hover: '#048c10',
                 },
                 surface: {
                     DEFAULT: '#ffffff',
                     hover: '#f8fafc',
                 },
+                indigo: colors.emerald,
+                blue: colors.emerald,
             },
             boxShadow: {
                 sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',

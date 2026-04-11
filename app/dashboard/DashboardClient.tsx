@@ -8,6 +8,8 @@ import { DashboardCalendar } from './DashboardCalendar';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { Modal } from '@/app/components/ui/Modal';
+import { EmptyState } from '@/app/components/ui/EmptyState';
+import { Skeleton } from '@/app/components/ui/Skeleton';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useTranslation } from '@/app/i18n/LanguageContext';
 
@@ -155,8 +157,11 @@ function TodoListWidget() {
         : activeTodos.slice(0, 5);
 
     if (!isLoaded) return (
-        <div className="flex items-center justify-center p-8 h-full">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="p-4 h-full flex flex-col">
+            <Skeleton className="w-1/3 h-6 mb-4" />
+            <Skeleton className="w-full h-10 mb-4" />
+            <Skeleton className="w-full h-16 mb-2" />
+            <Skeleton className="w-full h-16" />
         </div>
     ); // Avoid hydration mismatch and show loading state
 
@@ -172,10 +177,7 @@ function TodoListWidget() {
             <div className="flex items-center gap-2 mb-4">
                 <button
                     onClick={() => setIsAddTodoModalOpen(true)}
-                    className="flex-1 text-white font-medium py-2 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-sm"
-                    style={{ backgroundColor: '#2563eb' }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+                    className="flex-1 text-white font-medium py-2 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-sm bg-primary hover:bg-primary/90"
                 >
                     <Plus size={18} />
                     <span>{t("dashboard.todo.create")}</span>
@@ -191,9 +193,11 @@ function TodoListWidget() {
 
             <div className="flex-1 overflow-y-auto pr-1" style={{ maxHeight: showAll ? '400px' : 'auto' }}>
                 {todos.length === 0 ? (
-                    <div className="text-center text-sm text-gray-400 mt-8">
-                        {t("dashboard.todo.empty")}
-                    </div>
+                    <EmptyState 
+                        icon={CheckCircle2}
+                        title={t("dashboard.todo.empty")}
+                        description="Bắt đầu ngày mới bằng cách ghi chú công việc cần làm."
+                    />
                 ) : (
                     <ul className="space-y-2">
                         {displayedTodos.map(todo => (
@@ -552,17 +556,28 @@ export function DashboardClient({
     return (
         <div className="bg-gray-50/50 min-h-screen p-4 xl:p-8 pt-4 xl:pt-6">
             <div className="w-full mx-auto space-y-8 pb-10">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 md:mb-2 -mx-2 md:mx-0">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 md:mb-8 -mx-2 md:mx-0">
                     <div>
                         <h2 className="text-3xl font-bold text-gray-800 tracking-tight">{t("dashboard.header.title")}</h2>
                         <p className="text-gray-600 mt-1">{t("dashboard.header.subtitle")}</p>
                     </div>
                     <div className="flex flex-col sm:flex-row md:items-center items-stretch gap-3 w-full md:w-auto">
+                        <div className="flex items-center gap-2 mr-2">
+                           <a href="/sales/estimates/new" className="hidden lg:flex items-center gap-1.5 px-3 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-xl text-sm font-semibold transition-colors border border-emerald-100 shadow-sm">
+                               <Receipt size={16} className="shrink-0" /> <span className="whitespace-nowrap">Báo giá</span>
+                           </a>
+                           <a href="/customers" className="hidden lg:flex items-center gap-1.5 px-3 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl text-sm font-semibold transition-colors border border-blue-100 shadow-sm">
+                               <Users size={16} className="shrink-0" /> <span className="whitespace-nowrap">Khách hàng</span>
+                           </a>
+                           <button onClick={() => setIsAddEventModalOpen(true)} className="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-xl text-sm font-semibold transition-colors border border-indigo-100 shadow-sm">
+                               <Briefcase size={16} className="shrink-0" /> <span className="whitespace-nowrap">Giao việc</span>
+                           </button>
+                        </div>
                         {isAdminOrManager && users && users.length > 0 && (
                             <div className="flex items-center gap-2 w-full sm:w-auto">
                                 <span className="text-sm text-gray-500 font-medium whitespace-nowrap">{t("dashboard.header.displayBy")}</span>
                                 <select
-                                    className="flex-1 sm:flex-none px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                    className="flex-1 sm:flex-none px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm"
                                     value={currentEmployeeId || ''}
                                     onChange={(e) => {
                                         const newEmployeeId = e.target.value;
@@ -584,9 +599,9 @@ export function DashboardClient({
                         )}
                         <button
                             onClick={() => setIsCustomizeMode(!isCustomizeMode)}
-                            className={`w-full sm:w-auto px-4 py-2 rounded-xl font-medium text-sm transition-colors border flex-shrink-0 ${isCustomizeMode ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                            className={`w-full sm:w-auto px-4 py-2 rounded-xl font-medium text-sm transition-colors border flex-shrink-0 shadow-sm ${isCustomizeMode ? 'bg-primary text-white border-primary cursor-pointer' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
                         >
-                            {isCustomizeMode ? t("dashboard.header.finishCustomize") : t("dashboard.header.customize")}
+                            {isCustomizeMode ? "Hoàn tất chỉnh sửa" : t("dashboard.header.customize")}
                         </button>
                     </div>
                 </div>
@@ -604,7 +619,7 @@ export function DashboardClient({
                                                         ref={provided.innerRef}
                                                         {...provided.draggableProps}
                                                         {...(isCustomizeMode ? provided.dragHandleProps : {})}
-                                                        className={`transition-shadow ${snapshot.isDragging ? 'opacity-70 z-50 rounded-xl' : ''} ${isCustomizeMode ? 'ring-2 ring-dashed ring-blue-200 bg-blue-50/20 p-2 rounded-xl relative cursor-grab active:cursor-grabbing' : ''}`}
+                                                        className={`transition-shadow ${snapshot.isDragging ? 'opacity-90 z-50 rounded-2xl shadow-2xl scale-[1.01]' : ''} ${isCustomizeMode ? 'ring-2 ring-dashed ring-primary/40 bg-primary/5 p-3 rounded-2xl relative cursor-grab active:cursor-grabbing hover:bg-primary/10' : ''}`}
                                                     >
                                                         {isCustomizeMode && (
                                                             <div className="absolute top-4 right-4 bg-white border border-gray-200 shadow-sm p-1.5 rounded-lg text-gray-400 z-10 pointer-events-none">
@@ -617,68 +632,80 @@ export function DashboardClient({
                                                         )}
 
                                                         {widgetId === 'kpi_cards' && (
-                                                            /* KPI Cards */
-                                                            <div className="gap-4 mb-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
-                                                                <div className="stat-card stat-card-purple flex-1 min-w-[200px]">
-                                                                    <div className="flex justify-between items-start mb-2">
-                                                                        <span className="stat-title text-sm font-semibold uppercase tracking-wide">{t("dashboard.kpi.revenue")}</span>
-                                                                        <div className="stat-icon p-2 rounded-xl flex items-center justify-center">
-                                                                            <DollarSign size={20} strokeWidth={2.5} />
+                                                            /* KPI Cards - Modernized White Style */
+                                                            <div className="gap-5 mb-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
+                                                                <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+                                                                    <div className="absolute opacity-0 group-hover:opacity-100 top-0 left-0 w-1 h-full bg-blue-500 transition-opacity"></div>
+                                                                    <div className="flex justify-between items-start mb-4">
+                                                                        <span className="text-[13px] font-bold text-gray-500 uppercase tracking-wider">{t("dashboard.kpi.revenue")}</span>
+                                                                        <div className="bg-blue-50 text-blue-600 p-2.5 rounded-xl">
+                                                                            <DollarSign size={22} strokeWidth={2.5} />
                                                                         </div>
                                                                     </div>
-                                                                    <div className="stat-info">
-                                                                        <span className="stat-value text-3xl font-bold mb-1 truncate" title={formatMoney(revenueThisMonth)}>{formatMoney(revenueThisMonth)}</span>
-                                                                        <div className="text-[12px] font-medium mt-1" style={{ color: isRevenueUp ? '#10b981' : '#ef4444' }}>
-                                                                            <span className="font-bold">{isRevenueUp ? '↑' : '↓'} {Math.abs(revenueGrowth).toFixed(1)}%</span>
-                                                                            <span className="text-purple-700 opacity-80" style={{ color: 'inherit' }}> {t("dashboard.kpi.vsLastMonth")}</span>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="stat-card stat-card-amber flex-1 min-w-[200px]">
-                                                                    <div className="flex justify-between items-start mb-2">
-                                                                        <span className="stat-title text-sm font-semibold uppercase tracking-wide">{t("dashboard.kpi.invoices")}</span>
-                                                                        <div className="stat-icon p-2 rounded-xl flex items-center justify-center">
-                                                                            <Receipt size={20} strokeWidth={2.5} />
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="stat-info">
-                                                                        <span className="stat-value text-3xl font-bold mb-1">{invoicesThisMonth}</span>
-                                                                        <div className="text-[12px] font-medium mt-1" style={{ color: isInvoiceUp ? '#10b981' : '#ef4444' }}>
-                                                                            <span className="font-bold">{isInvoiceUp ? '↑' : '↓'} {Math.abs(invoiceGrowth).toFixed(1)}%</span>
-                                                                            <span className="text-amber-700 opacity-80" style={{ color: 'inherit' }}> {t("dashboard.kpi.vsLastMonth")}</span>
+                                                                    <div className="flex flex-col gap-1">
+                                                                        <span className="text-3xl font-black text-gray-900 truncate" title={formatMoney(revenueThisMonth)}>{formatMoney(revenueThisMonth)}</span>
+                                                                        <div className="flex items-center gap-2 mt-1">
+                                                                            <span className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[12px] font-bold ${isRevenueUp ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                                                                                {isRevenueUp ? '↑' : '↓'} {Math.abs(revenueGrowth).toFixed(1)}%
+                                                                            </span>
+                                                                            <span className="text-xs font-medium text-gray-400">{t("dashboard.kpi.vsLastMonth")}</span>
                                                                         </div>
                                                                     </div>
                                                                 </div>
 
-                                                                <div className="stat-card stat-card-green flex-1 min-w-[200px]">
-                                                                    <div className="flex justify-between items-start mb-2">
-                                                                        <span className="stat-title text-sm font-semibold uppercase tracking-wide" style={{ color: '#059669' }}>{t("dashboard.kpi.collected")}</span>
-                                                                        <div className="stat-icon p-2 rounded-xl flex items-center justify-center">
-                                                                            <CreditCard size={20} strokeWidth={2.5} />
+                                                                <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+                                                                    <div className="absolute opacity-0 group-hover:opacity-100 top-0 left-0 w-1 h-full bg-indigo-500 transition-opacity"></div>
+                                                                    <div className="flex justify-between items-start mb-4">
+                                                                        <span className="text-[13px] font-bold text-gray-500 uppercase tracking-wider">{t("dashboard.kpi.invoices")}</span>
+                                                                        <div className="bg-indigo-50 text-indigo-600 p-2.5 rounded-xl">
+                                                                            <Receipt size={22} strokeWidth={2.5} />
                                                                         </div>
                                                                     </div>
-                                                                    <div className="stat-info">
-                                                                        <span className="stat-value text-3xl font-bold mb-1 truncate" style={{ color: '#059669' }} title={formatMoney(paymentsThisMonth)}>{formatMoney(paymentsThisMonth)}</span>
-                                                                        <div className="text-[12px] font-medium mt-1" style={{ color: isPaymentUp ? '#10b981' : '#ef4444' }}>
-                                                                            <span className="font-bold">{isPaymentUp ? '↑' : '↓'} {Math.abs(paymentGrowth).toFixed(1)}%</span>
-                                                                            <span className="text-green-700 opacity-80" style={{ color: 'inherit' }}> {t("dashboard.kpi.vsLastMonth")}</span>
+                                                                    <div className="flex flex-col gap-1">
+                                                                        <span className="text-3xl font-black text-gray-900">{invoicesThisMonth}</span>
+                                                                        <div className="flex items-center gap-2 mt-1">
+                                                                            <span className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[12px] font-bold ${isInvoiceUp ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                                                                                {isInvoiceUp ? '↑' : '↓'} {Math.abs(invoiceGrowth).toFixed(1)}%
+                                                                            </span>
+                                                                            <span className="text-xs font-medium text-gray-400">{t("dashboard.kpi.vsLastMonth")}</span>
                                                                         </div>
                                                                     </div>
                                                                 </div>
 
-                                                                <div className="stat-card stat-card-blue flex-1 min-w-[200px]">
-                                                                    <div className="flex justify-between items-start mb-2">
-                                                                        <span className="stat-title text-sm font-semibold uppercase tracking-wide">{t("dashboard.kpi.debt")}</span>
-                                                                        <div className="stat-icon p-2 rounded-xl flex items-center justify-center">
-                                                                            <Briefcase size={20} strokeWidth={2.5} />
+                                                                <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+                                                                    <div className="absolute opacity-0 group-hover:opacity-100 top-0 left-0 w-1 h-full bg-emerald-500 transition-opacity"></div>
+                                                                    <div className="flex justify-between items-start mb-4">
+                                                                        <span className="text-[13px] font-bold text-emerald-600 uppercase tracking-wider">{t("dashboard.kpi.collected")}</span>
+                                                                        <div className="bg-emerald-50 text-emerald-600 p-2.5 rounded-xl">
+                                                                            <CreditCard size={22} strokeWidth={2.5} />
                                                                         </div>
                                                                     </div>
-                                                                    <div className="stat-info">
-                                                                        <span className="stat-value text-3xl font-bold mb-1 truncate" title={formatMoney(debtThisMonth)}>{formatMoney(debtThisMonth)}</span>
-                                                                        <div className="text-[12px] font-medium mt-1" style={{ color: isDebtUp ? '#ef4444' : '#10b981' }}>
-                                                                            <span className="font-bold">{isDebtUp ? '↑' : '↓'} {Math.abs(debtGrowth).toFixed(1)}%</span>
-                                                                            <span className="text-blue-700 opacity-80" style={{ color: 'inherit' }}> {t("dashboard.kpi.vsLastMonth")}</span>
+                                                                    <div className="flex flex-col gap-1">
+                                                                        <span className="text-3xl font-black text-emerald-600 truncate" title={formatMoney(paymentsThisMonth)}>{formatMoney(paymentsThisMonth)}</span>
+                                                                        <div className="flex items-center gap-2 mt-1">
+                                                                            <span className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[12px] font-bold ${isPaymentUp ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                                                                                {isPaymentUp ? '↑' : '↓'} {Math.abs(paymentGrowth).toFixed(1)}%
+                                                                            </span>
+                                                                            <span className="text-xs font-medium text-gray-400">{t("dashboard.kpi.vsLastMonth")}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+                                                                    <div className="absolute opacity-0 group-hover:opacity-100 top-0 left-0 w-1 h-full bg-orange-500 transition-opacity"></div>
+                                                                    <div className="flex justify-between items-start mb-4">
+                                                                        <span className="text-[13px] font-bold text-gray-500 uppercase tracking-wider">{t("dashboard.kpi.debt")}</span>
+                                                                        <div className="bg-orange-50 text-orange-600 p-2.5 rounded-xl">
+                                                                            <Briefcase size={22} strokeWidth={2.5} />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex flex-col gap-1">
+                                                                        <span className="text-3xl font-black text-gray-900 truncate" title={formatMoney(debtThisMonth)}>{formatMoney(debtThisMonth)}</span>
+                                                                        <div className="flex items-center gap-2 mt-1">
+                                                                            <span className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[12px] font-bold ${isDebtUp ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'}`}>
+                                                                                {isDebtUp ? '↑' : '↓'} {Math.abs(debtGrowth).toFixed(1)}%
+                                                                            </span>
+                                                                            <span className="text-xs font-medium text-gray-400">{t("dashboard.kpi.vsLastMonth")}</span>
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -700,14 +727,12 @@ export function DashboardClient({
                                                                         </div>
 
                                                                         {tasks.length === 0 ? (
-                                                                            <div className="flex-1 flex flex-col items-center justify-center text-gray-400 bg-gray-50/50 rounded-lg border border-dashed border-gray-200 p-8">
-                                                                                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
-                                                                                    <Briefcase size={24} className="text-gray-200" />
-                                                                                </div>
-                                                                                <p className="font-medium text-gray-500">{t("dashboard.myWork.empty")}</p>
-                                                                                <p className="text-sm mt-1 text-center max-w-sm">
-                                                                                    {t("dashboard.myWork.emptyDesc")}
-                                                                                </p>
+                                                                            <div className="flex-1 flex flex-col justify-center min-h-[250px]">
+                                                                                <EmptyState 
+                                                                                    icon={Briefcase}
+                                                                                    title={t("dashboard.myWork.empty")}
+                                                                                    description={t("dashboard.myWork.emptyDesc")}
+                                                                                />
                                                                             </div>
                                                                         ) : (
                                                                             <div className="table-wrapper custom-scrollbar" style={{ flex: 1, maxHeight: '320px', overflowY: 'auto' }}>
@@ -849,14 +874,12 @@ export function DashboardClient({
                                                                         </div>
 
                                                                         {activeLeads.length === 0 ? (
-                                                                            <div className="flex-1 flex flex-col items-center justify-center text-gray-400 bg-gray-50/50 rounded-lg border border-dashed border-gray-200 p-8 h-full min-h-[250px]">
-                                                                                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
-                                                                                    <Users size={24} className="text-gray-200" />
-                                                                                </div>
-                                                                                <p className="font-medium text-gray-500">{t("dashboard.leads.empty")}</p>
-                                                                                <p className="text-sm mt-1 text-center max-w-sm">
-                                                                                    {t("dashboard.leads.emptyDesc")}
-                                                                                </p>
+                                                                            <div className="flex-1 flex flex-col justify-center min-h-[250px]">
+                                                                                <EmptyState 
+                                                                                    icon={Users}
+                                                                                    title={t("dashboard.leads.empty")}
+                                                                                    description={t("dashboard.leads.emptyDesc")}
+                                                                                />
                                                                             </div>
                                                                         ) : (
                                                                             <div className="table-wrapper custom-scrollbar" style={{ flex: 1, maxHeight: '350px', overflowY: 'auto' }}>
@@ -938,9 +961,9 @@ export function DashboardClient({
                                                                                                     statusCounts[l.status] = (statusCounts[l.status] || 0) + 1;
                                                                                                 });
                                                                                                 const PIE_COLORS: Record<string, string> = {
-                                                                                                    'NEW': '#3b82f6', 'CONTACTED': '#6366f1',
-                                                                                                    'QUALIFIED': '#f59e0b', 'PROPOSAL': '#ec4899',
-                                                                                                    'WON': '#10b981', 'LOST': '#000000'
+                                                                                                    'NEW': '#3b82f6', 'CONTACTED': '#8b5cf6',
+                                                                                                    'QUALIFIED': '#f59e0b', 'PROPOSAL': '#f97316',
+                                                                                                    'WON': '#10b981', 'LOST': '#ef4444'
                                                                                                 };
                                                                                                 const PIE_LABELS: Record<string, string> = {
                                                                                                     'NEW': t("dashboard.leads.statusLabel.NEW"), 'CONTACTED': t("dashboard.leads.statusLabel.CONTACTED"), 'QUALIFIED': t("dashboard.leads.statusLabel.QUALIFIED"),
@@ -966,9 +989,9 @@ export function DashboardClient({
                                                                                                     statusCounts[l.status] = (statusCounts[l.status] || 0) + 1;
                                                                                                 });
                                                                                                 const PIE_COLORS: Record<string, string> = {
-                                                                                                    'NEW': '#3b82f6', 'CONTACTED': '#6366f1',
-                                                                                                    'QUALIFIED': '#f59e0b', 'PROPOSAL': '#ec4899',
-                                                                                                    'WON': '#10b981', 'LOST': '#000000'
+                                                                                                    'NEW': '#3b82f6', 'CONTACTED': '#8b5cf6',
+                                                                                                    'QUALIFIED': '#f59e0b', 'PROPOSAL': '#f97316',
+                                                                                                    'WON': '#10b981', 'LOST': '#ef4444'
                                                                                                 };
                                                                                                 const ordered = Object.entries(statusCounts).sort((a, b) => b[1] - a[1]);
                                                                                                 return ordered.map((entry, index) => (
@@ -1261,10 +1284,10 @@ export function DashboardClient({
                             <div className="p-4 sm:p-5 flex justify-end gap-3 shrink-0 relative z-10" style={{ backgroundColor: '#ffffff', boxShadow: '0 -4px 6px -1px rgba(0,0,0,0.05)' }}>
                                 <button
                                     onClick={() => setIsAddEventModalOpen(true)}
-                                    className="font-semibold py-2.5 px-6 flex items-center justify-center gap-2 transition-all w-full sm:w-auto"
-                                    style={{ background: 'linear-gradient(to right, #6366f1, #9333ea)', color: '#ffffff', borderRadius: '0.75rem', boxShadow: '0 4px 6px -1px rgba(99,102,241,0.2)' }}
-                                    onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(99,102,241,0.3)'; }}
-                                    onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(99,102,241,0.2)'; }}
+                                    className="font-semibold py-2.5 px-6 flex items-center justify-center gap-2 transition-all w-full sm:w-auto bg-primary text-white hover:bg-primary/90 shadow-sm"
+                                    style={{ borderRadius: '0.75rem' }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
                                 >
                                     <Plus className="w-5 h-5" />
                                     <span>Thêm sự kiện</span>

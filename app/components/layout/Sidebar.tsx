@@ -172,7 +172,7 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
                             flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                             padding: '0.75rem 1rem 0.75rem 0.25rem', borderRadius: 'var(--radius)',
                             backgroundColor: 'transparent', border: 'none', cursor: 'pointer',
-                            color: isChildActive ? 'var(--primary)' : 'var(--text-main)',
+                            color: isChildActive ? 'white' : '#94a3b8',
                             fontSize: '0.875rem', fontWeight: 500, transition: 'all 0.2s', outline: 'none'
                         }}
                     >
@@ -197,7 +197,7 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
                                                 width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                                                 padding: '0.5rem 0.75rem', borderRadius: 'var(--radius)',
                                                 backgroundColor: 'transparent', border: 'none', cursor: 'pointer',
-                                                color: isGrandChildActive ? 'var(--primary)' : 'var(--text-main)',
+                                                color: isGrandChildActive ? 'white' : '#94a3b8',
                                                 fontWeight: 500, transition: 'all 0.2s', outline: 'none', fontSize: '0.875rem'
                                             }}
                                         >
@@ -218,8 +218,8 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
                                                             onClick={() => { if (onClose && window.innerWidth < 768) onClose(); }}
                                                             style={{
                                                                 padding: '0.4rem 0.75rem', borderRadius: 'var(--radius)',
-                                                                backgroundColor: isActive ? 'rgba(79, 70, 229, 0.05)' : 'transparent',
-                                                                color: isActive ? 'var(--primary)' : 'var(--text-muted)',
+                                                                backgroundColor: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
+                                                                color: isActive ? 'white' : '#94a3b8',
                                                                 fontSize: '0.875rem', fontWeight: isActive ? 600 : 400, textDecoration: 'none',
                                                                 transition: 'all 0.2s', display: 'block'
                                                             }}
@@ -242,8 +242,8 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
                                     onClick={() => { if (onClose && window.innerWidth < 768) onClose(); }}
                                     style={{
                                         padding: '0.5rem 0.75rem', borderRadius: 'var(--radius)',
-                                        backgroundColor: isChildMenuActive ? 'rgba(79, 70, 229, 0.05)' : 'transparent',
-                                        color: isChildMenuActive ? 'var(--primary)' : 'var(--text-muted)',
+                                        backgroundColor: isChildMenuActive ? 'rgba(255,255,255,0.1)' : 'transparent',
+                                        color: isChildMenuActive ? 'white' : '#94a3b8',
                                         fontSize: '0.875rem', fontWeight: isChildMenuActive ? 600 : 500, textDecoration: 'none',
                                         transition: 'all 0.2s', display: 'block'
                                     }}
@@ -270,8 +270,8 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
                 style={{
                     flex: 1, display: 'flex', alignItems: 'center', gap: '0.75rem',
                     padding: '0.75rem 1rem 0.75rem 0.25rem', borderRadius: 'var(--radius)',
-                    backgroundColor: isActive ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
-                    color: isActive ? 'var(--primary)' : 'var(--text-main)',
+                    backgroundColor: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
+                    color: isActive ? 'white' : '#94a3b8',
                     fontSize: '0.875rem', fontWeight: isActive ? 600 : 500, transition: 'all 0.2s ease', textDecoration: 'none'
                 }}
             >
@@ -372,7 +372,7 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
     }
 
     return (
-        <aside className={`sidebar-container ${isOpen ? 'open' : ''}`} style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+        <aside className={`sidebar-container ${isOpen ? 'open' : ''} bg-slate-900 shadow-xl border-r border-slate-800 z-20`} style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
             <>
                 <style>{`
                     @keyframes sign-shine {
@@ -385,46 +385,24 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
                         50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 8px #10b981; }
                     }
                     .tech-signboard {
-                        background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
-                        border: 1px solid rgba(226, 232, 240, 0.8);
-                        box-shadow: 
-                            0 4px 15px -3px rgba(0, 0, 0, 0.05),
-                            0 2px 6px -2px rgba(0, 0, 0, 0.02),
-                            inset 0 2px 0 rgba(255, 255, 255, 0.9);
+                        background: transparent;
+                        border: 1px solid transparent;
                         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                        border-radius: 12px;
                     }
                     .tech-signboard:hover {
                         transform: translateY(-1px);
-                        box-shadow: 
-                            0 8px 20px -4px rgba(16, 185, 129, 0.15),
-                            0 4px 8px -3px rgba(59, 130, 246, 0.1),
-                            inset 0 2px 0 rgba(255, 255, 255, 1);
-                        border-color: rgba(16, 185, 129, 0.3);
+                        background: rgba(255,255,255,0.03);
+                        border-color: rgba(255,255,255,0.05);
                     }
-                    .dark .tech-signboard {
-                        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-                        border: 1px solid rgba(51, 65, 85, 0.8);
-                        box-shadow: 
-                            0 4px 15px -3px rgba(0, 0, 0, 0.3),
-                            inset 0 1px 0 rgba(255, 255, 255, 0.05);
-                    }
-                    .dark .tech-signboard:hover {
-                        border-color: rgba(16, 185, 129, 0.4);
-                        box-shadow: 
-                            0 8px 20px -4px rgba(16, 185, 129, 0.2),
-                            inset 0 1px 0 rgba(255, 255, 255, 0.1);
-                    }
+                    .dark .tech-signboard { }
+                    .dark .tech-signboard:hover { }
                     .brand-gradient-text {
-                        background: linear-gradient(90deg, #059669 0%, #0284c7 100%);
-                        -webkit-background-clip: text;
-                        -webkit-text-fill-color: transparent;
-                        background-clip: text;
+                        color: #ffffff;
+                        text-shadow: 0 2px 10px rgba(255,255,255,0.15);
                     }
                     .dark .brand-gradient-text {
-                        background: linear-gradient(90deg, #34d399 0%, #38bdf8 100%);
-                        -webkit-background-clip: text;
-                        -webkit-text-fill-color: transparent;
-                        background-clip: text;
+                        color: #ffffff;
                     }
                 `}</style>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.2rem 1rem', borderBottom: '1px solid var(--border)', gap: '10px' }}>
@@ -464,10 +442,10 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
                             ) : (
                                 <div style={{
                                     width: '42px', height: '42px', borderRadius: '10px',
-                                    background: 'linear-gradient(135deg, #10b981 0%, #0ea5e9 100%)',
+                                    background: 'linear-gradient(135deg, #05A613 0%, #048C10 100%)',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     color: 'white', flexShrink: 0,
-                                    boxShadow: '0 4px 12px rgba(14, 165, 233, 0.3)',
+                                    boxShadow: '0 4px 12px rgba(5, 166, 19, 0.4)',
                                     border: '1px solid rgba(255,255,255,0.2)',
                                     position: 'relative', zIndex: 1
                                 }}>
@@ -502,8 +480,9 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
                                 }}>
                                     <span style={{
                                         width: '6px', height: '6px', borderRadius: '50%',
-                                        background: '#10b981', display: 'inline-block',
-                                        animation: 'pulse-dot 2s infinite'
+                                        background: '#05A613', display: 'inline-block',
+                                        animation: 'pulse-dot 2s infinite',
+                                        boxShadow: '0 0 8px rgba(5, 166, 19, 0.6)'
                                     }}></span>
                                     ENTERPRISE SYSTEM
                                 </span>
@@ -548,9 +527,9 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
             {/* Online Users Widget */}
             {
                 isClient && onlineUsers.length > 0 && (
-                    <div style={{ padding: '1rem', borderTop: '1px solid var(--border)', marginTop: 'auto' }}>
+                    <div style={{ padding: '1rem', borderTop: '1px solid #334155', marginTop: 'auto' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                 Đang Online ({onlineUsers.length})
                             </span>
                             <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#22c55e', animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
@@ -563,7 +542,7 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
                                     key={u.id} 
                                     style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: u.id === session?.user?.id ? 'default' : 'pointer' }} 
                                     title={u.os ? `OS: ${u.os}` : ''}
-                                    className={u.id === session?.user?.id ? "" : "hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors rounded-lg p-1.5 -mx-1.5"}
+                                    className={u.id === session?.user?.id ? "" : "hover:bg-slate-800 transition-colors rounded-lg p-1.5 -mx-1.5"}
                                     onClick={() => {
                                         if (u.id !== session?.user?.id) {
                                             window.dispatchEvent(new CustomEvent('open-chat', { detail: { userId: u.id } }));
@@ -579,17 +558,17 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
                                         <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#22c55e', border: '2px solid white' }}></div>
                                     </div>
                                     <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        <div style={{ fontSize: '0.875rem', fontWeight: 500, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                             {u.name}
                                         </div>
-                                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                                        <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>
                                             {u.id === session?.user?.id ? 'Bạn' : (u.os || 'Đang hoạt động')}
                                         </div>
                                     </div>
                                 </div>
                             ))}
                             {onlineUsers.length > 5 && (
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '0.25rem' }}>
+                                <div style={{ fontSize: '0.75rem', color: '#94a3b8', textAlign: 'center', marginTop: '0.25rem' }}>
                                     +{onlineUsers.length - 5} người khác
                                 </div>
                             )}

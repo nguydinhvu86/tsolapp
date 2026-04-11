@@ -22,7 +22,7 @@ export function Pagination({
     if (totalItems === 0) return null;
 
     return (
-        <div className="flex flex-col sm:flex-row items-center justify-between border-t border-slate-200 px-4 py-3 sm:px-6 bg-white rounded-b-xl">
+        <div className="flex flex-col sm:flex-row items-center justify-between border-t border-slate-100 px-4 py-3 sm:px-6 bg-slate-50/30 rounded-b-2xl">
             <div className="flex items-center text-sm text-slate-500 mb-4 sm:mb-0">
                 <span className="mr-2 hidden sm:inline">Hiển thị</span>
                 <select
