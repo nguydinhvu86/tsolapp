@@ -58,5 +58,9 @@ export default async function PurchaseBillDetailPage({ params }: { params: { id:
         orderBy: { name: 'asc' }
     });
 
-    return <PurchaseBillDetailClient bill={bill} tasks={tasks} users={users} />;
+    const warehouses = await prisma.warehouse.findMany({
+        select: { id: true, name: true }
+    });
+
+    return <PurchaseBillDetailClient bill={bill} tasks={tasks} users={users} warehouses={warehouses} />;
 }

@@ -75,6 +75,7 @@ export default async function SupplierDetailPage({ params }: { params: { id: str
     });
 
     const users = await prisma.user.findMany({ select: { id: true, name: true, email: true }, orderBy: { name: 'asc' } });
+    const warehouses = await prisma.warehouse.findMany({ select: { id: true, name: true } });
 
-    return <SupplierDetailClient supplier={supplier} users={users} tasks={tasks} />;
+    return <SupplierDetailClient supplier={supplier} users={users} tasks={tasks} warehouses={warehouses} />;
 }

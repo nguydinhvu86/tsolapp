@@ -6,11 +6,12 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, CreditCard, Clock, Plus, Trash2, FileDown, ExternalLink, Copy, XCircle, AlertTriangle } from 'lucide-react';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import Link from 'next/link';
-import { uploadPurchaseBillDocument, cancelPurchaseBill, updatePurchaseBillNotes } from '@/app/purchasing/actions';
+import { uploadPurchaseBillDocument, cancelPurchaseBill, updatePurchaseBillNotes, approvePurchaseBill } from '@/app/purchasing/actions';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { DocumentPreviewModal } from '@/app/components/ui/DocumentPreviewModal';
+import { CheckCircle2 } from 'lucide-react';
 
-export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, tasks: any[], users: any[] }) {
+export function PurchaseBillDetailClient({ bill, tasks, users, warehouses }: { bill: any, tasks: any[], users: any[], warehouses?: any[] }) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'items' | 'payments' | 'tasks'>('items');
 
@@ -20,6 +21,10 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [copied, setCopied] = useState(false);
     const [previewDoc, setPreviewDoc] = useState<{ url: string, name: string } | null>(null);
+
+    // Approval Modal State
+    const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
+    const [approveWarehouseId, setApproveWarehouseId] = useState('');
 
     // Notes State
     const [noteText, setNoteText] = useState(bill.notes || '');
@@ -71,6 +76,25 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
     // Pagination hooks
     const itemsPag = usePagination(bill.items || []);
     const allocationsPag = usePagination(bill.allocations || []);
+
+    const handleApprove = async () => {
+        if (!approveWarehouseId) {
+            alert('Vui lòng chọn kho để nhập hàng hóa!');
+            return;
+        }
+        setIsSubmitting(true);
+        try {
+            const updated = await approvePurchaseBill(localBill.id, approveWarehouseId);
+            setLocalBill({ ...localBill, status: updated.status });
+            setIsApproveModalOpen(false);
+            alert('Duyệt hóa đơn thành công!');
+        } catch (error: any) {
+            console.error(error);
+            alert(error.message || 'Lỗi khi duyệt hóa đơn!');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     const handleCancel = async () => {
         if (confirm(`Bạn có chắc chắn muốn HỦY Hóa Đơn ${localBill.code}?\n\nHành động này sẽ:\n- Hủy phiếu Nhập Kho tương ứng\n- Giảm lại công nợ NCC.\n\nLưu ý: Không thể hủy nếu hóa đơn đã có thanh toán.`)) {
@@ -164,6 +188,15 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
                     >
                         <ExternalLink size={16} /> Xem Bản In
                     </Link>
+                    {localBill.status === 'DRAFT' && (
+                        <button
+                            onClick={() => setIsApproveModalOpen(true)}
+                            className="btn btn-primary"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.25rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#10b981', color: 'white', border: 'none', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                        >
+                            <CheckCircle2 size={18} /> Duyệt Nợ & Nhập Kho
+                        </button>
+                    )}
                     {localBill.status === 'APPROVED' && (
                         <button
                             onClick={handleCancel}
@@ -495,6 +528,56 @@ export function PurchaseBillDetailClient({ bill, tasks, users }: { bill: any, ta
                     fileUrl={previewDoc.url}
                     fileName={previewDoc.name}
                 />
+            )}
+
+            {/* Approve Modal */}
+            {isApproveModalOpen && (
+                <div className="modal-backdrop">
+                    <div className="modal-container" style={{ maxWidth: '450px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
+                            <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <CheckCircle2 className="text-blue-500" size={20} /> Duyệt hóa đơn {localBill.code}
+                            </h2>
+                            <button
+                                onClick={() => setIsApproveModalOpen(false)}
+                                style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-muted)' }}
+                            >
+                                &times;
+                            </button>
+                        </div>
+                        <div style={{ padding: '1.5rem' }}>
+                            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1.5rem', lineHeight: 1.5 }}>
+                                Hành động này sẽ chốt tồn kho (nếu có hàng hóa) và chuyển hóa đơn sang trạng thái công nợ. 
+                                <br/>Vui lòng chọn <b>kho</b> để nhập hàng hóa cho hóa đơn này từ nhà cung cấp <b>{localBill.supplier?.name}</b>.
+                            </p>
+
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>Chọn Kho Nhập Hàng</label>
+                                <select 
+                                    className="input w-full"
+                                    value={approveWarehouseId}
+                                    onChange={(e) => setApproveWarehouseId(e.target.value)}
+                                >
+                                    <option value="">Lựa chọn kho...</option>
+                                    {(warehouses || []).map((w: any) => (
+                                        <option key={w.id} value={w.id}>{w.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                        <div style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', background: 'var(--surface)' }}>
+                            <button onClick={() => setIsApproveModalOpen(false)} className="btn" style={{ border: '1px solid var(--border)', background: '#fff' }}>Hủy</button>
+                            <button 
+                                onClick={handleApprove} 
+                                disabled={isSubmitting || !approveWarehouseId} 
+                                className="btn btn-primary" 
+                                style={{ background: '#3b82f6', color: '#fff', opacity: (isSubmitting || !approveWarehouseId) ? 0.7 : 1, display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                            >
+                                {isSubmitting ? 'Đang duyệt...' : <><CheckCircle2 size={16} /> Xác Nhận Duyệt</>}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
