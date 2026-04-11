@@ -33,6 +33,10 @@ export default async function SupplierDetailPage({ params }: { params: { id: str
                 orderBy: { date: 'desc' },
                 include: { _count: { select: { items: true } } }
             },
+            invoices: {
+                orderBy: { issueDate: 'desc' },
+                include: { items: true }
+            },
             payments: {
                 orderBy: { date: 'desc' }
             },
