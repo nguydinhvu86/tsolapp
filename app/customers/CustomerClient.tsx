@@ -299,13 +299,15 @@ export function CustomerClient({ initialData, users, isAdminOrManager }: { initi
                                 <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>{t('customers.empty')}</td></tr>
                             ) : paginatedItems.map(customer => (
                                 <tr key={customer.id}>
-                                    <td className="font-semibold sm:font-medium min-w-[220px] max-w-[260px] sm:max-w-none whitespace-normal break-words">
-                                        <Link
-                                            href={`/customers/${customer.id}`}
-                                            className="text-blue-700 hover:underline text-sm sm:text-base leading-tight inline-block"
-                                        >
-                                            {customer.name}
-                                        </Link>
+                                    <td className="align-top sm:align-middle">
+                                        <div className="w-[180px] sm:w-[250px] md:w-auto font-semibold sm:font-medium whitespace-normal break-words [-webkit-text-size-adjust:100%]">
+                                            <Link
+                                                href={`/customers/${customer.id}`}
+                                                className="text-blue-700 hover:underline text-[13px] sm:text-[14px] md:text-base leading-snug block"
+                                            >
+                                                {customer.name}
+                                            </Link>
+                                        </div>
                                         {activeFilter === 'TOP_REVENUE_5' && customer.revenue ? (
                                             <div style={{ fontSize: '0.75rem', color: '#059669', marginTop: '0.25rem', fontWeight: 500 }}>{t('customers.revenue')} {formatMoney(customer.revenue)}</div>
                                         ) : null}
