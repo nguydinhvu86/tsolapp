@@ -155,8 +155,9 @@ export default function CallCenterClient({ initialAgents, initialLogs, totalCoun
                    return (
                        <div key={agent.id} className={`bg-white rounded-xl shadow-sm border ${stColor} p-4 transition-all`}>
                            <div className="flex items-center gap-3">
-                               <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
-                                   {agent.avatar ? <img src={agent.avatar} className="w-10 h-10 rounded-full object-cover" /> : <User size={20} />}
+                               <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold relative overflow-hidden">
+                                   <User size={20} className="absolute z-0" />
+                                   {agent.avatar && <img src={agent.avatar} className="w-10 h-10 rounded-full object-cover relative z-10" onError={e => e.currentTarget.style.display='none'} />}
                                </div>
                                <div className="flex-1 min-w-0">
                                    <div className="font-semibold text-gray-900 truncate">{agent.name}</div>
