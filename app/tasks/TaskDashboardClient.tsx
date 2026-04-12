@@ -9,9 +9,96 @@ import { Modal } from '@/app/components/ui/Modal';
 import { Plus, Trash2, MessageSquare, Edit2, ChevronUp, ChevronDown, Download, List, Clock, Loader2, Search, CheckCircle2, AlertTriangle, Filter } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { createTask, updateTaskStatus, deleteTask, searchEntities, updateTask } from './actions';
+import { createTask, updateTaskStatus, deleteTask, searchEntities, updateTask, startTaskTimer, stopTaskTimer } from './actions';
 import Link from 'next/link';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
+import GanttChart from '@/app/components/GanttChart';
+
+function formatTimer(seconds: number) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    if (h > 0) return `${h}h${m}m${s}s`;
+    if (m > 0) return `${m}m${s}s`;
+    return `${s}s`;
+}
+
+function TimerCell({ task, session }: { task: any, session: any }) {
+    const [elapsed, setElapsed] = React.useState(0);
+    const [isLoading, setIsLoading] = React.useState(false);
+    
+    const activeLog = task.timeLogs?.find((l: any) => l.userId === session?.user?.id && !l.endTime);
+
+    React.useEffect(() => {
+        if (activeLog && activeLog.startTime) {
+            const start = new Date(activeLog.startTime).getTime();
+            // initialize immediately
+            setElapsed(Math.floor((new Date().getTime() - start) / 1000));
+            const interval = setInterval(() => {
+                setElapsed(Math.floor((new Date().getTime() - start) / 1000));
+            }, 1000);
+            return () => clearInterval(interval);
+        } else {
+            setElapsed(0);
+        }
+    }, [activeLog]);
+
+    const handleStart = async (e: any) => {
+        e.stopPropagation();
+        setIsLoading(true);
+        try {
+            await startTaskTimer(task.id);
+        } catch (err: any) {
+            alert(err.message || 'Lỗi khi bắt đầu');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleStop = async (e: any) => {
+        e.stopPropagation();
+        setIsLoading(true);
+        try {
+            await stopTaskTimer(task.id);
+        } catch (err: any) {
+            alert(err.message || 'Lỗi khi dừng');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const totalDurationSec = task.timeLogs?.reduce((sum: number, l: any) => sum + (l.durationSec || 0), 0) || 0;
+    const currentTotal = totalDurationSec + elapsed;
+    const hours = Math.floor(currentTotal / 3600);
+    const mins = Math.floor((currentTotal % 3600) / 60);
+    const timeDisplay = hours > 0 ? `${hours}h${mins}m` : (mins > 0 ? `${mins}m` : '0m');
+
+    if (activeLog) {
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+                <button 
+                    onClick={handleStop} 
+                    disabled={isLoading}
+                    className="animate-pulse"
+                    style={{ backgroundColor: 'var(--danger)', color: 'white', border: 'none', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, cursor: isLoading ? 'not-allowed' : 'pointer' }}>
+                    {isLoading ? '...' : `⏹ Dừng (${formatTimer(elapsed)})`}
+                </button>
+            </div>
+        );
+    } else {
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+                <button 
+                    onClick={handleStart} 
+                    disabled={isLoading}
+                    style={{ backgroundColor: '#e2e8f0', color: '#1e293b', border: '1px solid #cbd5e1', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, cursor: isLoading ? 'not-allowed' : 'pointer' }}>
+                    {isLoading ? '...' : `▶ Bắt Đầu`}
+                </button>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{timeDisplay}</span>
+            </div>
+        );
+    }
+}
 
 export function TaskDashboardClient({ initialTasks, users, parentProjectId, parentProject }: { initialTasks: any[], users: any[], parentProjectId?: string, parentProject?: any }) {
     const router = useRouter();
@@ -42,6 +129,7 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
     const [editDueDate, setEditDueDate] = useState('');
     const [editSelectedAssignees, setEditSelectedAssignees] = useState<string[]>([]);
     const [editSelectedObservers, setEditSelectedObservers] = useState<string[]>([]);
+    const [editDependencies, setEditDependencies] = useState<string[]>([]);
     const [editIsRecurring, setEditIsRecurring] = useState(false);
     const [editRecurrenceFreq, setEditRecurrenceFreq] = useState('MONTHLY');
     const [editRecurrenceCount, setEditRecurrenceCount] = useState<number | string>(2);
@@ -110,6 +198,9 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
     // Filter State
     const [filterStatus, setFilterStatus] = useState<string>('ALL');
     const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
+
+    // View Mode State
+    const [viewMode, setViewMode] = useState<'LIST' | 'GANTT'>('LIST');
 
     // If parentProject is passed, filter available users to only those assigned to the project
     const availableUsersForAssign = React.useMemo(() => {
@@ -285,6 +376,35 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
 
     const { paginatedItems, paginationProps } = usePagination(sortedTasks, 20);
 
+    // Prepare Gantt Data
+    const ganttTasks = React.useMemo(() => {
+        return filteredTasks
+            .filter((t: any) => t.startDate || t.dueDate) // Tasks must have dates
+            .map((t: any) => {
+                const startDateStr = t.startDate ? new Date(t.startDate).toISOString().split('T')[0] : new Date(t.dueDate).toISOString().split('T')[0];
+                let endDateStr = t.dueDate ? new Date(t.dueDate).toISOString().split('T')[0] : startDateStr;
+                
+                // Gantt requires end >= start
+                if (new Date(endDateStr) < new Date(startDateStr)) endDateStr = startDateStr;
+
+                const progress = t.checklists?.length > 0 
+                                 ? Math.round((t.checklists.filter((c:any)=>c.isCompleted).length / t.checklists.length)*100) 
+                                 : (t.status === 'DONE' ? 100 : (t.status === 'IN_PROGRESS' ? 50 : 0));
+
+                const deps = t.dependencies?.map((d: any) => d.dependsOnId).join(', ') || '';
+
+                return {
+                    id: t.id,
+                    name: t.title,
+                    start: startDateStr,
+                    end: endDateStr,
+                    progress: progress,
+                    dependencies: deps,
+                    custom_class: t.status === 'DONE' ? 'bar-done' : (t.priority === 'URGENT' ? 'bar-urgent' : '')
+                };
+            });
+    }, [filteredTasks]);
+
     // Derived progress
     const renderProgress = (task: any) => {
         if (!task.checklists || task.checklists.length === 0) return '-';
@@ -338,7 +458,7 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
         }
 
         if (parentProjectId) {
-            payload.parentTaskId = parentProjectId;
+            payload.projectId = parentProjectId;
             payload.isProject = false;
         }
 
@@ -386,6 +506,7 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
         setEditStartDate(task.startDate ? new Date(task.startDate).toISOString().split('T')[0] : '');
         setEditSelectedAssignees(task.assignees?.map((a: any) => a.userId) || []);
         setEditSelectedObservers(task.observers?.map((o: any) => o.userId) || []);
+        setEditDependencies(task.dependencies?.map((d: any) => d.dependsOnId) || []);
 
         setEditIsRecurring(task.isRecurring || false);
         setEditRecurrenceFreq(task.recurrenceRule || 'MONTHLY');
@@ -405,7 +526,8 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                 dueDate: editDueDate ? new Date(editDueDate) : null,
                 startDate: editStartDate ? new Date(editStartDate) : null,
                 assignees: editSelectedAssignees,
-                observers: editSelectedObservers
+                observers: editSelectedObservers,
+                dependencies: editDependencies
             };
 
             if (editIsRecurring) {
@@ -645,8 +767,21 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                     )}
                 </div>
 
+                <div style={{ display: 'flex', borderRadius: '8px', border: '1px solid var(--border)', overflow: 'hidden', marginLeft: 'auto' }}>
+                    <button 
+                        onClick={() => setViewMode('LIST')} 
+                        style={{ padding: '6px 16px', backgroundColor: viewMode === 'LIST' ? 'var(--primary)' : 'white', color: viewMode === 'LIST' ? 'white' : 'var(--text-main)', fontSize: '0.85rem', fontWeight: 600 }}>
+                        <List size={14} style={{ display: 'inline-block', marginRight: '6px', verticalAlign: 'text-bottom' }} /> Dạng Bảng
+                    </button>
+                    <button 
+                        onClick={() => setViewMode('GANTT')} 
+                        style={{ padding: '6px 16px', backgroundColor: viewMode === 'GANTT' ? 'var(--primary)' : 'white', color: viewMode === 'GANTT' ? 'white' : 'var(--text-main)', fontSize: '0.85rem', fontWeight: 600 }}>
+                        <Clock size={14} style={{ display: 'inline-block', marginRight: '6px', verticalAlign: 'text-bottom' }} /> Gantt
+                    </button>
+                </div>
             </div>
 
+            {viewMode === 'LIST' && (
             <Card>
                 <div style={{ overflowX: 'auto' }}>
                     <Table>
@@ -684,6 +819,7 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                                 </th>
                                 <th>Liên Quan</th>
                                 <th>Tình Trạng</th>
+                                <th style={{ textAlign: 'center' }}>Thời Gian</th>
                                 <th>Tiến Độ</th>
                                 <th style={{ width: '100px', textAlign: 'center' }}>Hành Động</th>
                             </tr>
@@ -785,6 +921,9 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                                                 <option value="CANCELLED">Đã Hủy</option>
                                             </select>
                                         </td>
+                                        <td style={{ textAlign: 'center' }}>
+                                            <TimerCell task={task} session={session} />
+                                        </td>
                                         <td>{renderProgress(task)}</td>
                                         <td>
                                             <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
@@ -807,18 +946,45 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                                 );
                             })}
 
-                            {initialTasks.length === 0 && (
+                            {sortedTasks.length === 0 && (
                                 <tr>
-                                    <td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-                                        Chưa có công việc nào.
+                                    <td colSpan={9} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                                        Không có công việc nào thỏa mãn điều kiện lọc.
                                     </td>
                                 </tr>
                             )}
                         </tbody>
                     </Table>
-                    <Pagination {...paginationProps} />
+                    {sortedTasks.length > 0 && (
+                        <div style={{ marginTop: '1rem', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
+                            <Pagination {...paginationProps} />
+                        </div>
+                    )}
                 </div>
-            </Card >
+            </Card>
+            )}
+
+            {viewMode === 'GANTT' && (
+                <Card style={{ padding: '1.5rem', backgroundColor: '#f8fafc' }}>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Clock size={18} className="text-blue-600" />
+                        Tiến Độ Dự Án
+                    </h3>
+                    <GanttChart 
+                        tasks={ganttTasks} 
+                        viewMode="Day"
+                        onTaskClick={(t) => openEditModal(filteredTasks.find((task: any) => task.id === t.id))}
+                        onDateChange={async (t, start, end) => {
+                            if (!session?.user?.id) return;
+                            await updateTask(t.id, { startDate: new Date(start), dueDate: new Date(end) }, session.user.id);
+                            router.refresh();
+                        }}
+                    />
+                    <div style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        * Kéo thả thanh cuộn để thay đổi ngày bắt đầu/kết thúc. Nhấp đúp lại công việc để chỉnh sửa chi tiết.
+                    </div>
+                </Card>
+            )}
 
             <Modal isOpen={isCreateModalOpen} onClose={() => setCreateModalOpen(false)} title="Giao Việc Mới">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', paddingTop: '1rem' }}>
@@ -893,6 +1059,7 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                                 onChange={e => { setLinkType(e.target.value); setSelectedLink(null); setSearchQuery(''); setSearchResults([]); }}
                                 style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', marginBottom: '0.5rem' }}>
                                 <option value="">-- Không liên kết --</option>
+                                <option value="PROJECT">Dự Án</option>
                                 <option value="LEAD">Cơ hội bán hàng</option>
                                 <option value="CUSTOMER">Khách Hàng</option>
                                 <option value="QUOTE">Báo Giá (Sales)</option>
@@ -1048,6 +1215,23 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                                 ))}
                             </select>
                         </div>
+                    </div>
+
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Công việc phụ thuộc (Phải hoàn thành trước)</label>
+                        <select
+                            multiple
+                            value={editDependencies}
+                            onChange={e => {
+                                const options = Array.from(e.target.selectedOptions);
+                                setEditDependencies(options.map(o => o.value));
+                            }}
+                            style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', minHeight: '80px' }}>
+                            {initialTasks.filter(t => t.id !== editingTaskId).map(t => (
+                                <option key={t.id} value={t.id}>{t.title}</option>
+                            ))}
+                        </select>
+                        <small style={{ color: 'var(--text-muted)' }}>Bấm <kbd>Ctrl</kbd> hoặc kéo thả để chọn nhiều.</small>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)', gap: '1rem' }}>

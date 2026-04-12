@@ -14,14 +14,15 @@ export default async function SalesOrdersPage({ searchParams }: { searchParams: 
     const employeeId = typeof searchParams?.employeeId === 'string' ? searchParams.employeeId : undefined;
 
     // Pass employeeId to the action to apply RBAC filtering
-    const [orders, customers, products, nextCode] = await Promise.all([
+    const { prisma } = await import('@/lib/prisma');
+    const [orders, customers, products, nextCode, projects] = await Promise.all([
         getSalesOrders(employeeId),
         getCustomers(),
         getProducts(),
-        getNextOrderCode()
+        getNextOrderCode(),
+        prisma.project.findMany({ select: { id: true, title: true } })
     ]);
 
-    const { prisma } = await import('@/lib/prisma');
     const users = await prisma.user.findMany({ select: { id: true, name: true, avatar: true } });
 
     return (
@@ -39,6 +40,7 @@ export default async function SalesOrdersPage({ searchParams }: { searchParams: 
                 users={users}
                 currentUserId={session?.user?.id}
                 isAdminOrManager={isAdminOrManager}
+                projects={projects}
             />
         </div>
     );

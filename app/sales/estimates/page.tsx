@@ -20,13 +20,16 @@ export default async function SalesEstimatesPage({ searchParams }: { searchParam
     // Accept URL parameter for filtering
     const employeeId = typeof searchParams?.employeeId === 'string' ? searchParams.employeeId : undefined;
 
-    const [estimates, customers, products, leads, nextCode, users] = await Promise.all([
+    const initialProjectId = typeof searchParams?.projectId === 'string' ? searchParams.projectId : undefined;
+
+    const [estimates, customers, products, leads, nextCode, users, projects] = await Promise.all([
         getSalesEstimates(employeeId),
         getCustomers(),
         getProducts(),
         getLeads(employeeId),
         getNextEstimateCode(),
-        prisma.user.findMany({ select: { id: true, name: true, avatar: true }, orderBy: { name: 'asc' } })
+        prisma.user.findMany({ select: { id: true, name: true, avatar: true }, orderBy: { name: 'asc' } }),
+        prisma.project.findMany({ select: { id: true, name: true, code: true }, orderBy: { createdAt: 'desc' } })
     ]);
 
     return (
@@ -45,6 +48,8 @@ export default async function SalesEstimatesPage({ searchParams }: { searchParam
                 initialAction={typeof searchParams?.action === 'string' ? searchParams.action : undefined}
                 initialCustomerId={typeof searchParams?.customerId === 'string' ? searchParams.customerId : undefined}
                 initialLeadId={typeof searchParams?.leadId === 'string' ? searchParams.leadId : undefined}
+                initialProjectId={initialProjectId}
+                projects={projects}
                 isAdminOrManager={session?.user?.role === 'ADMIN' || session?.user?.role === 'MANAGER'}
             />
         </div>

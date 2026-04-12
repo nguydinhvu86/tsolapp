@@ -312,7 +312,8 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
             'SALES_INVOICE': { salesInvoiceId: entityId },
             'SALES_ESTIMATE': { salesEstimateId: entityId },
             'SALES_PAYMENT': { salesPaymentId: entityId },
-            'LEAD': { leadId: entityId }
+            'LEAD': { leadId: entityId },
+            'PROJECT': { projectId: entityId }
         };
         await updateTaskLinks(task.id, linkMap[linkType], session.user.id);
         setIsLinkModalOpen(false);
@@ -338,6 +339,7 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
         else if (typeLabel === 'Báo giá (Sales)') linkKey = 'SALES_ESTIMATE';
         else if (typeLabel === 'Phiếu thu') linkKey = 'SALES_PAYMENT';
         else if (typeLabel === 'Cơ hội bán hàng') linkKey = 'LEAD';
+        else if (typeLabel === 'Dự án') linkKey = 'PROJECT';
 
         const linkMap: any = {
             'CUSTOMER': { customerId: null },
@@ -350,7 +352,8 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
             'SALES_INVOICE': { salesInvoiceId: null },
             'SALES_ESTIMATE': { salesEstimateId: null },
             'SALES_PAYMENT': { salesPaymentId: null },
-            'LEAD': { leadId: null }
+            'LEAD': { leadId: null },
+            'PROJECT': { projectId: null }
         };
 
         if (linkKey && linkMap[linkKey]) {

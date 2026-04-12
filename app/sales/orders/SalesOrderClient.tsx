@@ -13,7 +13,7 @@ import { submitSalesOrder, updateSalesOrderStatus, deleteSalesOrder, updateSales
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import Link from 'next/link';
 
-export default function SalesOrderClient({ initialOrders, customers, products, nextCode, initialAction, initialCustomerId, users, currentUserId, isAdminOrManager }: any) {
+export default function SalesOrderClient({ initialOrders, customers, products, nextCode, initialAction, initialCustomerId, users, currentUserId, isAdminOrManager, projects }: any) {
     const router = useRouter();
     const [orders, setOrders] = useState(initialOrders);
     const [isFormOpen, setIsFormOpen] = useState(initialAction === 'new');
@@ -68,6 +68,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
         subTotal: 0,
         taxAmount: 0,
         totalAmount: 0,
+        projectId: '',
         items: []
     });
 
@@ -81,6 +82,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
             subTotal: 0,
             taxAmount: 0,
             totalAmount: 0,
+            projectId: '',
             items: []
         });
         setQty(1);
@@ -117,6 +119,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
             subTotal: calcSubTotal,
             taxAmount: calcTaxAmount,
             totalAmount: calcTotalAmount,
+            projectId: order.projectId || '',
             items: mappedItems
         });
         setQty(1);
@@ -662,6 +665,15 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                                     type="date" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white"
                                     value={formData.date}
                                     onChange={e => setFormData({ ...formData, date: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Dự Án Lắp Đặt (Tùy chọn)</label>
+                                <SearchableSelect
+                                    options={projects?.map((p: any) => ({ value: p.id, label: p.title })) || []}
+                                    value={formData.projectId || ''}
+                                    onChange={val => setFormData({ ...formData, projectId: val })}
+                                    placeholder="-- Chọn Dự án --"
                                 />
                             </div>
                             <div>

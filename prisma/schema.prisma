@@ -130,11 +130,21 @@ model User {
 
   // Core HR Module
   employeeProfile       EmployeeProfile?
-  laborContracts        LaborContract[]  @relation("UserLaborContracts")
-  createdLaborContracts LaborContract[]  @relation("ContractCreatorHr")
+  laborContracts        LaborContract[]   @relation("UserLaborContracts")
+  createdLaborContracts LaborContract[]   @relation("ContractCreatorHr")
   payrolls              Payroll[]
-  callLogs              CallLog[]        @relation("UserCallLogs")
+  callLogs              CallLog[]         @relation("UserCallLogs")
   supplierInvoices      SupplierInvoice[] @relation("InvoiceCreator")
+
+  // Project Management
+  createdProjects     Project[]            @relation("ProjectCreator")
+  projectMemberships  ProjectMember[]
+  createdRisks        ProjectRisk[]        @relation("RiskCreator")
+  projectActivityLogs ProjectActivityLog[]
+  projectComments     ProjectComment[]
+  projectCommentReactions ProjectCommentReaction[]
+  projectAttachments  ProjectAttachment[]
+  timeLogs            TaskTimeLog[]
 }
 
 model SystemSetting {
@@ -175,6 +185,7 @@ model Customer {
   handovers       Handover[]
   paymentRequests PaymentRequest[]
   dispatches      Dispatch[]
+  projects        Project[]
   tasks           Task[]
 
   // Sales & Expenses Relations
@@ -260,6 +271,7 @@ model Contract {
   template   ContractTemplate   @relation(fields: [templateId], references: [id])
   appendices ContractAppendix[]
   tasks      Task[]
+  projects   Project[]
   creatorId  String?
   creator    User?              @relation("ContractCreator", fields: [creatorId], references: [id])
   createdAt  DateTime           @default(now())
@@ -314,6 +326,7 @@ model Quote {
   customer   Customer      @relation(fields: [customerId], references: [id])
   template   QuoteTemplate @relation(fields: [templateId], references: [id])
   tasks      Task[]
+  projects   Project[]
   creatorId  String?
   creator    User?         @relation("QuoteCreator", fields: [creatorId], references: [id])
   createdAt  DateTime      @default(now())
@@ -427,6 +440,14 @@ model Task {
 
   assignees TaskAssignee[]
 
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  milestoneId String?
+  milestone   Milestone? @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
+
+  actualHours Float? @default(0) // Time logged on task
+
   creatorId String
   creator   User   @relation("TaskCreator", fields: [creatorId], references: [id])
 
@@ -492,9 +513,25 @@ model Task {
   attachments  TaskAttachment[]
   activityLogs TaskActivityLog[]
   emailLogs    EmailLog[]
+  
+  dependencies TaskDependency[] @relation("TaskDependencies")
+  dependentOn  TaskDependency[] @relation("DependentTasks")
+  timeLogs     TaskTimeLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model TaskDependency {
+  id           String @id @default(cuid())
+  taskId       String
+  dependsOnId  String
+  type         String @default("FS") // FS, SF, SS, FF
+
+  task      Task @relation("TaskDependencies", fields: [taskId], references: [id], onDelete: Cascade)
+  dependsOn Task @relation("DependentTasks", fields: [dependsOnId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, dependsOnId])
 }
 
 model TaskAssignee {
@@ -561,6 +598,20 @@ model TaskComment {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model TaskTimeLog {
+  id          String    @id @default(cuid())
+  taskId      String
+  userId      String
+  startTime   DateTime
+  endTime     DateTime?
+  durationSec Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model TaskCommentReaction {
@@ -732,15 +783,15 @@ model SupplierContact {
   id         String   @id @default(cuid())
   supplierId String
   supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
-  
-  name       String
-  position   String?
-  phone      String?
-  email      String?
-  notes      String?
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  name     String
+  position String?
+  phone    String?
+  email    String?
+  notes    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model SupplierProduct {
@@ -807,6 +858,9 @@ model PurchaseOrder {
   bills PurchaseBill[] // Bills linked to this PO
   tasks Task[]
 
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -826,7 +880,7 @@ model PurchaseOrderItem {
 
   order   PurchaseOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product?      @relation(fields: [productId], references: [id])
-  
+
   supplierInvoiceItems SupplierInvoiceItem[]
 }
 
@@ -858,6 +912,9 @@ model PurchaseBill {
   items       PurchaseBillItem[]
   allocations PurchasePaymentAllocation[] // Payments allocated to this bill
   tasks       Task[]
+
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -898,6 +955,9 @@ model PurchasePayment {
 
   allocations PurchasePaymentAllocation[]
   tasks       Task[]
+
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -944,6 +1004,7 @@ model SalesEstimate {
   items        SalesEstimateItem[]
   activityLogs SalesEstimateActivityLog[]
   tasks        Task[]
+  projects     Project[]
   managers     User[]                     @relation("SalesEstimateManagers")
 
   leadId String?
@@ -1012,6 +1073,7 @@ model SalesOrder {
   items    SalesOrderItem[]
   invoices SalesInvoice[] // Invoices linked to this Sales Order
   tasks    Task[]
+  projects Project[]
 
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
@@ -1073,6 +1135,7 @@ model SalesInvoice {
   items        SalesInvoiceItem[]
   allocations  SalesPaymentAllocation[]
   tasks        Task[]
+  projects     Project[]
   invoiceNotes SalesInvoiceNote[]
   activityLogs SalesInvoiceActivityLog[]
   emailLogs    EmailLog[]
@@ -1246,6 +1309,9 @@ model Expense {
 
   creatorId String
   creator   User   @relation("ExpenseCreator", fields: [creatorId], references: [id])
+
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   tasks        Task[]
   notes        ExpenseNote[]
@@ -1902,47 +1968,199 @@ model PbxConfig {
 }
 
 model SupplierInvoice {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
   invoiceNumber   String?
   issueDate       DateTime?
-  totalAmount     Float    @default(0)
-  taxAmount       Float    @default(0)
+  totalAmount     Float     @default(0)
+  taxAmount       Float     @default(0)
   supplierName    String?
   supplierTaxCode String?
-  pdfUrl          String?  @db.LongText
-  xmlUrl          String?  @db.LongText
-  status          String   @default("NEW") // NEW, VERIFIED, REJECTED, INVENTORY_IMPORTED
+  pdfUrl          String?   @db.LongText
+  xmlUrl          String?   @db.LongText
+  status          String    @default("NEW") // NEW, VERIFIED, REJECTED, INVENTORY_IMPORTED
 
-  lookupLink      String?  @db.LongText
-  lookupCode      String?
+  lookupLink String? @db.LongText
+  lookupCode String?
 
-  supplierId      String?
-  supplier        Supplier? @relation(fields: [supplierId], references: [id])
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id])
 
-  items           SupplierInvoiceItem[]
-  
-  creatorId       String?
-  creator         User?    @relation("InvoiceCreator", fields: [creatorId], references: [id])
+  items SupplierInvoiceItem[]
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  creatorId String?
+  creator   User?   @relation("InvoiceCreator", fields: [creatorId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model SupplierInvoiceItem {
-  id              String   @id @default(cuid())
-  invoiceId       String
-  invoice         SupplierInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  
-  productName     String
-  quantity        Float    @default(0)
-  unitPrice       Float    @default(0)
-  totalPrice      Float    @default(0)
-  taxRate         Float    @default(0)
+  id        String          @id @default(cuid())
+  invoiceId String
+  invoice   SupplierInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  productName String
+  quantity    Float  @default(0)
+  unitPrice   Float  @default(0)
+  totalPrice  Float  @default(0)
+  taxRate     Float  @default(0)
 
   // PO Discrepancy Matching
-  unitPriceDiscrepancy Float?   @default(0)
+  unitPriceDiscrepancy Float?             @default(0)
   matchedPoItemId      String?
   matchedPoItem        PurchaseOrderItem? @relation(fields: [matchedPoItemId], references: [id])
 }
 
+// --- PROJECT MANAGEMENT MODULE ---
 
+model Project {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  name        String
+  description String?   @db.Text
+  type        String    @default("IMPLEMENTATION") // IMPLEMENTATION, MAINTENANCE, INTERNAL
+  status      String    @default("PLANNING") // PLANNING, RUNNING, ON_HOLD, DONE, CANCELLED
+  priority    String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  startDate   DateTime?
+  dueDate     DateTime?
+  estimatedValue Float    @default(0)
+  estimatedDuration String?
+  budget      Float    @default(0) // Chi phí dự kiến tối đa (Phase 1 P&L)
+  tags        String?
+
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+
+  contractId String?
+  contract   Contract? @relation(fields: [contractId], references: [id])
+
+  quoteId String?
+  quote   Quote?  @relation(fields: [quoteId], references: [id])
+
+  invoiceId String?
+  invoice   SalesInvoice? @relation(fields: [invoiceId], references: [id])
+
+  salesEstimateId String?
+  salesEstimate   SalesEstimate? @relation(fields: [salesEstimateId], references: [id])
+
+  salesOrderId String?
+  salesOrder   SalesOrder? @relation(fields: [salesOrderId], references: [id])
+
+  purchaseOrders    PurchaseOrder[]
+  purchaseBills     PurchaseBill[]
+  purchasePayments  PurchasePayment[]
+  expenses          Expense[]
+
+  creatorId String
+  creator   User   @relation("ProjectCreator", fields: [creatorId], references: [id])
+
+  members      ProjectMember[]
+  milestones   Milestone[]
+  tasks        Task[]
+  risks        ProjectRisk[]
+  activityLogs ProjectActivityLog[]
+  comments     ProjectComment[]
+  attachments  ProjectAttachment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProjectComment {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String
+  content   String   @db.LongText
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  reactions ProjectCommentReaction[]
+}
+
+model ProjectCommentReaction {
+  id        String         @id @default(cuid())
+  commentId String
+  userId    String
+  emoji     String
+  createdAt DateTime       @default(now())
+
+  comment   ProjectComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId, emoji])
+}
+
+model ProjectAttachment {
+  id           String   @id @default(cuid())
+  projectId    String
+  fileName     String
+  fileUrl      String   @db.LongText
+  fileType     String?
+  uploadedById String
+  createdAt    DateTime @default(now())
+
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  uploadedBy User     @relation(fields: [uploadedById], references: [id])
+}
+
+model ProjectMember {
+  id        String @id @default(cuid())
+  projectId String
+  userId    String
+  role      String @default("MEMBER") // PM, MEMBER, VIEWER, ACCOUNTANT
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([projectId, userId])
+}
+
+model Milestone {
+  id          String    @id @default(cuid())
+  name        String
+  description String?   @db.Text
+  dueDate     DateTime?
+  status      String    @default("PENDING") // PENDING, ACHIEVED
+  projectId   String
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks   Task[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProjectRisk {
+  id          String  @id @default(cuid())
+  projectId   String
+  title       String
+  description String? @db.Text
+  probability Int     @default(50) // 1-100%
+  impact      String  @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+  status      String  @default("OPEN") // OPEN, MITIGATED, CLOSED
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  creatorId String
+  creator   User   @relation("RiskCreator", fields: [creatorId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProjectActivityLog {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String
+  action    String
+  details   String?  @db.Text
+  createdAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
+}

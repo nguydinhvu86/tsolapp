@@ -112,8 +112,15 @@ export async function createTask(data: any, creatorId: string) {
     const user = await verifyActionPermission('TASKS_CREATE');
     const uId = user ? (user as any).id : creatorId;
 
-    const { assignees, observers, recurrence, ...restDataUnresolved } = data;
+    const { assignees, observers, recurrence, dependencies, ...restDataUnresolved } = data;
     const restData = await resolveParentEntityIds(restDataUnresolved);
+
+    // Sanitize empty string ID fields to null to prevent foreign key violations
+    for (const key of Object.keys(restData)) {
+        if (restData[key] === "") {
+            restData[key] = null;
+        }
+    }
 
     const isRecurringMode = recurrence && recurrence.isRecurring && recurrence.count > 1;
     const taskCount = isRecurringMode ? recurrence.count : 1;
@@ -146,7 +153,7 @@ export async function createTask(data: any, creatorId: string) {
                 isRecurring: isRecurringMode,
                 recurrenceRule: frequency,
                 creatorId: uId,
-                parentTaskId: isRecurringMode ? (i > 0 ? firstTaskId : null) : restData.parentTaskId
+                parentTaskId: isRecurringMode ? (i > 0 ? firstTaskId : null) : (restData.parentTaskId || null)
             }
         });
 
@@ -158,6 +165,13 @@ export async function createTask(data: any, creatorId: string) {
         if (assignees && assignees.length > 0) {
             await prisma.taskAssignee.createMany({
                 data: assignees.map((userId: string) => ({ taskId: newTask.id, userId }))
+            });
+        }
+
+        // Handle Dependencies
+        if (dependencies && dependencies.length > 0) {
+            await prisma.taskDependency.createMany({
+                data: dependencies.map((depId: string) => ({ taskId: newTask.id, dependsOnId: depId }))
             });
         }
 
@@ -275,7 +289,14 @@ export async function triggerAutoTaskEmail(taskId: string, newAssigneeIds: strin
 
 
 export async function updateTask(id: string, data: any, userId: string) {
-    const { assignees, observers, recurrence, ...restData } = data;
+    const { assignees, observers, recurrence, dependencies, ...restData } = data;
+
+    // Sanitize empty string ID fields to null to prevent foreign key violations
+    for (const key of Object.keys(restData)) {
+        if (restData[key] === "") {
+            restData[key] = null;
+        }
+    }
 
     const oldTask = await prisma.task.findUnique({
         where: { id },
@@ -366,6 +387,14 @@ export async function updateTask(id: string, data: any, userId: string) {
         await prisma.taskAssignee.deleteMany({ where: { taskId: id } });
         await prisma.taskAssignee.createMany({
             data: assignees.map((uId: string) => ({ taskId: id, userId: uId }))
+        });
+    }
+
+    // Re-sync Dependencies if provided
+    if (dependencies) {
+        await prisma.taskDependency.deleteMany({ where: { taskId: id } });
+        await prisma.taskDependency.createMany({
+            data: dependencies.map((depId: string) => ({ taskId: id, dependsOnId: depId }))
         });
     }
 
@@ -943,6 +972,10 @@ export async function searchEntities(type: string, query: string = '') {
             const f = getRes('CUSTOMERS');
             return f ? prisma.customer.findMany({ where: { AND: [f as any, { name: { contains: q } }] }, take: 5, select: { id: true, name: true } }) : [];
         }
+        case 'PROJECT': {
+            const f = getRes('PROJECTS');
+            return f ? prisma.project.findMany({ where: { AND: [f as any, { name: { contains: q } }] }, take: 5, select: { id: true, name: true, code: true } }) : [];
+        }
         case 'CONTRACT': {
             const f = getRes('CONTRACTS');
             return f ? prisma.contract.findMany({ where: { AND: [f as any, { title: { contains: q } }] }, take: 5, select: { id: true, title: true } }) : [];
@@ -1107,4 +1140,70 @@ export async function sendTaskEmail(taskId: string, to: string, subject: string,
         console.error("Lỗi khi gửi email công việc:", error);
         return { success: false, error: error.message };
     }
+}
+
+// ------ TIMESHEET ENGINE ACTIONS ------
+
+export async function startTaskTimer(taskId: string) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user || !session.user.id) throw new Error("Chưa đăng nhập");
+    const userId = session.user.id;
+
+    // Check if user has any active timer globally
+    const activeLog = await prisma.taskTimeLog.findFirst({
+        where: { userId, endTime: null }
+    });
+    if (activeLog) {
+        throw new Error("Bạn đang có một công việc khác đang đếm giờ. Vui lòng dừng công việc cũ trước.");
+    }
+
+    const log = await prisma.taskTimeLog.create({
+        data: {
+            taskId,
+            userId,
+            startTime: new Date()
+        }
+    });
+
+    // Auto update task to IN_PROGRESS if it's currently TODO
+    const task = await prisma.task.findUnique({ where: { id: taskId } });
+    if (task && task.status === 'TODO') {
+        await prisma.task.update({
+            where: { id: taskId },
+            data: { status: 'IN_PROGRESS' }
+        });
+    }
+
+    revalidatePath(`/tasks/${taskId}`);
+    revalidatePath('/tasks');
+    return log;
+}
+
+export async function stopTaskTimer(taskId: string) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user || !session.user.id) throw new Error("Chưa đăng nhập");
+    const userId = session.user.id;
+
+    const activeLog = await prisma.taskTimeLog.findFirst({
+        where: { taskId, userId, endTime: null }
+    });
+
+    if (!activeLog) {
+        throw new Error("Không có phiên đếm giờ nào cho công việc này đang chạy trên hệ thống.");
+    }
+
+    const endTime = new Date();
+    const durationSec = Math.floor((endTime.getTime() - activeLog.startTime.getTime()) / 1000);
+
+    const log = await prisma.taskTimeLog.update({
+        where: { id: activeLog.id },
+        data: {
+            endTime,
+            durationSec
+        }
+    });
+
+    revalidatePath(`/tasks/${taskId}`);
+    revalidatePath('/tasks');
+    return log;
 }

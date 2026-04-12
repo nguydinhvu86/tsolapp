@@ -10,10 +10,11 @@ import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { createContract } from '../actions';
 import { useRouter } from 'next/navigation';
 
-export function NewContractClient({ templates, customers, preselectedCustomerId }: { templates: ContractTemplate[], customers: Customer[], preselectedCustomerId?: string }) {
+export function NewContractClient({ templates, customers, projects, preselectedCustomerId }: { templates: ContractTemplate[], customers: Customer[], projects: any[], preselectedCustomerId?: string }) {
     const router = useRouter();
     const [templateId, setTemplateId] = useState('');
     const [customerId, setCustomerId] = useState(preselectedCustomerId || '');
+    const [projectId, setProjectId] = useState('');
 
     const [variables, setVariables] = useState<Record<string, string>>({});
     const [previewContent, setPreviewContent] = useState('');
@@ -114,7 +115,8 @@ export function NewContractClient({ templates, customers, preselectedCustomerId 
                 content: previewContent,
                 variables: JSON.stringify(variables),
                 customerId: selectedCustomer.id,
-                templateId: selectedTemplate.id
+                templateId: selectedTemplate.id,
+                projectId: projectId || undefined
             });
             router.push('/contracts');
         } catch (error) {
@@ -144,6 +146,16 @@ export function NewContractClient({ templates, customers, preselectedCustomerId 
                                 onChange={setCustomerId}
                                 options={customers.map(c => ({ value: c.id, label: c.name }))}
                                 placeholder="-- Chọn khách hàng --"
+                            />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <label style={{ fontWeight: 500, fontSize: '0.875rem' }}>Dự Án Liên Kết (Tùy chọn)</label>
+                            <SearchableSelect
+                                value={projectId}
+                                onChange={setProjectId}
+                                options={projects?.map(p => ({ value: p.id, label: p.title })) || []}
+                                placeholder="-- Chọn dự án --"
                             />
                         </div>
                     </div>

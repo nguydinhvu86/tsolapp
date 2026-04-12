@@ -3,33 +3,42 @@ import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
-import { logActivity } from '@/app/tasks/actions'; // Reuse task activity logging
+import { logActivity } from '@/app/tasks/actions'; // Optional: separate into project actions later
 import { sendEmailWithTracking } from '@/lib/mailer';
 import { createNotification } from '@/app/notifications/actions';
 import { buildViewFilter, verifyActionPermission, verifyActionOwnership } from '@/lib/permissions';
+
+export async function generateProjectCode() {
+    const today = new Date();
+    const prefix = `PRJ-${today.getFullYear().toString().substr(-2)}${(today.getMonth() + 1).toString().padStart(2, '0')}`;
+    const count = await prisma.project.count({
+        where: { code: { startsWith: prefix } }
+    });
+    return `${prefix}-${(count + 1).toString().padStart(3, '0')}`;
+}
 
 export async function getProjects(filters?: any) {
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
     const isAdmin = session?.user?.role === 'ADMIN';
 
-    let whereClause: any = { isProject: true };
+    let whereClause: any = {};
 
-    // Base Privacy Filter (same as tasks but strictly for assigned/involved users)
+    // Base Privacy Filter (same logic as tasks but for Projects)
     if (!isAdmin && userId) {
         whereClause.OR = [
             { creatorId: userId },
-            { assignees: { some: { userId: userId } } },
-            { observers: { some: { userId: userId } } }
+            { members: { some: { userId: userId } } }
         ];
     }
 
-    const projects = await (prisma.task as any).findMany({
+    const projects = await prisma.project.findMany({
         where: whereClause,
         include: {
             creator: true,
-            assignees: { include: { user: true } },
-            childTasks: {
+            customer: true,
+            members: { include: { user: true } },
+            tasks: {
                 include: { assignees: { include: { user: true } } }
             }
         },
@@ -38,12 +47,15 @@ export async function getProjects(filters?: any) {
 
     // Calculate progress for each project based on child tasks
     const projectsWithProgress = projects.map((project: any) => {
-        const totalTasks = project.childTasks.length;
-        const completedTasks = project.childTasks.filter((t: any) => t.status === 'DONE').length;
+        const totalTasks = project.tasks?.length || 0;
+        const completedTasks = project.tasks?.filter((t: any) => t.status === 'DONE').length || 0;
         const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
         return {
             ...project,
+            // Re-map fields so the UI doesn't crash until we update it completely
+            title: project.name, 
+            assignees: project.members,
             progress,
             totalTasks,
             completedTasks
@@ -54,126 +66,142 @@ export async function getProjects(filters?: any) {
 }
 
 export async function createProject(data: any, creatorId: string) {
-    const user = await verifyActionPermission('TASKS_CREATE');
+    const user = await verifyActionPermission('PROJECTS_CREATE');
     const uId = user ? (user as any).id : creatorId;
-    const { assignees, ...restData } = data;
+    const { assignees, title, ...restData } = data;
 
-    const newProject = await (prisma.task as any).create({
+    const code = await generateProjectCode();
+
+    const newProject = await prisma.project.create({
         data: {
             ...restData,
-            // @ts-ignore: bypass locked client issue
-            isProject: true, // Explicitly mark as project
+            name: title,
+            code,
             creatorId: uId,
-            status: 'TODO'
+            status: restData.status || 'PLANNING'
         }
     });
 
     if (assignees && assignees.length > 0) {
-        await prisma.taskAssignee.createMany({
-            data: assignees.map((userId: string) => ({ taskId: newProject.id, userId }))
+        await prisma.projectMember.createMany({
+            data: assignees.map((userId: string) => ({ projectId: newProject.id, userId, role: 'MEMBER' }))
         });
 
-        // Notify Assignees
+        // Notify Members
         const assigneeUsers = await prisma.user.findMany({ where: { id: { in: assignees } } });
-        for (const user of assigneeUsers) {
-            if (user.id === creatorId) continue;
+        for (const targetUser of assigneeUsers) {
+            if (targetUser.id === creatorId) continue;
 
             // System Notification
             await createNotification(
-                user.id,
+                targetUser.id,
                 'Dự án mới',
-                `Bạn đã được giao tham gia dự án: ${newProject.title}`,
+                `Bạn đã được giao tham gia dự án: ${title}`,
                 'INFO',
                 `/projects/${newProject.id}`
             );
 
             // Email Notification
-            if (user.email) {
+            if (targetUser.email) {
                 await sendEmailWithTracking({
-                    to: user.email,
-                    subject: `[Thông Báo] Bạn được giao dự án mới: ${newProject.title}`,
+                    to: targetUser.email,
+                    subject: `[Thông Báo] Bạn được giao dự án mới: ${title}`,
                     htmlBody: `
                         <div style="font-family: Arial, sans-serif; padding: 20px;">
                             <h2>Thông báo dự án mới</h2>
-                            <p>Xin chào ${user.name || user.email},</p>
-                            <p>Bạn vừa được giao tham gia vào dự án: <strong>${newProject.title}</strong></p>
-                            <p>Độ ưu tiên: ${newProject.priority}</p>
-                            ${newProject.dueDate ? `<p>Hạn chót: ${new Date(newProject.dueDate).toLocaleDateString('vi-VN')}</p>` : ''}
+                            <p>Xin chào ${targetUser.name || targetUser.email},</p>
+                            <p>Bạn vừa được giao tham gia vào dự án: <strong>${title}</strong></p>
+                            <p>Độ ưu tiên: ${restData.priority || 'MEDIUM'}</p>
+                            ${restData.dueDate ? `<p>Hạn chót: ${new Date(restData.dueDate).toLocaleDateString('vi-VN')}</p>` : ''}
                             <hr style="border: 1px solid #eee; my-4;" />
                             <a href="${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/projects/${newProject.id}" style="background-color: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Xem Dự Án</a>
                         </div>
                     `,
-                    senderId: creatorId
+                    senderId: uId
                 });
             }
         }
     }
 
-    // Default observer is creator
-    await prisma.taskObserver.create({
-        data: { taskId: newProject.id, userId: uId }
+    // Optional: Log to project activity logs
+    await prisma.projectActivityLog.create({
+        data: {
+            projectId: newProject.id,
+            userId: uId,
+            action: 'CREATED_PROJECT',
+            details: 'Tạo dự án mới'
+        }
     });
-
-    await logActivity(newProject.id, uId, 'CREATED_PROJECT', 'Tạo dự án mới');
 
     revalidatePath('/projects');
     return newProject;
 }
 
 export async function updateProject(id: string, data: any, userId: string) {
-    const { assignees, ...restData } = data;
+    const { assignees, title, ...restData } = data;
 
-    const oldProject = await prisma.task.findUnique({
+    const oldProject = await prisma.project.findUnique({
         where: { id },
-        include: { assignees: true }
+        include: { members: true }
     });
 
     if (!oldProject) throw new Error("Dự án không tồn tại");
 
-    const assigneesList = oldProject.assignees ? oldProject.assignees.map((a: any) => a.userId) : [];
-    await verifyActionOwnership('TASKS', 'EDIT', oldProject.creatorId, assigneesList);
+    const assigneesList = oldProject.members ? oldProject.members.map((a: any) => a.userId) : [];
+    await verifyActionOwnership('PROJECTS', 'EDIT', oldProject.creatorId, assigneesList);
 
-    const updated = await prisma.task.update({
+    const updatePayload: any = { ...restData };
+    if (title) updatePayload.name = title;
+
+    const updated = await prisma.project.update({
         where: { id },
-        data: restData
+        data: updatePayload
     });
 
     // Re-sync Assignees if provided
     if (assignees) {
-        const currentAssignees = oldProject.assignees.map(a => a.userId);
+        const currentAssignees = oldProject.members.map((a: any) => a.userId);
         const added = assignees.filter((a: string) => !currentAssignees.includes(a));
-        const removed = currentAssignees.filter(a => !assignees.includes(a));
+        const removed = currentAssignees.filter((a: string) => !assignees.includes(a));
 
         if (added.length > 0 || removed.length > 0) {
-            await prisma.taskAssignee.deleteMany({ where: { taskId: id } });
-            await prisma.taskAssignee.createMany({
-                data: assignees.map((uId: string) => ({ taskId: id, userId: uId }))
+            await prisma.projectMember.deleteMany({ where: { projectId: id } });
+            await prisma.projectMember.createMany({
+                data: assignees.map((uId: string) => ({ projectId: id, userId: uId, role: 'MEMBER' }))
             });
-            await logActivity(id, userId, 'UPDATED_PROJECT', 'Cập nhật thành viên dự án');
+            
+            await prisma.projectActivityLog.create({
+                data: {
+                    projectId: id,
+                    userId,
+                    action: 'UPDATED_PROJECT',
+                    details: 'Cập nhật thành viên dự án'
+                }
+            });
 
             // Notify NEW Assignees
             if (added.length > 0) {
                 const addedUsers = await prisma.user.findMany({ where: { id: { in: added } } });
-                for (const user of addedUsers) {
-                    if (user.id === userId) continue;
+                for (const updatedUser of addedUsers) {
+                    if (updatedUser.id === userId) continue;
 
                     await createNotification(
-                        user.id,
+                        updatedUser.id,
                         'Thêm vào dự án',
-                        `Bạn đã được thêm vào dự án: ${updated.title}`,
+                        `Bạn đã được thêm vào dự án: ${updated.name}`,
                         'INFO',
                         `/projects/${updated.id}`
                     );
 
-                    if (user.email) {
+                    if (updatedUser.email) {
                         await sendEmailWithTracking({
-                            to: user.email,
-                            subject: `[Thông Báo] Bạn được thêm vào dự án: ${updated.title}`,
+                            to: updatedUser.email,
+                            subject: `[Thông Báo] Bạn được thêm vào dự án: ${updated.name}`,
                             htmlBody: `
                                 <div style="font-family: Arial, sans-serif; padding: 20px;">
                                     <h2>Tham gia dự án</h2>
-                                    <p>Xin chào ${user.name || user.email},</p>
-                                    <p>Bạn vừa được thêm vào dự án: <strong>${updated.title}</strong></p>
+                                    <p>Xin chào ${updatedUser.name || updatedUser.email},</p>
+                                    <p>Bạn vừa được thêm vào dự án: <strong>${updated.name}</strong></p>
                                     <hr style="border: 1px solid #eee; my-4;" />
                                     <a href="${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/projects/${updated.id}" style="background-color: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Xem Dự Án</a>
                                 </div>
@@ -192,15 +220,11 @@ export async function updateProject(id: string, data: any, userId: string) {
 }
 
 export async function deleteProject(id: string) {
-    const oldProject = await prisma.task.findUnique({ where: { id } });
+    const oldProject = await prisma.project.findUnique({ where: { id } });
     if (!oldProject) throw new Error("Dự án không tồn tại");
-    await verifyActionOwnership('TASKS', 'DELETE', oldProject.creatorId);
+    await verifyActionOwnership('PROJECTS', 'DELETE', oldProject.creatorId);
 
-    // Rely on Prisma cascade deletes or explicitly delete child tasks if not cascaded
-    // Currently Schema has 'TaskRecurrence' relation for parentTaskId but didn't specify onDelete: Cascade
-    // Wait, let's check schema: `parentTask Task? @relation("TaskRecurrence", fields: [parentTaskId], references: [id])` -> no Cascade.
-    // So we manually delete child tasks first.
-    await prisma.task.deleteMany({ where: { parentTaskId: id } });
-    await prisma.task.delete({ where: { id } });
+    // Prisma Cascade delete handles dependencies since we updated the schema relations to Cascade
+    await prisma.project.delete({ where: { id } });
     revalidatePath('/projects');
 }

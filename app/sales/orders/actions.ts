@@ -107,6 +107,7 @@ export async function submitSalesOrder(creatorId: string, formData: any) {
                 subTotal: formData.subTotal,
                 taxAmount: formData.taxAmount,
                 totalAmount: formData.totalAmount,
+                ...(formData.projectId ? { projects: { connect: [{ id: formData.projectId }] } } : {}),
                 creatorId: actualCreatorId,
                 items: {
                     create: formData.items.map((item: any) => ({
@@ -158,6 +159,7 @@ export async function updateSalesOrder(id: string, formData: any) {
                 subTotal: formData.subTotal,
                 taxAmount: formData.taxAmount,
                 totalAmount: formData.totalAmount,
+                ...(formData.projectId ? { projects: { connect: [{ id: formData.projectId }] } } : {}),
                 items: {
                     deleteMany: {},
                     create: formData.items.map((item: any) => ({

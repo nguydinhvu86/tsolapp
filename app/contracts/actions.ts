@@ -8,10 +8,20 @@ import { logCustomerActivity } from "@/lib/customerLogger";
 import { createManyNotifications } from '@/app/notifications/actions';
 import { buildViewFilter, verifyActionPermission, verifyActionOwnership } from '@/lib/permissions';
 
-export async function createContract(data: { title: string, content: string, variables: string, customerId: string, templateId: string, assignedToId?: string }, creatorId?: string) {
+export async function createContract(data: { title: string, content: string, variables: string, customerId: string, templateId: string, assignedToId?: string, projectId?: string }, creatorId?: string) {
     const user = await verifyActionPermission('CONTRACTS_CREATE');
     const uId = user ? (user as any).id : creatorId;
-    const contract = await prisma.contract.create({ data });
+    
+    // Extract virtual fields not belonging to Contract model
+    const { assignedToId, projectId, ...contractData } = data;
+
+    const contract = await prisma.contract.create({ 
+        data: {
+            ...contractData,
+            creatorId: uId,
+            ...(projectId ? { projects: { connect: [{ id: projectId }] } } : {})
+        } 
+    });
 
     const session = await getServerSession(authOptions);
     if (session?.user?.id && data.customerId) {

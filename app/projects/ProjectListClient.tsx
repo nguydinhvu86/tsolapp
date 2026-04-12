@@ -18,9 +18,9 @@ export function ProjectListClient({ initialProjects, users, customers = [] }: { 
     const permissions = session?.user?.permissions || [];
     const isAdmin = session?.user?.role === 'ADMIN';
 
-    const canCreate = true;
-    const canEdit = isAdmin || permissions.includes('TASKS_EDIT');
-    const canDelete = isAdmin || permissions.includes('TASKS_DELETE');
+    const canCreate = isAdmin || permissions.includes('PROJECTS_CREATE');
+    const canEdit = isAdmin || permissions.includes('PROJECTS_EDIT');
+    const canDelete = isAdmin || permissions.includes('PROJECTS_DELETE');
 
     const [isCreateModalOpen, setCreateModalOpen] = useState(false);
     const [title, setTitle] = useState('');
@@ -59,6 +59,9 @@ export function ProjectListClient({ initialProjects, users, customers = [] }: { 
     const [statusFilter, setStatusFilter] = useState('ALL');
     const [assigneeFilter, setAssigneeFilter] = useState('ALL');
 
+    // View State
+    const [viewMode, setViewMode] = useState<'LIST' | 'KANBAN'>('LIST');
+
     const customerOptions = [
         { value: '', label: '-- Không chọn --' },
         ...(customers?.map(c => ({ value: c.id, label: c.name })) || [])
@@ -70,6 +73,17 @@ export function ProjectListClient({ initialProjects, users, customers = [] }: { 
         } else {
             setSortField(field);
             setSortDirection('asc');
+        }
+    };
+
+    const handleStatusChange = async (projectId: string, newStatus: string) => {
+        if (!session?.user?.id) return;
+        try {
+            await updateProject(projectId, { status: newStatus }, session.user.id);
+            router.refresh();
+        } catch (error) {
+            console.error("Lỗi cập nhật trạng thái", error);
+            alert("Chỉ người tạo hoặc người quản trị mới có thể cập nhật.");
         }
     };
 
@@ -265,6 +279,22 @@ export function ProjectListClient({ initialProjects, users, customers = [] }: { 
                         <Plus size={18} /> Tạo Dự Án Mới
                     </Button>
                 )}
+                
+                <div style={{ display: 'flex', backgroundColor: '#f1f5f9', padding: '4px', borderRadius: '8px', gap: '4px' }}>
+                    <button 
+                        onClick={() => setViewMode('LIST')}
+                        style={{ padding: '6px 12px', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px',
+                                 backgroundColor: viewMode === 'LIST' ? 'white' : 'transparent', color: viewMode === 'LIST' ? '#0f172a' : '#64748b', boxShadow: viewMode === 'LIST' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' }}>
+                        <List size={16} /> Danh sách
+                    </button>
+                    <button 
+                        onClick={() => setViewMode('KANBAN')}
+                        style={{ padding: '6px 12px', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px',
+                                 backgroundColor: viewMode === 'KANBAN' ? 'white' : 'transparent', color: viewMode === 'KANBAN' ? '#0f172a' : '#64748b', boxShadow: viewMode === 'KANBAN' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' }}>
+                        <LayoutDashboard size={16} /> Kanban
+                    </button>
+                </div>
+
                 <div style={{ display: 'flex', gap: '0.5rem', flex: 1, justifyContent: 'flex-end', alignItems: 'center' }}>
                     <div style={{ position: 'relative' }}>
                         <input
@@ -301,7 +331,8 @@ export function ProjectListClient({ initialProjects, users, customers = [] }: { 
                 </div>
             </div>
 
-            <Card>
+            {viewMode === 'LIST' && (
+                <Card>
                 <div style={{ overflowX: 'auto' }}>
                     <Table>
                         <thead>
@@ -360,13 +391,23 @@ export function ProjectListClient({ initialProjects, users, customers = [] }: { 
                                             {project.dueDate ? formatDate(new Date(project.dueDate)) : '-'}
                                         </td>
                                         <td>
-                                            <span style={{
-                                                padding: '4px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600,
-                                                backgroundColor: project.status === 'DONE' ? '#dcfce7' : (project.status === 'IN_PROGRESS' ? '#dbeafe' : project.status === 'PAUSED' ? '#fef9c3' : '#f1f5f9'),
-                                                color: project.status === 'DONE' ? '#16a34a' : (project.status === 'IN_PROGRESS' ? '#2563eb' : project.status === 'PAUSED' ? '#ca8a04' : '#475569')
-                                            }}>
-                                                {project.status === 'TODO' ? 'Chuẩn Bị' : project.status === 'IN_PROGRESS' ? 'Đang Thực Hiện' : project.status === 'PAUSED' ? 'Tạm Ngưng' : project.status === 'DONE' ? 'Hoàn Thành' : project.status === 'CANCELLED' ? 'Đã Hủy' : project.status}
-                                            </span>
+                                            <select
+                                                value={project.status}
+                                                onChange={(e) => handleStatusChange(project.id, e.target.value)}
+                                                disabled={!canEdit}
+                                                style={{
+                                                    padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600,
+                                                    border: '1px solid var(--border)', cursor: canEdit ? 'pointer' : 'default',
+                                                    backgroundColor: project.status === 'DONE' ? '#dcfce7' : (project.status === 'IN_PROGRESS' ? '#dbeafe' : project.status === 'PAUSED' ? '#fef9c3' : '#f1f5f9'),
+                                                    color: project.status === 'DONE' ? '#16a34a' : (project.status === 'IN_PROGRESS' ? '#2563eb' : project.status === 'PAUSED' ? '#ca8a04' : '#475569')
+                                                }}
+                                            >
+                                                <option value="TODO" style={{ backgroundColor: 'white', color: '#475569' }}>Chuẩn Bị</option>
+                                                <option value="IN_PROGRESS" style={{ backgroundColor: 'white', color: '#2563eb' }}>Đang Thực Hiện</option>
+                                                <option value="PAUSED" style={{ backgroundColor: 'white', color: '#ca8a04' }}>Tạm Ngưng</option>
+                                                <option value="DONE" style={{ backgroundColor: 'white', color: '#16a34a' }}>Hoàn Thành</option>
+                                                <option value="CANCELLED" style={{ backgroundColor: 'white', color: '#dc2626' }}>Đã Hủy</option>
+                                            </select>
                                         </td>
                                         <td>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -418,6 +459,99 @@ export function ProjectListClient({ initialProjects, users, customers = [] }: { 
                     </Table>
                 </div>
             </Card>
+            )}
+
+            {viewMode === 'KANBAN' && (
+                <div style={{ display: 'flex', gap: '1.5rem', overflowX: 'auto', paddingBottom: '1rem', minHeight: '600px', alignItems: 'flex-start' }}>
+                    {['TODO', 'IN_PROGRESS', 'PAUSED', 'DONE', 'CANCELLED'].map(colStatus => {
+                        const colProjects = sortedProjects.filter(p => p.status === colStatus);
+                        const colTitles: any = { 'TODO': 'Chuẩn Bị', 'IN_PROGRESS': 'Đang Triển Khai', 'PAUSED': 'Tạm Ngưng', 'DONE': 'Hoàn Thành', 'CANCELLED': 'Đã Hủy' };
+                        const colColors: any = { 'TODO': '#f1f5f9', 'IN_PROGRESS': '#e0f2fe', 'PAUSED': '#fef9c3', 'DONE': '#dcfce7', 'CANCELLED': '#fee2e2' };
+                        const headerColors: any = { 'TODO': '#64748b', 'IN_PROGRESS': '#0284c7', 'PAUSED': '#ca8a04', 'DONE': '#16a34a', 'CANCELLED': '#dc2626' };
+
+                        return (
+                            <div key={colStatus} style={{ minWidth: '320px', width: '320px', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', maxHeight: '75vh' }}>
+                                <div style={{ padding: '1rem', borderBottom: '2px solid transparent', borderBottomColor: colColors[colStatus], display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'white', borderTopLeftRadius: '12px', borderTopRightRadius: '12px' }}>
+                                    <div style={{ fontWeight: 700, fontSize: '0.95rem', color: headerColors[colStatus] }}>
+                                        {colTitles[colStatus]}
+                                    </div>
+                                    <div style={{ backgroundColor: '#f1f5f9', color: '#475569', fontSize: '0.75rem', fontWeight: 600, padding: '2px 8px', borderRadius: '12px' }}>
+                                        {colProjects.length}
+                                    </div>
+                                </div>
+                                
+                                <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem', overflowY: 'auto', flex: 1 }}>
+                                    {colProjects.map((project: any) => {
+                                        const isDueSoon = project.dueDate && new Date(project.dueDate).getTime() - new Date().getTime() < 86400000 && project.status !== 'DONE';
+                                        
+                                        return (
+                                            <div key={project.id} style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', cursor: 'grab', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                                        <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backgroundColor: project.priority === 'URGENT' ? '#fef2f2' : project.priority === 'HIGH' ? '#fffbeb' : '#f8fafc', color: project.priority === 'URGENT' ? '#ef4444' : project.priority === 'HIGH' ? '#d97706' : '#64748b' }}>
+                                                            {project.priority || 'MEDIUM'}
+                                                        </span>
+                                                        <span style={{ fontSize: '0.65rem', fontWeight: 600, padding: '2px 6px', borderRadius: '4px', backgroundColor: '#f1f5f9', color: '#64748b' }}>
+                                                            {project.code || 'PRJ'}
+                                                        </span>
+                                                    </div>
+                                                    {canEdit && (
+                                                        <button onClick={() => openEditModal(project)} style={{ color: '#cbd5e1', padding: '0px' }} title="Sửa">
+                                                            <Edit2 size={14} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                
+                                                <Link href={`/projects/${project.id}`} style={{ fontWeight: 600, fontSize: '0.95rem', color: '#0f172a', lineHeight: '1.4', textDecoration: 'none' }} className="hover:text-blue-600">
+                                                    {project.title}
+                                                </Link>
+
+                                                {project.description && (
+                                                    <div style={{ fontSize: '0.8rem', color: '#64748b', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                                        {project.description}
+                                                    </div>
+                                                )}
+
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', paddingTop: '0.75rem', borderTop: '1px dashed #e2e8f0' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: isDueSoon ? '#ef4444' : '#64748b', fontSize: '0.75rem', fontWeight: isDueSoon ? 600 : 500 }}>
+                                                        <Clock size={14} />
+                                                        {project.dueDate ? formatDate(new Date(project.dueDate)) : 'No deadline'}
+                                                    </div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748b', fontSize: '0.75rem', fontWeight: 500 }}>
+                                                        <Users size={14} />
+                                                        {project.assignees?.length || 0}
+                                                    </div>
+                                                </div>
+                                                
+                                                {/* Progress Bar Mini */}
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <div style={{ flex: 1, backgroundColor: '#e2e8f0', height: '4px', borderRadius: '2px', overflow: 'hidden' }}>
+                                                        <div style={{
+                                                            width: `${project.progress || 0}%`,
+                                                            backgroundColor: project.progress === 100 ? '#10b981' : 'var(--primary)',
+                                                            height: '100%'
+                                                        }} />
+                                                    </div>
+                                                    <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b' }}>
+                                                        {project.progress || 0}%
+                                                    </span>
+                                                </div>
+
+                                            </div>
+                                        );
+                                    })}
+                                    
+                                    {colProjects.length === 0 && (
+                                        <div style={{ padding: '2rem 1rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem', border: '2px dashed #e2e8f0', borderRadius: '8px' }}>
+                                            Kéo thả hoặc tạo dự án mới
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
 
             {/* Create Project Modal */}
             <Modal isOpen={isCreateModalOpen} onClose={() => setCreateModalOpen(false)} title="Tạo Dự Án Mới">

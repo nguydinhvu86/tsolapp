@@ -15,27 +15,27 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
 
     if (!isViewAll && !isViewOwn) notFound();
 
-    const project = await (prisma.task as any).findFirst({
-        where: { id: params.id, isProject: true },
+    const project = await prisma.project.findUnique({
+        where: { id: params.id },
         include: {
             creator: { select: { id: true, name: true, avatar: true } },
-            assignees: { include: { user: { select: { id: true, name: true, avatar: true } } } },
+            members: { include: { user: { select: { id: true, name: true, avatar: true } } } },
             comments: {
                 orderBy: { createdAt: 'desc' },
-                include: { user: { select: { id: true, name: true, avatar: true } } }
+                include: { user: { select: { id: true, name: true, avatar: true } }, reactions: true }
             },
             attachments: { include: { uploadedBy: { select: { id: true, name: true } } } },
-            customer: { select: { id: true, name: true } },
-            contract: { select: { id: true, title: true } },
-            quote: { select: { id: true, title: true } },
-            handover: { select: { id: true, title: true } },
-            paymentReq: { select: { id: true, title: true } },
-            dispatch: { select: { id: true, title: true } },
-            salesOrder: { select: { id: true, code: true } },
-            salesInvoice: { select: { id: true, code: true } },
-            salesEstimate: { select: { id: true, code: true } },
-            salesPayment: { select: { id: true, code: true } },
-            childTasks: {
+            customer: { select: { id: true, name: true, phone: true, email: true } },
+            contract: { select: { id: true, title: true, status: true, createdAt: true } },
+            quote: { select: { id: true, title: true, status: true, createdAt: true } },
+            salesEstimate: { select: { id: true, code: true, status: true, totalAmount: true, date: true } },
+            salesOrder: { select: { id: true, code: true, status: true, totalAmount: true, date: true } },
+            invoice: { select: { id: true, code: true, status: true, totalAmount: true, paidAmount: true, date: true } },
+            purchaseOrders: { select: { id: true, code: true, status: true, totalAmount: true, date: true, supplier: { select: { name: true } } } },
+            purchaseBills: { select: { id: true, code: true, status: true, totalAmount: true, paidAmount: true, date: true, supplier: { select: { name: true } } } },
+            purchasePayments: { select: { id: true, code: true, status: true, amount: true, date: true, supplier: { select: { name: true } } } },
+            expenses: { select: { id: true, code: true, status: true, amount: true, date: true, description: true } },
+            tasks: {
                 include: {
                     assignees: { include: { user: { select: { id: true, name: true, avatar: true } } } },
                     creator: { select: { id: true, name: true } },
@@ -58,7 +58,8 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
                     quote: { select: { id: true, title: true } },
                     handover: { select: { id: true, title: true } },
                     paymentReq: { select: { id: true, title: true } },
-                    dispatch: { select: { id: true, title: true } }
+                    dispatch: { select: { id: true, title: true } },
+                    dependencies: { include: { dependsOn: { select: { id: true, title: true, status: true, dueDate: true } } } }
                 },
                 orderBy: { createdAt: 'desc' }
             }
@@ -69,9 +70,8 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
 
     if (!isViewAll && isViewOwn && userId) {
         const isRelated = project.creatorId === userId ||
-            project.assignees.some((a: any) => a.userId === userId) ||
-            project.observers?.some((o: any) => o.userId === userId) ||
-            project.childTasks?.some((ct: any) =>
+            project.members.some((a: any) => a.userId === userId) ||
+            project.tasks?.some((ct: any) =>
                 ct.creatorId === userId ||
                 ct.assignees.some((a: any) => a.userId === userId) ||
                 ct.observers?.some((o: any) => o.userId === userId)

@@ -16,7 +16,7 @@ import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { TagDisplay } from '@/app/components/ui/TagDisplay';
 import { AvatarImage } from '@/app/components/ui/AvatarImage';
 
-export default function SalesEstimateClient({ initialEstimates, customers, products, leads, nextCode, initialAction, initialCustomerId, initialLeadId, users, currentUserId, isAdminOrManager }: any) {
+export default function SalesEstimateClient({ initialEstimates, customers, products, leads, projects, nextCode, initialAction, initialCustomerId, initialLeadId, initialProjectId, users, currentUserId, isAdminOrManager }: any) {
     const { t } = useTranslation();
     const router = useRouter();
     const [estimates, setEstimates] = useState(initialEstimates);
@@ -58,6 +58,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         code: nextCode,
         customerId: initialCustomerId || '',
         leadId: initialLeadId || '',
+        projectId: initialProjectId || '',
         salespersonId: currentUserId || '',
         date: getLocalDateStr(new Date()),
         validUntil: getLocalDateStr(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
@@ -73,8 +74,9 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
     const handleOpenCreate = () => {
         setFormData({
             code: nextCode, // Assume nextCode persists or is updated elsewhere
-            customerId: '',
-            leadId: '',
+            customerId: initialCustomerId || '',
+            leadId: initialLeadId || '',
+            projectId: initialProjectId || '',
             salespersonId: currentUserId || '',
             date: getLocalDateStr(new Date()),
             validUntil: getLocalDateStr(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
@@ -117,6 +119,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
             code: est.code || '',
             customerId: est.customerId || '',
             leadId: est.leadId || '',
+            projectId: est.projects?.[0]?.id || '',
             salespersonId: est.salespersonId || est.creatorId || currentUserId || '',
             date: est.date ? getLocalDateStr(new Date(est.date)) : getLocalDateStr(new Date()),
             validUntil: est.validUntil ? getLocalDateStr(new Date(est.validUntil)) : '',
@@ -162,6 +165,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         setFormData({
             code: nextCode,
             customerId: est.customerId || '',
+            projectId: est.projects?.[0]?.id || '',
             salespersonId: currentUserId || '',
             date: getLocalDateStr(new Date()),
             validUntil: est.validUntil ? getLocalDateStr(new Date(est.validUntil)) : '',
@@ -885,7 +889,17 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                     placeholder={t('estimates.selectLead')}
                                 />
                             </div>
-                            <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-5 gap-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Dự án liên kết</label>
+                                <SearchableSelect
+                                    options={projects?.map((p: any) => ({ value: p.id, label: p.code + ' - ' + p.name })) || []}
+                                    value={formData.projectId}
+                                    onChange={val => setFormData({ ...formData, projectId: val })}
+                                    placeholder="Chọn dự án..."
+                                />
+                            </div>
+
+                            <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('estimates.estimateDate')}</label>
                                     <input

@@ -124,6 +124,7 @@ export async function submitSalesEstimate(creatorId: string, formData: any) {
                 creatorId: actualCreatorId,
                 salespersonId: formData.salespersonId || actualCreatorId,
                 leadId: formData.leadId || null,
+                projects: formData.projectId ? { connect: [{ id: formData.projectId }] } : undefined,
                 items: {
                     create: formData.items.map((item: any) => ({
                         productId: item.productId || null,
@@ -279,6 +280,7 @@ export async function updateSalesEstimate(id: string, formData: any) {
                 totalAmount: formData.totalAmount,
                 salespersonId: formData.salespersonId || null,
                 leadId: formData.leadId || null,
+                projects: formData.projectId ? { connect: [{ id: formData.projectId }] } : undefined,
                 items: {
                     deleteMany: {},
                     create: formData.items.map((item: any) => ({

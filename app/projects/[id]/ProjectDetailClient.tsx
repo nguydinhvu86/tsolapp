@@ -8,13 +8,14 @@ import Link from 'next/link';
 import {
     ArrowLeft, Target, Calendar, Users, LayoutDashboard, Flag,
     MessageSquare, FileText, BarChart2, Link as LinkIcon, Milestone,
-    Paperclip, Trash2, Clock, Tag
+    Paperclip, Trash2, Clock, Tag, DollarSign, ArrowUpRight, ArrowDownRight, Briefcase
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { addComment, uploadTaskAttachment, deleteTaskAttachment, toggleReaction } from '@/app/tasks/actions';
+import { FileSignature, Receipt, FileText as FileTextIcon, Calculator, Plus } from 'lucide-react';
 
 const EMOJIS = ['👍', '❤️', '😂', '🎉', '👀'];
 
@@ -22,7 +23,7 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
     const router = useRouter();
     const { data: session } = useSession();
 
-    const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'TASKS' | 'DISCUSSIONS' | 'FILES' | 'REPORTS'>('OVERVIEW');
+    const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'TASKS' | 'FINANCIALS' | 'DISCUSSIONS' | 'FILES' | 'REPORTS' | 'QUOTE' | 'CONTRACT' | 'INVOICE' | 'SALES_ESTIMATE'>('OVERVIEW');
 
     // Discussion State
     const [newComment, setNewComment] = useState('');
@@ -32,25 +33,38 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
     const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
 
     // Calculate Project Progress
-    const totalTasks = project.childTasks?.length || 0;
-    const completedTasks = project.childTasks?.filter((t: any) => t.status === 'DONE').length || 0;
+    const totalTasks = project.tasks?.length || 0;
+    const completedTasks = project.tasks?.filter((t: any) => t.status === 'DONE').length || 0;
     const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
     // Derived Milestones (Child tasks with High/Urgent priority or a specific convention)
-    const milestones = project.childTasks?.filter((t: any) => t.priority === 'URGENT' || t.priority === 'HIGH') || [];
+    const milestones = project.tasks?.filter((t: any) => t.priority === 'URGENT' || t.priority === 'HIGH') || [];
 
     // Contextual references
     const relatedLinks = [];
     if (project.contract) relatedLinks.push({ label: 'Hợp đồng', value: project.contract.title, href: `/contracts/${project.contract.id}` });
-    if (project.quote) relatedLinks.push({ label: 'Báo giá', value: project.quote.title, href: `/quotes/${project.quote.id}` });
-    if (project.handover) relatedLinks.push({ label: 'Bàn giao', value: project.handover.title, href: `/handovers/${project.handover.id}` });
-    if (project.paymentReq) relatedLinks.push({ label: 'Thanh toán', value: project.paymentReq.title, href: `/payment-requests/${project.paymentReq.id}` });
-    if (project.dispatch) relatedLinks.push({ label: 'Công văn', value: project.dispatch.title, href: `/dispatches/${project.dispatch.id}` });
+    if (project.quote) relatedLinks.push({ label: 'Báo giá (Văn bản)', value: project.quote.title, href: `/quotes/${project.quote.id}` });
     if (project.customer) relatedLinks.push({ label: 'Khách hàng', value: project.customer.name, href: `/customers/${project.customer.id}` });
-    if (project.salesOrder) relatedLinks.push({ label: 'Đơn hàng', value: project.salesOrder.code, href: `/sales/orders/${project.salesOrder.id}` });
-    if (project.salesInvoice) relatedLinks.push({ label: 'Hóa đơn', value: project.salesInvoice.code, href: `/sales/invoices/${project.salesInvoice.id}` });
-    if (project.salesEstimate) relatedLinks.push({ label: 'Báo giá (Sales)', value: project.salesEstimate.code, href: `/sales/estimates/${project.salesEstimate.id}` });
-    if (project.salesPayment) relatedLinks.push({ label: 'Phiếu thu', value: project.salesPayment.code, href: `/sales/payments/${project.salesPayment.id}` });
+    if (project.salesEstimate) relatedLinks.push({ label: 'Báo giá ERP', value: project.salesEstimate.code, href: `/sales/estimates/${project.salesEstimate.id}` });
+    if (project.invoice) relatedLinks.push({ label: 'Hóa đơn', value: project.invoice.code, href: `/sales/invoices/${project.invoice.id}` });
+
+    function getEmptyState(title: string, desc: string, icon: any, createHref: string) {
+        const IconNode = icon;
+        return (
+            <div style={{ padding: '4rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
+                <div style={{ padding: '1.5rem', backgroundColor: '#e2e8f0', borderRadius: '50%', marginBottom: '1.5rem', color: 'var(--text-muted)' }}>
+                    <IconNode size={48} />
+                </div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>{title}</h3>
+                <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', maxWidth: '400px' }}>{desc}</p>
+                <Link href={createHref}>
+                    <Button variant="primary">
+                        <Plus size={16} /> Tạo {title.replace('Chưa có ', '')}
+                    </Button>
+                </Link>
+            </div>
+        );
+    }
 
     const handleAddComment = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -146,9 +160,14 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
 
     const tabs = [
         { id: 'OVERVIEW', label: 'Tổng Quan', icon: Target },
+        { id: 'FINANCIALS', label: 'Tài Chính (P&L)', icon: DollarSign },
         { id: 'TASKS', label: 'Bảng Công Việc', icon: LayoutDashboard },
+        { id: 'SALES_ESTIMATE', label: 'Báo Giá ERP', icon: Calculator },
+        { id: 'QUOTE', label: 'Báo Giá (VB)', icon: FileTextIcon },
+        { id: 'CONTRACT', label: 'Hợp Đồng', icon: FileSignature },
+        { id: 'INVOICE', label: 'Hóa Đơn', icon: Receipt },
         { id: 'DISCUSSIONS', label: 'Thảo Luận', icon: MessageSquare },
-        { id: 'FILES', label: 'Tủ Hồ Sơ', icon: FileText },
+        { id: 'FILES', label: 'Tủ Hồ Sơ', icon: FileTextIcon },
         { id: 'REPORTS', label: 'Báo Cáo', icon: BarChart2 },
     ];
 
@@ -205,6 +224,107 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
 
             {/* TAB CONTENTS */}
             <div style={{ flex: 1, overflowY: 'auto' }}>
+                {activeTab === 'FINANCIALS' && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: '1.5rem', alignItems: 'start' }}>
+                        {(() => {
+                            const expectedRevenue = project.salesEstimate?.totalAmount || project.estimatedValue || 0;
+                            const actualRevenue = project.invoice?.totalAmount || 0;
+                            
+                            const totalPurchaseCost = project.purchaseBills?.reduce((sum: number, bill: any) => sum + (bill.totalAmount || 0), 0) || 0;
+                            const totalExpenseCost = project.expenses?.reduce((sum: number, exp: any) => sum + (exp.amount || 0), 0) || 0;
+                            const totalCost = totalPurchaseCost + totalExpenseCost;
+                            
+                            const grossProfit = actualRevenue - totalCost;
+                            const profitMargin = actualRevenue > 0 ? (grossProfit / actualRevenue) * 100 : 0;
+                            
+                            const budget = project.budget || 0;
+                            const budgetUsedPct = budget > 0 ? (totalCost / budget) * 100 : 0;
+                            
+                            return (
+                                <>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
+                                        {/* REVENUE CARD */}
+                                        <Card style={{ padding: '1.5rem', borderLeft: '4px solid #10b981' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                <div>
+                                                    <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: 600 }}>DOANH THU THỰC TẾ</p>
+                                                    <h3 style={{ margin: '0.5rem 0 0', fontSize: '1.5rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(actualRevenue)}
+                                                    </h3>
+                                                    <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                                        Dự kiến: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(expectedRevenue)}
+                                                    </p>
+                                                </div>
+                                                <div style={{ padding: '8px', backgroundColor: '#dcfce7', borderRadius: '8px', color: '#10b981' }}>
+                                                    <ArrowUpRight size={24} />
+                                                </div>
+                                            </div>
+                                        </Card>
+
+                                        {/* COSTS CARD */}
+                                        <Card style={{ padding: '1.5rem', borderLeft: '4px solid #ef4444' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                <div>
+                                                    <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: 600 }}>TỔNG CHI PHÍ THỰC TẾ</p>
+                                                    <h3 style={{ margin: '0.5rem 0 0', fontSize: '1.5rem', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalCost)}
+                                                    </h3>
+                                                    <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                                        Vật tư: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalPurchaseCost)} | Khác: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalExpenseCost)}
+                                                    </p>
+                                                </div>
+                                                <div style={{ padding: '8px', backgroundColor: '#fee2e2', borderRadius: '8px', color: '#ef4444' }}>
+                                                    <ArrowDownRight size={24} />
+                                                </div>
+                                            </div>
+                                        </Card>
+
+                                        {/* PROFIT CARD */}
+                                        <Card style={{ padding: '1.5rem', borderLeft: '4px solid #3b82f6' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                <div>
+                                                    <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: 600 }}>LỢI NHUẬN GỘP (P&L)</p>
+                                                    <h3 style={{ margin: '0.5rem 0 0', fontSize: '1.5rem', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(grossProfit)}
+                                                    </h3>
+                                                    <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                                        Biên lợi nhuận: {profitMargin.toFixed(1)}%
+                                                    </p>
+                                                </div>
+                                                <div style={{ padding: '8px', backgroundColor: '#dbeafe', borderRadius: '8px', color: '#3b82f6' }}>
+                                                    <Briefcase size={24} />
+                                                </div>
+                                            </div>
+                                        </Card>
+                                    </div>
+
+                                    {/* BUDGET BAR */}
+                                    <Card style={{ padding: '1.5rem' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                            <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                <Target size={18} color="var(--primary)" /> Ngân sách chi cho phép
+                                            </h3>
+                                            <div style={{ fontSize: '0.875rem', fontWeight: 600, color: budgetUsedPct > 90 ? '#ef4444' : 'var(--text-muted)' }}>
+                                                Đã dùng: {budgetUsedPct.toFixed(1)}%
+                                            </div>
+                                        </div>
+                                        <div style={{ width: '100%', height: '16px', backgroundColor: '#e2e8f0', borderRadius: '8px', overflow: 'hidden', margin: '1rem 0' }}>
+                                            <div style={{
+                                                height: '100%', backgroundColor: budgetUsedPct > 90 ? '#ef4444' : (budgetUsedPct > 75 ? '#f59e0b' : '#3b82f6'),
+                                                width: `${Math.min(budgetUsedPct, 100)}%`, transition: 'width 0.5s ease-in-out'
+                                            }} />
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                            <span>0 ₫</span>
+                                            <span>Ngân sách: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(budget)}</span>
+                                        </div>
+                                    </Card>
+                                </>
+                            );
+                        })()}
+                    </div>
+                )}
+
                 {activeTab === 'OVERVIEW' && (
                     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: '1.5rem', alignItems: 'start' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -310,14 +430,14 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
                                         </div>
                                     )}
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', gridColumn: '1 / -1' }}>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Users size={12} /> Thành viên ({project.assignees?.length || 0})</div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Users size={12} /> Thành viên ({project.members?.length || 0})</div>
                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.25rem' }}>
-                                            {project.assignees?.map((a: any) => (
+                                            {project.members?.map((a: any) => (
                                                 <div key={a.userId} style={{ padding: '2px 8px', borderRadius: '12px', backgroundColor: '#f1f5f9', fontSize: '0.75rem', border: '1px solid #e2e8f0' }}>
                                                     {a.user.name || a.user.email}
                                                 </div>
                                             ))}
-                                            {(!project.assignees || project.assignees.length === 0) && <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Chưa có thành viên</span>}
+                                            {(!project.members || project.members.length === 0) && <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Chưa có thành viên</span>}
                                         </div>
                                     </div>
                                 </div>
@@ -345,11 +465,182 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
                         </div>
                     </div>
                 )}
+                {activeTab === 'SALES_ESTIMATE' && (
+                    <div style={{ height: '100%' }}>
+                        {!project.salesEstimate ? (
+                            getEmptyState(
+                                'Chưa có Báo Giá ERP', 
+                                'Dự án này chưa được liên kết với một Báo Giá số liệu trên hệ thống. Hãy tạo Báo Giá ERP mới.', 
+                                Calculator, 
+                                `/sales/estimates?action=new&projectId=${project.id}${project.customer ? `&customerId=${project.customerId}` : ''}`
+                            )
+                        ) : (
+                            <div style={{ display: 'grid', gap: '1.5rem', maxWidth: '800px', margin: '0 auto' }}>
+                                <Card style={{ padding: '2rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                                        <div>
+                                            <h2 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>Báo Giá {project.salesEstimate.code}</h2>
+                                        </div>
+                                        <span style={{ padding: '6px 16px', borderRadius: '24px', fontSize: '0.85rem', fontWeight: 600, backgroundColor: project.salesEstimate.status === 'ACCEPTED' ? '#dcfce7' : '#f1f5f9', color: project.salesEstimate.status === 'ACCEPTED' ? '#16a34a' : 'var(--text-main)' }}>
+                                            {project.salesEstimate.status}
+                                        </span>
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+                                        <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '8px' }}>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Tổng tiền</div>
+                                            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--primary)' }}>
+                                                {project.salesEstimate.totalAmount ? `${project.salesEstimate.totalAmount.toLocaleString('vi-VN')} VNĐ` : '0 VNĐ'}
+                                            </div>
+                                        </div>
+                                        <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '8px' }}>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Ngày báo giá</div>
+                                            <div style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                                                {project.salesEstimate.date ? formatDate(new Date(project.salesEstimate.date)) : '-'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                                        <Link href={`/sales/estimates/${project.salesEstimate.id}`}>
+                                            <Button variant="primary">Mở Chi Tiết Báo Giá ERP</Button>
+                                        </Link>
+                                    </div>
+                                </Card>
+                            </div>
+                        )}
+                    </div>
+                )}
+                {activeTab === 'QUOTE' && (
+                    <div style={{ height: '100%' }}>
+                        {!project.quote ? (
+                            getEmptyState(
+                                'Chưa có Báo Giá', 
+                                'Dự án này chưa được liên kết với một Báo Giá nào. Hãy tạo Báo Giá mới để theo dõi tài chính dự toán.', 
+                                Calculator, 
+                                `/quotes/new?projectId=${project.id}${project.customer ? `&customerId=${project.customerId}` : ''}`
+                            )
+                        ) : (
+                            <div style={{ display: 'grid', gap: '1.5rem', maxWidth: '800px', margin: '0 auto' }}>
+                                <Card style={{ padding: '2rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                                        <div>
+                                            <h2 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>{project.quote.title}</h2>
+                                            <p style={{ color: 'var(--text-muted)' }}>Tài liệu Báo Giá</p>
+                                        </div>
+                                        <span style={{ padding: '6px 16px', borderRadius: '24px', fontSize: '0.85rem', fontWeight: 600, backgroundColor: project.quote.status === 'ACCEPTED' ? '#dcfce7' : '#f1f5f9', color: project.quote.status === 'ACCEPTED' ? '#16a34a' : 'var(--text-main)' }}>
+                                            {project.quote.status}
+                                        </span>
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+                                        <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '8px' }}>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Ngày tạo báo giá</div>
+                                            <div style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                                                {project.quote.createdAt ? formatDate(new Date(project.quote.createdAt)) : '-'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                                        <Link href={`/quotes/${project.quote.id}`}>
+                                            <Button variant="primary">Mở Chi Tiết Báo Giá</Button>
+                                        </Link>
+                                    </div>
+                                </Card>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === 'CONTRACT' && (
+                    <div style={{ height: '100%' }}>
+                        {!project.contract ? (
+                            getEmptyState(
+                                'Chưa có Hợp Đồng', 
+                                'Dự án này chưa được liên kết với một Hợp Đồng (văn bản) nào.', 
+                                FileSignature, 
+                                `/contracts/new?projectId=${project.id}${project.customer ? `&customerId=${project.customerId}` : ''}${project.quote ? `&quoteId=${project.quoteId}` : ''}`
+                            )
+                        ) : (
+                            <div style={{ display: 'grid', gap: '1.5rem', maxWidth: '800px', margin: '0 auto' }}>
+                                <Card style={{ padding: '2rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                                        <div>
+                                            <h2 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>{project.contract.title}</h2>
+                                            <p style={{ color: 'var(--text-muted)' }}>Tài liệu Hợp đồng</p>
+                                        </div>
+                                        <span style={{ padding: '6px 16px', borderRadius: '24px', fontSize: '0.85rem', fontWeight: 600, backgroundColor: project.contract.status === 'ACTIVE' ? '#dbeafe' : '#f1f5f9', color: project.contract.status === 'ACTIVE' ? '#2563eb' : 'var(--text-main)' }}>
+                                            {project.contract.status}
+                                        </span>
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+                                        <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '8px' }}>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Ngày tạo / ký kết dự kiến</div>
+                                            <div style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                                                {project.contract.createdAt ? formatDate(new Date(project.contract.createdAt)) : '-'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                                        <Link href={`/contracts/${project.contract.id}`}>
+                                            <Button variant="primary">Mở Chi Tiết Hợp Đồng</Button>
+                                        </Link>
+                                    </div>
+                                </Card>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === 'INVOICE' && (
+                    <div style={{ height: '100%' }}>
+                        {!project.invoice ? (
+                            getEmptyState(
+                                'Chưa có Hóa Đơn', 
+                                'Dự án này chưa được liên kết với một Hóa Đơn nào. Hãy tạo Hóa đơn để đối soát và thu tiền.', 
+                                Receipt, 
+                                `/sales/invoices?action=new&projectId=${project.id}${project.customer ? `&customerId=${project.customerId}` : ''}${project.contract ? `&contractId=${project.contractId}` : ''}`
+                            )
+                        ) : (
+                            <div style={{ display: 'grid', gap: '1.5rem', maxWidth: '800px', margin: '0 auto' }}>
+                                <Card style={{ padding: '2rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                                        <div>
+                                            <h2 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>Hóa Đơn {project.invoice.code}</h2>
+                                        </div>
+                                        <span style={{ padding: '6px 16px', borderRadius: '24px', fontSize: '0.85rem', fontWeight: 600, backgroundColor: project.invoice.status === 'PAID' ? '#dcfce7' : '#f1f5f9', color: project.invoice.status === 'PAID' ? '#16a34a' : 'var(--text-main)' }}>
+                                            {project.invoice.status}
+                                        </span>
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'revert', gap: '1.5rem', marginBottom: '2rem' }}>
+                                        <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '8px', gridColumn: '1/-1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div>
+                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Tổng tiền Hóa đơn</div>
+                                                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                                                    {project.invoice.totalAmount ? `${project.invoice.totalAmount.toLocaleString('vi-VN')} VNĐ` : '0 VNĐ'}
+                                                </div>
+                                            </div>
+                                            <div style={{ textAlign: 'right' }}>
+                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Đã thu</div>
+                                                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#16a34a' }}>
+                                                    {project.invoice.paidAmount ? `${project.invoice.paidAmount.toLocaleString('vi-VN')} VNĐ` : '0 VNĐ'}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                                        <Link href={`/sales/invoices/${project.invoice.id}`}>
+                                            <Button variant="primary">Mở Chi Tiết Hóa Đơn</Button>
+                                        </Link>
+                                    </div>
+                                </Card>
+                            </div>
+                        )}
+                    </div>
+                )}
+
 
                 {activeTab === 'TASKS' && (
                     <div style={{ height: '100%' }}>
                         <TaskDashboardClient
-                            initialTasks={project.childTasks || []}
+                            initialTasks={project.tasks || []}
                             users={users}
                             parentProjectId={project.id}
                             parentProject={project}
@@ -553,7 +844,7 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
                             <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem' }}>Báo cáo khối lượng theo trạng thái</h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 {['TODO', 'IN_PROGRESS', 'REVIEW', 'CANCELLED'].map(status => {
-                                    const count = project.childTasks?.filter((t: any) => t.status === status).length || 0;
+                                    const count = project.tasks?.filter((t: any) => t.status === status).length || 0;
                                     const pct = totalTasks > 0 ? (count / totalTasks) * 100 : 0;
                                     const colors: Record<string, string> = {
                                         'TODO': '#f59e0b', 'IN_PROGRESS': '#3b82f6', 'REVIEW': '#8b5cf6', 'CANCELLED': '#ef4444'
