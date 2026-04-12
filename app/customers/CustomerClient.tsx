@@ -299,10 +299,10 @@ export function CustomerClient({ initialData, users, isAdminOrManager }: { initi
                                 <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>{t('customers.empty')}</td></tr>
                             ) : paginatedItems.map(customer => (
                                 <tr key={customer.id}>
-                                    <td style={{ fontWeight: 600 }}>
+                                    <td className="font-semibold sm:font-medium min-w-[220px] max-w-[260px] sm:max-w-none whitespace-normal break-words">
                                         <Link
                                             href={`/customers/${customer.id}`}
-                                            className="text-blue-600 hover:underline"
+                                            className="text-blue-700 hover:underline text-sm sm:text-base leading-tight inline-block"
                                         >
                                             {customer.name}
                                         </Link>
