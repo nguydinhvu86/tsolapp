@@ -12,6 +12,12 @@ import { useTranslation } from '@/app/i18n/LanguageContext';
 
 export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses, products, projects }: { initialBills: any[], suppliers: any[], orders: any[], warehouses: any[], products: any[], projects?: any[] }) {
     const { t } = useTranslation();
+    const [isMounted, setIsMounted] = useState(false);
+    
+    React.useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
     const [bills, setBills] = useState(initialBills);
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL');
@@ -603,50 +609,58 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                 .status-card-paid.active .card-desc { color: #059669; }
             `}</style>
             <div className="status-grid">
-                <div
-                    onClick={() => setStatusFilter('ALL')}
-                    className={`status-card status-card-all ${statusFilter === 'ALL' ? 'active' : ''}`}
-                >
-                    <div className="card-title text-xs font-bold uppercase tracking-wider mb-2">{t('purchaseBills.all')}</div>
-                    <div className="card-value text-3xl font-black">{stats.total}</div>
-                    <div className="card-desc text-sm mt-1 font-medium">{t('purchaseBills.bills')}</div>
-                </div>
+                {isMounted ? (
+                    <>
+                        <div
+                            onClick={() => setStatusFilter('ALL')}
+                            className={`status-card status-card-all ${statusFilter === 'ALL' ? 'active' : ''}`}
+                        >
+                            <div className="card-title text-xs font-bold uppercase tracking-wider mb-2">{t('purchaseBills.all')}</div>
+                            <div className="card-value text-3xl font-black">{stats.total}</div>
+                            <div className="card-desc text-sm mt-1 font-medium">{t('purchaseBills.bills')}</div>
+                        </div>
 
-                <div
-                    onClick={() => setStatusFilter('DRAFT')}
-                    className={`status-card status-card-draft ${statusFilter === 'DRAFT' ? 'active' : ''}`}
-                >
-                    <div className="card-title text-xs font-bold uppercase tracking-wider mb-2">{t('purchaseBills.draft')}</div>
-                    <div className="card-value text-3xl font-black">{stats.draft.count}</div>
-                    <div className="card-desc text-sm mt-1 font-medium">{t('purchaseBills.pendingApproval')}</div>
-                </div>
+                        <div
+                            onClick={() => setStatusFilter('DRAFT')}
+                            className={`status-card status-card-draft ${statusFilter === 'DRAFT' ? 'active' : ''}`}
+                        >
+                            <div className="card-title text-xs font-bold uppercase tracking-wider mb-2">{t('purchaseBills.draft')}</div>
+                            <div className="card-value text-3xl font-black">{stats.draft.count}</div>
+                            <div className="card-desc text-sm mt-1 font-medium">{t('purchaseBills.pendingApproval')}</div>
+                        </div>
 
-                <div
-                    onClick={() => setStatusFilter('APPROVED')}
-                    className={`status-card status-card-approved ${statusFilter === 'APPROVED' ? 'active' : ''}`}
-                >
-                    <div className="card-title text-xs font-bold uppercase tracking-wider mb-2">{t('purchaseBills.approvedDebt')}</div>
-                    <div className="card-value text-3xl font-black">{stats.approved.count}</div>
-                    <div className="card-desc text-sm font-bold mt-1">{formatMoney(stats.approved.amount)}</div>
-                </div>
+                        <div
+                            onClick={() => setStatusFilter('APPROVED')}
+                            className={`status-card status-card-approved ${statusFilter === 'APPROVED' ? 'active' : ''}`}
+                        >
+                            <div className="card-title text-xs font-bold uppercase tracking-wider mb-2">{t('purchaseBills.approvedDebt')}</div>
+                            <div className="card-value text-3xl font-black">{stats.approved.count}</div>
+                            <div className="card-desc text-sm font-bold mt-1">{formatMoney(stats.approved.amount)}</div>
+                        </div>
 
-                <div
-                    onClick={() => setStatusFilter('PARTIAL_PAID')}
-                    className={`status-card status-card-partial ${statusFilter === 'PARTIAL_PAID' ? 'active' : ''}`}
-                >
-                    <div className="card-title text-xs font-bold uppercase tracking-wider mb-2">{t('purchaseBills.partialPaid')}</div>
-                    <div className="card-value text-3xl font-black">{stats.partial.count}</div>
-                    <div className="card-desc text-sm font-bold mt-1">{t('purchaseBills.debt')}: {formatMoney(stats.partial.amount)}</div>
-                </div>
+                        <div
+                            onClick={() => setStatusFilter('PARTIAL_PAID')}
+                            className={`status-card status-card-partial ${statusFilter === 'PARTIAL_PAID' ? 'active' : ''}`}
+                        >
+                            <div className="card-title text-xs font-bold uppercase tracking-wider mb-2">{t('purchaseBills.partialPaid')}</div>
+                            <div className="card-value text-3xl font-black">{stats.partial.count}</div>
+                            <div className="card-desc text-sm font-bold mt-1">{t('purchaseBills.debt')}: {formatMoney(stats.partial.amount)}</div>
+                        </div>
 
-                <div
-                    onClick={() => setStatusFilter('PAID')}
-                    className={`status-card status-card-paid ${statusFilter === 'PAID' ? 'active' : ''}`}
-                >
-                    <div className="card-title text-xs font-bold uppercase tracking-wider mb-2">{t('purchaseBills.paid')}</div>
-                    <div className="card-value text-3xl font-black">{stats.paid.count}</div>
-                    <div className="card-desc text-sm font-bold mt-1">{t('purchaseBills.completed')}</div>
-                </div>
+                        <div
+                            onClick={() => setStatusFilter('PAID')}
+                            className={`status-card status-card-paid ${statusFilter === 'PAID' ? 'active' : ''}`}
+                        >
+                            <div className="card-title text-xs font-bold uppercase tracking-wider mb-2">{t('purchaseBills.paid')}</div>
+                            <div className="card-value text-3xl font-black">{stats.paid.count}</div>
+                            <div className="card-desc text-sm font-bold mt-1">{t('purchaseBills.completed')}</div>
+                        </div>
+                    </>
+                ) : (
+                    Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} className="status-card h-[110px] bg-slate-50 dark:bg-gray-800 animate-pulse rounded-xl"></div>
+                    ))
+                )}
             </div>
 
             <div className="card search-card mb-6">
@@ -663,6 +677,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
             </div>
 
             <div className="table-wrapper">
+                {isMounted ? (
                 <table>
                     <thead>
                         <tr>
@@ -787,6 +802,9 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                         )}
                     </tbody>
                 </table>
+                ) : (
+                    <div className="h-[400px] w-full bg-slate-50 dark:bg-gray-800/50 animate-pulse rounded-lg"></div>
+                )}
                 <Pagination {...paginationProps} />
             </div>
 
