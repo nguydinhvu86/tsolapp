@@ -25,7 +25,7 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
     const router = useRouter();
     const { data: session } = useSession();
 
-    const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'TASKS' | 'FINANCIALS' | 'DISCUSSIONS' | 'FILES' | 'REPORTS' | 'QUOTE' | 'CONTRACT' | 'INVOICE' | 'SALES_ESTIMATE' | 'PURCHASE_BILL' | 'EXPENSE'>('OVERVIEW');
+    const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'TASKS' | 'ISSUES' | 'FINANCIALS' | 'TIMESHEETS' | 'DISCUSSIONS' | 'FILES' | 'REPORTS' | 'QUOTE' | 'CONTRACT' | 'INVOICE' | 'SALES_ESTIMATE' | 'PURCHASE_BILL' | 'EXPENSE'>('OVERVIEW');
 
     // Discussion State (Forum)
     const generalTopic = { id: 'GENERAL', title: 'Thảo Luận Chung', comments: project.comments?.filter((c:any) => !c.topicId) || [] };
@@ -187,6 +187,8 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
         { id: 'OVERVIEW', label: 'Tổng Quan', icon: Target },
         { id: 'FINANCIALS', label: 'Tài Chính (P&L)', icon: DollarSign },
         { id: 'TASKS', label: 'Bảng Công Việc', icon: LayoutDashboard },
+        { id: 'ISSUES', label: 'Vấn Đề & Rủi Ro', icon: Flag },
+        { id: 'TIMESHEETS', label: 'Chấm Công (Timesheets)', icon: Clock },
         { id: 'SALES_ESTIMATE', label: 'Báo Giá ERP', icon: Calculator },
         { id: 'QUOTE', label: 'Báo Giá (VB)', icon: FileTextIcon },
         { id: 'CONTRACT', label: 'Hợp Đồng', icon: FileSignature },
@@ -259,7 +261,18 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
                             
                             const totalPurchaseCost = project.purchaseBills?.reduce((sum: number, bill: any) => sum + (bill.totalAmount || 0), 0) || 0;
                             const totalExpenseCost = project.expenses?.reduce((sum: number, exp: any) => sum + (exp.amount || 0), 0) || 0;
-                            const totalCost = totalPurchaseCost + totalExpenseCost;
+                            
+                            // Calculate Labor Cost from tracking timesheets
+                            let totalLaborCost = 0;
+                            project.tasks?.forEach((task: any) => {
+                                task.timeLogs?.forEach((log: any) => {
+                                    const hourlyRate = log.user?.employeeProfile?.hourlyRate || 0;
+                                    const hours = (log.durationSec || 0) / 3600;
+                                    totalLaborCost += hours * hourlyRate;
+                                });
+                            });
+
+                            const totalCost = totalPurchaseCost + totalExpenseCost + totalLaborCost;
                             
                             const grossProfit = actualRevenue - totalCost;
                             const profitMargin = actualRevenue > 0 ? (grossProfit / actualRevenue) * 100 : 0;
@@ -297,7 +310,7 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
                                                         {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalCost)}
                                                     </h3>
                                                     <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                                        Vật tư: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalPurchaseCost)} | Khác: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalExpenseCost)}
+                                                        Nhân sự: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalLaborCost)} | Vật tư: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalPurchaseCost)} | Khác: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalExpenseCost)}
                                                     </p>
                                                 </div>
                                                 <div style={{ padding: '8px', backgroundColor: '#fee2e2', borderRadius: '8px', color: '#ef4444' }}>
@@ -1029,6 +1042,171 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
                                     </div>
                                 </>
                             ) : null}
+                        </Card>
+                    </div>
+                )}
+
+                {activeTab === 'ISSUES' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h2 style={{ margin: 0, fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <Flag size={24} color="var(--primary)" /> Danh Sách Vấn Đề (Issue Log)
+                            </h2>
+                            <Button variant="primary" onClick={() => alert('Đang phát triển form Thêm Vấn Đề (Phase 3)')}>
+                                <Plus size={16} style={{ marginRight: '8px' }} /> Ghi Nhận Sự Cố & Vấn Đề
+                            </Button>
+                        </div>
+                        
+                        {!project.issues || project.issues.length === 0 ? (
+                            getEmptyState('sự cố hoặc vấn đề nào (Risk/Issues)', 'Tất cả siêu mượt! Chưa có vấn đề phát sinh nào được ghi nhận làm chậm dự án.', Flag, '#')
+                        ) : (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
+                                {project.issues.map((issue: any) => {
+                                    const ragColors: Record<string, { bg: string, text: string, border: string, label: string }> = {
+                                        'RED': { bg: '#fee2e2', text: '#ef4444', border: '#fca5a5', label: 'Nghiêm trọng (Blocker)' },
+                                        'AMBER': { bg: '#fef3c7', text: '#f59e0b', border: '#fcd34d', label: 'Cảnh báo (Warning)' },
+                                        'GREEN': { bg: '#dcfce7', text: '#10b981', border: '#86efac', label: 'Chấp nhận được' },
+                                    };
+                                    
+                                    const c = ragColors[issue.severity || 'AMBER'];
+                                    
+                                    return (
+                                        <Card key={issue.id} style={{ borderLeft: `6px solid ${c.text}`, overflow: 'hidden' }}>
+                                            <div style={{ padding: '1.25rem', backgroundColor: c.bg + '30' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                                                    <span style={{ 
+                                                        padding: '4px 10px', 
+                                                        backgroundColor: c.bg, 
+                                                        color: c.text, 
+                                                        borderRadius: '16px', 
+                                                        fontSize: '0.75rem', 
+                                                        fontWeight: 700, 
+                                                        border: `1px solid ${c.border}` 
+                                                    }}>
+                                                        RAG: {c.label}
+                                                    </span>
+                                                    <span style={{
+                                                        padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600,
+                                                        backgroundColor: issue.status === 'RESOLVED' || issue.status === 'CLOSED' ? '#dcfce7' : '#f1f5f9',
+                                                        color: issue.status === 'RESOLVED' || issue.status === 'CLOSED' ? '#16a34a' : 'var(--text-main)',
+                                                        border: '1px solid var(--border)'
+                                                    }}>
+                                                        {issue.status}
+                                                    </span>
+                                                </div>
+                                                
+                                                <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.1rem', color: 'var(--text-main)' }}>{issue.title}</h3>
+                                                <p style={{ margin: '0 0 1rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>{issue.description || 'Không có mô tả chi tiết'}</p>
+                                                
+                                                {issue.mitigationPlan && (
+                                                    <div style={{ padding: '0.75rem', backgroundColor: 'rgba(255,255,255,0.6)', borderRadius: '8px', border: '1px dashed #cbd5e1', marginBottom: '1rem' }}>
+                                                        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem', textTransform: 'uppercase' }}>Phương án khắc phục (Mitigation)</div>
+                                                        <div style={{ fontSize: '0.85rem' }}>{issue.mitigationPlan}</div>
+                                                    </div>
+                                                )}
+                                                
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Người xử lý:</div>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                                            {issue.assignedTo ? (
+                                                                <>
+                                                                    <img src={issue.assignedTo.avatar || '/default-avatar.png'} alt="user" style={{ width: '20px', height: '20px', borderRadius: '50%' }} />
+                                                                    <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>{issue.assignedTo.name}</span>
+                                                                </>
+                                                            ) : (
+                                                                <span style={{ fontSize: '0.8rem', fontStyle: 'italic', color: 'var(--danger)' }}>Chưa chỉ định</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                        Báo cáo: {formatDate(new Date(issue.createdAt))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </Card>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === 'TIMESHEETS' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        <Card style={{ padding: '1.5rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                <h3 style={{ fontSize: '1.2rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+                                    <Clock size={20} color="var(--primary)" /> Phân Bổ Nguồn Lực & Chấm Công
+                                </h3>
+                            </div>
+                            
+                            {(() => {
+                                const workloadByUser = new Map();
+                                project.tasks?.forEach((task: any) => {
+                                    task.timeLogs?.forEach((log: any) => {
+                                        if (!log.user) return;
+                                        const uid = log.user.id;
+                                        if (!workloadByUser.has(uid)) {
+                                            workloadByUser.set(uid, {
+                                                user: log.user,
+                                                totalHours: 0,
+                                                laborCost: 0,
+                                                tasksCount: new Set(),
+                                                logs: []
+                                            });
+                                        }
+                                        const w = workloadByUser.get(uid);
+                                        const hours = (log.durationSec || 0) / 3600;
+                                        w.totalHours += hours;
+                                        w.laborCost += hours * (log.user.employeeProfile?.hourlyRate || 0);
+                                        w.tasksCount.add(task.id);
+                                        w.logs.push({ taskTitle: task.title, hours, date: log.createdAt || log.startTime });
+                                    });
+                                });
+                                const workloadArray = Array.from(workloadByUser.values()).sort((a: any, b: any) => b.totalHours - a.totalHours);
+                                
+                                if (workloadArray.length === 0) {
+                                    return getEmptyState('Ghi nhận thời gian', 'Chưa có nhân sự nào chấm công Play/Stop thời gian trong các công việc của dự án này.', Clock, '#');
+                                }
+                                
+                                return (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                        {workloadArray.map((w: any) => (
+                                            <div key={w.user.id} style={{ padding: '1.25rem', border: '1px solid var(--border)', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '1rem', backgroundColor: 'var(--surface)' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                                        <img src={w.user.avatar || '/default-avatar.png'} alt="avatar" style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }} />
+                                                        <div>
+                                                            <div style={{ fontWeight: 600, fontSize: '1.05rem', color: 'var(--text-main)' }}>{w.user.name}</div>
+                                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Tham gia {w.tasksCount.size} công việc khác nhau</div>
+                                                        </div>
+                                                    </div>
+                                                    <div style={{ textAlign: 'right' }}>
+                                                        <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--primary)' }}>{w.totalHours.toFixed(1)} <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Giờ</span></div>
+                                                        <div style={{ fontSize: '0.85rem', color: '#ef4444', fontWeight: 600 }}>Chi phí: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(w.laborCost)}</div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div style={{ width: '100%', height: '8px', backgroundColor: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
+                                                    {/* Warning red if working more than 40 hours logged strictly on this project alone */}
+                                                    <div style={{ width: `${Math.min((w.totalHours / 40) * 100, 100)}%`, backgroundColor: w.totalHours > 40 ? '#ef4444' : (w.totalHours > 20 ? '#f59e0b' : '#10b981'), height: '100%', transition: 'width 0.5s' }} />
+                                                </div>
+                                                
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.5rem', marginTop: '0.5rem', padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '8px' }}>
+                                                    {w.logs.slice(0, 6).map((log: any, idx: number) => (
+                                                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '0.5rem', borderBottom: '1px dashed #e2e8f0' }}>
+                                                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px', fontWeight: 500 }} title={log.taskTitle}>{log.taskTitle}</span>
+                                                            <span style={{ fontWeight: 600, color: 'var(--text-main)', backgroundColor: '#e2e8f0', padding: '2px 6px', borderRadius: '4px' }}>{log.hours.toFixed(1)}h</span>
+                                                        </div>
+                                                    ))}
+                                                    {w.logs.length > 6 && <div style={{ display: 'flex', alignItems: 'center', color: 'var(--primary)', fontWeight: 500 }}>+ {w.logs.length - 6} bản ghi khác...</div>}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                );
+                            })()}
                         </Card>
                     </div>
                 )}

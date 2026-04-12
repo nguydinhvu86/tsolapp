@@ -20,7 +20,7 @@ export default async function SalesOrdersPage({ searchParams }: { searchParams: 
         getCustomers(),
         getProducts(),
         getNextOrderCode(),
-        prisma.project.findMany({ select: { id: true, title: true } })
+        prisma.project.findMany({ select: { id: true, name: true } })
     ]);
 
     const users = await prisma.user.findMany({ select: { id: true, name: true, avatar: true } });

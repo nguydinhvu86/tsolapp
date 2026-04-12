@@ -39,6 +39,13 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
             purchaseBills: { select: { id: true, code: true, status: true, totalAmount: true, paidAmount: true, date: true, supplier: { select: { name: true } } } },
             purchasePayments: { select: { id: true, code: true, amount: true, date: true, supplier: { select: { name: true } } } },
             expenses: { select: { id: true, code: true, status: true, amount: true, date: true, description: true } },
+            issues: {
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    reportedBy: { select: { id: true, name: true, avatar: true } },
+                    assignedTo: { select: { id: true, name: true, avatar: true } }
+                }
+            },
             tasks: {
                 include: {
                     assignees: { include: { user: { select: { id: true, name: true, avatar: true } } } },
@@ -63,7 +70,8 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
                     handover: { select: { id: true, title: true } },
                     paymentReq: { select: { id: true, title: true } },
                     dispatch: { select: { id: true, title: true } },
-                    dependencies: { include: { dependsOn: { select: { id: true, title: true, status: true, dueDate: true } } } }
+                    dependencies: { include: { dependsOn: { select: { id: true, title: true, status: true, dueDate: true } } } },
+                    timeLogs: { include: { user: { include: { employeeProfile: true } } } }
                 },
                 orderBy: { createdAt: 'desc' }
             }

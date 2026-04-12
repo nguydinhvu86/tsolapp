@@ -4,7 +4,7 @@ import { NewContractClient } from './NewContractClient';
 export default async function NewContractPage({ searchParams }: { searchParams: { customerId?: string } }) {
     const templates = await prisma.contractTemplate.findMany({ orderBy: { name: 'asc' } });
     const customers = await prisma.customer.findMany({ orderBy: { name: 'asc' } });
-    const projects = await prisma.project.findMany({ select: { id: true, title: true } });
+    const projects = await prisma.project.findMany({ select: { id: true, name: true } });
 
     return (
         <div>
