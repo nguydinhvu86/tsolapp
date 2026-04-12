@@ -28,6 +28,11 @@ export default async function PurchaseBillsPage({ searchParams }: { searchParams
         select: { id: true, name: true, sku: true, unit: true, importPrice: true, taxRate: true, description: true }
     });
 
+    const projects = await (prisma as any).project.findMany({
+        where: { status: { notIn: ['CANCELLED'] } },
+        select: { id: true, title: true, code: true }
+    });
+
     return (
         <PurchaseBillClient
             initialBills={bills as any[]}
@@ -35,6 +40,7 @@ export default async function PurchaseBillsPage({ searchParams }: { searchParams
             orders={orders as any[]}
             warehouses={warehouses}
             products={products}
+            projects={projects}
         />
     );
 }

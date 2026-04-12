@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useRef } from 'react';
 import Gantt from 'frappe-gantt';
+import './frappe-gantt.css';
 
 interface GanttTask {
     id: string;

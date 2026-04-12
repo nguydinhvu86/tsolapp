@@ -3,6 +3,7 @@ import { formatDate } from '@/lib/utils/formatters';
 import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
+import { Table } from '@/app/components/ui/Table';
 import { TaskDashboardClient } from '@/app/tasks/TaskDashboardClient';
 import Link from 'next/link';
 import {
@@ -14,8 +15,9 @@ import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { addComment, uploadTaskAttachment, deleteTaskAttachment, toggleReaction } from '@/app/tasks/actions';
-import { FileSignature, Receipt, FileText as FileTextIcon, Calculator, Plus } from 'lucide-react';
+import { uploadTaskAttachment, deleteTaskAttachment, toggleReaction } from '@/app/tasks/actions';
+import { addProjectComment, toggleProjectReaction, createProjectTopic } from '@/app/projects/actions';
+import { FileSignature, Receipt, FileText as FileTextIcon, Calculator, Plus, ShoppingCart, CreditCard, Send } from 'lucide-react';
 
 const EMOJIS = ['👍', '❤️', '😂', '🎉', '👀'];
 
@@ -23,9 +25,17 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
     const router = useRouter();
     const { data: session } = useSession();
 
-    const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'TASKS' | 'FINANCIALS' | 'DISCUSSIONS' | 'FILES' | 'REPORTS' | 'QUOTE' | 'CONTRACT' | 'INVOICE' | 'SALES_ESTIMATE'>('OVERVIEW');
+    const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'TASKS' | 'FINANCIALS' | 'DISCUSSIONS' | 'FILES' | 'REPORTS' | 'QUOTE' | 'CONTRACT' | 'INVOICE' | 'SALES_ESTIMATE' | 'PURCHASE_BILL' | 'EXPENSE'>('OVERVIEW');
 
-    // Discussion State
+    // Discussion State (Forum)
+    const generalTopic = { id: 'GENERAL', title: 'Thảo Luận Chung', comments: project.comments?.filter((c:any) => !c.topicId) || [] };
+    const allTopics = [generalTopic, ...(project.topics || [])];
+
+    const [selectedTopic, setSelectedTopic] = useState<any>(generalTopic);
+    const [isCreatingTopic, setIsCreatingTopic] = useState(false);
+    const [newTopicTitle, setNewTopicTitle] = useState('');
+    const [newTopicContent, setNewTopicContent] = useState('');
+
     const [newComment, setNewComment] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     
@@ -68,13 +78,28 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
 
     const handleAddComment = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newComment.trim() || !session?.user?.id) return;
+        if (!newComment.trim() || !session?.user?.id || !selectedTopic) return;
 
         let finalHtml = newComment.replace(/\n/g, '<br/>');
         setIsSaving(true);
         try {
-            await addComment(project.id, finalHtml, session.user.id);
+            await addProjectComment(project.id, finalHtml, selectedTopic.id === 'GENERAL' ? undefined : selectedTopic.id);
             setNewComment('');
+            router.refresh();
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleCreateTopic = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newTopicTitle.trim() || !newTopicContent.trim() || !session?.user?.id) return;
+        setIsSaving(true);
+        try {
+            await createProjectTopic(project.id, newTopicTitle.trim(), newTopicContent.trim());
+            setNewTopicTitle('');
+            setNewTopicContent('');
+            setIsCreatingTopic(false);
             router.refresh();
         } finally {
             setIsSaving(false);
@@ -154,7 +179,7 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
 
     const handleToggleReaction = async (commentId: string, emoji: string) => {
         if (!session?.user?.id) return;
-        await toggleReaction(commentId, emoji, session.user.id);
+        await toggleProjectReaction(commentId, emoji, project.id);
         router.refresh();
     };
 
@@ -165,7 +190,9 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
         { id: 'SALES_ESTIMATE', label: 'Báo Giá ERP', icon: Calculator },
         { id: 'QUOTE', label: 'Báo Giá (VB)', icon: FileTextIcon },
         { id: 'CONTRACT', label: 'Hợp Đồng', icon: FileSignature },
-        { id: 'INVOICE', label: 'Hóa Đơn', icon: Receipt },
+        { id: 'INVOICE', label: 'Hóa Đơn Bán', icon: Receipt },
+        { id: 'PURCHASE_BILL', label: 'Hóa Đơn Mua', icon: ShoppingCart },
+        { id: 'EXPENSE', label: 'Chi Phí', icon: CreditCard },
         { id: 'DISCUSSIONS', label: 'Thảo Luận', icon: MessageSquare },
         { id: 'FILES', label: 'Tủ Hồ Sơ', icon: FileTextIcon },
         { id: 'REPORTS', label: 'Báo Cáo', icon: BarChart2 },
@@ -475,33 +502,43 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
                                 `/sales/estimates?action=new&projectId=${project.id}${project.customer ? `&customerId=${project.customerId}` : ''}`
                             )
                         ) : (
-                            <div style={{ display: 'grid', gap: '1.5rem', maxWidth: '800px', margin: '0 auto' }}>
-                                <Card style={{ padding: '2rem' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                                        <div>
-                                            <h2 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>Báo Giá {project.salesEstimate.code}</h2>
+                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '1rem' }}>
+                                <Card style={{ width: '100%', maxWidth: '100%', display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '2rem', boxShadow: '0 4px 20px -2px rgb(0 0 0 / 0.1)', border: '1px solid #e2e8f0', borderRadius: '16px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                                            <div style={{ width: '56px', height: '56px', borderRadius: '16px', backgroundColor: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', boxShadow: '0 2px 10px -2px rgba(99, 102, 241, 0.3)' }}>
+                                                <Calculator size={28} strokeWidth={2.5} />
+                                            </div>
+                                            <div>
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Báo Giá Phân Tích (ERP)</div>
+                                                <h2 style={{ fontSize: '1.5rem', margin: 0, fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.5px' }}>{project.salesEstimate.code}</h2>
+                                            </div>
                                         </div>
-                                        <span style={{ padding: '6px 16px', borderRadius: '24px', fontSize: '0.85rem', fontWeight: 600, backgroundColor: project.salesEstimate.status === 'ACCEPTED' ? '#dcfce7' : '#f1f5f9', color: project.salesEstimate.status === 'ACCEPTED' ? '#16a34a' : 'var(--text-main)' }}>
+                                        <span style={{ padding: '6px 16px', borderRadius: '24px', fontSize: '0.85rem', fontWeight: 700, backgroundColor: project.salesEstimate.status === 'ACCEPTED' ? '#dcfce7' : '#f1f5f9', color: project.salesEstimate.status === 'ACCEPTED' ? '#16a34a' : 'var(--text-main)', border: project.salesEstimate.status === 'ACCEPTED' ? '1px solid #bbf7d0' : '1px solid #e2e8f0' }}>
                                             {project.salesEstimate.status}
                                         </span>
                                     </div>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
-                                        <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '8px' }}>
-                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Tổng tiền</div>
-                                            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--primary)' }}>
-                                                {project.salesEstimate.totalAmount ? `${project.salesEstimate.totalAmount.toLocaleString('vi-VN')} VNĐ` : '0 VNĐ'}
-                                            </div>
-                                        </div>
-                                        <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '8px' }}>
-                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Ngày báo giá</div>
-                                            <div style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-main)' }}>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', backgroundColor: '#f8fafc', padding: '1.5rem', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', borderRight: '1px solid #e2e8f0', paddingRight: '1rem' }}>
+                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Ngày báo giá</div>
+                                            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-main)' }}>
                                                 {project.salesEstimate.date ? formatDate(new Date(project.salesEstimate.date)) : '-'}
                                             </div>
                                         </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingLeft: '0.5rem' }}>
+                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Tổng tiền</div>
+                                            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)' }}>
+                                                {project.salesEstimate.totalAmount ? `${project.salesEstimate.totalAmount.toLocaleString('vi-VN')} VNĐ` : '0 VNĐ'}
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                                        <Link href={`/sales/estimates/${project.salesEstimate.id}`}>
-                                            <Button variant="primary">Mở Chi Tiết Báo Giá ERP</Button>
+
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '1.5rem', borderTop: '1px dashed #e2e8f0' }}>
+                                        <Link href={`/sales/estimates/${project.salesEstimate.id}`} style={{ textDecoration: 'none' }}>
+                                            <Button variant="primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', fontWeight: 600, borderRadius: '8px' }}>
+                                                Mở Chi Tiết Báo Giá ERP
+                                            </Button>
                                         </Link>
                                     </div>
                                 </Card>
@@ -519,28 +556,37 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
                                 `/quotes/new?projectId=${project.id}${project.customer ? `&customerId=${project.customerId}` : ''}`
                             )
                         ) : (
-                            <div style={{ display: 'grid', gap: '1.5rem', maxWidth: '800px', margin: '0 auto' }}>
-                                <Card style={{ padding: '2rem' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                                        <div>
-                                            <h2 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>{project.quote.title}</h2>
-                                            <p style={{ color: 'var(--text-muted)' }}>Tài liệu Báo Giá</p>
+                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '1rem' }}>
+                                <Card style={{ width: '100%', maxWidth: '100%', display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '2rem', boxShadow: '0 4px 20px -2px rgb(0 0 0 / 0.1)', border: '1px solid #e2e8f0', borderRadius: '16px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                                            <div style={{ width: '56px', height: '56px', borderRadius: '16px', backgroundColor: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d97706', boxShadow: '0 2px 10px -2px rgba(245, 158, 11, 0.3)' }}>
+                                                <FileTextIcon size={28} strokeWidth={2.5} />
+                                            </div>
+                                            <div>
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Tài liệu Báo Giá (Văn Bản)</div>
+                                                <h2 style={{ fontSize: '1.5rem', margin: 0, fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.5px' }}>{project.quote.title}</h2>
+                                            </div>
                                         </div>
-                                        <span style={{ padding: '6px 16px', borderRadius: '24px', fontSize: '0.85rem', fontWeight: 600, backgroundColor: project.quote.status === 'ACCEPTED' ? '#dcfce7' : '#f1f5f9', color: project.quote.status === 'ACCEPTED' ? '#16a34a' : 'var(--text-main)' }}>
+                                        <span style={{ padding: '6px 16px', borderRadius: '24px', fontSize: '0.85rem', fontWeight: 700, backgroundColor: project.quote.status === 'ACCEPTED' ? '#dcfce7' : '#f1f5f9', color: project.quote.status === 'ACCEPTED' ? '#16a34a' : 'var(--text-main)', border: project.quote.status === 'ACCEPTED' ? '1px solid #bbf7d0' : '1px solid #e2e8f0' }}>
                                             {project.quote.status}
                                         </span>
                                     </div>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem', marginBottom: '2rem' }}>
-                                        <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '8px' }}>
-                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Ngày tạo báo giá</div>
-                                            <div style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-main)' }}>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', backgroundColor: '#f8fafc', padding: '1.5rem', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Ngày sinh chứng từ</div>
+                                            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-main)' }}>
                                                 {project.quote.createdAt ? formatDate(new Date(project.quote.createdAt)) : '-'}
                                             </div>
                                         </div>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                                        <Link href={`/quotes/${project.quote.id}`}>
-                                            <Button variant="primary">Mở Chi Tiết Báo Giá</Button>
+
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '1.5rem', borderTop: '1px dashed #e2e8f0' }}>
+                                        <Link href={`/quotes/${project.quote.id}`} style={{ textDecoration: 'none' }}>
+                                            <Button variant="primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', fontWeight: 600, borderRadius: '8px' }}>
+                                                Mở Chi Tiết Báo Giá 
+                                            </Button>
                                         </Link>
                                     </div>
                                 </Card>
@@ -559,28 +605,37 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
                                 `/contracts/new?projectId=${project.id}${project.customer ? `&customerId=${project.customerId}` : ''}${project.quote ? `&quoteId=${project.quoteId}` : ''}`
                             )
                         ) : (
-                            <div style={{ display: 'grid', gap: '1.5rem', maxWidth: '800px', margin: '0 auto' }}>
-                                <Card style={{ padding: '2rem' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                                        <div>
-                                            <h2 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>{project.contract.title}</h2>
-                                            <p style={{ color: 'var(--text-muted)' }}>Tài liệu Hợp đồng</p>
+                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '1rem' }}>
+                                <Card style={{ width: '100%', maxWidth: '100%', display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '2rem', boxShadow: '0 4px 20px -2px rgb(0 0 0 / 0.1)', border: '1px solid #e2e8f0', borderRadius: '16px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                                            <div style={{ width: '56px', height: '56px', borderRadius: '16px', backgroundColor: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb', boxShadow: '0 2px 10px -2px rgba(37, 99, 235, 0.3)' }}>
+                                                <FileSignature size={28} strokeWidth={2.5} />
+                                            </div>
+                                            <div>
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Hợp đồng Khách hàng (Văn Bản)</div>
+                                                <h2 style={{ fontSize: '1.5rem', margin: 0, fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.5px' }}>{project.contract.title}</h2>
+                                            </div>
                                         </div>
-                                        <span style={{ padding: '6px 16px', borderRadius: '24px', fontSize: '0.85rem', fontWeight: 600, backgroundColor: project.contract.status === 'ACTIVE' ? '#dbeafe' : '#f1f5f9', color: project.contract.status === 'ACTIVE' ? '#2563eb' : 'var(--text-main)' }}>
+                                        <span style={{ padding: '6px 16px', borderRadius: '24px', fontSize: '0.85rem', fontWeight: 700, backgroundColor: project.contract.status === 'ACTIVE' ? '#dcfce7' : '#f1f5f9', color: project.contract.status === 'ACTIVE' ? '#16a34a' : 'var(--text-main)', border: project.contract.status === 'ACTIVE' ? '1px solid #bbf7d0' : '1px solid #e2e8f0' }}>
                                             {project.contract.status}
                                         </span>
                                     </div>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem', marginBottom: '2rem' }}>
-                                        <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '8px' }}>
-                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Ngày tạo / ký kết dự kiến</div>
-                                            <div style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-main)' }}>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', backgroundColor: '#f8fafc', padding: '1.5rem', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Theo dõi Ngày ký kết</div>
+                                            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-main)' }}>
                                                 {project.contract.createdAt ? formatDate(new Date(project.contract.createdAt)) : '-'}
                                             </div>
                                         </div>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                                        <Link href={`/contracts/${project.contract.id}`}>
-                                            <Button variant="primary">Mở Chi Tiết Hợp Đồng</Button>
+
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '1.5rem', borderTop: '1px dashed #e2e8f0' }}>
+                                        <Link href={`/contracts/${project.contract.id}`} style={{ textDecoration: 'none' }}>
+                                            <Button variant="primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', fontWeight: 600, borderRadius: '8px' }}>
+                                                Xem & In Hợp Đồng
+                                            </Button>
                                         </Link>
                                     </div>
                                 </Card>
@@ -599,40 +654,138 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
                                 `/sales/invoices?action=new&projectId=${project.id}${project.customer ? `&customerId=${project.customerId}` : ''}${project.contract ? `&contractId=${project.contractId}` : ''}`
                             )
                         ) : (
-                            <div style={{ display: 'grid', gap: '1.5rem', maxWidth: '800px', margin: '0 auto' }}>
-                                <Card style={{ padding: '2rem' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                                        <div>
-                                            <h2 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>Hóa Đơn {project.invoice.code}</h2>
+                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '1rem' }}>
+                                <Card style={{ width: '100%', maxWidth: '100%', display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '2rem', boxShadow: '0 4px 20px -2px rgb(0 0 0 / 0.1)', border: '1px solid #e2e8f0', borderRadius: '16px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                                            <div style={{ width: '56px', height: '56px', borderRadius: '16px', backgroundColor: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4f46e5', boxShadow: '0 2px 10px -2px rgba(79, 70, 229, 0.3)' }}>
+                                                <Receipt size={28} strokeWidth={2.5} />
+                                            </div>
+                                            <div>
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Hóa Đơn Thu Tiền (Sales Invoice)</div>
+                                                <h2 style={{ fontSize: '1.5rem', margin: 0, fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.5px' }}>{project.invoice.code}</h2>
+                                            </div>
                                         </div>
-                                        <span style={{ padding: '6px 16px', borderRadius: '24px', fontSize: '0.85rem', fontWeight: 600, backgroundColor: project.invoice.status === 'PAID' ? '#dcfce7' : '#f1f5f9', color: project.invoice.status === 'PAID' ? '#16a34a' : 'var(--text-main)' }}>
+                                        <span style={{ padding: '6px 16px', borderRadius: '24px', fontSize: '0.85rem', fontWeight: 700, backgroundColor: project.invoice.status === 'PAID' ? '#dcfce7' : '#f1f5f9', color: project.invoice.status === 'PAID' ? '#16a34a' : 'var(--text-main)', border: project.invoice.status === 'PAID' ? '1px solid #bbf7d0' : '1px solid #e2e8f0' }}>
                                             {project.invoice.status}
                                         </span>
                                     </div>
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'revert', gap: '1.5rem', marginBottom: '2rem' }}>
-                                        <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '8px', gridColumn: '1/-1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <div>
-                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Tổng tiền Hóa đơn</div>
-                                                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                                                    {project.invoice.totalAmount ? `${project.invoice.totalAmount.toLocaleString('vi-VN')} VNĐ` : '0 VNĐ'}
-                                                </div>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', backgroundColor: '#f8fafc', padding: '1.5rem', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', borderRight: '1px solid #e2e8f0', paddingRight: '1rem' }}>
+                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Tổng tiền Hóa đơn</div>
+                                            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                                                {project.invoice.totalAmount ? `${project.invoice.totalAmount.toLocaleString('vi-VN')} VNĐ` : '0 VNĐ'}
                                             </div>
-                                            <div style={{ textAlign: 'right' }}>
-                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Đã thu</div>
-                                                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#16a34a' }}>
-                                                    {project.invoice.paidAmount ? `${project.invoice.paidAmount.toLocaleString('vi-VN')} VNĐ` : '0 VNĐ'}
-                                                </div>
+                                        </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingLeft: '0.5rem' }}>
+                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Đã thu (Thanh toán)</div>
+                                            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#16a34a' }}>
+                                                {project.invoice.paidAmount ? `${project.invoice.paidAmount.toLocaleString('vi-VN')} VNĐ` : '0 VNĐ'}
                                             </div>
                                         </div>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                                        <Link href={`/sales/invoices/${project.invoice.id}`}>
-                                            <Button variant="primary">Mở Chi Tiết Hóa Đơn</Button>
+
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '1.5rem', borderTop: '1px dashed #e2e8f0' }}>
+                                        <Link href={`/sales/invoices/${project.invoice.id}`} style={{ textDecoration: 'none' }}>
+                                            <Button variant="primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', fontWeight: 600, borderRadius: '8px' }}>
+                                                Mở Chi Tiết Hóa Đơn Khách
+                                            </Button>
                                         </Link>
                                     </div>
                                 </Card>
                             </div>
                         )}
+                    </div>
+                )}
+
+                {activeTab === 'PURCHASE_BILL' && (
+                    <div style={{ height: '100%' }}>
+                        <Card style={{ padding: '1.5rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                <h3 style={{ fontSize: '1.25rem', margin: 0 }}>Hóa Đơn Mua Vật Tư / Dịch Vụ</h3>
+                                <Link href={`/purchasing/bills?action=new&projectId=${project.id}`}>
+                                    <Button variant="primary" className="gap-2"><Plus size={16}/> Thêm Hóa Đơn Mua Mới</Button>
+                                </Link>
+                            </div>
+                            <div style={{ overflowX: 'auto' }}>
+                                <Table>
+                                    <thead>
+                                        <tr>
+                                            <th>Mã Hóa Đơn</th>
+                                            <th>Ngày lập</th>
+                                            <th>Nhà Cung Cấp</th>
+                                            <th>Tổng Tiền</th>
+                                            <th>Đã Thanh Toán</th>
+                                            <th>Trạng Thái</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {project.purchaseBills?.map((bill: any) => (
+                                            <tr key={bill.id}>
+                                                <td><Link href={`/purchasing/bills/${bill.id}`} className="text-blue-600 hover:underline font-medium">{bill.code}</Link></td>
+                                                <td>{bill.date ? formatDate(new Date(bill.date)) : '-'}</td>
+                                                <td><span style={{ fontWeight: 500, color: '#475569' }}>{bill.supplier?.name || '-'}</span></td>
+                                                <td style={{ fontWeight: 600 }}>{bill.totalAmount ? bill.totalAmount.toLocaleString('vi-VN') + ' ₫' : '0 ₫'}</td>
+                                                <td style={{ color: '#16a34a', fontWeight: 600 }}>{bill.paidAmount ? bill.paidAmount.toLocaleString('vi-VN') + ' ₫' : '0 ₫'}</td>
+                                                <td>
+                                                    <span style={{ padding: '4px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600, backgroundColor: bill.status === 'PAID' ? '#dcfce7' : '#f1f5f9', color: bill.status === 'PAID' ? '#16a34a' : 'var(--text-muted)' }}>
+                                                        {bill.status}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {(!project.purchaseBills || project.purchaseBills.length === 0) && (
+                                            <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2.5rem' }}>Chưa có hóa đơn mua hàng nào.</td></tr>
+                                        )}
+                                    </tbody>
+                                </Table>
+                            </div>
+                        </Card>
+                    </div>
+                )}
+
+                {activeTab === 'EXPENSE' && (
+                    <div style={{ height: '100%' }}>
+                        <Card style={{ padding: '1.5rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                <h3 style={{ fontSize: '1.25rem', margin: 0 }}>Chi Phí Khác (Tiếp khách, Phụ cấp...)</h3>
+                                <Link href={`/sales/expenses?action=new&projectId=${project.id}`}>
+                                    <Button variant="primary" className="gap-2"><Plus size={16}/> Thêm Phiếu Chi Mới</Button>
+                                </Link>
+                            </div>
+                            <div style={{ overflowX: 'auto' }}>
+                                <Table>
+                                    <thead>
+                                        <tr>
+                                            <th>Mã Phiếu Chi</th>
+                                            <th>Ngày chi</th>
+                                            <th>Lý do / Mô tả</th>
+                                            <th>Số Tiền Chi</th>
+                                            <th>Trạng Thái</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {project.expenses?.map((exp: any) => (
+                                            <tr key={exp.id}>
+                                                <td><Link href={`/sales/expenses/${exp.id}`} className="text-blue-600 hover:underline font-medium">{exp.code}</Link></td>
+                                                <td>{exp.date ? formatDate(new Date(exp.date)) : '-'}</td>
+                                                <td><span style={{ fontWeight: 500, color: '#475569' }}>{exp.description || '-'}</span></td>
+                                                <td style={{ fontWeight: 600, color: '#ef4444' }}>{exp.amount ? exp.amount.toLocaleString('vi-VN') + ' ₫' : '0 ₫'}</td>
+                                                <td>
+                                                    <span style={{ padding: '4px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600, backgroundColor: exp.status === 'APPROVED' || exp.status === 'PAID' ? '#dcfce7' : '#f1f5f9', color: exp.status === 'APPROVED' || exp.status === 'PAID' ? '#16a34a' : 'var(--text-muted)' }}>
+                                                        {exp.status}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {(!project.expenses || project.expenses.length === 0) && (
+                                            <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2.5rem' }}>Chưa có khoản chi phí nào liên kết với dự án này.</td></tr>
+                                        )}
+                                    </tbody>
+                                </Table>
+                            </div>
+                        </Card>
                     </div>
                 )}
 
@@ -649,106 +802,233 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
                 )}
 
                 {activeTab === 'DISCUSSIONS' && (
-                    <div style={{ maxWidth: '800px' }}>
-                        <Card>
-                            <div style={{ padding: '1.5rem' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '2rem' }}>
-                                    {project.comments?.length === 0 ? (
-                                        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', textAlign: 'center' }}>Chưa có bình luận nào.</p>
-                                    ) : (
-                                        project.comments?.map((comment: any) => {
-                                            const reactionCounts = comment.reactions?.reduce((acc: any, r: any) => {
-                                                acc[r.emoji] = (acc[r.emoji] || 0) + 1;
-                                                return acc;
-                                            }, {}) || {};
+                    <div style={{ display: 'flex', gap: '1.5rem', height: 'calc(100vh - 200px)' }}>
+                        {/* Sidebar: Topics List */}
+                        <Card style={{ width: '320px', display: 'flex', flexDirection: 'column', flexShrink: 0, overflow: 'hidden', boxShadow: '0 4px 20px -2px rgb(0 0 0 / 0.1)' }}>
+                            <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f8fafc' }}>
+                                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-main)' }}>Chủ Đề</h3>
+                                <Button onClick={() => setIsCreatingTopic(true)} title="Tạo Chủ Đề Mới" style={{ padding: '0.25rem 0.5rem', height: 'auto' }}><Plus size={16} /></Button>
+                            </div>
+                            <div style={{ flex: 1, overflowY: 'auto', padding: '0.75rem' }}>
+                                {allTopics.map((topic: any) => (
+                                    <div 
+                                        key={topic.id}
+                                        onClick={() => { setSelectedTopic(topic); setIsCreatingTopic(false); }}
+                                        style={{ 
+                                            padding: '1rem', 
+                                            borderRadius: '8px', 
+                                            cursor: 'pointer',
+                                            backgroundColor: selectedTopic?.id === topic.id && !isCreatingTopic ? '#e0e7ff' : 'transparent',
+                                            border: selectedTopic?.id === topic.id && !isCreatingTopic ? '1px solid var(--primary)' : '1px solid transparent',
+                                            marginBottom: '0.5rem',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        className="hover:bg-slate-100"
+                                    >
+                                        <h4 style={{ margin: '0 0 0.25rem 0', fontSize: '0.90rem', fontWeight: 600, color: selectedTopic?.id === topic.id && !isCreatingTopic ? 'var(--primary)' : 'var(--text-main)' }}>{topic.title}</h4>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                            {topic.id === 'GENERAL' ? 'Kênh trao đổi chung' : `Bởi ${topic.creator?.name || 'Vô danh'}`}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </Card>
 
-                                            const userReactions = comment.reactions?.filter((r: any) => r.user?.id === session?.user?.id).map((r: any) => r.emoji) || [];
-
-                                            return (
-                                                <div key={comment.id} style={{ display: 'flex', gap: '1rem' }}>
-                                                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', flexShrink: 0 }}>
-                                                        {comment.user.name?.[0]?.toUpperCase() || 'U'}
-                                                    </div>
-                                                    <div style={{ flex: 1 }}>
-                                                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', marginBottom: '0.25rem' }}>
-                                                            <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>{comment.user.name || comment.user.email}</span>
-                                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                                {comment.createdAt ? formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: vi }) : 'Vừa xong'}
-                                                            </span>
-                                                        </div>
-
-                                                        <div
-                                                            style={{ padding: '0.75rem', backgroundColor: 'var(--background)', borderRadius: '0.5rem', lineHeight: 1.5, fontSize: '0.95rem' }}
-                                                            dangerouslySetInnerHTML={{ __html: comment.content }}
-                                                        />
-
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem' }}>
-                                                            {Object.keys(reactionCounts).length > 0 && (
-                                                                <div style={{ display: 'flex', gap: '0.25rem' }}>
-                                                                    {Object.entries(reactionCounts).map(([emoji, count]) => (
-                                                                        <div key={emoji} style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', padding: '2px 6px', backgroundColor: userReactions.includes(emoji) ? '#e0e7ff' : '#f1f5f9', borderRadius: '12px', fontSize: '0.8rem', cursor: 'pointer', border: userReactions.includes(emoji) ? '1px solid #c7d2fe' : '1px solid transparent' }} onClick={() => handleToggleReaction(comment.id, emoji)}>
-                                                                            <span>{emoji}</span>
-                                                                            <span style={{ color: userReactions.includes(emoji) ? 'var(--primary)' : 'var(--text-muted)', fontWeight: 600 }}>{count as number}</span>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            )}
-                                                            <div style={{ display: 'flex', gap: '0.5rem', opacity: 0.7 }}>
-                                                                {EMOJIS.slice(0, 3).map(emoji => (
-                                                                    <button key={emoji} onClick={() => handleToggleReaction(comment.id, emoji)} style={{ fontSize: '0.85rem', cursor: 'pointer', border: 'none', background: 'none' }} className="hover:scale-110">{emoji}</button>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })
-                                    )}
-                                </div>
-
-                                <div style={{ backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                                    <form onSubmit={handleAddComment}>
-                                        <textarea
-                                            value={newComment}
-                                            onChange={e => setNewComment(e.target.value)}
-                                            onPaste={async (e) => {
-                                                const items = e.clipboardData.items;
-                                                for (let i = 0; i < items.length; i++) {
-                                                    if (items[i].type.indexOf('image') !== -1) {
-                                                        const file = items[i].getAsFile();
-                                                        if (file) {
-                                                            if (file.size > 52428800) {
-                                                                alert(`File ảnh dán vào quá lớn (Tối đa 50MB)`);
-                                                                return;
-                                                            }
-                                                            setIsSaving(true);
-                                                            try {
-                                                                const formData = new FormData();
-                                                                formData.append('file', file);
-                                                                const res = await fetch('/api/upload', { method: 'POST', body: formData });
-                                                                if (!res.ok) throw new Error('Upload failed');
-                                                                const data = await res.json();
-                                                                setNewComment(prev => prev + `\n<img src="${data.url}" alt="Pasted Image" style="max-width:100%; border-radius:8px; margin-top:8px;" />`);
-                                                            } catch (err) {
-                                                                alert('Lỗi tải hình ảnh từ clipboard');
-                                                            } finally {
-                                                                setIsSaving(false);
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }}
-                                            placeholder="Thêm thảo luận mới về dự án... (Có thể dán ảnh trực tiếp ctrl+V)"
-                                            style={{ width: '100%', minHeight: '80px', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', resize: 'vertical', fontSize: '0.95rem', marginBottom: '0.5rem' }}
-                                        />
-                                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                            <Button type="submit" disabled={isSaving || !newComment.trim()}>
-                                                Gửi bình luận
+                        {/* Main Content */}
+                        <Card style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 4px 20px -2px rgb(0 0 0 / 0.1)' }}>
+                            {isCreatingTopic ? (
+                                <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', height: '100%', overflowY: 'auto', backgroundColor: '#f8fafc' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #cbd5e1', paddingBottom: '1rem' }}>
+                                        <h3 style={{ fontSize: '1.25rem', margin: 0, fontWeight: 600 }}>Tạo Chủ Đề Thảo Luận</h3>
+                                        <Button variant="secondary" onClick={() => setIsCreatingTopic(false)}>Hủy</Button>
+                                    </div>
+                                    <form onSubmit={handleCreateTopic} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600, color: '#475569' }}>Tiêu đề chủ đề</label>
+                                            <input 
+                                                autoFocus
+                                                value={newTopicTitle} 
+                                                onChange={e => setNewTopicTitle(e.target.value)} 
+                                                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '1rem' }}
+                                                placeholder="VD: Cập nhật thiết kế báo giá đợt 2"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600, color: '#475569' }}>Nội dung chi tiết</label>
+                                            <textarea 
+                                                value={newTopicContent} 
+                                                onChange={e => setNewTopicContent(e.target.value)} 
+                                                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', minHeight: '200px', fontSize: '0.95rem' }}
+                                                placeholder="Mô tả cụ thể nội dung cần trao đổi..."
+                                                required
+                                            />
+                                        </div>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <Button type="submit" variant="primary" disabled={isSaving || !newTopicTitle || !newTopicContent}>
+                                                {isSaving ? 'Đang tạo...' : 'Đăng Chủ Đề'}
                                             </Button>
                                         </div>
                                     </form>
                                 </div>
-                            </div>
+                            ) : selectedTopic ? (
+                                <>
+                                    <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--border)', backgroundColor: 'white', zIndex: 10 }}>
+                                        <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <MessageSquare size={18} color="var(--primary)" />
+                                            {selectedTopic.title}
+                                        </h3>
+                                        {selectedTopic.id !== 'GENERAL' && selectedTopic.content && (
+                                            <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '8px', fontSize: '0.95rem', color: '#334155', marginTop: '1rem', borderLeft: '4px solid var(--primary)' }}>
+                                                {selectedTopic.content}
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', backgroundColor: '#f1f5f9', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                        {selectedTopic.comments?.length === 0 ? (
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)', opacity: 0.7 }}>
+                                                <MessageSquare size={48} style={{ marginBottom: '1rem' }} />
+                                                <p style={{ fontSize: '0.95rem' }}>Chưa có bình luận nào trong chủ đề này!</p>
+                                            </div>
+                                        ) : (
+                                            selectedTopic.comments?.map((comment: any) => {
+                                                const reactionCounts = comment.reactions?.reduce((acc: any, r: any) => {
+                                                    acc[r.emoji] = (acc[r.emoji] || 0) + 1;
+                                                    return acc;
+                                                }, {}) || {};
+
+                                                const userReactions = comment.reactions?.filter((r: any) => r.user?.id === session?.user?.id).map((r: any) => r.emoji) || [];
+                                                const isMe = comment.user?.id === session?.user?.id;
+
+                                                return (
+                                                    <div key={comment.id} style={{ display: 'flex', gap: '0.75rem', alignSelf: isMe ? 'flex-end' : 'flex-start', flexDirection: isMe ? 'row-reverse' : 'row', maxWidth: '85%' }}>
+                                                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: isMe ? '#e0e7ff' : 'white', border: isMe ? '2px solid var(--primary)' : '1px solid #cbd5e1', color: isMe ? 'var(--primary)' : 'var(--text-main)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', flexShrink: 0, boxShadow: '0 2px 4px rgb(0 0 0 / 0.05)' }}>
+                                                            {comment.user?.name?.[0]?.toUpperCase() || comment.user?.email?.[0]?.toUpperCase() || 'U'}
+                                                        </div>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0 0.25rem' }}>
+                                                                <span style={{ fontWeight: 600, fontSize: '0.85rem', color: isMe ? 'var(--primary)' : 'var(--text-main)' }}>{isMe ? 'Bạn' : (comment.user?.name || comment.user?.email)}</span>
+                                                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                                    {comment.createdAt ? formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: vi }) : 'Vừa xong'}
+                                                                </span>
+                                                            </div>
+
+                                                            <div
+                                                                style={{ 
+                                                                    padding: '0.75rem 1rem', 
+                                                                    backgroundColor: isMe ? 'var(--primary)' : 'white', 
+                                                                    color: isMe ? 'white' : 'var(--text-main)',
+                                                                    borderRadius: isMe ? '16px 4px 16px 16px' : '4px 16px 16px 16px', 
+                                                                    lineHeight: 1.5, 
+                                                                    fontSize: '0.95rem',
+                                                                    boxShadow: '0 1px 2px rgb(0 0 0 / 0.05)',
+                                                                    wordBreak: 'break-word'
+                                                                }}
+                                                                dangerouslySetInnerHTML={{ __html: comment.content }}
+                                                            />
+
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
+                                                                {Object.keys(reactionCounts).length > 0 && (
+                                                                    <div style={{ display: 'flex', gap: '0.25rem', background: 'white', padding: '2px', borderRadius: '12px', boxShadow: '0 1px 2px rgb(0 0 0 / 0.05)' }}>
+                                                                        {Object.entries(reactionCounts).map(([emoji, count]) => (
+                                                                            <div key={emoji} style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', padding: '2px 6px', backgroundColor: userReactions.includes(emoji) ? '#e0e7ff' : '#f1f5f9', borderRadius: '10px', fontSize: '0.75rem', cursor: 'pointer' }} onClick={() => handleToggleReaction(comment.id, emoji)}>
+                                                                                <span>{emoji}</span>
+                                                                                <span style={{ color: userReactions.includes(emoji) ? 'var(--primary)' : 'var(--text-muted)', fontWeight: 600 }}>{count as number}</span>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                                <div style={{ display: 'flex', gap: '0.25rem', padding: '2px 6px', background: 'white', borderRadius: '12px', opacity: 0.7, boxShadow: '0 1px 2px rgb(0 0 0 / 0.05)' }}>
+                                                                    {EMOJIS.slice(0, 4).map(emoji => (
+                                                                        <button key={emoji} onClick={() => handleToggleReaction(comment.id, emoji)} style={{ fontSize: '0.85rem', cursor: 'pointer', border: 'none', background: 'none' }} className="hover:scale-125 transition-transform">{emoji}</button>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })
+                                        )}
+                                    </div>
+
+                                    <div style={{ backgroundColor: 'white', borderTop: '1px solid var(--border)', padding: '1rem' }}>
+                                        <form onSubmit={handleAddComment} style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-end' }}>
+                                            <div style={{ flex: 1, position: 'relative' }}>
+                                                <textarea
+                                                    value={newComment}
+                                                    onChange={e => setNewComment(e.target.value)}
+                                                    onKeyDown={e => {
+                                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                                            e.preventDefault();
+                                                            if(newComment.trim() && !isSaving) {
+                                                              handleAddComment(e as unknown as React.FormEvent);
+                                                            }
+                                                        }
+                                                    }}
+                                                    onPaste={async (e) => {
+                                                        const items = e.clipboardData.items;
+                                                        for (let i = 0; i < items.length; i++) {
+                                                            if (items[i].type.indexOf('image') !== -1) {
+                                                                const file = items[i].getAsFile();
+                                                                if (file) {
+                                                                    if (file.size > 52428800) {
+                                                                        alert(`File ảnh dán vào quá lớn (Tối đa 50MB)`);
+                                                                        return;
+                                                                    }
+                                                                    setIsSaving(true);
+                                                                    try {
+                                                                        const formData = new FormData();
+                                                                        formData.append('file', file);
+                                                                        const res = await fetch('/api/upload', { method: 'POST', body: formData });
+                                                                        if (!res.ok) throw new Error('Upload failed');
+                                                                        const data = await res.json();
+                                                                        setNewComment(prev => prev + `\n<img src="${data.url}" alt="Pasted Image" style="max-width:100%; border-radius:8px; margin-top:8px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);" />`);
+                                                                    } catch (err) {
+                                                                        alert('Lỗi tải hình ảnh từ clipboard');
+                                                                    } finally {
+                                                                        setIsSaving(false);
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }}
+                                                    placeholder="Gõ tin nhắn... (Enter để gửi, Shift+Enter để xuống dòng. Hỗ trợ Ctrl+V dán ảnh)"
+                                                    style={{ 
+                                                        width: '100%', 
+                                                        minHeight: '48px', 
+                                                        maxHeight: '150px',
+                                                        padding: '0.75rem 1rem', 
+                                                        borderRadius: '24px', 
+                                                        border: '1px solid #cbd5e1', 
+                                                        resize: 'none', 
+                                                        fontSize: '0.95rem',
+                                                        outline: 'none',
+                                                        boxShadow: 'inset 0 1px 2px rgb(0 0 0 / 0.05)'
+                                                    }}
+                                                    rows={1}
+                                                />
+                                            </div>
+                                            <Button 
+                                                type="submit" 
+                                                disabled={isSaving || !newComment.trim()} 
+                                                style={{ 
+                                                    borderRadius: '50%', 
+                                                    width: '48px', 
+                                                    height: '48px', 
+                                                    padding: 0, 
+                                                    display: 'flex', 
+                                                    alignItems: 'center', 
+                                                    justifyContent: 'center',
+                                                    flexShrink: 0
+                                                }}
+                                            >
+                                                <Send size={20} style={{ marginLeft: '2px' }} />
+                                            </Button>
+                                        </form>
+                                    </div>
+                                </>
+                            ) : null}
                         </Card>
                     </div>
                 )}

@@ -10,7 +10,7 @@ import { TagDisplay } from '@/app/components/ui/TagDisplay';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { useTranslation } from '@/app/i18n/LanguageContext';
 
-export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses, products }: { initialBills: any[], suppliers: any[], orders: any[], warehouses: any[], products: any[] }) {
+export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses, products, projects }: { initialBills: any[], suppliers: any[], orders: any[], warehouses: any[], products: any[], projects?: any[] }) {
     const { t } = useTranslation();
     const [bills, setBills] = useState(initialBills);
     const [searchQuery, setSearchQuery] = useState('');
@@ -32,6 +32,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
     const [formData, setFormData] = useState({
         supplierId: '',
         orderId: '',
+        projectId: '',
         supplierInvoice: '',
         date: new Date().toISOString().substring(0, 10),
         dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10),
@@ -86,6 +87,10 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
             }
         } else if (supplierId || searchParams.get('action') === 'new') {
             if (supplierId) setFormData(prev => ({ ...prev, supplierId }));
+            
+            const projectId = searchParams.get('projectId');
+            if (projectId) setFormData(prev => ({ ...prev, projectId }));
+
             setIsCreateModalOpen(true);
             hasOpenedFromUrl.current = true;
             window.history.replaceState({}, '', '/purchasing/bills'); // clean url
@@ -186,6 +191,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
         setFormData({
             supplierId: '',
             orderId: '',
+            projectId: '',
             supplierInvoice: '',
             date: new Date().toISOString().substring(0, 10),
             dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10),
@@ -222,6 +228,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
             code: bill.code,
             supplierId: bill.supplierId,
             orderId: bill.orderId || '',
+            projectId: bill.projectId || '',
             supplierInvoice: bill.supplierInvoice || '',
             date: bill.date ? new Date(bill.date).toISOString().substring(0, 10) : new Date().toISOString().substring(0, 10),
             dueDate: bill.dueDate ? new Date(bill.dueDate).toISOString().substring(0, 10) : '',
@@ -835,6 +842,15 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                             onChange={(val) => setFormData({ ...formData, supplierId: val })}
                                             options={supplierFormOptions}
                                             placeholder={t('purchaseBills.selectSupplier')}
+                                        />
+                                    </div>
+                                    <div className="sm:col-span-2 lg:col-span-1">
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dự án</label>
+                                        <SearchableSelect
+                                            value={formData.projectId || ''}
+                                            onChange={(val) => setFormData({ ...formData, projectId: val })}
+                                            options={[{ value: '', label: '-- Không thuộc dự án --' }, ...(projects || []).map((p: any) => ({ value: p.id, label: `${p.code} - ${p.title}` }))]}
+                                            placeholder="Chọn dự án"
                                         />
                                     </div>
                                     <div className="sm:col-span-2 lg:col-span-1">

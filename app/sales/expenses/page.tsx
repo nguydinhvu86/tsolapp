@@ -32,7 +32,7 @@ export default async function ExpensesPage({ searchParams }: { searchParams: { a
         redirect("/dashboard");
     }
 
-    const { expenses, categories, customers, suppliers } = await getInitialData(session.user.id, permissions, isAdmin);
+    const { expenses, categories, customers, suppliers, projects } = await getInitialData(session.user.id, permissions, isAdmin);
 
     return (
         <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -47,6 +47,7 @@ export default async function ExpensesPage({ searchParams }: { searchParams: { a
                 suppliers={suppliers}
                 isAdmin={isAdmin}
                 permissions={permissions}
+                projects={projects}
             />
         </div>
     );
@@ -84,9 +85,14 @@ async function getInitialData(userId: string, permissions: string[], isAdmin: bo
             orderBy: { name: 'asc' }
         });
 
-        return { expenses, categories, customers, suppliers };
+        const projects = await (prisma as any).project.findMany({
+            where: { status: { notIn: ['CANCELLED'] } },
+            select: { id: true, title: true, code: true }
+        });
+
+        return { expenses, categories, customers, suppliers, projects };
     } catch (error) {
         console.error("Lỗi khi tải dữ liệu Chi phí:", error);
-        return { expenses: [], categories: [], customers: [], suppliers: [] };
+        return { expenses: [], categories: [], customers: [], suppliers: [], projects: [] };
     }
 }

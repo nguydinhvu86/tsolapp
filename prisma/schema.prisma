@@ -137,14 +137,15 @@ model User {
   supplierInvoices      SupplierInvoice[] @relation("InvoiceCreator")
 
   // Project Management
-  createdProjects     Project[]            @relation("ProjectCreator")
-  projectMemberships  ProjectMember[]
-  createdRisks        ProjectRisk[]        @relation("RiskCreator")
-  projectActivityLogs ProjectActivityLog[]
-  projectComments     ProjectComment[]
+  createdProjects         Project[]                @relation("ProjectCreator")
+  projectMemberships      ProjectMember[]
+  createdRisks            ProjectRisk[]            @relation("RiskCreator")
+  projectActivityLogs     ProjectActivityLog[]
+  projectComments         ProjectComment[]
   projectCommentReactions ProjectCommentReaction[]
-  projectAttachments  ProjectAttachment[]
-  timeLogs            TaskTimeLog[]
+  projectAttachments      ProjectAttachment[]
+  timeLogs                TaskTimeLog[]
+  ProjectTopic            ProjectTopic[]
 }
 
 model SystemSetting {
@@ -513,7 +514,7 @@ model Task {
   attachments  TaskAttachment[]
   activityLogs TaskActivityLog[]
   emailLogs    EmailLog[]
-  
+
   dependencies TaskDependency[] @relation("TaskDependencies")
   dependentOn  TaskDependency[] @relation("DependentTasks")
   timeLogs     TaskTimeLog[]
@@ -523,10 +524,10 @@ model Task {
 }
 
 model TaskDependency {
-  id           String @id @default(cuid())
-  taskId       String
-  dependsOnId  String
-  type         String @default("FS") // FS, SF, SS, FF
+  id          String @id @default(cuid())
+  taskId      String
+  dependsOnId String
+  type        String @default("FS") // FS, SF, SS, FF
 
   task      Task @relation("TaskDependencies", fields: [taskId], references: [id], onDelete: Cascade)
   dependsOn Task @relation("DependentTasks", fields: [dependsOnId], references: [id], onDelete: Cascade)
@@ -610,8 +611,8 @@ model TaskTimeLog {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model TaskCommentReaction {
@@ -2014,19 +2015,19 @@ model SupplierInvoiceItem {
 // --- PROJECT MANAGEMENT MODULE ---
 
 model Project {
-  id          String    @id @default(cuid())
-  code        String    @unique
-  name        String
-  description String?   @db.Text
-  type        String    @default("IMPLEMENTATION") // IMPLEMENTATION, MAINTENANCE, INTERNAL
-  status      String    @default("PLANNING") // PLANNING, RUNNING, ON_HOLD, DONE, CANCELLED
-  priority    String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
-  startDate   DateTime?
-  dueDate     DateTime?
-  estimatedValue Float    @default(0)
+  id                String    @id @default(cuid())
+  code              String    @unique
+  name              String
+  description       String?   @db.Text
+  type              String    @default("IMPLEMENTATION") // IMPLEMENTATION, MAINTENANCE, INTERNAL
+  status            String    @default("PLANNING") // PLANNING, RUNNING, ON_HOLD, DONE, CANCELLED
+  priority          String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  startDate         DateTime?
+  dueDate           DateTime?
+  estimatedValue    Float     @default(0)
   estimatedDuration String?
-  budget      Float    @default(0) // Chi phí dự kiến tối đa (Phase 1 P&L)
-  tags        String?
+  budget            Float     @default(0) // Chi phí dự kiến tối đa (Phase 1 P&L)
+  tags              String?
 
   customerId String?
   customer   Customer? @relation(fields: [customerId], references: [id])
@@ -2046,10 +2047,10 @@ model Project {
   salesOrderId String?
   salesOrder   SalesOrder? @relation(fields: [salesOrderId], references: [id])
 
-  purchaseOrders    PurchaseOrder[]
-  purchaseBills     PurchaseBill[]
-  purchasePayments  PurchasePayment[]
-  expenses          Expense[]
+  purchaseOrders   PurchaseOrder[]
+  purchaseBills    PurchaseBill[]
+  purchasePayments PurchasePayment[]
+  expenses         Expense[]
 
   creatorId String
   creator   User   @relation("ProjectCreator", fields: [creatorId], references: [id])
@@ -2059,6 +2060,7 @@ model Project {
   tasks        Task[]
   risks        ProjectRisk[]
   activityLogs ProjectActivityLog[]
+  topics       ProjectTopic[]
   comments     ProjectComment[]
   attachments  ProjectAttachment[]
 
@@ -2066,29 +2068,45 @@ model Project {
   updatedAt DateTime @updatedAt
 }
 
+model ProjectTopic {
+  id        String   @id @default(cuid())
+  projectId String
+  creatorId String
+  title     String
+  content   String   @db.LongText
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project  Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  creator  User             @relation(fields: [creatorId], references: [id])
+  comments ProjectComment[]
+}
+
 model ProjectComment {
   id        String   @id @default(cuid())
   projectId String
+  topicId   String?
   userId    String
   content   String   @db.LongText
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  project Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  topic   ProjectTopic? @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   reactions ProjectCommentReaction[]
 }
 
 model ProjectCommentReaction {
-  id        String         @id @default(cuid())
+  id        String   @id @default(cuid())
   commentId String
   userId    String
   emoji     String
-  createdAt DateTime       @default(now())
+  createdAt DateTime @default(now())
 
-  comment   ProjectComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
-  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment ProjectComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([commentId, userId, emoji])
 }
@@ -2102,8 +2120,8 @@ model ProjectAttachment {
   uploadedById String
   createdAt    DateTime @default(now())
 
-  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  uploadedBy User     @relation(fields: [uploadedById], references: [id])
+  project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  uploadedBy User    @relation(fields: [uploadedById], references: [id])
 }
 
 model ProjectMember {

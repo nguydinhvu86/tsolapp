@@ -202,6 +202,9 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
     // View Mode State
     const [viewMode, setViewMode] = useState<'LIST' | 'GANTT'>('LIST');
 
+    // Search State
+    const [globalFilter, setGlobalFilter] = useState('');
+
     // If parentProject is passed, filter available users to only those assigned to the project
     const availableUsersForAssign = React.useMemo(() => {
         if (parentProject && parentProject.assignees) {
@@ -269,6 +272,17 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
         });
 
         return initialTasks.filter((task: any) => {
+            const query = globalFilter ? globalFilter.toLowerCase() : '';
+            if (query) {
+                const matchesSearch = (
+                    (task.title?.toLowerCase().includes(query)) ||
+                    (task.description?.toLowerCase().includes(query)) ||
+                    (task.status?.toLowerCase().includes(query)) ||
+                    (task.customer?.name?.toLowerCase().includes(query))
+                );
+                if (!matchesSearch) return false;
+            }
+
             // Hide tasks that start > 10 days in the future
             if (task.startDate) {
                 const threshold = new Date().getTime() + 10 * 24 * 60 * 60 * 1000;
@@ -280,7 +294,10 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                 if (!activeRecurringIds.has(task.id)) return false;
             }
 
-            if (filterStatus === 'ALL') return task.status !== 'DONE' && task.status !== 'CANCELLED';
+            if (filterStatus === 'ALL') {
+                if (globalFilter && globalFilter.trim() !== '') return true;
+                return task.status !== 'DONE' && task.status !== 'CANCELLED';
+            }
 
             // Core Statuses (also matched by the top cards)
             if (['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE', 'PAUSED', 'CANCELLED'].includes(filterStatus)) {
@@ -677,6 +694,17 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                 </Button>
 
                 {/* Advanced Filter Dropdown */}
+                <div style={{ position: 'relative', flex: 1, maxWidth: '250px', marginLeft: 'auto' }}>
+                    <Search size={16} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                    <input 
+                        type="text" 
+                        placeholder="Tìm kiếm công việc..." 
+                        value={globalFilter}
+                        onChange={(e) => setGlobalFilter(e.target.value)}
+                        style={{ width: '100%', padding: '0.4rem 1rem 0.4rem 2.25rem', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '0.85rem' }}
+                    />
+                </div>
+
                 <div style={{ position: 'relative' }}>
                     <Button
                         variant={filterStatus === 'ALL' ? 'secondary' : 'primary'}

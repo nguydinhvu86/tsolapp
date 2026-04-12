@@ -1,15 +1,308 @@
 
-[1m[31mError: [39m[22m[31m[1mPrisma schema validation[22m[39m - (validate wasm)
-Error code: P1012
-[31m[1m[1;91merror[0m: [1mError validating field `user` in model `TaskCommentReaction`: The relation field `user` on model `TaskCommentReaction` is missing an opposite relation field on the model `User`. Either run `prisma format` or add it manually.[0m
-  [1;94m-->[0m  [4mprisma\schema.prisma:329[0m
-[1;94m   | [0m
-[1;94m328 | [0m  comment         TaskComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
-[1;94m329 | [0m  [1;91muser            User        @relation(fields: [userId], references: [id], onDelete: Cascade)[0m
-[1;94m330 | [0m  createdAt       DateTime  @default(now())
-[1;94m   | [0m
+Invalid `prisma.project.findUnique()` invocation:
 
-Validation Error Count: 1[22m[39m
-[Context: validate]
+{
+  where: {
+    id: "cmnv4d1l50003g6n4kik4tjh5"
+  },
+  include: {
+    creator: {
+      select: {
+        id: true,
+        name: true,
+        avatar: true
+      }
+    },
+    members: {
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true
+          }
+        }
+      }
+    },
+    comments: {
+      orderBy: {
+        createdAt: "desc"
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true
+          }
+        },
+        reactions: true
+      }
+    },
+    attachments: {
+      include: {
+        uploadedBy: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
+    },
+    customer: {
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        email: true
+      }
+    },
+    contract: {
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        createdAt: true
+      }
+    },
+    quote: {
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        createdAt: true
+      }
+    },
+    salesEstimate: {
+      select: {
+        id: true,
+        code: true,
+        status: true,
+        totalAmount: true,
+        date: true
+      }
+    },
+    salesOrder: {
+      select: {
+        id: true,
+        code: true,
+        status: true,
+        totalAmount: true,
+        date: true
+      }
+    },
+    invoice: {
+      select: {
+        id: true,
+        code: true,
+        status: true,
+        totalAmount: true,
+        paidAmount: true,
+        date: true
+      }
+    },
+    purchaseOrders: {
+      select: {
+        id: true,
+        code: true,
+        status: true,
+        totalAmount: true,
+        date: true,
+        supplier: {
+          select: {
+            name: true
+          }
+        }
+      }
+    },
+    purchaseBills: {
+      select: {
+        id: true,
+        code: true,
+        status: true,
+        totalAmount: true,
+        paidAmount: true,
+        date: true,
+        supplier: {
+          select: {
+            name: true
+          }
+        }
+      }
+    },
+    purchasePayments: {
+      select: {
+        id: true,
+        code: true,
+        status: true,
+        ~~~~~~
+        amount: true,
+        date: true,
+        supplier: {
+          select: {
+            name: true
+          }
+        },
+?       paymentMethod?: true,
+?       reference?: true,
+?       notes?: true,
+?       attachment?: true,
+?       supplierId?: true,
+?       creatorId?: true,
+?       projectId?: true,
+?       createdAt?: true,
+?       updatedAt?: true,
+?       creator?: true,
+?       allocations?: true,
+?       tasks?: true,
+?       project?: true,
+?       _count?: true
+      }
+    },
+    expenses: {
+      select: {
+        id: true,
+        code: true,
+        status: true,
+        amount: true,
+        date: true,
+        description: true
+      }
+    },
+    tasks: {
+      include: {
+        assignees: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true
+              }
+            }
+          }
+        },
+        creator: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        observers: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true
+              }
+            }
+          }
+        },
+        checklists: {
+          orderBy: {
+            createdAt: "asc"
+          },
+          include: {
+            completedBy: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        },
+        comments: {
+          orderBy: {
+            createdAt: "desc"
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true
+              }
+            }
+          }
+        },
+        attachments: {
+          include: {
+            uploadedBy: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        },
+        activityLogs: {
+          orderBy: {
+            createdAt: "desc"
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        },
+        customer: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        contract: {
+          select: {
+            id: true,
+            title: true
+          }
+        },
+        quote: {
+          select: {
+            id: true,
+            title: true
+          }
+        },
+        handover: {
+          select: {
+            id: true,
+            title: true
+          }
+        },
+        paymentReq: {
+          select: {
+            id: true,
+            title: true
+          }
+        },
+        dispatch: {
+          select: {
+            id: true,
+            title: true
+          }
+        },
+        dependencies: {
+          include: {
+            dependsOn: {
+              select: {
+                id: true,
+                title: true,
+                status: true,
+                dueDate: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        createdAt: "desc"
+      }
+    }
+  }
+}
 
-Prisma CLI Version : 5.22.0
+Unknown field `status` for select statement on model `PurchasePayment`. Available options are marked with ?.

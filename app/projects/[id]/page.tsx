@@ -20,6 +20,10 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
         include: {
             creator: { select: { id: true, name: true, avatar: true } },
             members: { include: { user: { select: { id: true, name: true, avatar: true } } } },
+            topics: {
+                orderBy: { createdAt: 'desc' },
+                include: { creator: { select: { id: true, name: true, avatar: true } }, comments: { include: { user: { select: { id: true, name: true, avatar: true } }, reactions: true } } }
+            },
             comments: {
                 orderBy: { createdAt: 'desc' },
                 include: { user: { select: { id: true, name: true, avatar: true } }, reactions: true }
@@ -33,7 +37,7 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
             invoice: { select: { id: true, code: true, status: true, totalAmount: true, paidAmount: true, date: true } },
             purchaseOrders: { select: { id: true, code: true, status: true, totalAmount: true, date: true, supplier: { select: { name: true } } } },
             purchaseBills: { select: { id: true, code: true, status: true, totalAmount: true, paidAmount: true, date: true, supplier: { select: { name: true } } } },
-            purchasePayments: { select: { id: true, code: true, status: true, amount: true, date: true, supplier: { select: { name: true } } } },
+            purchasePayments: { select: { id: true, code: true, amount: true, date: true, supplier: { select: { name: true } } } },
             expenses: { select: { id: true, code: true, status: true, amount: true, date: true, description: true } },
             tasks: {
                 include: {

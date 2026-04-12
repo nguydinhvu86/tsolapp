@@ -974,7 +974,7 @@ export async function searchEntities(type: string, query: string = '') {
         }
         case 'PROJECT': {
             const f = getRes('PROJECTS');
-            return f ? prisma.project.findMany({ where: { AND: [f as any, { name: { contains: q } }] }, take: 5, select: { id: true, name: true, code: true } }) : [];
+            return f ? (prisma as any).project.findMany({ where: { AND: [f as any, { title: { contains: q } }] }, take: 5, select: { id: true, title: true, code: true } }) : [];
         }
         case 'CONTRACT': {
             const f = getRes('CONTRACTS');

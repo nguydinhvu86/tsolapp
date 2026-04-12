@@ -228,3 +228,93 @@ export async function deleteProject(id: string) {
     await prisma.project.delete({ where: { id } });
     revalidatePath('/projects');
 }
+
+export async function addProjectComment(projectId: string, content: string, topicId?: string) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    const projectData = await prisma.project.findUnique({
+        where: { id: projectId },
+        include: { members: true }
+    });
+    if (!projectData) throw new Error("Not found");
+
+    const allowedUsers = [...projectData.members.map((a:any)=>a.userId)];
+    await verifyActionOwnership('PROJECTS', 'EDIT', projectData.creatorId, allowedUsers);
+
+    await prisma.projectComment.create({
+        data: {
+            projectId,
+            topicId: topicId || null,
+            userId: session.user.id,
+            content
+        }
+    });
+
+    revalidatePath(`/projects/${projectId}`);
+}
+
+export async function createProjectTopic(projectId: string, title: string, content: string) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    const projectData = await prisma.project.findUnique({
+        where: { id: projectId },
+        include: { members: true }
+    });
+    if (!projectData) throw new Error("Not found");
+
+    const allowedUsers = [...projectData.members.map((a:any)=>a.userId)];
+    await verifyActionOwnership('PROJECTS', 'EDIT', projectData.creatorId, allowedUsers);
+
+    await prisma.projectTopic.create({
+        data: {
+            projectId,
+            title,
+            content,
+            creatorId: session.user.id,
+        }
+    });
+
+    revalidatePath(`/projects/${projectId}`);
+}
+
+export async function getProjectTopics(projectId: string) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    const topics = await prisma.projectTopic.findMany({
+        where: { projectId },
+        include: {
+            creator: true,
+            comments: {
+                include: {
+                    user: true,
+                    reactions: true
+                },
+                orderBy: { createdAt: 'asc' }
+            }
+        },
+        orderBy: { createdAt: 'desc' }
+    });
+
+    return topics;
+}
+
+export async function toggleProjectReaction(commentId: string, emoji: string, projectId: string) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    const existing = await prisma.projectCommentReaction.findUnique({
+        where: { commentId_userId_emoji: { commentId, userId: session.user.id, emoji } }
+    });
+
+    if (existing) {
+        await prisma.projectCommentReaction.delete({ where: { id: existing.id } });
+    } else {
+        await prisma.projectCommentReaction.create({
+            data: { commentId, userId: session.user.id, emoji }
+        });
+    }
+    revalidatePath(`/projects/${projectId}`);
+}

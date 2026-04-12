@@ -83,6 +83,7 @@ export async function createExpense(data: {
     attachment?: string;
     supplierId?: string | null;
     customerId?: string | null;
+    projectId?: string | null;
 }) {
     const user = await verifyActionPermission('SALES_EXPENSES_CREATE');
     const uId = (user as any).id;
@@ -123,6 +124,7 @@ export async function createExpense(data: {
                 attachment: data.attachment,
                 supplierId: data.supplierId || null,
                 customerId: data.customerId || null,
+                projectId: data.projectId || null,
                 creatorId: uId,
                 status: 'COMPLETED'
             }
@@ -147,6 +149,7 @@ export async function updateExpense(id: string, data: {
     attachment?: string;
     supplierId?: string | null;
     customerId?: string | null;
+    projectId?: string | null;
 }) {
     const oldExpense = await prisma.expense.findUnique({ where: { id } });
     if (!oldExpense) throw new Error("Khoản chi phí không tồn tại");

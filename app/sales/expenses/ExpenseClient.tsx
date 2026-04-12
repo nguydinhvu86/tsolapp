@@ -19,6 +19,7 @@ export type ExpenseWithDetails = Expense & {
     supplier?: { id: string, name: string } | null;
     customer?: { id: string, name: string } | null;
     creator?: { name: string | null; email: string | null } | null;
+    projectId?: string | null;
 };
 
 export default function ExpenseClient({
@@ -27,7 +28,8 @@ export default function ExpenseClient({
     customers,
     suppliers,
     isAdmin,
-    permissions
+    permissions,
+    projects
 }: {
     initialData: ExpenseWithDetails[];
     categories: ExpenseCategory[];
@@ -35,6 +37,7 @@ export default function ExpenseClient({
     suppliers: { id: string, name: string, phone?: string | null }[];
     isAdmin: boolean;
     permissions: string[];
+    projects?: { id: string, title: string, code?: string | null }[];
 }) {
     const router = useRouter();
     const [expenses, setExpenses] = useState<ExpenseWithDetails[]>(initialData);
@@ -60,7 +63,8 @@ export default function ExpenseClient({
         attachment: '',
         systemLinkType: 'NONE', // 'NONE', 'CUSTOMER', 'SUPPLIER'
         customerId: '',
-        supplierId: ''
+        supplierId: '',
+        projectId: ''
     });
     const [isUploading, setIsUploading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -160,10 +164,16 @@ export default function ExpenseClient({
                 attachment: expense.attachment || '',
                 systemLinkType: expense.customerId ? 'CUSTOMER' : expense.supplierId ? 'SUPPLIER' : 'NONE',
                 customerId: expense.customerId || '',
-                supplierId: expense.supplierId || ''
+                supplierId: expense.supplierId || '',
+                projectId: expense.projectId || ''
             });
         } else {
             setEditingId(null);
+            
+            // Check for prefilled params
+            const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+            const prefillProjectId = params?.get('projectId') || '';
+
             setFormData({
                 amount: '',
                 payee: '',
@@ -175,7 +185,8 @@ export default function ExpenseClient({
                 attachment: '',
                 systemLinkType: 'NONE',
                 customerId: '',
-                supplierId: ''
+                supplierId: '',
+                projectId: prefillProjectId
             });
         }
         setIsModalOpen(true);
@@ -208,6 +219,7 @@ export default function ExpenseClient({
                     attachment: formData.attachment,
                     customerId: formData.systemLinkType === 'CUSTOMER' ? formData.customerId : null,
                     supplierId: formData.systemLinkType === 'SUPPLIER' ? formData.supplierId : null,
+                    projectId: formData.projectId || null,
                 });
             } else {
                 await createExpense({
@@ -221,6 +233,7 @@ export default function ExpenseClient({
                     attachment: formData.attachment,
                     customerId: formData.systemLinkType === 'CUSTOMER' ? formData.customerId : null,
                     supplierId: formData.systemLinkType === 'SUPPLIER' ? formData.supplierId : null,
+                    projectId: formData.projectId || null,
                 });
             }
             closeModal();
@@ -441,6 +454,16 @@ export default function ExpenseClient({
                                 value={formData.payee}
                                 onChange={e => setFormData({ ...formData, payee: e.target.value })}
                                 placeholder="Vd: Tên người/công ty nhận tiền..."
+                            />
+                        </div>
+
+                        <div className="flex flex-col gap-1.5" style={{ marginTop: '0.25rem' }}>
+                            <label className="text-sm font-medium text-slate-700">Dự án liên quan</label>
+                            <SearchableSelect
+                                value={formData.projectId || ''}
+                                onChange={(val) => setFormData({ ...formData, projectId: val })}
+                                options={[{ value: '', label: '-- Không thuộc dự án --' }, ...(projects || []).map((p: any) => ({ value: p.id, label: `${p.code} - ${p.title}` }))]}
+                                placeholder="Chọn dự án..."
                             />
                         </div>
 
