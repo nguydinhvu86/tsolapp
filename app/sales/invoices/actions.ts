@@ -103,8 +103,12 @@ export async function submitSalesInvoice(creatorId: string, formData: any) {
             },
             include: {
                 customer: true,
+                order: true,
                 creator: true,
-                salesperson: true
+                salesperson: true,
+                items: {
+                    include: { product: true }
+                }
             }
         });
 
@@ -188,8 +192,12 @@ export async function updateSalesInvoice(id: string, formData: any) {
             },
             include: {
                 customer: true,
+                order: true,
                 creator: true,
-                salesperson: true
+                salesperson: true,
+                items: {
+                    include: { product: true }
+                }
             }
         });
 
@@ -364,7 +372,16 @@ export async function approveSalesInvoice(invoiceId: string, userId: string) {
             // 1. Update Invoice Status
             const updatedInvoice = await tx.salesInvoice.update({
                 where: { id: invoiceId },
-                data: { status: "ISSUED" }
+                data: { status: "ISSUED" },
+                include: {
+                    customer: true,
+                    order: true,
+                    creator: true,
+                    salesperson: true,
+                    items: {
+                        include: { product: true }
+                    }
+                }
             });
 
             // 2. Add to Customer Debt
@@ -580,7 +597,16 @@ export async function cancelSalesInvoice(invoiceId: string) {
             // 3. Cập nhật trạng thái thành CANCELLED
             const updatedInvoice = await tx.salesInvoice.update({
                 where: { id: invoiceId },
-                data: { status: "CANCELLED" }
+                data: { status: "CANCELLED" },
+                include: {
+                    customer: true,
+                    order: true,
+                    creator: true,
+                    salesperson: true,
+                    items: {
+                        include: { product: true }
+                    }
+                }
             });
 
             await tx.salesInvoiceActivityLog.create({
@@ -628,7 +654,16 @@ export async function restoreSalesInvoice(invoiceId: string) {
             // 1. Update Invoice Status to ISSUED
             const updatedInvoice = await tx.salesInvoice.update({
                 where: { id: invoiceId },
-                data: { status: "ISSUED" }
+                data: { status: "ISSUED" },
+                include: {
+                    customer: true,
+                    order: true,
+                    creator: true,
+                    salesperson: true,
+                    items: {
+                        include: { product: true }
+                    }
+                }
             });
 
             // 2. Add to Customer Debt
