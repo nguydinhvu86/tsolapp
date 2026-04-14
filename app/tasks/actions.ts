@@ -304,7 +304,7 @@ export async function updateTask(id: string, data: any, userId: string) {
     });
     
     if (!oldTask) throw new Error("Thẻ công việc không tồn tại");
-    const allowedUserIds = oldTask.assignees.map((a: any) => a.userId);
+    const allowedUserIds = [...oldTask.assignees.map((a: any) => a.userId), ...oldTask.observers.map((o: any) => o.userId)];
     await verifyActionOwnership('TASKS', 'EDIT', oldTask.creatorId, allowedUserIds);
 
     const changes = [];
@@ -487,7 +487,7 @@ export async function updateTaskStatus(id: string, status: string, userId: strin
     });
     
     if (!oldTask) throw new Error("Thẻ công việc không tồn tại");
-    const allowedUserIds = oldTask.assignees.map((a: any) => a.userId);
+    const allowedUserIds = [...oldTask.assignees.map((a: any) => a.userId), ...oldTask.observers.map((o: any) => o.userId)];
     await verifyActionOwnership('TASKS', 'EDIT', oldTask.creatorId, allowedUserIds);
 
     await prisma.task.update({ where: { id }, data: { status } });
@@ -609,9 +609,9 @@ export async function deleteTask(id: string) {
 
 // Sub-features
 export async function addChecklist(taskId: string, title: string, userId: string) {
-    const taskData = await prisma.task.findUnique({ where: {id: taskId}, include: { assignees: true } });
+    const taskData = await prisma.task.findUnique({ where: {id: taskId}, include: { assignees: true, observers: true } });
     if (!taskData) throw new Error("Not found");
-    await verifyActionOwnership('TASKS', 'EDIT', taskData.creatorId, taskData.assignees.map((a:any)=>a.userId));
+    await verifyActionOwnership('TASKS', 'EDIT', taskData.creatorId, [...taskData.assignees.map((a:any)=>a.userId), ...taskData.observers.map((o:any)=>o.userId)]);
 
     const cl = await prisma.taskChecklist.create({
         data: { taskId, title }
@@ -752,10 +752,10 @@ export async function addComment(taskId: string, content: string, userId: string
 }
 
 export async function uploadTaskAttachment(taskId: string, fileName: string, fileUrl: string, fileType: string, userId: string) {
-    const taskData = await prisma.task.findUnique({ where: { id: taskId }, include: { assignees: true } });
+    const taskData = await prisma.task.findUnique({ where: { id: taskId }, include: { assignees: true, observers: true } });
     if (!taskData) throw new Error("Thẻ công việc không tồn tại");
     
-    await verifyActionOwnership('TASKS', 'EDIT', taskData.creatorId, taskData.assignees.map((a:any)=>a.userId));
+    await verifyActionOwnership('TASKS', 'EDIT', taskData.creatorId, [...taskData.assignees.map((a:any)=>a.userId), ...taskData.observers.map((o:any)=>o.userId)]);
 
     await prisma.taskAttachment.create({
         data: {
@@ -829,9 +829,9 @@ export async function deleteTaskAttachment(attachmentId: string, userId: string)
     const attachment = await prisma.taskAttachment.findUnique({ where: { id: attachmentId } });
     if (!attachment) return;
 
-    const taskData = await prisma.task.findUnique({ where: { id: attachment.taskId }, include: { assignees: true }});
+    const taskData = await prisma.task.findUnique({ where: { id: attachment.taskId }, include: { assignees: true, observers: true }});
     if (attachment.uploadedById !== userId && taskData) {
-        await verifyActionOwnership('TASKS', 'EDIT', taskData.creatorId, taskData.assignees.map((a:any)=>a.userId));
+        await verifyActionOwnership('TASKS', 'EDIT', taskData.creatorId, [...taskData.assignees.map((a:any)=>a.userId), ...taskData.observers.map((o:any)=>o.userId)]);
     }
 
     await prisma.taskAttachment.delete({ where: { id: attachmentId } });
@@ -921,7 +921,15 @@ export async function getTaskComments(taskId: string) {
 }
 
 export async function updateTaskLinks(taskId: string, linkData: { customerId?: string | null, contractId?: string | null, quoteId?: string | null, handoverId?: string | null, paymentReqId?: string | null, dispatchId?: string | null, salesOrderId?: string | null, salesInvoiceId?: string | null, salesEstimateId?: string | null, salesPaymentId?: string | null, supplierId?: string | null, purchaseOrderId?: string | null, purchaseBillId?: string | null, purchasePaymentId?: string | null }, userId: string) {
-    const oldTask = await prisma.task.findUnique({ where: { id: taskId } });
+    const oldTask = await prisma.task.findUnique({ 
+        where: { id: taskId },
+        include: { assignees: true, observers: true }
+    });
+
+    if (oldTask) {
+        const allowedUserIds = [...oldTask.assignees.map((a:any)=>a.userId), ...oldTask.observers.map((o:any)=>o.userId)];
+        await verifyActionOwnership('TASKS', 'EDIT', oldTask.creatorId, allowedUserIds);
+    }
 
     const resolvedLinkData = await resolveParentEntityIds(linkData);
 
