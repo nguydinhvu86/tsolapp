@@ -164,6 +164,12 @@ export async function verifyActionOwnership(
         }
     }
 
-    // 3. No permission at all
+    // 3. Intrinsic Ownership fallback
+    // Even if the user lacks the explicit string permission, if they are recorded as the creator or an explicit manager/participant, they are granted OWN access.
+    if (session.user.id === recordCreatorId || recordManagerIds.includes(session.user.id)) {
+        return session.user;
+    }
+
+    // 4. No permission at all
     throw new Error(`Forbidden: Bạn không có quyền thao tác trên tài nguyên này (${allPerm} / ${ownPerm})`);
 }
