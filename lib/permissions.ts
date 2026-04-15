@@ -146,10 +146,17 @@ export async function verifyActionOwnership(
     // ADMIN has universal permission
     if (session.user.role === 'ADMIN') return session.user;
 
+    // 1. Intrinsic Ownership fallback
+    // If they are recorded as the creator or an explicit manager (e.g. task assignee), 
+    // we grant them access for this specific record immediately.
+    if (session.user.id === recordCreatorId || recordManagerIds.includes(session.user.id)) {
+        return session.user;
+    }
+
     const permissions = session.user.permissions as string[] || [];
     const baseActionPerm = `${resourceId}_${actionType}`;
 
-    // 1. Check if user actually has the base EDIT or DELETE permission for this resource
+    // 2. Check if user actually has the base EDIT or DELETE permission for this resource
     if (!permissions.includes(baseActionPerm)) {
         throw new Error(`Forbidden: Bạn không có quyền thao tác này (${baseActionPerm})`);
     }
@@ -157,26 +164,14 @@ export async function verifyActionOwnership(
     const viewAllPerm = `${resourceId}_VIEW_ALL`;
     const viewOwnPerm = `${resourceId}_VIEW_OWN`;
 
-    // 2. If they have VIEW_ALL, they can edit/delete any record 
-    //    because they have the base action perm + global view scope
+    // 3. If they have VIEW_ALL, they can edit/delete any record 
     if (permissions.includes(viewAllPerm)) {
         return session.user;
     }
 
-    // 3. If they only have VIEW_OWN, they can only edit/delete their own 
+    // 4. If they only have VIEW_OWN but are not creator/manager (checked in step 1),
     if (permissions.includes(viewOwnPerm)) {
-        if (session.user.id === recordCreatorId || recordManagerIds.includes(session.user.id)) {
-            return session.user;
-        } else {
-             throw new Error(`Forbidden: Bản ghi này thuộc về người khác, bạn chỉ có quyền thao tác trên dữ liệu của mình`);
-        }
-    }
-
-    // 4. Intrinsic Ownership fallback
-    // Even if they lack formal VIEW_OWN permission, if they are recorded as the creator or an explicit manager, 
-    // we grant them access for this specific record.
-    if (session.user.id === recordCreatorId || recordManagerIds.includes(session.user.id)) {
-        return session.user;
+        throw new Error(`Forbidden: Bản ghi này thuộc về người khác, bạn chỉ có quyền thao tác trên dữ liệu của mình`);
     }
 
     // 5. No valid scope found
