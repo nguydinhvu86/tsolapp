@@ -24,10 +24,9 @@ export async function getTasks(filters?: any) {
             whereClause = { id: 'UNAUTHORIZED_NO_ACCESS' };
         } else if (Object.keys(viewFilter).length > 0) {
             // viewFilter returned something like { creatorId: userId }
-            // For tasks, VIEW_OWN means you can see if you created it OR are assigned OR observing OR it's public
+            // For tasks, VIEW_OWN means you can see if you created it OR are assigned OR observing
             whereClause = {
                 OR: [
-                    { isPublic: true },
                     { creatorId: userId },
                     { assignees: { some: { userId: userId } } },
                     { observers: { some: { userId: userId } } }

@@ -42,7 +42,6 @@ export default async function TasksPage({
     if (!viewAll && viewOwn) {
         // Find tasks where user is assignee, creator, or observer
         where.OR = [
-            { isPublic: true },
             { creatorId: userId },
             { assignees: { some: { userId } } },
             { observers: { some: { userId } } }
