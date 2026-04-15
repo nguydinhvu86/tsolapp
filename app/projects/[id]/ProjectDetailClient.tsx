@@ -75,11 +75,13 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
                 </div>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>{title}</h3>
                 <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', maxWidth: '400px' }}>{desc}</p>
-                <Link href={createHref}>
-                    <Button variant="primary">
-                        <Plus size={16} /> Tạo {title.replace('Chưa có ', '')}
-                    </Button>
-                </Link>
+                {createHref && createHref !== '#' && (
+                    <Link href={createHref}>
+                        <Button variant="primary">
+                            <Plus size={16} /> Tạo {title.replace('Chưa có ', '')}
+                        </Button>
+                    </Link>
+                )}
             </div>
         );
     }
