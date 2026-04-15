@@ -318,3 +318,141 @@ export async function toggleProjectReaction(commentId: string, emoji: string, pr
     }
     revalidatePath(`/projects/${projectId}`);
 }
+
+export async function createProjectIssue(projectId: string, title: string, description: string, severity: string, mitigationPlan: string) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    const projectData = await prisma.project.findUnique({
+        where: { id: projectId },
+        include: { members: true }
+    });
+    if (!projectData) throw new Error("Not found");
+
+    const allowedUsers = [...projectData.members.map((a:any)=>a.userId)];
+    await verifyActionOwnership('PROJECTS', 'EDIT', projectData.creatorId, allowedUsers);
+
+    await prisma.projectIssue.create({
+        data: {
+            projectId,
+            title,
+            description,
+            severity,
+            mitigationPlan,
+            status: "OPEN",
+            reportedById: session.user.id
+        }
+    });
+
+    revalidatePath(`/projects/${projectId}`);
+}
+
+export async function updateProjectIssueStatus(issueId: string, status: string, projectId: string) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) throw new Error("Unauthorized");
+    
+    const projectData = await prisma.project.findUnique({
+        where: { id: projectId },
+        include: { members: true }
+    });
+    if (!projectData) throw new Error("Not found");
+
+    const allowedUsers = [...projectData.members.map((a:any)=>a.userId)];
+    await verifyActionOwnership('PROJECTS', 'EDIT', projectData.creatorId, allowedUsers);
+
+    await prisma.projectIssue.update({
+        where: { id: issueId },
+        data: { status }
+    });
+
+    revalidatePath(`/projects/${projectId}`);
+}
+
+export async function createProjectRisk(projectId: string, title: string, description: string, probability: number, impact: string) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    const projectData = await prisma.project.findUnique({
+        where: { id: projectId },
+        include: { members: true }
+    });
+    if (!projectData) throw new Error("Not found");
+
+    const allowedUsers = [...projectData.members.map((a:any)=>a.userId)];
+    await verifyActionOwnership('PROJECTS', 'EDIT', projectData.creatorId, allowedUsers);
+
+    await prisma.projectRisk.create({
+        data: {
+            projectId,
+            title,
+            description,
+            probability,
+            impact,
+            status: "OPEN",
+            creatorId: session.user.id
+        }
+    });
+
+    revalidatePath(`/projects/${projectId}`);
+}
+
+export async function updateProjectRiskStatus(riskId: string, status: string, projectId: string) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) throw new Error("Unauthorized");
+    
+    const projectData = await prisma.project.findUnique({
+        where: { id: projectId },
+        include: { members: true }
+    });
+    if (!projectData) throw new Error("Not found");
+
+    const allowedUsers = [...projectData.members.map((a:any)=>a.userId)];
+    await verifyActionOwnership('PROJECTS', 'EDIT', projectData.creatorId, allowedUsers);
+
+    await prisma.projectRisk.update({
+        where: { id: riskId },
+        data: { status }
+    });
+
+    revalidatePath(`/projects/${projectId}`);
+}
+
+export async function updateProjectIssue(issueId: string, projectId: string, title: string, description: string, severity: string, mitigationPlan: string) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    const projectData = await prisma.project.findUnique({
+        where: { id: projectId },
+        include: { members: true }
+    });
+    if (!projectData) throw new Error("Not found");
+
+    const allowedUsers = [...projectData.members.map((a:any)=>a.userId)];
+    await verifyActionOwnership('PROJECTS', 'EDIT', projectData.creatorId, allowedUsers);
+
+    await prisma.projectIssue.update({
+        where: { id: issueId },
+        data: { title, description, severity, mitigationPlan }
+    });
+    revalidatePath(`/projects/${projectId}`);
+}
+
+export async function updateProjectRisk(riskId: string, projectId: string, title: string, description: string, probability: number, impact: string) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    const projectData = await prisma.project.findUnique({
+        where: { id: projectId },
+        include: { members: true }
+    });
+    if (!projectData) throw new Error("Not found");
+
+    const allowedUsers = [...projectData.members.map((a:any)=>a.userId)];
+    await verifyActionOwnership('PROJECTS', 'EDIT', projectData.creatorId, allowedUsers);
+
+    await prisma.projectRisk.update({
+        where: { id: riskId },
+        data: { title, description, probability, impact }
+    });
+    revalidatePath(`/projects/${projectId}`);
+}

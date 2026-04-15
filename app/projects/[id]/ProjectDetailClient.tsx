@@ -16,8 +16,10 @@ import { vi } from 'date-fns/locale';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { uploadTaskAttachment, deleteTaskAttachment, toggleReaction } from '@/app/tasks/actions';
-import { addProjectComment, toggleProjectReaction, createProjectTopic } from '@/app/projects/actions';
-import { FileSignature, Receipt, FileText as FileTextIcon, Calculator, Plus, ShoppingCart, CreditCard, Send } from 'lucide-react';
+import { addProjectComment, toggleProjectReaction, createProjectTopic, updateProjectIssueStatus, updateProjectRiskStatus } from '@/app/projects/actions';
+import { FileSignature, Receipt, FileText as FileTextIcon, Calculator, Plus, ShoppingCart, CreditCard, Send, AlertTriangle, Edit2 } from 'lucide-react';
+import { CreateIssueModal } from './CreateIssueModal';
+import { CreateRiskModal } from './CreateRiskModal';
 
 const EMOJIS = ['👍', '❤️', '😂', '🎉', '👀'];
 
@@ -26,6 +28,12 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
     const { data: session } = useSession();
 
     const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'TASKS' | 'ISSUES' | 'FINANCIALS' | 'TIMESHEETS' | 'DISCUSSIONS' | 'FILES' | 'REPORTS' | 'QUOTE' | 'CONTRACT' | 'INVOICE' | 'SALES_ESTIMATE' | 'PURCHASE_BILL' | 'EXPENSE'>('OVERVIEW');
+    
+    // Modal State
+    const [isIssueModalOpen, setIsIssueModalOpen] = useState(false);
+    const [editingIssueData, setEditingIssueData] = useState<any>(null);
+    const [isRiskModalOpen, setIsRiskModalOpen] = useState(false);
+    const [editingRiskData, setEditingRiskData] = useState<any>(null);
 
     // Discussion State (Forum)
     const generalTopic = { id: 'GENERAL', title: 'Thảo Luận Chung', comments: project.comments?.filter((c:any) => !c.topicId) || [] };
@@ -817,38 +825,44 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
                 {activeTab === 'DISCUSSIONS' && (
                     <div style={{ display: 'flex', gap: '1.5rem', height: 'calc(100vh - 200px)' }}>
                         {/* Sidebar: Topics List */}
-                        <Card style={{ width: '320px', display: 'flex', flexDirection: 'column', flexShrink: 0, overflow: 'hidden', boxShadow: '0 4px 20px -2px rgb(0 0 0 / 0.1)' }}>
-                            <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f8fafc' }}>
-                                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-main)' }}>Chủ Đề</h3>
-                                <Button onClick={() => setIsCreatingTopic(true)} title="Tạo Chủ Đề Mới" style={{ padding: '0.25rem 0.5rem', height: 'auto' }}><Plus size={16} /></Button>
+                        <Card style={{ width: '320px', display: 'flex', flexDirection: 'column', flexShrink: 0, overflow: 'hidden', boxShadow: '0 10px 40px -10px rgba(0,0,0,0.08)', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)' }}>
+                            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fcfcfd' }}>
+                                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)', letterSpacing: '-0.3px' }}>Chủ Đề</h3>
+                                <Button onClick={() => setIsCreatingTopic(true)} title="Tạo Chủ Đề Mới" style={{ padding: '0.35rem 0.5rem', height: 'auto', borderRadius: '8px' }}><Plus size={16} /></Button>
                             </div>
-                            <div style={{ flex: 1, overflowY: 'auto', padding: '0.75rem' }}>
-                                {allTopics.map((topic: any) => (
-                                    <div 
-                                        key={topic.id}
-                                        onClick={() => { setSelectedTopic(topic); setIsCreatingTopic(false); }}
-                                        style={{ 
-                                            padding: '1rem', 
-                                            borderRadius: '8px', 
-                                            cursor: 'pointer',
-                                            backgroundColor: selectedTopic?.id === topic.id && !isCreatingTopic ? '#e0e7ff' : 'transparent',
-                                            border: selectedTopic?.id === topic.id && !isCreatingTopic ? '1px solid var(--primary)' : '1px solid transparent',
-                                            marginBottom: '0.5rem',
-                                            transition: 'all 0.2s'
-                                        }}
-                                        className="hover:bg-slate-100"
-                                    >
-                                        <h4 style={{ margin: '0 0 0.25rem 0', fontSize: '0.90rem', fontWeight: 600, color: selectedTopic?.id === topic.id && !isCreatingTopic ? 'var(--primary)' : 'var(--text-main)' }}>{topic.title}</h4>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                            {topic.id === 'GENERAL' ? 'Kênh trao đổi chung' : `Bởi ${topic.creator?.name || 'Vô danh'}`}
+                            <div style={{ flex: 1, overflowY: 'auto', padding: '1rem 0' }}>
+                                {allTopics.map((topic: any) => {
+                                    const isActive = selectedTopic?.id === topic.id && !isCreatingTopic;
+                                    return (
+                                        <div 
+                                            key={topic.id}
+                                            onClick={() => { setSelectedTopic(topic); setIsCreatingTopic(false); }}
+                                            style={{ 
+                                                padding: '1rem 1.5rem', 
+                                                cursor: 'pointer',
+                                                background: isActive ? 'linear-gradient(to right, rgba(59, 130, 246, 0.05), transparent)' : 'transparent',
+                                                borderLeft: isActive ? '4px solid var(--primary)' : '4px solid transparent',
+                                                transition: 'all 0.2s',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                gap: '0.25rem'
+                                            }}
+                                            className="hover:bg-slate-50 transition-colors"
+                                        >
+                                            <h4 style={{ margin: 0, fontSize: '0.90rem', fontWeight: isActive ? 700 : 500, color: isActive ? 'var(--primary)' : 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                {topic.id === 'GENERAL' ? <MessageSquare size={14} /> : <Tag size={14} />} {topic.title}
+                                            </h4>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                {topic.id === 'GENERAL' ? 'Kênh trao đổi chung' : `Bởi ${topic.creator?.name || 'Vô danh'}`}
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </Card>
 
                         {/* Main Content */}
-                        <Card style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 4px 20px -2px rgb(0 0 0 / 0.1)' }}>
+                        <Card style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 10px 40px -10px rgba(0,0,0,0.08)', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)', backgroundColor: '#fafafb' }}>
                             {isCreatingTopic ? (
                                 <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', height: '100%', overflowY: 'auto', backgroundColor: '#f8fafc' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #cbd5e1', paddingBottom: '1rem' }}>
@@ -886,23 +900,22 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
                                 </div>
                             ) : selectedTopic ? (
                                 <>
-                                    <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--border)', backgroundColor: 'white', zIndex: 10 }}>
-                                        <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <MessageSquare size={18} color="var(--primary)" />
-                                            {selectedTopic.title}
+                                    <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid rgba(0,0,0,0.05)', backgroundColor: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(16px)', zIndex: 10, position: 'sticky', top: 0 }}>
+                                        <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', letterSpacing: '-0.3px', color: '#1e293b' }}>
+                                            # {selectedTopic.title}
                                         </h3>
                                         {selectedTopic.id !== 'GENERAL' && selectedTopic.content && (
-                                            <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '8px', fontSize: '0.95rem', color: '#334155', marginTop: '1rem', borderLeft: '4px solid var(--primary)' }}>
+                                            <div style={{ padding: '1rem', backgroundColor: 'rgba(241,245,249,0.5)', borderRadius: '12px', fontSize: '0.95rem', color: '#475569', marginTop: '1rem', borderLeft: '3px solid var(--primary)' }}>
                                                 {selectedTopic.content}
                                             </div>
                                         )}
                                     </div>
                                     
-                                    <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', backgroundColor: '#f1f5f9', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                    <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', backgroundColor: 'transparent', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                         {selectedTopic.comments?.length === 0 ? (
-                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)', opacity: 0.7 }}>
-                                                <MessageSquare size={48} style={{ marginBottom: '1rem' }} />
-                                                <p style={{ fontSize: '0.95rem' }}>Chưa có bình luận nào trong chủ đề này!</p>
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)', opacity: 0.5 }}>
+                                                <MessageSquare size={48} style={{ marginBottom: '1rem', opacity: 0.5 }} />
+                                                <p style={{ fontSize: '1rem', fontWeight: 500 }}>Chưa có bình luận nào. Hãy gửi một lời nhắn!</p>
                                             </div>
                                         ) : (
                                             selectedTopic.comments?.map((comment: any) => {
@@ -915,30 +928,35 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
                                                 const isMe = comment.user?.id === session?.user?.id;
 
                                                 return (
-                                                    <div key={comment.id} style={{ display: 'flex', gap: '0.75rem', alignSelf: isMe ? 'flex-end' : 'flex-start', flexDirection: isMe ? 'row-reverse' : 'row', maxWidth: '85%' }}>
-                                                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: isMe ? '#e0e7ff' : 'white', border: isMe ? '2px solid var(--primary)' : '1px solid #cbd5e1', color: isMe ? 'var(--primary)' : 'var(--text-main)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', flexShrink: 0, boxShadow: '0 2px 4px rgb(0 0 0 / 0.05)' }}>
+                                                    <div key={comment.id} style={{ display: 'flex', gap: '1rem', alignSelf: isMe ? 'flex-end' : 'flex-start', flexDirection: isMe ? 'row-reverse' : 'row', maxWidth: '85%' }}>
+                                                        <div style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: isMe ? 'transparent' : 'white', background: isMe ? 'linear-gradient(135deg, var(--primary) 0%, #3b82f6 100%)' : 'white', border: isMe ? 'none' : '1px solid #cbd5e1', color: isMe ? 'white' : 'var(--text-main)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', flexShrink: 0, boxShadow: isMe ? '0 4px 12px rgba(59, 130, 246, 0.4)' : '0 2px 8px rgba(0,0,0,0.05)' }}>
                                                             {comment.user?.name?.[0]?.toUpperCase() || comment.user?.email?.[0]?.toUpperCase() || 'U'}
                                                         </div>
-                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0 0.25rem' }}>
-                                                                <span style={{ fontWeight: 600, fontSize: '0.85rem', color: isMe ? 'var(--primary)' : 'var(--text-main)' }}>{isMe ? 'Bạn' : (comment.user?.name || comment.user?.email)}</span>
-                                                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                                <span style={{ fontWeight: 600, fontSize: '0.85rem', color: isMe ? '#475569' : '#1e293b' }}>{isMe ? 'Bạn' : (comment.user?.name || comment.user?.email)}</span>
+                                                                <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 500 }}>
                                                                     {comment.createdAt ? formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: vi }) : 'Vừa xong'}
                                                                 </span>
                                                             </div>
 
                                                             <div
                                                                 style={{ 
-                                                                    padding: '0.75rem 1rem', 
-                                                                    backgroundColor: isMe ? 'var(--primary)' : 'white', 
-                                                                    color: isMe ? 'white' : 'var(--text-main)',
-                                                                    borderRadius: isMe ? '16px 4px 16px 16px' : '4px 16px 16px 16px', 
+                                                                    padding: '0.85rem 1.25rem', 
+                                                                    background: isMe ? 'linear-gradient(135deg, var(--primary) 0%, #1d4ed8 100%)' : 'white', 
+                                                                    color: isMe ? 'white' : '#334155',
+                                                                    borderRadius: isMe ? '20px 4px 20px 20px' : '4px 20px 20px 20px', 
                                                                     lineHeight: 1.5, 
                                                                     fontSize: '0.95rem',
-                                                                    boxShadow: '0 1px 2px rgb(0 0 0 / 0.05)',
-                                                                    wordBreak: 'break-word'
+                                                                    boxShadow: isMe ? '0 8px 20px -5px rgba(59, 130, 246, 0.4)' : '0 4px 15px -3px rgba(0,0,0,0.05)',
+                                                                    border: isMe ? 'none' : '1px solid rgba(0,0,0,0.02)',
+                                                                    wordBreak: 'break-word',
                                                                 }}
-                                                                dangerouslySetInnerHTML={{ __html: comment.content }}
+                                                                dangerouslySetInnerHTML={{ __html: (comment.content || '')
+                                                                    .replace(/\[WARNING\]/g, '<span style="background: #fee2e2; color: #ef4444; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; border: 1px solid #fca5a5;">⚠ CẢNH BÁO</span>')
+                                                                    .replace(/\[INFO\]/g, '<span style="background: #e0e7ff; color: #3b82f6; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; border: 1px solid #93c5fd;">ℹ THÔNG BÁO</span>')
+                                                                    .replace(/\[URGENT\]/g, '<span style="background: #fef2f2; color: #dc2626; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; border: 1px solid #ef4444;">🚨 KHẨN CẤP</span>')
+                                                                }}
                                                             />
 
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
@@ -965,9 +983,40 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
                                         )}
                                     </div>
 
-                                    <div style={{ backgroundColor: 'white', borderTop: '1px solid var(--border)', padding: '1rem' }}>
-                                        <form onSubmit={handleAddComment} style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-end' }}>
-                                            <div style={{ flex: 1, position: 'relative' }}>
+                                    <div style={{ backgroundColor: 'transparent', padding: '0 1.5rem 1.5rem 1.5rem' }}>
+                                        <form onSubmit={handleAddComment}>
+                                            <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'white', borderRadius: '32px', padding: '0.35rem 0.35rem 0.35rem 1rem', boxShadow: '0 15px 35px -5px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.03)' }}>
+                                                <Button type="button" variant="secondary" style={{ padding: '0.5rem', borderRadius: '50%', color: '#64748b', background: 'transparent' }} onClick={() => document.getElementById('discuss-attach')?.click()}>
+                                                    <Paperclip size={20} />
+                                                </Button>
+                                                <input 
+                                                    type="file" 
+                                                    id="discuss-attach" 
+                                                    style={{ display: 'none' }} 
+                                                    multiple
+                                                    onChange={async (e) => {
+                                                        const files = e.target.files;
+                                                        if (!files || files.length === 0) return;
+                                                        setIsSaving(true);
+                                                        try {
+                                                            let newTxt = '';
+                                                            for (let i=0; i<files.length; i++) {
+                                                                const file = files[i];
+                                                                if (file.size > 52428800) { alert('File quá lớn'); continue; }
+                                                                const fd = new FormData(); fd.append('file', file);
+                                                                const res = await fetch('/api/upload', { method: 'POST', body: fd });
+                                                                if (!res.ok) continue;
+                                                                const data = await res.json();
+                                                                if (file.type.startsWith('image/')) {
+                                                                    newTxt += `\n<img src="${data.url}" alt="${file.name}" style="max-width:100%; border-radius:12px; margin-top:8px; display:block;" />`;
+                                                                } else {
+                                                                    newTxt += `\n<a href="${data.url}" target="_blank" style="display:inline-flex; align-items:center; gap:8px; padding:10px 14px; background:rgba(255,255,255,0.2); color:inherit; border-radius:12px; text-decoration:none; margin-top:8px; border:1px solid rgba(255,255,255,0.4); font-weight:500;">📎 ${file.name}</a>`;
+                                                                }
+                                                            }
+                                                            setNewComment(prev => prev + newTxt);
+                                                        } finally { setIsSaving(false); }
+                                                    }} 
+                                                />
                                                 <textarea
                                                     value={newComment}
                                                     onChange={e => setNewComment(e.target.value)}
@@ -996,7 +1045,7 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
                                                                         const res = await fetch('/api/upload', { method: 'POST', body: formData });
                                                                         if (!res.ok) throw new Error('Upload failed');
                                                                         const data = await res.json();
-                                                                        setNewComment(prev => prev + `\n<img src="${data.url}" alt="Pasted Image" style="max-width:100%; border-radius:8px; margin-top:8px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);" />`);
+                                                                        setNewComment(prev => prev + `\n<img src="${data.url}" alt="Pasted Image" style="max-width:100%; border-radius:12px; margin-top:8px; display:block; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);" />`);
                                                                     } catch (err) {
                                                                         alert('Lỗi tải hình ảnh từ clipboard');
                                                                     } finally {
@@ -1006,38 +1055,44 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
                                                             }
                                                         }
                                                     }}
-                                                    placeholder="Gõ tin nhắn... (Enter để gửi, Shift+Enter để xuống dòng. Hỗ trợ Ctrl+V dán ảnh)"
+                                                    placeholder="Gõ tin nhắn... (Enter để gửi, Shift+Enter xuống dòng, Hỗ trợ dán ảnh)"
                                                     style={{ 
-                                                        width: '100%', 
-                                                        minHeight: '48px', 
-                                                        maxHeight: '150px',
-                                                        padding: '0.75rem 1rem', 
-                                                        borderRadius: '24px', 
-                                                        border: '1px solid #cbd5e1', 
+                                                        flex: 1, 
+                                                        minHeight: '24px', 
+                                                        maxHeight: '120px',
+                                                        padding: '0.65rem 0.5rem', 
+                                                        borderRadius: '0', 
+                                                        border: 'none', 
+                                                        backgroundColor: 'transparent',
                                                         resize: 'none', 
                                                         fontSize: '0.95rem',
                                                         outline: 'none',
-                                                        boxShadow: 'inset 0 1px 2px rgb(0 0 0 / 0.05)'
+                                                        color: '#1e293b'
                                                     }}
                                                     rows={1}
                                                 />
+                                                <Button 
+                                                    type="submit" 
+                                                    disabled={isSaving || !newComment.trim()} 
+                                                    style={{ 
+                                                        borderRadius: '50%', 
+                                                        width: '44px', 
+                                                        height: '44px', 
+                                                        padding: 0, 
+                                                        display: 'flex', 
+                                                        alignItems: 'center', 
+                                                        justifyContent: 'center',
+                                                        flexShrink: 0,
+                                                        background: (!isSaving && newComment.trim()) ? 'linear-gradient(135deg, var(--primary) 0%, #3b82f6 100%)' : '#e2e8f0',
+                                                        border: 'none',
+                                                        color: (!isSaving && newComment.trim()) ? 'white' : '#94a3b8',
+                                                        boxShadow: (!isSaving && newComment.trim()) ? '0 4px 15px rgba(59, 130, 246, 0.4)' : 'none',
+                                                        transition: 'all 0.3s'
+                                                    }}
+                                                >
+                                                    <Send size={18} style={{ marginLeft: '3px' }} />
+                                                </Button>
                                             </div>
-                                            <Button 
-                                                type="submit" 
-                                                disabled={isSaving || !newComment.trim()} 
-                                                style={{ 
-                                                    borderRadius: '50%', 
-                                                    width: '48px', 
-                                                    height: '48px', 
-                                                    padding: 0, 
-                                                    display: 'flex', 
-                                                    alignItems: 'center', 
-                                                    justifyContent: 'center',
-                                                    flexShrink: 0
-                                                }}
-                                            >
-                                                <Send size={20} style={{ marginLeft: '2px' }} />
-                                            </Button>
                                         </form>
                                     </div>
                                 </>
@@ -1047,88 +1102,200 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
                 )}
 
                 {activeTab === 'ISSUES' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h2 style={{ margin: 0, fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <Flag size={24} color="var(--primary)" /> Danh Sách Vấn Đề (Issue Log)
-                            </h2>
-                            <Button variant="primary" onClick={() => alert('Đang phát triển form Thêm Vấn Đề (Phase 3)')}>
-                                <Plus size={16} style={{ marginRight: '8px' }} /> Ghi Nhận Sự Cố & Vấn Đề
-                            </Button>
-                        </div>
-                        
-                        {!project.issues || project.issues.length === 0 ? (
-                            getEmptyState('sự cố hoặc vấn đề nào (Risk/Issues)', 'Tất cả siêu mượt! Chưa có vấn đề phát sinh nào được ghi nhận làm chậm dự án.', Flag, '#')
-                        ) : (
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
-                                {project.issues.map((issue: any) => {
-                                    const ragColors: Record<string, { bg: string, text: string, border: string, label: string }> = {
-                                        'RED': { bg: '#fee2e2', text: '#ef4444', border: '#fca5a5', label: 'Nghiêm trọng (Blocker)' },
-                                        'AMBER': { bg: '#fef3c7', text: '#f59e0b', border: '#fcd34d', label: 'Cảnh báo (Warning)' },
-                                        'GREEN': { bg: '#dcfce7', text: '#10b981', border: '#86efac', label: 'Chấp nhận được' },
-                                    };
-                                    
-                                    const c = ragColors[issue.severity || 'AMBER'];
-                                    
-                                    return (
-                                        <Card key={issue.id} style={{ borderLeft: `6px solid ${c.text}`, overflow: 'hidden' }}>
-                                            <div style={{ padding: '1.25rem', backgroundColor: c.bg + '30' }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                                                    <span style={{ 
-                                                        padding: '4px 10px', 
-                                                        backgroundColor: c.bg, 
-                                                        color: c.text, 
-                                                        borderRadius: '16px', 
-                                                        fontSize: '0.75rem', 
-                                                        fontWeight: 700, 
-                                                        border: `1px solid ${c.border}` 
-                                                    }}>
-                                                        RAG: {c.label}
-                                                    </span>
-                                                    <span style={{
-                                                        padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600,
-                                                        backgroundColor: issue.status === 'RESOLVED' || issue.status === 'CLOSED' ? '#dcfce7' : '#f1f5f9',
-                                                        color: issue.status === 'RESOLVED' || issue.status === 'CLOSED' ? '#16a34a' : 'var(--text-main)',
-                                                        border: '1px solid var(--border)'
-                                                    }}>
-                                                        {issue.status}
-                                                    </span>
-                                                </div>
-                                                
-                                                <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.1rem', color: 'var(--text-main)' }}>{issue.title}</h3>
-                                                <p style={{ margin: '0 0 1rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>{issue.description || 'Không có mô tả chi tiết'}</p>
-                                                
-                                                {issue.mitigationPlan && (
-                                                    <div style={{ padding: '0.75rem', backgroundColor: 'rgba(255,255,255,0.6)', borderRadius: '8px', border: '1px dashed #cbd5e1', marginBottom: '1rem' }}>
-                                                        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem', textTransform: 'uppercase' }}>Phương án khắc phục (Mitigation)</div>
-                                                        <div style={{ fontSize: '0.85rem' }}>{issue.mitigationPlan}</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+                        {/* SECTION 1: ISSUES */}
+                        <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                <h2 style={{ margin: 0, fontSize: '1.35rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <Flag size={20} color="#ef4444" /> Sự Cố (Issues)
+                                </h2>
+                                <Button variant="primary" onClick={() => { setEditingIssueData(null); setIsIssueModalOpen(true); }}>
+                                    <Plus size={16} style={{ marginRight: '8px' }} /> Ghi Nhận Sự Cố & Vấn Đề
+                                </Button>
+                            </div>
+                            
+                            {!project.issues || project.issues.length === 0 ? (
+                                getEmptyState('Sự Cố (Issue)', 'Không có sự cố nào cản trở dự án ở hiện tại.', Flag, '#')
+                            ) : (
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
+                                    {project.issues.map((issue: any) => {
+                                        const ragColors: Record<string, { bg: string, text: string, border: string, label: string }> = {
+                                            'RED': { bg: '#fee2e2', text: '#ef4444', border: '#fca5a5', label: 'Nghiêm trọng (Blocker)' },
+                                            'AMBER': { bg: '#fef3c7', text: '#f59e0b', border: '#fcd34d', label: 'Cảnh báo (Warning)' },
+                                            'GREEN': { bg: '#dcfce7', text: '#10b981', border: '#86efac', label: 'Chấp nhận được' },
+                                        };
+                                        const c = ragColors[issue.severity || 'AMBER'];
+                                        
+                                        return (
+                                            <Card key={issue.id} style={{ borderLeft: `6px solid ${c.text}`, overflow: 'hidden' }}>
+                                                <div style={{ padding: '1.25rem', backgroundColor: c.bg + '30', display: 'flex', flexDirection: 'column', height: '100%' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                                                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                                            <button 
+                                                                onClick={() => { setEditingIssueData(issue); setIsIssueModalOpen(true); }}
+                                                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', display: 'flex', alignItems: 'center', padding: '2px' }}
+                                                            >
+                                                                <Edit2 size={14} />
+                                                            </button>
+                                                            <span style={{ padding: '4px 10px', backgroundColor: c.bg, color: c.text, borderRadius: '16px', fontSize: '0.75rem', fontWeight: 700, border: `1px solid ${c.border}` }}>
+                                                                {c.label}
+                                                            </span>
+                                                        </div>
+                                                        <select
+                                                            value={issue.status}
+                                                            onChange={async (e) => {
+                                                                setIsSaving(true);
+                                                                try {
+                                                                    await updateProjectIssueStatus(issue.id, e.target.value, project.id);
+                                                                    router.refresh();
+                                                                } finally { setIsSaving(false); }
+                                                            }}
+                                                            disabled={isSaving}
+                                                            style={{
+                                                                padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600,
+                                                                backgroundColor: issue.status === 'RESOLVED' || issue.status === 'CLOSED' ? '#dcfce7' : 'white',
+                                                                color: issue.status === 'RESOLVED' || issue.status === 'CLOSED' ? '#16a34a' : 'var(--text-main)',
+                                                                border: '1px solid var(--border)', cursor: 'pointer', outline: 'none'
+                                                            }}
+                                                        >
+                                                            <option value="OPEN">Mở (Open)</option>
+                                                            <option value="IN_PROGRESS">Đang xử lý</option>
+                                                            <option value="RESOLVED">Đã giải quyết</option>
+                                                            <option value="CLOSED">Đã đóng</option>
+                                                        </select>
                                                     </div>
-                                                )}
-                                                
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Người xử lý:</div>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                                            {issue.assignedTo ? (
-                                                                <>
-                                                                    <img src={issue.assignedTo.avatar || '/default-avatar.png'} alt="user" style={{ width: '20px', height: '20px', borderRadius: '50%' }} />
-                                                                    <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>{issue.assignedTo.name}</span>
-                                                                </>
-                                                            ) : (
-                                                                <span style={{ fontSize: '0.8rem', fontStyle: 'italic', color: 'var(--danger)' }}>Chưa chỉ định</span>
-                                                            )}
+                                                    
+                                                    <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.1rem', color: 'var(--text-main)' }}>{issue.title}</h3>
+                                                    <p style={{ margin: '0 0 1rem', fontSize: '0.9rem', color: 'var(--text-muted)', flex: 1 }}>{issue.description || 'Không có mô tả chi tiết'}</p>
+                                                    
+                                                    {issue.mitigationPlan && (
+                                                        <div style={{ padding: '0.75rem', backgroundColor: 'rgba(255,255,255,0.6)', borderRadius: '8px', border: '1px dashed rgba(0,0,0,0.1)', marginBottom: '1rem' }}>
+                                                            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem', textTransform: 'uppercase' }}>PA khắc phục (Mitigation)</div>
+                                                            <div style={{ fontSize: '0.85rem' }}>{issue.mitigationPlan}</div>
+                                                        </div>
+                                                    )}
+                                                    
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Người xử lý:</div>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                                                {issue.assignedTo ? (
+                                                                    <>
+                                                                        <img src={issue.assignedTo.avatar || '/default-avatar.png'} alt="user" style={{ width: '20px', height: '20px', borderRadius: '50%' }} />
+                                                                        <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>{issue.assignedTo.name}</span>
+                                                                    </>
+                                                                ) : (
+                                                                    <span style={{ fontSize: '0.8rem', fontStyle: 'italic', color: 'var(--danger)' }}>Chưa chỉ định</span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                            {formatDate(new Date(issue.createdAt))}
                                                         </div>
                                                     </div>
-                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                        Báo cáo: {formatDate(new Date(issue.createdAt))}
+                                                </div>
+                                            </Card>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* SECTION 2: RISKS */}
+                        <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderTop: '1px dashed #cbd5e1', paddingTop: '2.5rem' }}>
+                                <h2 style={{ margin: 0, fontSize: '1.35rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <AlertTriangle size={20} color="#f59e0b" /> Quản Trị Rủi Ro (Risks)
+                                </h2>
+                                <Button variant="secondary" onClick={() => { setEditingRiskData(null); setIsRiskModalOpen(true); }}>
+                                    <AlertTriangle size={16} style={{ marginRight: '8px' }} /> Đánh Giá Rủi Ro
+                                </Button>
+                            </div>
+
+                            {!project.risks || project.risks.length === 0 ? (
+                                getEmptyState('Rủi ro (Risk)', 'Dự án hiện tại không có rủi ro tiềm ẩn nào được cấu hình.', AlertTriangle, '#')
+                            ) : (
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
+                                    {project.risks.map((risk: any) => {
+                                        const impactColors: Record<string, { bg: string, text: string }> = {
+                                            'LOW': { bg: '#e0f2fe', text: '#0284c7' },       // Blue
+                                            'MEDIUM': { bg: '#fef3c7', text: '#d97706' },    // Amber
+                                            'HIGH': { bg: '#ffedd5', text: '#ea580c' },      // Orange
+                                            'CRITICAL': { bg: '#fee2e2', text: '#dc2626' },  // Red
+                                        };
+                                        const c = impactColors[risk.impact || 'MEDIUM'];
+                                        
+                                        return (
+                                            <Card key={risk.id} style={{ display: 'flex', flexDirection: 'column' }}>
+                                                <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', height: '100%' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                                                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                                            <button 
+                                                                onClick={() => { setEditingRiskData(risk); setIsRiskModalOpen(true); }}
+                                                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', display: 'flex', alignItems: 'center', padding: '2px' }}
+                                                            >
+                                                                <Edit2 size={14} />
+                                                            </button>
+                                                            <span style={{ padding: '4px 10px', backgroundColor: c.bg, color: c.text, borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600 }}>
+                                                                Tác động: {risk.impact}
+                                                            </span>
+                                                        </div>
+                                                        <select
+                                                            value={risk.status}
+                                                            onChange={async (e) => {
+                                                                setIsSaving(true);
+                                                                try {
+                                                                    await updateProjectRiskStatus(risk.id, e.target.value, project.id);
+                                                                    router.refresh();
+                                                                } finally { setIsSaving(false); }
+                                                            }}
+                                                            disabled={isSaving}
+                                                            style={{
+                                                                padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600,
+                                                                backgroundColor: risk.status === 'MITIGATED' || risk.status === 'RESOLVED' ? '#dcfce7' : '#f1f5f9',
+                                                                color: risk.status === 'MITIGATED' || risk.status === 'RESOLVED' ? '#16a34a' : 'var(--text-main)',
+                                                                border: '1px solid var(--border)', cursor: 'pointer', outline: 'none'
+                                                            }}
+                                                        >
+                                                            <option value="OPEN">Đang theo dõi (Open)</option>
+                                                            <option value="MITIGATED">Đã phòng ngừa (Mitigated)</option>
+                                                            <option value="OCCURRED">Đã xảy ra sự cố</option>
+                                                            <option value="RESOLVED">Đã giải quyết</option>
+                                                        </select>
+                                                    </div>
+                                                    
+                                                    <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.1rem', color: 'var(--text-main)' }}>{risk.title}</h3>
+                                                    <p style={{ margin: '0 0 1.5rem', fontSize: '0.9rem', color: 'var(--text-muted)', flex: 1 }}>{risk.description || 'Không có mô tả chi tiết'}</p>
+                                                    
+                                                    {/* Probability Bar */}
+                                                    <div style={{ marginBottom: '1.5rem' }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem', fontWeight: 600 }}>
+                                                            <span>Xác suất xảy ra</span>
+                                                            <span style={{ color: risk.probability > 70 ? '#ef4444' : risk.probability > 40 ? '#f59e0b' : '#10b981' }}>
+                                                                {risk.probability}%
+                                                            </span>
+                                                        </div>
+                                                        <div style={{ width: '100%', height: '6px', backgroundColor: '#e2e8f0', borderRadius: '3px', overflow: 'hidden' }}>
+                                                            <div style={{ width: `${risk.probability}%`, backgroundColor: risk.probability > 70 ? '#ef4444' : risk.probability > 40 ? '#f59e0b' : '#10b981', height: '100%' }} />
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                            <img src={risk.creator?.avatar || '/default-avatar.png'} alt="user" style={{ width: '20px', height: '20px', borderRadius: '50%' }} />
+                                                            <span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-muted)' }}>{risk.creator?.name} ghi nhận</span>
+                                                        </div>
+                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                            {formatDate(new Date(risk.createdAt))}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </Card>
-                                    );
-                                })}
-                            </div>
-                        )}
+                                            </Card>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
 
@@ -1276,57 +1443,168 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
                 )}
 
                 {activeTab === 'REPORTS' && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '1.5rem' }}>
-                        <Card style={{ padding: '1.5rem' }}>
-                            <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem' }}>Tỷ lệ hoàn thành công việc</h3>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1rem' }}>
-                                <div style={{ position: 'relative', width: '200px', height: '200px', borderRadius: '50%', background: `conic-gradient(var(--primary) ${progress}%, #e2e8f0 ${progress}% 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <div style={{ width: '160px', height: '160px', backgroundColor: 'var(--surface)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
-                                        <span style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--text-main)' }}>{progress}%</span>
-                                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        {/* KPI Summary Row */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem' }}>
+                            <Card style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', borderBottom: '4px solid var(--primary)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)' }}>
+                                    <span style={{ fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase' }}>Tiến độ tổng thể</span>
+                                    <Target size={18} color="var(--primary)" />
                                 </div>
-                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <div style={{ width: '12px', height: '12px', backgroundColor: 'var(--primary)', borderRadius: '2px' }} />
-                                        <span style={{ fontSize: '0.85rem' }}>Đã xong ({completedTasks})</span>
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <div style={{ width: '12px', height: '12px', backgroundColor: '#e2e8f0', borderRadius: '2px' }} />
-                                        <span style={{ fontSize: '0.85rem' }}>Chưa xong ({totalTasks - completedTasks})</span>
-                                    </div>
+                                <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-main)', display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                                    {progress}%
                                 </div>
-                            </div>
-                        </Card>
+                                <div style={{ width: '100%', height: '6px', backgroundColor: '#e2e8f0', borderRadius: '4px', overflow: 'hidden', marginTop: '0.5rem' }}>
+                                    <div style={{ width: `${progress}%`, backgroundColor: 'var(--primary)', height: '100%', borderRadius: '4px' }} />
+                                </div>
+                            </Card>
 
-                        <Card style={{ padding: '1.5rem' }}>
-                            <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem' }}>Báo cáo khối lượng theo trạng thái</h3>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                {['TODO', 'IN_PROGRESS', 'REVIEW', 'CANCELLED'].map(status => {
-                                    const count = project.tasks?.filter((t: any) => t.status === status).length || 0;
-                                    const pct = totalTasks > 0 ? (count / totalTasks) * 100 : 0;
-                                    const colors: Record<string, string> = {
-                                        'TODO': '#f59e0b', 'IN_PROGRESS': '#3b82f6', 'REVIEW': '#8b5cf6', 'CANCELLED': '#ef4444'
-                                    };
-                                    const labels: Record<string, string> = {
-                                        'TODO': 'Chuẩn bị', 'IN_PROGRESS': 'Đang làm', 'REVIEW': 'Chờ duyệt', 'CANCELLED': 'Hủy'
-                                    };
-                                    return (
-                                        <div key={status}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.25rem' }}>
-                                                <span>{labels[status]}</span>
-                                                <span style={{ fontWeight: 600 }}>{count}</span>
-                                            </div>
-                                            <div style={{ width: '100%', height: '8px', backgroundColor: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
-                                                <div style={{ width: `${pct}%`, backgroundColor: colors[status], height: '100%' }} />
-                                            </div>
+                            <Card style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', borderBottom: '4px solid #10b981' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)' }}>
+                                    <span style={{ fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase' }}>Tài chính (Lãi/Lỗ)</span>
+                                    <DollarSign size={18} color="#10b981" />
+                                </div>
+                                <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#10b981', display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(
+                                        (project.quotes?.reduce((acc: number, q: any) => acc + (q.status === 'ACCEPTED' ? q.totalAmount : 0), 0) || 0) - 
+                                        (project.expenses?.reduce((acc: number, e: any) => acc + (e.status === 'APPROVED' ? e.amount : 0), 0) || 0)
+                                    )}
+                                </div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                    <ArrowUpRight size={14} color="#10b981" /> Tạm tính từ Báo Giá & Chi Phí
+                                </div>
+                            </Card>
+
+                            <Card style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', borderBottom: '4px solid #f59e0b' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)' }}>
+                                    <span style={{ fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase' }}>Vấn đề & Rủi ro</span>
+                                    <Flag size={18} color="#f59e0b" />
+                                </div>
+                                <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-main)', display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                                    {project.issues?.length || 0}
+                                </div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                    {project.issues?.filter((i:any) => i.status !== 'CLOSED').length || 0} vấn đề đang mở
+                                </div>
+                            </Card>
+
+                            <Card style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', borderBottom: '4px solid #8b5cf6' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)' }}>
+                                    <span style={{ fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase' }}>Team & Nguồn lực</span>
+                                    <Users size={18} color="#8b5cf6" />
+                                </div>
+                                <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-main)', display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                                    {project.members?.length || 0} <span style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--text-muted)' }}>người</span>
+                                </div>
+                                <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.5rem' }}>
+                                    {project.members?.slice(0, 5).map((m: any) => (
+                                        <div key={m.id} style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: 600, color: 'var(--primary)', border: '1px solid white', marginLeft: '-8px' }}>
+                                            {m.user?.name?.charAt(0).toUpperCase() || 'U'}
                                         </div>
-                                    );
-                                })}
-                            </div>
-                        </Card>
+                                    ))}
+                                </div>
+                            </Card>
+                        </div>
+
+                        {/* Detailed Charts Row */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: '1.5rem' }}>
+                            {/* Breakdown of Tasks */}
+                            <Card style={{ padding: '1.5rem' }}>
+                                <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <LayoutDashboard size={18} color="var(--primary)" /> Phân bổ khối lượng công việc (Workload)
+                                </h3>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    {['TODO', 'IN_PROGRESS', 'REVIEW', 'CANCELLED'].map(status => {
+                                        const count = project.tasks?.filter((t: any) => t.status === status).length || 0;
+                                        const pct = totalTasks > 0 ? Math.round((count / totalTasks) * 100) : 0;
+                                        const config: Record<string, { color: string, label: string }> = {
+                                            'TODO': { color: '#f59e0b', label: 'Chuẩn bị' },
+                                            'IN_PROGRESS': { color: '#3b82f6', label: 'Đang làm' },
+                                            'REVIEW': { color: '#8b5cf6', label: 'Chờ duyệt' },
+                                            'CANCELLED': { color: '#ef4444', label: 'Hủy/Tạm dừng' }
+                                        };
+                                        return (
+                                            <div key={status}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.4rem' }}>
+                                                    <span style={{ fontWeight: 500 }}>{config[status].label}</span>
+                                                    <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>{count} task(s) - {pct}%</span>
+                                                </div>
+                                                <div style={{ width: '100%', height: '10px', backgroundColor: '#f1f5f9', borderRadius: '5px', overflow: 'hidden' }}>
+                                                    <div style={{ width: `${pct}%`, backgroundColor: config[status].color, height: '100%', transition: 'width 1s ease-in-out' }} />
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </Card>
+
+                            {/* Timeline Health */}
+                            <Card style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
+                                <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <Milestone size={18} color="#10b981" /> Sức khỏe Tiến độ
+                                </h3>
+                                
+                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '1.5rem' }}>
+                                    {(() => {
+                                        const endDate = project.endDate ? new Date(project.endDate) : null;
+                                        const today = new Date();
+                                        const totalDays = (endDate && project.startDate) ? Math.ceil((endDate.getTime() - new Date(project.startDate).getTime()) / (1000 * 3600 * 24)) : 0;
+                                        const daysPassed = project.startDate ? Math.ceil((today.getTime() - new Date(project.startDate).getTime()) / (1000 * 3600 * 24)) : 0;
+                                        
+                                        const isOverdue = endDate && today > endDate;
+                                        const timePct = totalDays > 0 ? Math.min(100, Math.max(0, (daysPassed / totalDays) * 100)) : 0;
+                                        const timeProgressDiff = progress - timePct;
+                                        
+                                        let statusColor = '#10b981';
+                                        let statusText = 'Đúng tiến độ';
+                                        let statusIcon = '✓';
+                                        
+                                        if (isOverdue && progress < 100) {
+                                            statusColor = '#ef4444'; statusText = 'Trễ hạn'; statusIcon = '⚠';
+                                        } else if (timeProgressDiff < -15) {
+                                            statusColor = '#f59e0b'; statusText = 'Nguy cơ chậm trễ'; statusIcon = '!';
+                                        } else if (timeProgressDiff > 20) {
+                                            statusColor = '#3b82f6'; statusText = 'Vượt tiến độ'; statusIcon = '🚀';
+                                        }
+
+                                        if (!endDate) {
+                                            return <div style={{ color: 'var(--text-muted)' }}>Chưa cấu hình ngày kết thúc</div>;
+                                        }
+
+                                        return (
+                                            <>
+                                                <div style={{ width: '120px', height: '120px', borderRadius: '50%', backgroundColor: `${statusColor}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `4px solid ${statusColor}` }}>
+                                                    <span style={{ fontSize: '3rem' }}>{statusIcon}</span>
+                                                </div>
+                                                <div style={{ textAlign: 'center' }}>
+                                                    <h4 style={{ margin: '0 0 0.5rem', fontSize: '1.25rem', color: statusColor }}>{statusText}</h4>
+                                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                                        Đã tiêu hao <b>{Math.round(timePct)}%</b> thời gian quỹ đạo<br/>
+                                                        để hoàn thành <b>{progress}%</b> khối lượng công việc.
+                                                    </div>
+                                                </div>
+                                            </>
+                                        );
+                                    })()}
+                                </div>
+                            </Card>
+                        </div>
                     </div>
                 )}
             </div>
+
+            <CreateIssueModal 
+                isOpen={isIssueModalOpen}
+                onClose={() => { setIsIssueModalOpen(false); setEditingIssueData(null); }}
+                projectId={project.id}
+                initialData={editingIssueData}
+            />
+            <CreateRiskModal 
+                isOpen={isRiskModalOpen}
+                onClose={() => { setIsRiskModalOpen(false); setEditingRiskData(null); }}
+                projectId={project.id}
+                initialData={editingRiskData}
+            />
         </div>
     );
 }

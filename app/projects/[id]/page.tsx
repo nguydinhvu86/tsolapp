@@ -46,6 +46,12 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
                     assignedTo: { select: { id: true, name: true, avatar: true } }
                 }
             },
+            risks: {
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    creator: { select: { id: true, name: true, avatar: true } }
+                }
+            },
             tasks: {
                 include: {
                     assignees: { include: { user: { select: { id: true, name: true, avatar: true } } } },
