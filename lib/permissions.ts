@@ -125,8 +125,8 @@ export async function verifyActionPermission(requiredPermission: string, throwEr
 
 /**
  * Validates ownership logic for EDIT/DELETE actions.
- * First checks for _EDIT_ALL or _DELETE_ALL. If present, passes.
- * If not, checks for _EDIT_OWN or _DELETE_OWN. If present, verifies ownership.
+ * First checks if the user has the base EDIT/DELETE permission.
+ * Then checks if they have VIEW_ALL (global access) or VIEW_OWN (scoped access).
  * @param actionType 'EDIT' | 'DELETE'
  * @param resourceId e.g., 'SUPPLIERS'
  * @param recordCreatorId The ID of the user who created the record
@@ -147,29 +147,38 @@ export async function verifyActionOwnership(
     if (session.user.role === 'ADMIN') return session.user;
 
     const permissions = session.user.permissions as string[] || [];
-    const allPerm = `${resourceId}_${actionType}_ALL`;
-    const ownPerm = `${resourceId}_${actionType}_OWN`;
+    const baseActionPerm = `${resourceId}_${actionType}`;
 
-    // 1. Has ALL permission?
-    if (permissions.includes(allPerm)) {
+    // 1. Check if user actually has the base EDIT or DELETE permission for this resource
+    if (!permissions.includes(baseActionPerm)) {
+        throw new Error(`Forbidden: Bạn không có quyền thao tác này (${baseActionPerm})`);
+    }
+
+    const viewAllPerm = `${resourceId}_VIEW_ALL`;
+    const viewOwnPerm = `${resourceId}_VIEW_OWN`;
+
+    // 2. If they have VIEW_ALL, they can edit/delete any record 
+    //    because they have the base action perm + global view scope
+    if (permissions.includes(viewAllPerm)) {
         return session.user;
     }
 
-    // 2. Has OWN permission?
-    if (permissions.includes(ownPerm)) {
+    // 3. If they only have VIEW_OWN, they can only edit/delete their own 
+    if (permissions.includes(viewOwnPerm)) {
         if (session.user.id === recordCreatorId || recordManagerIds.includes(session.user.id)) {
             return session.user;
         } else {
-             throw new Error(`Forbidden: Bản ghi này thuộc về người khác, bạn chỉ có quyền thao tác trên dữ liệu của mình (${ownPerm})`);
+             throw new Error(`Forbidden: Bản ghi này thuộc về người khác, bạn chỉ có quyền thao tác trên dữ liệu của mình`);
         }
     }
 
-    // 3. Intrinsic Ownership fallback
-    // Even if the user lacks the explicit string permission, if they are recorded as the creator or an explicit manager/participant, they are granted OWN access.
+    // 4. Intrinsic Ownership fallback
+    // Even if they lack formal VIEW_OWN permission, if they are recorded as the creator or an explicit manager, 
+    // we grant them access for this specific record.
     if (session.user.id === recordCreatorId || recordManagerIds.includes(session.user.id)) {
         return session.user;
     }
 
-    // 4. No permission at all
-    throw new Error(`Forbidden: Bạn không có quyền thao tác trên tài nguyên này (${allPerm} / ${ownPerm})`);
+    // 5. No valid scope found
+    throw new Error(`Forbidden: Bạn không có quyền xem hoặc thao tác trên bản ghi này.`);
 }

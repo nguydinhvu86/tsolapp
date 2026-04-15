@@ -1,3 +1,5 @@
+import DOMPurify from 'isomorphic-dompurify';
+
 export function formatCurrencyInHtml(html: string): string {
     if (!html) return html;
 

@@ -36,6 +36,13 @@ export async function GET(req: NextRequest, { params }: { params: { path: string
 
         const headers = new Headers();
         headers.set('Content-Type', mimeType);
+        
+        // Security check: Force download for vector formats explicitly to prevent inline JS execution
+        if (ext === '.svg') {
+            headers.set('Content-Disposition', `attachment; filename="${path.basename(filePath)}"`);
+            headers.set('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'");
+        }
+
         headers.set('Content-Length', stats.size.toString());
         // Cache control to help browsers
         headers.set('Cache-Control', 'public, max-age=86400, stale-while-revalidate=86400');

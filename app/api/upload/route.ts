@@ -18,6 +18,14 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
         }
 
+        const rawExt = path.extname(file.name).toLowerCase();
+        
+        // Strict File Extension Whitelist
+        const allowedExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.csv', '.ppt', '.pptx', '.txt', '.zip', '.rar', '.mp4', '.webm'];
+        if (!allowedExtensions.includes(rawExt)) {
+            return NextResponse.json({ error: `File type ${rawExt} is not allowed for security reasons.` }, { status: 415 });
+        }
+
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
 
