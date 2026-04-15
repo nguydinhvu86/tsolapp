@@ -7,6 +7,7 @@ import { Table } from '@/app/components/ui/Table';
 import { Modal } from '@/app/components/ui/Modal';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { Plus, Trash2, Edit2, ChevronUp, ChevronDown, List, Target, Users, LayoutDashboard, Clock, Pause, CheckCircle, XCircle } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { createProject, updateProject, deleteProject } from './actions';
@@ -21,6 +22,17 @@ export function ProjectListClient({ initialProjects, users, customers = [] }: { 
     const canCreate = isAdmin || permissions.includes('PROJECTS_CREATE');
     const canEdit = isAdmin || permissions.includes('PROJECTS_EDIT');
     const canDelete = isAdmin || permissions.includes('PROJECTS_DELETE');
+
+    const [isMounted, setIsMounted] = React.useState(false);
+    const [localProjects, setLocalProjects] = React.useState<any[]>(initialProjects);
+
+    React.useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    React.useEffect(() => {
+        setLocalProjects(initialProjects);
+    }, [initialProjects]);
 
     const [isCreateModalOpen, setCreateModalOpen] = useState(false);
     const [title, setTitle] = useState('');
@@ -87,8 +99,34 @@ export function ProjectListClient({ initialProjects, users, customers = [] }: { 
         }
     };
 
+    const onDragEnd = async (result: any) => {
+        const { destination, source, draggableId } = result;
+        if (!destination) return;
+        if (destination.droppableId === source.droppableId && destination.index === source.index) return;
+
+        const newStatus = destination.droppableId;
+        const projectId = draggableId;
+
+        const updatedLocalProjects = localProjects.map((p) => {
+            if (p.id === projectId) return { ...p, status: newStatus };
+            return p;
+        });
+        setLocalProjects(updatedLocalProjects);
+
+        try {
+            if (session?.user?.id) {
+                await updateProject(projectId, { status: newStatus }, session.user.id);
+                router.refresh();
+            }
+        } catch (error) {
+            console.error("Lỗi cập nhật trạng thái", error);
+            setLocalProjects(initialProjects);
+            alert("Lỗi kéo thả cập nhật trạng thái. Chỉ người tạo hoặc người quản trị mới có thể cập nhật.");
+        }
+    };
+
     const filteredProjects = React.useMemo(() => {
-        return initialProjects.filter(p => {
+        return localProjects.filter(p => {
             const matchesSearch = (p.title || '').toLowerCase().includes(searchQuery.toLowerCase()) || (p.description || '').toLowerCase().includes(searchQuery.toLowerCase());
             const matchesStatus = statusFilter === 'ALL' || p.status === statusFilter;
             const matchesAssignee = assigneeFilter === 'ALL' || p.assignees?.some((a: any) => a.userId === assigneeFilter);
@@ -373,6 +411,14 @@ export function ProjectListClient({ initialProjects, users, customers = [] }: { 
                                                     {project.title}
                                                 </Link>
                                             </div>
+                                            <div style={{ display: 'flex', gap: '8px', marginTop: '6px', marginBottom: '4px' }}>
+                                                <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backgroundColor: project.priority === 'URGENT' ? '#fef2f2' : project.priority === 'HIGH' ? '#fffbeb' : '#f8fafc', color: project.priority === 'URGENT' ? '#ef4444' : project.priority === 'HIGH' ? '#d97706' : '#64748b' }}>
+                                                    {project.priority || 'MEDIUM'}
+                                                </span>
+                                                <span style={{ fontSize: '0.65rem', fontWeight: 600, padding: '2px 6px', borderRadius: '4px', backgroundColor: '#f1f5f9', color: '#64748b' }}>
+                                                    {project.code || 'PRJ'}
+                                                </span>
+                                            </div>
                                             {project.description && (
                                                 <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '300px' }}>
                                                     {project.description}
@@ -461,7 +507,8 @@ export function ProjectListClient({ initialProjects, users, customers = [] }: { 
             </Card>
             )}
 
-            {viewMode === 'KANBAN' && (
+            {viewMode === 'KANBAN' && isMounted && (
+                <DragDropContext onDragEnd={onDragEnd}>
                 <div style={{ display: 'flex', gap: '1.5rem', overflowX: 'auto', paddingBottom: '1rem', minHeight: '600px', alignItems: 'flex-start' }}>
                     {['TODO', 'IN_PROGRESS', 'PAUSED', 'DONE', 'CANCELLED'].map(colStatus => {
                         const colProjects = sortedProjects.filter(p => p.status === colStatus);
@@ -470,7 +517,13 @@ export function ProjectListClient({ initialProjects, users, customers = [] }: { 
                         const headerColors: any = { 'TODO': '#64748b', 'IN_PROGRESS': '#0284c7', 'PAUSED': '#ca8a04', 'DONE': '#16a34a', 'CANCELLED': '#dc2626' };
 
                         return (
-                            <div key={colStatus} style={{ minWidth: '320px', width: '320px', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', maxHeight: '75vh' }}>
+                            <Droppable key={colStatus} droppableId={colStatus}>
+                                {(provided) => (
+                            <div 
+                                ref={provided.innerRef}
+                                {...provided.droppableProps}
+                                style={{ minWidth: '320px', width: '320px', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', maxHeight: '75vh' }}
+                            >
                                 <div style={{ padding: '1rem', borderBottom: '2px solid transparent', borderBottomColor: colColors[colStatus], display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'white', borderTopLeftRadius: '12px', borderTopRightRadius: '12px' }}>
                                     <div style={{ fontWeight: 700, fontSize: '0.95rem', color: headerColors[colStatus] }}>
                                         {colTitles[colStatus]}
@@ -481,13 +534,25 @@ export function ProjectListClient({ initialProjects, users, customers = [] }: { 
                                 </div>
                                 
                                 <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem', overflowY: 'auto', flex: 1 }}>
-                                    {colProjects.map((project: any) => {
+                                    {colProjects.map((project: any, index: number) => {
                                         const isDueSoon = project.dueDate && new Date(project.dueDate).getTime() - new Date().getTime() < 86400000 && project.status !== 'DONE';
                                         
                                         return (
-                                            <div key={project.id} style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', cursor: 'grab', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                            <Draggable key={project.id} draggableId={project.id} index={index} isDragDisabled={!canEdit}>
+                                                {(provided, snapshot) => (
+                                                    <div 
+                                                        ref={provided.innerRef}
+                                                        {...provided.draggableProps}
+                                                        {...provided.dragHandleProps}
+                                                        style={{ 
+                                                            backgroundColor: 'white', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', 
+                                                            boxShadow: snapshot.isDragging ? '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)' : '0 1px 2px rgba(0,0,0,0.05)', 
+                                                            cursor: canEdit ? 'grab' : 'default', display: 'flex', flexDirection: 'column', gap: '0.75rem',
+                                                            ...provided.draggableProps.style 
+                                                        }}
+                                                    >
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                                                         <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backgroundColor: project.priority === 'URGENT' ? '#fef2f2' : project.priority === 'HIGH' ? '#fffbeb' : '#f8fafc', color: project.priority === 'URGENT' ? '#ef4444' : project.priority === 'HIGH' ? '#d97706' : '#64748b' }}>
                                                             {project.priority || 'MEDIUM'}
                                                         </span>
@@ -532,14 +597,20 @@ export function ProjectListClient({ initialProjects, users, customers = [] }: { 
                                                             height: '100%'
                                                         }} />
                                                     </div>
-                                                    <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b' }}>
+                                                    <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b', minWidth: '28px', textAlign: 'right' }}>
                                                         {project.progress || 0}%
                                                     </span>
                                                 </div>
+                                                <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>
+                                                    {project.completedTasks || 0} / {project.totalTasks || 0} công việc con
+                                                </div>
 
-                                            </div>
+                                                    </div>
+                                                )}
+                                            </Draggable>
                                         );
                                     })}
+                                    {provided.placeholder}
                                     
                                     {colProjects.length === 0 && (
                                         <div style={{ padding: '2rem 1rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem', border: '2px dashed #e2e8f0', borderRadius: '8px' }}>
@@ -548,9 +619,12 @@ export function ProjectListClient({ initialProjects, users, customers = [] }: { 
                                     )}
                                 </div>
                             </div>
+                                )}
+                            </Droppable>
                         );
                     })}
                 </div>
+                </DragDropContext>
             )}
 
             {/* Create Project Modal */}
