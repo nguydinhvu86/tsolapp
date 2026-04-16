@@ -16,6 +16,7 @@ import { useSession } from 'next-auth/react';
 import { DocumentManagersPanel } from '@/app/components/shared/DocumentManagersPanel';
 import { EmailLogTable } from '@/app/components/ui/EmailLogTable';
 import { DocumentSignatureBlock } from '@/app/components/ui/DocumentSignatureBlock';
+import * as XLSX from 'xlsx';
 
 export default function SalesEstimateDetailClient({ initialData, customers, products, users, emailTemplates, settings }: any) {
     const router = useRouter();
@@ -45,6 +46,102 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
         navigator.clipboard.writeText(publicUrl);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
+    };
+
+    const handleExportExcel = () => {
+        const wb = XLSX.utils.book_new();
+
+        const data: any[] = [];
+        data.push(['BẢNG BÁO GIÁ']);
+        data.push([`Số: ${estimate.code}`, `Ngày: ${formatDate(estimate.date)}`]);
+        data.push([]);
+        data.push(['THÔNG TIN KHÁCH HÀNG', '', '', 'ĐIỀU KIỆN BÁO GIÁ']);
+        data.push([`Khách hàng: ${estimate.customer?.name || ''}`, '', '', `Hiệu lực đến: ${estimate.validUntil ? formatDate(estimate.validUntil) : '---'}`]);
+        data.push([`Người liên hệ: ${estimate.customer?.phone || ''}`, '', '', `Người lập: ${estimate.creator?.name || ''}`]);
+        data.push([]);
+        
+        let headers = ['STT', 'Sản Phẩm / Dịch Vụ', 'SL', 'ĐVT', 'Đơn Giá', 'Thuế (%)', 'Thành Tiền'];
+        if (estimate.templateType === 'PROJECT_BREAKDOWN') {
+            headers = ['STT', 'Sản Phẩm / Dịch Vụ', 'Hãng SX', 'Bảo Hành', 'SL', 'ĐVT', 'Đ.Giá Vật Tư', 'Đ.Giá N.Công', 'Tiền Vật Tư', 'Tiền N.Công'];
+        } else if (estimate.templateType === 'WITH_IMAGES') {
+            headers = ['STT', 'Sản Phẩm / Dịch Vụ', 'Xuất Xứ', 'Bảo Hành', 'SL', 'ĐVT', 'Đơn Giá', 'Thuế (%)', 'Thành Tiền'];
+        }
+        data.push(headers);
+
+        let currentIndex = 1;
+        estimate.items?.forEach((item: any) => {
+            const row: any[] = [];
+            row.push(item.isSubItem ? '-' : currentIndex++);
+            
+            let name = item.customName || item.product?.name || '';
+            if (item.description) name += `\n${item.description}`;
+            if (item.product?.sku) name += `\nSKU: ${item.product.sku}`;
+            if (estimate.templateType === 'WITH_IMAGES' && item.manufacture) name += `\nHãng: ${item.manufacture}`;
+
+            row.push(item.isSubItem ? `  ↳ ${name}` : name);
+            
+            if (estimate.templateType === 'PROJECT_BREAKDOWN') {
+                row.push(item.manufacture || '');
+                row.push(item.warranty || '');
+                row.push(item.quantity);
+                row.push(item.unit || item.product?.unit || '');
+                row.push(item.unitPrice);
+                row.push(item.laborPrice || 0);
+                row.push(item.quantity * item.unitPrice);
+                row.push(item.quantity * (item.laborPrice || 0));
+            } else if (estimate.templateType === 'WITH_IMAGES') {
+                row.push(item.origin || '');
+                row.push(item.warranty || '');
+                row.push(item.quantity);
+                row.push(item.unit || item.product?.unit || '');
+                row.push(item.unitPrice);
+                row.push(item.taxRate || 0);
+                row.push(item.totalPrice);
+            } else {
+                row.push(item.quantity);
+                row.push(item.unit || item.product?.unit || '');
+                row.push(item.unitPrice);
+                row.push(item.taxRate || 0);
+                row.push(item.totalPrice);
+            }
+            
+            data.push(row);
+        });
+
+        data.push([]);
+        
+        if (estimate.templateType === 'PROJECT_BREAKDOWN') {
+            let sumVatTu = 0;
+            let sumNhanCong = 0;
+            estimate.items?.forEach((i: any) => { sumVatTu += i.quantity * i.unitPrice; sumNhanCong += i.quantity * (i.laborPrice || 0); });
+            const padArray = Array(7).fill('');
+            data.push([...padArray, 'Tổng Cộng Vật Tư:', sumVatTu, '']);
+            data.push([...padArray, 'Tổng Cộng Nhân Công:', sumNhanCong, '']);
+            data.push([...padArray, 'Tổng Cộng Chưa Thuế:', sumVatTu + sumNhanCong, '']);
+            data.push([...padArray, 'VAT Tax:', estimate.taxAmount, '']);
+            data.push([...padArray, 'TỔNG CỘNG (GỒM VAT):', estimate.totalAmount, '']);
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            ws['!cols'] = [{ wch: 5 }, { wch: 40 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
+            XLSX.utils.book_append_sheet(wb, ws, 'BaoGia');
+        } else if (estimate.templateType === 'WITH_IMAGES') {
+            const padArray = Array(6).fill('');
+            data.push([...padArray, 'Tổng Tiền Trước Thuế:', estimate.subTotal, '']);
+            data.push([...padArray, 'Tổng Tiền Thuế:', estimate.taxAmount, '']);
+            data.push([...padArray, 'TỔNG CỘNG:', estimate.totalAmount, '']);
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            ws['!cols'] = [{ wch: 5 }, { wch: 40 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 20 }];
+            XLSX.utils.book_append_sheet(wb, ws, 'BaoGia');
+        } else {
+            const padArray = Array(4).fill('');
+            data.push([...padArray, 'Tổng Tiền Trước Thuế:', estimate.subTotal, '']);
+            data.push([...padArray, 'Tổng Tiền Thuế:', estimate.taxAmount, '']);
+            data.push([...padArray, 'TỔNG CỘNG:', estimate.totalAmount, '']);
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            ws['!cols'] = [{ wch: 5 }, { wch: 50 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 20 }];
+            XLSX.utils.book_append_sheet(wb, ws, 'BaoGia');
+        }
+
+        XLSX.writeFile(wb, `Bao_Gia_${estimate.code}.xlsx`);
     };
 
 
@@ -166,6 +263,13 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                     >
                         <ExternalLink size={16} /> Xem Bản In
                     </Link>
+                    <button
+                        onClick={handleExportExcel}
+                        className="btn btn-secondary hover:bg-emerald-50 transition-colors"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                    >
+                        <FileDown size={16} /> Xuất Excel
+                    </button>
                     <button
                         onClick={() => router.push(`/sales/estimates?edit=${estimate.id}`)}
                         className="btn btn-secondary hover:bg-slate-100 transition-colors"
@@ -335,55 +439,192 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                         <div className="p-4 sm:p-6">
                             {activeTab === 'items' && (
                                 <div className="overflow-x-auto w-full">
-                                    <table className="w-full min-w-[700px] text-left text-sm border-collapse">
-                                        <thead>
-                                            <tr style={{ backgroundColor: '#f8fafc', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>
-                                                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Sản Phẩm</th>
-                                                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Số Lượng</th>
-                                                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Đơn Giá</th>
-                                                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Thuế (%)</th>
-                                                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Thành Tiền</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {estimate.items?.length === 0 ? (
-                                                <tr><td colSpan={4} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Chưa có sản phẩm nào.</td></tr>
-                                            ) : (
-                                                estimate.items?.map((item: any) => (
-                                                    <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: item.isSubItem ? '#f8fafc' : 'transparent' }}>
-                                                        <td style={{ padding: '1rem', paddingLeft: item.isSubItem ? '3rem' : '1rem', fontWeight: 500, color: item.isSubItem ? '#64748b' : '#1e293b' }}>
-                                                            <div className="flex items-center gap-2">
-                                                                {item.isSubItem && <span className="text-gray-400">↳</span>}
-                                                                <span>{item.customName || item.product?.name || 'Sản phẩm tự do'}</span>
-                                                            </div>
-                                                            {item.product?.sku && <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>SKU: {item.product.sku}</div>}
-                                                            {item.description && <div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.25rem', whiteSpace: 'pre-wrap', fontWeight: 400 }}>{item.description}</div>}
-                                                        </td>
-                                                        <td style={{ padding: '1rem', textAlign: 'center', color: '#475569' }}>{item.quantity} {item.unit || item.product?.unit || ''}</td>
-                                                        <td style={{ padding: '1rem', textAlign: 'right', color: '#475569' }}>{formatMoney(item.unitPrice)}</td>
-                                                        <td style={{ padding: '1rem', textAlign: 'center', color: '#475569' }}>{item.taxRate || 0}%</td>
-                                                        <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>{formatMoney(item.totalPrice)}</td>
+                                    {estimate.templateType === 'WITH_IMAGES' ? (
+                                        <table className="w-full min-w-[1000px] text-left text-sm border-collapse">
+                                            <thead>
+                                                <tr style={{ backgroundColor: '#f8fafc', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>
+                                                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>S.Ảnh</th>
+                                                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Sản Phẩm</th>
+                                                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Xuất Xứ</th>
+                                                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Bảo Hành</th>
+                                                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Số Lượng</th>
+                                                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Đơn Giá</th>
+                                                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Thuế (%)</th>
+                                                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Thành Tiền</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {estimate.items?.length === 0 ? (
+                                                    <tr><td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Chưa có sản phẩm nào.</td></tr>
+                                                ) : (
+                                                    estimate.items?.map((item: any) => (
+                                                        <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: item.isSubItem ? '#f8fafc' : 'transparent' }}>
+                                                            <td style={{ padding: '1rem', textAlign: 'center' }}>
+                                                                {item.imageUrl ? <img src={item.imageUrl} alt="img" style={{ maxWidth: '40px', maxHeight: '40px', objectFit: 'contain' }} /> : '-'}
+                                                            </td>
+                                                            <td style={{ padding: '1rem', paddingLeft: item.isSubItem ? '3rem' : '1rem', fontWeight: 500, color: item.isSubItem ? '#64748b' : '#1e293b' }}>
+                                                                <div className="flex items-center gap-2">
+                                                                    {item.isSubItem && <span className="text-gray-400">↳</span>}
+                                                                    <span>{item.customName || item.product?.name || 'Sản phẩm tự do'}</span>
+                                                                </div>
+                                                                {item.product?.sku && <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>SKU: {item.product.sku}</div>}
+                                                                {item.manufacture && <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>Hãng: {item.manufacture}</div>}
+                                                                {item.description && <div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.25rem', whiteSpace: 'pre-wrap', fontWeight: 400 }}>{item.description}</div>}
+                                                            </td>
+                                                            <td style={{ padding: '1rem', textAlign: 'center', color: '#475569' }}>{item.origin || '-'}</td>
+                                                            <td style={{ padding: '1rem', textAlign: 'center', color: '#475569' }}>{item.warranty || '-'}</td>
+                                                            <td style={{ padding: '1rem', textAlign: 'center', color: '#475569' }}>{item.quantity} {item.unit || item.product?.unit || ''}</td>
+                                                            <td style={{ padding: '1rem', textAlign: 'right', color: '#475569' }}>{formatMoney(item.unitPrice)}</td>
+                                                            <td style={{ padding: '1rem', textAlign: 'center', color: '#475569' }}>{item.taxRate || 0}%</td>
+                                                            <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>{formatMoney(item.totalPrice)}</td>
+                                                        </tr>
+                                                    ))
+                                                )}
+                                                {estimate.items?.length > 0 && (
+                                                    <>
+                                                        <tr style={{ backgroundColor: '#f8fafc' }}>
+                                                            <td colSpan={7} style={{ padding: '1rem', textAlign: 'right', color: '#64748b' }}>Tổng tiền trước thuế:</td>
+                                                            <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 500, color: '#1e293b' }}>{formatMoney(estimate.subTotal || 0)}</td>
+                                                        </tr>
+                                                        <tr style={{ backgroundColor: '#f8fafc' }}>
+                                                            <td colSpan={7} style={{ padding: '1rem', textAlign: 'right', color: '#64748b' }}>Tổng tiền thuế:</td>
+                                                            <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 500, color: '#1e293b' }}>{formatMoney(estimate.taxAmount || 0)}</td>
+                                                        </tr>
+                                                        <tr style={{ backgroundColor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+                                                            <td colSpan={7} style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>Tổng Cộng:</td>
+                                                            <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 700, color: '#10b981', fontSize: '1.1rem' }}>{formatMoney(estimate.totalAmount)}</td>
+                                                        </tr>
+                                                    </>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    ) : estimate.templateType === 'PROJECT_BREAKDOWN' ? (() => {
+                                        let sumVatTu = 0;
+                                        let sumNhanCong = 0;
+                                        estimate.items?.forEach((item: any) => {
+                                            sumVatTu += item.quantity * item.unitPrice;
+                                            sumNhanCong += item.quantity * (item.laborPrice || 0);
+                                        });
+
+                                        return (
+                                            <table className="w-full min-w-[1100px] text-left text-sm border-collapse">
+                                                <thead>
+                                                    <tr style={{ backgroundColor: '#f8fafc', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>
+                                                        <th style={{ padding: '0.75rem 0.5rem', fontWeight: 600, textAlign: 'center' }}>S.Ảnh</th>
+                                                        <th style={{ padding: '0.75rem 0.5rem', fontWeight: 600 }}>Sản Phẩm</th>
+                                                        <th style={{ padding: '0.75rem 0.5rem', fontWeight: 600, textAlign: 'center' }}>Hãng SX</th>
+                                                        <th style={{ padding: '0.75rem 0.5rem', fontWeight: 600, textAlign: 'center' }}>Bảo Hành</th>
+                                                        <th style={{ padding: '0.75rem 0.5rem', fontWeight: 600, textAlign: 'center' }}>SL</th>
+                                                        <th style={{ padding: '0.75rem 0.5rem', fontWeight: 600, textAlign: 'right' }}>Đ.Giá V.Tư</th>
+                                                        <th style={{ padding: '0.75rem 0.5rem', fontWeight: 600, textAlign: 'right' }}>Đ.Giá N.Công</th>
+                                                        <th style={{ padding: '0.75rem 0.5rem', fontWeight: 600, textAlign: 'right' }}>Tiền V.Tư</th>
+                                                        <th style={{ padding: '0.75rem 0.5rem', fontWeight: 600, textAlign: 'right' }}>Tiền N.Công</th>
                                                     </tr>
-                                                ))
-                                            )}
-                                            {estimate.items?.length > 0 && (
-                                                <>
-                                                    <tr style={{ backgroundColor: '#f8fafc' }}>
-                                                        <td colSpan={4} style={{ padding: '1rem', textAlign: 'right', color: '#64748b' }}>Tổng tiền trước thuế:</td>
-                                                        <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 500, color: '#1e293b' }}>{formatMoney(estimate.subTotal || 0)}</td>
-                                                    </tr>
-                                                    <tr style={{ backgroundColor: '#f8fafc' }}>
-                                                        <td colSpan={4} style={{ padding: '1rem', textAlign: 'right', color: '#64748b' }}>Tổng tiền thuế:</td>
-                                                        <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 500, color: '#1e293b' }}>{formatMoney(estimate.taxAmount || 0)}</td>
-                                                    </tr>
-                                                    <tr style={{ backgroundColor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
-                                                        <td colSpan={4} style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>Tổng Cộng:</td>
-                                                        <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 700, color: '#10b981', fontSize: '1.1rem' }}>{formatMoney(estimate.totalAmount)}</td>
-                                                    </tr>
-                                                </>
-                                            )}
-                                        </tbody>
-                                    </table>
+                                                </thead>
+                                                <tbody>
+                                                    {estimate.items?.length === 0 ? (
+                                                        <tr><td colSpan={9} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Chưa có sản phẩm nào.</td></tr>
+                                                    ) : (
+                                                        estimate.items?.map((item: any) => {
+                                                            const tienVatTu = item.quantity * item.unitPrice;
+                                                            const tienNhanCong = item.quantity * (item.laborPrice || 0);
+                                                            return (
+                                                                <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: item.isSubItem ? '#f8fafc' : 'transparent' }}>
+                                                                    <td style={{ padding: '1rem 0.5rem', textAlign: 'center' }}>
+                                                                        {item.imageUrl ? <img src={item.imageUrl} alt="img" style={{ maxWidth: '40px', maxHeight: '40px', objectFit: 'contain' }} /> : '-'}
+                                                                    </td>
+                                                                    <td style={{ padding: '1rem 0.5rem', paddingLeft: item.isSubItem ? '3rem' : '0.5rem', fontWeight: 500, color: item.isSubItem ? '#64748b' : '#1e293b' }}>
+                                                                        <div className="flex items-center gap-2">
+                                                                            {item.isSubItem && <span className="text-gray-400">↳</span>}
+                                                                            <span>{item.customName || item.product?.name || 'Sản phẩm tự do'}</span>
+                                                                        </div>
+                                                                        {item.description && <div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.25rem', whiteSpace: 'pre-wrap', fontWeight: 400 }}>{item.description}</div>}
+                                                                    </td>
+                                                                    <td style={{ padding: '1rem 0.5rem', textAlign: 'center', color: '#475569' }}>{item.manufacture || '-'}</td>
+                                                                    <td style={{ padding: '1rem 0.5rem', textAlign: 'center', color: '#475569' }}>{item.warranty || '-'}</td>
+                                                                    <td style={{ padding: '1rem 0.5rem', textAlign: 'center', color: '#475569' }}>{item.quantity} {item.unit || item.product?.unit || ''}</td>
+                                                                    <td style={{ padding: '1rem 0.5rem', textAlign: 'right', color: '#475569' }}>{formatMoney(item.unitPrice)}</td>
+                                                                    <td style={{ padding: '1rem 0.5rem', textAlign: 'right', color: '#475569' }}>{formatMoney(item.laborPrice || 0)}</td>
+                                                                    <td style={{ padding: '1rem 0.5rem', textAlign: 'right', fontWeight: 500, color: '#475569' }}>{formatMoney(tienVatTu)}</td>
+                                                                    <td style={{ padding: '1rem 0.5rem', textAlign: 'right', fontWeight: 500, color: '#475569' }}>{formatMoney(tienNhanCong)}</td>
+                                                                </tr>
+                                                            );
+                                                        })
+                                                    )}
+                                                    {estimate.items?.length > 0 && (
+                                                        <>
+                                                            <tr style={{ backgroundColor: '#f8fafc' }}>
+                                                                <td colSpan={8} style={{ padding: '1rem 0.5rem', textAlign: 'right', color: '#64748b' }}>Tổng Cộng Vật Tư:</td>
+                                                                <td style={{ padding: '1rem 0.5rem', textAlign: 'right', fontWeight: 500, color: '#1e293b' }}>{formatMoney(sumVatTu)}</td>
+                                                            </tr>
+                                                            <tr style={{ backgroundColor: '#f8fafc' }}>
+                                                                <td colSpan={8} style={{ padding: '1rem 0.5rem', textAlign: 'right', color: '#64748b' }}>Tổng Cộng Nhân Công:</td>
+                                                                <td style={{ padding: '1rem 0.5rem', textAlign: 'right', fontWeight: 500, color: '#1e293b' }}>{formatMoney(sumNhanCong)}</td>
+                                                            </tr>
+                                                            <tr style={{ backgroundColor: '#f8fafc' }}>
+                                                                <td colSpan={8} style={{ padding: '1rem 0.5rem', textAlign: 'right', color: '#64748b' }}>VAT Tax:</td>
+                                                                <td style={{ padding: '1rem 0.5rem', textAlign: 'right', fontWeight: 500, color: '#1e293b' }}>{formatMoney(estimate.taxAmount || 0)}</td>
+                                                            </tr>
+                                                            <tr style={{ backgroundColor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+                                                                <td colSpan={8} style={{ padding: '1rem 0.5rem', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>Tổng Cộng (Gồm VAT):</td>
+                                                                <td style={{ padding: '1rem 0.5rem', textAlign: 'right', fontWeight: 700, color: '#10b981', fontSize: '1.1rem' }}>{formatMoney(estimate.totalAmount)}</td>
+                                                            </tr>
+                                                        </>
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        );
+                                    })() : (
+                                        <table className="w-full min-w-[700px] text-left text-sm border-collapse">
+                                            <thead>
+                                                <tr style={{ backgroundColor: '#f8fafc', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>
+                                                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Sản Phẩm</th>
+                                                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Số Lượng</th>
+                                                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Đơn Giá</th>
+                                                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Thuế (%)</th>
+                                                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Thành Tiền</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {estimate.items?.length === 0 ? (
+                                                    <tr><td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Chưa có sản phẩm nào.</td></tr>
+                                                ) : (
+                                                    estimate.items?.map((item: any) => (
+                                                        <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: item.isSubItem ? '#f8fafc' : 'transparent' }}>
+                                                            <td style={{ padding: '1rem', paddingLeft: item.isSubItem ? '3rem' : '1rem', fontWeight: 500, color: item.isSubItem ? '#64748b' : '#1e293b' }}>
+                                                                <div className="flex items-center gap-2">
+                                                                    {item.isSubItem && <span className="text-gray-400">↳</span>}
+                                                                    <span>{item.customName || item.product?.name || 'Sản phẩm tự do'}</span>
+                                                                </div>
+                                                                {item.product?.sku && <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>SKU: {item.product.sku}</div>}
+                                                                {item.description && <div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.25rem', whiteSpace: 'pre-wrap', fontWeight: 400 }}>{item.description}</div>}
+                                                            </td>
+                                                            <td style={{ padding: '1rem', textAlign: 'center', color: '#475569' }}>{item.quantity} {item.unit || item.product?.unit || ''}</td>
+                                                            <td style={{ padding: '1rem', textAlign: 'right', color: '#475569' }}>{formatMoney(item.unitPrice)}</td>
+                                                            <td style={{ padding: '1rem', textAlign: 'center', color: '#475569' }}>{item.taxRate || 0}%</td>
+                                                            <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>{formatMoney(item.totalPrice)}</td>
+                                                        </tr>
+                                                    ))
+                                                )}
+                                                {estimate.items?.length > 0 && (
+                                                    <>
+                                                        <tr style={{ backgroundColor: '#f8fafc' }}>
+                                                            <td colSpan={4} style={{ padding: '1rem', textAlign: 'right', color: '#64748b' }}>Tổng tiền trước thuế:</td>
+                                                            <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 500, color: '#1e293b' }}>{formatMoney(estimate.subTotal || 0)}</td>
+                                                        </tr>
+                                                        <tr style={{ backgroundColor: '#f8fafc' }}>
+                                                            <td colSpan={4} style={{ padding: '1rem', textAlign: 'right', color: '#64748b' }}>Tổng tiền thuế:</td>
+                                                            <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 500, color: '#1e293b' }}>{formatMoney(estimate.taxAmount || 0)}</td>
+                                                        </tr>
+                                                        <tr style={{ backgroundColor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+                                                            <td colSpan={4} style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>Tổng Cộng:</td>
+                                                            <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 700, color: '#10b981', fontSize: '1.1rem' }}>{formatMoney(estimate.totalAmount)}</td>
+                                                        </tr>
+                                                    </>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    )}
                                 </div>
                             )}
 

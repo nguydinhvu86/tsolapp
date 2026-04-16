@@ -988,6 +988,7 @@ model SalesEstimate {
   date       DateTime  @default(now())
   validUntil DateTime?
   status     String    @default("DRAFT") // DRAFT, SENT, ACCEPTED, REJECTED
+  templateType String  @default("STANDARD") // STANDARD, WITH_IMAGES, PROJECT_BREAKDOWN
   notes      String?   @db.Text
   tags       String? // Commas separated list of tags
 
@@ -1050,6 +1051,11 @@ model SalesEstimateItem {
   taxRate     Float   @default(0)
   taxAmount   Float   @default(0)
   totalPrice  Float   @default(0)
+  laborPrice  Float   @default(0)
+  origin      String?
+  warranty    String?
+  manufacture String?
+  imageUrl    String? @db.LongText
   isSubItem   Boolean @default(false)
 
   estimate SalesEstimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)

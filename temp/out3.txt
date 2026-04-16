@@ -1,0 +1,212 @@
+ Đơn Giá Vật Tư 
+Unit Price
+VNĐ 
+ Đơn Giá
+ Nhân Công /  
+Labor Unit Price  
+ Tiền Vật Tư 
+Unit Total 
+ Tiền Nhân Công 
+Labor Total  
+1                                         Cung cấp và lắp đặt Dây cáp mạng Cat6 UTP
+Commscope / 
+Tương Đương   N/a             Mét                9,250                              12,000                                        8,000                              111,000,000                                74,000,000        
+2                                         Bộ chuyển đổi quang điện 1Gbps A+B             Aptek                 12 tháng         Bộ           8                            975,000                                      95,000                                  7,800,000                                    760,000            
+3                                         Cung cấp ODF quang 4FO (Full phụ kiện)            VNSX                      N/a              Bộ          16                              95,000                                           -                                 1,520,000                                           -                  
+4                                         Chi phí hàn nối cáp quang                       TSOL                       N/a             Mối         64                                                        110,000                                           -                                 7,040,000          
+5                                         Cung cấp và lắp đặt cáp quang 4Fo              Postef                     N/a             Mét                   750                                5,000                                        7,000                                  3,750,000                                  5,250,000          
+6
+Cung cấp và lắp đặt Mặt Outlet 1P màu trắng commscope + 
+đế
+Commscope/ 
+Tương Đương  
+N/a              Cái                   192                              34,000                                      14,000                                  6,528,000                                  2,688,000          
+7                                         Cung cấp và lắp đặt Thanh quản lý cáp mạng 1U
+Commscope/ 
+Tương Đương  
+N/a             Cái                      2                            275,000                                      80,000                                    550,000                                    160,000            
+8                                         Cung cấp và lắp đặt Thanh ngu ồn PDU 6 c ổng                                VNSX                N/a              Cái                       9                            490,000                                     115,000                                 4,410,000                                  1,035,000          
+9                                         Cung cấp và lắp đặt Nhân mạng âm Cat6
+Commscope/ 
+Tương Đương  
+N/a             Cái                   192                              87,000                                      29,000                                16,704,000                                  5,568,000          
+10                                        Cung cấp và lắp đặt Patch panel 24 port cat6 Commscope 
+Commscope/ 
+Tương Đương  
+N/a             Cái                       2                          1,950,000                                     750,000                                 3,900,000                                  1,500,000          
+11                                        Cung cấp và lắp đặt tủ Rack 10U                VNSX                N/a             Cái                       8                          1,800,000                                     220,000                                14,400,000                                  1,760,000          
+12                                        Cung cấp và lắp đặt ống điện PVC D20        Sino / Vanlock          N/a             Mét                1,125                                6,800                                      15,000                                  7,650,000                                16,875,000        
+13
+Cung cấp và lắp đặt máng cáp 60cm x 50cm x 1.2 li + 
+nắp 1.0  
+VNSX                N/a             Mét                    25                              98,000                                      59,000                                  2,401,000                                  1,445,500          
+14
+Cung cấp và lắp đặt máng cáp 150cm x 100cm x 1.2li 
++ nắp 1.0mm
+VNSX                N/a             Mét                   248                             215,000                                     115,000                                53,320,000                                28,520,000        
+15
+Cung cấp và lắp đặt Suppost treo máng cáp 150cm x 
+100cm x 1.2li
+VNSX                N/a             Mét                   163                              30,000                                      15,000                                  4,890,000                                  2,445,000          
+Quotation of
+Báo Giá 
+Date: Bình Dương, .Ngày    tháng   Năm 2025
+Số Báo Giá/ Num of QO: 
+STT
+Num
+Model /Image/Product 
+Code
+Hình ảnh
+Mô tả sản phẩm dịch vụ
+Descriptions
+Hãng 
+sản xuất
+Manufacture
+Bảo hành
+Warranty
+Số Lượng
+Quality
+TSOL - TRINH GIA SOLUTION    kính chúc Quý khách hàng sức khỏe và thành đạt. Chúng tôi trân trọng gửi tới Quý khách hàng bảng báo giá theo yêu cầu dưới đây:
+TSOL  - TRINH GIA SOLUTION  Would like to wish our partners to have healthy, success. 
+We are pleasure to send you the quotation  with details below:
+ Prices                                               Sub.Total (VND) 
+ Ghi Chú/ Note 
+CÔNG TY TNHH GIẢI PHÁP ĐÀO TẠO TRỊNH GIA
+Head office: Số 147/80 Nguyễn Thị Minh Khai, Tổ 2 Khu 9 Phú Hòa, Tp Thủ Dầu Một, Bình Dương
+MST: 3703185173
+Điện thoại: 0274 999 2222 - 090 123 2255
+E: sales@trinhgiatelecom.vn - Web: https://tsol.com.vn
+Đơn Vị Tính
+Unit
+ĐƠN VỊ / COMPANY'S  NAME: 
+Địa chỉ/ Address: 
+Người nhận ( Receiver):                              Điện thoại/Tel:  
+Email: 
+ĐƠN VỊ/ COMPANY : TSOL - GIẢI PHÁP TRỊNH GIA
+Địa chỉ/Address: Bình Dương 
+Attn: Ngụy Đình Vũ           Điện thoại/Tel: 0901232255
+Email: vutg@trinhgiatelecom.vn
+----------------Page (0) Break----------------
+16
+Cung cấp và lắp đặt Tê máng cáp 150cm x 100cm x 
+1.2li + nắp 1.0mm
+VNSX                N/a             Cái                       8                            115,000                                      42,000                                    920,000                                    336,000            
+17
+Cung cấp và lắp đặt Co máng cáp 150cm x 100cm x 
+1.2li + nắp 1.0mm
+VNSX                N/a             Cái                     12                            102,000                                      39,000                                  1,224,000                                    468,000            
+----------------Page (1) Break----------------
+18
+Cung cấp và lắp đặt Z chuyển cao độ máng cáp 150cm 
+x 100cm x 1.2li + nắp 1.0mm
+VNSX                N/a             Cái                       6                            139,000                                      45,000                                    834,000                                    270,000            
+19
+Cung cấp và lắp đặt Co xuống máng cáp 150cm x 
+100cm x 1.2li + nắp 1.0mm
+VNSX                N/a             Cái                       7                            127,000                                      42,000                                    889,000                                    294,000            
+20
+Cung cấp và lắp đặt vật tư phụ máng cáp ( ty treo, tắc 
+kê đạn , ...)                               TSOL/VN             N/a             Gói                      1                          1,200,000                                  1,200,000                                  1,200,000                                  1,200,000          
+21
+Cung cấp và lắp đặt vật tư phụ lắp tủ mạng ( hạt mạng 
+RJ45, đầu boot, nhãn dán, dây velcro,ốc tủ rack,dây 
+nhảy quang ....)
+TSOL/VN             N/a             Gói                      1                          3,900,000                                  1,600,000                                  3,900,000                                  1,600,000          
+22
+Cung cấp và lắp đặt vật tư thi công cáp và ống điện ( 
+co, nối, kẹp ống, box tròn, vít +tắc kê, cáp điện cấp 
+nguồn tủ rack ....)
+TSOL/VN             N/a             Gói                      1                          4,500,000                                  2,500,000                                  4,500,000                                  2,500,000          
+23                                        Chi phí quản lý dự án và các chi phí khác        TSOL/VN             N/a             Gói                      1                                                    10,000,000                                           -                               10,000,000        
+24
+Nhân công triển khai hệ thống dây tín hiêu cho hệ 
+thống âm thanh
+TSOL/VN             N/a            Node                   11                                                        650,000                                           -                                 7,150,000          
+25
+Nhân công triển khai hệ thống dây tín hiêu cho
+ camera 
+TSOL/VN             N/a            Node                   74                                                        650,000                                           -                               48,100,000        
+26
+Cung cấp và lắp đặt Dây cáp mạng Cat6 UTP - Cable 
+dành cho camera 
+Commscope 
+/ Tương Đương
+N/a             Mét                3,500                              12,000                                        8,000                                42,000,000                                28,000,000        
+27
+Cung cấp và lắp đặt Cáp âm thanh 18AWG 1 đôi 
+Shielded, PVC
+Heizka/tương 
+đương
+N/a             Mét                1,100                              24,000                                        8,000                                26,400,000                                  8,800,000                               Cáp âm thanh
+28                                        Nhân công triển khai hệ thống dây cho Access Point  TSOL/VN             N/a            Node                   22                                   -                                    650,000                                           -                               14,300,000        
+29                                        Cung cấp và lắp đặt switch Cisco C1300-16T-2G     Cisco            12 Tháng         Cái                       3                          9,900,000                                     350,000                                29,700,000                                  1,050,000          
+30
+Cung cấp và lắp đặt switch SWICH POE HIKVISION DS- 
+3E1318P-EI/M
+Hikvision         12 Tháng         Cái                       5                          2,970,000                                     200,000                                14,850,000                                  1,000,000          
+31
+Cung cấp và lắp đặt switch SWICH SWICH POE 
+HIKVISION DS-3E1510P-EI/M
+POE 8 cổng
+Hikvision         12 Tháng         Cái                       2                          1,890,000                                     100,000                                 3,780,000                                    200,000            
+32
+Cung cấp và lắp đặt Bộ bắn điểm Wifi Ruijie Reyee
+RG-EST100-E
+Ruijie            12 tháng          Bộ           2                          1,250,000                                     500,000                                 2,500,000                                  1,000,000                          Lắp đặt ở thang máy
+33
+Cung cấp và lắp đặt đầu ghi hình Hikvision 64 kênh DS-
+7764NI-M4
+Hikvision          12 tháng        Chiếc         1                        11,350,000                                     750,000                                11,350,000                                     750,000            
+34
+Cung cấp và lắp đặt ổ cứng lưu trữ 10TB Seagate 
+Skyhawk
+Seagate           12 tháng          Cái                       4                          7,950,000                                                         31,800,000                                           -                  
+35                                        Cung cấp camera Dome   HIK DS-2CD1321G2-LIU        Hikvision          12 tháng          Cái                     21                            875,000                                                         18,375,000                                           -                  
+36                                        Cung cấp camera thân trụ DS-2CD1T21G2-LIU        Hikvision          12 tháng          Cái                     18                            950,000                                                         17,100,000                                           -                  
+58,096,760                                                                                                                             
+784,306,260                                                                                                                           
+Payment term: Điều Khoản thanh toán
+Đợt 1 - Pharse 1: Tạm ứng 50%  - 50% In advance
+Khách hàng sẽ thanh toán 50% giá trị hợp đồng ngay khi hai bên ký kết hợp đồng
+The customer shall make a payment of 50% of the contract value when the contract have been signed
+Đợt 2 - Pharse 2: Thanh toán 50% còn lại và chi phí phát sinh (nếu có ) khi hoàn thành việc lắp đặt, Nghiệm thu, và 
+xuất hóa đơn VAT 
+The customer shall make a payment of 50% In Remaining of the contract  and addition fees ( If Its available) 
+- Chỉ bảo hành những trường hợp hư hỏng do lỗi của nhà sản xuất, không bảo hành 
+các trường hợp hư hỏng do sét đánh hoặc lỗi của người sử dụng và các sự cố đột 
+biến từ nguồn điện của Điện Lực.
+Only do warranty with the faults of the manufacture.
+Chú ý:  Số lương sẽ được bàn giao nghiệm thu theo thực tế cuối cùng.
+- Giá đã bao gồm VAT ( Price included VAT tax)                                                                                                                    Điều kiện bảo hành:( Warranty Conditions)
+- Bảo hành theo tiêu chuẩn nhà sản xuất ( Warranty is  based on Manufacture's  policies )
+- Thiết bị mới 100%. Đúng xuất sứ ( All of goods are new 100%
+with right original)
+II. Notes and Conditions
+VAT Tax 8%
+Tổng cộng bao gồm VAT / Total Within VAT
+Tổng Cộng Vật Tư / Sub.total of Material Price
+Tổng Cộng Nhân công / Sub.total of Labor Cost
+450,145,000                                                                                                                           
+276,064,500                                                                                                                           
+726,209,500                                                                                                                           Tổng cộng chưa VAT / Total without VAT Tax
+- Giao hàng vận chuyển: Miễn phí ở bình dương với khoảng cách dưới 30km từ trụ sở TSOL
+'- Transportation Fee: Free in Binh Duong Province ( less than 30km from TGCS-office)
+Leadtime: 2 days ( thời gian giao hàng 1 ngày khi xác nhận đơn hàng) - It maybe take time, depend on each product
+- Thời gian bảo hành được tính từ ngày giao hàng.
+Warranty time will Start  from the date that the goods are delivered
+----------------Page (2) Break----------------
+- Chỉ bảo hành những trường hợp hư hỏng do lỗi của nhà sản xuất, không bảo hành 
+các trường hợp hư hỏng do sét đánh hoặc lỗi của người sử dụng và các sự cố đột 
+biến từ nguồn điện của Điện Lực.
+Only do warranty with the faults of the manufacture.
+- Báo giá có hiệu lực trong vòng 7 ngày kể từ ngày báo giá( due time of quotation:with in 7 days)
+ĐẠI DIỆN BÁN HÀNG 
+Behalf of TRINH GIA
+PHẠM THỊ CHUYÊN
+XÁC NHẬN KHÁCH HÀNG 
+ Customer's confirmation
+Xin chân thành cảm ơn quý khách hàng.  *** Chúng tôi rất hân hạnh được phục vụ quý khách! *** 
+Thanks for your cooperation - we are pleased to serve you
+----------------Page (3) Break----------------
+
+----------------Page (4) Break----------------

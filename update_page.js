@@ -1,174 +1,29 @@
-import { formatDate } from '@/lib/utils/formatters';
-import React from 'react';
-import { prisma } from '@/lib/prisma';
-import { notFound } from 'next/navigation';
-import { PrintButton } from '@/app/components/ui/PrintButton';
-import { Watermark } from '@/app/components/ui/Watermark';
-import { DocumentSignatureBlock } from '@/app/components/ui/DocumentSignatureBlock';
+const fs = require('fs');
+const file = 'app/public/sales/estimate/[id]/page.tsx';
+let content = fs.readFileSync(file, 'utf8');
 
-export default async function PublicSalesEstimatePage({ params }: { params: { id: string } }) {
-    const estimate = await prisma.salesEstimate.findUnique({
-        where: { id: params.id },
-        include: {
-            customer: true,
-            creator: true,
-            items: { include: { product: true } }
-        }
-    });
+// 1. Fix maxWidth in print-wrapper
+content = content.replace(
+    `maxWidth: '210mm' }}>`,
+    `maxWidth: estimate.templateType === 'PROJECT_BREAKDOWN' ? '297mm' : '210mm' }}>`
+);
 
-    if (!estimate) {
-        notFound();
-    }
+// 2. Fix @page size
+content = content.replace(
+    `size: A4;`,
+    "size: A4 ${estimate.templateType === 'PROJECT_BREAKDOWN' ? 'landscape' : 'portrait'};"
+);
 
-    // Lazy evaluate EXPIRED status
-    const todayAtMidnight = new Date();
-    todayAtMidnight.setHours(0, 0, 0, 0);
+// 3. Fix inline dimensions of a4-document
+content = content.replace(
+    `maxWidth: '210mm',
+                minHeight: '297mm',`,
+    `maxWidth: estimate.templateType === 'PROJECT_BREAKDOWN' ? '297mm' : '210mm',
+                minHeight: estimate.templateType === 'PROJECT_BREAKDOWN' ? '210mm' : '297mm',`
+);
 
-    if (estimate.status === 'SENT' && estimate.validUntil && new Date(estimate.validUntil).setHours(0, 0, 0, 0) < todayAtMidnight.getTime()) {
-        await prisma.salesEstimate.update({
-            where: { id: estimate.id },
-            data: { status: 'EXPIRED' }
-        });
-        estimate.status = 'EXPIRED';
-    }
-
-    const settings = await prisma.systemSetting.findMany({
-        where: {
-            key: {
-                in: [
-                    'COMPANY_FULL_NAME', 'COMPANY_NAME', 'COMPANY_ADDRESS', 'COMPANY_LOGO', 'COMPANY_PHONE', 'COMPANY_EMAIL', 'COMPANY_TAX',
-                    'WATERMARK_ENABLED', 'WATERMARK_TYPE', 'WATERMARK_TEXT', 'WATERMARK_IMAGE_URL', 'WATERMARK_OPACITY', 'WATERMARK_ROTATION', 'WATERMARK_COLOR', 'WATERMARK_SIZE', 'WATERMARK_DOCUMENTS'
-                ]
-            }
-        }
-    });
-    const settingsMap: Record<string, string> = {};
-    settings.forEach(s => settingsMap[s.key] = s.value);
-
-    const compName = settingsMap['COMPANY_FULL_NAME'] || settingsMap['COMPANY_NAME'] || 'CÔNG TY CHƯA CẬP NHẬT';
-    const compAddress = settingsMap['COMPANY_ADDRESS'] || '';
-    const compLogo = settingsMap['COMPANY_LOGO'] || null;
-
-    const formatMoney = (amount: number) => {
-        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
-    };
-
-
-    return (
-        <div className="print-wrapper" style={{ minHeight: '100vh', backgroundColor: '#e2e8f0', padding: '2rem 1rem', margin: '0 auto', maxWidth: estimate.templateType === 'PROJECT_BREAKDOWN' ? '1122px' : '800px' }}>
-            <style dangerouslySetInnerHTML={{
-                __html: `
-                @media print {
-                    @page {
-                        margin: 15mm;
-                        size: A4 ${estimate.templateType === 'PROJECT_BREAKDOWN' ? 'landscape' : 'portrait'};
-                    }
-                    body, html {
-                        height: auto !important;
-                        overflow: visible !important;
-                        background-color: white !important;
-                        display: block !important;
-                    }
-                    body * {
-                        visibility: hidden;
-                    }
-                    .print-wrapper {
-                        position: static !important;
-                        top: auto !important;
-                        left: auto !important;
-                        width: 100% !important;
-                        height: auto !important;
-                        overflow: visible !important;
-                        background-color: white !important;
-                        padding: 0 !important;
-                        display: block !important;
-                    }
-                    .print-wrapper, .print-wrapper * {
-                        visibility: visible;
-                    }
-                    .a4-document {
-                        position: static !important;
-                        margin: 0 !important;
-                        padding: 0 1px !important;
-                        box-shadow: none !important;
-                        width: 100% !important;
-                        max-width: none !important;
-                        min-height: auto !important;
-                    }
-                    .no-print {
-                        display: none !important;
-                    }
-                    table { page-break-inside: auto; border-collapse: collapse; width: 100%; }
-                    tr    { page-break-inside: auto; page-break-after: auto; }
-                    td, th { page-break-inside: auto; }
-                    thead { display: table-header-group; }
-                    tfoot {
-                        display: table-row-group;
-                    }
-                }
-            `}} />
-            <PrintButton label="In Báo Giá / Lưu PDF" />
-
-            <div className="a4-document" style={{
-                position: 'relative',
-                width: '100%',
-                maxWidth: estimate.templateType === 'PROJECT_BREAKDOWN' ? '1122px' : '800px',
-                minHeight: estimate.templateType === 'PROJECT_BREAKDOWN' ? '800px' : '1122px',
-                backgroundColor: 'white',
-                padding: '20mm',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                fontFamily: '"Times New Roman", Times, serif'
-            }}>
-                <Watermark settings={settingsMap} documentType="SALES_ESTIMATE" />
-                {/* Header: Company Info */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #1e293b', paddingBottom: '1.5rem', marginBottom: '2rem' }}>
-                    <div style={{ flex: 1 }}>
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 0.5rem 0', textTransform: 'uppercase', color: '#0f172a' }}>
-                            {compName}
-                        </h2>
-                        <div style={{ fontSize: '0.875rem', lineHeight: '1.5', color: '#334155' }}>
-                            {compAddress && <div><strong>Địa chỉ:</strong> {compAddress}</div>}
-                            {settingsMap['COMPANY_PHONE'] && <div><strong>Điện thoại:</strong> {settingsMap['COMPANY_PHONE']}</div>}
-                            {settingsMap['COMPANY_EMAIL'] && <div><strong>Email:</strong> {settingsMap['COMPANY_EMAIL']}</div>}
-                            {settingsMap['COMPANY_TAX'] && <div><strong>Mã số thuế:</strong> {settingsMap['COMPANY_TAX']}</div>}
-                        </div>
-                    </div>
-                    {compLogo && (
-                        <div style={{ marginLeft: '2rem' }}>
-                            <img src={compLogo} alt="Logo" style={{ maxHeight: '80px', maxWidth: '200px', objectFit: 'contain' }} />
-                        </div>
-                    )}
-                </div>
-
-                {/* Title */}
-                <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-                    <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 0.5rem 0', color: '#0f172a' }}>BẢNG BÁO GIÁ</h1>
-                    <i style={{ fontSize: '0.95rem', color: '#475569' }}>Số: {estimate.code} | Ngày: {formatDate(estimate.date)}</i>
-                </div>
-
-                {/* Estimate Detail Info */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem', fontSize: '0.95rem', lineHeight: '1.6' }}>
-                    <div style={{ flex: 1, paddingRight: '1rem' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 700, borderBottom: '1px solid #e2e8f0', display: 'inline-block', paddingBottom: '0.25rem', marginBottom: '0.75rem' }}>THÔNG TIN KHÁCH HÀNG</h3>
-                        <div><strong>Tên khách hàng:</strong> {estimate.customer?.name}</div>
-                        {estimate.customer?.address && <div><strong>Địa chỉ:</strong> {estimate.customer?.address}</div>}
-                        {estimate.customer?.phone && <div><strong>Điện thoại:</strong> {estimate.customer?.phone}</div>}
-                    </div>
-                    <div style={{ flex: 1, paddingLeft: '1rem', textAlign: 'right' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 700, borderBottom: '1px solid #e2e8f0', display: 'inline-block', paddingBottom: '0.25rem', marginBottom: '0.75rem' }}>ĐIỀU KIỆN BÁO GIÁ</h3>
-                        <div><strong>Hiệu lực đến:</strong> {formatDate(estimate.validUntil) || '---'}</div>
-                        <div><strong>Người lập:</strong> {estimate.creator?.name || '---'}</div>
-                        <div><strong>Trạng thái:</strong> {
-                            estimate.status === 'DRAFT' ? 'Bản Dự Thảo' :
-                                estimate.status === 'SENT' ? 'Đã Gửi KH' :
-                                    estimate.status === 'ACCEPTED' ? 'Đã Phê Duyệt' :
-                                        estimate.status === 'REJECTED' ? 'Từ Chối' :
-                                            estimate.status === 'EXPIRED' ? 'Hết Hiệu Lực' : estimate.status
-                        }</div>
-                    </div>
-                </div>
-
-                                {/* Items Table */}
+// 4. Update the Table Render Logic
+const tableReplacement = `                {/* Items Table */}
                 {estimate.templateType === 'PROJECT_BREAKDOWN' ? (() => {
                     let sumVatTu = 0;
                     let sumNhanCong = 0;
@@ -235,7 +90,7 @@ export default async function PublicSalesEstimatePage({ params }: { params: { id
                                     <td colSpan={2} style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', fontWeight: 600, color: '#334155' }}>{formatMoney(estimate.taxAmount || 0)}</td>
                                 </tr>
                                 <tr>
-                                    <td colSpan={7} style={{ border: '1px solid #cbd5e1', padding: '10px 16px', textAlign: 'right', fontWeight: 700, fontSize: '1.05rem' }}>TỔNG CỘNG:</td>
+                                    <td colSpan={7} style={{ border: '1px solid #cbd5e1', padding: '10px 16px', textAlign: 'right', fontWeight: 700, fontSize: '1.05rem' }}>TỔNG CỘNG (GHI CODE):</td>
                                     <td colSpan={2} style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', fontWeight: 800, fontSize: '1.05rem', color: '#0f172a' }}>{formatMoney(estimate.totalAmount)}</td>
                                 </tr>
                             </tfoot>
@@ -344,47 +199,14 @@ export default async function PublicSalesEstimatePage({ params }: { params: { id
                             </tr>
                         </tfoot>
                     </table>
-                )}                {/* Notes */}
-                {estimate.notes && (
-                    <div style={{ marginBottom: '3rem' }}>
-                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '0 0 0.5rem 0' }}>Ghi chú:</h4>
-                        <div style={{ fontSize: '0.9rem', whiteSpace: 'pre-line', fontStyle: 'italic', padding: '10px 15px', backgroundColor: '#f8fafc', borderLeft: '4px solid #94a3b8' }}>
-                            {estimate.notes}
-                        </div>
-                    </div>
-                )}
+                )}`;
 
-                {/* Signatures */}
-                <div className="no-break" style={{ display: 'flex', justifyContent: 'space-between', padding: '0 2rem', marginTop: '2rem', pageBreakInside: 'avoid' }}>
-                    <DocumentSignatureBlock 
-                        entityType="SALES_ESTIMATE" 
-                        entityId={estimate.id} 
-                        role="CUSTOMER" 
-                        title="ĐẠI DIỆN KHÁCH HÀNG" 
-                        subtitle="(Ký tên)" 
-                        canSign={true} 
-                        initialSignature={estimate.customerSignature} 
-                        initialSignedAt={estimate.customerSignedAt}
-                            metadata={{
-                                ip: estimate.customerSignIP,
-                                device: estimate.customerSignDevice,
-                                location: estimate.customerSignLocation
-                            }} 
-                    />
-                    <DocumentSignatureBlock 
-                        entityType="SALES_ESTIMATE" 
-                        entityId={estimate.id} 
-                        role="COMPANY" 
-                        title="NGƯỜI LẬP BÁO GIÁ" 
-                        subtitle="(Ký tên)" 
-                        canSign={false} 
-                        initialSignature={estimate.companySignature} 
-                        initialSignedAt={estimate.companySignedAt} 
-                        signerName={estimate.creator?.name} 
-                    />
-                </div>
-
-            </div>
-        </div>
-    );
+const startIndex = content.indexOf("{/* Items Table */}");
+const endIndex = content.indexOf("{/* Notes */}");
+if (startIndex !== -1 && endIndex !== -1) {
+    content = content.substring(0, Math.max(0, startIndex)) + tableReplacement + "                " + content.substring(endIndex);
+    fs.writeFileSync(file, content, 'utf8');
+    console.log("SUCCESS");
+} else {
+    console.error("Could not find start or end index.");
 }

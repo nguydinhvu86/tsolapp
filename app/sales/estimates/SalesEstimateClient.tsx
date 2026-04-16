@@ -64,6 +64,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         validUntil: getLocalDateStr(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
         notes: '',
         status: 'DRAFT',
+        templateType: 'STANDARD',
         tags: '',
         subTotal: 0,
         taxAmount: 0,
@@ -82,6 +83,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
             validUntil: getLocalDateStr(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
             notes: '',
             status: 'DRAFT',
+            templateType: 'STANDARD',
             tags: '',
             subTotal: 0,
             taxAmount: 0,
@@ -92,6 +94,11 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         setPrice(0);
         setSelectedProduct('');
         setIsSubItem(false);
+        setItemOrigin('');
+        setItemWarranty('');
+        setItemManufacture('');
+        setItemImageUrl('');
+        setItemLaborPrice(0);
         setIsFormOpen(true);
     };
 
@@ -107,10 +114,15 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
             taxRate: i.taxRate || 0,
             taxAmount: i.taxAmount || 0,
             totalPrice: i.totalPrice,
-            isSubItem: i.isSubItem || false
+            isSubItem: i.isSubItem || false,
+            origin: i.origin || '',
+            warranty: i.warranty || '',
+            manufacture: i.manufacture || '',
+            imageUrl: i.imageUrl || '',
+            laborPrice: i.laborPrice || 0
         })) : [];
 
-        const calcSubTotal = mappedItems.reduce((acc: number, curr: any) => acc + (curr.quantity * curr.unitPrice), 0);
+        const calcSubTotal = mappedItems.reduce((acc: number, curr: any) => acc + (curr.quantity * (curr.unitPrice + (curr.laborPrice || 0))), 0);
         const calcTaxAmount = mappedItems.reduce((acc: number, curr: any) => acc + curr.taxAmount, 0);
         const calcTotalAmount = mappedItems.reduce((acc: number, curr: any) => acc + curr.totalPrice, 0);
 
@@ -125,6 +137,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
             validUntil: est.validUntil ? getLocalDateStr(new Date(est.validUntil)) : '',
             notes: est.notes || '',
             status: est.status || 'DRAFT',
+            templateType: est.templateType || 'STANDARD',
             tags: est.tags || '',
             subTotal: calcSubTotal,
             taxAmount: calcTaxAmount,
@@ -155,10 +168,15 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
             taxRate: i.taxRate || 0,
             taxAmount: i.taxAmount || 0,
             totalPrice: i.totalPrice,
-            isSubItem: i.isSubItem || false
+            isSubItem: i.isSubItem || false,
+            origin: i.origin || '',
+            warranty: i.warranty || '',
+            manufacture: i.manufacture || '',
+            imageUrl: i.imageUrl || '',
+            laborPrice: i.laborPrice || 0
         })) : [];
 
-        const calcSubTotal = mappedItems.reduce((acc: number, curr: any) => acc + (curr.quantity * curr.unitPrice), 0);
+        const calcSubTotal = mappedItems.reduce((acc: number, curr: any) => acc + (curr.quantity * (curr.unitPrice + (curr.laborPrice || 0))), 0);
         const calcTaxAmount = mappedItems.reduce((acc: number, curr: any) => acc + curr.taxAmount, 0);
         const calcTotalAmount = mappedItems.reduce((acc: number, curr: any) => acc + curr.totalPrice, 0);
 
@@ -171,6 +189,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
             validUntil: est.validUntil ? getLocalDateStr(new Date(est.validUntil)) : '',
             notes: est.notes || '',
             status: 'DRAFT',
+            templateType: est.templateType || 'STANDARD',
             tags: est.tags || '',
             subTotal: calcSubTotal,
             taxAmount: calcTaxAmount,
@@ -215,6 +234,13 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
     const [customDescription, setCustomDescription] = useState('');
     const [useInventoryDescription, setUseInventoryDescription] = useState(true);
     const [isSubItem, setIsSubItem] = useState(false);
+    
+    // Multi-Template extended states
+    const [itemOrigin, setItemOrigin] = useState('');
+    const [itemWarranty, setItemWarranty] = useState('');
+    const [itemManufacture, setItemManufacture] = useState('');
+    const [itemImageUrl, setItemImageUrl] = useState('');
+    const [itemLaborPrice, setItemLaborPrice] = useState(0);
 
     const handleProductSelect = (pid: string) => {
         const prod = products.find((p: any) => p.id === pid);
@@ -258,7 +284,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
             taxRate = prod.taxRate || 0;
         }
 
-        const baseTotal = qty * price;
+        const baseTotal = qty * (price + itemLaborPrice);
         const taxItemAmount = baseTotal * taxRate / 100;
         const total = baseTotal + taxItemAmount;
 
@@ -275,7 +301,12 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                 taxRate,
                 taxAmount: taxItemAmount,
                 totalPrice: total,
-                isSubItem: isSubItem
+                isSubItem: isSubItem,
+                origin: itemOrigin,
+                warranty: itemWarranty,
+                manufacture: itemManufacture,
+                imageUrl: itemImageUrl,
+                laborPrice: itemLaborPrice
             }],
             subTotal: (prev.subTotal || 0) + baseTotal,
             taxAmount: (prev.taxAmount || 0) + taxItemAmount,
@@ -289,6 +320,11 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         setQty(1);
         setPrice(0);
         setIsSubItem(false);
+        setItemOrigin('');
+        setItemWarranty('');
+        setItemManufacture('');
+        setItemImageUrl('');
+        setItemLaborPrice(0);
     };
 
     const handleRemoveItem = (index: number) => {
@@ -296,7 +332,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
             const newItems = [...prev.items];
             newItems.splice(index, 1);
 
-            const calcSubTotal = newItems.reduce((acc: number, curr: any) => acc + (curr.quantity * curr.unitPrice), 0);
+            const calcSubTotal = newItems.reduce((acc: number, curr: any) => acc + (curr.quantity * (curr.unitPrice + (curr.laborPrice || 0))), 0);
             const calcTaxAmount = newItems.reduce((acc: number, curr: any) => acc + curr.taxAmount, 0);
             const calcTotalAmount = newItems.reduce((acc: number, curr: any) => acc + curr.totalPrice, 0);
 
@@ -338,6 +374,11 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         setPrice(item.unitPrice);
         setQty(item.quantity);
         setIsSubItem(item.isSubItem || false);
+        setItemOrigin(item.origin || '');
+        setItemWarranty(item.warranty || '');
+        setItemManufacture(item.manufacture || '');
+        setItemImageUrl(item.imageUrl || '');
+        setItemLaborPrice(item.laborPrice || 0);
 
         handleRemoveItem(index);
     };
@@ -898,6 +939,20 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                     placeholder="Chọn dự án..."
                                 />
                             </div>
+                            <div className="md:col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Mẫu báo giá</label>
+                                <div className="grid grid-cols-3 gap-3">
+                                    {['STANDARD', 'WITH_IMAGES', 'PROJECT_BREAKDOWN'].map(tmpl => (
+                                        <div
+                                            key={tmpl}
+                                            onClick={() => setFormData({ ...formData, templateType: tmpl })}
+                                            className={`cursor-pointer border rounded-lg p-3 text-center transition-all ${formData.templateType === tmpl ? 'border-primary bg-primary/5 text-primary font-semibold ring-1 ring-primary' : 'border-gray-200 hover:border-gray-300 text-gray-600 bg-gray-50'}`}
+                                        >
+                                            {tmpl === 'STANDARD' ? 'Tiêu Chuẩn' : tmpl === 'WITH_IMAGES' ? 'Thiết bị (Có hình)' : 'Công trình (Tách vật tư & nhân công)'}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
 
                             <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-4">
                                 <div>
@@ -983,7 +1038,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                     </div>
                                 )}
                                 <div className="w-full md:w-36">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Đơn giá</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{formData.templateType === 'PROJECT_BREAKDOWN' ? 'Đ.giá vật tư' : 'Đơn giá'}</label>
                                     <input type="number" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" value={price} onChange={e => setPrice(Number(e.target.value))} />
                                 </div>
                                 <div className="w-full md:w-20">
@@ -1006,6 +1061,37 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                 </div>
                                 <Button onClick={handleAddItem} variant="secondary" className="w-full md:w-auto md:mb-[2px] h-[46px] px-6 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 shadow-sm font-semibold rounded-lg">Thêm</Button>
                             </div>
+
+                            {(formData.templateType === 'WITH_IMAGES' || formData.templateType === 'PROJECT_BREAKDOWN') && (
+                                <div className="flex flex-col md:flex-row gap-3 md:items-end mb-4 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                    {(formData.templateType === 'WITH_IMAGES' || formData.templateType === 'PROJECT_BREAKDOWN') && (
+                                        <>
+                                            <div className="w-full md:flex-1">
+                                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Link ảnh <span className="text-gray-400 font-normal">(URL)</span></label>
+                                                <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" placeholder="https://..." value={itemImageUrl} onChange={e => setItemImageUrl(e.target.value)} />
+                                            </div>
+                                            <div className="w-full md:w-32">
+                                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Hãng SX</label>
+                                                <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" placeholder="VD: Sony" value={itemManufacture} onChange={e => setItemManufacture(e.target.value)} />
+                                            </div>
+                                            <div className="w-full md:w-32">
+                                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Xuất xứ</label>
+                                                <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" placeholder="VD: Nhật Bản" value={itemOrigin} onChange={e => setItemOrigin(e.target.value)} />
+                                            </div>
+                                            <div className="w-full md:w-32">
+                                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Bảo hành</label>
+                                                <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" placeholder="VD: 12 tháng" value={itemWarranty} onChange={e => setItemWarranty(e.target.value)} />
+                                            </div>
+                                        </>
+                                    )}
+                                    {formData.templateType === 'PROJECT_BREAKDOWN' && (
+                                        <div className="w-full md:w-64">
+                                            <label className="block text-sm font-medium text-gray-700 mb-1.5">Đ.giá nhân công <span className="text-gray-400 font-normal">(/1 {!isCustomProduct ? products.find((p: any) => p.id === selectedProduct)?.unit || customUnit : customUnit})</span></label>
+                                            <input type="number" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" value={itemLaborPrice} onChange={e => setItemLaborPrice(Number(e.target.value))} />
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Chi tiết Kỹ Thuật / Ghi chú cho khách hàng <span className="text-gray-400 font-normal">(In dưới tên SP)</span></label>
                                 <div className="flex items-center gap-4 mb-2">
@@ -1028,7 +1114,10 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                             <tr>
                                                 <th className="p-3 font-medium">Sản Phẩm</th>
                                                 <th className="p-3 font-medium text-center w-20">SL</th>
-                                                <th className="p-3 font-medium text-right w-32">Đ.Giá</th>
+                                                <th className="p-3 font-medium text-right w-32">{formData.templateType === 'PROJECT_BREAKDOWN' ? 'Đ.Giá Vật Tư' : 'Đ.Giá'}</th>
+                                                {formData.templateType === 'PROJECT_BREAKDOWN' && (
+                                                    <th className="p-3 font-medium text-right w-32">Đ.Giá N.Công</th>
+                                                )}
                                                 <th className="p-3 font-medium text-center w-20">Thuế</th>
                                                 <th className="p-3 font-medium text-right w-36">Thành Tiền</th>
                                                 <th className="p-3 font-medium text-center w-12"></th>
@@ -1043,11 +1132,21 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                                             <span className={item.isSubItem ? 'text-gray-600 font-medium' : ''}>{item.productName || item.customName}</span>
                                                         </div>
                                                         {item.description && <div className="text-xs text-gray-500 mt-0.5 max-w-sm whitespace-pre-wrap">{item.description}</div>}
+                                                        {(formData.templateType === 'WITH_IMAGES' || formData.templateType === 'PROJECT_BREAKDOWN') && (
+                                                            <div className="text-[11px] text-gray-500 mt-1 flex flex-wrap gap-2">
+                                                                {item.manufacture && <span>Hãng: <span className="font-medium text-gray-700">{item.manufacture}</span></span>}
+                                                                {item.origin && <span>XX: <span className="font-medium text-gray-700">{item.origin}</span></span>}
+                                                                {item.warranty && <span>BH: <span className="font-medium text-gray-700">{item.warranty}</span></span>}
+                                                            </div>
+                                                        )}
                                                     </td>
                                                     <td className="p-3 text-center text-gray-800">
                                                         {item.quantity} <span className="text-xs text-gray-500 ml-1">{item.unit}</span>
                                                     </td>
                                                     <td className="p-3 text-right text-gray-600 font-medium">{formatMoney(item.unitPrice)}</td>
+                                                    {formData.templateType === 'PROJECT_BREAKDOWN' && (
+                                                        <td className="p-3 text-right text-indigo-600 font-medium">{formatMoney(item.laborPrice || 0)}</td>
+                                                    )}
                                                     <td className="p-3 text-center text-gray-500 bg-gray-50 border-x border-white">{item.taxRate}%</td>
                                                     <td className="p-3 text-right font-semibold text-gray-900">{formatMoney(item.totalPrice)}</td>
                                                     <td className="p-3 text-center">
@@ -1061,17 +1160,17 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                         </tbody>
                                         <tfoot className="bg-slate-50 border-t border-gray-200 text-gray-700">
                                             <tr>
-                                                <td colSpan={4} className="p-3 text-right text-sm">{t('estimates.subTotal')}:</td>
+                                                <td colSpan={formData.templateType === 'PROJECT_BREAKDOWN' ? 5 : 4} className="p-3 text-right text-sm">{t('estimates.subTotal')}:</td>
                                                 <td className="p-3 text-right font-medium">{formatMoney(formData.subTotal || 0)}</td>
                                                 <td className="p-3"></td>
                                             </tr>
                                             <tr>
-                                                <td colSpan={4} className="p-3 text-right text-sm">{t('estimates.totalTax')}:</td>
+                                                <td colSpan={formData.templateType === 'PROJECT_BREAKDOWN' ? 5 : 4} className="p-3 text-right text-sm">{t('estimates.totalTax')}:</td>
                                                 <td className="p-3 text-right font-medium text-gray-500">{formatMoney(formData.taxAmount || 0)}</td>
                                                 <td className="p-3"></td>
                                             </tr>
                                             <tr className="border-t border-gray-200">
-                                                <td colSpan={4} className="p-3 text-right font-semibold text-base">{t('estimates.grandTotal')}:</td>
+                                                <td colSpan={formData.templateType === 'PROJECT_BREAKDOWN' ? 5 : 4} className="p-3 text-right font-semibold text-base">{t('estimates.grandTotal')}:</td>
                                                 <td className="p-3 text-right font-bold text-indigo-700 text-lg">{formatMoney(formData.totalAmount || 0)}</td>
                                                 <td className="p-3"></td>
                                             </tr>

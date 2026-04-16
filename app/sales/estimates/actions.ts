@@ -115,6 +115,7 @@ export async function submitSalesEstimate(creatorId: string, formData: any) {
                 date: new Date(formData.date),
                 validUntil: formData.validUntil ? new Date(formData.validUntil) : null,
                 status: formData.status || "DRAFT",
+                templateType: formData.templateType || 'STANDARD',
                 notes: formData.notes,
                 tags: formData.tags || null,
                 customerId: formData.customerId,
@@ -136,7 +137,12 @@ export async function submitSalesEstimate(creatorId: string, formData: any) {
                         taxRate: item.taxRate || 0,
                         taxAmount: item.taxAmount || 0,
                         totalPrice: item.totalPrice,
-                        isSubItem: item.isSubItem || false
+                        isSubItem: item.isSubItem || false,
+                        origin: item.origin || null,
+                        warranty: item.warranty || null,
+                        manufacture: item.manufacture || null,
+                        imageUrl: item.imageUrl || null,
+                        laborPrice: item.laborPrice || 0
                     }))
                 }
             },
@@ -272,6 +278,7 @@ export async function updateSalesEstimate(id: string, formData: any) {
                 date: new Date(formData.date),
                 validUntil: formData.validUntil ? new Date(formData.validUntil) : null,
                 status: formData.status || "DRAFT",
+                templateType: formData.templateType || 'STANDARD',
                 notes: formData.notes,
                 tags: formData.tags || null,
                 customerId: formData.customerId,
@@ -293,7 +300,12 @@ export async function updateSalesEstimate(id: string, formData: any) {
                         taxRate: item.taxRate || 0,
                         taxAmount: item.taxAmount || 0,
                         totalPrice: item.totalPrice,
-                        isSubItem: item.isSubItem || false
+                        isSubItem: item.isSubItem || false,
+                        origin: item.origin || null,
+                        warranty: item.warranty || null,
+                        manufacture: item.manufacture || null,
+                        imageUrl: item.imageUrl || null,
+                        laborPrice: item.laborPrice || 0
                     }))
                 }
             },
@@ -722,6 +734,7 @@ export async function cloneSalesEstimate(estimateId: string) {
                 date: new Date(),
                 validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
                 status: "DRAFT",
+                templateType: estimate.templateType || 'STANDARD',
                 notes: estimate.notes,
                 tags: estimate.tags,
                 customerId: estimate.customerId,
@@ -742,7 +755,12 @@ export async function cloneSalesEstimate(estimateId: string) {
                         taxRate: i.taxRate,
                         taxAmount: i.taxAmount,
                         totalPrice: i.totalPrice,
-                        isSubItem: i.isSubItem || false
+                        isSubItem: i.isSubItem || false,
+                        origin: i.origin || null,
+                        warranty: i.warranty || null,
+                        manufacture: i.manufacture || null,
+                        imageUrl: i.imageUrl || null,
+                        laborPrice: i.laborPrice || 0
                     }))
                 }
             }
