@@ -7,6 +7,20 @@ import { logActivity } from '@/app/tasks/actions'; // Optional: separate into pr
 import { sendEmailWithTracking } from '@/lib/mailer';
 import { createNotification } from '@/app/notifications/actions';
 import { buildViewFilter, verifyActionPermission, verifyActionOwnership } from '@/lib/permissions';
+import { z } from 'zod';
+
+const projectSchema = z.object({
+    title: z.string().min(1, 'Tên dự án không được để trống'),
+    description: z.string().nullable().optional(),
+    status: z.string().optional(),
+    priority: z.string().optional(),
+    dueDate: z.union([z.string(), z.date()]).nullable().optional(),
+    startDate: z.union([z.string(), z.date()]).nullable().optional(),
+    customerId: z.string().nullable().optional(),
+    assignees: z.array(z.string()).optional(),
+    estimatedValue: z.number().nullable().optional(),
+    estimatedDuration: z.string().nullable().optional(),
+}).passthrough();
 
 export async function generateProjectCode() {
     const today = new Date();
@@ -68,7 +82,13 @@ export async function getProjects(filters?: any) {
 export async function createProject(data: any, creatorId: string) {
     const user = await verifyActionPermission('PROJECTS_CREATE');
     const uId = user ? (user as any).id : creatorId;
-    const { assignees, title, ...restData } = data;
+    
+    const validatedData = projectSchema.parse(data);
+    const { assignees, title, ...restDataRaw } = validatedData;
+    const restData: any = restDataRaw;
+    for (const key of Object.keys(restData)) {
+        if (restData[key] === "") restData[key] = null;
+    }
 
     const code = await generateProjectCode();
 
@@ -138,7 +158,12 @@ export async function createProject(data: any, creatorId: string) {
 }
 
 export async function updateProject(id: string, data: any, userId: string) {
-    const { assignees, title, ...restData } = data;
+    const validatedData = projectSchema.parse(data);
+    const { assignees, title, ...restDataRaw } = validatedData;
+    const restData: any = restDataRaw;
+    for (const key of Object.keys(restData)) {
+        if (restData[key] === "") restData[key] = null;
+    }
 
     const oldProject = await prisma.project.findUnique({
         where: { id },

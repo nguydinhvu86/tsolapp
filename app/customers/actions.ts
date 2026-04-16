@@ -7,9 +7,34 @@ import { logCustomerActivity } from "@/lib/customerLogger";
 import { revalidatePath } from 'next/cache';
 import { sendEmailWithTracking } from '@/lib/mailer';
 import { buildViewFilter, verifyActionPermission, verifyActionOwnership } from '@/lib/permissions';
+import { z } from 'zod';
+
+const customerSchema = z.object({
+    name: z.string().min(1, "Tên khách hàng không được để trống"),
+    email: z.string().email("Email không hợp lệ").optional().or(z.literal("")).nullable(),
+    phone: z.string().optional().or(z.literal("")).nullable(),
+    address: z.string().optional().or(z.literal("")).nullable(),
+    taxCode: z.string().optional().or(z.literal("")).nullable()
+});
+
+const customerContactSchema = z.object({
+    name: z.string().min(1, "Tên người liên hệ không được để trống"),
+    email: z.string().email("Email không hợp lệ").optional().or(z.literal("")).nullable(),
+    position: z.string().optional().nullable(),
+    phone: z.string().optional().nullable(),
+    otherPhone: z.string().optional().nullable(),
+    birthday: z.union([z.string(), z.date()]).optional().nullable()
+});
 
 export async function createCustomer(data: { name: string, email?: string, phone?: string, address?: string, taxCode?: string }) {
     await verifyActionPermission('CUSTOMERS_CREATE');
+    const validatedData = customerSchema.parse(data);
+    data.name = validatedData.name;
+    data.email = validatedData.email ?? undefined;
+    data.phone = validatedData.phone ?? undefined;
+    data.address = validatedData.address ?? undefined;
+    data.taxCode = validatedData.taxCode ?? undefined;
+
     if (data.email) data.email = data.email.trim();
     if (!data.email) data.email = undefined; // Prisma expects undefined/null to not insert an empty string
 
@@ -41,6 +66,13 @@ export async function updateCustomer(id: string, data: { name: string, email?: s
     if (!cust) throw new Error("Not found");
     const managers = cust.managers ? cust.managers.map((m: any) => m.id) : [];
     await verifyActionOwnership('CUSTOMERS', 'EDIT', '', managers);
+
+    const validatedData = customerSchema.parse(data);
+    data.name = validatedData.name;
+    data.email = validatedData.email ?? undefined;
+    data.phone = validatedData.phone ?? undefined;
+    data.address = validatedData.address ?? undefined;
+    data.taxCode = validatedData.taxCode ?? undefined;
 
     if (data.email) data.email = data.email.trim();
     if (!data.email) data.email = undefined;
@@ -243,6 +275,14 @@ export async function createCustomerContact(customerId: string, data: { name: st
     const managers = cust.managers ? cust.managers.map((m: any) => m.id) : [];
     await verifyActionOwnership('CUSTOMERS', 'EDIT', '', managers);
 
+    const validatedData = customerContactSchema.parse(data);
+    data.name = validatedData.name;
+    data.email = validatedData.email ?? undefined;
+    data.position = validatedData.position ?? undefined;
+    data.phone = validatedData.phone ?? undefined;
+    data.otherPhone = validatedData.otherPhone ?? undefined;
+    // Keep birthday as is since it is Date | null and schema accepts string/date
+
     try {
         const contact = await prisma.customerContact.create({
             data: {
@@ -283,6 +323,13 @@ export async function updateCustomerContact(contactId: string, data: { name: str
         if (!cust) throw new Error("Not found");
         const managers = cust.managers ? cust.managers.map((m: any) => m.id) : [];
         await verifyActionOwnership('CUSTOMERS', 'EDIT', '', managers);
+
+        const validatedData = customerContactSchema.parse(data);
+        data.name = validatedData.name;
+        data.email = validatedData.email ?? undefined;
+        data.position = validatedData.position ?? undefined;
+        data.phone = validatedData.phone ?? undefined;
+        data.otherPhone = validatedData.otherPhone ?? undefined;
 
         const contact = await prisma.customerContact.update({
             where: { id: contactId },

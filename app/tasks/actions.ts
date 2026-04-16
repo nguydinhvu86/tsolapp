@@ -8,6 +8,51 @@ import { authOptions } from '@/lib/authOptions';
 import { createManyNotifications } from '@/app/notifications/actions';
 import { sendWebPushNotification } from '@/lib/notifications/webPush';
 import { buildViewFilter, verifyActionPermission, verifyActionOwnership } from '@/lib/permissions';
+import { z } from 'zod';
+
+const recurrenceSchema = z.object({
+    isRecurring: z.boolean(),
+    frequency: z.string().nullable().optional(),
+    count: z.number().optional()
+}).nullable().optional();
+
+const taskBaseSchema = z.object({
+    title: z.string().min(1, 'Tiêu đề không được để trống'),
+    description: z.string().nullable().optional(),
+    status: z.string().optional(),
+    priority: z.string().optional(),
+    dueDate: z.union([z.string(), z.date()]).nullable().optional(),
+    startDate: z.union([z.string(), z.date()]).nullable().optional(),
+    isPublic: z.boolean().optional(),
+    isProject: z.boolean().optional(),
+    estimatedValue: z.number().nullable().optional(),
+    estimatedDuration: z.string().nullable().optional(),
+    tags: z.string().nullable().optional(),
+    parentTaskId: z.string().nullable().optional(),
+    assignees: z.array(z.string()).optional(),
+    observers: z.array(z.string()).optional(),
+    dependencies: z.array(z.string()).optional(),
+    recurrence: recurrenceSchema,
+    projectId: z.string().nullable().optional(),
+    milestoneId: z.string().nullable().optional(),
+    customerId: z.string().nullable().optional(),
+    contractId: z.string().nullable().optional(),
+    quoteId: z.string().nullable().optional(),
+    appendixId: z.string().nullable().optional(),
+    handoverId: z.string().nullable().optional(),
+    paymentReqId: z.string().nullable().optional(),
+    dispatchId: z.string().nullable().optional(),
+    supplierId: z.string().nullable().optional(),
+    expenseId: z.string().nullable().optional(),
+    purchaseOrderId: z.string().nullable().optional(),
+    purchaseBillId: z.string().nullable().optional(),
+    purchasePaymentId: z.string().nullable().optional(),
+    salesEstimateId: z.string().nullable().optional(),
+    salesOrderId: z.string().nullable().optional(),
+    salesInvoiceId: z.string().nullable().optional(),
+    salesPaymentId: z.string().nullable().optional(),
+    leadId: z.string().nullable().optional()
+}).passthrough();
 
 export async function getTasks(filters?: any) {
     const session = await getServerSession(authOptions);
@@ -111,7 +156,8 @@ export async function createTask(data: any, creatorId: string) {
     const user = await verifyActionPermission('TASKS_CREATE');
     const uId = user ? (user as any).id : creatorId;
 
-    const { assignees, observers, recurrence, dependencies, ...restDataUnresolved } = data;
+    const validatedData = taskBaseSchema.parse(data);
+    const { assignees, observers, recurrence, dependencies, ...restDataUnresolved } = validatedData;
     const restData = await resolveParentEntityIds(restDataUnresolved);
 
     // Sanitize empty string ID fields to null to prevent foreign key violations
@@ -121,9 +167,9 @@ export async function createTask(data: any, creatorId: string) {
         }
     }
 
-    const isRecurringMode = recurrence && recurrence.isRecurring && recurrence.count > 1;
-    const taskCount = isRecurringMode ? recurrence.count : 1;
-    const frequency = isRecurringMode ? recurrence.frequency : null;
+    const isRecurringMode = recurrence && recurrence.isRecurring && (recurrence.count || 1) > 1;
+    const taskCount = isRecurringMode ? (recurrence.count || 1) : 1;
+    const frequency = isRecurringMode ? (recurrence.frequency as string) : null;
     let baseDueDate = restData.dueDate ? new Date(restData.dueDate) : null;
     let baseStartDate = restData.startDate ? new Date(restData.startDate) : new Date();
 
@@ -134,7 +180,7 @@ export async function createTask(data: any, creatorId: string) {
         let currentDueDate = baseDueDate;
         let currentStartDate = baseStartDate;
 
-        if (isRecurringMode && i > 0) {
+        if (isRecurringMode && i > 0 && frequency) {
             if (baseDueDate) currentDueDate = addFrequency(baseDueDate, frequency, i);
             if (baseStartDate) currentStartDate = addFrequency(baseStartDate, frequency, i);
         }
@@ -288,7 +334,8 @@ export async function triggerAutoTaskEmail(taskId: string, newAssigneeIds: strin
 
 
 export async function updateTask(id: string, data: any, userId: string) {
-    const { assignees, observers, recurrence, dependencies, ...restData } = data;
+    const validatedData = taskBaseSchema.parse(data);
+    const { assignees, observers, recurrence, dependencies, ...restData } = validatedData;
 
     // Sanitize empty string ID fields to null to prevent foreign key violations
     for (const key of Object.keys(restData)) {
@@ -408,14 +455,14 @@ export async function updateTask(id: string, data: any, userId: string) {
     // Process Recurrence Toggle On -> generate child tasks (only after update succeeds)
     if (oldTask && !oldTask.isRecurring && recurrence && recurrence.isRecurring) {
         const taskCount = recurrence.count || 1;
-        const frequency = recurrence.frequency;
+        const frequency = recurrence.frequency as string;
         const baseDueDate = restData.dueDate ? new Date(restData.dueDate) : (oldTask.dueDate || new Date());
         const baseStartDate = restData.startDate ? new Date(restData.startDate) : (oldTask.startDate || null);
 
         const childTasksData = [];
         for (let i = 1; i < taskCount; i++) {
-            let nextDueDate = baseDueDate ? addFrequency(baseDueDate, frequency, i) : null;
-            let nextStartDate = baseStartDate ? addFrequency(baseStartDate, frequency, i) : null;
+            let nextDueDate = baseDueDate && frequency ? addFrequency(baseDueDate, frequency, i) : null;
+            let nextStartDate = baseStartDate && frequency ? addFrequency(baseStartDate, frequency, i) : null;
             childTasksData.push({
                 ...restData,
                 title: restData.title + ` (Lần ${i + 1}/${taskCount})`,
