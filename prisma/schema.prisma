@@ -2296,7 +2296,7 @@ model MarketingForm {
   title        String
   description  String? @db.Text
   isActive     Boolean @default(true)
-  fieldsConfig String  @default("[]") @db.LongText // JSON array of field configurations
+  fieldsConfig String  @db.LongText // JSON array of field configurations
 
   campaignId String
   campaign   MarketingCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)

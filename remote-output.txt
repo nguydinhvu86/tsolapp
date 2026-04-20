@@ -1,0 +1,13 @@
+Connected to server. Executing remote build...
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": MySQL database "erp_tsolnew" at "127.0.0.1:3306"
+Error: BLOB, TEXT, GEOMETRY or JSON column 'fieldsConfig' can't have a default value
+   0: sql_schema_connector::apply_migration::migration_step
+           with step=CreateTable { table_id: TableId(112) }
+             at schema-engine/connectors/sql-schema-connector/src/apply_migration.rs:21
+   1: sql_schema_connector::apply_migration::apply_migration
+             at schema-engine/connectors/sql-schema-connector/src/apply_migration.rs:10
+   2: schema_core::state::SchemaPush
+             at schema-engine/core/src/state.rs:504
+
