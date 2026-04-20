@@ -87,7 +87,7 @@ async function getInitialData(userId: string, permissions: string[], isAdmin: bo
 
         const projects = await (prisma as any).project.findMany({
             where: { status: { notIn: ['CANCELLED'] } },
-            select: { id: true, title: true, code: true }
+            select: { id: true, name: true, code: true }
         });
 
         return { expenses, categories, customers, suppliers, projects };

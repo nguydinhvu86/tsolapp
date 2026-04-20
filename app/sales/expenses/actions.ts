@@ -84,6 +84,7 @@ export async function createExpense(data: {
     supplierId?: string | null;
     customerId?: string | null;
     projectId?: string | null;
+    marketingCampaignId?: string | null;
 }) {
     const user = await verifyActionPermission('SALES_EXPENSES_CREATE');
     const uId = (user as any).id;
@@ -125,15 +126,16 @@ export async function createExpense(data: {
                 supplierId: data.supplierId || null,
                 customerId: data.customerId || null,
                 projectId: data.projectId || null,
+                marketingCampaignId: data.marketingCampaignId || null,
                 creatorId: uId,
                 status: 'COMPLETED'
             }
         });
 
         return expense;
-    } catch (error) {
+    } catch (error: any) {
         console.error('Lỗi khi tạo khoản Chi Phí:', error);
-        throw new Error('Không thể tạo khoản Chi Phí');
+        throw new Error(error.message || 'Không thể tạo khoản Chi Phí');
     }
 }
 
@@ -150,6 +152,7 @@ export async function updateExpense(id: string, data: {
     supplierId?: string | null;
     customerId?: string | null;
     projectId?: string | null;
+    marketingCampaignId?: string | null;
 }) {
     const oldExpense = await prisma.expense.findUnique({ where: { id } });
     if (!oldExpense) throw new Error("Khoản chi phí không tồn tại");

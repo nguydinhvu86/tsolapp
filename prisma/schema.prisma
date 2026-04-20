@@ -148,6 +148,9 @@ model User {
   projectAttachments      ProjectAttachment[]
   timeLogs                TaskTimeLog[]
   ProjectTopic            ProjectTopic[]
+
+  // Marketing Module
+  createdCampaigns MarketingCampaign[] @relation("CampaignCreator")
 }
 
 model SystemSetting {
@@ -207,8 +210,9 @@ model Customer {
   managers     User[]                @relation("CustomerManagers")
   callLogs     CallLog[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  MarketingParticipant MarketingParticipant[]
 
   @@index([createdAt])
 }
@@ -522,6 +526,9 @@ model Task {
   dependencies TaskDependency[] @relation("TaskDependencies")
   dependentOn  TaskDependency[] @relation("DependentTasks")
   timeLogs     TaskTimeLog[]
+
+  marketingCampaignId String?
+  marketingCampaign   MarketingCampaign? @relation(fields: [marketingCampaignId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1346,6 +1353,9 @@ model Expense {
   notes        ExpenseNote[]
   activityLogs ExpenseActivityLog[]
 
+  marketingCampaignId String?
+  marketingCampaign   MarketingCampaign? @relation(fields: [marketingCampaignId], references: [id], onDelete: SetNull)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -1421,11 +1431,12 @@ model Lead {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  activityLogs   LeadActivityLog[]
-  tasks          Task[] // Công việc liên quan (gọi điện, hẹn gặp...)
-  EmailLog       EmailLog[]
-  salesEstimates SalesEstimate[]
-  callLogs       CallLog[]
+  activityLogs         LeadActivityLog[]
+  tasks                Task[] // Công việc liên quan (gọi điện, hẹn gặp...)
+  EmailLog             EmailLog[]
+  salesEstimates       SalesEstimate[]
+  callLogs             CallLog[]
+  MarketingParticipant MarketingParticipant[]
 
   @@index([status])
   @@index([customerId])
@@ -2240,4 +2251,84 @@ model ProjectIssue {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// --- MARKETING MODULE ---
+
+model MarketingCategory {
+  id          String              @id @default(cuid())
+  name        String              @unique
+  description String?             @db.Text
+  campaigns   MarketingCampaign[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
+model MarketingCampaign {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  name        String
+  description String?   @db.Text
+  startDate   DateTime?
+  endDate     DateTime?
+  budget      Float     @default(0)
+  status      String    @default("DRAFT") // DRAFT, ACTIVE, COMPLETED, CANCELLED
+
+  categoryId String
+  category   MarketingCategory @relation(fields: [categoryId], references: [id])
+
+  forms        MarketingForm[]
+  participants MarketingParticipant[]
+  tasks        Task[]
+  expenses     Expense[]
+
+  creatorId String
+  creator   User   @relation("CampaignCreator", fields: [creatorId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MarketingForm {
+  id           String  @id @default(cuid())
+  title        String
+  description  String? @db.Text
+  isActive     Boolean @default(true)
+  fieldsConfig String  @default("[]") @db.LongText // JSON array of field configurations
+
+  campaignId String
+  campaign   MarketingCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  participants MarketingParticipant[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MarketingParticipant {
+  id         String  @id @default(cuid())
+  name       String
+  email      String?
+  phone      String?
+  status     String  @default("REGISTERED") // REGISTERED, ATTENDED, ABSENT, CANCELLED
+  source     String? @default("FORM") // FORM, IMPORT, MANUAL
+  customData String? @db.LongText // JSON string of custom form fields data
+
+  campaignId String
+  campaign   MarketingCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  formId String?
+  form   MarketingForm? @relation(fields: [formId], references: [id])
+
+  // Optional link to CRM mapping
+  leadId     String?
+  lead       Lead?     @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([campaignId, email])
+  @@unique([campaignId, phone])
 }

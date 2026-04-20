@@ -14,7 +14,7 @@ import Link from 'next/link';
 interface TaskPanelProps {
     initialTasks: any[];
     users: any[];
-    entityType: 'PROJECT' | 'CONTRACT' | 'QUOTE' | 'HANDOVER' | 'PAYMENT_REQUEST' | 'DISPATCH' | 'CUSTOMER' | 'APPENDIX' | 'SUPPLIER' | 'PURCHASE_ORDER' | 'PURCHASE_BILL' | 'PURCHASE_PAYMENT' | 'SALES_ESTIMATE' | 'SALES_ORDER' | 'SALES_INVOICE' | 'SALES_PAYMENT' | 'LEAD' | 'OTHER';
+    entityType: 'PROJECT' | 'CONTRACT' | 'QUOTE' | 'HANDOVER' | 'PAYMENT_REQUEST' | 'DISPATCH' | 'CUSTOMER' | 'APPENDIX' | 'SUPPLIER' | 'PURCHASE_ORDER' | 'PURCHASE_BILL' | 'PURCHASE_PAYMENT' | 'SALES_ESTIMATE' | 'SALES_ORDER' | 'SALES_INVOICE' | 'SALES_PAYMENT' | 'LEAD' | 'MARKETING_CAMPAIGN' | 'OTHER';
     entityId: string;
     initialTitle?: string;
     initialDescription?: string;
@@ -128,6 +128,7 @@ export function TaskPanel({ initialTasks, users, entityType, entityId, initialTi
         if (entityType === 'SALES_INVOICE') contextLinks.salesInvoiceId = entityId;
         if (entityType === 'SALES_PAYMENT') contextLinks.salesPaymentId = entityId;
         if (entityType === 'LEAD') contextLinks.leadId = entityId;
+        if (entityType === 'MARKETING_CAMPAIGN') contextLinks.marketingCampaignId = entityId;
 
         try {
             const payload: any = {

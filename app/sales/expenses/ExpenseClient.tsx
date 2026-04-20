@@ -20,6 +20,7 @@ export type ExpenseWithDetails = Expense & {
     customer?: { id: string, name: string } | null;
     creator?: { name: string | null; email: string | null } | null;
     projectId?: string | null;
+    marketingCampaignId?: string | null;
 };
 
 export default function ExpenseClient({
@@ -29,7 +30,8 @@ export default function ExpenseClient({
     suppliers,
     isAdmin,
     permissions,
-    projects
+    projects,
+    campaignId
 }: {
     initialData: ExpenseWithDetails[];
     categories: ExpenseCategory[];
@@ -37,7 +39,8 @@ export default function ExpenseClient({
     suppliers: { id: string, name: string, phone?: string | null }[];
     isAdmin: boolean;
     permissions: string[];
-    projects?: { id: string, title: string, code?: string | null }[];
+    projects?: { id: string, name: string, code?: string | null }[];
+    campaignId?: string;
 }) {
     const router = useRouter();
     const [expenses, setExpenses] = useState<ExpenseWithDetails[]>(initialData);
@@ -64,7 +67,8 @@ export default function ExpenseClient({
         systemLinkType: 'NONE', // 'NONE', 'CUSTOMER', 'SUPPLIER'
         customerId: '',
         supplierId: '',
-        projectId: ''
+        projectId: '',
+        marketingCampaignId: campaignId || ''
     });
     const [isUploading, setIsUploading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -165,7 +169,8 @@ export default function ExpenseClient({
                 systemLinkType: expense.customerId ? 'CUSTOMER' : expense.supplierId ? 'SUPPLIER' : 'NONE',
                 customerId: expense.customerId || '',
                 supplierId: expense.supplierId || '',
-                projectId: expense.projectId || ''
+                projectId: expense.projectId || '',
+                marketingCampaignId: expense.marketingCampaignId || campaignId || ''
             });
         } else {
             setEditingId(null);
@@ -186,7 +191,8 @@ export default function ExpenseClient({
                 systemLinkType: 'NONE',
                 customerId: '',
                 supplierId: '',
-                projectId: prefillProjectId
+                projectId: prefillProjectId,
+                marketingCampaignId: campaignId || ''
             });
         }
         setIsModalOpen(true);
@@ -217,9 +223,10 @@ export default function ExpenseClient({
                     date: new Date(formData.date),
                     reference: formData.reference,
                     attachment: formData.attachment,
-                    customerId: formData.systemLinkType === 'CUSTOMER' ? formData.customerId : null,
-                    supplierId: formData.systemLinkType === 'SUPPLIER' ? formData.supplierId : null,
+                    customerId: formData.systemLinkType === 'CUSTOMER' ? (formData.customerId || null) : null,
+                    supplierId: formData.systemLinkType === 'SUPPLIER' ? (formData.supplierId || null) : null,
                     projectId: formData.projectId || null,
+                    marketingCampaignId: formData.marketingCampaignId || null,
                 });
             } else {
                 await createExpense({
@@ -231,15 +238,16 @@ export default function ExpenseClient({
                     date: new Date(formData.date),
                     reference: formData.reference,
                     attachment: formData.attachment,
-                    customerId: formData.systemLinkType === 'CUSTOMER' ? formData.customerId : null,
-                    supplierId: formData.systemLinkType === 'SUPPLIER' ? formData.supplierId : null,
+                    customerId: formData.systemLinkType === 'CUSTOMER' ? (formData.customerId || null) : null,
+                    supplierId: formData.systemLinkType === 'SUPPLIER' ? (formData.supplierId || null) : null,
                     projectId: formData.projectId || null,
+                    marketingCampaignId: formData.marketingCampaignId || null,
                 });
             }
             closeModal();
             router.refresh();
-        } catch (error) {
-            alert("Có lỗi xảy ra, vui lòng thử lại.");
+        } catch (error: any) {
+            alert(`Có lỗi xảy ra: ${error.message || 'vui lòng thử lại'}`);
         } finally {
             setIsSaving(false);
         }
@@ -462,7 +470,7 @@ export default function ExpenseClient({
                             <SearchableSelect
                                 value={formData.projectId || ''}
                                 onChange={(val) => setFormData({ ...formData, projectId: val })}
-                                options={[{ value: '', label: '-- Không thuộc dự án --' }, ...(projects || []).map((p: any) => ({ value: p.id, label: `${p.code} - ${p.title}` }))]}
+                                options={[{ value: '', label: '-- Không thuộc dự án --' }, ...(projects || []).map((p: any) => ({ value: p.id, label: `${p.code} - ${p.name}` }))]}
                                 placeholder="Chọn dự án..."
                             />
                         </div>

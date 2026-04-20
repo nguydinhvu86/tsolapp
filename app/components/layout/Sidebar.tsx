@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { LayoutDashboard, Users, FileText, Settings, FileSpreadsheet, FileCode, ChevronDown, ChevronRight, FileOutput, FilePlus2, FileStack, Mail, CheckSquare, Package, ShoppingCart, Target, GripVertical, Clock, BookOpen, Phone, Calculator } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Settings, FileSpreadsheet, FileCode, ChevronDown, ChevronRight, FileOutput, FilePlus2, FileStack, Mail, CheckSquare, Package, ShoppingCart, Target, GripVertical, Clock, BookOpen, Phone, Calculator, Megaphone } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -92,6 +92,17 @@ const mainNavItems: any[] = [
             { name: 'Thu Tiền / Công Nợ', nameKey: 'sidebar.sp', href: '/sales/payments', permission: 'SALES_PAYMENTS_VIEW' },
             { name: 'Chi Phí', nameKey: 'sidebar.expenses', href: '/sales/expenses', permission: 'SALES_EXPENSES_VIEW' },
             { name: 'Báo Cáo Doanh Thu', nameKey: 'sidebar.sales_reports', href: '/sales/reports', permission: 'SALES_INVOICES_VIEW' }
+        ]
+    },
+    {
+        name: 'Marketing', nameKey: 'sidebar.marketing',
+        icon: Megaphone,
+        children: [
+            { name: 'Tổng Quan', nameKey: 'sidebar.marketing_dashboard', href: '/marketing', permission: 'MARKETING_VIEW' },
+            { name: 'Chiến Dịch & Sự Kiện', nameKey: 'sidebar.marketing_campaigns', href: '/marketing/campaigns', permission: 'MARKETING_VIEW' },
+            { name: 'Phân Loại Sự Kiện', nameKey: 'sidebar.marketing_categories', href: '/marketing/categories', permission: 'MARKETING_VIEW' },
+            { name: 'Thiết Kế Form', nameKey: 'sidebar.marketing_forms', href: '/marketing/forms', permission: 'MARKETING_VIEW' },
+            { name: 'Người Tham Gia', nameKey: 'sidebar.marketing_participants', href: '/marketing/participants', permission: 'MARKETING_VIEW' }
         ]
     },
     {

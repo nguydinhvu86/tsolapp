@@ -1,0 +1,22 @@
+
+Error: Prisma schema validation - (validate wasm)
+Error code: P1012
+[1;91merror[0m: [1mError validating field `MarketingCampaign` in model `User`: The relation field `MarketingCampaign` on model `User` is missing an opposite relation field on the model `MarketingCampaign`. Either run `prisma format` or add it manually.[0m
+  [1;94m-->[0m  [4mprisma\schema.prisma:151[0m
+[1;94m   | [0m
+[1;94m150 | [0m  ProjectTopic            ProjectTopic[]
+[1;94m151 | [0m  [1;91mMarketingCampaign       MarketingCampaign[][0m
+[1;94m152 | [0m}
+[1;94m   | [0m
+[1;91merror[0m: [1mError validating field `creator` in model `MarketingCampaign`: The relation field `creator` on model `MarketingCampaign` is missing an opposite relation field on the model `User`. Either run `prisma format` or add it manually.[0m
+  [1;94m-->[0m  [4mprisma\schema.prisma:2284[0m
+[1;94m   | [0m
+[1;94m2283 | [0m  creatorId String
+[1;94m2284 | [0m  [1;91mcreator   User   @relation("CampaignCreator", fields: [creatorId], references: [id])[0m
+[1;94m2285 | [0m
+[1;94m   | [0m
+
+Validation Error Count: 2
+[Context: validate]
+
+Prisma CLI Version : 5.22.0

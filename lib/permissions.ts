@@ -31,6 +31,7 @@ export const RESOURCES = [
     { id: 'PAYROLL', name: 'Bảng Lương' },
     { id: 'RECRUITMENT', name: 'Tuyển Dụng' },
     { id: 'MONITORING', name: 'Giám Sát Ping' },
+    { id: 'MARKETING', name: 'Chiến dịch Marketing' },
 ] as const;
 
 export const ACTIONS = [
