@@ -1,8 +1,8 @@
 -- AlterTable
-ALTER TABLE `expense` ADD COLUMN `marketingCampaignId` VARCHAR(191) NULL;
+ALTER TABLE `Expense` ADD COLUMN `marketingCampaignId` VARCHAR(191) NULL;
 
 -- AlterTable
-ALTER TABLE `task` ADD COLUMN `marketingCampaignId` VARCHAR(191) NULL;
+ALTER TABLE `Task` ADD COLUMN `marketingCampaignId` VARCHAR(191) NULL;
 
 -- CreateTable
 CREATE TABLE `MarketingCategory` (
