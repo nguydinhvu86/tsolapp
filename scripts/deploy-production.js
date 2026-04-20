@@ -18,6 +18,7 @@ conn.on('ready', () => {
         `npm install && ` +
         `npx prisma generate && ` +
         `npx prisma migrate deploy && ` +
+        `rm -rf .next && ` +
         `npm run build && ` +
         `/www/server/nodejs/v14.17.6/bin/pm2 restart inside.tsol.vn`;
 
