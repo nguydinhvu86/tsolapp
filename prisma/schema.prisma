@@ -2269,6 +2269,8 @@ model MarketingCampaign {
   code        String    @unique
   name        String
   description String?   @db.Text
+  eventTime   String?   @db.Text
+  location    String?   @db.Text
   startDate   DateTime?
   endDate     DateTime?
   budget      Float     @default(0)

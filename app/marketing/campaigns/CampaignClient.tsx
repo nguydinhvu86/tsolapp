@@ -43,6 +43,8 @@ export default function CampaignClient({
         name: string;
         categoryId: string;
         description: string;
+        eventTime: string;
+        location: string;
         startDate: string;
         endDate: string;
         budget: string;
@@ -52,6 +54,8 @@ export default function CampaignClient({
         name: '',
         categoryId: '',
         description: '',
+        eventTime: '',
+        location: '',
         startDate: '',
         endDate: '',
         budget: '',
@@ -70,6 +74,8 @@ export default function CampaignClient({
                 name: campaign.name,
                 categoryId: campaign.categoryId,
                 description: campaign.description || '',
+                eventTime: campaign.eventTime || '',
+                location: campaign.location || '',
                 startDate: campaign.startDate ? new Date(campaign.startDate).toISOString().split('T')[0] : '',
                 endDate: campaign.endDate ? new Date(campaign.endDate).toISOString().split('T')[0] : '',
                 budget: campaign.budget?.toString() || '',
@@ -82,6 +88,8 @@ export default function CampaignClient({
                 name: '',
                 categoryId: categories.length > 0 ? categories[0].id : '',
                 description: '',
+                eventTime: '',
+                location: '',
                 startDate: '',
                 endDate: '',
                 budget: '',
@@ -106,7 +114,7 @@ export default function CampaignClient({
             if (editingId) {
                 const res = await updateCampaign(editingId, dataToSubmit);
                 if (res.success && res.data) {
-                    // Update state. Refetch is better, but optimistic update is faster
+                    setCampaigns(campaigns.map(c => c.id === editingId ? { ...c, ...res.data } : c));
                     router.refresh();
                     setIsModalOpen(false);
                 } else {
@@ -115,6 +123,13 @@ export default function CampaignClient({
             } else {
                 const res = await createCampaign(dataToSubmit);
                 if (res.success && res.data) {
+                    const newCampaignLocal = {
+                        ...res.data,
+                        category: categories.find(c => c.id === dataToSubmit.categoryId),
+                        creator: { id: '', name: 'Bạn', email: '' }, // Optimistic minimal data
+                        _count: { participants: 0, tasks: 0, forms: 0 }
+                    };
+                    setCampaigns([newCampaignLocal as any, ...campaigns]);
                     router.refresh();
                     setIsModalOpen(false);
                 } else {
@@ -319,6 +334,23 @@ export default function CampaignClient({
                                 value={formData.categoryId}
                                 onChange={(val) => setFormData(prev => ({ ...prev, categoryId: val }))}
                                 placeholder="Chọn phân loại..."
+                            />
+                        </div>
+
+                        <div className="col-span-2 md:col-span-1">
+                            <label className="block text-sm font-medium mb-1">Giờ diễn ra</label>
+                            <Input
+                                value={formData.eventTime}
+                                onChange={(e) => setFormData(prev => ({ ...prev, eventTime: e.target.value }))}
+                                placeholder="VD: 08:00 - 17:00 ngày..."
+                            />
+                        </div>
+                        <div className="col-span-2 md:col-span-1">
+                            <label className="block text-sm font-medium mb-1">Địa điểm tổ chức</label>
+                            <Input
+                                value={formData.location}
+                                onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                                placeholder="Trung tâm Triển lãm SECC..."
                             />
                         </div>
 

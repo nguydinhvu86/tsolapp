@@ -5,8 +5,8 @@ import { MarketingParticipant } from '@prisma/client';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Table } from '@/app/components/ui/Table';
-import { checkInParticipant, deleteParticipant } from './actions';
-import { Trash2, Search, CheckCircle, Clock, MapPin, UserCheck, Download } from 'lucide-react';
+import { checkInParticipant, cancelCheckInParticipant, deleteParticipant, updateParticipantStatus } from './actions';
+import { Trash2, Search, CheckCircle, Clock, MapPin, UserCheck, Download, ChevronUp, ChevronDown, ArrowUpDown } from 'lucide-react';
 import { formatDate } from '@/lib/utils/formatters';
 
 export type ParticipantListType = MarketingParticipant & {
@@ -30,6 +30,7 @@ export default function ParticipantClient({
     const [searchTerm, setSearchTerm] = useState('');
     const [filterCampaignId, setFilterCampaignId] = useState('ALL');
     const [filterStatus, setFilterStatus] = useState('ALL');
+    const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>({ key: 'createdAt', direction: 'desc' });
 
     const canEdit = isAdmin || permissions.includes('MARKETING_EDIT');
     const canDelete = isAdmin || permissions.includes('MARKETING_DELETE');
@@ -37,14 +38,59 @@ export default function ParticipantClient({
     const handleCheckIn = async (id: string) => {
         try {
             const res = await checkInParticipant(id);
-            if (res.success && res.data) {
-                setParticipants(participants.map(p => p.id === id ? { ...p, status: 'ATTENDED', checkInTime: res.data.checkInTime } : p));
+            if (res.success) {
+                setParticipants(participants.map(p => p.id === id ? { ...p, status: 'ATTENDED', updatedAt: new Date() } : p));
+                alert("Check-in thành công");
             } else {
                 alert(res.error);
             }
         } catch (error) {
             console.error(error);
             alert('Lỗi điểm danh');
+        }
+    };
+
+    const handleUpdateStatus = async (id: string, status: string) => {
+        try {
+            const res = await updateParticipantStatus(id, status);
+            if (res.success) {
+                setParticipants(participants.map(p => {
+                    if (p.id === id) {
+                        let customDataObj: any = {};
+                        try {
+                            if (p.customData) customDataObj = JSON.parse(p.customData);
+                        } catch (e) {}
+
+                        if (status === 'REMINDED_1') {
+                            customDataObj['_remind1At'] = new Date().toISOString();
+                        } else if (status === 'REMINDED_2') {
+                            customDataObj['_remind2At'] = new Date().toISOString();
+                        }
+
+                        return { ...p, status: status, customData: JSON.stringify(customDataObj) };
+                    }
+                    return p;
+                }));
+            } else {
+                alert(res.error);
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Lỗi cập nhật trạng thái');
+        }
+    };
+
+    const handleCancelCheckIn = async (id: string) => {
+        try {
+            const res = await cancelCheckInParticipant(id);
+            if (res.success) {
+                setParticipants(participants.map(p => p.id === id ? { ...p, status: 'REGISTERED' } : p));
+            } else {
+                alert(res.error);
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Lỗi hủy điểm danh');
         }
     };
 
@@ -64,24 +110,8 @@ export default function ParticipantClient({
         }
     };
 
-    const extractMainInfo = (dataObj: any) => {
-        // Attempt to find Name, Phone, Email from dynamic JSON
-        let name = '', phone = '', email = '';
-        if (typeof dataObj === 'object' && dataObj !== null) {
-            for (const [key, value] of Object.entries(dataObj)) {
-                const k = key.toLowerCase();
-                const v = typeof value === 'string' ? value : String(value);
-                if (k.includes('tên') || k.includes('name')) name = v;
-                if (k.includes('điện thoại') || k.includes('phone')) phone = v;
-                if (k.includes('email') || k.includes('mail')) email = v;
-            }
-        }
-        return { name, phone, email };
-    };
-
     const filteredData = participants.filter(p => {
-        const { name, phone, email } = extractMainInfo(p.data);
-        const searchStr = `${name} ${phone} ${email} ${p.campaign.name}`.toLowerCase();
+        const searchStr = `${p.name} ${p.phone || ''} ${p.email || ''} ${p.campaign?.name || ''}`.toLowerCase();
         
         const matchSearch = searchStr.includes(searchTerm.toLowerCase());
         const matchCampaign = filterCampaignId === 'ALL' || p.campaignId === filterCampaignId;
@@ -90,19 +120,59 @@ export default function ParticipantClient({
         return matchSearch && matchCampaign && matchStatus;
     });
 
+    const sortedData = [...filteredData].sort((a, b) => {
+        if (!sortConfig) return 0;
+        
+        let valA: any, valB: any;
+        if (sortConfig.key === 'info') {
+            valA = (a.name || '').toLowerCase();
+            valB = (b.name || '').toLowerCase();
+        } else if (sortConfig.key === 'campaign') {
+            valA = (a.campaign?.name || '').toLowerCase();
+            valB = (b.campaign?.name || '').toLowerCase();
+        } else if (sortConfig.key === 'createdAt') {
+            valA = new Date(a.createdAt).getTime();
+            valB = new Date(b.createdAt).getTime();
+        } else if (sortConfig.key === 'status') {
+            valA = a.status;
+            valB = b.status;
+        }
+
+        if (valA === undefined || valB === undefined) return 0;
+
+        if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    const handleSort = (key: string) => {
+        let direction: 'asc' | 'desc' = 'asc';
+        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const SortIcon = ({ columnKey }: { columnKey: string }) => {
+        if (sortConfig?.key !== columnKey) return <ArrowUpDown size={14} className="ml-1 opacity-20 group-hover:opacity-100 transition-opacity" />;
+        return sortConfig.direction === 'asc' 
+            ? <ChevronUp size={14} className="ml-1 text-blue-500" />
+            : <ChevronDown size={14} className="ml-1 text-blue-500" />;
+    };
+
     const exportToCSV = () => {
         // Simple CSV export
         const headers = ['Chiến dịch', 'Form đăng ký', 'Trạng thái', 'Thời gian đăng ký', 'Thời gian Check-in', 'Dữ liệu thô (JSON)'];
         const csvRows = [headers.join(',')];
 
-        filteredData.forEach(p => {
+        sortedData.forEach(p => {
             csvRows.push([
-                `"${p.campaign.name}"`,
-                `"${p.form.title}"`,
+                `"${p.campaign?.name || ''}"`,
+                `"${p.form?.title || ''}"`,
                 `"${p.status}"`,
                 `"${formatDate(p.createdAt)}"`,
-                `"${p.checkInTime ? formatDate(p.checkInTime) : ''}"`,
-                `"${JSON.stringify(p.data).replace(/"/g, '""')}"`
+                `"${p.updatedAt ? formatDate(p.updatedAt) : ''}"`,
+                `"${(p.customData || '').replace(/"/g, '""')}"`
             ].join(','));
         });
 
@@ -162,23 +232,29 @@ export default function ParticipantClient({
                 <Table>
                     <thead>
                         <tr>
-                            <th className="w-64">Thông tin (Trích xuất)</th>
-                            <th>Chiến dịch / Form</th>
-                            <th>Thời gian ĐK</th>
-                            <th>Trạng thái</th>
-                            <th>Dữ liệu chi tiết</th>
+                            <th className="w-64 cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" onClick={() => handleSort('info')}>
+                                <div className="flex items-center">Thông tin (Trích xuất) <SortIcon columnKey="info" /></div>
+                            </th>
+                            <th className="cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" onClick={() => handleSort('campaign')}>
+                                <div className="flex items-center">Chiến dịch / Form <SortIcon columnKey="campaign" /></div>
+                            </th>
+                            <th className="cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" onClick={() => handleSort('createdAt')}>
+                                <div className="flex items-center">Thời gian ĐK <SortIcon columnKey="createdAt" /></div>
+                            </th>
+                            <th className="cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" onClick={() => handleSort('status')}>
+                                <div className="flex items-center">Trạng thái <SortIcon columnKey="status" /></div>
+                            </th>
                             <th className="text-right">Thao tác</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredData.length > 0 ? filteredData.map((p) => {
-                            const { name, phone, email } = extractMainInfo(p.data);
+                        {sortedData.length > 0 ? sortedData.map((p) => {
                             return (
                                 <tr key={p.id}>
                                     <td>
-                                        <div className="font-semibold text-slate-800 dark:text-slate-200">{name || '[Không tên]'}</div>
-                                        <div className="text-sm text-slate-600 dark:text-slate-400">{phone}</div>
-                                        <div className="text-sm text-slate-600 dark:text-slate-400 truncate w-48">{email}</div>
+                                        <div className="font-semibold text-slate-800 dark:text-slate-200">{p.name || '[Không tên]'}</div>
+                                        <div className="text-sm text-slate-600 dark:text-slate-400">{p.phone}</div>
+                                        <div className="text-sm text-slate-600 dark:text-slate-400 truncate w-48">{p.email}</div>
                                     </td>
                                     <td>
                                         <span className="font-medium inline-block max-w-[200px] truncate" title={p.campaign.name}>{p.campaign.name}</span>
@@ -189,34 +265,64 @@ export default function ParticipantClient({
                                         <div className="text-xs text-slate-500">{new Date(p.createdAt).toLocaleTimeString('vi-VN')}</div>
                                     </td>
                                     <td>
-                                        {p.status === 'ATTENDED' ? (
-                                            <div>
-                                                <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-400">
-                                                    <UserCheck size={14} /> Điểm danh lúc
+                                        <div className="flex flex-col gap-1.5">
+                                            {p.status === 'CANCELLED' ? (
+                                                <span className="inline-flex items-center gap-1 w-max px-2.5 py-1 text-xs font-medium rounded bg-gray-100 text-gray-800">
+                                                    Hủy
                                                 </span>
-                                                <div className="text-xs text-emerald-600 dark:text-emerald-500 font-bold mt-1 ml-1 font-mono">
-                                                    {p.checkInTime ? new Date(p.checkInTime).toLocaleTimeString('vi-VN') : ''}
-                                                </div>
-                                            </div>
-                                        ) : p.status === 'REGISTERED' ? (
-                                            <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400">
-                                                <Clock size={14} /> Chờ tham gia
-                                            </span>
-                                        ) : (
-                                            <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded bg-gray-100 text-gray-800">
-                                                Hủy
-                                            </span>
-                                        )}
-                                    </td>
-                                    <td>
-                                        <div className="text-xs font-mono bg-slate-100 dark:bg-slate-800 p-2 rounded max-h-20 overflow-y-auto max-w-[250px] whitespace-pre-wrap">
-                                            {JSON.stringify(p.data, null, 2)}
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1 w-max px-2.5 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400">
+                                                    Đăng ký chờ tham gia
+                                                </span>
+                                            )}
+
+                                            {(() => {
+                                                if (p.status === 'CANCELLED') return null;
+                                                try {
+                                                    const parsed = p.customData ? JSON.parse(p.customData) : {};
+                                                    return (
+                                                        <>
+                                                            {parsed._remind1At && (
+                                                                <span className="inline-flex items-center gap-1 w-max px-2.5 py-1 text-xs font-medium rounded bg-cyan-100 text-cyan-800 dark:bg-cyan-900/50 dark:text-cyan-400">
+                                                                    <Clock size={14} /> Nhắc L1: {new Date(parsed._remind1At).toLocaleTimeString('vi-VN')} {new Date(parsed._remind1At).toLocaleDateString('vi-VN')}
+                                                                </span>
+                                                            )}
+                                                            {parsed._remind2At && (
+                                                                <span className="inline-flex items-center gap-1 w-max px-2.5 py-1 text-xs font-medium rounded bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-400">
+                                                                    <Clock size={14} /> Nhắc L2: {new Date(parsed._remind2At).toLocaleTimeString('vi-VN')} {new Date(parsed._remind2At).toLocaleDateString('vi-VN')}
+                                                                </span>
+                                                            )}
+                                                        </>
+                                                    );
+                                                } catch (e) { return null; }
+                                            })()}
+
+                                            {p.status === 'ATTENDED' && (
+                                                <span className="inline-flex items-center gap-1 w-max px-2.5 py-1 text-xs font-semibold rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-400">
+                                                    <UserCheck size={14} /> Điểm danh lúc: {p.updatedAt ? new Date(p.updatedAt).toLocaleTimeString('vi-VN') : ''}
+                                                </span>
+                                            )}
                                         </div>
                                     </td>
                                     <td className="text-right space-x-2 whitespace-nowrap">
-                                        {canEdit && p.status === 'REGISTERED' && (
+                                        {canEdit && (p.status === 'REGISTERED' || p.status === 'REMINDED_1' || p.status === 'REMINDED_2') && (
                                             <Button onClick={() => handleCheckIn(p.id)} className="bg-emerald-500 hover:bg-emerald-600 text-white border-0 px-2 py-1 text-sm h-8">
                                                 <CheckCircle size={14} className="mr-1" /> Check-in
+                                            </Button>
+                                        )}
+                                        {canEdit && p.status === 'REGISTERED' && (
+                                            <Button variant="secondary" onClick={() => handleUpdateStatus(p.id, 'REMINDED_1')} className="px-2 py-1 text-sm h-8 border-cyan-200 text-cyan-700 hover:bg-cyan-50">
+                                                Nhắc L1
+                                            </Button>
+                                        )}
+                                        {canEdit && p.status === 'REMINDED_1' && (
+                                            <Button variant="secondary" onClick={() => handleUpdateStatus(p.id, 'REMINDED_2')} className="px-2 py-1 text-sm h-8 border-indigo-200 text-indigo-700 hover:bg-indigo-50">
+                                                Nhắc L2
+                                            </Button>
+                                        )}
+                                        {canEdit && p.status === 'ATTENDED' && (
+                                            <Button variant="secondary" onClick={() => handleCancelCheckIn(p.id)} className="px-2 py-1 text-sm h-8">
+                                                Hoàn tác
                                             </Button>
                                         )}
                                         {canDelete && (

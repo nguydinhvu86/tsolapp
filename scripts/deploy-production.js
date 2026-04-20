@@ -17,7 +17,6 @@ conn.on('ready', () => {
         `export PATH=/www/server/nvm/versions/node/v24.14.0/bin:$PATH && ` +
         `npm install && ` +
         `npx prisma generate && ` +
-        `npx prisma migrate resolve --rolled-back 20260420092451_init_marketing 2>/dev/null || true && ` +
         `npx prisma migrate deploy && ` +
         `rm -rf .next && ` +
         `npm run build && ` +

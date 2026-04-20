@@ -8,11 +8,11 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
     const form = await prisma.marketingForm.findUnique({
-        where: { slug: params.slug },
+        where: { id: params.slug },
         include: { campaign: true }
     });
     
-    if (!form || !form.isPublished) return { title: 'Sự kiện không tồn tại' };
+    if (!form || !form.isActive) return { title: 'Sự kiện không tồn tại' };
     
     return {
         title: `${form.title} | Đăng ký tham gia`,
@@ -22,13 +22,15 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
 export default async function PublicRegistrationPage({ params }: { params: { slug: string } }) {
     const form = await prisma.marketingForm.findUnique({
-        where: { slug: params.slug },
+        where: { id: params.slug },
         include: {
             campaign: {
                 select: {
                     id: true,
                     name: true,
                     description: true,
+                    eventTime: true,
+                    location: true,
                     startDate: true,
                     endDate: true,
                 }
@@ -36,7 +38,7 @@ export default async function PublicRegistrationPage({ params }: { params: { slu
         }
     });
 
-    if (!form || !form.isPublished) {
+    if (!form || !form.isActive) {
         return (
             <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
                 <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-xl text-center border border-slate-100">
@@ -49,11 +51,8 @@ export default async function PublicRegistrationPage({ params }: { params: { slu
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 relative flex items-center justify-center py-12 px-4 selection:bg-blue-200">
-            {/* Soft backdrop */}
-            <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-100 via-white to-slate-50 opacity-80" />
-            
-            <div className="relative z-10 w-full max-w-2xl">
+        <div className="min-h-screen bg-white relative flex w-full">
+            <div className="w-full">
                 <RegisterClient form={form as any} />
             </div>
         </div>

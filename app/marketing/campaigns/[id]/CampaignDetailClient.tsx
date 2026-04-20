@@ -59,7 +59,7 @@ export default function CampaignDetailClient({
     const budgetRemaining = (campaign.budget || 0) - actualExpense;
 
     return (
-        <div className="space-y-6 max-w-7xl mx-auto">
+        <div className="space-y-6 w-full">
             {/* Header section with back button */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">

@@ -8,9 +8,10 @@ import { Table } from '@/app/components/ui/Table';
 import { Modal } from '@/app/components/ui/Modal';
 import { Input } from '@/app/components/ui/Input';
 import { createForm, updateForm, deleteForm } from './actions';
-import { Plus, Edit, Trash2, Search, Link as LinkIcon, FileText, CheckCircle, XCircle } from 'lucide-react';
+import { Search, Link as LinkIcon, FileText, CheckCircle, XCircle, Plus, Edit, Trash2 } from 'lucide-react';
 import { formatDate } from '@/lib/utils/formatters';
 import Link from 'next/link';
+import { RichTextEditor } from '@/app/components/ui/RichTextEditor';
 
 export type FormListType = MarketingForm & {
     campaign: { id: string, name: string, code: string };
@@ -39,7 +40,7 @@ export default function FormClient({
         campaignId: '',
         title: '',
         description: '',
-        isPublished: false
+        isActive: false
     });
 
     const canCreate = isAdmin || permissions.includes('MARKETING_CREATE');
@@ -53,7 +54,7 @@ export default function FormClient({
                 campaignId: form.campaignId,
                 title: form.title,
                 description: form.description || '',
-                isPublished: form.isPublished
+                isActive: form.isActive
             });
         } else {
             setEditingId(null);
@@ -61,7 +62,7 @@ export default function FormClient({
                 campaignId: campaigns.length > 0 ? campaigns[0].id : '',
                 title: '',
                 description: '',
-                isPublished: false
+                isActive: false
             });
         }
         setIsModalOpen(true);
@@ -77,9 +78,10 @@ export default function FormClient({
                     campaignId: formData.campaignId,
                     title: formData.title,
                     description: formData.description,
-                    isPublished: formData.isPublished
+                    isActive: formData.isActive
                 });
                 if (res.success && res.data) {
+                    setForms(forms.map(f => f.id === editingId ? { ...f, ...res.data } : f));
                     router.refresh(); // Because we might not get _count back properly in pessimistic return
                     setIsModalOpen(false);
                 } else {
@@ -95,9 +97,15 @@ export default function FormClient({
                         { id: '2', name: 'Số điện thoại', type: 'text', required: true },
                         { id: '3', name: 'Email liên hệ', type: 'email', required: false }
                     ],
-                    isPublished: formData.isPublished
+                    isActive: formData.isActive
                 });
                 if (res.success && res.data) {
+                    const newFormLocal = {
+                        ...res.data,
+                        campaign: campaigns.find(c => c.id === formData.campaignId),
+                        _count: { participants: 0 }
+                    };
+                    setForms([newFormLocal as FormListType, ...forms]);
                     router.refresh();
                     setIsModalOpen(false);
                 } else {
@@ -181,7 +189,7 @@ export default function FormClient({
                                     <div className="text-xs text-slate-500">{form.campaign.code}</div>
                                 </td>
                                 <td>
-                                    {form.isPublished ? (
+                                    {form.isActive ? (
                                         <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400">
                                             <CheckCircle size={14} /> Hoạt động
                                         </span>
@@ -195,8 +203,8 @@ export default function FormClient({
                                     <span className="font-bold text-lg">{form._count?.participants || 0}</span>
                                 </td>
                                 <td>
-                                    {form.isPublished ? (
-                                        <a target="_blank" href={`/public/marketing/register/${form.slug}`} className="text-blue-600 hover:underline flex items-center gap-1 text-sm">
+                                    {form.isActive ? (
+                                        <a target="_blank" href={`/public/marketing/register/${form.id}`} className="text-blue-600 hover:underline flex items-center gap-1 text-sm">
                                             <LinkIcon size={14}/> Mở link
                                         </a>
                                     ) : (
@@ -238,7 +246,7 @@ export default function FormClient({
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 title={editingId ? 'Cập nhật form' : 'Tạo form đăng ký mới'}
-                size="lg"
+                maxWidth="1100px"
             >
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="grid grid-cols-1 gap-4">
@@ -267,25 +275,23 @@ export default function FormClient({
                                 placeholder="Đăng ký tham gia..."
                             />
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium mb-1">Mô tả (tùy chọn)</label>
-                            <textarea
-                                className="w-full flex min-h-[80px] rounded-md border border-slate-200 bg-transparent px-3 py-2 text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950/50 dark:focus:ring-slate-800"
-                                rows={3}
+                        <div className="md:col-span-1 lg:col-span-2">
+                            <label className="block text-sm font-medium mb-1">Thiết kế nội dung (Tùy chọn Rich Media)</label>
+                            <RichTextEditor
                                 value={formData.description}
-                                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                                placeholder="Mô tả sự kiện, thời gian địa điểm..."
+                                onChange={(val) => setFormData(prev => ({ ...prev, description: val }))}
+                                placeholder="Chèn chữ, link Video, hình ảnh thiết kế..."
                             />
                         </div>
                         <div className="flex items-center gap-2 mt-2 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-100 dark:border-slate-800">
                             <input
                                 type="checkbox"
-                                id="isPublished"
-                                checked={formData.isPublished}
-                                onChange={(e) => setFormData(prev => ({ ...prev, isPublished: e.target.checked }))}
+                                id="isActive"
+                                checked={formData.isActive}
+                                onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
                                 className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                             />
-                            <label htmlFor="isPublished" className="text-sm font-semibold text-slate-700 dark:text-slate-200 cursor-pointer">
+                            <label htmlFor="isActive" className="text-sm font-semibold text-slate-700 dark:text-slate-200 cursor-pointer">
                                 Cho phép đăng ký (Publish form)
                             </label>
                         </div>

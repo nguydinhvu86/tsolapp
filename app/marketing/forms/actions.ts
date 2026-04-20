@@ -9,23 +9,19 @@ export async function createForm(data: {
     title: string;
     description?: string;
     fields: any;
-    isPublished?: boolean;
+    isActive?: boolean;
 }) {
     try {
         const user = await verifyActionPermission('MARKETING_CREATE');
         if (!user) return { success: false, error: 'Unauthorized' };
-
-        // Generate unique slug
-        const slug = `form-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
         const newForm = await prisma.marketingForm.create({
             data: {
                 campaignId: data.campaignId,
                 title: data.title,
                 description: data.description,
-                fields: data.fields || [],
-                isPublished: data.isPublished || false,
-                slug,
+                fieldsConfig: JSON.stringify(data.fields || []),
+                isActive: data.isActive !== undefined ? data.isActive : false,
             }
         });
 
@@ -43,9 +39,15 @@ export async function updateForm(id: string, data: any) {
         const user = await verifyActionPermission('MARKETING_EDIT');
         if (!user) return { success: false, error: 'Unauthorized' };
 
+        const updatePayload: any = {};
+        if (data.title !== undefined) updatePayload.title = data.title;
+        if (data.description !== undefined) updatePayload.description = data.description;
+        if (data.fields !== undefined) updatePayload.fieldsConfig = JSON.stringify(data.fields);
+        if (data.isActive !== undefined) updatePayload.isActive = data.isActive;
+
         const updatedForm = await prisma.marketingForm.update({
             where: { id },
-            data
+            data: updatePayload
         });
 
         revalidatePath('/marketing/forms');

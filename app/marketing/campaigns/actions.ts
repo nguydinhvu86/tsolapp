@@ -9,6 +9,8 @@ export async function createCampaign(data: {
     code: string;
     categoryId: string;
     description?: string;
+    eventTime?: string;
+    location?: string;
     startDate?: Date;
     endDate?: Date;
     budget?: number;

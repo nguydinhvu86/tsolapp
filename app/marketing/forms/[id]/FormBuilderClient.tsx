@@ -86,7 +86,13 @@ export default function FormBuilderClient({
     isAdmin: boolean;
     permissions: string[];
 }) {
-    const [fields, setFields] = useState<FormField[]>((initialData.fields as any) || []);
+    const [fields, setFields] = useState<FormField[]>(() => {
+        try {
+            return JSON.parse(initialData.fieldsConfig || '[]');
+        } catch (e) {
+            return [];
+        }
+    });
     const [isSaving, setIsSaving] = useState(false);
     
     // Edit state
@@ -171,7 +177,7 @@ export default function FormBuilderClient({
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    <a target="_blank" href={`/public/marketing/register/${initialData.slug}`}>
+                    <a target="_blank" href={`/public/marketing/register/${initialData.id}`}>
                         <Button variant="secondary" className="flex items-center gap-2 h-9">
                             <Eye size={16} /> Xem trước
                         </Button>

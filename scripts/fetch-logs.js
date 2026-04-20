@@ -4,7 +4,7 @@ const conn = new Client();
 
 conn.on('ready', () => {
     // Fetch the last 1000 lines of the PM2 error log
-    conn.exec('cd /www/wwwroot/inside.tsol.vn/tsolapp && export PATH=/www/server/nvm/versions/node/v24.14.0/bin:$PATH && npx prisma migrate deploy', (err, stream) => {
+    conn.exec('cd /www/wwwroot/inside.tsol.vn/tsolapp && export PATH=/www/server/nvm/versions/node/v24.14.0/bin:$PATH && npx prisma migrate resolve --applied 20260420092451_init_marketing', (err, stream) => {
         if (err) throw err;
         let logData = '';
         stream.on('data', data => logData += data.toString());

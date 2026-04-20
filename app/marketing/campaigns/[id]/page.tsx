@@ -72,7 +72,7 @@ export default async function CampaignDetailPage({ params }: { params: { id: str
     }
 
     const users = await prisma.user.findMany({
-        where: { status: 'ACTIVE' },
+        where: { isActive: true },
         select: { id: true, name: true, email: true }
     });
 
