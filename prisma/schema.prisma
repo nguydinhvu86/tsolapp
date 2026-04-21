@@ -2258,7 +2258,7 @@ model ProjectIssue {
 model MarketingCategory {
   id          String              @id @default(cuid())
   name        String              @unique
-  description String?             @db.Text
+  description String?             @db.LongText
   campaigns   MarketingCampaign[]
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
@@ -2268,7 +2268,7 @@ model MarketingCampaign {
   id          String    @id @default(cuid())
   code        String    @unique
   name        String
-  description String?   @db.Text
+  description String?   @db.LongText
   eventTime   String?   @db.Text
   location    String?   @db.Text
   startDate   DateTime?
@@ -2294,7 +2294,7 @@ model MarketingCampaign {
 model MarketingForm {
   id           String  @id @default(cuid())
   title        String
-  description  String? @db.Text
+  description  String? @db.LongText
   isActive     Boolean @default(true)
   fieldsConfig String  @db.LongText // JSON array of field configurations
 
