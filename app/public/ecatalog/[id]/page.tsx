@@ -1,211 +1,194 @@
-import { formatDate } from '@/lib/utils/formatters';
-import React from 'react';
+import { Box, CheckCircle } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
-import { DocumentSignatureBlock } from '@/app/components/ui/DocumentSignatureBlock';
-import { Calendar, User, UserCheck, Clock, FileText, LayoutGrid, Package, ShieldCheck, Tag, Info } from 'lucide-react';
+import { Metadata } from 'next';
+import Image from 'next/image';
+
+
+export const metadata: Metadata = {
+    title: 'Product E-Catalog',
+    description: 'Bản xem trước E-Catalog sản phẩm trực tuyến',
+};
 
 export default async function PublicEcatalogPage({ params }: { params: { id: string } }) {
     const ecatalog = await prisma.ecatalog.findUnique({
         where: { id: params.id },
         include: {
-            customer: true,
-            creator: true,
-            items: { include: { product: true } }
+            creator: {
+                select: { name: true, email: true, phone: true, avatar: true }
+            },
+            items: {
+                orderBy: { displayOrder: 'asc' },
+                include: {
+                    product: true
+                }
+            }
         }
     });
 
-    if (!ecatalog) {
+    if (!ecatalog || !ecatalog.isPublic) {
         notFound();
     }
 
-    const todayAtMidnight = new Date();
-    todayAtMidnight.setHours(0, 0, 0, 0);
+    const companyConfig = await prisma.systemSetting.findMany({
+        where: { key: { in: ['COMPANY_NAME', 'COMPANY_LOGO', 'COMPANY_EMAIL', 'COMPANY_PHONE', 'COMPANY_WEBSITE'] } }
+    });
 
-    if (ecatalog.status === 'SENT' && ecatalog.validUntil && new Date(ecatalog.validUntil).setHours(0, 0, 0, 0) < todayAtMidnight.getTime()) {
-        await prisma.ecatalog.update({
-            where: { id: ecatalog.id },
-            data: { status: 'EXPIRED' }
-        });
-        ecatalog.status = 'EXPIRED';
-    }
+    const getSetting = (key: string) => companyConfig.find(c => c.key === key)?.value || '';
 
-    const formatMoney = (amount: number) => {
-        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
-    };
+    const companyName = getSetting('COMPANY_NAME') || 'ContractMgr Enterprise';
+    const companyLogo = getSetting('COMPANY_LOGO');
+    const companyEmail = getSetting('COMPANY_EMAIL');
+    const companyPhone = getSetting('COMPANY_PHONE');
+    const companyWebsite = getSetting('COMPANY_WEBSITE');
 
     return (
-        <div className="min-h-screen bg-[#f8fafc] font-sans text-slate-900 pb-20">
-            <div className="h-2 w-full bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600"></div>
-            <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
-                <div className="bg-white/80 backdrop-blur-xl shadow-sm border border-slate-200 rounded-3xl p-6 md:p-8 flex flex-col xl:flex-row gap-8 items-start xl:items-center justify-between relative overflow-hidden">
-                    <div className="absolute top-0 right-0 -mt-16 -mr-16 w-64 h-64 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-full blur-3xl opacity-70 pointer-events-none"></div>
-                    <div className="flex-1 flex flex-wrap items-center gap-x-12 gap-y-6 relative z-10">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                                <User className="w-5 h-5" />
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-1">Khách Hàng</span>
-                                <span className="text-base font-bold text-slate-900">{ecatalog.customer?.name || 'Khách lẻ'}</span>
-                            </div>
-                        </div>
-                        <div className="w-px h-10 bg-slate-200 hidden sm:block"></div>
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
-                                <UserCheck className="w-5 h-5" />
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-1">Nhân Viên</span>
-                                <span className="text-base font-bold text-slate-900">{ecatalog.creator?.name || '---'}</span>
-                            </div>
-                        </div>
-                        <div className="w-px h-10 bg-slate-200 hidden md:block"></div>
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
-                                <Calendar className="w-5 h-5" />
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-1">Ngày Tạo</span>
-                                <span className="text-base font-bold text-slate-900">{formatDate(ecatalog.date)}</span>
+        <div className="min-h-screen bg-gray-50 pb-20 font-sans">
+            {/* Header / Hero Section */}
+            <div className="bg-white border-b border-gray-200">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-8">
+                        
+                        {/* Company Info */}
+                        <div className="flex items-start gap-4 md:max-w-md">
+                            {companyLogo ? (
+                                <img src={companyLogo} alt={companyName} className="h-16 w-auto object-contain" />
+                            ) : (
+                                <div className="h-16 w-16 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-2xl shadow-sm">
+                                    {companyName.charAt(0)}
+                                </div>
+                            )}
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-900">{companyName}</h2>
+                                <div className="mt-2 space-y-1 text-sm text-gray-500">
+                                    {companyPhone && <p>📞 {companyPhone}</p>}
+                                    {companyEmail && <p>✉️ {companyEmail}</p>}
+                                    {companyWebsite && <p>🌐 {companyWebsite}</p>}
+                                </div>
                             </div>
                         </div>
-                        <div className="w-px h-10 bg-slate-200 hidden lg:block"></div>
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-600">
-                                <Clock className="w-5 h-5" />
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-1">Hiệu Lực Đến</span>
-                                <span className="text-base font-bold text-slate-900">{formatDate(ecatalog.validUntil) || '---'}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-slate-900 rounded-2xl px-8 py-5 shadow-xl relative z-10 w-full xl:w-auto shrink-0 flex items-center justify-between xl:flex-col xl:items-end gap-2 border border-slate-800">
-                        <span className="text-sm tracking-widest text-slate-400 font-medium uppercase">Tổng Giá Trị</span>
-                        <span className="text-3xl sm:text-4xl font-black text-white tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-300">
-                            {formatMoney(ecatalog.totalAmount)}
-                        </span>
-                    </div>
-                </div>
 
-                <div className="flex items-center gap-3 py-4">
-                    <LayoutGrid className="w-6 h-6 text-blue-600" />
-                    <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Danh Sách Sản Phẩm</h2>
-                    <div className="h-px flex-1 bg-gradient-to-r from-slate-200 to-transparent ml-4"></div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
-                    {ecatalog.items?.map((item: any) => (
-                        <div key={item.id} className="bg-white rounded-3xl shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden border border-slate-100 group flex flex-col transform hover:-translate-y-1">
-                            <div className="aspect-[4/3] bg-slate-50 relative overflow-hidden flex items-center justify-center p-6 border-b border-slate-100">
-                                {item.imageUrl ? (
-                                    <img src={item.imageUrl} alt={item.customName} className="object-contain w-full h-full group-hover:scale-110 transition-transform duration-700 ease-out" />
-                                ) : (
-                                    <div className="text-slate-300 flex flex-col items-center gap-3">
-                                        <Package className="w-16 h-16 stroke-[1.5]" />
-                                        <span className="text-sm font-medium">Chưa có hình ảnh</span>
-                                    </div>
-                                )}
-                                {item.isSubItem && (
-                                    <div className="absolute top-4 left-4 bg-slate-900/80 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1.5">
-                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" /></svg>
-                                        Sản phẩm phụ
-                                    </div>
-                                )}
+                        {/* Catalog Info */}
+                        <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 md:text-right flex-1 md:max-w-md">
+                            <div className="inline-block bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full mb-3 uppercase tracking-wider">
+                                Product E-Catalog
                             </div>
+                            <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-2 leading-tight">
+                                {ecatalog.name}
+                            </h1>
+                            <p className="text-gray-500 text-sm mb-4">
+                                {ecatalog.description || 'Danh mục sản phẩm chính hãng.'}
+                            </p>
                             
-                            <div className="p-6 flex-1 flex flex-col">
-                                <h3 className="text-lg font-bold text-slate-900 line-clamp-2 mb-3 leading-snug group-hover:text-blue-600 transition-colors">
-                                    {item.customName || item.product?.name || 'Sản phẩm'}
-                                </h3>
-                                
-                                {item.description && (
-                                    <p className="text-sm text-slate-500 line-clamp-3 mb-5 flex-1 leading-relaxed">
-                                        {item.description}
-                                    </p>
-                                )}
-                                
-                                {(item.manufacture || item.origin || item.warranty || item.product?.sku) && (
-                                    <div className="grid grid-cols-2 gap-3 text-xs text-slate-600 mb-6 bg-slate-50/80 p-4 rounded-2xl border border-slate-100">
-                                        {item.manufacture && (
-                                            <div className="flex items-center gap-2">
-                                                <Tag className="w-3.5 h-3.5 text-slate-400" />
-                                                <span className="truncate" title={item.manufacture}>Hãng: <span className="font-semibold text-slate-900">{item.manufacture}</span></span>
-                                            </div>
-                                        )}
-                                        {item.origin && (
-                                            <div className="flex items-center gap-2">
-                                                <Info className="w-3.5 h-3.5 text-slate-400" />
-                                                <span className="truncate" title={item.origin}>X.Xứ: <span className="font-semibold text-slate-900">{item.origin}</span></span>
-                                            </div>
-                                        )}
-                                        {item.warranty && (
-                                            <div className="flex items-center gap-2">
-                                                <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
-                                                <span className="truncate" title={item.warranty}>B.Hành: <span className="font-semibold text-slate-900">{item.warranty}</span></span>
-                                            </div>
-                                        )}
-                                        {item.product?.sku && (
-                                            <div className="flex items-center gap-2">
-                                                <FileText className="w-3.5 h-3.5 text-slate-400" />
-                                                <span className="truncate" title={item.product.sku}>SKU: <span className="font-semibold text-slate-900">{item.product.sku}</span></span>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                                
-                                <div className="mt-auto pt-5 border-t border-slate-100 flex flex-col gap-3">
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="text-slate-500 font-medium">Số lượng</span>
-                                        <span className="font-bold text-slate-900 bg-slate-100 px-3 py-1 rounded-lg">{item.quantity} {item.unit || item.product?.unit}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="text-slate-500 font-medium">Đơn giá</span>
-                                        <span className="font-semibold text-slate-700">{formatMoney(item.unitPrice)}</span>
-                                    </div>
-                                    <div className="flex justify-between items-end mt-2 pt-3 border-t border-slate-50 border-dashed">
-                                        <span className="text-sm font-bold text-slate-400 uppercase tracking-wider">Thành Tiền</span>
-                                        <span className="text-xl font-black text-blue-600">{formatMoney(item.totalPrice)}</span>
+                            <div className="pt-4 border-t border-gray-200 mt-4 text-left">
+                                <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-2">Phụ trách tư vấn</p>
+                                <div className="flex items-center gap-3">
+                                    {ecatalog.creator.avatar ? (
+                                        <img src={ecatalog.creator.avatar} alt={ecatalog.creator.name || ''} className="w-10 h-10 rounded-full object-cover border border-gray-200" />
+                                    ) : (
+                                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold border border-blue-200">
+                                            {ecatalog.creator.name?.charAt(0) || 'U'}
+                                        </div>
+                                    )}
+                                    <div>
+                                        <div className="font-semibold text-gray-900">{ecatalog.creator.name}</div>
+                                        <div className="text-sm text-blue-600">{ecatalog.creator.phone || ecatalog.creator.email}</div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    ))}
+                    </div>
                 </div>
-                
-                {ecatalog.notes && (
-                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/50 rounded-3xl p-6 md:p-8 text-amber-900 shadow-sm relative overflow-hidden mt-8">
-                        <div className="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-amber-400 to-orange-400"></div>
-                        <h4 className="font-bold mb-3 flex items-center gap-2 text-lg">
-                            <Info className="w-6 h-6 text-amber-500" />
-                            Ghi chú & Điều khoản
-                        </h4>
-                        <div className="whitespace-pre-line text-sm md:text-base leading-relaxed opacity-90">{ecatalog.notes}</div>
+            </div>
+
+            {/* Product Grid */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                        <Box className="text-blue-600" /> Danh Sách Sản Phẩm
+                    </h2>
+                    <div className="text-sm text-gray-500 font-medium bg-white px-4 py-2 rounded-full border border-gray-200 shadow-sm">
+                        Tổng cộng: {ecatalog.items.length} sản phẩm
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {ecatalog.items.map((item, index) => {
+                        const name = item.customName || item.product?.name;
+                        const desc = item.customDesc || item.product?.description;
+                        const price = item.customPrice ?? item.product?.salePrice ?? 0;
+                        const image = item.imageUrl || item.product?.imageUrl;
+                        const sku = item.product?.sku;
+
+                        return (
+                            <div key={index} className="bg-white rounded-2xl overflow-hidden border border-gray-200 hover:shadow-xl transition-all duration-300 group flex flex-col h-full">
+                                {/* Image Box */}
+                                <div className="aspect-[4/3] bg-gray-100 relative overflow-hidden flex items-center justify-center border-b border-gray-100">
+                                    {image ? (
+                                        <img 
+                                            src={image} 
+                                            alt={name || ''} 
+                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                        />
+                                    ) : (
+                                        <div className="text-gray-400 flex flex-col items-center">
+                                            <Box size={40} className="mb-2 opacity-50" />
+                                            <span className="text-xs font-medium">Chưa có hình ảnh</span>
+                                        </div>
+                                    )}
+                                    {/* SKU Badge */}
+                                    {sku && (
+                                        <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-md text-xs font-bold text-gray-700 shadow-sm border border-gray-200/50">
+                                            {sku}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Content Box */}
+                                <div className="p-5 flex flex-col flex-1">
+                                    <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">
+                                        {name}
+                                    </h3>
+                                    
+                                    <p className="text-sm text-gray-500 mb-4 line-clamp-3 flex-1">
+                                        {desc || 'Chưa có mô tả chi tiết cho sản phẩm này.'}
+                                    </p>
+                                    
+                                    {/* Footer attributes */}
+                                    <div className="pt-4 border-t border-gray-100 mt-auto">
+                                        {price > 0 ? (
+                                            <div className="flex items-end justify-between">
+                                                <div className="text-xs text-gray-500 font-medium mb-1">Giá tham khảo</div>
+                                                <div className="text-xl font-extrabold text-blue-600">
+                                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)}
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-2 text-blue-600 font-medium">
+                                                <CheckCircle />
+                                                <span>Liên hệ nhận báo giá</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {ecatalog.items.length === 0 && (
+                    <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-12 flex flex-col items-center justify-center text-gray-500">
+                        <Box size={48} className="text-gray-300 mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-1">Catalog trống</h3>
+                        <p className="text-sm text-center max-w-md">Catalog này hiện chưa có sản phẩm nào được cập nhật. Vui lòng liên hệ với người phụ trách để biết thêm chi tiết.</p>
                     </div>
                 )}
+            </div>
 
-                <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8 mt-8">
-                    <div className="flex flex-col md:flex-row justify-between gap-12">
-                        <DocumentSignatureBlock 
-                            entityType="ECATALOG" 
-                            entityId={ecatalog.id} 
-                            role="CUSTOMER" 
-                            title="XÁC NHẬN CỦA KHÁCH HÀNG" 
-                            subtitle="(Ký tên)" 
-                            canSign={true} 
-                        />
-                        <DocumentSignatureBlock 
-                            entityType="ECATALOG" 
-                            entityId={ecatalog.id} 
-                            role="COMPANY" 
-                            title="NGƯỜI LẬP E-CATALOG" 
-                            subtitle="(Ký tên)" 
-                            canSign={false} 
-                            signerName={ecatalog.creator?.name} 
-                        />
-                    </div>
-                </div>
+            {/* Footer */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 text-center text-sm text-gray-400">
+                <p>&copy; {new Date().getFullYear()} {companyName}. All rights reserved.</p>
+                <p className="mt-1">Powered by ContractMgr E-Catalog System</p>
             </div>
         </div>
     );

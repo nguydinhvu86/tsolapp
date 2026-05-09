@@ -1,7 +1,5 @@
-import { getEcatalogs, getNextEstimateCode } from './actions';
-import { getCustomers } from '@/app/customers/actions';
+import { getEcatalogs } from './actions';
 import { getProducts } from '@/app/inventory/actions';
-import { getLeads } from '@/app/sales/leads/actions';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { prisma } from '@/lib/prisma';
@@ -9,7 +7,7 @@ import EcatalogClient from './EcatalogClient';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Ecatalog Kinh Doanh | ContractMgr',
+    title: 'Quản lý Catalog | ContractMgr',
 };
 
 export const dynamic = 'force-dynamic';
@@ -17,39 +15,26 @@ export const dynamic = 'force-dynamic';
 export default async function EcatalogsPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
     const session = await getServerSession(authOptions);
 
-    // Accept URL parameter for filtering
-    const employeeId = typeof searchParams?.employeeId === 'string' ? searchParams.employeeId : undefined;
+    const filterParams = {
+        search: typeof searchParams?.search === 'string' ? searchParams.search : undefined,
+    };
 
-    const initialProjectId = typeof searchParams?.projectId === 'string' ? searchParams.projectId : undefined;
-
-    const [estimates, customers, products, leads, nextCode, users, projects] = await Promise.all([
-        getEcatalogs(employeeId),
-        getCustomers(),
+    const [ecatalogs, products, users] = await Promise.all([
+        getEcatalogs(filterParams),
         getProducts(),
-        getLeads(employeeId),
-        getNextEstimateCode(),
-        prisma.user.findMany({ select: { id: true, name: true, avatar: true }, orderBy: { name: 'asc' } }),
-        prisma.project.findMany({ select: { id: true, name: true, code: true }, orderBy: { createdAt: 'desc' } })
+        prisma.user.findMany({ select: { id: true, name: true, avatar: true }, orderBy: { name: 'asc' } })
     ]);
 
     return (
         <div className="p-6">
             <h1 className="text-2xl font-bold mb-6 text-gray-800">
-                Quản Lý Ecatalog Bán Hàng (ERP)
+                Quản Lý E-Catalog Số (Product Catalogs)
             </h1>
             <EcatalogClient
-                initialEstimates={estimates}
-                customers={customers}
+                initialEcatalogs={ecatalogs}
                 products={products.filter((p: any) => p.isActive)}
-                leads={leads}
                 users={users}
                 currentUserId={session?.user?.id}
-                nextCode={nextCode}
-                initialAction={typeof searchParams?.action === 'string' ? searchParams.action : undefined}
-                initialCustomerId={typeof searchParams?.customerId === 'string' ? searchParams.customerId : undefined}
-                initialLeadId={typeof searchParams?.leadId === 'string' ? searchParams.leadId : undefined}
-                initialProjectId={initialProjectId}
-                projects={projects}
                 isAdminOrManager={session?.user?.role === 'ADMIN' || session?.user?.role === 'MANAGER'}
             />
         </div>
