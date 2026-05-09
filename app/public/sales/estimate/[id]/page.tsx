@@ -2,9 +2,8 @@ import { formatDate } from '@/lib/utils/formatters';
 import React from 'react';
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
-import { PrintButton } from '@/app/components/ui/PrintButton';
-import { Watermark } from '@/app/components/ui/Watermark';
 import { DocumentSignatureBlock } from '@/app/components/ui/DocumentSignatureBlock';
+import { Calendar, User, UserCheck, Clock, FileText, LayoutGrid, Package, ShieldCheck, Tag, Info } from 'lucide-react';
 
 export default async function PublicSalesEstimatePage({ params }: { params: { id: string } }) {
     const estimate = await prisma.salesEstimate.findUnique({
@@ -32,358 +31,224 @@ export default async function PublicSalesEstimatePage({ params }: { params: { id
         estimate.status = 'EXPIRED';
     }
 
-    const settings = await prisma.systemSetting.findMany({
-        where: {
-            key: {
-                in: [
-                    'COMPANY_FULL_NAME', 'COMPANY_NAME', 'COMPANY_ADDRESS', 'COMPANY_LOGO', 'COMPANY_PHONE', 'COMPANY_EMAIL', 'COMPANY_TAX',
-                    'WATERMARK_ENABLED', 'WATERMARK_TYPE', 'WATERMARK_TEXT', 'WATERMARK_IMAGE_URL', 'WATERMARK_OPACITY', 'WATERMARK_ROTATION', 'WATERMARK_COLOR', 'WATERMARK_SIZE', 'WATERMARK_DOCUMENTS'
-                ]
-            }
-        }
-    });
-    const settingsMap: Record<string, string> = {};
-    settings.forEach(s => settingsMap[s.key] = s.value);
-
-    const compName = settingsMap['COMPANY_FULL_NAME'] || settingsMap['COMPANY_NAME'] || 'CÔNG TY CHƯA CẬP NHẬT';
-    const compAddress = settingsMap['COMPANY_ADDRESS'] || '';
-    const compLogo = settingsMap['COMPANY_LOGO'] || null;
-
     const formatMoney = (amount: number) => {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
     };
 
-
     return (
-        <div className="print-wrapper" style={{ minHeight: '100vh', backgroundColor: '#e2e8f0', padding: '2rem 1rem', margin: '0 auto', maxWidth: estimate.templateType === 'PROJECT_BREAKDOWN' ? '1122px' : '800px' }}>
-            <style dangerouslySetInnerHTML={{
-                __html: `
-                @media print {
-                    @page {
-                        margin: 15mm;
-                        size: A4 ${estimate.templateType === 'PROJECT_BREAKDOWN' ? 'landscape' : 'portrait'};
-                    }
-                    body, html {
-                        height: auto !important;
-                        overflow: visible !important;
-                        background-color: white !important;
-                        display: block !important;
-                    }
-                    body * {
-                        visibility: hidden;
-                    }
-                    .print-wrapper {
-                        position: static !important;
-                        top: auto !important;
-                        left: auto !important;
-                        width: 100% !important;
-                        height: auto !important;
-                        overflow: visible !important;
-                        background-color: white !important;
-                        padding: 0 !important;
-                        display: block !important;
-                    }
-                    .print-wrapper, .print-wrapper * {
-                        visibility: visible;
-                    }
-                    .a4-document {
-                        position: static !important;
-                        margin: 0 !important;
-                        padding: 0 1px !important;
-                        box-shadow: none !important;
-                        width: 100% !important;
-                        max-width: none !important;
-                        min-height: auto !important;
-                    }
-                    .no-print {
-                        display: none !important;
-                    }
-                    table { page-break-inside: auto; border-collapse: collapse; width: 100%; }
-                    tr    { page-break-inside: auto; page-break-after: auto; }
-                    td, th { page-break-inside: auto; }
-                    thead { display: table-header-group; }
-                    tfoot {
-                        display: table-row-group;
-                    }
-                }
-            `}} />
-            <PrintButton label="In Báo Giá / Lưu PDF" />
+        <div className="min-h-screen bg-[#f8fafc] font-sans text-slate-900 pb-20">
+            {/* Sleek Gradient Header Bar */}
+            <div className="h-2 w-full bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600"></div>
 
-            <div className="a4-document" style={{
-                position: 'relative',
-                width: '100%',
-                maxWidth: estimate.templateType === 'PROJECT_BREAKDOWN' ? '1122px' : '800px',
-                minHeight: estimate.templateType === 'PROJECT_BREAKDOWN' ? '800px' : '1122px',
-                backgroundColor: 'white',
-                padding: '20mm',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                fontFamily: '"Times New Roman", Times, serif'
-            }}>
-                <Watermark settings={settingsMap} documentType="SALES_ESTIMATE" />
-                {/* Header: Company Info */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #1e293b', paddingBottom: '1.5rem', marginBottom: '2rem' }}>
-                    <div style={{ flex: 1 }}>
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 0.5rem 0', textTransform: 'uppercase', color: '#0f172a' }}>
-                            {compName}
-                        </h2>
-                        <div style={{ fontSize: '0.875rem', lineHeight: '1.5', color: '#334155' }}>
-                            {compAddress && <div><strong>Địa chỉ:</strong> {compAddress}</div>}
-                            {settingsMap['COMPANY_PHONE'] && <div><strong>Điện thoại:</strong> {settingsMap['COMPANY_PHONE']}</div>}
-                            {settingsMap['COMPANY_EMAIL'] && <div><strong>Email:</strong> {settingsMap['COMPANY_EMAIL']}</div>}
-                            {settingsMap['COMPANY_TAX'] && <div><strong>Mã số thuế:</strong> {settingsMap['COMPANY_TAX']}</div>}
-                        </div>
-                    </div>
-                    {compLogo && (
-                        <div style={{ marginLeft: '2rem' }}>
-                            <img src={compLogo} alt="Logo" style={{ maxHeight: '80px', maxWidth: '200px', objectFit: 'contain' }} />
-                        </div>
-                    )}
-                </div>
-
-                {/* Title */}
-                <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-                    <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 0.5rem 0', color: '#0f172a' }}>BẢNG BÁO GIÁ</h1>
-                    <i style={{ fontSize: '0.95rem', color: '#475569' }}>Số: {estimate.code} | Ngày: {formatDate(estimate.date)}</i>
-                </div>
-
-                {/* Estimate Detail Info */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem', fontSize: '0.95rem', lineHeight: '1.6' }}>
-                    <div style={{ flex: 1, paddingRight: '1rem' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 700, borderBottom: '1px solid #e2e8f0', display: 'inline-block', paddingBottom: '0.25rem', marginBottom: '0.75rem' }}>THÔNG TIN KHÁCH HÀNG</h3>
-                        <div><strong>Tên khách hàng:</strong> {estimate.customer?.name}</div>
-                        {estimate.customer?.address && <div><strong>Địa chỉ:</strong> {estimate.customer?.address}</div>}
-                        {estimate.customer?.phone && <div><strong>Điện thoại:</strong> {estimate.customer?.phone}</div>}
-                    </div>
-                    <div style={{ flex: 1, paddingLeft: '1rem', textAlign: 'right' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 700, borderBottom: '1px solid #e2e8f0', display: 'inline-block', paddingBottom: '0.25rem', marginBottom: '0.75rem' }}>ĐIỀU KIỆN BÁO GIÁ</h3>
-                        <div><strong>Hiệu lực đến:</strong> {formatDate(estimate.validUntil) || '---'}</div>
-                        <div><strong>Người lập:</strong> {estimate.creator?.name || '---'}</div>
-                        <div><strong>Trạng thái:</strong> {
-                            estimate.status === 'DRAFT' ? 'Bản Dự Thảo' :
-                                estimate.status === 'SENT' ? 'Đã Gửi KH' :
-                                    estimate.status === 'ACCEPTED' ? 'Đã Phê Duyệt' :
-                                        estimate.status === 'REJECTED' ? 'Từ Chối' :
-                                            estimate.status === 'EXPIRED' ? 'Hết Hiệu Lực' : estimate.status
-                        }</div>
-                    </div>
-                </div>
-
-                                {/* Items Table */}
-                {estimate.templateType === 'PROJECT_BREAKDOWN' ? (() => {
-                    let sumVatTu = 0;
-                    let sumNhanCong = 0;
-                    estimate.items?.forEach((item: any) => {
-                        sumVatTu += item.quantity * item.unitPrice;
-                        sumNhanCong += item.quantity * (item.laborPrice || 0);
-                    });
+            <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
+                
+                {/* Top Info Bar - Glassmorphism */}
+                <div className="bg-white/80 backdrop-blur-xl shadow-sm border border-slate-200 rounded-3xl p-6 md:p-8 flex flex-col xl:flex-row gap-8 items-start xl:items-center justify-between relative overflow-hidden">
                     
-                    return (
-                        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2rem', fontSize: '0.95rem' }}>
-                            <thead>
-                                <tr style={{ backgroundColor: '#f1f5f9' }}>
-                                    <th style={{ border: '1px solid #cbd5e1', padding: '10px 4px', textAlign: 'center' }}>S.Ảnh</th>
-                                    <th style={{ border: '1px solid #cbd5e1', padding: '10px 4px', textAlign: 'left' }}>Sản Phẩm</th>
-                                    <th style={{ border: '1px solid #cbd5e1', padding: '10px 4px', textAlign: 'center' }}>Hãng SX</th>
-                                    <th style={{ border: '1px solid #cbd5e1', padding: '10px 4px', textAlign: 'center' }}>Bảo Hành</th>
-                                    <th style={{ border: '1px solid #cbd5e1', padding: '10px 4px', textAlign: 'center' }}>SL</th>
-                                    <th style={{ border: '1px solid #cbd5e1', padding: '10px 4px', textAlign: 'right', whiteSpace: 'nowrap' }}>Đ.Giá V.Tư</th>
-                                    <th style={{ border: '1px solid #cbd5e1', padding: '10px 4px', textAlign: 'right', whiteSpace: 'nowrap' }}>Đ.Giá N.Công</th>
-                                    <th style={{ border: '1px solid #cbd5e1', padding: '10px 4px', textAlign: 'right', whiteSpace: 'nowrap' }}>Tiền V.Tư</th>
-                                    <th style={{ border: '1px solid #cbd5e1', padding: '10px 4px', textAlign: 'right', whiteSpace: 'nowrap' }}>Tiền N.Công</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {estimate.items?.map((item: any) => {
-                                    const tienVatTu = item.quantity * item.unitPrice;
-                                    const tienNhanCong = item.quantity * (item.laborPrice || 0);
-                                    return (
-                                        <tr key={item.id} style={{ backgroundColor: item.isSubItem ? '#f8fafc' : 'transparent' }}>
-                                            <td style={{ border: '1px solid #cbd5e1', padding: '8px 4px', textAlign: 'center' }}>
-                                                {item.imageUrl ? <img src={item.imageUrl} alt="img" style={{ maxWidth: '40px', maxHeight: '40px', objectFit: 'contain' }} /> : '-'}
-                                            </td>
-                                            <td style={{ border: '1px solid #cbd5e1', padding: '8px 4px', paddingLeft: item.isSubItem ? '30px' : '8px' }}>
-                                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                                                    {item.isSubItem && <span style={{ color: '#94a3b8' }}>↳</span>}
-                                                    <div>
-                                                        <strong style={{ display: 'block', color: item.isSubItem ? '#475569' : '#0f172a' }}>{item.customName || item.product?.name || 'Sản phẩm tự do'}</strong>
-                                                        {item.description && <span style={{ fontSize: '0.8rem', color: '#64748b', whiteSpace: 'pre-line', display: 'block', marginTop: '2px' }}>{item.description}</span>}
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td style={{ border: '1px solid #cbd5e1', padding: '8px 4px', textAlign: 'center' }}>{item.manufacture || '-'}</td>
-                                            <td style={{ border: '1px solid #cbd5e1', padding: '8px 4px', textAlign: 'center' }}>{item.warranty || '-'}</td>
-                                            <td style={{ border: '1px solid #cbd5e1', padding: '8px 4px', textAlign: 'center' }}>{item.quantity} {item.unit || item.product?.unit || ''}</td>
-                                            <td style={{ border: '1px solid #cbd5e1', padding: '8px 4px', textAlign: 'right' }}>{formatMoney(item.unitPrice)}</td>
-                                            <td style={{ border: '1px solid #cbd5e1', padding: '8px 4px', textAlign: 'right' }}>{formatMoney(item.laborPrice || 0)}</td>
-                                            <td style={{ border: '1px solid #cbd5e1', padding: '8px 4px', textAlign: 'right', fontWeight: 600 }}>{formatMoney(tienVatTu)}</td>
-                                            <td style={{ border: '1px solid #cbd5e1', padding: '8px 4px', textAlign: 'right', fontWeight: 600 }}>{formatMoney(tienNhanCong)}</td>
-                                        </tr>
-                                    )
-                                })}
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td colSpan={7} style={{ border: '1px solid #cbd5e1', padding: '10px 16px', textAlign: 'right', fontWeight: 600 }}>Tổng Cộng Vật Tư:</td>
-                                    <td colSpan={2} style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', fontWeight: 600, color: '#334155' }}>{formatMoney(sumVatTu)}</td>
-                                </tr>
-                                <tr>
-                                    <td colSpan={7} style={{ border: '1px solid #cbd5e1', padding: '10px 16px', textAlign: 'right', fontWeight: 600 }}>Tổng Cộng Nhân Công:</td>
-                                    <td colSpan={2} style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', fontWeight: 600, color: '#334155' }}>{formatMoney(sumNhanCong)}</td>
-                                </tr>
-                                <tr>
-                                    <td colSpan={7} style={{ border: '1px solid #cbd5e1', padding: '10px 16px', textAlign: 'right', fontWeight: 600 }}>VAT Tax:</td>
-                                    <td colSpan={2} style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', fontWeight: 600, color: '#334155' }}>{formatMoney(estimate.taxAmount || 0)}</td>
-                                </tr>
-                                <tr>
-                                    <td colSpan={7} style={{ border: '1px solid #cbd5e1', padding: '10px 16px', textAlign: 'right', fontWeight: 700, fontSize: '1.05rem' }}>TỔNG CỘNG:</td>
-                                    <td colSpan={2} style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', fontWeight: 800, fontSize: '1.05rem', color: '#0f172a' }}>{formatMoney(estimate.totalAmount)}</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    );
-                })() : estimate.templateType === 'WITH_IMAGES' ? (
-                    <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2rem', fontSize: '0.95rem' }}>
-                        <thead>
-                            <tr style={{ backgroundColor: '#f1f5f9' }}>
-                                <th style={{ border: '1px solid #cbd5e1', padding: '10px 6px', textAlign: 'center', width: '7%' }}>S.Ảnh</th>
-                                <th style={{ border: '1px solid #cbd5e1', padding: '10px 6px', textAlign: 'left', width: '38%' }}>Sản Phẩm</th>
-                                <th style={{ border: '1px solid #cbd5e1', padding: '10px 6px', textAlign: 'center', width: '10%' }}>Xuất Xứ</th>
-                                <th style={{ border: '1px solid #cbd5e1', padding: '10px 6px', textAlign: 'center', width: '10%' }}>Bảo Hành</th>
-                                <th style={{ border: '1px solid #cbd5e1', padding: '10px 6px', textAlign: 'center', width: '5%' }}>SL</th>
-                                <th style={{ border: '1px solid #cbd5e1', padding: '10px 6px', textAlign: 'right', width: '10%', whiteSpace: 'nowrap' }}>Đơn Giá</th>
-                                <th style={{ border: '1px solid #cbd5e1', padding: '10px 6px', textAlign: 'center', width: '5%' }}>Thuế</th>
-                                <th style={{ border: '1px solid #cbd5e1', padding: '10px 6px', textAlign: 'right', width: '15%', whiteSpace: 'nowrap' }}>Thành Tiền</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {estimate.items?.map((item: any) => (
-                                <tr key={item.id} style={{ backgroundColor: item.isSubItem ? '#f8fafc' : 'transparent' }}>
-                                    <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>
-                                        {item.imageUrl ? <img src={item.imageUrl} alt="img" style={{ maxWidth: '40px', maxHeight: '40px', objectFit: 'contain' }} /> : '-'}
-                                    </td>
-                                    <td style={{ border: '1px solid #cbd5e1', padding: '8px', paddingLeft: item.isSubItem ? '30px' : '8px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                                            {item.isSubItem && <span style={{ color: '#94a3b8' }}>↳</span>}
-                                            <div>
-                                                <strong style={{ display: 'block', color: item.isSubItem ? '#475569' : '#0f172a' }}>{item.customName || item.product?.name || 'Sản phẩm tự do'}</strong>
-                                                {item.product?.sku && <span style={{ fontSize: '0.8rem', color: '#64748b', display: 'block', marginTop: '2px' }}>SKU: {item.product.sku}</span>}
-                                                {item.manufacture && <span style={{ fontSize: '0.8rem', color: '#64748b', display: 'block' }}>Hãng: {item.manufacture}</span>}
-                                                {item.description && <span style={{ fontSize: '0.8rem', color: '#64748b', whiteSpace: 'pre-line', display: 'block', marginTop: '2px' }}>{item.description}</span>}
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{item.origin || '-'}</td>
-                                    <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{item.warranty || '-'}</td>
-                                    <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{item.quantity} {item.unit || item.product?.unit || ''}</td>
-                                    <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'right' }}>{formatMoney(item.unitPrice)}</td>
-                                    <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{item.taxRate}%</td>
-                                    <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'right', fontWeight: 600 }}>{formatMoney(item.totalPrice)}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colSpan={7} style={{ border: '1px solid #cbd5e1', padding: '10px 16px', textAlign: 'right', fontWeight: 600 }}>Tổng tiền trước thuế:</td>
-                                <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', fontWeight: 600, color: '#334155' }}>{formatMoney(estimate.subTotal || 0)}</td>
-                            </tr>
-                            <tr>
-                                <td colSpan={7} style={{ border: '1px solid #cbd5e1', padding: '10px 16px', textAlign: 'right', fontWeight: 600 }}>Tổng tiền thuế:</td>
-                                <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', fontWeight: 600, color: '#334155' }}>{formatMoney(estimate.taxAmount || 0)}</td>
-                            </tr>
-                            <tr>
-                                <td colSpan={7} style={{ border: '1px solid #cbd5e1', padding: '10px 16px', textAlign: 'right', fontWeight: 700, fontSize: '1.05rem' }}>TỔNG CỘNG:</td>
-                                <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', fontWeight: 800, fontSize: '1.05rem', color: '#0f172a' }}>{formatMoney(estimate.totalAmount)}</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                ) : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2rem', fontSize: '0.95rem' }}>
-                        <thead>
-                            <tr style={{ backgroundColor: '#f1f5f9' }}>
-                                <th style={{ border: '1px solid #cbd5e1', padding: '10px 6px', textAlign: 'center', width: '5%' }}>STT</th>
-                                <th style={{ border: '1px solid #cbd5e1', padding: '10px 6px', textAlign: 'left', width: '57%' }}>Sản Phẩm / Dịch Vụ</th>
-                                <th style={{ border: '1px solid #cbd5e1', padding: '10px 6px', textAlign: 'center', width: '5%' }}>SL</th>
-                                <th style={{ border: '1px solid #cbd5e1', padding: '10px 6px', textAlign: 'right', width: '13%', whiteSpace: 'nowrap' }}>Đơn Giá</th>
-                                <th style={{ border: '1px solid #cbd5e1', padding: '10px 6px', textAlign: 'center', width: '6%' }}>Thuế (%)</th>
-                                <th style={{ border: '1px solid #cbd5e1', padding: '10px 6px', textAlign: 'right', width: '14%', whiteSpace: 'nowrap' }}>Thành Tiền</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {estimate.items?.map((item: any, index: number) => (
-                                <tr key={item.id} style={{ backgroundColor: item.isSubItem ? '#f8fafc' : 'transparent' }}>
-                                    <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{item.isSubItem ? '-' : (index + 1)}</td>
-                                    <td style={{ border: '1px solid #cbd5e1', padding: '8px', paddingLeft: item.isSubItem ? '30px' : '8px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                                            {item.isSubItem && <span style={{ color: '#94a3b8' }}>↳</span>}
-                                            <div>
-                                                <strong style={{ display: 'block', color: item.isSubItem ? '#475569' : '#0f172a' }}>{item.customName || item.product?.name || 'Sản phẩm tự do'}</strong>
-                                                {item.product?.sku && <span style={{ fontSize: '0.8rem', color: '#64748b', display: 'block', marginTop: '2px' }}>SKU: {item.product.sku}</span>}
-                                                {item.description && <span style={{ fontSize: '0.8rem', color: '#64748b', whiteSpace: 'pre-line', display: 'block', marginTop: '2px' }}>{item.description}</span>}
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{item.quantity} {item.product?.unit || item.unit || ''}</td>
-                                    <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'right' }}>{formatMoney(item.unitPrice)}</td>
-                                    <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{item.taxRate}</td>
-                                    <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'right', fontWeight: 600 }}>{formatMoney(item.totalPrice)}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colSpan={5} style={{ border: '1px solid #cbd5e1', padding: '10px 16px', textAlign: 'right', fontWeight: 600 }}>Tổng tiền trước thuế:</td>
-                                <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', fontWeight: 600, color: '#334155' }}>{formatMoney(estimate.subTotal || 0)}</td>
-                            </tr>
-                            <tr>
-                                <td colSpan={5} style={{ border: '1px solid #cbd5e1', padding: '10px 16px', textAlign: 'right', fontWeight: 600 }}>Tổng tiền thuế:</td>
-                                <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', fontWeight: 600, color: '#334155' }}>{formatMoney(estimate.taxAmount || 0)}</td>
-                            </tr>
-                            <tr>
-                                <td colSpan={5} style={{ border: '1px solid #cbd5e1', padding: '10px 16px', textAlign: 'right', fontWeight: 700, fontSize: '1.05rem' }}>TỔNG CỘNG:</td>
-                                <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', fontWeight: 800, fontSize: '1.05rem', color: '#0f172a' }}>{formatMoney(estimate.totalAmount)}</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                )}                {/* Notes */}
-                {estimate.notes && (
-                    <div style={{ marginBottom: '3rem' }}>
-                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '0 0 0.5rem 0' }}>Ghi chú:</h4>
-                        <div style={{ fontSize: '0.9rem', whiteSpace: 'pre-line', fontStyle: 'italic', padding: '10px 15px', backgroundColor: '#f8fafc', borderLeft: '4px solid #94a3b8' }}>
-                            {estimate.notes}
+                    {/* Decorative Background Element */}
+                    <div className="absolute top-0 right-0 -mt-16 -mr-16 w-64 h-64 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-full blur-3xl opacity-70 pointer-events-none"></div>
+
+                    <div className="flex-1 flex flex-wrap items-center gap-x-12 gap-y-6 relative z-10">
+                        {/* Customer */}
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                                <User className="w-5 h-5" />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-1">Khách Hàng</span>
+                                <span className="text-base font-bold text-slate-900">{estimate.customer?.name}</span>
+                            </div>
                         </div>
+
+                        <div className="w-px h-10 bg-slate-200 hidden sm:block"></div>
+
+                        {/* Salesperson */}
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                                <UserCheck className="w-5 h-5" />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-1">Nhân Viên</span>
+                                <span className="text-base font-bold text-slate-900">{estimate.creator?.name || '---'}</span>
+                            </div>
+                        </div>
+
+                        <div className="w-px h-10 bg-slate-200 hidden md:block"></div>
+
+                        {/* Date */}
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
+                                <Calendar className="w-5 h-5" />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-1">Ngày Báo Giá</span>
+                                <span className="text-base font-bold text-slate-900">{formatDate(estimate.date)}</span>
+                            </div>
+                        </div>
+
+                        <div className="w-px h-10 bg-slate-200 hidden lg:block"></div>
+
+                        {/* Valid Until */}
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-600">
+                                <Clock className="w-5 h-5" />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-1">Hiệu Lực Đến</span>
+                                <span className="text-base font-bold text-slate-900">{formatDate(estimate.validUntil) || '---'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Total Amount Box */}
+                    <div className="bg-slate-900 rounded-2xl px-8 py-5 shadow-xl relative z-10 w-full xl:w-auto shrink-0 flex items-center justify-between xl:flex-col xl:items-end gap-2 border border-slate-800">
+                        <span className="text-sm tracking-widest text-slate-400 font-medium uppercase">Tổng Giá Trị</span>
+                        <span className="text-3xl sm:text-4xl font-black text-white tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-300">
+                            {formatMoney(estimate.totalAmount)}
+                        </span>
+                    </div>
+                </div>
+
+                {/* E-Catalog Header Title */}
+                <div className="flex items-center gap-3 py-4">
+                    <LayoutGrid className="w-6 h-6 text-blue-600" />
+                    <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Danh Sách Sản Phẩm</h2>
+                    <div className="h-px flex-1 bg-gradient-to-r from-slate-200 to-transparent ml-4"></div>
+                </div>
+
+                {/* E-Catalog Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
+                    {estimate.items?.map((item: any) => (
+                        <div key={item.id} className="bg-white rounded-3xl shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden border border-slate-100 group flex flex-col transform hover:-translate-y-1">
+                            {/* Image Section */}
+                            <div className="aspect-[4/3] bg-slate-50 relative overflow-hidden flex items-center justify-center p-6 border-b border-slate-100">
+                                {item.imageUrl ? (
+                                    <img src={item.imageUrl} alt={item.customName} className="object-contain w-full h-full group-hover:scale-110 transition-transform duration-700 ease-out" />
+                                ) : (
+                                    <div className="text-slate-300 flex flex-col items-center gap-3">
+                                        <Package className="w-16 h-16 stroke-[1.5]" />
+                                        <span className="text-sm font-medium">Chưa có hình ảnh</span>
+                                    </div>
+                                )}
+                                {/* Badge */}
+                                {item.isSubItem && (
+                                    <div className="absolute top-4 left-4 bg-slate-900/80 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1.5">
+                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" /></svg>
+                                        Sản phẩm phụ
+                                    </div>
+                                )}
+                            </div>
+                            
+                            {/* Details Section */}
+                            <div className="p-6 flex-1 flex flex-col">
+                                <h3 className="text-lg font-bold text-slate-900 line-clamp-2 mb-3 leading-snug group-hover:text-blue-600 transition-colors">
+                                    {item.customName || item.product?.name || 'Sản phẩm'}
+                                </h3>
+                                
+                                {item.description && (
+                                    <p className="text-sm text-slate-500 line-clamp-3 mb-5 flex-1 leading-relaxed">
+                                        {item.description}
+                                    </p>
+                                )}
+                                
+                                {/* Specs Grid */}
+                                {(item.manufacture || item.origin || item.warranty || item.product?.sku) && (
+                                    <div className="grid grid-cols-2 gap-3 text-xs text-slate-600 mb-6 bg-slate-50/80 p-4 rounded-2xl border border-slate-100">
+                                        {item.manufacture && (
+                                            <div className="flex items-center gap-2">
+                                                <Tag className="w-3.5 h-3.5 text-slate-400" />
+                                                <span className="truncate" title={item.manufacture}>Hãng: <span className="font-semibold text-slate-900">{item.manufacture}</span></span>
+                                            </div>
+                                        )}
+                                        {item.origin && (
+                                            <div className="flex items-center gap-2">
+                                                <Info className="w-3.5 h-3.5 text-slate-400" />
+                                                <span className="truncate" title={item.origin}>X.Xứ: <span className="font-semibold text-slate-900">{item.origin}</span></span>
+                                            </div>
+                                        )}
+                                        {item.warranty && (
+                                            <div className="flex items-center gap-2">
+                                                <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
+                                                <span className="truncate" title={item.warranty}>B.Hành: <span className="font-semibold text-slate-900">{item.warranty}</span></span>
+                                            </div>
+                                        )}
+                                        {item.product?.sku && (
+                                            <div className="flex items-center gap-2">
+                                                <FileText className="w-3.5 h-3.5 text-slate-400" />
+                                                <span className="truncate" title={item.product.sku}>SKU: <span className="font-semibold text-slate-900">{item.product.sku}</span></span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                                
+                                {/* Price Section */}
+                                <div className="mt-auto pt-5 border-t border-slate-100 flex flex-col gap-3">
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-slate-500 font-medium">Số lượng</span>
+                                        <span className="font-bold text-slate-900 bg-slate-100 px-3 py-1 rounded-lg">{item.quantity} {item.unit || item.product?.unit}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-slate-500 font-medium">Đơn giá</span>
+                                        <span className="font-semibold text-slate-700">{formatMoney(item.unitPrice)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-end mt-2 pt-3 border-t border-slate-50 border-dashed">
+                                        <span className="text-sm font-bold text-slate-400 uppercase tracking-wider">Thành Tiền</span>
+                                        <span className="text-xl font-black text-blue-600">{formatMoney(item.totalPrice)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                
+                {/* Notes Section */}
+                {estimate.notes && (
+                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/50 rounded-3xl p-6 md:p-8 text-amber-900 shadow-sm relative overflow-hidden mt-8">
+                        <div className="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-amber-400 to-orange-400"></div>
+                        <h4 className="font-bold mb-3 flex items-center gap-2 text-lg">
+                            <Info className="w-6 h-6 text-amber-500" />
+                            Ghi chú & Điều khoản
+                        </h4>
+                        <div className="whitespace-pre-line text-sm md:text-base leading-relaxed opacity-90">{estimate.notes}</div>
                     </div>
                 )}
 
                 {/* Signatures */}
-                <div className="no-break" style={{ display: 'flex', justifyContent: 'space-between', padding: '0 2rem', marginTop: '2rem', pageBreakInside: 'avoid' }}>
-                    <DocumentSignatureBlock 
-                        entityType="SALES_ESTIMATE" 
-                        entityId={estimate.id} 
-                        role="CUSTOMER" 
-                        title="ĐẠI DIỆN KHÁCH HÀNG" 
-                        subtitle="(Ký tên)" 
-                        canSign={true} 
-                        initialSignature={estimate.customerSignature} 
-                        initialSignedAt={estimate.customerSignedAt}
+                <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8 mt-8">
+                    <div className="flex flex-col md:flex-row justify-between gap-12">
+                        <DocumentSignatureBlock 
+                            entityType="SALES_ESTIMATE" 
+                            entityId={estimate.id} 
+                            role="CUSTOMER" 
+                            title="XÁC NHẬN CỦA KHÁCH HÀNG" 
+                            subtitle="(Ký tên)" 
+                            canSign={true} 
+                            initialSignature={estimate.customerSignature} 
+                            initialSignedAt={estimate.customerSignedAt}
                             metadata={{
                                 ip: estimate.customerSignIP,
                                 device: estimate.customerSignDevice,
                                 location: estimate.customerSignLocation
                             }} 
-                    />
-                    <DocumentSignatureBlock 
-                        entityType="SALES_ESTIMATE" 
-                        entityId={estimate.id} 
-                        role="COMPANY" 
-                        title="NGƯỜI LẬP BÁO GIÁ" 
-                        subtitle="(Ký tên)" 
-                        canSign={false} 
-                        initialSignature={estimate.companySignature} 
-                        initialSignedAt={estimate.companySignedAt} 
-                        signerName={estimate.creator?.name} 
-                    />
+                        />
+                        <DocumentSignatureBlock 
+                            entityType="SALES_ESTIMATE" 
+                            entityId={estimate.id} 
+                            role="COMPANY" 
+                            title="NGƯỜI LẬP BÁO GIÁ" 
+                            subtitle="(Ký tên)" 
+                            canSign={false} 
+                            initialSignature={estimate.companySignature} 
+                            initialSignedAt={estimate.companySignedAt} 
+                            signerName={estimate.creator?.name} 
+                        />
+                    </div>
                 </div>
-
+                
+                {/* Minimal Footer */}
+                <div className="text-center text-slate-400 text-sm font-medium py-8 pb-12">
+                    E-Catalog generated securely • {formatDate(new Date())}
+                </div>
             </div>
         </div>
     );
