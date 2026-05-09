@@ -8,8 +8,14 @@ conn.on('ready', () => {
 
     // Fetch the last 100 lines of the PM2 error log
     const cmd = `cd /www/wwwroot/inside.tsol.vn/tsolapp && ` +
+        `git fetch --all && ` +
+        `git reset --hard origin/main && ` +
         `export PATH=/www/server/nvm/versions/node/v24.14.0/bin:$PATH && ` +
-        `npx prisma db push --accept-data-loss`;
+        `npm install && ` +
+        `npx prisma generate && ` +
+        `npx prisma db push --accept-data-loss && ` +
+        `npm run build && ` +
+        `/www/server/nodejs/v14.17.6/bin/pm2 restart inside.tsol.vn`;
 
     conn.exec(cmd, (err, stream) => {
         if (err) throw err;
