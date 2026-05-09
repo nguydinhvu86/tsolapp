@@ -170,11 +170,16 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
             addedRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
                 if (colNumber <= colCount) {
                     cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
-                    if (colNumber === 1) {
+                    
+                    const headerValue = headers[colNumber - 1];
+                    const isCenterCol = ['STT', 'SL', 'Thuế (%)', 'ĐVT', 'Xuất Xứ', 'Hãng SX', 'Bảo Hành'].includes(headerValue);
+
+                    if (isCenterCol) {
                         cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
                     } else {
                         cell.alignment = { vertical: 'middle', wrapText: true };
                     }
+                    
                     if (typeof cell.value === 'number' && colNumber > 1) {
                          cell.numFmt = '#,##0';
                     }
