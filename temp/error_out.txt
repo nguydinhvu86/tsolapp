@@ -1,0 +1,12 @@
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": MySQL database "erp_tsolnew" at "127.0.0.1:3306"
+
+11 migrations found in prisma/migrations
+
+Error: P3009
+
+migrate found failed migrations in the target database, new migrations will not be applied. Read more about how to resolve migration issues in a production database: https://pris.ly/d/migrate-resolve
+The `20260421023425_change_marketing_description_longtext` migration started at 2026-04-21 02:35:34.840 UTC failed
+
+

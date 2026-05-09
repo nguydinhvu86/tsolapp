@@ -87,6 +87,7 @@ const mainNavItems: any[] = [
         children: [
             { name: 'Cơ Hội Bán Hàng', nameKey: 'sidebar.leads', href: '/sales/leads', permission: 'SALES_ESTIMATES_VIEW' }, // FIXME later with proper permission
             { name: 'Báo Giá (ERP)', nameKey: 'sidebar.estimates', href: '/sales/estimates', permission: 'SALES_ESTIMATES_VIEW' },
+            { name: 'E-Catalog', nameKey: 'sidebar.ecatalogs', href: '/ecatalogs', permission: 'SALES_ESTIMATES_VIEW' },
             { name: 'Đơn Đặt Hàng', nameKey: 'sidebar.so', href: '/sales/orders', permission: 'SALES_ORDERS_VIEW' },
             { name: 'Hóa Đơn / Xuất Kho', nameKey: 'sidebar.si', href: '/sales/invoices', permission: 'SALES_INVOICES_VIEW' },
             { name: 'Thu Tiền / Công Nợ', nameKey: 'sidebar.sp', href: '/sales/payments', permission: 'SALES_PAYMENTS_VIEW' },

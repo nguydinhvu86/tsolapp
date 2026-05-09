@@ -1,0 +1,778 @@
+'use server';
+import { formatDate } from '@/lib/utils/formatters';
+import { prisma } from '@/lib/prisma';
+import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/authOptions';
+import { logCustomerActivity } from '@/lib/customerLogger';
+import { buildViewFilter, verifyActionPermission, verifyActionOwnership } from '@/lib/permissions';
+import { getNextInvoiceCode } from '../sales/invoices/actions';
+import { createNotification } from '@/app/notifications/actions';
+
+const itemSchema = z.object({
+    id: z.string().optional(),
+    productId: z.string().optional(),
+    customName: z.string().optional(),
+    description: z.string().optional(),
+    unit: z.string().optional(),
+    quantity: z.number().min(1, "Quantity must be at least 1"),
+    unitPrice: z.number().min(0, "Unit price must be >= 0"),
+    taxRate: z.number().min(0, "Tax rate must be >= 0"),
+    totalPrice: z.number().min(0, "Total price must be >= 0")
+});
+
+const estimateSchema = z.object({
+    code: z.string().min(1, "Code is required"),
+    date: z.string().transform((str) => new Date(str)),
+    validUntil: z.string().optional().transform((str) => str ? new Date(str) : null),
+    status: z.string().default("DRAFT"),
+    notes: z.string().optional(),
+    tags: z.string().optional(),
+    customerId: z.string().min(1, "Customer is required"),
+    subTotal: z.number().min(0, "Subtotal must be >= 0"),
+    taxAmount: z.number().min(0, "Tax amount must be >= 0"),
+    totalAmount: z.number().min(0, "Total amount must be >= 0"),
+    items: z.array(itemSchema).min(1, "At least one item is required") // Custom validator
+});
+
+export async function logEcatalogActivity(estimateId: string, userId: string, action: string, details?: string) {
+    try {
+        await prisma.ecatalogActivityLog.create({
+            data: { estimateId, userId, action, details }
+        });
+    } catch (e) {
+        console.error("Failed to log activity:", e);
+    }
+}
+
+import { sendEmailWithTracking } from '@/lib/mailer';
+
+export async function sendEstimateEmail(
+    estimateId: string,
+    toEmail: string,
+    subject: string,
+    htmlBody: string,
+    attachmentName?: string,
+    attachmentBase64?: string
+) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" };
+        }
+        const senderId = session.user.id;
+
+        const estimate = await prisma.ecatalog.findUnique({
+            where: { id: estimateId },
+            include: { customer: true }
+        });
+
+        if (!estimate) {
+            return { success: false, error: "Ecatalog không tồn tại." };
+        }
+
+        const res = await sendEmailWithTracking({
+            to: toEmail,
+            subject,
+            htmlBody,
+            senderId,
+            customerId: estimate.customerId,
+            estimateId: estimate.id,
+            attachmentName,
+            attachmentBase64
+        });
+
+        if (res.success) {
+            await logEcatalogActivity(estimate.id, senderId, 'EMAIL_SENT', `Đã gửi email Ecatalog tới ${toEmail} với tiêu đề "${subject}"`);
+            // Automatically mark SENT if DRAFT
+            if (estimate.status === 'DRAFT') {
+                await updateEcatalogStatus(estimate.id, 'SENT');
+            }
+            revalidatePath(`/ecatalogs/${estimateId}`);
+            return { success: true };
+        } else {
+            return { success: false, error: res.error };
+        }
+    } catch (error: any) {
+        console.error("sendEstimateEmail error:", error);
+        return { success: false, error: "Lỗi hệ thống khi gửi email." };
+    }
+}
+
+export async function submitEcatalog(creatorId: string, formData: any) {
+    try {
+        const user = await verifyActionPermission('SALES_ESTIMATES_CREATE');
+        const actualCreatorId = user ? (user as any).id : creatorId;
+
+        if (!formData.code || !formData.customerId || !formData.items || formData.items.length === 0) {
+            return { success: false, error: "Thiếu thông tin bắt buộc." };
+        }
+
+        const estimate = await prisma.ecatalog.create({
+            data: {
+                code: formData.code,
+                date: new Date(formData.date),
+                validUntil: formData.validUntil ? new Date(formData.validUntil) : null,
+                status: formData.status || "DRAFT",
+                templateType: formData.templateType || 'STANDARD',
+                notes: formData.notes,
+                tags: formData.tags || null,
+                customerId: formData.customerId,
+                subTotal: formData.subTotal,
+                taxAmount: formData.taxAmount,
+                totalAmount: formData.totalAmount,
+                creatorId: actualCreatorId,
+                salespersonId: formData.salespersonId || actualCreatorId,
+                leadId: formData.leadId || null,
+                projects: formData.projectId ? { connect: [{ id: formData.projectId }] } : undefined,
+                items: {
+                    create: formData.items.map((item: any) => ({
+                        productId: item.productId || null,
+                        customName: item.customName || null,
+                        description: item.description || null,
+                        unit: item.unit || null,
+                        quantity: item.quantity,
+                        unitPrice: item.unitPrice,
+                        taxRate: item.taxRate || 0,
+                        taxAmount: item.taxAmount || 0,
+                        totalPrice: item.totalPrice,
+                        isSubItem: item.isSubItem || false,
+                        origin: item.origin || null,
+                        warranty: item.warranty || null,
+                        manufacture: item.manufacture || null,
+                        imageUrl: item.imageUrl || null,
+                        laborPrice: item.laborPrice || 0
+                    }))
+                }
+            },
+            include: {
+                customer: true,
+                creator: true,
+                salesperson: true
+            }
+        });
+
+        await logEcatalogActivity(estimate.id, actualCreatorId, 'CREATED', 'Tạo Ecatalog mới');
+
+        // Log to unified Customer History
+        await logCustomerActivity(formData.customerId, actualCreatorId, 'TẠO_BÁO_GIÁ', `Tạo Ecatalog: ${formData.code}`);
+
+        revalidatePath('/ecatalogs');
+        return { success: true, data: estimate };
+    } catch (error: any) {
+        console.error("Lỗi khi tạo Ecatalog Kinh Doanh:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function updateEcatalog(id: string, formData: any) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" };
+        }
+        const userId = session.user.id;
+
+        if (!formData.code || !formData.customerId || !formData.items || formData.items.length === 0) {
+            return { success: false, error: "Thiếu thông tin bắt buộc." };
+        }
+
+        const oldEstimate = await prisma.ecatalog.findUnique({
+            where: { id },
+            include: { items: { include: { product: true } }, customer: true }
+        });
+
+        if (!oldEstimate) {
+            return { success: false, error: "Không tìm thấy Ecatalog." };
+        }
+        
+        await verifyActionOwnership('SALES_ESTIMATES', 'EDIT', oldEstimate.creatorId);
+
+        const changes: string[] = [];
+
+        // So sánh khách hàng
+        if (oldEstimate.customerId !== formData.customerId) {
+            const newCustomer = await prisma.customer.findUnique({ where: { id: formData.customerId } });
+            changes.push(`Đổi Khách hàng từ **${oldEstimate.customer?.name}** sang **${newCustomer?.name}**`);
+        }
+
+        // So sánh người Ecatalog
+        if (oldEstimate.salespersonId !== formData.salespersonId) {
+            const oldSalesperson = oldEstimate.salespersonId ? await prisma.user.findUnique({ where: { id: oldEstimate.salespersonId } }) : null;
+            const newSalesperson = formData.salespersonId ? await prisma.user.findUnique({ where: { id: formData.salespersonId } }) : null;
+            changes.push(`Đổi Người Ecatalog từ **${oldSalesperson?.name || 'Không có'}** sang **${newSalesperson?.name || 'Không có'}**`);
+        }
+
+        // Handle timezone offset to get correct local date string (YYYY-MM-DD)
+        const getLocalDateStr = (d: Date) => {
+            const offset = d.getTimezoneOffset() * 60000;
+            return new Date(d.getTime() - offset).toISOString().split('T')[0];
+        };
+
+        // So sánh ngày
+        const oldDateStr = getLocalDateStr(oldEstimate.date);
+        const newDateStr = getLocalDateStr(new Date(formData.date));
+        if (oldDateStr !== newDateStr) {
+            const fmtOld = formatDate(oldEstimate.date);
+            const fmtNew = formatDate(new Date(formData.date));
+            changes.push(`Đổi Ngày Ecatalog từ **${fmtOld}** sang **${fmtNew}**`);
+        }
+
+        // So sánh ngày hết hạn
+        const oldValidStr = oldEstimate.validUntil ? getLocalDateStr(oldEstimate.validUntil) : null;
+        const newValidStr = formData.validUntil ? getLocalDateStr(new Date(formData.validUntil)) : null;
+        if (oldValidStr !== newValidStr) {
+            const fmtOld = oldEstimate.validUntil ? formatDate(oldEstimate.validUntil) : 'Không có';
+            const fmtNew = formData.validUntil ? formatDate(new Date(formData.validUntil)) : 'Không có';
+            changes.push(`Đổi Ngày hết hạn từ **${fmtOld}** sang **${fmtNew}**`);
+        }
+
+        // So sánh ghi chú
+        if ((oldEstimate.notes || '') !== (formData.notes || '')) {
+            changes.push(`Đã thay đổi **Ghi chú**`);
+        }
+
+        // Thu thập thông tin sản phẩm
+        const oldItemsMap = new Map(oldEstimate.items.map((item: any) => [item.productId || item.customName, item]));
+        const newItemsMap = new Map((formData.items as any[]).map((item: any) => [item.productId || item.customName, item]));
+
+        // Kiểm tra xóa sản phẩm & sửa sản phẩm
+        const deletedProducts: string[] = [];
+        for (const [key, oldItem] of Array.from(oldItemsMap.entries())) {
+            const newItem = newItemsMap.get(key);
+            const itemName = oldItem.customName || oldItem.product?.name || 'Sản phẩm tự do';
+            if (!newItem) {
+                deletedProducts.push(itemName);
+            } else {
+                let itemChanges: string[] = [];
+                if (oldItem.quantity !== newItem.quantity) {
+                    itemChanges.push(`số lượng (${oldItem.quantity} ➔ ${newItem.quantity})`);
+                }
+                if (oldItem.unitPrice !== newItem.unitPrice) {
+                    itemChanges.push(`đơn giá (${oldItem.unitPrice.toLocaleString('vi-VN')} ➔ ${newItem.unitPrice.toLocaleString('vi-VN')})`);
+                }
+                if (oldItem.taxRate !== (newItem.taxRate || 0)) {
+                    itemChanges.push(`thuế (${oldItem.taxRate}% ➔ ${newItem.taxRate || 0}%)`);
+                }
+                if (itemChanges.length > 0) {
+                    changes.push(`Cập nhật **${itemName}**: ${itemChanges.join(', ')}`);
+                }
+            }
+        }
+
+        if (deletedProducts.length > 0) {
+            changes.push(`Xóa sản phẩm: **${deletedProducts.join(', ')}**`);
+        }
+
+        // Kiểm tra thêm sản phẩm mới
+        const newKeys = Array.from(newItemsMap.keys()).filter(key => !oldItemsMap.has(key));
+        if (newKeys.length > 0) {
+            changes.push(`Thêm ${newKeys.length} dòng sản phẩm mới`);
+        }
+
+        const estimate = await prisma.ecatalog.update({
+            where: { id },
+            data: {
+                code: formData.code,
+                date: new Date(formData.date),
+                validUntil: formData.validUntil ? new Date(formData.validUntil) : null,
+                status: formData.status || "DRAFT",
+                templateType: formData.templateType || 'STANDARD',
+                notes: formData.notes,
+                tags: formData.tags || null,
+                customerId: formData.customerId,
+                subTotal: formData.subTotal,
+                taxAmount: formData.taxAmount,
+                totalAmount: formData.totalAmount,
+                salespersonId: formData.salespersonId || null,
+                leadId: formData.leadId || null,
+                projects: formData.projectId ? { connect: [{ id: formData.projectId }] } : undefined,
+                items: {
+                    deleteMany: {},
+                    create: formData.items.map((item: any) => ({
+                        productId: item.productId || null,
+                        customName: item.customName || null,
+                        description: item.description || null,
+                        unit: item.unit || null,
+                        quantity: item.quantity,
+                        unitPrice: item.unitPrice,
+                        taxRate: item.taxRate || 0,
+                        taxAmount: item.taxAmount || 0,
+                        totalPrice: item.totalPrice,
+                        isSubItem: item.isSubItem || false,
+                        origin: item.origin || null,
+                        warranty: item.warranty || null,
+                        manufacture: item.manufacture || null,
+                        imageUrl: item.imageUrl || null,
+                        laborPrice: item.laborPrice || 0
+                    }))
+                }
+            },
+            include: {
+                customer: true,
+                creator: true,
+                salesperson: true
+            }
+        });
+
+        const customDetails = changes.length > 0 ? JSON.stringify({ diffs: changes }) : 'Cập nhật nội dung Ecatalog';
+
+        await logEcatalogActivity(estimate.id, userId, 'UPDATED', customDetails);
+
+        revalidatePath('/ecatalogs');
+        return { success: true, data: estimate };
+    } catch (error: any) {
+        console.error("Lỗi khi cập nhật Ecatalog Kinh Doanh:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function getEcatalogs(employeeId?: string) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) return [];
+
+        const permissions = session.user.permissions as string[] || [];
+        const viewAll = permissions.includes('SALES_ESTIMATES_VIEW_ALL');
+        const viewOwn = permissions.includes('SALES_ESTIMATES_VIEW_OWN');
+
+        if (!viewAll && !viewOwn) return [];
+
+        let whereClause: any = {};
+
+        if (viewAll) {
+            if (employeeId) {
+                whereClause = {
+                    OR: [
+                        { creatorId: employeeId },
+                        { salespersonId: employeeId }
+                    ]
+                };
+            }
+        } else if (viewOwn) {
+            whereClause = {
+                OR: [
+                    { creatorId: session.user.id },
+                    { salespersonId: session.user.id },
+                    { managers: { some: { id: session.user.id } } }
+                ]
+            };
+        }
+
+        const estimates = await prisma.ecatalog.findMany({
+            where: whereClause,
+            include: {
+                customer: true,
+                creator: true,
+                salesperson: true,
+                items: {
+                    include: { product: true }
+                }
+            },
+            orderBy: [
+                { createdAt: 'desc' },
+                { id: 'desc' }
+            ]
+        });
+
+        // Lazy evaluate EXPIRED status
+        const todayAtMidnight = new Date();
+        todayAtMidnight.setHours(0, 0, 0, 0);
+
+        const expiredEstimateIds = estimates
+            .filter(e => e.status === 'SENT' && e.validUntil && new Date(e.validUntil).setHours(0, 0, 0, 0) < todayAtMidnight.getTime())
+            .map(e => e.id);
+
+        if (expiredEstimateIds.length > 0) {
+            await prisma.ecatalog.updateMany({
+                where: { id: { in: expiredEstimateIds } },
+                data: { status: 'EXPIRED' }
+            });
+
+            // Mutate loaded array immediately
+            for (const est of estimates) {
+                if (expiredEstimateIds.includes(est.id)) {
+                    est.status = 'EXPIRED';
+                }
+            }
+        }
+
+        return estimates;
+    } catch (error) {
+        console.error("Lỗi khi lấy danh sách Ecatalog:", error);
+        return [];
+    }
+}
+
+export async function updateEcatalogStatus(id: string, newStatus: string) {
+    try {
+        const session = await getServerSession(authOptions);
+        const userId = session?.user?.id;
+
+        const ext = await prisma.ecatalog.findUnique({ where: { id } });
+        if (!ext) return { success: false, error: "Not found" };
+        await verifyActionOwnership('SALES_ESTIMATES', 'EDIT', ext.creatorId);
+
+        const estimate = await prisma.ecatalog.update({
+            where: { id },
+            data: { status: newStatus }
+        });
+
+        if (userId) {
+            await logEcatalogActivity(id, userId, 'STATUS_CHANGED', JSON.stringify({ to: newStatus }));
+            await logCustomerActivity(estimate.customerId, userId, 'CẬP_NHẬT_TRẠNG_THÁI', `Ecatalog ${estimate.code} chuyển trạng thái: ${newStatus}`);
+        }
+
+        if (newStatus === 'ACCEPTED' || newStatus === 'REJECTED') {
+            const statusText = newStatus === 'ACCEPTED' ? 'chốt' : 'từ chối';
+            const typeClass = newStatus === 'ACCEPTED' ? 'SUCCESS' : 'ERROR';
+
+            // Only notify if the person changing the status is NOT the creator
+            if (userId !== estimate.creatorId) {
+                await createNotification(
+                    estimate.creatorId,
+                    `Ecatalog đã được ${statusText}`,
+                    `Ecatalog ${estimate.code} đã chuyển sang trạng thái ${newStatus}.`,
+                    typeClass,
+                    `/ecatalogs/${estimate.id}`
+                );
+            }
+        }
+
+        revalidatePath('/ecatalogs');
+        return { success: true, data: estimate };
+    } catch (error: any) {
+        console.error("Lỗi cập nhật trạng thái Ecatalog:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function deleteEcatalog(id: string) {
+    try {
+        const ext = await prisma.ecatalog.findUnique({ where: { id } });
+        if (!ext) return { success: false, error: "Not found" };
+        await verifyActionOwnership('SALES_ESTIMATES', 'DELETE', ext.creatorId);
+
+        await prisma.ecatalog.delete({ where: { id } });
+        revalidatePath('/ecatalogs');
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function getNextEstimateCode() {
+    const settings = await prisma.systemSetting.findMany({
+        where: { key: { in: ['ESTIMATE_CODE_FORMAT', 'ESTIMATE_START_SEQ'] } }
+    });
+    const formatSetting = settings.find(s => s.key === 'ESTIMATE_CODE_FORMAT');
+    const startSeqSetting = settings.find(s => s.key === 'ESTIMATE_START_SEQ');
+
+    const format = formatSetting?.value || 'BG{SEQ}';
+    const startSeq = parseInt(startSeqSetting?.value || '1', 10) || 1;
+
+    const estimates = await prisma.ecatalog.findMany({ select: { code: true } });
+
+    // Generate regex to match codes of this format and extract {SEQ}
+    const escapedPrefix = format.split('{SEQ}')[0]?.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') || '';
+    const escapedSuffix = format.split('{SEQ}')[1]?.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') || '';
+
+    // Replace {MM} and {YYYY} in regex with actual current month/year to only match current month/year codes?
+    // Actually, usually sequence should just increment regardless of month/year unless sequence resets every month.
+    // Let's just extract the number where {SEQ} is located.
+    // Regex: ^PREFIX(\d+)SUFFIX$
+    // But prefix might contain {MM} and {YYYY}. Let's substitute them first for the CURRENT date to find max sequence of current date.
+    const now = new Date();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const yyyy = String(now.getFullYear());
+
+    const dateReplacedFormat = format.replace('{MM}', mm).replace('{YYYY}', yyyy);
+    const prefix = dateReplacedFormat.split('{SEQ}')[0] || '';
+    const suffix = dateReplacedFormat.split('{SEQ}')[1] || '';
+
+    const safePrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const safeSuffix = suffix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    const regex = new RegExp(`^${safePrefix}(\\d+)${safeSuffix}$`);
+
+    let maxNum = 0;
+    for (const est of estimates) {
+        const m = est.code.match(regex);
+        if (m && m[1]) {
+            const n = parseInt(m[1], 10);
+            if (!isNaN(n) && n > maxNum) {
+                maxNum = n;
+            }
+        }
+    }
+
+    const nextNumber = Math.max(maxNum + 1, startSeq);
+    const nextSeq = String(nextNumber).padStart(4, '0');
+    return prefix + nextSeq + suffix;
+}
+
+export async function convertEstimateToInvoice(estimateId: string) {
+    try {
+        const estimate = await prisma.ecatalog.findUnique({
+            where: { id: estimateId },
+            include: { items: true }
+        });
+
+        if (!estimate) return { success: false, error: "Ecatalog không tồn tại." };
+        
+        await verifyActionOwnership('SALES_ESTIMATES', 'EDIT', estimate.creatorId);
+        const user = await verifyActionPermission('SALES_INVOICES_CREATE');
+        const actualCreatorId = user ? (user as any).id : 'system';
+
+        // Lấy mã Invoice tiếp theo dùng config tự động
+        const nextCode = await getNextInvoiceCode();
+
+        const { invoice, estimateId: estId, actualCreatorId: creatorId } = await prisma.$transaction(async (tx) => {
+            const invoice = await tx.salesInvoice.create({
+                data: {
+                    code: nextCode,
+                    date: new Date(),
+                    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                    status: "DRAFT",
+                    notes: `Tạo từ Ecatalog ${estimate.code}`,
+                    tags: estimate.tags,
+                    customerId: estimate.customerId,
+                    subTotal: estimate.subTotal,
+                    taxAmount: estimate.taxAmount,
+                    totalAmount: estimate.totalAmount,
+                    creatorId: actualCreatorId,
+                    salespersonId: estimate.salespersonId,
+                    items: {
+                        create: estimate.items.map((i: any) => ({
+                            productId: i.productId,
+                            customName: i.customName,
+                            description: i.description,
+                            unit: i.unit,
+                            quantity: i.quantity,
+                            unitPrice: i.unitPrice,
+                            taxRate: i.taxRate,
+                            taxAmount: i.taxAmount,
+                            totalPrice: i.totalPrice,
+                            isSubItem: i.isSubItem || false
+                        }))
+                    }
+                }
+            });
+
+            // Đánh dấu Ecatalog đã Lên Hóa Đơn
+            await tx.ecatalog.update({
+                where: { id: estimateId },
+                data: { status: 'INVOICED' }
+            });
+
+            await tx.ecatalogActivityLog.create({
+                data: { estimateId, userId: actualCreatorId, action: 'STATUS_CHANGED', details: JSON.stringify({ to: 'INVOICED' }) }
+            });
+            await tx.ecatalogActivityLog.create({
+                data: { estimateId, userId: actualCreatorId, action: 'CONVERTED', details: `Đã tạo Hóa Đơn: ${invoice.code}` }
+            });
+
+            // Ghi log qua Customer History
+            await tx.customerActivityLog.create({
+                data: {
+                    customerId: estimate.customerId,
+                    userId: actualCreatorId,
+                    action: 'TẠO_HÓA_ĐƠN',
+                    details: `Tạo hóa đơn ${invoice.code} từ Ecatalog ${estimate.code}`
+                }
+            });
+
+            return { invoice, estimateId, actualCreatorId };
+        }, { maxWait: 5000, timeout: 15000 });
+
+        revalidatePath('/sales/invoices');
+        revalidatePath('/ecatalogs');
+
+        return { success: true, data: invoice };
+    } catch (error: any) {
+        console.error("Lỗi khi chuyển thành Hóa Đơn:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function convertEstimateToOrder(estimateId: string) {
+    try {
+        const estimate = await prisma.ecatalog.findUnique({
+            where: { id: estimateId },
+            include: { items: true }
+        });
+
+        if (!estimate) return { success: false, error: "Ecatalog không tồn tại." };
+        
+        await verifyActionOwnership('SALES_ESTIMATES', 'EDIT', estimate.creatorId);
+        const user = await verifyActionPermission('SALES_ORDERS_CREATE');
+        const actualCreatorId = user ? (user as any).id : 'system';
+
+        // Lấy mã Đơn Hàng tiếp theo
+        const orders = await prisma.salesOrder.findMany({ select: { code: true } });
+        let maxOrdNum = 0;
+        for (const ord of orders) {
+            const m = ord.code.match(/\d+/);
+            if (m) {
+                const n = parseInt(m[0], 10);
+                if (!isNaN(n) && n > maxOrdNum) maxOrdNum = n;
+            }
+        }
+        const nextCode = `SO${String(maxOrdNum + 1).padStart(4, '0')}`;
+
+        const { order, estimateId: estId, actualCreatorId: creatorId } = await prisma.$transaction(async (tx) => {
+            const order = await tx.salesOrder.create({
+                data: {
+                    code: nextCode,
+                    date: new Date(),
+                    status: "DRAFT",
+                    notes: `Tạo từ Ecatalog ${estimate.code}`,
+                    customerId: estimate.customerId,
+                    subTotal: estimate.subTotal,
+                    taxAmount: estimate.taxAmount,
+                    totalAmount: estimate.totalAmount,
+                    creatorId: actualCreatorId,
+                    items: {
+                        create: estimate.items.map((i: any) => ({
+                            productId: i.productId,
+                            customName: i.customName,
+                            description: i.description,
+                            unit: i.unit,
+                            quantity: i.quantity,
+                            unitPrice: i.unitPrice,
+                            taxRate: i.taxRate,
+                            taxAmount: i.taxAmount,
+                            totalPrice: i.totalPrice,
+                            isSubItem: i.isSubItem || false
+                        }))
+                    }
+                }
+            });
+
+            // Đánh dấu Ecatalog đã Lên Đơn Hàng
+            await tx.ecatalog.update({
+                where: { id: estimateId },
+                data: { status: 'ORDERED' }
+            });
+
+            await tx.ecatalogActivityLog.create({
+                data: { estimateId, userId: actualCreatorId, action: 'STATUS_CHANGED', details: JSON.stringify({ to: 'ORDERED' }) }
+            });
+            await tx.ecatalogActivityLog.create({
+                data: { estimateId, userId: actualCreatorId, action: 'CONVERTED', details: `Đã tạo Đơn Đặt Hàng: ${order.code}` }
+            });
+
+            await tx.customerActivityLog.create({
+                data: {
+                    customerId: estimate.customerId,
+                    userId: actualCreatorId,
+                    action: 'TẠO_ĐƠN_HÀNG',
+                    details: `Tạo đơn đặt hàng ${order.code} từ Ecatalog ${estimate.code}`
+                }
+            });
+
+            return { order, estimateId, actualCreatorId };
+        }, { maxWait: 5000, timeout: 15000 });
+
+        revalidatePath('/sales/orders');
+        revalidatePath('/ecatalogs');
+
+        return { success: true, data: order };
+    } catch (error: any) {
+        console.error("Lỗi khi chuyển thành Đơn Đặt Hàng:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function assignEcatalogManagers(estimateId: string, userIds: string[]) {
+    const ext = await prisma.ecatalog.findUnique({ where: { id: estimateId } });
+    if (!ext) throw new Error("Not found");
+    await verifyActionOwnership('SALES_ESTIMATES', 'EDIT', ext.creatorId);
+
+    const doc = await prisma.ecatalog.update({
+        where: { id: estimateId },
+        data: { managers: { connect: userIds.map(id => ({ id })) } }
+    });
+
+    // Log activity optional
+    revalidatePath(`/ecatalogs/${estimateId}`);
+    return doc;
+}
+
+export async function removeEcatalogManager(estimateId: string, userId: string) {
+    const ext = await prisma.ecatalog.findUnique({ where: { id: estimateId } });
+    if (!ext) throw new Error("Not found");
+    await verifyActionOwnership('SALES_ESTIMATES', 'EDIT', ext.creatorId);
+
+    const doc = await prisma.ecatalog.update({
+        where: { id: estimateId },
+        data: { managers: { disconnect: { id: userId } } }
+    });
+
+    revalidatePath(`/ecatalogs/${estimateId}`);
+    return doc;
+}
+
+export async function cloneEcatalog(estimateId: string) {
+    try {
+        const user = await verifyActionPermission('SALES_ESTIMATES_CREATE');
+        const creatorId = user ? (user as any).id : 'system';
+
+        const estimate = await prisma.ecatalog.findUnique({
+            where: { id: estimateId },
+            include: { items: true }
+        });
+
+        if (!estimate) return { success: false, error: "Ecatalog không tồn tại." };
+
+        const nextCode = await getNextEstimateCode();
+
+        const clonedEstimate = await prisma.ecatalog.create({
+            data: {
+                code: nextCode,
+                date: new Date(),
+                validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                status: "DRAFT",
+                templateType: estimate.templateType || 'STANDARD',
+                notes: estimate.notes,
+                tags: estimate.tags,
+                customerId: estimate.customerId,
+                subTotal: estimate.subTotal,
+                taxAmount: estimate.taxAmount,
+                totalAmount: estimate.totalAmount,
+                creatorId: creatorId,
+                salespersonId: estimate.salespersonId || creatorId,
+                leadId: estimate.leadId,
+                items: {
+                    create: estimate.items.map((i: any) => ({
+                        productId: i.productId,
+                        customName: i.customName,
+                        description: i.description,
+                        unit: i.unit,
+                        quantity: i.quantity,
+                        unitPrice: i.unitPrice,
+                        taxRate: i.taxRate,
+                        taxAmount: i.taxAmount,
+                        totalPrice: i.totalPrice,
+                        isSubItem: i.isSubItem || false,
+                        origin: i.origin || null,
+                        warranty: i.warranty || null,
+                        manufacture: i.manufacture || null,
+                        imageUrl: i.imageUrl || null,
+                        laborPrice: i.laborPrice || 0
+                    }))
+                }
+            }
+        });
+
+        await logEcatalogActivity(clonedEstimate.id, creatorId, 'CREATED', `Tạo Ecatalog ${clonedEstimate.code} (Sao chép từ ${estimate.code})`);
+        await logCustomerActivity(estimate.customerId, creatorId, 'TẠO_BÁO_GIÁ', `Tạo Ecatalog mới ${clonedEstimate.code} (Sao chép từ ${estimate.code})`);
+
+        revalidatePath('/ecatalogs');
+        return { success: true, data: clonedEstimate };
+    } catch (error: any) {
+        console.error("Lỗi khi sao chép Ecatalog:", error);
+        return { success: false, error: error.message };
+    }
+}

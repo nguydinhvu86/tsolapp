@@ -21,6 +21,10 @@ model PermissionGroup {
 }
 
 model User {
+  ecatalogsSalesperson     Ecatalog[]             @relation("EcatalogSalesperson")
+  ecatalogsCreated      Ecatalog[]             @relation("EcatalogCreator")
+  managedEcatalogs      Ecatalog[]             @relation("EcatalogManagers")
+  ecatalogActivityLogs  EcatalogActivityLog[]
   id                    String                 @id @default(cuid())
   email                 String                 @unique
   password              String // Thêm trường mật khẩu đã mã hóa (hashed)
@@ -176,6 +180,7 @@ model Notification {
 }
 
 model Customer {
+  ecatalogs       Ecatalog[]
   id              String           @id @default(cuid())
   name            String
   email           String?          @unique
@@ -427,6 +432,8 @@ model Dispatch {
 
 // --- TASKS MODULE ---
 model Task {
+  ecatalogId        String?
+  ecatalog          Ecatalog? @relation(fields: [ecatalogId], references: [id])
   id                String    @id @default(cuid())
   title             String
   description       String?   @db.Text
@@ -682,6 +689,7 @@ model ProductGroup {
 }
 
 model Product {
+  ecatalogItems    EcatalogItem[]
   id               String                     @id @default(cuid())
   sku              String                     @unique
   name             String
@@ -1388,6 +1396,7 @@ model ExpenseActivityLog {
 // --- LEAD MANAGEMENT MODULE ---
 
 model Lead {
+  ecatalogs                Ecatalog[]
   id   String @id @default(cuid())
   code String @unique // Mã cơ hội, dạng LEAD-YYMM-XXXX
   name String // Tên cơ hội (VD: "Lắp đặt hệ thống Camera nhà xưởng A")
@@ -1554,11 +1563,13 @@ model EmailTemplate {
 }
 
 model EmailLog {
-  id      String @id @default(cuid())
-  subject String
-  body    String @db.Text
-  toEmail String
-  status  String @default("SENT") // SENT, OPENED, FAILED
+  ecatalogId String?
+  ecatalog   Ecatalog? @relation(fields: [ecatalogId], references: [id], onDelete: Cascade)
+  id         String    @id @default(cuid())
+  subject    String
+  body       String    @db.Text
+  toEmail    String
+  status     String    @default("SENT") // SENT, OPENED, FAILED
 
   senderId   String?
   customerId String?
@@ -2059,6 +2070,7 @@ model SupplierInvoiceItem {
 // --- PROJECT MANAGEMENT MODULE ---
 
 model Project {
+  ecatalogs                Ecatalog[]
   id                String    @id @default(cuid())
   code              String    @unique
   name              String
@@ -2333,4 +2345,72 @@ model MarketingParticipant {
 
   @@unique([campaignId, email])
   @@unique([campaignId, phone])
+}
+
+model Ecatalog {
+  id           String                @id @default(uuid())
+  code         String                @unique
+  name         String
+  date         DateTime              @default(now())
+  validUntil   DateTime?
+  customerId   String?
+  customer     Customer?             @relation(fields: [customerId], references: [id])
+  creatorId    String
+  creator      User                  @relation("EcatalogCreator", fields: [creatorId], references: [id])
+  subTotal     Float                 @default(0)
+  taxAmount    Float                 @default(0)
+  totalAmount  Float                 @default(0)
+  status       String                @default("DRAFT")
+  notes        String?               @db.Text
+  items        EcatalogItem[]
+  activityLogs EcatalogActivityLog[]
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  tasks    Task[]
+  EmailLog EmailLog[]
+  managers User[]     @relation("EcatalogManagers")
+
+  @@index([customerId])
+  @@index([creatorId])
+}
+
+model EcatalogItem {
+  id           String   @id @default(uuid())
+  ecatalogId   String
+  ecatalog     Ecatalog @relation(fields: [ecatalogId], references: [id], onDelete: Cascade)
+  productId    String?
+  product      Product? @relation(fields: [productId], references: [id])
+  customName   String?
+  description  String?  @db.Text
+  quantity     Float    @default(1)
+  unit         String?
+  unitPrice    Float    @default(0)
+  taxRate      Float    @default(0)
+  totalPrice   Float    @default(0)
+  imageUrl     String?  @db.Text
+  isSubItem    Boolean  @default(false)
+  parentItemId String?
+  manufacture  String?
+  origin       String?
+  warranty     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([ecatalogId])
+  @@index([productId])
+}
+
+model EcatalogActivityLog {
+  id         String   @id @default(uuid())
+  ecatalogId String
+  userId     String
+  action     String
+  details    String?  @db.Text
+  createdAt  DateTime @default(now())
+  ecatalog   Ecatalog @relation(fields: [ecatalogId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@index([ecatalogId])
+  @@index([userId])
 }

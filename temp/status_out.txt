@@ -1,0 +1,20 @@
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": MySQL database "erp_tsolnew" at "127.0.0.1:3306"
+
+11 migrations found in prisma/migrations
+Following migration have failed:
+20260421023425_change_marketing_description_longtext
+
+During development if the failed migration(s) have not been deployed to a production database you can then fix the migration(s) and run prisma migrate dev.
+
+The failed migration(s) can be marked as rolled back or applied:
+      
+- If you rolled back the migration(s) manually:
+prisma migrate resolve --rolled-back "20260421023425_change_marketing_description_longtext"
+
+- If you fixed the database manually (hotfix):
+prisma migrate resolve --applied "20260421023425_change_marketing_description_longtext"
+
+Read more about how to resolve migration issues in a production database:
+https://pris.ly/d/migrate-resolve
