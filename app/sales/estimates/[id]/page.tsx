@@ -86,7 +86,7 @@ export default async function SalesEstimateDetailPage({ params }: { params: { id
     };
 
     const settingsRaw = await prisma.systemSetting.findMany({
-        where: { key: { in: ['BANK_INFO_ENABLED', 'BANK_INFO_CONTENT', 'COMPANY_NAME', 'COMPANY_PHONE', 'COMPANY_EMAIL', 'COMPANY_ADDRESS'] } }
+        where: { key: { in: ['BANK_INFO_ENABLED', 'BANK_INFO_CONTENT', 'COMPANY_NAME', 'COMPANY_FULL_NAME', 'COMPANY_PHONE', 'COMPANY_EMAIL', 'COMPANY_ADDRESS', 'COMPANY_TAX'] } }
     });
     const settingsMap: Record<string, string> = {};
     settingsRaw.forEach(s => settingsMap[s.key] = s.value);

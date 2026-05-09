@@ -79,7 +79,7 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
 
         // Header Rows - Company Info
         ws.mergeCells(1, 1, 1, colCount);
-        ws.getCell('A1').value = (settings?.COMPANY_NAME || 'TÊN CÔNG TY').toUpperCase();
+        ws.getCell('A1').value = (settings?.COMPANY_FULL_NAME || settings?.COMPANY_NAME || 'TÊN CÔNG TY').toUpperCase();
         ws.getCell('A1').font = { bold: true, size: 12 };
         
         ws.mergeCells(2, 1, 2, colCount);
@@ -88,28 +88,37 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
         ws.mergeCells(3, 1, 3, colCount);
         ws.getCell('A3').value = `Điện thoại: ${settings?.COMPANY_PHONE || ''} - Email: ${settings?.COMPANY_EMAIL || ''}`;
         
+        ws.mergeCells(4, 1, 4, colCount);
+        ws.getCell('A4').value = `Mã số thuế: ${settings?.COMPANY_TAX || ''}`;
+
         ws.addRow([]);
 
         // Main Title
-        const titleRowNumber = 5;
+        const titleRowNumber = 6;
         ws.mergeCells(titleRowNumber, 1, titleRowNumber, colCount);
         ws.getCell(`A${titleRowNumber}`).value = 'BẢNG BÁO GIÁ';
         ws.getCell(`A${titleRowNumber}`).font = { size: 16, bold: true, name: 'Times New Roman' };
         ws.getCell(`A${titleRowNumber}`).alignment = { vertical: 'middle', horizontal: 'center' };
         ws.getRow(titleRowNumber).height = 30;
 
-        ws.addRow([`Số: ${estimate.code}`, `Ngày: ${formatDate(estimate.date)}`]);
+        const codeRow = ws.addRow([`Số: ${estimate.code}   |   Ngày: ${formatDate(estimate.date)}`]);
+        ws.mergeCells(codeRow.number, 1, codeRow.number, colCount);
+        codeRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' };
+        codeRow.getCell(1).font = { italic: true };
+
         ws.addRow([]);
         
-        ws.addRow(['THÔNG TIN KHÁCH HÀNG', '', '', `ĐIỀU KIỆN BÁO GIÁ`]);
-        ws.mergeCells(`A8:C8`);
-        ws.getCell('A8').font = { bold: true };
-        ws.getCell('D8').font = { bold: true };
+        const infoTitleRow = ws.addRow(['THÔNG TIN KHÁCH HÀNG', '', '', `ĐIỀU KIỆN BÁO GIÁ`]);
+        ws.mergeCells(infoTitleRow.number, 1, infoTitleRow.number, 3);
+        infoTitleRow.getCell(1).font = { bold: true };
+        infoTitleRow.getCell(4).font = { bold: true };
         
-        ws.addRow([`Khách hàng: ${estimate.customer?.name || ''}`, '', '', `Hiệu lực đến: ${estimate.validUntil ? formatDate(estimate.validUntil) : '---'}`]);
-        ws.mergeCells(`A9:C9`);
-        ws.addRow([`Người liên hệ: ${estimate.customer?.phone || ''}`, '', '', `Người lập: ${estimate.creator?.name || ''}`]);
-        ws.mergeCells(`A10:C10`);
+        const infoRow1 = ws.addRow([`Khách hàng: ${estimate.customer?.name || ''}`, '', '', `Hiệu lực đến: ${estimate.validUntil ? formatDate(estimate.validUntil) : '---'}`]);
+        ws.mergeCells(infoRow1.number, 1, infoRow1.number, 3);
+        
+        const infoRow2 = ws.addRow([`Người liên hệ: ${estimate.customer?.phone || ''}`, '', '', `Người lập: ${estimate.creator?.name || ''}`]);
+        ws.mergeCells(infoRow2.number, 1, infoRow2.number, 3);
+        
         ws.addRow([]);
 
         const headerRow = ws.addRow(headers);
@@ -161,8 +170,12 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
             addedRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
                 if (colNumber <= colCount) {
                     cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
-                    cell.alignment = { vertical: 'middle', wrapText: true };
-                    if (typeof cell.value === 'number') {
+                    if (colNumber === 1) {
+                        cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+                    } else {
+                        cell.alignment = { vertical: 'middle', wrapText: true };
+                    }
+                    if (typeof cell.value === 'number' && colNumber > 1) {
                          cell.numFmt = '#,##0';
                     }
                 }
@@ -171,57 +184,57 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
 
         ws.addRow([]);
         
+        const addSummary = (label: string, val: any, bold: boolean = false) => {
+            const rowData = Array(colCount).fill('');
+            rowData[0] = label;
+            rowData[colCount - 1] = val;
+            
+            const r = ws.addRow(rowData);
+            ws.mergeCells(r.number, 1, r.number, colCount - 1);
+            
+            const labelCell = r.getCell(1);
+            labelCell.alignment = { horizontal: 'right', vertical: 'middle' };
+            
+            const valCell = r.getCell(colCount);
+            valCell.alignment = { horizontal: 'right', vertical: 'middle' };
+            valCell.numFmt = '#,##0';
+            
+            if (bold) {
+                r.font = { bold: true, size: 12 };
+            }
+            
+            for (let i = 1; i <= colCount; i++) {
+                r.getCell(i).border = { 
+                    top: {style:'thin'}, 
+                    left: {style:'thin'}, 
+                    bottom: {style:'thin'}, 
+                    right: {style:'thin'} 
+                };
+            }
+            return r;
+        };
+
         if (estimate.templateType === 'PROJECT_BREAKDOWN') {
             let sumVatTu = 0;
             let sumNhanCong = 0;
             estimate.items?.forEach((i: any) => { sumVatTu += i.quantity * i.unitPrice; sumNhanCong += i.quantity * (i.laborPrice || 0); });
             
-            const addSummary = (label: string, val: any, bold: boolean = false) => {
-                const r = ws.addRow(['', '', '', '', '', '', '', label, val, '']);
-                r.getCell(8).alignment = { horizontal: 'right' };
-                if (bold) r.font = { bold: true, size: 12 };
-                r.getCell(9).numFmt = '#,##0';
-                if (bold) {
-                    r.getCell(8).border = { top: {style:'thin'}, bottom: {style:'double'} };
-                    r.getCell(9).border = { top: {style:'thin'}, bottom: {style:'double'} };
-                }
-            };
             addSummary('Tổng Cộng Vật Tư:', sumVatTu);
             addSummary('Tổng Cộng Nhân Công:', sumNhanCong);
             addSummary('Tổng Cộng Chưa Thuế:', sumVatTu + sumNhanCong);
             addSummary('VAT Tax:', estimate.taxAmount);
-            addSummary('TỔNG CỘNG (GỒM VAT):', estimate.totalAmount, true);
-            ws.getCell(`I${ws.rowCount}`).font = { bold: true, color: { argb: 'FF05A613' }, size: 12 };
+            const lastRow = addSummary('TỔNG CỘNG (GỒM VAT):', estimate.totalAmount, true);
+            lastRow.getCell(colCount).font = { bold: true, color: { argb: 'FF05A613' }, size: 12 };
         } else if (estimate.templateType === 'WITH_IMAGES') {
-            const addSummary = (label: string, val: any, bold: boolean = false) => {
-                const r = ws.addRow(['', '', '', '', '', '', '', label, val]);
-                r.getCell(8).alignment = { horizontal: 'right' };
-                if (bold) r.font = { bold: true, size: 12 };
-                r.getCell(9).numFmt = '#,##0';
-                if (bold) {
-                    r.getCell(8).border = { top: {style:'thin'}, bottom: {style:'double'} };
-                    r.getCell(9).border = { top: {style:'thin'}, bottom: {style:'double'} };
-                }
-            };
             addSummary('Tổng Tiền Trước Thuế:', estimate.subTotal);
             addSummary('Tổng Tiền Thuế:', estimate.taxAmount);
-            addSummary('TỔNG CỘNG:', estimate.totalAmount, true);
-            ws.getCell(`I${ws.rowCount}`).font = { bold: true, color: { argb: 'FF10B981' }, size: 12 };
+            const lastRow = addSummary('TỔNG CỘNG:', estimate.totalAmount, true);
+            lastRow.getCell(colCount).font = { bold: true, color: { argb: 'FF10B981' }, size: 12 };
         } else {
-             const addSummary = (label: string, val: any, bold: boolean = false) => {
-                const r = ws.addRow(['', '', '', '', '', label, val]);
-                r.getCell(6).alignment = { horizontal: 'right' };
-                if (bold) r.font = { bold: true, size: 12 };
-                r.getCell(7).numFmt = '#,##0';
-                if (bold) {
-                    r.getCell(6).border = { top: {style:'thin'}, bottom: {style:'double'} };
-                    r.getCell(7).border = { top: {style:'thin'}, bottom: {style:'double'} };
-                }
-            };
             addSummary('Tổng Tiền Trước Thuế:', estimate.subTotal);
             addSummary('Tổng Tiền Thuế:', estimate.taxAmount);
-            addSummary('TỔNG CỘNG:', estimate.totalAmount, true);
-            ws.getCell(`G${ws.rowCount}`).font = { bold: true, color: { argb: 'FF10B981' }, size: 12 };
+            const lastRow = addSummary('TỔNG CỘNG:', estimate.totalAmount, true);
+            lastRow.getCell(colCount).font = { bold: true, color: { argb: 'FF10B981' }, size: 12 };
         }
 
         ws.addRow([]);
