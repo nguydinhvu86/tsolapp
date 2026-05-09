@@ -16,8 +16,8 @@ import { useSession } from 'next-auth/react';
 import { DocumentManagersPanel } from '@/app/components/shared/DocumentManagersPanel';
 import { EmailLogTable } from '@/app/components/ui/EmailLogTable';
 import { DocumentSignatureBlock } from '@/app/components/ui/DocumentSignatureBlock';
-import * as XLSX from 'xlsx';
-
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 export default function SalesEstimateDetailClient({ initialData, customers, products, users, emailTemplates, settings }: any) {
     const router = useRouter();
     const { data: session } = useSession();
@@ -48,25 +48,77 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
         setTimeout(() => setCopied(false), 2000);
     };
 
-    const handleExportExcel = () => {
-        const wb = XLSX.utils.book_new();
+    const handleExportExcel = async () => {
+        const wb = new ExcelJS.Workbook();
+        const ws = wb.addWorksheet('BaoGia');
 
-        const data: any[] = [];
-        data.push(['BẢNG BÁO GIÁ']);
-        data.push([`Số: ${estimate.code}`, `Ngày: ${formatDate(estimate.date)}`]);
-        data.push([]);
-        data.push(['THÔNG TIN KHÁCH HÀNG', '', '', 'ĐIỀU KIỆN BÁO GIÁ']);
-        data.push([`Khách hàng: ${estimate.customer?.name || ''}`, '', '', `Hiệu lực đến: ${estimate.validUntil ? formatDate(estimate.validUntil) : '---'}`]);
-        data.push([`Người liên hệ: ${estimate.customer?.phone || ''}`, '', '', `Người lập: ${estimate.creator?.name || ''}`]);
-        data.push([]);
-        
+        // Common layout
+        ws.columns = [
+            { key: 'col1', width: 5 },
+            { key: 'col2', width: 40 },
+            { key: 'col3', width: 15 },
+            { key: 'col4', width: 10 },
+            { key: 'col5', width: 10 },
+            { key: 'col6', width: 15 },
+            { key: 'col7', width: 15 },
+            { key: 'col8', width: 15 },
+            { key: 'col9', width: 15 },
+            { key: 'col10', width: 20 }
+        ];
+
         let headers = ['STT', 'Sản Phẩm / Dịch Vụ', 'SL', 'ĐVT', 'Đơn Giá', 'Thuế (%)', 'Thành Tiền'];
+        let colCount = 7;
+        
         if (estimate.templateType === 'PROJECT_BREAKDOWN') {
             headers = ['STT', 'Sản Phẩm / Dịch Vụ', 'Hãng SX', 'Bảo Hành', 'SL', 'ĐVT', 'Đ.Giá Vật Tư', 'Đ.Giá N.Công', 'Tiền Vật Tư', 'Tiền N.Công'];
+            colCount = 10;
         } else if (estimate.templateType === 'WITH_IMAGES') {
             headers = ['STT', 'Sản Phẩm / Dịch Vụ', 'Xuất Xứ', 'Bảo Hành', 'SL', 'ĐVT', 'Đơn Giá', 'Thuế (%)', 'Thành Tiền'];
+            colCount = 9;
         }
-        data.push(headers);
+
+        // Header Rows - Company Info
+        ws.mergeCells(1, 1, 1, colCount);
+        ws.getCell('A1').value = (settings?.COMPANY_NAME || 'TÊN CÔNG TY').toUpperCase();
+        ws.getCell('A1').font = { bold: true, size: 12 };
+        
+        ws.mergeCells(2, 1, 2, colCount);
+        ws.getCell('A2').value = `Địa chỉ: ${settings?.COMPANY_ADDRESS || ''}`;
+        
+        ws.mergeCells(3, 1, 3, colCount);
+        ws.getCell('A3').value = `Điện thoại: ${settings?.COMPANY_PHONE || ''} - Email: ${settings?.COMPANY_EMAIL || ''}`;
+        
+        ws.addRow([]);
+
+        // Main Title
+        const titleRowNumber = 5;
+        ws.mergeCells(titleRowNumber, 1, titleRowNumber, colCount);
+        ws.getCell(`A${titleRowNumber}`).value = 'BẢNG BÁO GIÁ';
+        ws.getCell(`A${titleRowNumber}`).font = { size: 16, bold: true, name: 'Times New Roman' };
+        ws.getCell(`A${titleRowNumber}`).alignment = { vertical: 'middle', horizontal: 'center' };
+        ws.getRow(titleRowNumber).height = 30;
+
+        ws.addRow([`Số: ${estimate.code}`, `Ngày: ${formatDate(estimate.date)}`]);
+        ws.addRow([]);
+        
+        ws.addRow(['THÔNG TIN KHÁCH HÀNG', '', '', `ĐIỀU KIỆN BÁO GIÁ`]);
+        ws.mergeCells(`A8:C8`);
+        ws.getCell('A8').font = { bold: true };
+        ws.getCell('D8').font = { bold: true };
+        
+        ws.addRow([`Khách hàng: ${estimate.customer?.name || ''}`, '', '', `Hiệu lực đến: ${estimate.validUntil ? formatDate(estimate.validUntil) : '---'}`]);
+        ws.mergeCells(`A9:C9`);
+        ws.addRow([`Người liên hệ: ${estimate.customer?.phone || ''}`, '', '', `Người lập: ${estimate.creator?.name || ''}`]);
+        ws.mergeCells(`A10:C10`);
+        ws.addRow([]);
+
+        const headerRow = ws.addRow(headers);
+        headerRow.eachCell((cell) => {
+            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF05A613' } };
+            cell.alignment = { vertical: 'middle', horizontal: 'center' };
+            cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+        });
 
         let currentIndex = 1;
         estimate.items?.forEach((item: any) => {
@@ -74,9 +126,9 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
             row.push(item.isSubItem ? '-' : currentIndex++);
             
             let name = item.customName || item.product?.name || '';
-            if (item.description) name += `\n${item.description}`;
-            if (item.product?.sku) name += `\nSKU: ${item.product.sku}`;
-            if (estimate.templateType === 'WITH_IMAGES' && item.manufacture) name += `\nHãng: ${item.manufacture}`;
+            if (item.description) name += `\r\n${item.description}`;
+            if (item.product?.sku) name += `\r\nSKU: ${item.product.sku}`;
+            if (estimate.templateType === 'WITH_IMAGES' && item.manufacture) name += `\r\nHãng: ${item.manufacture}`;
 
             row.push(item.isSubItem ? `  ↳ ${name}` : name);
             
@@ -105,43 +157,130 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                 row.push(item.totalPrice);
             }
             
-            data.push(row);
+            const addedRow = ws.addRow(row);
+            addedRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+                if (colNumber <= colCount) {
+                    cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+                    cell.alignment = { vertical: 'middle', wrapText: true };
+                    if (typeof cell.value === 'number') {
+                         cell.numFmt = '#,##0';
+                    }
+                }
+            });
         });
 
-        data.push([]);
+        ws.addRow([]);
         
         if (estimate.templateType === 'PROJECT_BREAKDOWN') {
             let sumVatTu = 0;
             let sumNhanCong = 0;
             estimate.items?.forEach((i: any) => { sumVatTu += i.quantity * i.unitPrice; sumNhanCong += i.quantity * (i.laborPrice || 0); });
-            const padArray = Array(7).fill('');
-            data.push([...padArray, 'Tổng Cộng Vật Tư:', sumVatTu, '']);
-            data.push([...padArray, 'Tổng Cộng Nhân Công:', sumNhanCong, '']);
-            data.push([...padArray, 'Tổng Cộng Chưa Thuế:', sumVatTu + sumNhanCong, '']);
-            data.push([...padArray, 'VAT Tax:', estimate.taxAmount, '']);
-            data.push([...padArray, 'TỔNG CỘNG (GỒM VAT):', estimate.totalAmount, '']);
-            const ws = XLSX.utils.aoa_to_sheet(data);
-            ws['!cols'] = [{ wch: 5 }, { wch: 40 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
-            XLSX.utils.book_append_sheet(wb, ws, 'BaoGia');
+            
+            const addSummary = (label: string, val: any, bold: boolean = false) => {
+                const r = ws.addRow(['', '', '', '', '', '', '', label, val, '']);
+                r.getCell(8).alignment = { horizontal: 'right' };
+                if (bold) r.font = { bold: true, size: 12 };
+                r.getCell(9).numFmt = '#,##0';
+                if (bold) {
+                    r.getCell(8).border = { top: {style:'thin'}, bottom: {style:'double'} };
+                    r.getCell(9).border = { top: {style:'thin'}, bottom: {style:'double'} };
+                }
+            };
+            addSummary('Tổng Cộng Vật Tư:', sumVatTu);
+            addSummary('Tổng Cộng Nhân Công:', sumNhanCong);
+            addSummary('Tổng Cộng Chưa Thuế:', sumVatTu + sumNhanCong);
+            addSummary('VAT Tax:', estimate.taxAmount);
+            addSummary('TỔNG CỘNG (GỒM VAT):', estimate.totalAmount, true);
+            ws.getCell(`I${ws.rowCount}`).font = { bold: true, color: { argb: 'FF05A613' }, size: 12 };
         } else if (estimate.templateType === 'WITH_IMAGES') {
-            const padArray = Array(6).fill('');
-            data.push([...padArray, 'Tổng Tiền Trước Thuế:', estimate.subTotal, '']);
-            data.push([...padArray, 'Tổng Tiền Thuế:', estimate.taxAmount, '']);
-            data.push([...padArray, 'TỔNG CỘNG:', estimate.totalAmount, '']);
-            const ws = XLSX.utils.aoa_to_sheet(data);
-            ws['!cols'] = [{ wch: 5 }, { wch: 40 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 20 }];
-            XLSX.utils.book_append_sheet(wb, ws, 'BaoGia');
+            const addSummary = (label: string, val: any, bold: boolean = false) => {
+                const r = ws.addRow(['', '', '', '', '', '', '', label, val]);
+                r.getCell(8).alignment = { horizontal: 'right' };
+                if (bold) r.font = { bold: true, size: 12 };
+                r.getCell(9).numFmt = '#,##0';
+                if (bold) {
+                    r.getCell(8).border = { top: {style:'thin'}, bottom: {style:'double'} };
+                    r.getCell(9).border = { top: {style:'thin'}, bottom: {style:'double'} };
+                }
+            };
+            addSummary('Tổng Tiền Trước Thuế:', estimate.subTotal);
+            addSummary('Tổng Tiền Thuế:', estimate.taxAmount);
+            addSummary('TỔNG CỘNG:', estimate.totalAmount, true);
+            ws.getCell(`I${ws.rowCount}`).font = { bold: true, color: { argb: 'FF10B981' }, size: 12 };
         } else {
-            const padArray = Array(4).fill('');
-            data.push([...padArray, 'Tổng Tiền Trước Thuế:', estimate.subTotal, '']);
-            data.push([...padArray, 'Tổng Tiền Thuế:', estimate.taxAmount, '']);
-            data.push([...padArray, 'TỔNG CỘNG:', estimate.totalAmount, '']);
-            const ws = XLSX.utils.aoa_to_sheet(data);
-            ws['!cols'] = [{ wch: 5 }, { wch: 50 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 20 }];
-            XLSX.utils.book_append_sheet(wb, ws, 'BaoGia');
+             const addSummary = (label: string, val: any, bold: boolean = false) => {
+                const r = ws.addRow(['', '', '', '', '', label, val]);
+                r.getCell(6).alignment = { horizontal: 'right' };
+                if (bold) r.font = { bold: true, size: 12 };
+                r.getCell(7).numFmt = '#,##0';
+                if (bold) {
+                    r.getCell(6).border = { top: {style:'thin'}, bottom: {style:'double'} };
+                    r.getCell(7).border = { top: {style:'thin'}, bottom: {style:'double'} };
+                }
+            };
+            addSummary('Tổng Tiền Trước Thuế:', estimate.subTotal);
+            addSummary('Tổng Tiền Thuế:', estimate.taxAmount);
+            addSummary('TỔNG CỘNG:', estimate.totalAmount, true);
+            ws.getCell(`G${ws.rowCount}`).font = { bold: true, color: { argb: 'FF10B981' }, size: 12 };
         }
 
-        XLSX.writeFile(wb, `Bao_Gia_${estimate.code}.xlsx`);
+        ws.addRow([]);
+        ws.addRow([]);
+
+        // Payment Info
+        ws.addRow(['THÔNG TIN THANH TOÁN / CHUYỂN KHOẢN:']);
+        ws.getCell(`A${ws.rowCount}`).font = { bold: true, underline: true };
+        
+        if (settings?.BANK_INFO_CONTENT) {
+            const contentLines = settings.BANK_INFO_CONTENT.split('\n');
+            contentLines.forEach((line: string) => {
+                if (line.trim()) {
+                    ws.addRow([line.trim()]);
+                }
+            });
+        } else {
+            ws.addRow(['- Vui lòng chuyển khoản theo thông tin đính kèm hoặc liên hệ kế toán để lấy thông tin chi tiết.']);
+        }
+
+        ws.addRow([]);
+        ws.addRow([]);
+
+        // Signatures
+        const sigRow = ws.addRow([]);
+        const mid = Math.floor(colCount / 2);
+        
+        ws.mergeCells(sigRow.number, 1, sigRow.number, mid);
+        const custCell = sigRow.getCell(1);
+        custCell.value = 'XÁC NHẬN CỦA KHÁCH HÀNG';
+        custCell.font = { bold: true };
+        custCell.alignment = { horizontal: 'center' };
+        
+        ws.mergeCells(sigRow.number, mid + 1, sigRow.number, colCount);
+        const compCell = sigRow.getCell(mid + 1);
+        compCell.value = 'ĐẠI DIỆN CÔNG TY';
+        compCell.font = { bold: true };
+        compCell.alignment = { horizontal: 'center' };
+        
+        const subSigRow = ws.addRow([]);
+        ws.mergeCells(subSigRow.number, 1, subSigRow.number, mid);
+        const subCustCell = subSigRow.getCell(1);
+        subCustCell.value = '(Ký, ghi rõ họ tên)';
+        subCustCell.font = { italic: true };
+        subCustCell.alignment = { horizontal: 'center' };
+        
+        ws.mergeCells(subSigRow.number, mid + 1, subSigRow.number, colCount);
+        const subCompCell = subSigRow.getCell(mid + 1);
+        subCompCell.value = '(Ký, ghi rõ họ tên)';
+        subCompCell.font = { italic: true };
+        subCompCell.alignment = { horizontal: 'center' };
+        
+        ws.addRow([]);
+        ws.addRow([]);
+        ws.addRow([]);
+        ws.addRow([]);
+
+        const buffer = await wb.xlsx.writeBuffer();
+        saveAs(new Blob([buffer]), `Bao_Gia_${estimate.code}.xlsx`);
     };
 
 
