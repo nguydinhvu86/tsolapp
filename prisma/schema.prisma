@@ -21,7 +21,7 @@ model PermissionGroup {
 }
 
 model User {
-  ecatalogsSalesperson     Ecatalog[]             @relation("EcatalogSalesperson")
+  ecatalogsSalesperson  Ecatalog[]             @relation("EcatalogSalesperson")
   ecatalogsCreated      Ecatalog[]             @relation("EcatalogCreator")
   managedEcatalogs      Ecatalog[]             @relation("EcatalogManagers")
   ecatalogActivityLogs  EcatalogActivityLog[]
@@ -1396,10 +1396,10 @@ model ExpenseActivityLog {
 // --- LEAD MANAGEMENT MODULE ---
 
 model Lead {
-  ecatalogs                Ecatalog[]
-  id   String @id @default(cuid())
-  code String @unique // Mã cơ hội, dạng LEAD-YYMM-XXXX
-  name String // Tên cơ hội (VD: "Lắp đặt hệ thống Camera nhà xưởng A")
+  ecatalogs Ecatalog[]
+  id        String     @id @default(cuid())
+  code      String     @unique // Mã cơ hội, dạng LEAD-YYMM-XXXX
+  name      String // Tên cơ hội (VD: "Lắp đặt hệ thống Camera nhà xưởng A")
 
   // Thông tin liên hệ (Dành cho Lead MỚI chưa là Khách Hàng)
   company     String? // Tên khách hàng / Công ty mới
@@ -2070,19 +2070,19 @@ model SupplierInvoiceItem {
 // --- PROJECT MANAGEMENT MODULE ---
 
 model Project {
-  ecatalogs                Ecatalog[]
-  id                String    @id @default(cuid())
-  code              String    @unique
+  ecatalogs         Ecatalog[]
+  id                String     @id @default(cuid())
+  code              String     @unique
   name              String
-  description       String?   @db.Text
-  type              String    @default("IMPLEMENTATION") // IMPLEMENTATION, MAINTENANCE, INTERNAL
-  status            String    @default("PLANNING") // PLANNING, RUNNING, ON_HOLD, DONE, CANCELLED
-  priority          String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  description       String?    @db.Text
+  type              String     @default("IMPLEMENTATION") // IMPLEMENTATION, MAINTENANCE, INTERNAL
+  status            String     @default("PLANNING") // PLANNING, RUNNING, ON_HOLD, DONE, CANCELLED
+  priority          String     @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
   startDate         DateTime?
   dueDate           DateTime?
-  estimatedValue    Float     @default(0)
+  estimatedValue    Float      @default(0)
   estimatedDuration String?
-  budget            Float     @default(0) // Chi phí dự kiến tối đa (Phase 1 P&L)
+  budget            Float      @default(0) // Chi phí dự kiến tối đa (Phase 1 P&L)
   tags              String?
 
   customerId String?
@@ -2348,24 +2348,39 @@ model MarketingParticipant {
 }
 
 model Ecatalog {
-  id           String                @id @default(uuid())
-  code         String                @unique
-  name         String
-  date         DateTime              @default(now())
-  validUntil   DateTime?
-  customerId   String?
-  customer     Customer?             @relation(fields: [customerId], references: [id])
-  creatorId    String
-  creator      User                  @relation("EcatalogCreator", fields: [creatorId], references: [id])
-  subTotal     Float                 @default(0)
-  taxAmount    Float                 @default(0)
-  totalAmount  Float                 @default(0)
-  status       String                @default("DRAFT")
-  notes        String?               @db.Text
-  items        EcatalogItem[]
-  activityLogs EcatalogActivityLog[]
-  createdAt    DateTime              @default(now())
-  updatedAt    DateTime              @updatedAt
+  id                   String                @id @default(uuid())
+  code                 String                @unique
+  name                 String
+  date                 DateTime              @default(now())
+  validUntil           DateTime?
+  customerId           String?
+  customer             Customer?             @relation(fields: [customerId], references: [id])
+  creatorId            String
+  creator              User                  @relation("EcatalogCreator", fields: [creatorId], references: [id])
+  subTotal             Float                 @default(0)
+  taxAmount            Float                 @default(0)
+  totalAmount          Float                 @default(0)
+  status               String                @default("DRAFT")
+  templateType         String                @default("STANDARD")
+  notes                String?               @db.Text
+  tags                 String?
+  salespersonId        String?
+  salesperson          User?                 @relation("EcatalogSalesperson", fields: [salespersonId], references: [id])
+  leadId               String?
+  lead                 Lead?                 @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  customerSignature    String?               @db.LongText
+  customerSignedAt     DateTime?
+  customerSignIP       String?
+  customerSignDevice   String?
+  customerSignLocation String?               @db.Text
+  companySignature     String?               @db.LongText
+  companySignedAt      DateTime?
+  companySignerId      String?
+  projects             Project[]
+  items                EcatalogItem[]
+  activityLogs         EcatalogActivityLog[]
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
 
   tasks    Task[]
   EmailLog EmailLog[]
