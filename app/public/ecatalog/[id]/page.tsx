@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import PublicEcatalogClient from './PublicEcatalogClient';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
     title: 'Product E-Catalog',
     description: 'Bản xem trước E-Catalog sản phẩm trực tuyến',
