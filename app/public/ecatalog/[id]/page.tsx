@@ -32,12 +32,13 @@ export default async function PublicEcatalogPage({ params }: { params: { id: str
     }
 
     const companyConfig = await prisma.systemSetting.findMany({
-        where: { key: { in: ['COMPANY_NAME', 'COMPANY_LOGO', 'COMPANY_EMAIL', 'COMPANY_PHONE', 'COMPANY_WEBSITE'] } }
+        where: { key: { in: ['COMPANY_NAME', 'COMPANY_DISPLAY_NAME', 'COMPANY_LOGO', 'COMPANY_EMAIL', 'COMPANY_PHONE', 'COMPANY_WEBSITE'] } }
     });
 
     const getSetting = (key: string) => companyConfig.find(c => c.key === key)?.value || '';
 
-    const companyName = getSetting('COMPANY_NAME') || 'ContractMgr Enterprise';
+    const companyName = getSetting('COMPANY_DISPLAY_NAME') || getSetting('COMPANY_NAME') || 'ContractMgr Enterprise';
+    const companyFullName = getSetting('COMPANY_NAME') || 'ContractMgr Enterprise';
     const companyLogo = getSetting('COMPANY_LOGO');
     const companyEmail = getSetting('COMPANY_EMAIL');
     const companyPhone = getSetting('COMPANY_PHONE');
@@ -149,7 +150,7 @@ export default async function PublicEcatalogPage({ params }: { params: { id: str
             {/* Footer */}
             <footer className="w-full mx-auto px-4 sm:px-6 lg:px-8 mt-8 border-t border-slate-200/60 pt-8">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500 font-medium">
-                    <p>&copy; {new Date().getFullYear()} <span className="text-slate-800 font-bold">{companyName}</span>. All rights reserved.</p>
+                    <p>&copy; {new Date().getFullYear()} <span className="text-slate-800 font-bold">{companyFullName}</span>. All rights reserved.</p>
                     <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                         <p>Powered by ContractMgr E-Catalog System</p>
