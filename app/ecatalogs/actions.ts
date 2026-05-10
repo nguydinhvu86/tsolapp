@@ -70,6 +70,10 @@ export async function submitEcatalog(creatorId: string, formData: any) {
                         customName: item.customName || null,
                         customDesc: item.customDesc || null,
                         customPrice: item.customPrice || null,
+                        customRetailPrice: item.customRetailPrice || null,
+                        customDealerPrice: item.customDealerPrice || null,
+                        customOrigin: item.customOrigin || null,
+                        customNote: item.customNote || null,
                         imageUrl: item.imageUrl || null,
                         displayOrder: index
                     }))
@@ -128,6 +132,10 @@ export async function updateEcatalog(id: string, formData: any, updaterId: strin
                         customName: item.customName || null,
                         customDesc: item.customDesc || null,
                         customPrice: item.customPrice || null,
+                        customRetailPrice: item.customRetailPrice || null,
+                        customDealerPrice: item.customDealerPrice || null,
+                        customOrigin: item.customOrigin || null,
+                        customNote: item.customNote || null,
                         imageUrl: item.imageUrl || null,
                         displayOrder: index
                     }))

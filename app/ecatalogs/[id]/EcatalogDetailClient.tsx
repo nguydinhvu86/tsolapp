@@ -28,7 +28,10 @@ export default function EcatalogDetailClient({
                 customSku: item.customSku || item.product?.sku || '',
                 customName: item.customName || item.product?.name || '',
                 customDesc: item.customDesc || item.product?.description || '',
-                customPrice: item.customPrice || item.product?.salePrice || 0,
+                customRetailPrice: item.customRetailPrice || 0,
+                customDealerPrice: item.customDealerPrice || 0,
+                customOrigin: item.customOrigin || '',
+                customNote: item.customNote || '',
                 imageUrl: item.imageUrl || item.product?.imageUrl || ''
             }))
         }, currentUserId);
@@ -55,7 +58,10 @@ export default function EcatalogDetailClient({
                 customSku: '',
                 customName: 'Sản phẩm mới',
                 customDesc: '',
-                customPrice: 0,
+                customRetailPrice: 0,
+                customDealerPrice: 0,
+                customOrigin: '',
+                customNote: '',
                 imageUrl: ''
             }
         ]);
@@ -74,7 +80,7 @@ export default function EcatalogDetailClient({
                 const ws = wb.Sheets[wsname];
                 const data = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
 
-                // Expecting Header in Row 1: SKU, Tên SP, Mô tả, Giá, Link ảnh
+                // Expecting Header in Row 1: TT, Part. Number Model, Hình ảnh Ghi chú, Mô tả sản phẩm, Xuất xứ, Giá đại lý, Giá bán lẻ
                 if (data.length <= 1) {
                     alert("File Excel trống hoặc không đúng định dạng!");
                     return;
@@ -86,12 +92,25 @@ export default function EcatalogDetailClient({
                     const row = data[i];
                     if (!row || row.length === 0 || !row[1]) continue; // skip empty or no name
 
+                    
+                    let imageUrl = '';
+                    let customNote = '';
+                    let col2 = row[2] ? String(row[2]) : '';
+                    if (col2.startsWith('http')) {
+                        imageUrl = col2;
+                    } else {
+                        customNote = col2;
+                    }
+
                     newItems.push({
-                        customSku: row[0] ? String(row[0]) : '',
-                        customName: row[1] ? String(row[1]) : '',
-                        customDesc: row[2] ? String(row[2]) : '',
-                        customPrice: row[3] ? Number(row[3]) : 0,
-                        imageUrl: row[4] ? String(row[4]) : ''
+                        customSku: row[1] ? String(row[1]) : '',
+                        customDesc: row[3] ? String(row[3]) : '',
+                        customName: row[3] ? String(row[3]).substring(0, 50) + '...' : 'Sản phẩm', // They only provide description, so we use it as name too, or a placeholder
+                        customOrigin: row[4] ? String(row[4]) : '',
+                        customDealerPrice: row[5] ? Number(row[5]) : 0,
+                        customRetailPrice: row[6] ? Number(row[6]) : 0,
+                        customNote: customNote,
+                        imageUrl: imageUrl
                     });
                 }
 
@@ -111,10 +130,10 @@ export default function EcatalogDetailClient({
     };
 
     const downloadSampleExcel = () => {
-        const headers = [['Mã SKU', 'Tên sản phẩm', 'Mô tả', 'Giá', 'Link hình ảnh (URL)']];
+        const headers = [['TT', 'Part. Number Model', 'Hình ảnh / Ghi chú', 'Mô tả sản phẩm', 'Xuất xứ', 'Giá đại lý VNĐ', 'Giá bán lẻ VNĐ']];
         const sampleData = [
-            ['SW-01', 'Phần mềm ERP Pro', 'Giải pháp quản trị doanh nghiệp toàn diện', 15000000, 'https://example.com/erp.png'],
-            ['SEC-02', 'Antivirus Security 2026', 'Phần mềm diệt virus bản quyền 1 năm', 350000, '']
+            [1, 'SW-01', 'https://example.com/erp.png', 'Phần mềm ERP Pro - Giải pháp quản trị toàn diện', 'Việt Nam', 10000000, 15000000],
+            [2, 'SEC-02', 'Hàng đặt trước', 'Antivirus Security 2026', 'Mỹ', 250000, 350000]
         ];
         
         const wb = XLSX.utils.book_new();
@@ -246,19 +265,6 @@ export default function EcatalogDetailClient({
                                     
                                     {/* Product Details Form */}
                                     <div className="flex-1 grid grid-cols-1 sm:grid-cols-12 gap-4">
-                                        <div className="sm:col-span-8">
-                                            <input 
-                                                type="text"
-                                                value={item.customName || ''}
-                                                onChange={(e) => {
-                                                    const newItems = [...items];
-                                                    newItems[index].customName = e.target.value;
-                                                    setItems(newItems);
-                                                }}
-                                                className="w-full font-bold text-gray-900 border border-gray-200 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                                                placeholder="Tên sản phẩm *"
-                                            />
-                                        </div>
                                         <div className="sm:col-span-4">
                                             <input 
                                                 type="text"
@@ -268,38 +274,24 @@ export default function EcatalogDetailClient({
                                                     newItems[index].customSku = e.target.value;
                                                     setItems(newItems);
                                                 }}
-                                                className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                                                placeholder="Mã SKU (tùy chọn)"
+                                                className="w-full font-bold text-gray-900 border border-gray-200 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                                placeholder="Part. Number Model *"
                                             />
                                         </div>
-                                        <div className="sm:col-span-8">
-                                            <textarea 
-                                                value={item.customDesc || ''}
+                                        <div className="sm:col-span-4">
+                                            <input 
+                                                type="text"
+                                                value={item.customOrigin || ''}
                                                 onChange={(e) => {
                                                     const newItems = [...items];
-                                                    newItems[index].customDesc = e.target.value;
+                                                    newItems[index].customOrigin = e.target.value;
                                                     setItems(newItems);
                                                 }}
-                                                className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-600"
-                                                placeholder="Mô tả sản phẩm (tùy chọn)"
-                                                rows={2}
+                                                className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                                placeholder="Xuất xứ"
                                             />
                                         </div>
-                                        <div className="sm:col-span-4 space-y-4">
-                                            <div className="relative">
-                                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">đ</span>
-                                                <input 
-                                                    type="number"
-                                                    value={item.customPrice || 0}
-                                                    onChange={(e) => {
-                                                        const newItems = [...items];
-                                                        newItems[index].customPrice = Number(e.target.value);
-                                                        setItems(newItems);
-                                                    }}
-                                                    className="w-full border border-gray-200 rounded-md pl-8 pr-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-blue-600 font-bold"
-                                                    placeholder="Giá tham khảo"
-                                                />
-                                            </div>
+                                        <div className="sm:col-span-4">
                                             <input 
                                                 type="text"
                                                 value={item.imageUrl || ''}
@@ -309,8 +301,69 @@ export default function EcatalogDetailClient({
                                                     setItems(newItems);
                                                 }}
                                                 className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                                                placeholder="URL Hình ảnh (https://...)"
+                                                placeholder="Link Hình ảnh (URL)"
                                             />
+                                        </div>
+
+                                        <div className="sm:col-span-12">
+                                            <textarea 
+                                                value={item.customDesc || ''}
+                                                onChange={(e) => {
+                                                    const newItems = [...items];
+                                                    newItems[index].customDesc = e.target.value;
+                                                    setItems(newItems);
+                                                }}
+                                                className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-600"
+                                                placeholder="Mô tả sản phẩm"
+                                                rows={2}
+                                            />
+                                        </div>
+
+                                        <div className="sm:col-span-4 relative">
+                                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">đ</span>
+                                            <input 
+                                                type="number"
+                                                value={item.customDealerPrice || 0}
+                                                onChange={(e) => {
+                                                    const newItems = [...items];
+                                                    newItems[index].customDealerPrice = Number(e.target.value);
+                                                    setItems(newItems);
+                                                }}
+                                                className="w-full border border-gray-200 rounded-md pl-8 pr-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-orange-600 font-bold"
+                                                placeholder="Giá đại lý VNĐ"
+                                            />
+                                            <label className="text-xs text-gray-500 mt-1 block">Giá đại lý VNĐ</label>
+                                        </div>
+                                        
+                                        <div className="sm:col-span-4 relative">
+                                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">đ</span>
+                                            <input 
+                                                type="number"
+                                                value={item.customRetailPrice || 0}
+                                                onChange={(e) => {
+                                                    const newItems = [...items];
+                                                    newItems[index].customRetailPrice = Number(e.target.value);
+                                                    setItems(newItems);
+                                                }}
+                                                className="w-full border border-gray-200 rounded-md pl-8 pr-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-blue-600 font-bold"
+                                                placeholder="Giá bán lẻ VNĐ"
+                                            />
+                                            <label className="text-xs text-gray-500 mt-1 block">Giá bán lẻ VNĐ</label>
+                                        </div>
+
+                                        <div className="sm:col-span-4">
+                                            <input 
+                                                type="text"
+                                                value={item.customNote || ''}
+                                                onChange={(e) => {
+                                                    const newItems = [...items];
+                                                    newItems[index].customNote = e.target.value;
+                                                    setItems(newItems);
+                                                }}
+                                                className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                                placeholder="Ghi chú"
+                                            />
+                                            <label className="text-xs text-gray-500 mt-1 block">Ghi chú</label>
                                         </div>
                                     </div>
                                 </div>
