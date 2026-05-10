@@ -2347,11 +2347,12 @@ model Ecatalog {
   id           String                @id @default(uuid())
   code         String                @unique
   name         String
-  description  String?               @db.Text
-  coverImage   String?               @db.Text
-  isPublic     Boolean               @default(true)
-  creatorId    String
-  creator      User                  @relation("EcatalogCreator", fields: [creatorId], references: [id])
+  description     String?               @db.Text
+  coverImage      String?               @db.Text
+  isPublic        Boolean               @default(true)
+  showDealerPrice Boolean               @default(false)
+  creatorId       String
+  creator         User                  @relation("EcatalogCreator", fields: [creatorId], references: [id])
   items        EcatalogItem[]
   activityLogs EcatalogActivityLog[]
   createdAt    DateTime              @default(now())

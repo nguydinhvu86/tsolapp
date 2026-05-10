@@ -62,6 +62,7 @@ export async function submitEcatalog(creatorId: string, formData: any) {
                 description: formData.description || null,
                 coverImage: formData.coverImage || null,
                 isPublic: formData.isPublic !== undefined ? formData.isPublic : true,
+                showDealerPrice: formData.showDealerPrice !== undefined ? formData.showDealerPrice : false,
                 creatorId: actualCreatorId,
                 items: {
                     create: (formData.items || []).map((item: any, index: number) => ({
@@ -125,6 +126,7 @@ export async function updateEcatalog(id: string, formData: any, updaterId: strin
                 description: formData.description || null,
                 coverImage: formData.coverImage || null,
                 isPublic: formData.isPublic !== undefined ? formData.isPublic : true,
+                showDealerPrice: formData.showDealerPrice !== undefined ? formData.showDealerPrice : false,
                 items: {
                     create: formData.items.map((item: any, index: number) => ({
                         productId: item.productId || null,

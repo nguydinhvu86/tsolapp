@@ -16,6 +16,7 @@ export default function EcatalogDetailClient({
     const [name, setName] = useState(ecatalog.name);
     const [description, setDescription] = useState(ecatalog.description || '');
     const [isPublic, setIsPublic] = useState(ecatalog.isPublic);
+    const [showDealerPrice, setShowDealerPrice] = useState(ecatalog.showDealerPrice || false);
     const [items, setItems] = useState<any[]>(ecatalog.items);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -24,6 +25,7 @@ export default function EcatalogDetailClient({
             name,
             description,
             isPublic,
+            showDealerPrice,
             items: items.map(item => ({
                 customSku: item.customSku || item.product?.sku || '',
                 customName: item.customName || item.product?.name || '',
@@ -193,11 +195,16 @@ export default function EcatalogDetailClient({
                                     rows={4}
                                 />
                             </div>
-                            <div className="flex items-center gap-3 pt-2">
+                            <div className="flex flex-col gap-3 pt-2">
                                 <label className="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" className="sr-only peer" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} />
                                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                                     <span className="ml-3 text-sm font-medium text-gray-700">Công khai (Public)</span>
+                                </label>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" className="sr-only peer" checked={showDealerPrice} onChange={(e) => setShowDealerPrice(e.target.checked)} />
+                                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                                    <span className="ml-3 text-sm font-medium text-gray-700">Hiển thị Giá đại lý</span>
                                 </label>
                             </div>
                         </div>

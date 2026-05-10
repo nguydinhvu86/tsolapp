@@ -2,6 +2,7 @@ import { Box, CheckCircle, Phone, Mail, Globe, MapPin, Tag, ShieldCheck, User } 
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
+import PublicEcatalogClient from './PublicEcatalogClient';
 
 export const metadata: Metadata = {
     title: 'Product E-Catalog',
@@ -35,17 +36,21 @@ export default async function PublicEcatalogPage({ params }: { params: { id: str
     const getSetting = (key: string) => companyConfig.find(c => c.key === key)?.value || '';
 
     // If company name contains default or old names, you can handle it, but we rely on DB
-    const companyName = getSetting('COMPANY_NAME') || 'ContractMgr Enterprise';
+    let companyName = getSetting('COMPANY_NAME') || 'ContractMgr Enterprise';
+    if (companyName.toLowerCase().includes('trường thịnh')) {
+        companyName = 'CÔNG TY TNHH CÔNG NGHỆ VÀ VIỄN THÔNG TSOL';
+    }
+    
     const companyLogo = getSetting('COMPANY_LOGO');
     const companyEmail = getSetting('COMPANY_EMAIL');
     const companyPhone = getSetting('COMPANY_PHONE');
     const companyWebsite = getSetting('COMPANY_WEBSITE');
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] font-sans pb-20 selection:bg-emerald-100 selection:text-emerald-900">
+        <div className="min-h-screen bg-[#F8FAFC] font-sans pb-20 selection:bg-emerald-100 selection:text-emerald-900 overflow-x-hidden">
             {/* Top Navigation Bar */}
             <nav className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12">
                     <div className="flex flex-col md:flex-row md:items-center justify-between py-4 gap-4">
                         {/* Logo & Company Name */}
                         <div className="flex items-center gap-4">
@@ -95,7 +100,7 @@ export default async function PublicEcatalogPage({ params }: { params: { id: str
                     <div className="absolute top-1/2 right-0 w-80 h-80 rounded-full bg-teal-400 blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
                 </div>
 
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-32 relative z-10">
+                <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 pt-16 pb-32 relative z-10">
                     <div className="max-w-3xl">
                         <div className="inline-flex items-center gap-2 bg-emerald-500/20 border border-emerald-400/30 text-emerald-100 text-xs font-bold px-3 py-1.5 rounded-full mb-6 uppercase tracking-wider backdrop-blur-sm">
                             <Tag size={14} /> Product E-Catalog
@@ -110,8 +115,8 @@ export default async function PublicEcatalogPage({ params }: { params: { id: str
                 </div>
             </div>
 
-            {/* Floating Consultant Card & Product Header */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 -mt-20 mb-8">
+            {/* Floating Consultant Card */}
+            <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 relative z-20 -mt-20 mb-8">
                 <div className="flex flex-col lg:flex-row justify-between items-end gap-6">
                     {/* Consultant Card */}
                     <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 p-6 flex flex-col sm:flex-row items-center sm:items-start gap-5 border border-slate-100 w-full lg:w-auto">
@@ -135,134 +140,15 @@ export default async function PublicEcatalogPage({ params }: { params: { id: str
                                 Liên hệ ngay
                             </button>
                         </div>
-                    </div>
-
-                    {/* Product Count Badge */}
-                    <div className="flex items-center gap-3 bg-white px-5 py-3 rounded-xl shadow-sm border border-slate-200 w-full lg:w-auto justify-center lg:justify-start">
-                        <Box className="text-emerald-500" size={20} />
-                        <span className="text-slate-700 font-semibold">Danh sách sản phẩm</span>
-                        <div className="w-px h-5 bg-slate-200 mx-1"></div>
-                        <span className="bg-slate-100 text-slate-600 text-sm font-bold px-3 py-1 rounded-md">{ecatalog.items.length} mục</span>
-                    </div>
+                    {/* Consultant Card is now taking full focus here. The "Danh sách sản phẩm" badge is moved to the client component */}
                 </div>
             </div>
 
-            {/* Product Grid */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {ecatalog.items.map((item, index) => {
-                        const name = item.customName || item.product?.name;
-                        const desc = item.customDesc || item.product?.description;
-                        const price = item.customPrice ?? item.product?.salePrice ?? 0;
-                        const retailPrice = item.customRetailPrice ?? item.customPrice ?? item.product?.salePrice ?? 0;
-                        const dealerPrice = item.customDealerPrice ?? 0;
-                        const origin = item.customOrigin || '';
-                        const note = item.customNote || '';
-                        const image = item.imageUrl || item.product?.imageUrl;
-                        const sku = item.customSku || item.product?.sku;
-
-                        return (
-                            <div key={index} className="bg-white rounded-2xl overflow-hidden border border-slate-200 hover:border-emerald-300 hover:shadow-2xl hover:shadow-emerald-900/5 transition-all duration-300 group flex flex-col h-full transform hover:-translate-y-1">
-                                {/* Image Box */}
-                                <div className="aspect-[4/3] bg-slate-50 relative overflow-hidden flex items-center justify-center border-b border-slate-100 p-4">
-                                    {image ? (
-                                        <img 
-                                            src={image} 
-                                            alt={name || ''} 
-                                            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700 ease-out drop-shadow-sm"
-                                        />
-                                    ) : (
-                                        <div className="text-slate-300 flex flex-col items-center">
-                                            <Box size={48} className="mb-3 opacity-40 group-hover:scale-110 transition-transform duration-500" />
-                                            <span className="text-xs font-medium tracking-wide">CHƯA CÓ HÌNH ẢNH</span>
-                                        </div>
-                                    )}
-                                    
-                                    {/* Top left badges */}
-                                    <div className="absolute top-3 left-3 flex flex-col gap-2">
-                                        {sku && (
-                                            <div className="bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-md text-xs font-bold text-slate-700 shadow-sm border border-slate-200/50">
-                                                SKU: {sku}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Top right badges */}
-                                    <div className="absolute top-3 right-3 flex flex-col gap-2">
-                                        {origin && (
-                                            <div className="bg-emerald-500/90 backdrop-blur-md px-2.5 py-1 rounded-md text-[10px] font-bold text-white shadow-sm flex items-center gap-1 uppercase tracking-wider">
-                                                <MapPin size={10} /> {origin}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Content Box */}
-                                <div className="p-5 flex flex-col flex-1">
-                                    <h3 className="text-[17px] font-bold text-slate-900 mb-2 line-clamp-2 leading-snug group-hover:text-emerald-700 transition-colors">
-                                        {name}
-                                    </h3>
-                                    
-                                    {note && (
-                                        <div className="inline-flex items-start gap-1.5 text-xs text-amber-700 bg-amber-50 px-2.5 py-1.5 rounded-lg mb-3 border border-amber-100/50">
-                                            <ShieldCheck size={14} className="mt-0.5 shrink-0" />
-                                            <span className="leading-tight">{note}</span>
-                                        </div>
-                                    )}
-                                    
-                                    <p className="text-sm text-slate-500 mb-4 line-clamp-3 flex-1 pt-2 border-t border-slate-50">
-                                        {desc || 'Chưa có thông tin mô tả chi tiết cho sản phẩm này.'}
-                                    </p>
-                                    
-                                    {/* Footer attributes / Pricing */}
-                                    <div className="pt-4 border-t border-slate-100 mt-auto bg-slate-50/50 -mx-5 -mb-5 p-5">
-                                        <div className="space-y-3">
-                                            {dealerPrice > 0 && (
-                                                <div className="flex items-center justify-between">
-                                                    <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Giá đại lý</div>
-                                                    <div className="text-base font-extrabold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-100">
-                                                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(dealerPrice)}
-                                                    </div>
-                                                </div>
-                                            )}
-                                            {retailPrice > 0 ? (
-                                                <div className="flex items-end justify-between">
-                                                    <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Giá bán lẻ</div>
-                                                    <div className="text-xl font-black text-emerald-600 drop-shadow-sm">
-                                                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(retailPrice)}
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="flex items-center justify-between mt-2">
-                                                    <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Giá bán lẻ</div>
-                                                    <div className="text-sm font-bold text-emerald-600 flex items-center gap-1.5 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100">
-                                                        <CheckCircle size={14} /> Liên hệ báo giá
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-
-                {ecatalog.items.length === 0 && (
-                    <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-16 flex flex-col items-center justify-center text-slate-400 shadow-sm mt-8">
-                        <div className="bg-slate-50 p-6 rounded-full mb-4">
-                            <Box size={56} className="text-slate-300" />
-                        </div>
-                        <h3 className="text-xl font-bold text-slate-800 mb-2">E-Catalog trống</h3>
-                        <p className="text-base text-center max-w-md text-slate-500">
-                            Danh mục này hiện chưa có sản phẩm nào được cập nhật. Vui lòng quay lại sau hoặc liên hệ với người phụ trách.
-                        </p>
-                    </div>
-                )}
-            </div>
+            {/* Product Grid & Modals (Client Component) */}
+            <PublicEcatalogClient ecatalog={ecatalog} />
 
             {/* Footer */}
-            <footer className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 border-t border-slate-200/60 pt-8">
+            <footer className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 mt-8 border-t border-slate-200/60 pt-8">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500 font-medium">
                     <p>&copy; {new Date().getFullYear()} <span className="text-slate-800 font-bold">{companyName}</span>. All rights reserved.</p>
                     <div className="flex items-center gap-2">
