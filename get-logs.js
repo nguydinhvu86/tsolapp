@@ -1,25 +1,23 @@
-const { Client } = require('ssh2');
 
+const { Client } = require('ssh2');
+const fs = require('fs');
 const conn = new Client();
-const config = {
-    host: '124.158.9.5',
-    port: 22,
-    username: 'incall',
-    password: 'P@ssw0rdVu'
-};
 
 conn.on('ready', () => {
-    // Check webhook logs
-    const cmd = `cat /www/wwwroot/inside.tsol.vn/tsolapp/public/test-webhook.txt | tail -n 20 && echo "---" && cat /www/wwwroot/inside.tsol.vn/tsolapp/public/route-log.txt | tail -n 20`;
-    conn.exec(cmd, (err, stream) => {
+    // Fetch the last 1000 lines of the PM2 error log
+    conn.exec('tail -n 1000 /root/.pm2/logs/inside.tsol.vn-error.log', (err, stream) => {
         if (err) throw err;
-        let output = '';
-        stream.on('data', d => { output += d; });
-        stream.stderr.on('data', d => process.stderr.write(d));
+        let logData = '';
+        stream.on('data', data => logData += data.toString());
         stream.on('close', () => {
+            fs.writeFileSync('prod-error.log', logData);
+            console.log('Logs fetched to prod-error.log');
             conn.end();
-            require('fs').writeFileSync('remote-webhook-logs-2.txt', output);
-            console.log("Saved remote webhook logs.");
         });
     });
-}).connect(config);
+}).connect({
+    host: '124.158.9.5',
+    username: 'incall',
+    password: 'P@ssw0rdVu'
+});
+

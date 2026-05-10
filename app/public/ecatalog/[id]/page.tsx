@@ -15,7 +15,7 @@ export default async function PublicEcatalogPage({ params }: { params: { id: str
         where: { id: params.id },
         include: {
             creator: {
-                select: { name: true, email: true, phone: true, avatar: true }
+                select: { name: true, email: true, avatar: true }
             },
             items: {
                 orderBy: { displayOrder: 'asc' },
@@ -92,7 +92,7 @@ export default async function PublicEcatalogPage({ params }: { params: { id: str
                                     )}
                                     <div>
                                         <div className="font-semibold text-gray-900">{ecatalog.creator.name}</div>
-                                        <div className="text-sm text-blue-600">{ecatalog.creator.phone || ecatalog.creator.email}</div>
+                                        <div className="text-sm text-blue-600">{ecatalog.creator.email}</div>
                                     </div>
                                 </div>
                             </div>
