@@ -66,6 +66,7 @@ export async function submitEcatalog(creatorId: string, formData: any) {
                 items: {
                     create: formData.items.map((item: any, index: number) => ({
                         productId: item.productId || null,
+                        customSku: item.customSku || null,
                         customName: item.customName || null,
                         customDesc: item.customDesc || null,
                         customPrice: item.customPrice || null,
@@ -123,6 +124,7 @@ export async function updateEcatalog(id: string, formData: any, updaterId: strin
                 items: {
                     create: formData.items.map((item: any, index: number) => ({
                         productId: item.productId || null,
+                        customSku: item.customSku || null,
                         customName: item.customName || null,
                         customDesc: item.customDesc || null,
                         customPrice: item.customPrice || null,

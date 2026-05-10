@@ -1,15 +1,13 @@
 'use client';
-import { Plus, Search, Edit2, Trash2, ExternalLink, ArrowLeft, Save, Eye } from 'lucide-react';
 
-import React, { useState } from 'react';
+import { Plus, Edit2, Trash2, ExternalLink, ArrowLeft, Save, Upload, Download } from 'lucide-react';
+import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-
 import { updateEcatalog } from '../actions';
-
+import * as XLSX from 'xlsx';
 
 export default function EcatalogDetailClient({
     initialEcatalog,
-    products,
     currentUserId,
     isAdminOrManager
 }: any) {
@@ -19,9 +17,7 @@ export default function EcatalogDetailClient({
     const [description, setDescription] = useState(ecatalog.description || '');
     const [isPublic, setIsPublic] = useState(ecatalog.isPublic);
     const [items, setItems] = useState<any[]>(ecatalog.items);
-    
-    const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
-    const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleSave = async () => {
         const res = await updateEcatalog(ecatalog.id, {
@@ -29,19 +25,20 @@ export default function EcatalogDetailClient({
             description,
             isPublic,
             items: items.map(item => ({
-                productId: item.productId || item.product?.id,
-                customName: item.customName || item.product?.name,
-                customPrice: item.customPrice || item.product?.salePrice,
-                imageUrl: item.imageUrl || item.product?.imageUrl
+                customSku: item.customSku || item.product?.sku || '',
+                customName: item.customName || item.product?.name || '',
+                customDesc: item.customDesc || item.product?.description || '',
+                customPrice: item.customPrice || item.product?.salePrice || 0,
+                imageUrl: item.imageUrl || item.product?.imageUrl || ''
             }))
         }, currentUserId);
 
         if (res.success) {
-            alert();
+            alert("Đã lưu thay đổi");
             setEcatalog(res.data);
             router.refresh();
         } else {
-            alert();
+            alert(res.error || "Lỗi lưu dữ liệu");
         }
     };
 
@@ -51,25 +48,79 @@ export default function EcatalogDetailClient({
         setItems(newItems);
     };
 
-    const handleAddSelectedProducts = () => {
-        const newItems = selectedProducts.map(p => ({
-            productId: p.id,
-            product: p,
-            customName: p.name,
-            customPrice: p.salePrice,
-            imageUrl: p.imageUrl
-        }));
-        setItems([...items, ...newItems]);
-        setSelectedProducts([]);
-        setIsAddProductModalOpen(false);
+    const handleAddManualProduct = () => {
+        setItems([
+            ...items, 
+            {
+                customSku: '',
+                customName: 'Sản phẩm mới',
+                customDesc: '',
+                customPrice: 0,
+                imageUrl: ''
+            }
+        ]);
     };
 
-    const toggleProductSelect = (product: any) => {
-        if (selectedProducts.find(p => p.id === product.id)) {
-            setSelectedProducts(selectedProducts.filter(p => p.id !== product.id));
-        } else {
-            setSelectedProducts([...selectedProducts, product]);
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            try {
+                const bstr = evt.target?.result;
+                const wb = XLSX.read(bstr, { type: 'binary' });
+                const wsname = wb.SheetNames[0];
+                const ws = wb.Sheets[wsname];
+                const data = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
+
+                // Expecting Header in Row 1: SKU, Tên SP, Mô tả, Giá, Link ảnh
+                if (data.length <= 1) {
+                    alert("File Excel trống hoặc không đúng định dạng!");
+                    return;
+                }
+
+                const newItems: any[] = [];
+                // Start from row index 1 (skip header)
+                for (let i = 1; i < data.length; i++) {
+                    const row = data[i];
+                    if (!row || row.length === 0 || !row[1]) continue; // skip empty or no name
+
+                    newItems.push({
+                        customSku: row[0] ? String(row[0]) : '',
+                        customName: row[1] ? String(row[1]) : '',
+                        customDesc: row[2] ? String(row[2]) : '',
+                        customPrice: row[3] ? Number(row[3]) : 0,
+                        imageUrl: row[4] ? String(row[4]) : ''
+                    });
+                }
+
+                setItems([...items, ...newItems]);
+                alert(`Đã nhập thành công ${newItems.length} sản phẩm từ file Excel! Đừng quên ấn Lưu thay đổi.`);
+            } catch (error) {
+                console.error(error);
+                alert("Lỗi khi đọc file Excel. Vui lòng kiểm tra lại định dạng.");
+            }
+        };
+        reader.readAsBinaryString(file);
+        
+        // Reset file input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
         }
+    };
+
+    const downloadSampleExcel = () => {
+        const headers = [['Mã SKU', 'Tên sản phẩm', 'Mô tả', 'Giá', 'Link hình ảnh (URL)']];
+        const sampleData = [
+            ['SW-01', 'Phần mềm ERP Pro', 'Giải pháp quản trị doanh nghiệp toàn diện', 15000000, 'https://example.com/erp.png'],
+            ['SEC-02', 'Antivirus Security 2026', 'Phần mềm diệt virus bản quyền 1 năm', 350000, '']
+        ];
+        
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet([...headers, ...sampleData]);
+        XLSX.utils.book_append_sheet(wb, ws, "DanhSachSP");
+        XLSX.writeFile(wb, "Ecatalog_Sample_Import.xlsx");
     };
 
     return (
@@ -89,19 +140,19 @@ export default function EcatalogDetailClient({
                         onClick={() => window.open(`/public/ecatalog/${ecatalog.id}`, '_blank')}
                         className="flex items-center gap-2 px-4 py-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg font-medium transition-colors"
                     >
-                        <ExternalLink /> Xem public
+                        <ExternalLink className="w-4 h-4" /> Xem public
                     </button>
                     <button 
                         onClick={handleSave}
                         className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg font-medium shadow-sm transition-colors"
                     >
-                        <Save /> Lưu thay đổi
+                        <Save className="w-4 h-4" /> Lưu thay đổi
                     </button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-1 space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <div className="lg:col-span-1 space-y-6">
                     <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
                         <h2 className="text-lg font-semibold text-gray-800 mb-4">Thông tin Catalog</h2>
                         <div className="space-y-4">
@@ -134,107 +185,140 @@ export default function EcatalogDetailClient({
                     </div>
                 </div>
 
-                <div className="md:col-span-2 space-y-6">
+                <div className="lg:col-span-3 space-y-6">
                     <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-                        <div className="flex items-center justify-between mb-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 border-b border-gray-100 pb-4">
                             <h2 className="text-lg font-semibold text-gray-800">Danh sách Sản phẩm ({items.length})</h2>
-                            <button 
-                                onClick={() => setIsAddProductModalOpen(true)}
-                                className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg font-medium transition-colors"
-                            >
-                                <Plus /> Thêm sản phẩm
-                            </button>
+                            
+                            <div className="flex flex-wrap gap-2">
+                                <input 
+                                    type="file" 
+                                    accept=".xlsx, .xls" 
+                                    className="hidden" 
+                                    ref={fileInputRef}
+                                    onChange={handleFileUpload}
+                                />
+                                <button 
+                                    onClick={downloadSampleExcel}
+                                    className="flex items-center gap-1.5 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg font-medium transition-colors"
+                                >
+                                    <Download className="w-4 h-4" /> File Mẫu
+                                </button>
+                                <button 
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="flex items-center gap-1.5 text-sm text-green-600 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg font-medium transition-colors"
+                                >
+                                    <Upload className="w-4 h-4" /> Nhập Excel
+                                </button>
+                                <button 
+                                    onClick={handleAddManualProduct}
+                                    className="flex items-center gap-1.5 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg font-medium transition-colors"
+                                >
+                                    <Plus className="w-4 h-4" /> Thêm thủ công
+                                </button>
+                            </div>
                         </div>
                         
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                             {items.length === 0 ? (
-                                <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                                    Chưa có sản phẩm nào trong Catalog này.
+                                <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                                    Chưa có sản phẩm nào. Bạn có thể thêm thủ công hoặc nhập từ file Excel.
                                 </div>
                             ) : items.map((item, index) => (
-                                <div key={index} className="flex items-center gap-4 p-3 border border-gray-100 rounded-lg hover:border-blue-200 hover:shadow-sm transition-all bg-gray-50/50 group">
-                                    <div className="w-12 h-12 bg-white rounded border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                <div key={index} className="flex items-start gap-4 p-4 border border-gray-200 rounded-xl hover:border-blue-300 hover:shadow-md transition-all bg-white relative group">
+                                    {/* Delete Button */}
+                                    <button 
+                                        onClick={() => handleRemoveItem(index)}
+                                        className="absolute -top-2 -right-2 bg-white text-gray-400 hover:text-red-500 border border-gray-200 rounded-full p-1.5 shadow-sm opacity-0 group-hover:opacity-100 transition-all"
+                                        title="Xóa sản phẩm"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+
+                                    {/* Image Preview */}
+                                    <div className="w-24 h-24 bg-gray-50 rounded-lg border border-gray-200 flex flex-col items-center justify-center overflow-hidden flex-shrink-0">
                                         {item.imageUrl || item.product?.imageUrl ? (
-                                            <img src={item.imageUrl || item.product?.imageUrl} alt={item.customName || item.product?.name} className="w-full h-full object-cover" />
+                                            <img src={item.imageUrl || item.product?.imageUrl} alt={item.customName} className="w-full h-full object-cover" />
                                         ) : (
-                                            <span className="text-xs text-gray-400">No Img</span>
+                                            <span className="text-[10px] text-gray-400 font-medium text-center px-2">No Image</span>
                                         )}
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <input 
-                                            type="text"
-                                            value={item.customName || item.product?.name || ''}
-                                            onChange={(e) => {
-                                                const newItems = [...items];
-                                                newItems[index].customName = e.target.value;
-                                                setItems(newItems);
-                                            }}
-                                            className="font-medium text-gray-900 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none w-full truncate"
-                                            placeholder="Tên sản phẩm"
-                                        />
-                                        <div className="flex items-center gap-4 mt-1">
-                                            <div className="text-sm text-gray-500">{item.product?.sku}</div>
-                                            <div className="flex items-center gap-1 text-sm">
-                                                <span className="text-gray-500">Giá:</span>
+                                    
+                                    {/* Product Details Form */}
+                                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-12 gap-4">
+                                        <div className="sm:col-span-8">
+                                            <input 
+                                                type="text"
+                                                value={item.customName || ''}
+                                                onChange={(e) => {
+                                                    const newItems = [...items];
+                                                    newItems[index].customName = e.target.value;
+                                                    setItems(newItems);
+                                                }}
+                                                className="w-full font-bold text-gray-900 border border-gray-200 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                                placeholder="Tên sản phẩm *"
+                                            />
+                                        </div>
+                                        <div className="sm:col-span-4">
+                                            <input 
+                                                type="text"
+                                                value={item.customSku || ''}
+                                                onChange={(e) => {
+                                                    const newItems = [...items];
+                                                    newItems[index].customSku = e.target.value;
+                                                    setItems(newItems);
+                                                }}
+                                                className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                                placeholder="Mã SKU (tùy chọn)"
+                                            />
+                                        </div>
+                                        <div className="sm:col-span-8">
+                                            <textarea 
+                                                value={item.customDesc || ''}
+                                                onChange={(e) => {
+                                                    const newItems = [...items];
+                                                    newItems[index].customDesc = e.target.value;
+                                                    setItems(newItems);
+                                                }}
+                                                className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-600"
+                                                placeholder="Mô tả sản phẩm (tùy chọn)"
+                                                rows={2}
+                                            />
+                                        </div>
+                                        <div className="sm:col-span-4 space-y-4">
+                                            <div className="relative">
+                                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">đ</span>
                                                 <input 
                                                     type="number"
-                                                    value={item.customPrice || item.product?.salePrice || 0}
+                                                    value={item.customPrice || 0}
                                                     onChange={(e) => {
                                                         const newItems = [...items];
                                                         newItems[index].customPrice = Number(e.target.value);
                                                         setItems(newItems);
                                                     }}
-                                                    className="w-24 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none text-blue-600 font-medium"
+                                                    className="w-full border border-gray-200 rounded-md pl-8 pr-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-blue-600 font-bold"
+                                                    placeholder="Giá tham khảo"
                                                 />
                                             </div>
+                                            <input 
+                                                type="text"
+                                                value={item.imageUrl || ''}
+                                                onChange={(e) => {
+                                                    const newItems = [...items];
+                                                    newItems[index].imageUrl = e.target.value;
+                                                    setItems(newItems);
+                                                }}
+                                                className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                                placeholder="URL Hình ảnh (https://...)"
+                                            />
                                         </div>
                                     </div>
-                                    <button 
-                                        onClick={() => handleRemoveItem(index)}
-                                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
-                                    >
-                                        <Trash2 />
-                                    </button>
                                 </div>
                             ))}
                         </div>
                     </div>
                 </div>
             </div>
-
-            {isAddProductModalOpen && (<div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"><div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4"><div className="p-4 border-b border-gray-100 flex justify-between items-center"><h2 className="text-lg font-bold">Thêm Sản Phẩm Vào Catalog</h2><button onClick={() => setIsAddProductModalOpen(false)} className="text-gray-500 hover:text-gray-700">✕</button></div><div className="p-4">
-                <div className="space-y-4">
-                    <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-1">
-                        {products.map((p: any) => {
-                            const isSelected = !!selectedProducts.find(sp => sp.id === p.id);
-                            const isAlreadyInCatalog = !!items.find(i => i.productId === p.id);
-                            
-                            return (
-                                <label key={p.id} className={`flex items-center gap-3 p-3 rounded cursor-pointer ${isAlreadyInCatalog ? 'opacity-50 bg-gray-50' : 'hover:bg-blue-50'}`}>
-                                    <input 
-                                        type="checkbox" 
-                                        checked={isSelected || isAlreadyInCatalog}
-                                        disabled={isAlreadyInCatalog}
-                                        onChange={() => toggleProductSelect(p)}
-                                        className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                                    />
-                                    <div className="flex-1">
-                                        <div className="text-sm font-medium text-gray-900">{p.name} <span className="text-gray-500 font-normal">({p.sku})</span></div>
-                                        <div className="text-xs text-blue-600 font-medium mt-0.5">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p.salePrice)}</div>
-                                    </div>
-                                    {isAlreadyInCatalog && <span className="text-xs text-gray-500 font-medium bg-gray-200 px-2 py-1 rounded">Đã thêm</span>}
-                                </label>
-                            );
-                        })}
-                    </div>
-                    <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                        <button onClick={() => setIsAddProductModalOpen(false)} className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">Hủy</button>
-                        <button onClick={handleAddSelectedProducts} disabled={selectedProducts.length === 0} className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-300 rounded-lg font-medium transition-colors">
-                            Thêm {selectedProducts.length > 0 ? `(${selectedProducts.length})` : ''}
-                        </button>
-                    </div>
-                </div>
-            </div></div></div>)}
         </div>
     );
 }
