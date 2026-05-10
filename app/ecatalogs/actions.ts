@@ -49,8 +49,8 @@ export async function submitEcatalog(creatorId: string, formData: any) {
         const user = await verifyActionPermission('SALES_ESTIMATES_CREATE');
         const actualCreatorId = user ? (user as any).id : creatorId;
 
-        if (!formData.name || !formData.items || formData.items.length === 0) {
-            return { success: false, error: "Thiếu thông tin bắt buộc." };
+        if (!formData.name) {
+            return { success: false, error: "Thiếu tên Catalog." };
         }
 
         const code = formData.code || `CAT-${Date.now().toString().slice(-6)}`;
@@ -64,7 +64,7 @@ export async function submitEcatalog(creatorId: string, formData: any) {
                 isPublic: formData.isPublic !== undefined ? formData.isPublic : true,
                 creatorId: actualCreatorId,
                 items: {
-                    create: formData.items.map((item: any, index: number) => ({
+                    create: (formData.items || []).map((item: any, index: number) => ({
                         productId: item.productId || null,
                         customSku: item.customSku || null,
                         customName: item.customName || null,
