@@ -32,13 +32,13 @@ export default async function PublicEcatalogPage({ params }: { params: { id: str
     }
 
     const companyConfig = await prisma.systemSetting.findMany({
-        where: { key: { in: ['COMPANY_NAME', 'COMPANY_DISPLAY_NAME', 'COMPANY_LOGO', 'COMPANY_EMAIL', 'COMPANY_PHONE', 'COMPANY_WEBSITE'] } }
+        where: { key: { in: ['COMPANY_NAME', 'COMPANY_DISPLAY_NAME', 'COMPANY_FULL_NAME', 'COMPANY_LOGO', 'COMPANY_EMAIL', 'COMPANY_PHONE', 'COMPANY_WEBSITE'] } }
     });
 
     const getSetting = (key: string) => companyConfig.find(c => c.key === key)?.value || '';
 
     const companyName = getSetting('COMPANY_DISPLAY_NAME') || getSetting('COMPANY_NAME') || 'ContractMgr Enterprise';
-    const companyFullName = getSetting('COMPANY_NAME') || 'ContractMgr Enterprise';
+    const companyFullName = getSetting('COMPANY_FULL_NAME') || getSetting('COMPANY_NAME') || 'ContractMgr Enterprise';
     const companyLogo = getSetting('COMPANY_LOGO');
     const companyEmail = getSetting('COMPANY_EMAIL');
     const companyPhone = getSetting('COMPANY_PHONE');
