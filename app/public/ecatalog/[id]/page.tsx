@@ -140,6 +140,7 @@ export default async function PublicEcatalogPage({ params }: { params: { id: str
                                 Liên hệ ngay
                             </button>
                         </div>
+                    </div>
                     {/* Consultant Card is now taking full focus here. The "Danh sách sản phẩm" badge is moved to the client component */}
                 </div>
             </div>
