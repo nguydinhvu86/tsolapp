@@ -117,8 +117,12 @@ export default async function PublicEcatalogPage({ params }: { params: { id: str
                         const name = item.customName || item.product?.name;
                         const desc = item.customDesc || item.product?.description;
                         const price = item.customPrice ?? item.product?.salePrice ?? 0;
+                        const retailPrice = item.customRetailPrice ?? item.customPrice ?? item.product?.salePrice ?? 0;
+                        const dealerPrice = item.customDealerPrice ?? 0;
+                        const origin = item.customOrigin || '';
+                        const note = item.customNote || '';
                         const image = item.imageUrl || item.product?.imageUrl;
-                        const sku = item.product?.sku;
+                        const sku = item.customSku || item.product?.sku;
 
                         return (
                             <div key={index} className="bg-white rounded-2xl overflow-hidden border border-gray-200 hover:shadow-xl transition-all duration-300 group flex flex-col h-full">

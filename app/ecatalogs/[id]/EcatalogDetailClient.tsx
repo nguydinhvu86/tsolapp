@@ -265,6 +265,19 @@ export default function EcatalogDetailClient({
                                     
                                     {/* Product Details Form */}
                                     <div className="flex-1 grid grid-cols-1 sm:grid-cols-12 gap-4">
+                                        <div className="sm:col-span-8">
+                                            <input 
+                                                type="text"
+                                                value={item.customName || ''}
+                                                onChange={(e) => {
+                                                    const newItems = [...items];
+                                                    newItems[index].customName = e.target.value;
+                                                    setItems(newItems);
+                                                }}
+                                                className="w-full font-bold text-gray-900 border border-gray-200 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                                placeholder="Tên sản phẩm *"
+                                            />
+                                        </div>
                                         <div className="sm:col-span-4">
                                             <input 
                                                 type="text"
