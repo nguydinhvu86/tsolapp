@@ -35,12 +35,7 @@ export default async function PublicEcatalogPage({ params }: { params: { id: str
 
     const getSetting = (key: string) => companyConfig.find(c => c.key === key)?.value || '';
 
-    // If company name contains default or old names, you can handle it, but we rely on DB
-    let companyName = getSetting('COMPANY_NAME') || 'ContractMgr Enterprise';
-    if (companyName.toLowerCase().includes('trường thịnh')) {
-        companyName = 'CÔNG TY TNHH CÔNG NGHỆ VÀ VIỄN THÔNG TSOL';
-    }
-    
+    const companyName = getSetting('COMPANY_NAME') || 'ContractMgr Enterprise';
     const companyLogo = getSetting('COMPANY_LOGO');
     const companyEmail = getSetting('COMPANY_EMAIL');
     const companyPhone = getSetting('COMPANY_PHONE');
@@ -50,7 +45,7 @@ export default async function PublicEcatalogPage({ params }: { params: { id: str
         <div className="min-h-screen bg-[#F8FAFC] font-sans pb-20 selection:bg-emerald-100 selection:text-emerald-900 overflow-x-hidden">
             {/* Top Navigation Bar */}
             <nav className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-                <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12">
+                <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex flex-col md:flex-row md:items-center justify-between py-4 gap-4">
                         {/* Logo & Company Name */}
                         <div className="flex items-center gap-4">
@@ -93,14 +88,15 @@ export default async function PublicEcatalogPage({ params }: { params: { id: str
             </nav>
 
             {/* Hero Section */}
-            <div className="relative bg-gradient-to-br from-emerald-900 via-teal-800 to-slate-900 overflow-hidden">
+            <div className="relative bg-[#022c22] overflow-hidden">
                 {/* Decorative background shapes */}
-                <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-20 pointer-events-none">
-                    <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-emerald-500 blur-3xl"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-[#065f46] to-[#0f172a] opacity-80 mix-blend-multiply"></div>
+                <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-30 pointer-events-none">
+                    <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-emerald-400 blur-3xl"></div>
                     <div className="absolute top-1/2 right-0 w-80 h-80 rounded-full bg-teal-400 blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
                 </div>
 
-                <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 pt-16 pb-32 relative z-10">
+                <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-32 relative z-10">
                     <div className="max-w-3xl">
                         <div className="inline-flex items-center gap-2 bg-emerald-500/20 border border-emerald-400/30 text-emerald-100 text-xs font-bold px-3 py-1.5 rounded-full mb-6 uppercase tracking-wider backdrop-blur-sm">
                             <Tag size={14} /> Product E-Catalog
@@ -116,7 +112,7 @@ export default async function PublicEcatalogPage({ params }: { params: { id: str
             </div>
 
             {/* Floating Consultant Card */}
-            <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 relative z-20 -mt-20 mb-8">
+            <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 relative z-20 -mt-20 mb-8">
                 <div className="flex flex-col lg:flex-row justify-between items-end gap-6">
                     {/* Consultant Card */}
                     <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 p-6 flex flex-col sm:flex-row items-center sm:items-start gap-5 border border-slate-100 w-full lg:w-auto">
@@ -149,7 +145,7 @@ export default async function PublicEcatalogPage({ params }: { params: { id: str
             <PublicEcatalogClient ecatalog={ecatalog} />
 
             {/* Footer */}
-            <footer className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 mt-8 border-t border-slate-200/60 pt-8">
+            <footer className="w-full mx-auto px-4 sm:px-6 lg:px-8 mt-8 border-t border-slate-200/60 pt-8">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500 font-medium">
                     <p>&copy; {new Date().getFullYear()} <span className="text-slate-800 font-bold">{companyName}</span>. All rights reserved.</p>
                     <div className="flex items-center gap-2">

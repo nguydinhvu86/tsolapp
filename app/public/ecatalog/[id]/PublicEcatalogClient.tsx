@@ -30,7 +30,7 @@ export default function PublicEcatalogClient({ ecatalog }: PublicEcatalogClientP
     return (
         <div className="relative z-20">
             {/* Toolbar / Pagination Header */}
-            <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3 bg-white/80 backdrop-blur-md px-5 py-3 rounded-2xl shadow-sm border border-slate-200">
                     <Box className="text-emerald-500" size={24} />
                     <div>
@@ -63,8 +63,8 @@ export default function PublicEcatalogClient({ ecatalog }: PublicEcatalogClientP
             </div>
 
             {/* Product Grid - Full Width */}
-            <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 pb-12 transition-opacity duration-300">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 xl:gap-8">
+            <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 pb-12 transition-opacity duration-300">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6 xl:gap-8">
                     {currentItems.map((item: any, index: number) => {
                         const name = item.customName || item.product?.name;
                         const desc = item.customDesc || item.product?.description;
@@ -184,7 +184,7 @@ export default function PublicEcatalogClient({ ecatalog }: PublicEcatalogClientP
 
             {/* Pagination Footer */}
             {totalPages > 1 && (
-                <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 pb-16 flex justify-center">
+                <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 pb-16 flex justify-center">
                     <div className="flex items-center gap-2">
                         {Array.from({ length: totalPages }).map((_, idx) => (
                             <button
