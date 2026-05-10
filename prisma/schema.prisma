@@ -2371,10 +2371,15 @@ model EcatalogItem {
   productId  String?
   product    Product? @relation(fields: [productId], references: [id])
 
-  customName   String?
-  customDesc   String? @db.Text
-  customPrice  Float?
-  imageUrl     String? @db.Text
+  customName        String?
+  customSku         String?
+  customDesc        String? @db.Text
+  customPrice       Float?
+  customRetailPrice Float?
+  customDealerPrice Float?
+  customOrigin      String?
+  customNote        String? @db.Text
+  imageUrl          String? @db.Text
   displayOrder Int     @default(0)
 
   createdAt DateTime @default(now())
