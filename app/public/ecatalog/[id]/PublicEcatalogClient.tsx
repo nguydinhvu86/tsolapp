@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Box, CheckCircle, Phone, Mail, Globe, MapPin, Tag, ShieldCheck, User, ChevronLeft, ChevronRight, X, Info } from 'lucide-react';
+import { Box, CheckCircle, Phone, Mail, Globe, MapPin, Tag, ShieldCheck, User, ChevronLeft, ChevronRight, X, Info, Search } from 'lucide-react';
 
 interface PublicEcatalogClientProps {
     ecatalog: any;
@@ -11,9 +11,18 @@ export default function PublicEcatalogClient({ ecatalog }: PublicEcatalogClientP
     const itemsPerPage = 8;
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedItem, setSelectedItem] = useState<any | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
-    const totalPages = Math.ceil(ecatalog.items.length / itemsPerPage);
-    const currentItems = ecatalog.items.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    const filteredItems = ecatalog.items.filter((item: any) => {
+        if (!searchQuery) return true;
+        const searchLower = searchQuery.toLowerCase();
+        const name = (item.customName || item.product?.name || '').toLowerCase();
+        const sku = (item.customSku || item.product?.sku || '').toLowerCase();
+        return name.includes(searchLower) || sku.includes(searchLower);
+    });
+
+    const totalPages = Math.ceil(filteredItems.length / itemsPerPage) || 1;
+    const currentItems = filteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     const handleNextPage = () => {
         if (currentPage < totalPages) setCurrentPage(prev => prev + 1);
@@ -31,16 +40,30 @@ export default function PublicEcatalogClient({ ecatalog }: PublicEcatalogClientP
         <div className="relative z-20">
             {/* Toolbar / Pagination Header */}
             <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-3 bg-white/80 backdrop-blur-md px-5 py-3 rounded-2xl shadow-sm border border-slate-200">
+                <div className="flex items-center gap-3 bg-white/80 backdrop-blur-md px-5 py-3 rounded-2xl shadow-sm border border-slate-200 shrink-0">
                     <Box className="text-emerald-500" size={24} />
                     <div>
                         <span className="text-slate-800 font-bold block leading-none">Danh sách sản phẩm</span>
-                        <span className="text-slate-500 text-xs font-medium">Tổng cộng: {ecatalog.items.length} mục</span>
+                        <span className="text-slate-500 text-xs font-medium">Tổng cộng: {filteredItems.length} mục</span>
                     </div>
                 </div>
 
+                <div className="flex-1 max-w-md w-full relative">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                    <input 
+                        type="text" 
+                        placeholder="Tìm kiếm theo tên hoặc mã sản phẩm..." 
+                        value={searchQuery}
+                        onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            setCurrentPage(1);
+                        }}
+                        className="w-full pl-12 pr-4 py-3 rounded-2xl bg-white/80 backdrop-blur-md border border-slate-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all text-sm text-slate-700 font-medium placeholder:text-slate-400"
+                    />
+                </div>
+
                 {totalPages > 1 && (
-                    <div className="flex items-center gap-4 bg-white/80 backdrop-blur-md px-4 py-2 rounded-2xl shadow-sm border border-slate-200">
+                    <div className="flex items-center gap-4 bg-white/80 backdrop-blur-md px-4 py-2 rounded-2xl shadow-sm border border-slate-200 shrink-0">
                         <button 
                             onClick={handlePrevPage} 
                             disabled={currentPage === 1}
@@ -169,15 +192,27 @@ export default function PublicEcatalogClient({ ecatalog }: PublicEcatalogClientP
                     })}
                 </div>
 
-                {ecatalog.items.length === 0 && (
+                {filteredItems.length === 0 && (
                     <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-20 flex flex-col items-center justify-center text-slate-400 shadow-sm mt-8">
                         <div className="bg-slate-50 p-6 rounded-full mb-5">
-                            <Box size={64} className="text-slate-300" />
+                            {searchQuery ? <Search size={64} className="text-slate-300" /> : <Box size={64} className="text-slate-300" />}
                         </div>
-                        <h3 className="text-2xl font-black text-slate-800 mb-3">E-Catalog trống</h3>
+                        <h3 className="text-2xl font-black text-slate-800 mb-3">
+                            {searchQuery ? 'Không tìm thấy kết quả' : 'E-Catalog trống'}
+                        </h3>
                         <p className="text-lg text-center max-w-lg text-slate-500">
-                            Danh mục này hiện chưa có sản phẩm nào được cập nhật. Vui lòng quay lại sau hoặc liên hệ với người phụ trách.
+                            {searchQuery 
+                                ? `Không có sản phẩm nào khớp với từ khóa "${searchQuery}". Vui lòng thử lại với từ khóa khác.` 
+                                : 'Danh mục này hiện chưa có sản phẩm nào được cập nhật. Vui lòng quay lại sau hoặc liên hệ với người phụ trách.'}
                         </p>
+                        {searchQuery && (
+                            <button 
+                                onClick={() => { setSearchQuery(''); setCurrentPage(1); }}
+                                className="mt-6 px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors"
+                            >
+                                Xóa tìm kiếm
+                            </button>
+                        )}
                     </div>
                 )}
             </div>
