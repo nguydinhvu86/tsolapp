@@ -47,7 +47,7 @@ interface TodoItem {
     createdAt: number;
 }
 
-import { getTodos, addTodo, toggleTodo, deleteTodo } from '@/app/actions/todo';
+import { getTodos, addTodo, toggleTodo, deleteTodo, updateTodoText } from '@/app/actions/todo';
 
 function TodoListWidget() {
     const { t } = useTranslation();
@@ -57,6 +57,8 @@ function TodoListWidget() {
     const [isLoaded, setIsLoaded] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isAddTodoModalOpen, setIsAddTodoModalOpen] = useState(false);
+    const [editingTodoId, setEditingTodoId] = useState<string | null>(null);
+    const [editValue, setEditValue] = useState('');
 
     // Fetch todos from database
     useEffect(() => {
@@ -146,6 +148,29 @@ function TodoListWidget() {
         }
     };
 
+    const handleUpdateTodo = async (id: string) => {
+        if (!editValue.trim()) {
+            setEditingTodoId(null);
+            return;
+        }
+        
+        const backupTodos = [...todos];
+        setTodos(prev => prev.map(todo => 
+            todo.id === id ? { ...todo, text: editValue.trim() } : todo
+        ));
+        setEditingTodoId(null);
+        
+        try {
+            const res = await updateTodoText(id, editValue.trim());
+            if (res.status === 'error') {
+                setTodos(backupTodos);
+            }
+        } catch (error) {
+            console.error("Failed to update todo", error);
+            setTodos(backupTodos);
+        }
+    };
+
     const activeTodos = todos.filter(t => !t.completed);
     const completedTodos = todos.filter(t => t.completed);
 
@@ -169,7 +194,7 @@ function TodoListWidget() {
         <div className="flex flex-col h-full">
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                    <CheckCircle2 size={20} className="text-emerald-500" />
+                    <CheckCircle2 size={20} className="text-green-600" />
                     {t("dashboard.todo.title")}
                 </h3>
             </div>
@@ -177,7 +202,7 @@ function TodoListWidget() {
             <div className="flex items-center gap-2 mb-4">
                 <button
                     onClick={() => setIsAddTodoModalOpen(true)}
-                    className="flex-1 text-white font-medium py-2 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-sm bg-primary hover:bg-primary/90"
+                    className="flex-1 text-white font-medium py-2 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-sm bg-green-600 hover:bg-green-700"
                 >
                     <Plus size={18} />
                     <span>{t("dashboard.todo.create")}</span>
@@ -203,37 +228,85 @@ function TodoListWidget() {
                         {displayedTodos.map(todo => (
                             <li
                                 key={todo.id}
-                                className={`flex items-start gap-2.5 p-3 rounded-lg group transition-all ${todo.completed ? 'bg-gray-50/50 opacity-75 border border-transparent' : 'bg-white shadow-sm border border-gray-100 hover:border-blue-200'}`}
+                                className={`flex items-start gap-2.5 p-3 rounded-lg group transition-all ${todo.completed ? 'bg-gray-50/50 opacity-75 border border-transparent' : 'bg-white shadow-sm border border-gray-100 hover:border-green-200'}`}
                             >
-                                <button
-                                    onClick={() => handleToggleTodo(todo.id, todo.completed)}
-                                    className="mt-0.5 text-gray-400 hover:text-emerald-500 flex-shrink-0 transition-colors"
-                                    title={todo.completed ? t("dashboard.todo.markIncomplete") : t("dashboard.todo.markComplete")}
-                                >
-                                    {todo.completed ? (
-                                        <CheckCircle2 size={20} className="text-emerald-500" />
-                                    ) : (
-                                        <Circle size={20} className="hover:text-emerald-500 transition-colors" />
-                                    )}
-                                </button>
-                                <div className="flex-1 flex flex-col min-w-0 pt-0.5">
-                                    <span className={`text-[15px] font-medium leading-relaxed whitespace-pre-wrap break-words ${todo.completed ? 'text-gray-400 line-through decoration-gray-300' : 'text-gray-800'}`}>
-                                        {todo.text}
-                                    </span>
-                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-[11px] text-gray-400">
-                                        <span className="flex items-center gap-1 leading-none" title={t("dashboard.todo.createdAt")}>
-                                            <Clock size={11} className={todo.completed ? "text-gray-300" : "text-blue-400/70"} />
-                                            {new Date(todo.createdAt).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}
-                                        </span>
+                                {editingTodoId === todo.id ? (
+                                    <div className="flex-1 w-full">
+                                        <textarea
+                                            value={editValue}
+                                            onChange={(e) => setEditValue(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' && !e.shiftKey) {
+                                                    e.preventDefault();
+                                                    handleUpdateTodo(todo.id);
+                                                }
+                                                if (e.key === 'Escape') {
+                                                    setEditingTodoId(null);
+                                                }
+                                            }}
+                                            className="w-full border border-green-300 rounded-md p-2 text-sm outline-none resize-y min-h-[60px]"
+                                            autoFocus
+                                        />
+                                        <div className="flex justify-end gap-2 mt-2">
+                                            <button onClick={() => setEditingTodoId(null)} className="text-xs text-gray-500 hover:text-gray-700">{t("common.cancel")}</button>
+                                            <button onClick={() => handleUpdateTodo(todo.id)} className="text-xs bg-green-600 text-white px-3 py-1.5 rounded hover:bg-green-700">{t("common.save")}</button>
+                                        </div>
                                     </div>
-                                </div>
-                                <button
-                                    onClick={() => handleRemoveTodo(todo.id)}
-                                    className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity"
-                                    title={t("dashboard.todo.delete")}
-                                >
-                                    <X size={16} />
-                                </button>
+                                ) : (
+                                    <>
+                                        <button
+                                            onClick={() => handleToggleTodo(todo.id, todo.completed)}
+                                            className="mt-0.5 text-gray-400 hover:text-green-600 flex-shrink-0 transition-colors"
+                                            title={todo.completed ? t("dashboard.todo.markIncomplete") : t("dashboard.todo.markComplete")}
+                                        >
+                                            {todo.completed ? (
+                                                <CheckCircle2 size={20} className="text-green-600" />
+                                            ) : (
+                                                <Circle size={20} className="hover:text-green-600 transition-colors" />
+                                            )}
+                                        </button>
+                                        <div className="flex-1 flex flex-col min-w-0 pt-0.5">
+                                            <span 
+                                                onDoubleClick={() => {
+                                                    if (!todo.completed) {
+                                                        setEditingTodoId(todo.id);
+                                                        setEditValue(todo.text);
+                                                    }
+                                                }}
+                                                className={`text-[15px] font-medium leading-relaxed whitespace-pre-wrap break-words ${todo.completed ? 'text-gray-400 line-through decoration-gray-300' : 'text-gray-800'}`}
+                                            >
+                                                {todo.text}
+                                            </span>
+                                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-[11px] text-gray-400">
+                                                <span className="flex items-center gap-1 leading-none" title={t("dashboard.todo.createdAt")}>
+                                                    <Clock size={11} className={todo.completed ? "text-gray-300" : "text-green-500"} />
+                                                    {new Date(todo.createdAt).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
+                                            {!todo.completed && (
+                                                <button
+                                                    onClick={() => {
+                                                        setEditingTodoId(todo.id);
+                                                        setEditValue(todo.text);
+                                                    }}
+                                                    className="text-gray-400 hover:text-blue-500 transition-colors p-1"
+                                                    title={t("common.edit")}
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path></svg>
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={() => handleRemoveTodo(todo.id)}
+                                                className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                                                title={t("dashboard.todo.delete")}
+                                            >
+                                                <X size={16} />
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
                             </li>
                         ))}
                     </ul>
