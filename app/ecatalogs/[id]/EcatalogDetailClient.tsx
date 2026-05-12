@@ -5,6 +5,8 @@ import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateEcatalog } from '../actions';
 import * as XLSX from 'xlsx';
+import { MediaPickerModal } from '@/app/components/ui/modals/MediaPickerModal';
+
 
 export default function EcatalogDetailClient({
     initialEcatalog,
@@ -19,6 +21,9 @@ export default function EcatalogDetailClient({
     const [showDealerPrice, setShowDealerPrice] = useState(ecatalog.showDealerPrice || false);
     const [items, setItems] = useState<any[]>(ecatalog.items);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+    const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
+
 
     const handleSave = async () => {
         const res = await updateEcatalog(ecatalog.id, {
@@ -311,7 +316,7 @@ export default function EcatalogDetailClient({
                                                 placeholder="Xuất xứ"
                                             />
                                         </div>
-                                        <div className="sm:col-span-4">
+                                        <div className="sm:col-span-4 relative">
                                             <input 
                                                 type="text"
                                                 value={item.imageUrl || ''}
@@ -320,9 +325,20 @@ export default function EcatalogDetailClient({
                                                     newItems[index].imageUrl = e.target.value;
                                                     setItems(newItems);
                                                 }}
-                                                className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                                className="w-full border border-gray-200 rounded-md pl-3 pr-10 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                                                 placeholder="Link Hình ảnh (URL)"
                                             />
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setActiveItemIndex(index);
+                                                    setMediaPickerOpen(true);
+                                                }}
+                                                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 transition-colors bg-white"
+                                                title="Tải lên / Chọn ảnh"
+                                            >
+                                                <Upload size={16} />
+                                            </button>
                                         </div>
 
                                         <div className="sm:col-span-12">
@@ -392,6 +408,19 @@ export default function EcatalogDetailClient({
                     </div>
                 </div>
             </div>
+
+            <MediaPickerModal 
+                isOpen={mediaPickerOpen} 
+                onClose={() => setMediaPickerOpen(false)} 
+                onSelect={(url) => {
+                    if (activeItemIndex !== null) {
+                        const newItems = [...items];
+                        newItems[activeItemIndex].imageUrl = url;
+                        setItems(newItems);
+                        setActiveItemIndex(null);
+                    }
+                }} 
+            />
         </div>
     );
 }

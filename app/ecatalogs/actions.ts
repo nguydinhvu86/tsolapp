@@ -171,3 +171,35 @@ export async function deleteEcatalog(id: string, deleterId: string) {
         return { success: false, error: error.message };
     }
 }
+
+import fs from 'fs';
+import path from 'path';
+
+export async function listServerImages() {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) return { success: false, error: 'Unauthorized' };
+
+        const uploadDir = path.join(process.cwd(), 'uploads_data', 'documents');
+        if (!fs.existsSync(uploadDir)) return { success: true, data: [] };
+
+        const files = fs.readdirSync(uploadDir);
+        const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'];
+        
+        const images = files
+            .filter(file => imageExtensions.includes(path.extname(file).toLowerCase()))
+            .map(file => {
+                const stat = fs.statSync(path.join(uploadDir, file));
+                return {
+                    url: `/api/files/documents/${file}`,
+                    name: file,
+                    createdAt: stat.mtime
+                };
+            })
+            .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+        return { success: true, data: images };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
