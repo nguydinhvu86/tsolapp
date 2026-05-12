@@ -142,6 +142,17 @@ export async function updateEcatalog(id: string, formData: any, updaterId: strin
                         displayOrder: index
                     }))
                 }
+            },
+            include: {
+                creator: { select: { name: true, avatar: true, email: true } },
+                items: {
+                    orderBy: { displayOrder: 'asc' },
+                    include: { product: true }
+                },
+                activityLogs: {
+                    orderBy: { createdAt: 'desc' },
+                    include: { user: { select: { name: true, avatar: true } } }
+                }
             }
         });
 

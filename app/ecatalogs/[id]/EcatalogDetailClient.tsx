@@ -32,9 +32,11 @@ export default function EcatalogDetailClient({
             isPublic,
             showDealerPrice,
             items: items.map(item => ({
+                productId: item.productId || null,
                 customSku: item.customSku || item.product?.sku || '',
                 customName: item.customName || item.product?.name || '',
                 customDesc: item.customDesc || item.product?.description || '',
+                customPrice: item.customPrice || 0,
                 customRetailPrice: item.customRetailPrice || 0,
                 customDealerPrice: item.customDealerPrice || 0,
                 customOrigin: item.customOrigin || '',
