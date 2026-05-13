@@ -135,9 +135,33 @@ export default async function PublicEcatalogPage({ params }: { params: { id: str
                             </p>
                             <h3 className="text-lg font-extrabold text-slate-800">{ecatalog.creator.name}</h3>
                             <p className="text-sm text-slate-500 mt-0.5">{ecatalog.creator.email}</p>
-                            <button className="mt-3 bg-slate-900 hover:bg-emerald-600 text-white text-xs font-bold py-2 px-4 rounded-lg transition-colors w-full sm:w-auto shadow-sm">
-                                Liên hệ ngay
-                            </button>
+                            <div className="relative group inline-block w-full sm:w-auto mt-3">
+                                <button className="bg-slate-900 group-hover:bg-emerald-600 text-white text-xs font-bold py-2.5 px-5 rounded-xl transition-all duration-300 w-full shadow-md hover:shadow-lg flex items-center justify-center gap-2">
+                                    Liên hệ ngay
+                                </button>
+                                <div className="absolute left-0 top-full mt-2 w-56 bg-white border border-slate-100 rounded-2xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 overflow-hidden transform origin-top-left scale-95 group-hover:scale-100">
+                                    <div className="p-2">
+                                        <a href="tel:0901232255" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-emerald-50 text-sm font-bold text-slate-700 hover:text-emerald-700 transition-colors">
+                                            <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                                                <Phone size={14} className="text-emerald-600" />
+                                            </div>
+                                            Gọi: 090 123 2255
+                                        </a>
+                                        <a href="https://zalo.me/0901232255" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-blue-50 text-sm font-bold text-slate-700 hover:text-blue-700 transition-colors mt-1">
+                                            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                                                <div className="w-4 h-4 bg-blue-600 text-white flex items-center justify-center rounded-[4px] text-[10px] font-black">Z</div>
+                                            </div>
+                                            Zalo: 0901232255
+                                        </a>
+                                        <a href="mailto:vutg@trinhgiatelecom.vn" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-amber-50 text-sm font-bold text-slate-700 hover:text-amber-700 transition-colors mt-1">
+                                            <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                                                <Mail size={14} className="text-amber-600" />
+                                            </div>
+                                            Email cho chúng tôi
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     {/* Consultant Card is now taking full focus here. The "Danh sách sản phẩm" badge is moved to the client component */}

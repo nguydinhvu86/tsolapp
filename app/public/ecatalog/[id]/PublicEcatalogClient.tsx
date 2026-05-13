@@ -8,7 +8,6 @@ interface PublicEcatalogClientProps {
 }
 
 export default function PublicEcatalogClient({ ecatalog }: PublicEcatalogClientProps) {
-    const itemsPerPage = 8;
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedItem, setSelectedItem] = useState<any | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -21,6 +20,7 @@ export default function PublicEcatalogClient({ ecatalog }: PublicEcatalogClientP
         return name.includes(searchLower) || sku.includes(searchLower);
     });
 
+    const itemsPerPage = filteredItems.length >= 100 ? 24 : Math.max(filteredItems.length, 1);
     const totalPages = Math.ceil(filteredItems.length / itemsPerPage) || 1;
     const currentItems = filteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
@@ -48,18 +48,29 @@ export default function PublicEcatalogClient({ ecatalog }: PublicEcatalogClientP
                     </div>
                 </div>
 
-                <div className="flex-1 max-w-md w-full relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                    <input 
-                        type="text" 
-                        placeholder="Tìm kiếm theo tên hoặc mã sản phẩm..." 
-                        value={searchQuery}
-                        onChange={(e) => {
-                            setSearchQuery(e.target.value);
-                            setCurrentPage(1);
-                        }}
-                        className="w-full pl-12 pr-4 py-3 rounded-2xl bg-white/80 backdrop-blur-md border border-slate-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all text-sm text-slate-700 font-medium placeholder:text-slate-400"
-                    />
+                <div className="flex-1 w-full relative group max-w-2xl">
+                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-[2rem] blur opacity-0 group-focus-within:opacity-20 transition-opacity duration-500"></div>
+                    <div className="relative flex items-center">
+                        <Search className="absolute left-5 text-emerald-500/70 group-focus-within:text-emerald-600 transition-colors duration-300" size={20} />
+                        <input 
+                            type="text" 
+                            placeholder="Tìm kiếm nhanh tên hoặc mã sản phẩm..." 
+                            value={searchQuery}
+                            onChange={(e) => {
+                                setSearchQuery(e.target.value);
+                                setCurrentPage(1);
+                            }}
+                            className="w-full pl-14 pr-12 py-3.5 rounded-[2rem] bg-white/90 backdrop-blur-xl border border-slate-200/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] focus:shadow-[0_8px_30px_rgb(16,185,129,0.1)] focus:outline-none focus:border-emerald-400/50 focus:bg-white transition-all duration-300 text-sm text-slate-700 font-semibold placeholder:text-slate-400 placeholder:font-medium"
+                        />
+                        {searchQuery && (
+                            <button 
+                                onClick={() => { setSearchQuery(''); setCurrentPage(1); }}
+                                className="absolute right-4 p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-600 rounded-full transition-colors"
+                            >
+                                <X size={14} />
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {totalPages > 1 && (
@@ -310,11 +321,47 @@ export default function PublicEcatalogClient({ ecatalog }: PublicEcatalogClientP
                                         )}
                                     </div>
                                     
-                                    <button 
-                                        className="w-full sm:w-auto bg-slate-900 hover:bg-emerald-600 text-white font-bold py-4 px-8 rounded-2xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-1 active:translate-y-0"
-                                    >
-                                        Nhận tư vấn ngay
-                                    </button>
+                                    <div className="relative group inline-block w-full sm:w-auto">
+                                        <button 
+                                            className="w-full sm:w-auto bg-slate-900 group-hover:bg-emerald-600 text-white font-bold py-4 px-8 rounded-2xl transition-all duration-300 shadow-lg group-hover:shadow-xl flex items-center justify-center gap-2"
+                                        >
+                                            Nhận tư vấn ngay
+                                        </button>
+                                        <div className="absolute right-0 bottom-full mb-3 w-64 bg-white border border-slate-100 rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 overflow-hidden transform origin-bottom scale-95 group-hover:scale-100">
+                                            <div className="p-2">
+                                                <div className="px-3 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50 mb-1">
+                                                    Chọn phương thức liên hệ
+                                                </div>
+                                                <a href="tel:0901232255" className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-emerald-50 text-sm font-bold text-slate-700 hover:text-emerald-700 transition-colors">
+                                                    <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                                                        <Phone size={16} className="text-emerald-600" />
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xs text-slate-500 font-medium mb-0.5">Gọi điện thoại</div>
+                                                        <div>090 123 2255</div>
+                                                    </div>
+                                                </a>
+                                                <a href="https://zalo.me/0901232255" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-blue-50 text-sm font-bold text-slate-700 hover:text-blue-700 transition-colors mt-1">
+                                                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                                                        <div className="w-5 h-5 bg-blue-600 text-white flex items-center justify-center rounded-[5px] text-[11px] font-black">Z</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xs text-slate-500 font-medium mb-0.5">Nhắn tin Zalo</div>
+                                                        <div>090 123 2255</div>
+                                                    </div>
+                                                </a>
+                                                <a href="mailto:vutg@trinhgiatelecom.vn" className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-amber-50 text-sm font-bold text-slate-700 hover:text-amber-700 transition-colors mt-1">
+                                                    <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                                                        <Mail size={16} className="text-amber-600" />
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xs text-slate-500 font-medium mb-0.5">Gửi Email</div>
+                                                        <div className="text-xs">vutg@trinhgiatelecom.vn</div>
+                                                    </div>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
