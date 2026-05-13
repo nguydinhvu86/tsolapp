@@ -115,7 +115,7 @@ export default async function PublicEcatalogPage({ params }: { params: { id: str
             </div>
 
             {/* Floating Consultant Card */}
-            <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 relative z-20 -mt-20 mb-8">
+            <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 relative z-40 -mt-20 mb-8">
                 <div className="flex flex-col lg:flex-row justify-between items-end gap-6">
                     {/* Consultant Card */}
                     <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 p-6 flex flex-col sm:flex-row items-center sm:items-start gap-5 border border-slate-100 w-full lg:w-auto">
