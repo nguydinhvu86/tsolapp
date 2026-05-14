@@ -395,11 +395,15 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
         setIsSaving(true);
         try {
             await updateTask(task.id, {
+                title: task.title,
                 assignees: editAssignees,
                 observers: editObservers
             }, session.user.id);
             setIsParticipantModalOpen(false);
             router.refresh();
+        } catch (error) {
+            console.error(error);
+            alert("Lỗi khi lưu người tham gia");
         } finally {
             setIsSaving(false);
         }
