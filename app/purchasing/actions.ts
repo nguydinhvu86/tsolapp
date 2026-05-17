@@ -611,6 +611,25 @@ export async function updatePurchaseBillNotes(id: string, notes: string) {
     return bill;
 }
 
+export async function updatePurchaseBillTags(id: string, tags: string) {
+    const existing = await prisma.purchaseBill.findUnique({ where: { id } });
+    if (!existing) throw new Error("Không tìm thấy hóa đơn");
+    
+    await verifyActionOwnership('PURCHASE_BILLS', 'EDIT', existing.creatorId);
+
+    const bill = await prisma.purchaseBill.update({
+        where: { id },
+        data: { tags },
+        include: {
+            supplier: true,
+            creator: true
+        }
+    });
+
+    revalidatePath('/purchasing/bills');
+    revalidatePath(`/purchasing/bills/${id}`);
+    return bill;
+}
 
 export async function deletePurchaseBill(id: string) {
     const existing = await prisma.purchaseBill.findUnique({ where: { id } });

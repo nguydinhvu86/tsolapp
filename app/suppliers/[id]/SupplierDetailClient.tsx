@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
-import { updateSupplier, approvePurchaseBill, cancelPurchaseBill } from '@/app/purchasing/actions';
+import { updateSupplier, approvePurchaseBill, cancelPurchaseBill, updatePurchaseBillTags } from '@/app/purchasing/actions';
 import { SupplierStatementPanel } from '@/app/components/suppliers/SupplierStatementPanel';
 import { SupplierContactsPanel } from '@/app/components/suppliers/SupplierContactsPanel';
 import { ClickToCallButton } from '@/app/components/ClickToCallButton';
@@ -65,6 +65,8 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
     const [selectedBill, setSelectedBill] = useState<any | null>(null);
     const [approveWarehouseId, setApproveWarehouseId] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [editingTagsBillId, setEditingTagsBillId] = useState<string | null>(null);
+    const [editingTagsValue, setEditingTagsValue] = useState<string>('');
     const [formData, setFormData] = useState({
         code: supplier.code || '',
         name: supplier.name || '',
@@ -145,6 +147,20 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
             } finally {
                 setIsSubmitting(false);
             }
+        }
+    };
+
+    const handleUpdateTags = async (billId: string) => {
+        setIsSubmitting(true);
+        try {
+            const updated = await updatePurchaseBillTags(billId, editingTagsValue);
+            const updatedBills = supplier.bills.map((b: any) => b.id === updated.id ? { ...b, tags: updated.tags } : b);
+            setSupplier({ ...supplier, bills: updatedBills });
+            setEditingTagsBillId(null);
+        } catch (error: any) {
+            alert(error.message || 'Lỗi khi cập nhật thẻ quản lý!');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -370,24 +386,49 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
                                                 </td>
                                                 <td style={{ padding: '1rem 0' }}>{getStatusBadge(bill.status, 'bill')}</td>
                                                 <td style={{ padding: '1rem 0' }}>
-                                                    {bill.tags ? (
-                                                        <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
-                                                            {bill.tags.split(',').map((tag: string, i: number) => (
-                                                                <span key={i} style={{
-                                                                    padding: '0.125rem 0.5rem',
-                                                                    fontSize: '0.7rem',
-                                                                    backgroundColor: '#f1f5f9',
-                                                                    color: '#475569',
-                                                                    borderRadius: '0.25rem',
-                                                                    border: '1px solid #e2e8f0',
-                                                                    fontWeight: 500
-                                                                }}>
-                                                                    {tag.trim()}
-                                                                </span>
-                                                            ))}
+                                                    {editingTagsBillId === bill.id ? (
+                                                        <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+                                                            <input
+                                                                type="text"
+                                                                className="input"
+                                                                style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', height: 'auto', minHeight: 'unset', width: '140px' }}
+                                                                value={editingTagsValue}
+                                                                onChange={(e) => setEditingTagsValue(e.target.value)}
+                                                                onKeyDown={(e) => {
+                                                                    if (e.key === 'Enter') handleUpdateTags(bill.id);
+                                                                    if (e.key === 'Escape') setEditingTagsBillId(null);
+                                                                }}
+                                                                autoFocus
+                                                                placeholder="Thẻ 1, Thẻ 2..."
+                                                            />
+                                                            <button onClick={() => handleUpdateTags(bill.id)} style={{ border: 'none', background: '#dcfce7', color: '#16a34a', padding: '0.25rem', borderRadius: '0.25rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Lưu"><CheckCircle size={14} /></button>
+                                                            <button onClick={() => setEditingTagsBillId(null)} style={{ border: 'none', background: '#fee2e2', color: '#dc2626', padding: '0.25rem', borderRadius: '0.25rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Hủy"><XCircle size={14} /></button>
                                                         </div>
                                                     ) : (
-                                                        <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>--</span>
+                                                        <div 
+                                                            style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap', cursor: 'pointer', minHeight: '24px', alignItems: 'center' }}
+                                                            onClick={() => { setEditingTagsBillId(bill.id); setEditingTagsValue(bill.tags || ''); }}
+                                                            title="Nhấn để sửa thẻ quản lý"
+                                                        >
+                                                            {bill.tags ? (
+                                                                bill.tags.split(',').map((tag: string, i: number) => (
+                                                                    <span key={i} style={{
+                                                                        padding: '0.125rem 0.5rem',
+                                                                        fontSize: '0.7rem',
+                                                                        backgroundColor: '#f1f5f9',
+                                                                        color: '#475569',
+                                                                        borderRadius: '0.25rem',
+                                                                        border: '1px solid #e2e8f0',
+                                                                        fontWeight: 500,
+                                                                        transition: 'all 0.2s',
+                                                                    }} className="hover:border-indigo-300 hover:text-indigo-600">
+                                                                        {tag.trim()}
+                                                                    </span>
+                                                                ))
+                                                            ) : (
+                                                                <span style={{ color: '#9ca3af', fontSize: '0.75rem', border: '1px dashed #d1d5db', padding: '0.125rem 0.5rem', borderRadius: '0.25rem', transition: 'all 0.2s' }} className="hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50">+ Thêm thẻ</span>
+                                                            )}
+                                                        </div>
                                                     )}
                                                 </td>
                                                 <td style={{ padding: '1rem 0', color: '#4b5563' }}>{formatDate(bill.date)}</td>

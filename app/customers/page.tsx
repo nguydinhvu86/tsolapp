@@ -131,6 +131,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: { 
                 initialData={customersWithStats as any}
                 users={users}
                 isAdminOrManager={isAdminOrManager}
+                initialEmployeeId={employeeIdFromUrl}
             />
         </div>
     );

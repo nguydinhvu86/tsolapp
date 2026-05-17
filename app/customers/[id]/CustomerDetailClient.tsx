@@ -509,6 +509,7 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                         <tr>
                                             <th>Mã HS</th>
                                             <th>Tiêu đề</th>
+                                            {activeTab === 'salesInvoices' && <th>Thẻ Quản Lý</th>}
                                             <th>Trạng thái</th>
                                             <th>Ngày tạo</th>
                                             <th style={{ width: '100px', textAlign: 'right' }}>Thao tác</th>
@@ -777,12 +778,17 @@ export function SalesDocumentRow({ doc, type, getStatusColor }: { doc: any, type
                 <Link href={`/${type}/${doc.id}`} className="hover:text-primary hover:underline block" style={{ color: 'inherit', textDecoration: 'none' }}>
                     {doc.notes || 'Hồ sơ Bán Hàng'} - Trị giá: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(doc.totalAmount || doc.amount || 0)}
                 </Link>
-                {doc.tags && (
+                {type !== 'sales/invoices' && doc.tags && (
                     <div style={{ marginTop: '0.375rem' }}>
                         <TagDisplay tagsString={doc.tags} />
                     </div>
                 )}
             </td>
+            {type === 'sales/invoices' && (
+                <td>
+                    <TagDisplay tagsString={doc.tags} />
+                </td>
+            )}
             <td>
                 <span style={{
                     backgroundColor: statusObj.bg, color: statusObj.color,

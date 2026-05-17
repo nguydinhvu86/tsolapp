@@ -19,7 +19,7 @@ import { ClickToCallButton } from '@/app/components/ClickToCallButton';
 
 export type CustomerWithStats = Customer & { revenue?: number, lastActivityAt?: Date | string };
 
-export function CustomerClient({ initialData, users, isAdminOrManager }: { initialData: CustomerWithStats[], users?: any[], isAdminOrManager?: boolean }) {
+export function CustomerClient({ initialData, users, isAdminOrManager, initialEmployeeId }: { initialData: CustomerWithStats[], users?: any[], isAdminOrManager?: boolean, initialEmployeeId?: string }) {
     const router = useRouter();
     const { data: session } = useSession();
     const { t } = useTranslation();
@@ -248,7 +248,7 @@ export function CustomerClient({ initialData, users, isAdminOrManager }: { initi
                                 <span className="text-sm text-gray-500 font-medium whitespace-nowrap">{t('customers.filterEmployee')}</span>
                                 <select
                                     className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 outline-none focus:border-blue-500"
-                                    defaultValue={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('employeeId') || '' : ''}
+                                    defaultValue={initialEmployeeId || ''}
                                     onChange={(e) => {
                                         const newEmployeeId = e.target.value;
                                         const params = new URLSearchParams(window.location.search);

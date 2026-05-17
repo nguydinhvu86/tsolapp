@@ -290,6 +290,32 @@ export async function updateSalesInvoiceStatus(id: string, newStatus: string) {
     }
 }
 
+export async function updateSalesInvoiceTags(id: string, tags: string) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" };
+        }
+        
+        const inv = await prisma.salesInvoice.findUnique({ where: { id } });
+        if (!inv) return { success: false, error: "Không tìm thấy hóa đơn" };
+
+        await verifyActionOwnership('SALES_INVOICES', 'EDIT', inv.creatorId);
+
+        const result = await prisma.salesInvoice.update({
+            where: { id },
+            data: { tags }
+        });
+
+        revalidatePath('/sales/invoices');
+        revalidatePath(`/sales/invoices/${id}`);
+        return { success: true, data: result };
+    } catch (error: any) {
+        console.error("Lỗi cập nhật thẻ quản lý Hóa Đơn:", error);
+        return { success: false, error: error.message };
+    }
+}
+
 export async function getSalesInvoices(employeeId?: string) {
     try {
         const session = await getServerSession(authOptions);

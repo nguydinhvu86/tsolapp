@@ -10,7 +10,7 @@ import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { Plus, Edit2, Trash2, Save, X, Printer, Search, Calendar, PackageCheck, Eye, Download, LinkIcon, CheckCircle2, FileSearch, LayoutList, FileText, ChevronUp, ChevronDown, Undo2, XCircle, AlertTriangle, Info, ShieldAlert, Copy, Clock } from 'lucide-react';
-import { submitSalesInvoice, approveSalesInvoice, deleteSalesInvoice, updateSalesInvoice, cancelSalesInvoice, updateSalesInvoiceStatus, restoreSalesInvoice } from './actions';
+import { submitSalesInvoice, approveSalesInvoice, deleteSalesInvoice, updateSalesInvoice, cancelSalesInvoice, updateSalesInvoiceStatus, restoreSalesInvoice, updateSalesInvoiceTags } from './actions';
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { TagDisplay } from '@/app/components/ui/TagDisplay';
 import { useTranslation } from '@/app/i18n/LanguageContext';
@@ -34,6 +34,10 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         confirmVariant?: 'primary' | 'danger' | 'warning' | 'success'
     } | null>(null);
     const [isActioning, setIsActioning] = useState(false);
+
+    // Tags Inline Edit State
+    const [editingTagsInvoiceId, setEditingTagsInvoiceId] = useState<string | null>(null);
+    const [editingTagsValue, setEditingTagsValue] = useState<string>('');
 
     // Filters & Sort
     const [statusFilter, setStatusFilter] = useState(typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('filter') || 'ALL' : 'ALL');
@@ -588,6 +592,21 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         });
     };
 
+    const handleSaveTagsInline = async (invoiceId: string) => {
+        try {
+            const res = await updateSalesInvoiceTags(invoiceId, editingTagsValue);
+            if (res.success) {
+                setInvoices((prev: any[]) => prev.map(inv => inv.id === invoiceId ? { ...inv, tags: editingTagsValue } : inv));
+            } else {
+                alert(t('invoices.alertErrorGeneric') + res.error);
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setEditingTagsInvoiceId(null);
+        }
+    };
+
     const baseFilteredInvoices = useMemo(() => {
         let result = invoices;
 
@@ -1112,7 +1131,48 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                 </div>
                             </td>
                             <td className="py-3">
-                                <TagDisplay tagsString={inv.tags} />
+                                <div className="group/tags relative cursor-text min-h-[28px] flex items-center rounded border border-transparent hover:border-gray-200 hover:bg-gray-50 transition-colors"
+                                     onClick={(e) => {
+                                         if (editingTagsInvoiceId !== inv.id) {
+                                             setEditingTagsInvoiceId(inv.id);
+                                             setEditingTagsValue(inv.tags || '');
+                                         }
+                                     }}>
+                                    {editingTagsInvoiceId === inv.id ? (
+                                        <div className="flex flex-col gap-1 w-full" onClick={(e) => e.stopPropagation()}>
+                                            <input
+                                                autoFocus
+                                                type="text"
+                                                className="w-full text-xs p-1 border border-indigo-300 rounded outline-none focus:ring-2 focus:ring-indigo-100 shadow-sm"
+                                                value={editingTagsValue}
+                                                onChange={(e) => setEditingTagsValue(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') handleSaveTagsInline(inv.id);
+                                                    if (e.key === 'Escape') setEditingTagsInvoiceId(null);
+                                                }}
+                                                placeholder="Ngăn cách bằng dấu phẩy..."
+                                            />
+                                            <div className="flex gap-1 justify-end">
+                                                <button onClick={() => setEditingTagsInvoiceId(null)} className="p-0.5 rounded text-gray-500 hover:bg-gray-200" title="Hủy">
+                                                    <X size={12} />
+                                                </button>
+                                                <button onClick={() => handleSaveTagsInline(inv.id)} className="p-0.5 rounded text-indigo-600 hover:bg-indigo-100 font-bold" title="Lưu">
+                                                    <CheckCircle2 size={12} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="w-full px-1">
+                                            {inv.tags ? (
+                                                <TagDisplay tagsString={inv.tags} />
+                                            ) : (
+                                                <span className="text-[11px] text-gray-400 opacity-0 group-hover/tags:opacity-100 transition-opacity border border-dashed border-gray-300 rounded px-2 py-0.5 inline-block">
+                                                    + Thêm thẻ
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             </td>
                             <td className="py-3 text-right font-bold text-gray-800">{formatMoney(inv.totalAmount)}</td>
                             <td className="py-3 text-right text-green-600 font-medium">{formatMoney(inv.paidAmount)}</td>
