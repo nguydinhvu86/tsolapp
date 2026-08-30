@@ -192,7 +192,7 @@ export function DynamicTableBuilder({ value, onChange, onTotalsChange, type = 'q
                     if (colsToOmit.includes(index)) return;
 
                     let cellText = cell;
-                    if (index === taxRateIdx && cellText.trim() !== '' && !cellText.includes('%')) {
+                    if (index === taxRateIdx && cellText.trim() !== '' && !cellText.includes('%') && cellText.trim().toUpperCase() !== 'KCT') {
                         cellText += '%';
                     }
 
@@ -367,8 +367,12 @@ export function DynamicTableBuilder({ value, onChange, onTotalsChange, type = 'q
         if (taxRateIdx !== -1) {
             const rateStr = newRows[rowIndex][taxRateIdx].replace('%', '').trim();
             if (rateStr !== '') {
-                const rate = parseVNNumber(rateStr);
-                taxAmount = amount * (rate / 100);
+                if (rateStr.toUpperCase() === 'KCT') {
+                    taxAmount = 0;
+                } else {
+                    const rate = parseVNNumber(rateStr);
+                    taxAmount = rate <= 0 ? 0 : amount * (rate / 100);
+                }
                 if (taxAmountIdx !== -1) newRows[rowIndex][taxAmountIdx] = formatVNNumber(taxAmount);
             } else {
                 if (taxAmountIdx !== -1) newRows[rowIndex][taxAmountIdx] = '';
@@ -422,7 +426,7 @@ export function DynamicTableBuilder({ value, onChange, onTotalsChange, type = 'q
         }
 
         if (taxRateIdx !== -1 && product.taxRate !== undefined) {
-            newRows[rowIndex][taxRateIdx] = `${product.taxRate}`;
+            newRows[rowIndex][taxRateIdx] = product.taxRate === -1 ? 'KCT' : `${product.taxRate}`;
         }
 
         if (qtyIdx !== -1 && (!newRows[rowIndex][qtyIdx] || newRows[rowIndex][qtyIdx].trim() === '')) {

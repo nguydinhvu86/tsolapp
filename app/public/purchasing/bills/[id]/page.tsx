@@ -1,4 +1,4 @@
-import { formatDate } from '@/lib/utils/formatters';
+import { formatDate, formatTaxRate } from '@/lib/utils/formatters';
 import React from 'react';
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
@@ -164,7 +164,7 @@ export default async function PublicPurchaseBillPage({ params }: { params: { id:
                             <th style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'left' }}>Sản Phẩm Nhập</th>
                             <th style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center', width: '70px' }}>SL</th>
                             <th style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', width: '120px' }}>Đơn Giá (VNĐ)</th>
-                            <th style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center', width: '80px' }}>Thuế (%)</th>
+                            <th style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center', width: '80px' }}>Thuế</th>
                             <th style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', width: '140px' }}>Thành Tiền (VNĐ)</th>
                         </tr>
                     </thead>
@@ -178,7 +178,7 @@ export default async function PublicPurchaseBillPage({ params }: { params: { id:
                                 </td>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{item.quantity} {item.product?.unit || ''}</td>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'right' }}>{formatMoney(item.unitPrice)}</td>
-                                <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{item.taxRate}</td>
+                                <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center', fontWeight: item.taxRate === -1 ? 700 : 400 }}>{formatTaxRate(item.taxRate)}</td>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'right', fontWeight: 600 }}>{formatMoney(item.totalPrice)}</td>
                             </tr>
                         ))}

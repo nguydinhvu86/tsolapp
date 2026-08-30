@@ -9,6 +9,8 @@ import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { TagDisplay } from '@/app/components/ui/TagDisplay';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { useTranslation } from '@/app/i18n/LanguageContext';
+import { formatMoney, formatDate, formatTaxRate, calcPreTaxPrice, calcTaxAmount } from '@/lib/utils/formatters';
+import { TaxRateSelect, TaxBadge } from '@/app/components/ui/TaxRateSelect';
 
 export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses, products, projects }: { initialBills: any[], suppliers: any[], orders: any[], warehouses: any[], products: any[], projects?: any[] }) {
     const { t } = useTranslation();
@@ -61,6 +63,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
     const [customTaxRate, setCustomTaxRate] = useState(0);
     const [customDescription, setCustomDescription] = useState('');
     const [useInventoryDescription, setUseInventoryDescription] = useState(true);
+    const [isPriceInclusiveVat, setIsPriceInclusiveVat] = useState(false);
 
     const searchParams = useSearchParams();
     const hasOpenedFromUrl = React.useRef(false);
@@ -337,28 +340,30 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
             return;
         }
 
+        let taxRate = customTaxRate !== undefined ? customTaxRate : 0;
+        let pId = 'EXTERNAL';
+        let pName = customName;
+        let pUnit = customUnit;
+
+        if (!isCustomProduct) {
+            const product = products.find((p: any) => p.id === selectedProduct);
+            pId = selectedProduct;
+            pName = product?.name || '';
+            pUnit = product?.unit || 'Cái';
+        }
+
+        const effectiveUnitPrice = isPriceInclusiveVat ? calcPreTaxPrice(price, taxRate) : price;
+
         let newItem: any = {
             quantity: qty,
-            unitPrice: price,
+            unitPrice: effectiveUnitPrice,
             description: customDescription,
-            taxRate: 0,
-            productName: '',
-            unit: 'Cái'
+            taxRate: taxRate,
+            productName: pName,
+            customName: pName,
+            productId: pId,
+            unit: pUnit
         };
-
-        if (isCustomProduct) {
-            newItem.productId = 'EXTERNAL';
-            newItem.productName = customName;
-            newItem.customName = customName;
-            newItem.unit = customUnit;
-            newItem.taxRate = customTaxRate;
-        } else {
-            const product = products.find((p: any) => p.id === selectedProduct);
-            newItem.productId = selectedProduct;
-            newItem.productName = product?.name || '';
-            newItem.unit = product?.unit || 'Cái';
-            newItem.taxRate = product?.taxRate || 0;
-        }
 
         setBillItems(prev => [...prev, newItem]);
 
@@ -369,6 +374,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
         setCustomUnit('Cái');
         setQty(1);
         setPrice(0);
+        setIsPriceInclusiveVat(false);
     };
 
     const handleRemoveItem = (index: number) => {
@@ -411,7 +417,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
     };
 
     const calculateTax = () => {
-        return billItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice * (item.taxRate || 0) / 100), 0);
+        return billItems.reduce((sum, item) => sum + calcTaxAmount(item.quantity * item.unitPrice, item.taxRate), 0);
     };
 
     const calculateTotal = () => {
@@ -1045,8 +1051,19 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                                     ✨ Tự động lưu vào kho cho các lần sau
                                                 </span>
                                             )}
+                                            <div className="ml-auto">
+                                                <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-emerald-900 dark:text-emerald-300 bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-3 py-1.5 rounded-lg select-none hover:bg-emerald-100/80 transition-colors">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isPriceInclusiveVat}
+                                                        onChange={(e) => setIsPriceInclusiveVat(e.target.checked)}
+                                                        className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 accent-emerald-600 cursor-pointer"
+                                                    />
+                                                    <span>Đã có thuế VAT (Nhập giá sau thuế)</span>
+                                                </label>
+                                            </div>
                                         </div>
-                                        <div className="flex flex-wrap gap-3 items-end mb-4">
+                                        <div className="flex flex-wrap gap-3 items-end mb-2">
                                             <div className="flex-1 min-w-[250px]">
                                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('purchaseBills.productNameLabel')}</label>
                                                 {!isCustomProduct ? (
@@ -1066,17 +1083,18 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                                     <input type="text" className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 text-center" placeholder={t('purchaseBills.unitPlaceholder')} value={customUnit} onChange={e => setCustomUnit(e.target.value)} />
                                                 </div>
                                             )}
-                                            <div className="w-28 shrink-0">
-                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('purchaseBills.unitPriceLabel')}</label>
-                                                <input type="number" step="any" min="0" className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700" value={price} onChange={e => setPrice(parseFloat(e.target.value) || 0)} />
+                                            <div className="w-36 shrink-0">
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                                                    {isPriceInclusiveVat ? 'Đơn giá (gồm VAT)' : t('purchaseBills.unitPriceLabel')}
+                                                </label>
+                                                <input type="number" step="any" min="0" className={`w-full border rounded-lg p-2.5 outline-none transition-all text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 ${isPriceInclusiveVat ? 'border-emerald-400 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 bg-emerald-50/20 font-semibold text-emerald-800 dark:text-emerald-300' : 'border-gray-300 dark:border-gray-600 focus:border-primary focus:ring-1 focus:ring-primary'}`} value={price} onChange={e => setPrice(parseFloat(e.target.value) || 0)} />
                                             </div>
-                                            <div className="w-20 shrink-0">
+                                            <div className="w-32 shrink-0">
                                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('purchaseBills.taxLabel')}</label>
-                                                {isCustomProduct ? (
-                                                    <input type="number" step="any" min="0" className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-center text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700" value={customTaxRate} onChange={e => setCustomTaxRate(parseFloat(e.target.value) || 0)} />
-                                                ) : (
-                                                    <input type="text" className="w-full border border-gray-200 dark:border-gray-600 rounded-lg p-2.5 bg-slate-50 dark:bg-gray-800 text-center text-gray-500 dark:text-gray-400 font-medium cursor-not-allowed" value={`${products.find((p: any) => p.id === selectedProduct)?.taxRate || 0}`} disabled />
-                                                )}
+                                                <TaxRateSelect
+                                                    value={customTaxRate}
+                                                    onChange={(val) => setCustomTaxRate(val)}
+                                                />
                                             </div>
                                             <div className="w-20 shrink-0">
                                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('purchaseBills.qtyLabel')}</label>
@@ -1084,6 +1102,18 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                             </div>
                                             <button type="button" onClick={handleAddItem} className="shrink-0 mb-[2px] h-[46px] px-6 border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 shadow-sm font-semibold rounded-lg dark:border-primary/50 dark:text-primary-light">{t('purchaseBills.addItemBtn')}</button>
                                         </div>
+
+                                        {/* Realtime calculation preview when isPriceInclusiveVat is ON */}
+                                        {isPriceInclusiveVat && price > 0 && (
+                                            <div className="mb-4 p-2.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs flex flex-wrap items-center gap-x-5 gap-y-1.5 text-emerald-900 dark:text-emerald-200 shadow-sm animate-fadeIn">
+                                                <div>💡 <strong>Giá đã gồm VAT:</strong> {formatMoney(price)}</div>
+                                                <div>➔ <strong>Đơn giá trước thuế:</strong> <span className="font-bold text-blue-700 dark:text-blue-400">{formatMoney(calcPreTaxPrice(price, customTaxRate))}</span></div>
+                                                <div>➔ <strong>Thuế suất:</strong> <TaxBadge rate={customTaxRate} /></div>
+                                                <div>➔ <strong>Tiền thuế/SP:</strong> <span className="font-semibold text-amber-700 dark:text-amber-400">{formatMoney(price - calcPreTaxPrice(price, customTaxRate))}</span></div>
+                                                <div>➔ <strong>Thành tiền ({qty} {isCustomProduct ? customUnit : (products.find((p: any) => p.id === selectedProduct)?.unit || 'Cái')}):</strong> <span className="font-bold text-emerald-700 dark:text-emerald-300">{formatMoney(price * qty)}</span></div>
+                                            </div>
+                                        )}
+
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('purchaseBills.itemNotesLabel')} <span className="text-gray-400 font-normal">({t('purchaseBills.printedOnTransfer')})</span></label>
                                             <div className="flex flex-wrap items-center gap-4 mb-2">
@@ -1109,7 +1139,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                                         <th className="p-3 font-medium">{t('purchaseBills.colProductName')}</th>
                                                         <th className="p-3 font-medium text-center w-20">{t('purchaseBills.colQty')}</th>
                                                         <th className="p-3 font-medium text-right w-32">{t('purchaseBills.colUnitPrice')}</th>
-                                                        <th className="p-3 font-medium text-center w-20">{t('purchaseBills.colTax')}</th>
+                                                        <th className="p-3 font-medium text-center w-24">{t('purchaseBills.colTax')}</th>
                                                         <th className="p-3 font-medium text-right w-36">{t('purchaseBills.colLineTotal')}</th>
                                                         <th className="p-3 font-medium text-center w-16"></th>
                                                     </tr>
@@ -1117,7 +1147,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                                 <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                                                     {billItems.map((item, i) => {
                                                         const rowSubtotal = item.quantity * item.unitPrice;
-                                                        const rowTax = rowSubtotal * (item.taxRate || 0) / 100;
+                                                        const rowTax = calcTaxAmount(rowSubtotal, item.taxRate);
                                                         const rowTotal = rowSubtotal + rowTax;
                                                         return (
                                                             <tr key={i} className="hover:bg-slate-50 dark:hover:bg-gray-800/50 transition-colors">
@@ -1129,7 +1159,9 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                                                     {item.quantity} <span className="text-xs text-gray-500 ml-1">{item.unit}</span>
                                                                 </td>
                                                                 <td className="p-3 text-right text-gray-600 dark:text-gray-300 font-medium">{formatMoney(item.unitPrice)}</td>
-                                                                <td className="p-3 text-center text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/30 border-x border-white dark:border-gray-800">{item.taxRate}%</td>
+                                                                <td className="p-3 text-center bg-gray-50 dark:bg-gray-800/30 border-x border-white dark:border-gray-800">
+                                                                    <TaxBadge rate={item.taxRate} />
+                                                                </td>
                                                                 <td className="p-3 text-right font-medium text-gray-800 dark:text-gray-200">{formatMoney(rowTotal)}</td>
                                                                 <td className="p-3 text-center">
                                                                     <div className="flex items-center justify-center gap-2">

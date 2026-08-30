@@ -6,6 +6,7 @@ import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, Fil
 import Link from 'next/link';
 import { updateSalesOrderStatus, convertOrderToInvoice } from '../actions';
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
+import { TaxBadge } from '@/app/components/ui/TaxRateSelect';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import { Modal } from '@/app/components/ui/Modal';
 import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
@@ -261,7 +262,7 @@ export default function SalesOrderDetailClient({ initialData, customers, product
                                                 <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Sản Phẩm</th>
                                                 <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Số Lượng</th>
                                                 <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Đơn Giá</th>
-                                                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Thuế (%)</th>
+                                                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Thuế</th>
                                                 <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Thành Tiền</th>
                                             </tr>
                                         </thead>
@@ -281,7 +282,9 @@ export default function SalesOrderDetailClient({ initialData, customers, product
                                                         </td>
                                                         <td style={{ padding: '1rem', textAlign: 'center', color: '#475569' }}>{item.quantity} {item.unit || item.product?.unit || ''}</td>
                                                         <td style={{ padding: '1rem', textAlign: 'right', color: '#475569' }}>{formatMoney(item.unitPrice)}</td>
-                                                        <td style={{ padding: '1rem', textAlign: 'center', color: '#475569' }}>{item.taxRate || 0}%</td>
+                                                        <td style={{ padding: '1rem', textAlign: 'center' }}>
+                                                            <TaxBadge rate={item.taxRate} />
+                                                        </td>
                                                         <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>{formatMoney(item.totalPrice)}</td>
                                                     </tr>
                                                 ))

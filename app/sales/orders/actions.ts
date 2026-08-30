@@ -64,9 +64,9 @@ const itemSchema = z.object({
     customName: z.string().optional(),
     description: z.string().optional(),
     unit: z.string().optional(),
-    quantity: z.number().min(1, "Quantity must be at least 1"),
+    quantity: z.number().min(0.000001, "Quantity must be > 0"),
     unitPrice: z.number().min(0, "Unit price must be >= 0"),
-    taxRate: z.number().min(0, "Tax rate must be >= 0"),
+    taxRate: z.number().min(-1, "Tax rate must be >= -1"),
     totalPrice: z.number().min(0, "Total price must be >= 0")
 });
 
@@ -82,19 +82,119 @@ const orderSchema = z.object({
     items: z.array(itemSchema).min(1, "At least one item is required")
 });
 
+async function ensureCustomProductsExist(tx: any, items: any[], context: 'PURCHASE' | 'SALES') {
+    if (!items || items.length === 0) return;
+
+    for (const item of items) {
+        const customName = (item.customName || item.productName || '').trim();
+        const isExternalOrCustom = (!item.productId || item.productId === 'EXTERNAL') && customName.length > 0;
+
+        if (isExternalOrCustom) {
+            let product = await tx.product.findFirst({
+                where: { name: customName }
+            });
+
+            if (product) {
+                item.productId = product.id;
+                if (!item.unit && product.unit) item.unit = product.unit;
+
+                if (context === 'SALES' && product.salePrice === 0 && item.unitPrice > 0) {
+                    await tx.product.update({
+                        where: { id: product.id },
+                        data: { salePrice: item.unitPrice }
+                    });
+                } else if (context === 'PURCHASE' && product.importPrice === 0 && item.unitPrice > 0) {
+                    await tx.product.update({
+                        where: { id: product.id },
+                        data: { importPrice: item.unitPrice }
+                    });
+                }
+            } else {
+                const count = await tx.product.count();
+                let sku = `SP-${(count + 1).toString().padStart(6, '0')}`;
+                let duplicateSku = await tx.product.findUnique({ where: { sku } });
+                let step = 1;
+                while (duplicateSku) {
+                    sku = `SP-${(count + 1 + step).toString().padStart(6, '0')}`;
+                    duplicateSku = await tx.product.findUnique({ where: { sku } });
+                    step++;
+                }
+
+                const salePrice = context === 'SALES' ? (item.unitPrice || 0) : 0;
+                const importPrice = context === 'PURCHASE' ? (item.unitPrice || 0) : 0;
+                const unit = (item.unit && item.unit.trim()) ? item.unit.trim() : 'Cái';
+
+                const newProduct = await tx.product.create({
+                    data: {
+                        sku,
+                        name: customName,
+                        type: 'PRODUCT',
+                        unit,
+                        taxRate: item.taxRate !== undefined ? item.taxRate : 0,
+                        salePrice,
+                        importPrice,
+                        description: item.description || null,
+                        isActive: true
+                    }
+                });
+
+                const defaultWarehouse = await tx.warehouse.findFirst({ where: { isDefault: true } })
+                    || await tx.warehouse.findFirst();
+                if (defaultWarehouse) {
+                    const existingInv = await tx.inventory.findUnique({
+                        where: {
+                            productId_warehouseId: {
+                                productId: newProduct.id,
+                                warehouseId: defaultWarehouse.id
+                            }
+                        }
+                    });
+                    if (!existingInv) {
+                        await tx.inventory.create({
+                            data: {
+                                productId: newProduct.id,
+                                warehouseId: defaultWarehouse.id,
+                                quantity: 0
+                            }
+                        });
+                    }
+                }
+
+                item.productId = newProduct.id;
+            }
+        }
+    }
+}
+
 export async function submitSalesOrder(creatorId: string, formData: any) {
     try {
         const user = await verifyActionPermission('SALES_ORDERS_CREATE');
         const actualCreatorId = user ? (user as any).id : creatorId;
 
-        if (!formData.code || !formData.customerId || !formData.items || formData.items.length === 0) {
+        if (!formData.customerId || !formData.items || formData.items.length === 0) {
             return { success: false, error: "Thiếu thông tin bắt buộc." };
         }
 
-        let finalCode = formData.code;
-        const existingOrder = await prisma.salesOrder.findUnique({ where: { code: finalCode } });
-        if (existingOrder) {
+        // Tự động tạo sản phẩm vào kho/danh mục nếu là nhập tự do
+        await ensureCustomProductsExist(prisma, formData.items, 'SALES');
+
+        let finalCode = (formData.code || '').trim();
+        if (!finalCode) {
             finalCode = await getNextOrderCode();
+        } else {
+            const existingOrder = await prisma.salesOrder.findUnique({ where: { code: finalCode } });
+            if (existingOrder) {
+                finalCode = await getNextOrderCode();
+            }
+        }
+
+        let checkExist = await prisma.salesOrder.findUnique({ where: { code: finalCode } });
+        let step = 1;
+        const originalBaseCode = finalCode;
+        while (checkExist) {
+            finalCode = `${originalBaseCode}-${step}`;
+            checkExist = await prisma.salesOrder.findUnique({ where: { code: finalCode } });
+            step++;
         }
 
         const order = await prisma.salesOrder.create({
@@ -143,6 +243,9 @@ export async function updateSalesOrder(id: string, formData: any) {
         if (!formData.code || !formData.customerId || !formData.items || formData.items.length === 0) {
             return { success: false, error: "Thiếu thông tin bắt buộc." };
         }
+
+        // Tự động tạo sản phẩm vào kho/danh mục nếu là nhập tự do
+        await ensureCustomProductsExist(prisma, formData.items, 'SALES');
 
         const existing = await prisma.salesOrder.findUnique({ where: { id } });
         if (!existing) return { success: false, error: "Đơn đặt hàng không tồn tại" };
@@ -262,15 +365,23 @@ export async function deleteSalesOrder(id: string) {
 
 export async function getNextOrderCode() {
     const orders = await prisma.salesOrder.findMany({ select: { code: true } });
+    const existingCodes = new Set(orders.map(o => o.code?.trim().toUpperCase()));
     let maxOrdNum = 0;
     for (const ord of orders) {
-        const m = ord.code.match(/\d+/);
+        if (!ord.code) continue;
+        const m = ord.code.match(/(\d+)$/);
         if (m) {
-            const n = parseInt(m[0], 10);
+            const n = parseInt(m[1], 10);
             if (!isNaN(n) && n > maxOrdNum) maxOrdNum = n;
         }
     }
-    return `SO${String(maxOrdNum + 1).padStart(4, '0')}`;
+    let nextNumber = maxOrdNum + 1;
+    let candidate = `SO${String(nextNumber).padStart(4, '0')}`;
+    while (existingCodes.has(candidate.trim().toUpperCase())) {
+        nextNumber++;
+        candidate = `SO${String(nextNumber).padStart(4, '0')}`;
+    }
+    return candidate;
 }
 
 export async function getSalesOrderById(id: string) {

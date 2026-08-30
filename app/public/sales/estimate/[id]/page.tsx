@@ -1,4 +1,4 @@
-import { formatDate } from '@/lib/utils/formatters';
+import { formatDate, formatTaxRate } from '@/lib/utils/formatters';
 import React from 'react';
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
@@ -276,7 +276,7 @@ export default async function PublicSalesEstimatePage({ params }: { params: { id
                                     <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{item.warranty || '-'}</td>
                                     <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{item.quantity} {item.unit || item.product?.unit || ''}</td>
                                     <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'right' }}>{formatMoney(item.unitPrice)}</td>
-                                    <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{item.taxRate}%</td>
+                                    <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center', fontWeight: item.taxRate === -1 ? 700 : 400 }}>{formatTaxRate(item.taxRate)}</td>
                                     <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'right', fontWeight: 600 }}>{formatMoney(item.totalPrice)}</td>
                                 </tr>
                             ))}
@@ -304,7 +304,7 @@ export default async function PublicSalesEstimatePage({ params }: { params: { id
                                 <th style={{ border: '1px solid #cbd5e1', padding: '10px 6px', textAlign: 'left', width: '57%' }}>Sản Phẩm / Dịch Vụ</th>
                                 <th style={{ border: '1px solid #cbd5e1', padding: '10px 6px', textAlign: 'center', width: '5%' }}>SL</th>
                                 <th style={{ border: '1px solid #cbd5e1', padding: '10px 6px', textAlign: 'right', width: '13%', whiteSpace: 'nowrap' }}>Đơn Giá</th>
-                                <th style={{ border: '1px solid #cbd5e1', padding: '10px 6px', textAlign: 'center', width: '6%' }}>Thuế (%)</th>
+                                <th style={{ border: '1px solid #cbd5e1', padding: '10px 6px', textAlign: 'center', width: '8%' }}>Thuế</th>
                                 <th style={{ border: '1px solid #cbd5e1', padding: '10px 6px', textAlign: 'right', width: '14%', whiteSpace: 'nowrap' }}>Thành Tiền</th>
                             </tr>
                         </thead>
@@ -324,7 +324,7 @@ export default async function PublicSalesEstimatePage({ params }: { params: { id
                                     </td>
                                     <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{item.quantity} {item.product?.unit || item.unit || ''}</td>
                                     <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'right' }}>{formatMoney(item.unitPrice)}</td>
-                                    <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{item.taxRate}</td>
+                                    <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center', fontWeight: item.taxRate === -1 ? 700 : 400 }}>{formatTaxRate(item.taxRate)}</td>
                                     <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'right', fontWeight: 600 }}>{formatMoney(item.totalPrice)}</td>
                                 </tr>
                             ))}

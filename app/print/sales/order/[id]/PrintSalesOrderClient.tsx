@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 
-import { formatMoney, formatDate } from '@/lib/utils/formatters';
+import { formatMoney, formatDate, formatTaxRate } from '@/lib/utils/formatters';
 import { Printer, ArrowLeft, Download } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Watermark } from '@/app/components/ui/Watermark';
@@ -207,7 +207,7 @@ export default function PrintSalesOrderClient({ order, settings }: any) {
                                 </td>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center' }}>{item.quantity} {item.unit || item.product?.unit || ''}</td>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right' }}>{formatMoney(item.unitPrice)}</td>
-                                <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center' }}>{item.taxRate}</td>
+                                <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center', fontWeight: item.taxRate === -1 ? 700 : 400 }}>{formatTaxRate(item.taxRate)}</td>
                                 <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', fontWeight: 600 }}>{formatMoney(item.totalPrice)}</td>
                             </tr>
                         ))}

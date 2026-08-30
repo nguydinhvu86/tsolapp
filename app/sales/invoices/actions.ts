@@ -151,8 +151,27 @@ export async function submitSalesInvoice(creatorId: string, formData: any) {
     try {
         const user = await verifyActionPermission('SALES_INVOICES_CREATE');
         const actualCreatorId = user ? (user as any).id : creatorId;
-        if (!formData.code || !formData.customerId || !formData.items || formData.items.length === 0) {
+        if (!formData.customerId || !formData.items || formData.items.length === 0) {
             return { success: false, error: "Thiếu thông tin bắt buộc." };
+        }
+
+        let finalCode = (formData.code || '').trim();
+        if (!finalCode) {
+            finalCode = await getNextInvoiceCode();
+        } else {
+            const existing = await prisma.salesInvoice.findUnique({ where: { code: finalCode } });
+            if (existing) {
+                finalCode = await getNextInvoiceCode();
+            }
+        }
+
+        let checkExist = await prisma.salesInvoice.findUnique({ where: { code: finalCode } });
+        let step = 1;
+        const originalBaseCode = finalCode;
+        while (checkExist) {
+            finalCode = `${originalBaseCode}-${step}`;
+            checkExist = await prisma.salesInvoice.findUnique({ where: { code: finalCode } });
+            step++;
         }
 
         // Tự động tạo sản phẩm vào kho/danh mục nếu là nhập tự do
@@ -160,7 +179,7 @@ export async function submitSalesInvoice(creatorId: string, formData: any) {
 
         const invoice = await prisma.salesInvoice.create({
             data: {
-                code: formData.code,
+                code: finalCode,
                 date: new Date(formData.date),
                 dueDate: formData.dueDate ? new Date(formData.dueDate) : null,
                 status: formData.status || "DRAFT",
@@ -276,8 +295,10 @@ function computeSalesInvoiceDiff(oldInvoice: any, newFormData: any, oldItems: an
             if (oldItem.unitPrice !== newItem.unitPrice) {
                 itemDiffs.push(`Đơn giá: ${oldItem.unitPrice.toLocaleString('vi-VN')} đ ➔ **${newItem.unitPrice.toLocaleString('vi-VN')} đ**`);
             }
-            if ((oldItem.taxRate || 0) !== (newItem.taxRate || 0)) {
-                itemDiffs.push(`Thuế: ${oldItem.taxRate || 0}% ➔ **${newItem.taxRate || 0}%**`);
+            if ((oldItem.taxRate ?? 0) !== (newItem.taxRate ?? 0)) {
+                const oldTax = oldItem.taxRate === -1 ? 'KCT' : `${oldItem.taxRate ?? 0}%`;
+                const newTax = newItem.taxRate === -1 ? 'KCT' : `${newItem.taxRate ?? 0}%`;
+                itemDiffs.push(`Thuế: ${oldTax} ➔ **${newTax}**`);
             }
             if (itemDiffs.length > 0) {
                 changes.push(`✏️ Điều chỉnh **${name}**: ${itemDiffs.join(', ')}`);
@@ -896,6 +917,7 @@ export async function getNextInvoiceCode() {
     const startSeq = parseInt(startSeqSetting?.value || '1', 10) || 1;
 
     const invoices = await prisma.salesInvoice.findMany({ select: { code: true } });
+    const existingCodes = new Set(invoices.map(i => i.code?.trim().toUpperCase()));
 
     const now = new Date();
     const mm = String(now.getMonth() + 1).padStart(2, '0');
@@ -908,19 +930,31 @@ export async function getNextInvoiceCode() {
     const safePrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const safeSuffix = suffix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-    const regex = new RegExp(`^${safePrefix}(\\d+)${safeSuffix}$`);
+    const regex = new RegExp(`^${safePrefix}(\\d+)${safeSuffix}$`, 'i');
 
     let maxInvNum = 0;
     for (const inv of invoices) {
+        if (!inv.code) continue;
         const m = inv.code.match(regex);
         if (m && m[1]) {
             const n = parseInt(m[1], 10);
             if (!isNaN(n) && n > maxInvNum) maxInvNum = n;
         }
+        const trailing = inv.code.match(/(\d+)$/);
+        if (trailing && trailing[1]) {
+            const tn = parseInt(trailing[1], 10);
+            if (!isNaN(tn) && tn > maxInvNum) maxInvNum = tn;
+        }
     }
-    const nextNumber = Math.max(maxInvNum + 1, startSeq);
-    const nextSeq = String(nextNumber).padStart(4, '0');
-    return prefix + nextSeq + suffix;
+    let nextNumber = Math.max(maxInvNum + 1, startSeq);
+    let candidate = prefix + String(nextNumber).padStart(4, '0') + suffix;
+
+    while (existingCodes.has(candidate.trim().toUpperCase())) {
+        nextNumber++;
+        candidate = prefix + String(nextNumber).padStart(4, '0') + suffix;
+    }
+
+    return candidate;
 }
 
 export async function cancelSalesInvoice(invoiceId: string) {

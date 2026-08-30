@@ -11,6 +11,8 @@ import { createProduct, updateProduct, deleteProduct, createProductGroup, update
 import { useRouter } from 'next/navigation';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import { useTranslation } from '@/app/i18n/LanguageContext';
+import { formatMoney, formatTaxRate } from '@/lib/utils/formatters';
+import { TaxBadge } from '@/app/components/ui/TaxRateSelect';
 
 export default function ProductClient({ initialProducts, warehouses = [], productGroups = [], userRole = 'USER' }: { initialProducts: any[], warehouses?: any[], productGroups?: any[], userRole?: string }) {
     const canViewImportPrice = userRole === 'ADMIN' || userRole === 'MANAGER';
@@ -314,7 +316,9 @@ export default function ProductClient({ initialProducts, warehouses = [], produc
                                     </td>
                                     <td style={{ textAlign: 'center' }}>{p.unit || 'Cái'}</td>
                                     <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--primary)' }}>{formatMoney(p.salePrice)}</td>
-                                    <td style={{ textAlign: 'center' }}>{p.taxRate}%</td>
+                                    <td style={{ textAlign: 'center' }}>
+                                        <TaxBadge rate={p.taxRate} />
+                                    </td>
                                     <td style={{ textAlign: 'center' }}>
                                         {p.type === 'PRODUCT' ? (
                                             <span style={{
@@ -400,6 +404,7 @@ export default function ProductClient({ initialProducts, warehouses = [], produc
                                     <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.875rem' }}>{t('products.formTaxLabel')}</label>
                                     <select value={taxRate} onChange={(e) => setTaxRate(e.target.value)}
                                         style={{ width: '100%', padding: '0.625rem', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
+                                        <option value="-1">KCT (Không chịu thuế)</option>
                                         <option value="0">0%</option>
                                         <option value="5">5%</option>
                                         <option value="8">8%</option>
@@ -491,7 +496,9 @@ export default function ProductClient({ initialProducts, warehouses = [], produc
                                     <span style={{ fontWeight: 500 }}>{viewingProduct.unit || 'Cái'}</span>
 
                                     <span style={{ color: 'var(--text-muted)' }}>{t('products.viewTaxLabel')}</span>
-                                    <span style={{ fontWeight: 500 }}>{viewingProduct.taxRate}%</span>
+                                    <span style={{ fontWeight: 500 }}>
+                                        <TaxBadge rate={viewingProduct.taxRate} />
+                                    </span>
 
                                     <span style={{ color: 'var(--text-muted)' }}>{t('products.viewMinStockLabel')}</span>
                                     <span style={{ fontWeight: 500, color: 'var(--danger)' }}>{viewingProduct.minStockLevel || 0}</span>

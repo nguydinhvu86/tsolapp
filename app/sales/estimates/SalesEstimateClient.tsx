@@ -12,7 +12,8 @@ import { Modal } from '@/app/components/ui/Modal';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { Plus, Edit2, Trash2, Save, X, Printer, FileText, Search, Calendar, FolderClock, LayoutList, CheckCircle2, XCircle, Eye, Link as LinkIcon, Download, ChevronUp, ChevronDown, Check, ArrowRightLeft, ShoppingCart, Copy } from 'lucide-react';
 import { submitSalesEstimate, updateSalesEstimateStatus, deleteSalesEstimate, updateSalesEstimate, convertEstimateToInvoice, convertEstimateToOrder } from './actions';
-import { formatMoney, formatDate } from '@/lib/utils/formatters';
+import { formatMoney, formatDate, formatTaxRate, calcPreTaxPrice, calcTaxAmount } from '@/lib/utils/formatters';
+import { TaxRateSelect, TaxBadge } from '@/app/components/ui/TaxRateSelect';
 import { TagDisplay } from '@/app/components/ui/TagDisplay';
 import { AvatarImage } from '@/app/components/ui/AvatarImage';
 
@@ -234,6 +235,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
     const [customDescription, setCustomDescription] = useState('');
     const [useInventoryDescription, setUseInventoryDescription] = useState(true);
     const [isSubItem, setIsSubItem] = useState(false);
+    const [isPriceInclusiveVat, setIsPriceInclusiveVat] = useState(false);
     
     // Multi-Template extended states
     const [itemOrigin, setItemOrigin] = useState('');
@@ -246,6 +248,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         const prod = products.find((p: any) => p.id === pid);
         setSelectedProduct(pid);
         setPrice(prod ? prod.salePrice : 0);
+        setCustomTaxRate(prod ? (prod.taxRate !== undefined ? prod.taxRate : 0) : 0);
         if (useInventoryDescription) {
             setCustomDescription(prod?.description || '');
         }
@@ -260,7 +263,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
     };
 
     const handleAddItem = () => {
-        let taxRate = 0;
+        let taxRate = customTaxRate !== undefined ? customTaxRate : 0;
         let pId = null;
         let pName = '';
         let pUnit = '';
@@ -273,7 +276,6 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
             }
             pName = customName;
             pUnit = customUnit;
-            taxRate = customTaxRate;
         } else {
             if (!selectedProduct) return;
             const prod = products.find((p: any) => p.id === selectedProduct);
@@ -281,12 +283,12 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
             pId = prod.id;
             pName = prod.name;
             pUnit = prod.unit;
-            taxRate = prod.taxRate || 0;
         }
 
-        const baseTotal = qty * (price + itemLaborPrice);
-        const taxItemAmount = baseTotal * taxRate / 100;
-        const total = baseTotal + taxItemAmount;
+        const effectiveUnitPrice = isPriceInclusiveVat ? calcPreTaxPrice(price, taxRate) : price;
+        const baseTotal = qty * (effectiveUnitPrice + itemLaborPrice);
+        const taxItemAmount = calcTaxAmount(baseTotal, taxRate);
+        const total = isPriceInclusiveVat ? (qty * (price + itemLaborPrice)) : (baseTotal + taxItemAmount);
 
         setFormData((prev: any) => ({
             ...prev,
@@ -297,7 +299,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                 description: pDesc,
                 unit: pUnit,
                 quantity: qty,
-                unitPrice: price,
+                unitPrice: effectiveUnitPrice,
                 taxRate,
                 taxAmount: taxItemAmount,
                 totalPrice: total,
@@ -325,6 +327,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         setItemManufacture('');
         setItemImageUrl('');
         setItemLaborPrice(0);
+        setIsPriceInclusiveVat(false);
     };
 
     const handleRemoveItem = (index: number) => {
@@ -1016,8 +1019,24 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                     <input type="radio" className="accent-indigo-600 w-4 h-4 cursor-pointer" checked={isCustomProduct} onChange={() => setIsCustomProduct(true)} />
                                     <span>Nhập tự do ngoài hệ thống</span>
                                 </label>
+                                {isCustomProduct && (
+                                    <span className="text-xs text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-md font-medium flex items-center gap-1">
+                                        ✨ Tự động lưu vào kho cho các lần sau
+                                    </span>
+                                )}
+                                <div className="ml-auto">
+                                    <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-indigo-900 bg-indigo-50/80 border border-indigo-200 px-3 py-1.5 rounded-lg select-none hover:bg-indigo-100/80 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            checked={isPriceInclusiveVat}
+                                            onChange={(e) => setIsPriceInclusiveVat(e.target.checked)}
+                                            className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 accent-indigo-600 cursor-pointer"
+                                        />
+                                        <span>Đã có thuế VAT (Nhập giá sau thuế)</span>
+                                    </label>
+                                </div>
                             </div>
-                            <div className="flex flex-col md:flex-row gap-3 md:items-end mb-4">
+                            <div className="flex flex-col md:flex-row gap-3 md:items-end mb-2">
                                 <div className="flex-1 w-full min-w-0">
                                     <label className="block text-sm font-medium text-gray-700 mb-1.5">Tên Sản Phẩm</label>
                                     {!isCustomProduct ? (
@@ -1037,21 +1056,22 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                         <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white text-center" placeholder="Đơn vị" value={customUnit} onChange={e => setCustomUnit(e.target.value)} />
                                     </div>
                                 )}
-                                <div className="w-full md:w-36">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{formData.templateType === 'PROJECT_BREAKDOWN' ? 'Đ.giá vật tư' : 'Đơn giá'}</label>
-                                    <input type="number" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" value={price} onChange={e => setPrice(Number(e.target.value))} />
+                                <div className="w-full md:w-40">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                        {isPriceInclusiveVat ? 'Đơn giá (gồm VAT)' : (formData.templateType === 'PROJECT_BREAKDOWN' ? 'Đ.giá vật tư' : 'Đơn giá')}
+                                    </label>
+                                    <input type="number" step="any" min="0" className={`w-full border rounded-lg p-2.5 outline-none transition-all text-gray-900 bg-white ${isPriceInclusiveVat ? 'border-emerald-400 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 bg-emerald-50/20 font-semibold text-emerald-800' : 'border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'}`} value={price} onChange={e => setPrice(parseFloat(e.target.value) || 0)} />
                                 </div>
-                                <div className="w-full md:w-20">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Thuế %</label>
-                                    {isCustomProduct ? (
-                                        <input type="number" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-center text-gray-900 bg-white" value={customTaxRate} onChange={e => setCustomTaxRate(Number(e.target.value))} />
-                                    ) : (
-                                        <input type="text" className="w-full border border-gray-200 rounded-lg p-2.5 bg-slate-50 text-center text-gray-500 font-medium cursor-not-allowed" value={`${products.find((p: any) => p.id === selectedProduct)?.taxRate || 0}`} disabled />
-                                    )}
+                                <div className="w-full md:w-28">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Thuế suất</label>
+                                    <TaxRateSelect
+                                        value={customTaxRate}
+                                        onChange={(val) => setCustomTaxRate(val)}
+                                    />
                                 </div>
                                 <div className="w-full md:w-20">
                                     <label className="block text-sm font-medium text-gray-700 mb-1.5">SL</label>
-                                    <input type="number" min="1" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-center text-gray-900 bg-white" value={qty} onChange={e => setQty(Number(e.target.value))} />
+                                    <input type="number" step="any" min="0.0001" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-center text-gray-900 bg-white" value={qty} onChange={e => setQty(parseFloat(e.target.value) || 0)} />
                                 </div>
                                 <div className="w-full md:w-24 flex flex-col items-center justify-center">
                                     <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wide text-center">T/Phần bộ?</label>
@@ -1061,6 +1081,17 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                 </div>
                                 <Button onClick={handleAddItem} variant="secondary" className="w-full md:w-auto md:mb-[2px] h-[46px] px-6 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 shadow-sm font-semibold rounded-lg">Thêm</Button>
                             </div>
+
+                            {/* Calculation preview when isPriceInclusiveVat is ON */}
+                            {isPriceInclusiveVat && price > 0 && (
+                                <div className="mb-4 p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg text-xs flex flex-wrap items-center gap-x-5 gap-y-1.5 text-emerald-900 shadow-sm animate-fadeIn">
+                                    <div>💡 <strong>Giá đã gồm VAT:</strong> {formatMoney(price)}</div>
+                                    <div>➔ <strong>Đơn giá trước thuế:</strong> <span className="font-bold text-blue-700">{formatMoney(calcPreTaxPrice(price, customTaxRate))}</span></div>
+                                    <div>➔ <strong>Thuế suất:</strong> <TaxBadge rate={customTaxRate} /></div>
+                                    <div>➔ <strong>Tiền thuế/SP:</strong> <span className="font-semibold text-amber-700">{formatMoney(price - calcPreTaxPrice(price, customTaxRate))}</span></div>
+                                    <div>➔ <strong>Thành tiền ({qty} {isCustomProduct ? customUnit : (products.find((p: any) => p.id === selectedProduct)?.unit || 'Cái')}):</strong> <span className="font-bold text-emerald-700">{formatMoney((price + itemLaborPrice) * qty)}</span></div>
+                                </div>
+                            )}
 
                             {(formData.templateType === 'WITH_IMAGES' || formData.templateType === 'PROJECT_BREAKDOWN') && (
                                 <div className="flex flex-col md:flex-row gap-3 md:items-end mb-4 bg-slate-50 p-3 rounded-lg border border-slate-200">
@@ -1087,7 +1118,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                     {formData.templateType === 'PROJECT_BREAKDOWN' && (
                                         <div className="w-full md:w-64">
                                             <label className="block text-sm font-medium text-gray-700 mb-1.5">Đ.giá nhân công <span className="text-gray-400 font-normal">(/1 {!isCustomProduct ? products.find((p: any) => p.id === selectedProduct)?.unit || customUnit : customUnit})</span></label>
-                                            <input type="number" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" value={itemLaborPrice} onChange={e => setItemLaborPrice(Number(e.target.value))} />
+                                            <input type="number" step="any" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" value={itemLaborPrice} onChange={e => setItemLaborPrice(parseFloat(e.target.value) || 0)} />
                                         </div>
                                     )}
                                 </div>
@@ -1118,7 +1149,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                                 {formData.templateType === 'PROJECT_BREAKDOWN' && (
                                                     <th className="p-3 font-medium text-right w-32">Đ.Giá N.Công</th>
                                                 )}
-                                                <th className="p-3 font-medium text-center w-20">Thuế</th>
+                                                <th className="p-3 font-medium text-center w-24">Thuế</th>
                                                 <th className="p-3 font-medium text-right w-36">Thành Tiền</th>
                                                 <th className="p-3 font-medium text-center w-12"></th>
                                             </tr>
@@ -1133,7 +1164,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                                         </div>
                                                         {item.description && <div className="text-xs text-gray-500 mt-0.5 max-w-sm whitespace-pre-wrap">{item.description}</div>}
                                                         {(formData.templateType === 'WITH_IMAGES' || formData.templateType === 'PROJECT_BREAKDOWN') && (
-                                                            <div className="text-[11px] text-gray-500 mt-1 flex flex-wrap gap-2">
+                                                             <div className="text-[11px] text-gray-500 mt-1 flex flex-wrap gap-2">
                                                                 {item.manufacture && <span>Hãng: <span className="font-medium text-gray-700">{item.manufacture}</span></span>}
                                                                 {item.origin && <span>XX: <span className="font-medium text-gray-700">{item.origin}</span></span>}
                                                                 {item.warranty && <span>BH: <span className="font-medium text-gray-700">{item.warranty}</span></span>}
@@ -1147,7 +1178,9 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                                     {formData.templateType === 'PROJECT_BREAKDOWN' && (
                                                         <td className="p-3 text-right text-indigo-600 font-medium">{formatMoney(item.laborPrice || 0)}</td>
                                                     )}
-                                                    <td className="p-3 text-center text-gray-500 bg-gray-50 border-x border-white">{item.taxRate}%</td>
+                                                    <td className="p-3 text-center bg-gray-50 border-x border-white">
+                                                        <TaxBadge rate={item.taxRate} />
+                                                    </td>
                                                     <td className="p-3 text-right font-semibold text-gray-900">{formatMoney(item.totalPrice)}</td>
                                                     <td className="p-3 text-center">
                                                         <div className="flex items-center justify-center gap-1">

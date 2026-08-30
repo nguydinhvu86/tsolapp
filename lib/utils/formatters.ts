@@ -18,6 +18,25 @@ export const parseNumber = (val: string | number | null | undefined): number => 
     return isNaN(num) ? 0 : num;
 };
 
+export const formatTaxRate = (rate: number | string | null | undefined): string => {
+    if (rate === null || rate === undefined || rate === '') return '0%';
+    const num = typeof rate === 'string' ? parseFloat(rate) : rate;
+    if (num === -1 || String(rate).toUpperCase() === 'KCT') return 'KCT';
+    return `${num}%`;
+};
+
+export const calcPreTaxPrice = (grossPrice: number, taxRate: number): number => {
+    if (!grossPrice || isNaN(grossPrice)) return 0;
+    if (taxRate === -1 || taxRate <= 0) return grossPrice;
+    return grossPrice / (1 + taxRate / 100);
+};
+
+export const calcTaxAmount = (preTaxAmount: number, taxRate: number): number => {
+    if (!preTaxAmount || isNaN(preTaxAmount)) return 0;
+    if (taxRate === -1 || taxRate <= 0) return 0;
+    return preTaxAmount * (taxRate / 100);
+};
+
 export const formatDate = (dateString: string | Date | undefined | null) => {
     if (!dateString) return '';
     const date = new Date(dateString);

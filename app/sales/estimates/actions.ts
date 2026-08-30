@@ -100,18 +100,125 @@ export async function sendEstimateEmail(
     }
 }
 
+async function ensureCustomProductsExist(tx: any, items: any[], context: 'PURCHASE' | 'SALES') {
+    if (!items || items.length === 0) return;
+
+    for (const item of items) {
+        const customName = (item.customName || item.productName || '').trim();
+        const isExternalOrCustom = (!item.productId || item.productId === 'EXTERNAL') && customName.length > 0;
+
+        if (isExternalOrCustom) {
+            let product = await tx.product.findFirst({
+                where: { name: customName }
+            });
+
+            if (product) {
+                item.productId = product.id;
+                if (!item.unit && product.unit) item.unit = product.unit;
+
+                if (context === 'SALES' && product.salePrice === 0 && item.unitPrice > 0) {
+                    await tx.product.update({
+                        where: { id: product.id },
+                        data: { salePrice: item.unitPrice }
+                    });
+                } else if (context === 'PURCHASE' && product.importPrice === 0 && item.unitPrice > 0) {
+                    await tx.product.update({
+                        where: { id: product.id },
+                        data: { importPrice: item.unitPrice }
+                    });
+                }
+            } else {
+                const count = await tx.product.count();
+                let sku = `SP-${(count + 1).toString().padStart(6, '0')}`;
+                let duplicateSku = await tx.product.findUnique({ where: { sku } });
+                let step = 1;
+                while (duplicateSku) {
+                    sku = `SP-${(count + 1 + step).toString().padStart(6, '0')}`;
+                    duplicateSku = await tx.product.findUnique({ where: { sku } });
+                    step++;
+                }
+
+                const salePrice = context === 'SALES' ? (item.unitPrice || 0) : 0;
+                const importPrice = context === 'PURCHASE' ? (item.unitPrice || 0) : 0;
+                const unit = (item.unit && item.unit.trim()) ? item.unit.trim() : 'Cái';
+
+                const newProduct = await tx.product.create({
+                    data: {
+                        sku,
+                        name: customName,
+                        type: 'PRODUCT',
+                        unit,
+                        taxRate: item.taxRate !== undefined ? item.taxRate : 0,
+                        salePrice,
+                        importPrice,
+                        description: item.description || null,
+                        isActive: true
+                    }
+                });
+
+                const defaultWarehouse = await tx.warehouse.findFirst({ where: { isDefault: true } })
+                    || await tx.warehouse.findFirst();
+                if (defaultWarehouse) {
+                    const existingInv = await tx.inventory.findUnique({
+                        where: {
+                            productId_warehouseId: {
+                                productId: newProduct.id,
+                                warehouseId: defaultWarehouse.id
+                            }
+                        }
+                    });
+                    if (!existingInv) {
+                        await tx.inventory.create({
+                            data: {
+                                productId: newProduct.id,
+                                warehouseId: defaultWarehouse.id,
+                                quantity: 0
+                            }
+                        });
+                    }
+                }
+
+                item.productId = newProduct.id;
+            }
+        }
+    }
+}
+
 export async function submitSalesEstimate(creatorId: string, formData: any) {
     try {
         const user = await verifyActionPermission('SALES_ESTIMATES_CREATE');
         const actualCreatorId = user ? (user as any).id : creatorId;
 
-        if (!formData.code || !formData.customerId || !formData.items || formData.items.length === 0) {
+        if (!formData.customerId || !formData.items || formData.items.length === 0) {
             return { success: false, error: "Thiếu thông tin bắt buộc." };
+        }
+
+        // Tự động tạo sản phẩm vào kho/danh mục nếu là nhập tự do
+        await ensureCustomProductsExist(prisma, formData.items, 'SALES');
+
+        let finalCode = (formData.code || '').trim();
+        if (!finalCode) {
+            finalCode = await getNextEstimateCode();
+        } else {
+            const existing = await prisma.salesEstimate.findUnique({ where: { code: finalCode } });
+            if (existing) {
+                finalCode = await getNextEstimateCode();
+            }
+        }
+
+        // Safety guarantee against unique constraint collisions
+        let checkExist = await prisma.salesEstimate.findUnique({ where: { code: finalCode } });
+        let step = 1;
+        const originalBaseCode = finalCode;
+        while (checkExist) {
+            finalCode = `${originalBaseCode}-${step}`;
+            checkExist = await prisma.salesEstimate.findUnique({ where: { code: finalCode } });
+            step++;
         }
 
         const estimate = await prisma.salesEstimate.create({
             data: {
-                code: formData.code,
+                code: finalCode,
                 date: new Date(formData.date),
                 validUntil: formData.validUntil ? new Date(formData.validUntil) : null,
                 status: formData.status || "DRAFT",
@@ -177,6 +284,9 @@ export async function updateSalesEstimate(id: string, formData: any) {
         if (!formData.code || !formData.customerId || !formData.items || formData.items.length === 0) {
             return { success: false, error: "Thiếu thông tin bắt buộc." };
         }
+
+        // Tự động tạo sản phẩm vào kho/danh mục nếu là nhập tự do
+        await ensureCustomProductsExist(prisma, formData.items, 'SALES');
 
         const oldEstimate = await prisma.salesEstimate.findUnique({
             where: { id },
@@ -252,8 +362,10 @@ export async function updateSalesEstimate(id: string, formData: any) {
                 if (oldItem.unitPrice !== newItem.unitPrice) {
                     itemChanges.push(`đơn giá (${oldItem.unitPrice.toLocaleString('vi-VN')} ➔ ${newItem.unitPrice.toLocaleString('vi-VN')})`);
                 }
-                if (oldItem.taxRate !== (newItem.taxRate || 0)) {
-                    itemChanges.push(`thuế (${oldItem.taxRate}% ➔ ${newItem.taxRate || 0}%)`);
+                if ((oldItem.taxRate ?? 0) !== (newItem.taxRate ?? 0)) {
+                    const oldT = oldItem.taxRate === -1 ? 'KCT' : `${oldItem.taxRate ?? 0}%`;
+                    const newT = newItem.taxRate === -1 ? 'KCT' : `${newItem.taxRate ?? 0}%`;
+                    itemChanges.push(`thuế (${oldT} ➔ ${newT})`);
                 }
                 if (itemChanges.length > 0) {
                     changes.push(`Cập nhật **${itemName}**: ${itemChanges.join(', ')}`);
@@ -473,16 +585,12 @@ export async function getNextEstimateCode() {
     const startSeq = parseInt(startSeqSetting?.value || '1', 10) || 1;
 
     const estimates = await prisma.salesEstimate.findMany({ select: { code: true } });
+    const existingCodes = new Set(estimates.map(e => e.code?.trim().toUpperCase()));
 
     // Generate regex to match codes of this format and extract {SEQ}
     const escapedPrefix = format.split('{SEQ}')[0]?.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') || '';
     const escapedSuffix = format.split('{SEQ}')[1]?.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') || '';
 
-    // Replace {MM} and {YYYY} in regex with actual current month/year to only match current month/year codes?
-    // Actually, usually sequence should just increment regardless of month/year unless sequence resets every month.
-    // Let's just extract the number where {SEQ} is located.
-    // Regex: ^PREFIX(\d+)SUFFIX$
-    // But prefix might contain {MM} and {YYYY}. Let's substitute them first for the CURRENT date to find max sequence of current date.
     const now = new Date();
     const mm = String(now.getMonth() + 1).padStart(2, '0');
     const yyyy = String(now.getFullYear());
@@ -494,10 +602,11 @@ export async function getNextEstimateCode() {
     const safePrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const safeSuffix = suffix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-    const regex = new RegExp(`^${safePrefix}(\\d+)${safeSuffix}$`);
+    const regex = new RegExp(`^${safePrefix}(\\d+)${safeSuffix}$`, 'i');
 
     let maxNum = 0;
     for (const est of estimates) {
+        if (!est.code) continue;
         const m = est.code.match(regex);
         if (m && m[1]) {
             const n = parseInt(m[1], 10);
@@ -505,11 +614,25 @@ export async function getNextEstimateCode() {
                 maxNum = n;
             }
         }
+        // Also check any trailing digits in case old codes used another prefix
+        const trailing = est.code.match(/(\d+)$/);
+        if (trailing && trailing[1]) {
+            const tn = parseInt(trailing[1], 10);
+            if (!isNaN(tn) && tn > maxNum) {
+                maxNum = tn;
+            }
+        }
     }
 
-    const nextNumber = Math.max(maxNum + 1, startSeq);
-    const nextSeq = String(nextNumber).padStart(4, '0');
-    return prefix + nextSeq + suffix;
+    let nextNumber = Math.max(maxNum + 1, startSeq);
+    let candidate = prefix + String(nextNumber).padStart(4, '0') + suffix;
+
+    while (existingCodes.has(candidate.trim().toUpperCase())) {
+        nextNumber++;
+        candidate = prefix + String(nextNumber).padStart(4, '0') + suffix;
+    }
+
+    return candidate;
 }
 
 export async function convertEstimateToInvoice(estimateId: string) {

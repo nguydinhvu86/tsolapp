@@ -6,6 +6,7 @@ import { ArrowLeft, ExternalLink, Copy, CheckCircle2, User, FileText, ShoppingCa
 import Link from 'next/link';
 import { approveSalesInvoice, updateSalesInvoiceStatus, cancelSalesInvoice, restoreSalesInvoice, paySalesInvoice } from '../actions';
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
+import { TaxBadge } from '@/app/components/ui/TaxRateSelect';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import { Modal } from '@/app/components/ui/Modal';
 import { Input } from '@/app/components/ui/Input';
@@ -515,7 +516,9 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                                                         {item.quantity} <span style={{ fontSize: '0.75rem', color: '#64748b', marginLeft: '0.25rem' }}>{item.unit || item.product?.unit || ''}</span>
                                                     </td>
                                                     <td style={{ padding: '1rem 0.5rem', textAlign: 'right', color: '#334155' }}>{formatMoney(item.unitPrice)}</td>
-                                                    <td style={{ padding: '1rem 0.5rem', textAlign: 'center', color: '#334155' }}>{item.taxRate}%</td>
+                                                    <td style={{ padding: '1rem 0.5rem', textAlign: 'center' }}>
+                                                        <TaxBadge rate={item.taxRate} />
+                                                    </td>
                                                     <td style={{ padding: '1rem 0.5rem', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>{formatMoney(item.totalPrice)}</td>
                                                 </tr>
                                             ))}
@@ -530,7 +533,7 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                                                 <span style={{ fontWeight: 500, color: '#0f172a' }}>{formatMoney(invoice.subTotal)}</span>
                                             </div>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', fontSize: '0.875rem', color: '#475569' }}>
-                                                <span>Thuế GTGT ({invoice.items?.[0]?.taxRate || 0}%):</span>
+                                                <span>Tổng thuế GTGT:</span>
                                                 <span style={{ fontWeight: 500, color: '#0f172a' }}>{formatMoney(invoice.taxAmount)}</span>
                                             </div>
                                             <div style={{ height: '1px', backgroundColor: '#cbd5e1', margin: '1rem 0' }}></div>

@@ -11,7 +11,8 @@ import { Modal } from '@/app/components/ui/Modal';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { Plus, Edit2, Trash2, Save, X, Printer, Search, Calendar, PackageCheck, Eye, Download, LinkIcon, CheckCircle2, FileSearch, LayoutList, FileText, ChevronUp, ChevronDown, Undo2, XCircle, AlertTriangle, Info, ShieldAlert, Copy, Clock } from 'lucide-react';
 import { submitSalesInvoice, approveSalesInvoice, deleteSalesInvoice, updateSalesInvoice, cancelSalesInvoice, updateSalesInvoiceStatus, restoreSalesInvoice, updateSalesInvoiceTags } from './actions';
-import { formatMoney, formatDate } from '@/lib/utils/formatters';
+import { formatMoney, formatDate, formatTaxRate, calcPreTaxPrice, calcTaxAmount } from '@/lib/utils/formatters';
+import { TaxRateSelect, TaxBadge } from '@/app/components/ui/TaxRateSelect';
 import { TagDisplay } from '@/app/components/ui/TagDisplay';
 import { useTranslation } from '@/app/i18n/LanguageContext';
 import { AvatarImage } from '@/app/components/ui/AvatarImage';
@@ -88,6 +89,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
     const [customDescription, setCustomDescription] = useState('');
     const [useInventoryDescription, setUseInventoryDescription] = useState(true);
     const [isSubItem, setIsSubItem] = useState(false);
+    const [isPriceInclusiveVat, setIsPriceInclusiveVat] = useState(false);
 
     const handleOpenCreate = () => {
         setFormData({
@@ -114,6 +116,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         setCustomUnit('Cái');
         setCustomTaxRate(0);
         setIsSubItem(false);
+        setIsPriceInclusiveVat(false);
         setIsFormOpen(true);
     };
 
@@ -262,6 +265,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         const prod = products.find((p: any) => p.id === pid);
         setSelectedProduct(pid);
         setPrice(prod ? prod.salePrice : 0);
+        setCustomTaxRate(prod ? (prod.taxRate !== undefined ? prod.taxRate : 0) : 0);
         if (useInventoryDescription) {
             setCustomDescription(prod?.description || '');
         }
@@ -276,7 +280,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
     };
 
     const handleAddItem = () => {
-        let taxRate = 0;
+        let taxRate = customTaxRate !== undefined ? customTaxRate : 0;
         let pId = null;
         let pName = '';
         let pUnit = '';
@@ -289,7 +293,6 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
             }
             pName = customName;
             pUnit = customUnit;
-            taxRate = customTaxRate;
         } else {
             if (!selectedProduct) return;
             const prod = products.find((p: any) => p.id === selectedProduct);
@@ -297,12 +300,12 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
             pId = prod.id;
             pName = prod.name;
             pUnit = prod.unit;
-            taxRate = prod.taxRate || 0;
         }
 
-        const baseTotal = qty * price;
-        const taxItemAmount = baseTotal * taxRate / 100;
-        const total = baseTotal + taxItemAmount;
+        const effectiveUnitPrice = isPriceInclusiveVat ? calcPreTaxPrice(price, taxRate) : price;
+        const baseTotal = qty * effectiveUnitPrice;
+        const taxItemAmount = calcTaxAmount(baseTotal, taxRate);
+        const total = isPriceInclusiveVat ? (qty * price) : (baseTotal + taxItemAmount);
 
         setFormData((prev: any) => {
             const newItems = [...prev.items, {
@@ -312,7 +315,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                 description: pDesc,
                 unit: pUnit,
                 quantity: qty,
-                unitPrice: price,
+                unitPrice: effectiveUnitPrice,
                 taxRate,
                 taxAmount: taxItemAmount,
                 totalPrice: total,
@@ -320,14 +323,14 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
             }];
 
             const calcSubTotal = newItems.reduce((acc: number, curr: any) => acc + (curr.quantity * curr.unitPrice), 0);
-            const calcTaxAmount = newItems.reduce((acc: number, curr: any) => acc + curr.taxAmount, 0);
+            const calcTaxAmountSum = newItems.reduce((acc: number, curr: any) => acc + curr.taxAmount, 0);
             const calcTotalAmount = newItems.reduce((acc: number, curr: any) => acc + curr.totalPrice, 0);
 
             return {
                 ...prev,
                 items: newItems,
                 subTotal: calcSubTotal,
-                taxAmount: calcTaxAmount,
+                taxAmount: calcTaxAmountSum,
                 totalAmount: calcTotalAmount
             };
         });
@@ -339,6 +342,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         setQty(1);
         setPrice(0);
         setIsSubItem(false);
+        setIsPriceInclusiveVat(false);
     };
 
     const handleRemoveItem = (index: number) => {
@@ -943,8 +947,19 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                     ✨ Tự động lưu vào kho cho các lần sau
                                 </span>
                             )}
+                            <div className="ml-auto">
+                                <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-indigo-900 bg-indigo-50/80 border border-indigo-200 px-3 py-1.5 rounded-lg select-none hover:bg-indigo-100/80 transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        checked={isPriceInclusiveVat}
+                                        onChange={(e) => setIsPriceInclusiveVat(e.target.checked)}
+                                        className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 accent-indigo-600 cursor-pointer"
+                                    />
+                                    <span>Đã có thuế VAT (Nhập giá sau thuế)</span>
+                                </label>
+                            </div>
                         </div>
-                        <div className="flex flex-col md:flex-row gap-3 md:items-end mb-4">
+                        <div className="flex flex-col md:flex-row gap-3 md:items-end mb-2">
                             <div className="flex-1 w-full min-w-[150px]">
                                 <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('invoices.productName')}</label>
                                 {!isCustomProduct ? (
@@ -964,17 +979,18 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                     <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white text-center" placeholder={t('invoices.unitPlaceholder')} value={customUnit} onChange={e => setCustomUnit(e.target.value)} />
                                 </div>
                             )}
-                            <div className="w-full md:w-36 shrink-0">
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('invoices.unitPrice')}</label>
-                                <input type="number" step="any" min="0" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" value={price} onChange={e => setPrice(parseFloat(e.target.value) || 0)} />
+                            <div className="w-full md:w-40 shrink-0">
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                    {isPriceInclusiveVat ? 'Đơn giá (gồm VAT)' : t('invoices.unitPrice')}
+                                </label>
+                                <input type="number" step="any" min="0" className={`w-full border rounded-lg p-2.5 outline-none transition-all text-gray-900 bg-white ${isPriceInclusiveVat ? 'border-emerald-400 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 bg-emerald-50/20 font-semibold text-emerald-800' : 'border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'}`} value={price} onChange={e => setPrice(parseFloat(e.target.value) || 0)} />
                             </div>
-                            <div className="w-full md:w-20 shrink-0">
+                            <div className="w-full md:w-28 shrink-0">
                                 <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('invoices.taxRateLabel')}</label>
-                                {isCustomProduct ? (
-                                    <input type="number" step="any" min="0" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-center text-gray-900 bg-white" value={customTaxRate} onChange={e => setCustomTaxRate(parseFloat(e.target.value) || 0)} />
-                                ) : (
-                                    <input type="text" className="w-full border border-gray-200 rounded-lg p-2.5 bg-slate-50 text-center text-gray-500 font-medium cursor-not-allowed" value={`${products.find((p: any) => p.id === selectedProduct)?.taxRate || 0}`} disabled />
-                                )}
+                                <TaxRateSelect
+                                    value={customTaxRate}
+                                    onChange={(val) => setCustomTaxRate(val)}
+                                />
                             </div>
                             <div className="w-full md:w-20 shrink-0">
                                 <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('invoices.quantityLabel')}</label>
@@ -988,6 +1004,18 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                             </div>
                             <Button onClick={handleAddItem} variant="secondary" className="w-full md:w-auto shrink-0 md:mb-[2px] h-[46px] px-4 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 shadow-sm font-semibold rounded-lg">{t('invoices.addButton')}</Button>
                         </div>
+
+                        {/* Calculation preview when isPriceInclusiveVat is ON */}
+                        {isPriceInclusiveVat && price > 0 && (
+                            <div className="mb-4 p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg text-xs flex flex-wrap items-center gap-x-5 gap-y-1.5 text-emerald-900 shadow-sm animate-fadeIn">
+                                <div>💡 <strong>Giá đã gồm VAT:</strong> {formatMoney(price)}</div>
+                                <div>➔ <strong>Đơn giá trước thuế:</strong> <span className="font-bold text-blue-700">{formatMoney(calcPreTaxPrice(price, customTaxRate))}</span></div>
+                                <div>➔ <strong>Thuế suất:</strong> <TaxBadge rate={customTaxRate} /></div>
+                                <div>➔ <strong>Tiền thuế/SP:</strong> <span className="font-semibold text-amber-700">{formatMoney(price - calcPreTaxPrice(price, customTaxRate))}</span></div>
+                                <div>➔ <strong>Thành tiền ({qty} {isCustomProduct ? customUnit : (products.find((p: any) => p.id === selectedProduct)?.unit || 'Cái')}):</strong> <span className="font-bold text-emerald-700">{formatMoney(price * qty)}</span></div>
+                            </div>
+                        )}
+
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('invoices.techDetailsDesc')} <span className="text-gray-400 font-normal">{t('invoices.techDetailsDescSub')}</span></label>
                             <div className="flex items-center gap-4 mb-2">
@@ -1012,7 +1040,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                         <th className="p-3 font-medium">{t('invoices.colProduct')}</th>
                                         <th className="p-3 font-medium text-center w-20">{t('invoices.colQty')}</th>
                                         <th className="p-3 font-medium text-right w-32">{t('invoices.colPrice')}</th>
-                                        <th className="p-3 font-medium text-center w-20">{t('invoices.colTax')}</th>
+                                        <th className="p-3 font-medium text-center w-24">{t('invoices.colTax')}</th>
                                         <th className="p-3 font-medium text-right w-36">{t('invoices.colAmountRow')}</th>
                                         <th className="p-3 font-medium text-center w-12"></th>
                                     </tr>
@@ -1031,7 +1059,9 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                                 {item.quantity} <span className="text-xs text-gray-500 ml-1">{item.unit}</span>
                                             </td>
                                             <td className="p-3 text-right text-gray-600 font-medium">{formatMoney(item.unitPrice)}</td>
-                                            <td className="p-3 text-center text-gray-500 bg-gray-50 border-x border-white">{item.taxRate}%</td>
+                                            <td className="p-3 text-center bg-gray-50 border-x border-white">
+                                                <TaxBadge rate={item.taxRate} />
+                                            </td>
                                             <td className="p-2 border text-right font-medium">{formatMoney(item.totalPrice)}</td>
                                             <td className="p-2 border text-center">
                                                 <div className="flex items-center justify-center gap-2">

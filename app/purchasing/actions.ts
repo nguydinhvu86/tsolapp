@@ -6,6 +6,7 @@ import { authOptions } from '@/lib/authOptions';
 import { revalidatePath } from 'next/cache';
 import { sendEmailWithTracking } from '@/lib/mailer';
 import { buildViewFilter, verifyActionPermission, verifyActionOwnership } from '@/lib/permissions';
+import { calcTaxAmount } from '@/lib/utils/formatters';
 
 async function getUser() {
     const session = await getServerSession(authOptions);
@@ -246,10 +247,18 @@ export async function getPurchaseOrder(id: string) {
 export async function createPurchaseOrder(data: any) {
     const user = await verifyActionPermission('PURCHASE_ORDERS_CREATE');
 
-    let code = data.code;
+    let code = (data.code || '').trim();
     if (!code) {
         const count = await prisma.purchaseOrder.count();
         code = `PO-${(count + 1).toString().padStart(6, '0')}`;
+    }
+    let dupOrder = await prisma.purchaseOrder.findUnique({ where: { code } });
+    let poStep = 1;
+    const basePoCode = code;
+    while (dupOrder) {
+        code = `${basePoCode}-${poStep}`;
+        dupOrder = await prisma.purchaseOrder.findUnique({ where: { code } });
+        poStep++;
     }
 
     const order = await prisma.purchaseOrder.create({
@@ -266,7 +275,7 @@ export async function createPurchaseOrder(data: any) {
             items: {
                 create: data.items.map((item: any) => {
                     const lineSubTotal = item.quantity * item.unitPrice;
-                    const lineTaxAmount = lineSubTotal * (item.taxRate || 0) / 100;
+                    const lineTaxAmount = calcTaxAmount(lineSubTotal, item.taxRate);
                     const isExternal = item.productId === 'EXTERNAL';
                     return {
                         productId: isExternal ? null : item.productId,
@@ -275,7 +284,7 @@ export async function createPurchaseOrder(data: any) {
                         description: item.description || null,
                         quantity: item.quantity,
                         unitPrice: item.unitPrice,
-                        taxRate: item.taxRate || 0,
+                        taxRate: item.taxRate !== undefined ? item.taxRate : 0,
                         taxAmount: lineTaxAmount,
                         totalPrice: lineSubTotal + lineTaxAmount
                     };
@@ -308,7 +317,7 @@ export async function updatePurchaseOrder(id: string, data: any) {
                 deleteMany: {},
                 create: data.items.map((item: any) => {
                     const lineSubTotal = item.quantity * item.unitPrice;
-                    const lineTaxAmount = lineSubTotal * (item.taxRate || 0) / 100;
+                    const lineTaxAmount = calcTaxAmount(lineSubTotal, item.taxRate);
                     const isExternal = item.productId === 'EXTERNAL' || !item.productId;
                     return {
                         productId: isExternal ? null : item.productId,
@@ -317,7 +326,7 @@ export async function updatePurchaseOrder(id: string, data: any) {
                         description: item.description || null,
                         quantity: item.quantity,
                         unitPrice: item.unitPrice,
-                        taxRate: item.taxRate || 0,
+                        taxRate: item.taxRate !== undefined ? item.taxRate : 0,
                         taxAmount: lineTaxAmount,
                         totalPrice: lineSubTotal + lineTaxAmount
                     };
@@ -464,8 +473,10 @@ function computePurchaseBillDiff(oldBill: any, newFormData: any, oldItems: any[]
             if (oldItem.unitPrice !== newItem.unitPrice) {
                 itemDiffs.push(`Đơn giá: ${oldItem.unitPrice.toLocaleString('vi-VN')} đ ➔ **${newItem.unitPrice.toLocaleString('vi-VN')} đ**`);
             }
-            if ((oldItem.taxRate || 0) !== (newItem.taxRate || 0)) {
-                itemDiffs.push(`Thuế: ${oldItem.taxRate || 0}% ➔ **${newItem.taxRate || 0}%**`);
+            if ((oldItem.taxRate ?? 0) !== (newItem.taxRate ?? 0)) {
+                const oldT = oldItem.taxRate === -1 ? 'KCT' : `${oldItem.taxRate ?? 0}%`;
+                const newT = newItem.taxRate === -1 ? 'KCT' : `${newItem.taxRate ?? 0}%`;
+                itemDiffs.push(`Thuế: ${oldT} ➔ **${newT}**`);
             }
             if (itemDiffs.length > 0) {
                 changes.push(`✏️ Điều chỉnh **${name}**: ${itemDiffs.join(', ')}`);
@@ -528,7 +539,7 @@ async function ensureCustomProductsExist(tx: any, items: any[], context: 'PURCHA
                         name: customName,
                         type: 'PRODUCT',
                         unit,
-                        taxRate: item.taxRate || 0,
+                        taxRate: item.taxRate !== undefined ? item.taxRate : 0,
                         salePrice,
                         importPrice,
                         description: item.description || null,
@@ -571,10 +582,18 @@ export async function createPurchaseBill(data: any) {
     // Tự động tạo sản phẩm vào kho/danh mục nếu là nhập tự do
     await ensureCustomProductsExist(prisma, data.items, 'PURCHASE');
 
-    let code = data.code;
+    let code = (data.code || '').trim();
     if (!code) {
         const count = await prisma.purchaseBill.count();
         code = `PB-${(count + 1).toString().padStart(6, '0')}`;
+    }
+    let dupBill = await prisma.purchaseBill.findUnique({ where: { code } });
+    let pbStep = 1;
+    const basePbCode = code;
+    while (dupBill) {
+        code = `${basePbCode}-${pbStep}`;
+        dupBill = await prisma.purchaseBill.findUnique({ where: { code } });
+        pbStep++;
     }
 
     const bill = await prisma.purchaseBill.create({
@@ -597,7 +616,7 @@ export async function createPurchaseBill(data: any) {
             items: {
                 create: data.items.map((item: any) => {
                     const lineSubTotal = item.quantity * item.unitPrice;
-                    const lineTaxAmount = lineSubTotal * (item.taxRate || 0) / 100;
+                    const lineTaxAmount = calcTaxAmount(lineSubTotal, item.taxRate);
                     const isExternal = item.productId === 'EXTERNAL' || !item.productId;
                     return {
                         productId: isExternal ? null : item.productId,
@@ -606,7 +625,7 @@ export async function createPurchaseBill(data: any) {
                         description: item.description || null,
                         quantity: item.quantity,
                         unitPrice: item.unitPrice,
-                        taxRate: item.taxRate || 0,
+                        taxRate: item.taxRate !== undefined ? item.taxRate : 0,
                         taxAmount: lineTaxAmount,
                         totalPrice: lineSubTotal + lineTaxAmount
                     };
@@ -752,7 +771,7 @@ export async function updatePurchaseBill(id: string, data: any) {
     // Format new items
     const formattedNewItems = data.items.map((item: any) => {
         const lineSubTotal = item.quantity * item.unitPrice;
-        const lineTaxAmount = lineSubTotal * (item.taxRate || 0) / 100;
+        const lineTaxAmount = calcTaxAmount(lineSubTotal, item.taxRate);
         const isExternal = item.productId === 'EXTERNAL' || !item.productId;
         return {
             productId: isExternal ? null : item.productId,
@@ -761,7 +780,7 @@ export async function updatePurchaseBill(id: string, data: any) {
             description: item.description || null,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
-            taxRate: item.taxRate || 0,
+            taxRate: item.taxRate !== undefined ? item.taxRate : 0,
             taxAmount: lineTaxAmount,
             totalPrice: lineSubTotal + lineTaxAmount
         };
