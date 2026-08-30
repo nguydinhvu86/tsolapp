@@ -4,20 +4,30 @@ const conn = new Client();
 const BRANCH = 'main'; // Target branch
 const APP_PATH = '/www/wwwroot/inside.tsol.vn/tsolapp';
 
-conn.on('ready', () => {
-    console.log(`Connected to Production Server. Fetching origin/${BRANCH} and rebuilding...`);
+const password = 'P@ssw0rdVu';
 
-    const cmd = `cd ${APP_PATH} && ` +
-        `chattr -i .user.ini 2>/dev/null || true && ` +
-        `git fetch --all && ` +
-        `git reset --hard origin/${BRANCH} && ` +
-        `chattr +i .user.ini 2>/dev/null || true && ` +
-        `export PATH=/www/server/nvm/versions/node/v24.14.0/bin:$PATH && ` +
-        `npm install && ` +
-        `npx prisma generate && ` +
-        `npx prisma migrate deploy && ` +
-        `npm run build && ` +
-        `/www/server/nodejs/v14.17.6/bin/pm2 restart inside.tsol.vn`;
+conn.on('ready', () => {
+    console.log(`Connected to Production Server. Setting permissions, fetching origin/${BRANCH} and rebuilding...`);
+
+    const bashScript = `
+set -e
+cd ${APP_PATH}
+chattr -i .user.ini 2>/dev/null || true
+chown -R incall:incall ${APP_PATH}
+git fetch origin ${BRANCH}
+git reset --hard origin/${BRANCH}
+chattr +i .user.ini 2>/dev/null || true
+export PATH=/www/server/nvm/versions/node/v24.14.0/bin:$PATH
+npm install
+npx prisma generate
+node scripts/safe-apply-db.js
+npm run build
+chown -R www:www ${APP_PATH}/uploads_data 2>/dev/null || true
+/www/server/nvm/versions/node/v24.14.0/bin/pm2 restart contract-app
+echo "=== DEPLOYMENT COMPLETED SUCCESSFULLY ==="
+`;
+
+    const cmd = `echo '${password}' | sudo -S bash -c '${bashScript.replace(/'/g, `'\\''`)}'`;
 
     conn.exec(cmd, (err, stream) => {
         if (err) throw err;
@@ -33,5 +43,5 @@ conn.on('ready', () => {
     host: '124.158.9.5',
     port: 22,
     username: 'incall',
-    password: 'P@ssw0rdVu'
+    password: password
 });

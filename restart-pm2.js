@@ -5,7 +5,7 @@ const password = 'P@ssw0rdVu';
 
 conn.on('ready', () => {
     // We execute bash -lc to get the interactive environment where pm2 is known
-    const cmd = `bash -lc "pm2 restart next-app"`;
+    const cmd = `/www/server/nvm/versions/node/v24.14.0/bin/pm2 restart contract-app && /www/server/nvm/versions/node/v24.14.0/bin/pm2 list`;
 
     conn.exec(cmd, (err, stream) => {
         if (err) throw err;
