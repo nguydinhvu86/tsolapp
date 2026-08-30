@@ -23,7 +23,7 @@ npx prisma generate
 node scripts/safe-apply-db.js
 npm run build
 chown -R www:www ${APP_PATH}/uploads_data 2>/dev/null || true
-sudo -u incall /www/server/nvm/versions/node/v24.14.0/bin/pm2 restart contract-app
+sudo -u incall /www/server/nvm/versions/node/v24.14.0/bin/pm2 reload all || sudo -u incall /www/server/nvm/versions/node/v24.14.0/bin/pm2 restart all
 echo "=== DEPLOYMENT COMPLETED SUCCESSFULLY ==="
 `;
 
