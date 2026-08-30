@@ -157,23 +157,37 @@ export async function fetchUnreadInvoices() {
             if (!existing) {
                 // Save XML and PDF to persistent storage
                 const invoicesDir = path.join(process.cwd(), 'uploads_data', 'invoices');
-                if (!fs.existsSync(invoicesDir)) {
-                    fs.mkdirSync(invoicesDir, { recursive: true });
+                try {
+                    if (!fs.existsSync(invoicesDir)) {
+                        fs.mkdirSync(invoicesDir, { recursive: true });
+                    }
+                } catch (dirErr) {
+                    console.error("Lỗi tạo thư mục invoicesDir:", dirErr);
                 }
 
                 const timestamp = Date.now();
+                const safeInvNumber = (invoiceData.invoiceNumber || 'HD').toString().replace(/[^a-zA-Z0-9_-]/g, '_');
+                
                 let xmlUrl = '';
-                if (xmlAttachment) {
-                    const xmlFilename = invoiceData.invoiceNumber + '_' + timestamp + '.xml';
-                    fs.writeFileSync(path.join(invoicesDir, xmlFilename), xmlAttachment.content);
-                    xmlUrl = '/api/files/invoices/' + xmlFilename;
+                if (xmlAttachment && xmlAttachment.content) {
+                    try {
+                        const xmlFilename = `${safeInvNumber}_${timestamp}.xml`;
+                        fs.writeFileSync(path.join(invoicesDir, xmlFilename), xmlAttachment.content);
+                        xmlUrl = '/api/files/invoices/' + xmlFilename;
+                    } catch (writeErr) {
+                        console.error("Không thể ghi file XML đính kèm:", writeErr);
+                    }
                 }
 
                 let pdfUrl = '';
-                if (pdfAttachment) {
-                    const pdfFilename = invoiceData.invoiceNumber + '_' + timestamp + '.pdf';
-                    fs.writeFileSync(path.join(invoicesDir, pdfFilename), pdfAttachment.content);
-                    pdfUrl = '/api/files/invoices/' + pdfFilename;
+                if (pdfAttachment && pdfAttachment.content) {
+                    try {
+                        const pdfFilename = `${safeInvNumber}_${timestamp}.pdf`;
+                        fs.writeFileSync(path.join(invoicesDir, pdfFilename), pdfAttachment.content);
+                        pdfUrl = '/api/files/invoices/' + pdfFilename;
+                    } catch (writeErr) {
+                        console.error("Không thể ghi file PDF đính kèm:", writeErr);
+                    }
                 }
 
                 // Fetch the active PO for price checking

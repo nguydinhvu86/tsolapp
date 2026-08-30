@@ -144,8 +144,12 @@ export default function InvoiceDashboardClient({ initialInvoices }: { initialInv
          setIsProcessing(true);
          try {
              const res = await triggerManualScan();
-             alert(`Quá trình quét hoàn tất. Đã tải về ${res.count} hóa đơn điện tử mới.`);
-             router.refresh();
+             if (res.success) {
+                 alert(`Quá trình quét hoàn tất! Đã tải về ${res.count || 0} hóa đơn điện tử mới.`);
+                 router.refresh();
+             } else {
+                 alert(res.error || "Không thể quét hóa đơn. Vui lòng kiểm tra lại cấu hình IMAP.");
+             }
          } catch (e: any) {
              alert(e.message || "Lỗi. Vui lòng kiểm tra lại cấu hình IMAP.");
          } finally {

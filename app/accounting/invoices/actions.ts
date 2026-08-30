@@ -174,17 +174,22 @@ export async function importInventoryFromInvoice(invoiceId: string, actionType: 
 }
 
 export async function triggerManualScan() {
-    await verifyActionPermission('ACCOUNTING_CREATE');
+    try {
+        await verifyActionPermission('ACCOUNTING_CREATE');
 
-    // We can't import this at the top to avoid circular deps if any, but it's safe to import dynamically
-    const { fetchUnreadInvoices } = await import('@/lib/email-scanner');
-    const result = await fetchUnreadInvoices();
+        // We can't import this at the top to avoid circular deps if any, but it's safe to import dynamically
+        const { fetchUnreadInvoices } = await import('@/lib/email-scanner');
+        const result = await fetchUnreadInvoices();
 
-    if (result.success) {
-        revalidatePath('/accounting/invoices');
-        return { success: true, count: result.processedCount };
-    } else {
-        throw new Error(result.error || "Có lỗi khi lấy hóa đơn");
+        if (result.success) {
+            revalidatePath('/accounting/invoices');
+            return { success: true, count: result.processedCount || 0 };
+        } else {
+            return { success: false, error: result.error || "Có lỗi khi lấy hóa đơn từ email." };
+        }
+    } catch (e: any) {
+        console.error("Lỗi triggerManualScan:", e);
+        return { success: false, error: e.message || "Lỗi xử lý hệ thống khi quét hóa đơn." };
     }
 }
 

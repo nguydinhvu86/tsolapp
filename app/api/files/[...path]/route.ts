@@ -30,6 +30,7 @@ export async function GET(req: NextRequest, { params }: { params: { path: string
             case '.webp': mimeType = 'image/webp'; break;
             case '.svg': mimeType = 'image/svg+xml'; break;
             case '.pdf': mimeType = 'application/pdf'; break;
+            case '.xml': mimeType = 'application/xml; charset=utf-8'; break;
             case '.mp4': mimeType = 'video/mp4'; break;
             case '.webm': mimeType = 'video/webm'; break;
         }
