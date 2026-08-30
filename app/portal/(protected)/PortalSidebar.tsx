@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, FileText, ShoppingCart, Receipt, CreditCard, Folder, LogOut, FileSignature, Menu, X, Building2 } from 'lucide-react';
+import { LayoutDashboard, FileText, ShoppingCart, Receipt, CreditCard, Folder, LogOut, FileSignature, Menu, X, Building2, History, FileSpreadsheet } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 
 interface SidebarProps {
@@ -17,12 +17,12 @@ export default function PortalSidebar({ customerName, avatar }: SidebarProps) {
 
     const navItems = [
         { name: 'Tổng quan', href: '/portal/dashboard', icon: LayoutDashboard },
-        { name: 'Lịch sử giao dịch', href: '/portal/orders', icon: LayoutDashboard }, 
+        { name: 'Lịch sử giao dịch', href: '/portal/orders', icon: History }, 
         { name: 'Báo giá', href: '/portal/quotes', icon: FileSignature },
         { name: 'Đơn hàng', href: '/portal/sales-orders', icon: ShoppingCart },
         { name: 'Hóa đơn', href: '/portal/invoices', icon: Receipt },
         { name: 'Thanh toán', href: '/portal/payments', icon: CreditCard },
-        { name: 'Sao kê công nợ', href: '/portal/statement', icon: FileSignature },
+        { name: 'Sao kê công nợ', href: '/portal/statement', icon: FileSpreadsheet },
         { name: 'Tài liệu', href: '/portal/documents', icon: Folder },
     ];
 

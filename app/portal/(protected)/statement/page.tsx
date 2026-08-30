@@ -7,6 +7,8 @@ import { FileSpreadsheet } from "lucide-react";
 import Link from "next/link";
 import PrintButtonClient from "./PrintButtonClient";
 
+import PortalExportPdfButton from "../components/PortalExportPdfButton";
+
 export const metadata = {
     title: "Sao kê công nợ - Customer Portal",
 };
@@ -140,9 +142,13 @@ export default async function PortalStatementPage({ searchParams }: { searchPara
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 print:hidden">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-800">Sao Kê Công Nợ</h1>
+                    <p className="text-sm text-slate-500 font-medium">Bảng theo dõi số dư công nợ phát sinh và thanh toán chi tiết.</p>
                 </div>
                 <div>
-                    <PrintButtonClient />
+                    <PortalExportPdfButton
+                        targetId="portal-statement-print-area"
+                        fileName={`Sao_ke_cong_no_${session.user.name || 'Khach_hang'}`}
+                    />
                 </div>
             </div>
 
@@ -191,8 +197,17 @@ export default async function PortalStatementPage({ searchParams }: { searchPara
                 </div>
             </div>
 
-            {/* Classic Summary Table (Print Only) */}
-            <table className="hidden print:table w-full border-collapse border border-slate-800 text-sm mb-8" style={{ fontSize: '11pt' }}>
+            {/* Exportable & Printable Report Area */}
+            <div id="portal-statement-print-area" className="space-y-6 bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm print:border-none print:shadow-none print:p-0">
+                {/* Print Only Header (Classic Sổ Phụ) */}
+                <div className="hidden print:block text-center mb-8">
+                    <h1 className="font-bold uppercase tracking-wide text-slate-900 mb-3" style={{ fontSize: '24pt', color: '#0f172a' }}>SAO KÊ CÔNG NỢ KHÁCH HÀNG</h1>
+                    <p className="font-bold text-slate-900 mb-1" style={{ fontSize: '14pt' }}>Tên khách hàng: {session.user.name?.toUpperCase()}</p>
+                    <p className="italic text-slate-600" style={{ fontSize: '11pt' }}>Từ {new Date(fromDate).toLocaleDateString('vi-VN')} đến {new Date(toDate).toLocaleDateString('vi-VN')}</p>
+                </div>
+
+                {/* Classic Summary Table (Print Only) */}
+                <table className="hidden print:table w-full border-collapse border border-slate-800 text-sm mb-8" style={{ fontSize: '11pt' }}>
                 <thead>
                     <tr className="bg-slate-50">
                         <th className="border border-slate-800 p-4 text-left uppercase font-bold w-1/4">Số dư đầu kỳ</th>
@@ -299,6 +314,7 @@ export default async function PortalStatementPage({ searchParams }: { searchPara
                     <h3 className="font-bold text-[12pt] uppercase mb-1">NGƯỜI LẬP SAO KÊ</h3>
                     <p className="italic text-[10pt] text-slate-800">(Ký và ghi rõ họ tên)</p>
                 </div>
+            </div>
             </div>
         </div>
     );
