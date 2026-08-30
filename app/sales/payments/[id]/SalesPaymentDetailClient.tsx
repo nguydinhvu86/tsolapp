@@ -690,9 +690,9 @@ export function SalesPaymentDetailClient({ payment, tasks, users, unpaidInvoices
                                                                     placeholder="0"
                                                                     min="0"
                                                                     max={debt}
-                                                                    step="1"
+                                                                    step="any"
                                                                     value={allocations[inv.id] || ''}
-                                                                    onChange={(e) => handleAllocationChange(inv.id, Number(e.target.value), debt)}
+                                                                    onChange={(e) => handleAllocationChange(inv.id, parseFloat(e.target.value) || 0, debt)}
                                                                 />
                                                                 <div className="flex gap-1 justify-end w-full max-w-[160px]">
                                                                     <button

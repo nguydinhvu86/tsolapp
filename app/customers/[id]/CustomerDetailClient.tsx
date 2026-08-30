@@ -1,5 +1,5 @@
 'use client'
-import { formatDate } from '@/lib/utils/formatters';
+import { formatDate, formatMoney } from '@/lib/utils/formatters';
 
 import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
@@ -249,7 +249,7 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                 <div className="mt-0.5 w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600 flex-shrink-0"><HandCoins size={16} /></div>
                                 <div className="min-w-0 flex-1">
                                     <p className="m-0 text-xs font-semibold text-red-600 uppercase">Tổng Dư Nợ Hóa Đơn</p>
-                                    <p className="m-0 text-[16px] font-bold text-red-600 break-words">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(computedDebt)}</p>
+                                    <p className="m-0 text-[16px] font-bold text-red-600 break-words">{formatMoney(computedDebt)}</p>
                                 </div>
                             </div>
                             <div className="flex items-start gap-3 lg:col-span-2">
@@ -607,7 +607,7 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                 variablesData={{
                     customerName: customer.name,
                     customerEmail: customer.email || '',
-                    totalDebt: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(computedDebt),
+                    totalDebt: formatMoney(computedDebt),
                 }}
                 onSend={async (emailData) => {
                     const res = await sendDebtConfirmationEmail(customer.id, emailData.to, emailData.subject, emailData.htmlBody);
@@ -776,7 +776,7 @@ export function SalesDocumentRow({ doc, type, getStatusColor }: { doc: any, type
             </td>
             <td style={{ fontWeight: 500, color: 'var(--text-main)' }}>
                 <Link href={`/${type}/${doc.id}`} className="hover:text-primary hover:underline block" style={{ color: 'inherit', textDecoration: 'none' }}>
-                    {doc.notes || 'Hồ sơ Bán Hàng'} - Trị giá: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(doc.totalAmount || doc.amount || 0)}
+                    {doc.notes || 'Hồ sơ Bán Hàng'} - Trị giá: {formatMoney(doc.totalAmount || doc.amount || 0)}
                 </Link>
                 {type !== 'sales/invoices' && doc.tags && (
                     <div style={{ marginTop: '0.375rem' }}>

@@ -138,7 +138,7 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
     }, [allocations]);
 
     const formatMoney = (amount: number) => {
-        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 6, minimumFractionDigits: 0 }).format(amount || 0);
     };
 
     const supplierFormOptions = useMemo(() => [
@@ -165,7 +165,7 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
     const handleAllocationChange = (billId: string, value: number, maxAllowed: number) => {
         let val = value;
         if (val < 0) val = 0;
-        if (val > maxAllowed) val = maxAllowed;
+        if (val > maxAllowed + 0.001) val = maxAllowed;
 
         setAllocations(prev => ({
             ...prev,
@@ -475,9 +475,9 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                                         <div className="sm:col-span-2 lg:col-span-2">
                                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('purchasePayments.paymentAmountReqLabel')}</label>
                                             <input
-                                                type="number" required min="1"
+                                                type="number" step="any" required min="0.000001"
                                                 value={formData.amount}
-                                                onChange={e => setFormData({ ...formData, amount: Number(e.target.value) })}
+                                                onChange={e => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
                                                 className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2.5 font-bold text-lg text-green-600 dark:text-green-400"
                                             />
                                             <p className="text-xs text-gray-500 mt-1">{t('purchasePayments.numberFormat')} {formatMoney(formData.amount)}</p>
@@ -564,10 +564,11 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                                                                         <div className="relative">
                                                                             <input
                                                                                 type="number"
+                                                                                step="any"
                                                                                 min="0"
                                                                                 max={debt}
                                                                                 value={allocations[bill.id] || ''}
-                                                                                onChange={(e) => handleAllocationChange(bill.id, Number(e.target.value), debt)}
+                                                                                onChange={(e) => handleAllocationChange(bill.id, parseFloat(e.target.value) || 0, debt)}
                                                                                 className="w-full rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 p-2 text-sm text-right focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-medium"
                                                                                 placeholder="0"
                                                                             />

@@ -966,19 +966,19 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                             )}
                             <div className="w-full md:w-36 shrink-0">
                                 <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('invoices.unitPrice')}</label>
-                                <input type="number" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" value={price} onChange={e => setPrice(Number(e.target.value))} />
+                                <input type="number" step="any" min="0" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" value={price} onChange={e => setPrice(parseFloat(e.target.value) || 0)} />
                             </div>
                             <div className="w-full md:w-20 shrink-0">
                                 <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('invoices.taxRateLabel')}</label>
                                 {isCustomProduct ? (
-                                    <input type="number" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-center text-gray-900 bg-white" value={customTaxRate} onChange={e => setCustomTaxRate(Number(e.target.value))} />
+                                    <input type="number" step="any" min="0" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-center text-gray-900 bg-white" value={customTaxRate} onChange={e => setCustomTaxRate(parseFloat(e.target.value) || 0)} />
                                 ) : (
                                     <input type="text" className="w-full border border-gray-200 rounded-lg p-2.5 bg-slate-50 text-center text-gray-500 font-medium cursor-not-allowed" value={`${products.find((p: any) => p.id === selectedProduct)?.taxRate || 0}`} disabled />
                                 )}
                             </div>
                             <div className="w-full md:w-20 shrink-0">
                                 <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('invoices.quantityLabel')}</label>
-                                <input type="number" min="1" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-center text-gray-900 bg-white" value={qty} onChange={e => setQty(Number(e.target.value))} />
+                                <input type="number" step="any" min="0.0001" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-center text-gray-900 bg-white" value={qty} onChange={e => setQty(parseFloat(e.target.value) || 0)} />
                             </div>
                             <div className="w-full md:w-32 shrink-0 flex flex-col items-center justify-center">
                                 <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wide">Thành phần bộ?</label>

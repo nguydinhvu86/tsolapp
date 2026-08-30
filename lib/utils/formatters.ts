@@ -1,6 +1,22 @@
-﻿import { format as dateFnsFormat } from 'date-fns';
+import { format as dateFnsFormat } from 'date-fns';
 
-export const formatMoney = (amount: number) => { return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount); };
+export const formatMoney = (amount: number | null | undefined) => {
+    if (amount === null || amount === undefined || isNaN(Number(amount))) return '0 ₫';
+    return new Intl.NumberFormat('vi-VN', {
+        style: 'currency',
+        currency: 'VND',
+        maximumFractionDigits: 6,
+        minimumFractionDigits: 0
+    }).format(Number(amount));
+};
+
+export const parseNumber = (val: string | number | null | undefined): number => {
+    if (typeof val === 'number') return isNaN(val) ? 0 : val;
+    if (!val) return 0;
+    const clean = String(val).replace(/\s/g, '').replace(/,/g, '.');
+    const num = parseFloat(clean);
+    return isNaN(num) ? 0 : num;
+};
 
 export const formatDate = (dateString: string | Date | undefined | null) => {
     if (!dateString) return '';

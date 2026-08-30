@@ -130,7 +130,7 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
     };
 
     const handleSubmitPayment = async () => {
-        if (paymentData.amount <= 0 || paymentData.amount > remainingAmount) {
+        if (paymentData.amount <= 0 || paymentData.amount > remainingAmount + 0.001) {
             alert('Số tiền không hợp lệ. Phải lớn hơn 0 và không vượt quá số còn nợ.');
             return;
         }
@@ -811,10 +811,20 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                         {/* Inputs */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                             <div>
-                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#334155', marginBottom: '0.375rem' }}>Số tiền thực thu (VND)</label>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
+                                    <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155' }}>Số tiền thực thu (VND)</label>
+                                    <button
+                                        type="button"
+                                        onClick={() => setPaymentData({ ...paymentData, amount: remainingAmount })}
+                                        style={{ fontSize: '0.75rem', fontWeight: 600, color: '#2563eb', background: '#eff6ff', border: '1px solid #dbeafe', padding: '0.2rem 0.5rem', borderRadius: '0.375rem', cursor: 'pointer' }}
+                                    >
+                                        Điền hết nợ ({formatMoney(remainingAmount)})
+                                    </button>
+                                </div>
                                 <input
                                     type="number"
-                                    min="1"
+                                    step="any"
+                                    min="0"
                                     max={remainingAmount}
                                     style={{ width: '100%', padding: '0.625rem 0.75rem', fontSize: '1.125rem', fontWeight: 500, color: '#1e293b', border: '1px solid #cbd5e1', borderRadius: '0.5rem', outline: 'none', transition: 'border-color 0.2s', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
                                     onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
@@ -822,6 +832,9 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                                     value={paymentData.amount}
                                     onChange={(e) => setPaymentData({ ...paymentData, amount: parseFloat(e.target.value) || 0 })}
                                 />
+                                <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.375rem', marginBottom: 0 }}>
+                                    Định dạng hiển thị: <strong>{formatMoney(paymentData.amount)}</strong>
+                                </p>
                             </div>
 
                             <div>

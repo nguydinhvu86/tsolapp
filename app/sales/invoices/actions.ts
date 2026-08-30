@@ -1201,13 +1201,13 @@ export async function paySalesInvoice(
                     invoiceId: invoice.id,
                     userId: creatorId,
                     action: 'UPDATED',
-                    details: `Thu tiền: ${amount.toLocaleString('vi-VN')} đ (PT: ${payment.code})`
+                    details: `Thu tiền: ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 6 }).format(amount)} (PT: ${payment.code})`
                 }
             });
 
             // Update status if needed
-            const newStatus = (inv.paidAmount >= inv.totalAmount) ? 'PAID' : 'PARTIAL_PAID';
-            if (inv.status !== newStatus && inv.status !== 'DRAFT') {
+            const newStatus = (inv.paidAmount >= inv.totalAmount - 0.0001) ? 'PAID' : 'PARTIAL_PAID';
+            if (inv.status !== newStatus && inv.status !== 'DRAFT' && inv.status !== 'CANCELLED') {
                 await tx.salesInvoice.update({
                     where: { id: inv.id },
                     data: { status: newStatus }

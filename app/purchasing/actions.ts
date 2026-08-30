@@ -1275,6 +1275,95 @@ export async function createPurchasePayment(data: any) {
     });
 }
 
+export async function payPurchaseBill(
+    billId: string,
+    amount: number,
+    paymentMethod: string = 'BANK_TRANSFER',
+    reference: string = '',
+    notes: string = ''
+) {
+    try {
+        const u = await verifyActionPermission('PURCHASE_PAYMENTS_CREATE');
+        const creatorId = u ? (u as any).id : 'system';
+
+        const result = await prisma.$transaction(async (tx) => {
+            const bill = await tx.purchaseBill.findUnique({
+                where: { id: billId }
+            });
+            if (!bill) throw new Error("Hóa đơn không tồn tại");
+
+            // Get next payment code robustly
+            const payments = await tx.purchasePayment.findMany({ select: { code: true } });
+            let maxPayNum = 0;
+            for (const pay of payments) {
+                const m = pay.code.match(/\d+/);
+                if (m) {
+                    const n = parseInt(m[0], 10);
+                    if (!isNaN(n) && n > maxPayNum) maxPayNum = n;
+                }
+            }
+            const nextCode = `PAY${String(maxPayNum + 1).padStart(4, '0')}`;
+
+            // Create payment
+            const payment = await tx.purchasePayment.create({
+                data: {
+                    code: nextCode,
+                    date: new Date(),
+                    amount,
+                    paymentMethod,
+                    reference,
+                    notes: notes || `Chi tiền theo hóa đơn ${bill.code}`,
+                    supplierId: bill.supplierId,
+                    creatorId,
+                    allocations: {
+                        create: [{ billId: bill.id, amount }]
+                    }
+                }
+            });
+
+            // Decrease supplier debt
+            await tx.supplier.update({
+                where: { id: bill.supplierId },
+                data: { totalDebt: { decrement: amount } }
+            });
+
+            // Increase bill paidAmount
+            const updatedBill = await tx.purchaseBill.update({
+                where: { id: bill.id },
+                data: { paidAmount: { increment: amount } }
+            });
+
+            await tx.purchaseBillActivityLog.create({
+                data: {
+                    billId: bill.id,
+                    userId: creatorId,
+                    action: 'UPDATED',
+                    details: `Chi tiền thanh toán: ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 6 }).format(amount)} (Phiếu chi: ${payment.code})`
+                }
+            });
+
+            // Update status if needed
+            const newStatus = (updatedBill.paidAmount >= updatedBill.totalAmount - 0.0001) ? 'PAID' : 'PARTIAL_PAID';
+            if (updatedBill.status !== newStatus && updatedBill.status !== 'DRAFT' && updatedBill.status !== 'CANCELLED') {
+                await tx.purchaseBill.update({
+                    where: { id: updatedBill.id },
+                    data: { status: newStatus }
+                });
+            }
+
+            return payment;
+        });
+
+        revalidatePath('/purchasing/bills');
+        revalidatePath(`/purchasing/bills/${billId}`);
+        revalidatePath('/purchasing/payments');
+        return { success: true, data: result };
+    } catch (error: any) {
+        console.error("Lỗi khi chi tiền thanh toán hóa đơn:", error);
+        return { success: false, error: error.message };
+    }
+}
+
 export async function updatePurchasePayment(id: string, data: any) {
     const oldPayment = await prisma.purchasePayment.findUnique({ where: { id } });
     if (!oldPayment) throw new Error("Phiếu chi không tồn tại");

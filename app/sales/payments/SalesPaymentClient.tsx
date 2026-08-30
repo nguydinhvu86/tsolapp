@@ -178,7 +178,7 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
         e.preventDefault();
         if (!formData.customerId || formData.amount <= 0) return;
 
-        if (totalAllocated > formData.amount) {
+        if (totalAllocated > formData.amount + 0.001) {
             alert("Số tiền phân bổ không được vượt quá tổng tiền thu!");
             return;
         }
@@ -444,9 +444,9 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
                                         <div className="sm:col-span-2 lg:col-span-2">
                                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Số Tiền Thu Vào *</label>
                                             <input
-                                                type="number" required min="1"
+                                                type="number" step="any" required min="0.000001"
                                                 value={formData.amount}
-                                                onChange={e => setFormData({ ...formData, amount: Number(e.target.value) })}
+                                                onChange={e => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
                                                 className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2.5 font-bold text-lg text-green-600 dark:text-green-400"
                                             />
                                             <p className="text-xs text-gray-500 mt-1">Định dạng số: {formatMoney(formData.amount)}</p>
@@ -533,10 +533,11 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
                                                                         <div className="relative">
                                                                             <input
                                                                                 type="number"
+                                                                                step="any"
                                                                                 min="0"
                                                                                 max={debt}
                                                                                 value={allocations[inv.id] || ''}
-                                                                                onChange={(e) => handleAllocationChange(inv.id, Number(e.target.value), debt)}
+                                                                                onChange={(e) => handleAllocationChange(inv.id, parseFloat(e.target.value) || 0, debt)}
                                                                                 className="w-full rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 p-2 text-sm text-right focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-medium"
                                                                                 placeholder="0"
                                                                             />

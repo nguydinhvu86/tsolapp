@@ -31,7 +31,7 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
     const [paymentMethod, setPaymentMethod] = useState('ALL');
 
     const formatMoney = (amount: number) => {
-        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0);
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 6, minimumFractionDigits: 0 }).format(amount || 0);
     };
 
 

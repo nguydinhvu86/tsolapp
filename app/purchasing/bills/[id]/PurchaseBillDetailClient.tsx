@@ -6,10 +6,10 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, CreditCard, Clock, Plus, Trash2, FileDown, ExternalLink, Copy, XCircle, AlertTriangle, Edit2, Activity } from 'lucide-react';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import Link from 'next/link';
-import { uploadPurchaseBillDocument, cancelPurchaseBill, updatePurchaseBillNotes, approvePurchaseBill } from '@/app/purchasing/actions';
+import { uploadPurchaseBillDocument, cancelPurchaseBill, updatePurchaseBillNotes, approvePurchaseBill, payPurchaseBill } from '@/app/purchasing/actions';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { DocumentPreviewModal } from '@/app/components/ui/DocumentPreviewModal';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, DollarSign } from 'lucide-react';
 import { PurchaseBillActivityLog } from '@/app/components/purchasing/PurchaseBillActivityLog';
 
 export function PurchaseBillDetailClient({ bill, tasks, users, warehouses }: { bill: any, tasks: any[], users: any[], warehouses?: any[] }) {
@@ -22,6 +22,10 @@ export function PurchaseBillDetailClient({ bill, tasks, users, warehouses }: { b
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [copied, setCopied] = useState(false);
     const [previewDoc, setPreviewDoc] = useState<{ url: string, name: string } | null>(null);
+
+    // Payment Modal State
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [paymentData, setPaymentData] = useState({ amount: 0, method: 'BANK_TRANSFER', notes: '' });
 
     // Approval Modal State
     const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
@@ -129,11 +133,33 @@ export function PurchaseBillDetailClient({ bill, tasks, users, warehouses }: { b
     }, [localBill.attachment]);
 
     const formatMoney = (amount: number) => {
-        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 6, minimumFractionDigits: 0 }).format(amount || 0);
     };
 
     const remainingAmount = localBill.totalAmount - (localBill.paidAmount || 0);
     const isOverdue = localBill.dueDate && new Date(localBill.dueDate).getTime() < new Date().getTime() && localBill.status !== 'PAID' && localBill.status !== 'CANCELLED' && remainingAmount > 0;
+
+    const handleSubmitPayment = async () => {
+        if (paymentData.amount <= 0 || paymentData.amount > remainingAmount + 0.001) {
+            alert('Số tiền chi không hợp lệ. Phải lớn hơn 0 và không vượt quá số còn nợ.');
+            return;
+        }
+        setIsSubmitting(true);
+        try {
+            const res = await payPurchaseBill(localBill.id, paymentData.amount, paymentData.method, '', paymentData.notes);
+            if (res.success) {
+                alert('Đã chi tiền và tạo Phiếu Chi thành công!');
+                setIsPaymentModalOpen(false);
+                router.refresh();
+            } else {
+                alert('Lỗi: ' + res.error);
+            }
+        } catch (error: any) {
+            alert('Lỗi: ' + error.message);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
 
     const getStatusBadge = (status: string) => {
@@ -218,14 +244,26 @@ export function PurchaseBillDetailClient({ bill, tasks, users, warehouses }: { b
                             <XCircle size={16} /> {isSubmitting ? 'Đang xử lý...' : 'Hủy Hóa Đơn'}
                         </button>
                     )}
-                    {bill.totalAmount > bill.paidAmount && (
-                        <Link
-                            href={`/purchasing/payments?supplierId=${bill.supplierId}`}
-                            className="btn btn-primary w-full sm:w-auto justify-center"
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.25rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#10b981', color: 'white', border: 'none', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
-                        >
-                            <CreditCard size={18} /> Tạo lệnh Chi tiền
-                        </Link>
+                    {localBill.status !== 'DRAFT' && localBill.status !== 'CANCELLED' && remainingAmount > 0 && (
+                        <>
+                            <button
+                                onClick={() => {
+                                    setPaymentData({ amount: remainingAmount, method: 'BANK_TRANSFER', notes: `Chi tiền thanh toán hóa đơn ${localBill.code}` });
+                                    setIsPaymentModalOpen(true);
+                                }}
+                                className="btn btn-primary w-full sm:w-auto justify-center"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.25rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#10b981', color: 'white', border: 'none', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                            >
+                                <CreditCard size={18} /> Chi Tiền Thanh Toán
+                            </button>
+                            <Link
+                                href={`/purchasing/payments?supplierId=${localBill.supplierId}`}
+                                className="btn btn-secondary w-full sm:w-auto justify-center"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: 'white', color: '#475569', border: '1px solid #cbd5e1', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                            >
+                                <ExternalLink size={16} /> DS Phiếu Chi
+                            </Link>
+                        </>
                     )}
                 </div>
             </div>
@@ -591,6 +629,105 @@ export function PurchaseBillDetailClient({ bill, tasks, users, warehouses }: { b
                                 style={{ background: '#3b82f6', color: '#fff', opacity: (isSubmitting || !approveWarehouseId) ? 0.7 : 1, display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                             >
                                 {isSubmitting ? 'Đang duyệt...' : <><CheckCircle2 size={16} /> Xác Nhận Duyệt</>}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Payment Modal */}
+            {isPaymentModalOpen && (
+                <div className="modal-backdrop">
+                    <div className="modal-container" style={{ maxWidth: '480px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
+                            <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <CreditCard className="text-emerald-500" size={20} /> Chi Tiền Hóa Đơn {localBill.code}
+                            </h2>
+                            <button
+                                onClick={() => setIsPaymentModalOpen(false)}
+                                style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-muted)' }}
+                            >
+                                &times;
+                            </button>
+                        </div>
+                        <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                            {/* Summary Card */}
+                            <div style={{ backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                    <span style={{ color: '#475569', fontSize: '0.875rem', fontWeight: 500 }}>Tổng Hóa Đơn:</span>
+                                    <span style={{ fontWeight: 600, color: '#1e293b' }}>{formatMoney(localBill.totalAmount)}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                                    <span style={{ color: '#475569', fontSize: '0.875rem', fontWeight: 500 }}>Đã Thanh Toán Trước:</span>
+                                    <span style={{ fontWeight: 600, color: '#059669' }}>{formatMoney(localBill.paidAmount || 0)}</span>
+                                </div>
+                                <div style={{ height: '1px', backgroundColor: '#e2e8f0', width: '100%', marginBottom: '0.75rem' }}></div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ color: '#334155', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.025em', fontSize: '0.875rem' }}>Còn Phải Trả:</span>
+                                    <span style={{ fontWeight: 700, color: '#e11d48', fontSize: '1.25rem' }}>{formatMoney(remainingAmount)}</span>
+                                </div>
+                            </div>
+
+                            {/* Inputs */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                                <div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
+                                        <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155' }}>Số tiền chi (VND) *</label>
+                                        <button
+                                            type="button"
+                                            onClick={() => setPaymentData({ ...paymentData, amount: remainingAmount })}
+                                            style={{ fontSize: '0.75rem', fontWeight: 600, color: '#2563eb', background: '#eff6ff', border: '1px solid #dbeafe', padding: '0.2rem 0.5rem', borderRadius: '0.375rem', cursor: 'pointer' }}
+                                        >
+                                            Chi hết nợ ({formatMoney(remainingAmount)})
+                                        </button>
+                                    </div>
+                                    <input
+                                        type="number"
+                                        step="any"
+                                        min="0"
+                                        max={remainingAmount}
+                                        style={{ width: '100%', padding: '0.625rem 0.75rem', fontSize: '1.125rem', fontWeight: 600, color: '#059669', border: '1px solid #cbd5e1', borderRadius: '0.5rem', outline: 'none' }}
+                                        value={paymentData.amount}
+                                        onChange={(e) => setPaymentData({ ...paymentData, amount: parseFloat(e.target.value) || 0 })}
+                                    />
+                                    <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.375rem', marginBottom: 0 }}>
+                                        Định dạng hiển thị: <strong>{formatMoney(paymentData.amount)}</strong>
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#334155', marginBottom: '0.375rem' }}>Phương thức thanh toán</label>
+                                    <select
+                                        className="input w-full"
+                                        value={paymentData.method}
+                                        onChange={(e) => setPaymentData({ ...paymentData, method: e.target.value })}
+                                    >
+                                        <option value="BANK_TRANSFER">Chuyển khoản</option>
+                                        <option value="CASH">Tiền mặt</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#334155', marginBottom: '0.375rem' }}>Diễn giải / Ghi chú</label>
+                                    <input
+                                        type="text"
+                                        className="input w-full"
+                                        value={paymentData.notes}
+                                        onChange={(e) => setPaymentData({ ...paymentData, notes: e.target.value })}
+                                        placeholder="Ghi chú chi tiền..."
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', background: 'var(--surface)' }}>
+                            <button onClick={() => setIsPaymentModalOpen(false)} className="btn" style={{ border: '1px solid var(--border)', background: '#fff' }}>Hủy</button>
+                            <button
+                                onClick={handleSubmitPayment}
+                                disabled={isSubmitting || paymentData.amount <= 0}
+                                className="btn btn-primary"
+                                style={{ background: '#10b981', color: '#fff', opacity: (isSubmitting || paymentData.amount <= 0) ? 0.7 : 1, display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                            >
+                                {isSubmitting ? 'Đang xử lý...' : <><CreditCard size={16} /> Xác Nhận Chi Tiền</>}
                             </button>
                         </div>
                     </div>

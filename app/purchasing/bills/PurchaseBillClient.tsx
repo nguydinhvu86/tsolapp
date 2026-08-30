@@ -197,7 +197,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
     const { paginatedItems, paginationProps } = usePagination(sortedBills);
 
     const formatMoney = (amount: number) => {
-        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 6, minimumFractionDigits: 0 }).format(amount || 0);
     };
 
     const formatDate = (dateString: string | Date) => {
@@ -1068,19 +1068,19 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                             )}
                                             <div className="w-28 shrink-0">
                                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('purchaseBills.unitPriceLabel')}</label>
-                                                <input type="number" className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700" value={price} onChange={e => setPrice(Number(e.target.value))} />
+                                                <input type="number" step="any" min="0" className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700" value={price} onChange={e => setPrice(parseFloat(e.target.value) || 0)} />
                                             </div>
                                             <div className="w-20 shrink-0">
                                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('purchaseBills.taxLabel')}</label>
                                                 {isCustomProduct ? (
-                                                    <input type="number" className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-center text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700" value={customTaxRate} onChange={e => setCustomTaxRate(Number(e.target.value))} />
+                                                    <input type="number" step="any" min="0" className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-center text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700" value={customTaxRate} onChange={e => setCustomTaxRate(parseFloat(e.target.value) || 0)} />
                                                 ) : (
                                                     <input type="text" className="w-full border border-gray-200 dark:border-gray-600 rounded-lg p-2.5 bg-slate-50 dark:bg-gray-800 text-center text-gray-500 dark:text-gray-400 font-medium cursor-not-allowed" value={`${products.find((p: any) => p.id === selectedProduct)?.taxRate || 0}`} disabled />
                                                 )}
                                             </div>
                                             <div className="w-20 shrink-0">
                                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('purchaseBills.qtyLabel')}</label>
-                                                <input type="number" min="1" className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-center text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700" value={qty} onChange={e => setQty(Number(e.target.value))} />
+                                                <input type="number" step="any" min="0.0001" className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-center text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700" value={qty} onChange={e => setQty(parseFloat(e.target.value) || 0)} />
                                             </div>
                                             <button type="button" onClick={handleAddItem} className="shrink-0 mb-[2px] h-[46px] px-6 border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 shadow-sm font-semibold rounded-lg dark:border-primary/50 dark:text-primary-light">{t('purchaseBills.addItemBtn')}</button>
                                         </div>
