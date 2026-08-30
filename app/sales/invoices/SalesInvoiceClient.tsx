@@ -170,8 +170,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
             const editId = params.get('edit');
             if (editId && invoices.length > 0) {
                 const invToEdit = invoices.find((inv: any) => inv.id === editId);
-                // Allow edit if draft or anything you want, let's say draft
-                if (invToEdit && invToEdit.status === 'DRAFT') {
+                if (invToEdit && invToEdit.status !== 'CANCELLED') {
                     handleEdit(invToEdit);
                     window.history.replaceState({}, '', '/sales/invoices');
                 }
@@ -848,8 +847,17 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                 </div>
             </div>
 
-            <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title={formData.id ? t('invoices.editInvoice') : t('invoices.createInvoiceModal')} maxWidth="1000px">
+            <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title={formData.id ? (formData.status !== 'DRAFT' ? 'Điều Chỉnh Hóa Đơn Bán Hàng' : t('invoices.editInvoice')) : t('invoices.createInvoiceModal')} maxWidth="1000px">
                 <div className="p-4">
+                    {formData.id && formData.status && formData.status !== 'DRAFT' && (
+                        <div className="p-3.5 mb-5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5 shadow-2xs">
+                            <AlertTriangle className="text-amber-600 shrink-0 mt-0.5" size={16} />
+                            <div>
+                                <strong className="block font-semibold mb-0.5 text-sm">Điều chỉnh hóa đơn đã duyệt & ghi nhận nợ</strong>
+                                Hóa đơn này đã được ghi nhận công nợ và xuất kho. Khi lưu điều chỉnh, hệ thống sẽ <strong>tự động hoàn nhập kho cũ, xuất kho mới và tính toán lại công nợ khách hàng</strong>, đồng thời ghi nhật ký kiểm toán (log) chi tiết.
+                            </div>
+                        </div>
+                    )}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                         <div>
                             <label className="block text-sm text-gray-600 mb-1">{t('invoices.code')}</label>
@@ -921,7 +929,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
 
                     <h3 className="font-medium mb-4 mt-6">{t('invoices.productDetails')}</h3>
                     <div className="flex flex-col bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-                        <div className="mb-4 flex items-center gap-4 border-b border-gray-100 pb-3">
+                        <div className="mb-4 flex flex-wrap items-center gap-4 border-b border-gray-100 pb-3">
                             <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
                                 <input type="radio" className="accent-indigo-600 w-4 h-4 cursor-pointer" checked={!isCustomProduct} onChange={() => setIsCustomProduct(false)} />
                                 <span>{t('invoices.selectFromInventory')}</span>
@@ -930,6 +938,11 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                 <input type="radio" className="accent-indigo-600 w-4 h-4 cursor-pointer" checked={isCustomProduct} onChange={() => setIsCustomProduct(true)} />
                                 <span>{t('invoices.enterCustomProduct')}</span>
                             </label>
+                            {isCustomProduct && (
+                                <span className="text-xs text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-md font-medium flex items-center gap-1">
+                                    ✨ Tự động lưu vào kho cho các lần sau
+                                </span>
+                            )}
                         </div>
                         <div className="flex flex-col md:flex-row gap-3 md:items-end mb-4">
                             <div className="flex-1 w-full min-w-[150px]">
@@ -1204,8 +1217,12 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                             <td className="py-3 text-right">
                                 <div className="flex justify-end gap-2 items-center">
                                     <div className="flex items-center gap-1 mr-1">
-                                        {inv.status === 'DRAFT' && (
-                                            <button onClick={() => handleEdit(inv)} title={t('invoices.edit')} className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                                        {inv.status !== 'CANCELLED' && (
+                                            <button
+                                                onClick={() => handleEdit(inv)}
+                                                title={inv.status === 'DRAFT' ? t('invoices.edit') : 'Điều chỉnh hóa đơn đã duyệt (tự động hoàn nhập và cập nhật kho & công nợ)'}
+                                                className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                                            >
                                                 <Edit2 size={15} />
                                             </button>
                                         )}

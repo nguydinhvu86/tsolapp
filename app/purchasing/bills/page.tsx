@@ -25,7 +25,7 @@ export default async function PurchaseBillsPage({ searchParams }: { searchParams
 
     const products = await prisma.product.findMany({
         where: { isActive: true },
-        select: { id: true, name: true, sku: true, unit: true, importPrice: true, taxRate: true, description: true }
+        select: { id: true, name: true, sku: true, unit: true, importPrice: true, salePrice: true, taxRate: true, description: true }
     });
 
     const projects = await (prisma as any).project.findMany({

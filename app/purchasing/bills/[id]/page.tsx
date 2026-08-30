@@ -32,6 +32,14 @@ export default async function PurchaseBillDetailPage({ params }: { params: { id:
             },
             creator: {
                 select: { name: true, email: true }
+            },
+            activityLogs: {
+                include: {
+                    user: {
+                        select: { id: true, name: true, avatar: true, email: true }
+                    }
+                },
+                orderBy: { createdAt: 'desc' }
             }
         }
     });

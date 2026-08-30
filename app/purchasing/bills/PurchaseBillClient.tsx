@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Plus, Search, Eye, Trash2, Calendar, FileText, FileDown, CheckCircle, ArrowUpDown, Edit2, XCircle } from 'lucide-react';
+import { Plus, Search, Eye, Trash2, Calendar, FileText, FileDown, CheckCircle, ArrowUpDown, Edit2, XCircle, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { createPurchaseBill, approvePurchaseBill, deletePurchaseBill, updatePurchaseBill, cancelPurchaseBill } from '@/app/purchasing/actions';
@@ -70,6 +70,17 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
 
         const supplierId = searchParams.get('supplierId');
         const orderId = searchParams.get('orderId');
+        const editId = searchParams.get('edit');
+
+        if (editId) {
+            const billToEdit = bills.find((b: any) => b.id === editId);
+            if (billToEdit) {
+                handleEdit(billToEdit);
+                hasOpenedFromUrl.current = true;
+                window.history.replaceState({}, '', '/purchasing/bills');
+                return;
+            }
+        }
 
         if (orderId) {
             const order = orders.find(o => o.id === orderId);
@@ -231,6 +242,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
 
         setFormData({
             id: bill.id,
+            status: bill.status,
             code: bill.code,
             supplierId: bill.supplierId,
             orderId: bill.orderId || '',
@@ -760,15 +772,17 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                                 >
                                                     <Eye size={18} />
                                                 </Link>
+                                                {bill.status !== 'CANCELLED' && (
+                                                    <button
+                                                        onClick={() => handleEdit(bill)}
+                                                        className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded inline-block"
+                                                        title={bill.status === 'DRAFT' ? t('purchaseBills.editTooltip') : 'Điều chỉnh hóa đơn đã duyệt (tự động cập nhật kho & công nợ)'}
+                                                    >
+                                                        <Edit2 size={18} />
+                                                    </button>
+                                                )}
                                                 {bill.status === 'DRAFT' && (
                                                     <>
-                                                        <button
-                                                            onClick={() => handleEdit(bill)}
-                                                            className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded inline-block"
-                                                            title={t('purchaseBills.editTooltip')}
-                                                        >
-                                                            <Edit2 size={18} />
-                                                        </button>
                                                         <button
                                                             onClick={() => { setSelectedBill(bill); setIsApproveModalOpen(true); }}
                                                             className="p-1.5 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded flex items-center gap-1 text-xs font-semibold px-2"
@@ -851,6 +865,15 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                             <button onClick={() => setIsCreateModalOpen(false)} className="text-gray-400 hover:text-gray-600">×</button>
                         </div>
                         <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 140px)' }}>
+                            {(formData as any).id && (formData as any).status && (formData as any).status !== 'DRAFT' && (
+                                <div className="p-3.5 mb-5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-200 text-xs flex items-start gap-2.5 shadow-2xs">
+                                    <AlertTriangle className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" size={16} />
+                                    <div>
+                                        <strong className="block font-semibold mb-0.5 text-sm">Điều chỉnh hóa đơn đã duyệt & ghi nhận nợ</strong>
+                                        Hóa đơn này đã được ghi nhận nợ và nhập kho. Khi lưu điều chỉnh, hệ thống sẽ <strong>tự động hoàn tác và cập nhật lại tồn kho & công nợ nhà cung cấp</strong> tương ứng với danh sách sản phẩm mới, đồng thời ghi log chi tiết.
+                                    </div>
+                                </div>
+                            )}
                             <form id="billForm" onSubmit={handleSubmit} className="space-y-6">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 bg-gray-50 dark:bg-gray-800/30 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
                                     <div className="sm:col-span-2 lg:col-span-1">
@@ -1008,7 +1031,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
 
                                     {/* Sub-Form for Add Item */}
                                     <div className="flex flex-col bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mb-4">
-                                        <div className="mb-4 flex items-center gap-4 border-b border-gray-100 dark:border-gray-700 pb-3">
+                                        <div className="mb-4 flex flex-wrap items-center gap-4 border-b border-gray-100 dark:border-gray-700 pb-3">
                                             <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
                                                 <input type="radio" className="accent-primary w-4 h-4 cursor-pointer" checked={!isCustomProduct} onChange={() => setIsCustomProduct(false)} />
                                                 <span>{t('purchaseBills.selectFromInventory')}</span>
@@ -1017,6 +1040,11 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                                 <input type="radio" className="accent-primary w-4 h-4 cursor-pointer" checked={isCustomProduct} onChange={() => setIsCustomProduct(true)} />
                                                 <span>{t('purchaseBills.customEntry')}</span>
                                             </label>
+                                            {isCustomProduct && (
+                                                <span className="text-xs text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800 px-2.5 py-1 rounded-md font-medium flex items-center gap-1">
+                                                    ✨ Tự động lưu vào kho cho các lần sau
+                                                </span>
+                                            )}
                                         </div>
                                         <div className="flex flex-wrap gap-3 items-end mb-4">
                                             <div className="flex-1 min-w-[250px]">

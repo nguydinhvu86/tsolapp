@@ -3,17 +3,18 @@ import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, CreditCard, Clock, Plus, Trash2, FileDown, ExternalLink, Copy, XCircle, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, CreditCard, Clock, Plus, Trash2, FileDown, ExternalLink, Copy, XCircle, AlertTriangle, Edit2, Activity } from 'lucide-react';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import Link from 'next/link';
 import { uploadPurchaseBillDocument, cancelPurchaseBill, updatePurchaseBillNotes, approvePurchaseBill } from '@/app/purchasing/actions';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { DocumentPreviewModal } from '@/app/components/ui/DocumentPreviewModal';
 import { CheckCircle2 } from 'lucide-react';
+import { PurchaseBillActivityLog } from '@/app/components/purchasing/PurchaseBillActivityLog';
 
 export function PurchaseBillDetailClient({ bill, tasks, users, warehouses }: { bill: any, tasks: any[], users: any[], warehouses?: any[] }) {
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState<'items' | 'payments' | 'tasks'>('items');
+    const [activeTab, setActiveTab] = useState<'items' | 'payments' | 'tasks' | 'logs'>('items');
 
     // Document State
     const [localBill, setLocalBill] = useState(bill);
@@ -148,6 +149,7 @@ export function PurchaseBillDetailClient({ bill, tasks, users, warehouses }: { b
     const tabs = [
         { id: 'items', label: 'Sản phẩm Nhập', icon: <ShoppingCart size={18} />, count: localBill.items?.length || 0 },
         { id: 'payments', label: 'Thanh Toán (Chi)', icon: <CreditCard size={18} />, count: localBill.allocations?.length || 0 },
+        { id: 'logs', label: 'Lịch sử & Điều chỉnh', icon: <Activity size={18} />, count: localBill.activityLogs?.length || 0 },
         { id: 'tasks', label: 'Công việc', icon: <CheckSquare size={18} />, count: tasks.length },
     ] as const;
 
@@ -188,6 +190,15 @@ export function PurchaseBillDetailClient({ bill, tasks, users, warehouses }: { b
                     >
                         <ExternalLink size={16} /> Xem Bản In
                     </Link>
+                    {localBill.status !== 'CANCELLED' && (
+                        <Link
+                            href={`/purchasing/bills?edit=${localBill.id}`}
+                            className="btn btn-secondary flex-1 sm:flex-none justify-center hover:bg-slate-100 transition-colors"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                        >
+                            <Edit2 size={16} /> Chỉnh Sửa
+                        </Link>
+                    )}
                     {localBill.status === 'DRAFT' && (
                         <button
                             onClick={() => setIsApproveModalOpen(true)}
@@ -405,6 +416,12 @@ export function PurchaseBillDetailClient({ bill, tasks, users, warehouses }: { b
                                             )}
                                         </tbody>
                                     </table>
+                                </div>
+                            )}
+
+                            {activeTab === 'logs' && (
+                                <div>
+                                    <PurchaseBillActivityLog logs={localBill.activityLogs || []} billCreator={localBill.creator} billCreatedAt={localBill.createdAt} />
                                 </div>
                             )}
 

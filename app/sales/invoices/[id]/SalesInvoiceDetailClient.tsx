@@ -777,11 +777,13 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
 
                 </div>
 
-                <Modal isOpen={diffModal.isOpen} onClose={() => setDiffModal({ ...diffModal, isOpen: false })} title="Chi Tiết Cập Nhật">
+                <Modal isOpen={diffModal.isOpen} onClose={() => setDiffModal({ ...diffModal, isOpen: false })} title="Chi Tiết Điều Chỉnh / Cập Nhật">
                     <div style={{ padding: '0.5rem', maxHeight: '50vh', overflowY: 'auto' }}>
                         <ul style={{ paddingLeft: '1.25rem', color: '#334155', fontSize: '0.9375rem', lineHeight: '1.6', margin: 0 }}>
                             {diffModal.changes.map((change, i) => (
-                                <li key={i} style={{ marginBottom: '0.5rem' }}>{change}</li>
+                                <li key={i} style={{ marginBottom: '0.5rem' }} dangerouslySetInnerHTML={{
+                                    __html: change.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #0f172a; font-weight: 600;">$1</strong>')
+                                }} />
                             ))}
                         </ul>
                     </div>

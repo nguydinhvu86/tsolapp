@@ -69,6 +69,7 @@ model User {
   purchaseOrders        PurchaseOrder[]        @relation("POCreator")
   purchaseBills         PurchaseBill[]         @relation("BillCreator")
   purchasePayments      PurchasePayment[]      @relation("PaymentCreator")
+  purchaseBillActivityLogs PurchaseBillActivityLog[]
 
   salesEstimates           SalesEstimate[]            @relation("EstimateCreator")
   salesOrders              SalesOrder[]               @relation("SalesOrderCreator")
@@ -936,6 +937,7 @@ model PurchaseBill {
   items       PurchaseBillItem[]
   allocations PurchasePaymentAllocation[] // Payments allocated to this bill
   tasks       Task[]
+  activityLogs PurchaseBillActivityLog[]
 
   projectId String?
   project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
@@ -999,6 +1001,18 @@ model PurchasePaymentAllocation {
   createdAt DateTime @default(now())
 
   @@unique([paymentId, billId])
+}
+
+model PurchaseBillActivityLog {
+  id        String       @id @default(cuid())
+  billId    String
+  userId    String
+  action    String // e.g. "CREATED", "UPDATED", "STATUS_CHANGED", "APPROVED", "ADJUSTED", "CANCELLED"
+  details   String?      @db.Text
+  createdAt DateTime     @default(now())
+
+  bill PurchaseBill @relation(fields: [billId], references: [id], onDelete: Cascade)
+  user User         @relation(fields: [userId], references: [id])
 }
 
 // --- SALES MANAGEMENT MODULE ---

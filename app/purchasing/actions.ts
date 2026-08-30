@@ -394,13 +394,182 @@ export async function getPurchaseBill(id: string) {
             },
             allocations: {
                 include: { payment: true }
+            },
+            activityLogs: {
+                include: {
+                    user: {
+                        select: { id: true, name: true, avatar: true, email: true }
+                    }
+                },
+                orderBy: { createdAt: 'desc' }
             }
         }
     });
 }
 
+function computePurchaseBillDiff(oldBill: any, newFormData: any, oldItems: any[], newItems: any[]) {
+    const changes: string[] = [];
+
+    const oldTotal = oldBill.totalAmount || 0;
+    const newTotal = newFormData.totalAmount || 0;
+    const delta = newTotal - oldTotal;
+
+    if (oldTotal !== newTotal) {
+        changes.push(`Tổng tiền: **${oldTotal.toLocaleString('vi-VN')} đ** ➔ **${newTotal.toLocaleString('vi-VN')} đ** (Chênh lệch: ${delta >= 0 ? '+' : ''}${delta.toLocaleString('vi-VN')} đ)`);
+    }
+
+    if (oldBill.supplierInvoice !== newFormData.supplierInvoice && (oldBill.supplierInvoice || newFormData.supplierInvoice)) {
+        changes.push(`Số HĐ NCC: **${oldBill.supplierInvoice || 'Trống'}** ➔ **${newFormData.supplierInvoice || 'Trống'}**`);
+    }
+
+    if (oldBill.dueDate && newFormData.dueDate) {
+        const oldDue = new Date(oldBill.dueDate).toISOString().split('T')[0];
+        const newDue = new Date(newFormData.dueDate).toISOString().split('T')[0];
+        if (oldDue !== newDue) {
+            changes.push(`Hạn thanh toán: **${new Date(oldBill.dueDate).toLocaleDateString('vi-VN')}** ➔ **${new Date(newFormData.dueDate).toLocaleDateString('vi-VN')}**`);
+        }
+    }
+
+    const oldMap = new Map();
+    for (const item of oldItems) {
+        const key = item.productId ? `ID_${item.productId}` : `CUSTOM_${item.productName || item.customName || item.description || ''}`;
+        oldMap.set(key, item);
+    }
+
+    const newMap = new Map();
+    for (const item of newItems) {
+        const key = item.productId && item.productId !== 'EXTERNAL' ? `ID_${item.productId}` : `CUSTOM_${item.productName || item.customName || item.description || ''}`;
+        newMap.set(key, item);
+    }
+
+    // Check removed items
+    oldMap.forEach((oldItem, key) => {
+        if (!newMap.has(key)) {
+            const name = oldItem.product?.name || oldItem.productName || oldItem.customName || 'Sản phẩm';
+            changes.push(`🗑️ Xóa sản phẩm: **${name}** (SL cũ: ${oldItem.quantity}, Giá cũ: ${oldItem.unitPrice.toLocaleString('vi-VN')} đ)`);
+        }
+    });
+
+    // Check added or updated items
+    newMap.forEach((newItem, key) => {
+        const name = newItem.product?.name || newItem.productName || newItem.customName || 'Sản phẩm';
+        if (!oldMap.has(key)) {
+            changes.push(`➕ Thêm sản phẩm mới: **${name}** (SL: ${newItem.quantity} ${newItem.unit || ''}, Giá: ${newItem.unitPrice.toLocaleString('vi-VN')} đ)`);
+        } else {
+            const oldItem = oldMap.get(key);
+            const itemDiffs = [];
+            if (oldItem.quantity !== newItem.quantity) {
+                itemDiffs.push(`Số lượng: ${oldItem.quantity} ➔ **${newItem.quantity}**`);
+            }
+            if (oldItem.unitPrice !== newItem.unitPrice) {
+                itemDiffs.push(`Đơn giá: ${oldItem.unitPrice.toLocaleString('vi-VN')} đ ➔ **${newItem.unitPrice.toLocaleString('vi-VN')} đ**`);
+            }
+            if ((oldItem.taxRate || 0) !== (newItem.taxRate || 0)) {
+                itemDiffs.push(`Thuế: ${oldItem.taxRate || 0}% ➔ **${newItem.taxRate || 0}%**`);
+            }
+            if (itemDiffs.length > 0) {
+                changes.push(`✏️ Điều chỉnh **${name}**: ${itemDiffs.join(', ')}`);
+            }
+        }
+    });
+
+    if ((oldBill.notes || '') !== (newFormData.notes || '')) {
+        changes.push(`Ghi chú hóa đơn đã được cập nhật.`);
+    }
+
+    return changes;
+}
+
+async function ensureCustomProductsExist(tx: any, items: any[], context: 'PURCHASE' | 'SALES') {
+    if (!items || items.length === 0) return;
+
+    for (const item of items) {
+        const customName = (item.customName || item.productName || '').trim();
+        const isExternalOrCustom = (!item.productId || item.productId === 'EXTERNAL') && customName.length > 0;
+
+        if (isExternalOrCustom) {
+            let product = await tx.product.findFirst({
+                where: { name: customName }
+            });
+
+            if (product) {
+                item.productId = product.id;
+                if (!item.unit && product.unit) item.unit = product.unit;
+
+                if (context === 'SALES' && product.salePrice === 0 && item.unitPrice > 0) {
+                    await tx.product.update({
+                        where: { id: product.id },
+                        data: { salePrice: item.unitPrice }
+                    });
+                } else if (context === 'PURCHASE' && product.importPrice === 0 && item.unitPrice > 0) {
+                    await tx.product.update({
+                        where: { id: product.id },
+                        data: { importPrice: item.unitPrice }
+                    });
+                }
+            } else {
+                const count = await tx.product.count();
+                let sku = `SP-${(count + 1).toString().padStart(6, '0')}`;
+                let duplicateSku = await tx.product.findUnique({ where: { sku } });
+                let step = 1;
+                while (duplicateSku) {
+                    sku = `SP-${(count + 1 + step).toString().padStart(6, '0')}`;
+                    duplicateSku = await tx.product.findUnique({ where: { sku } });
+                    step++;
+                }
+
+                const salePrice = context === 'SALES' ? (item.unitPrice || 0) : 0;
+                const importPrice = context === 'PURCHASE' ? (item.unitPrice || 0) : 0;
+                const unit = (item.unit && item.unit.trim()) ? item.unit.trim() : 'Cái';
+
+                const newProduct = await tx.product.create({
+                    data: {
+                        sku,
+                        name: customName,
+                        type: 'PRODUCT',
+                        unit,
+                        taxRate: item.taxRate || 0,
+                        salePrice,
+                        importPrice,
+                        description: item.description || null,
+                        isActive: true
+                    }
+                });
+
+                const defaultWarehouse = await tx.warehouse.findFirst({ where: { isDefault: true } })
+                    || await tx.warehouse.findFirst();
+                if (defaultWarehouse) {
+                    const existingInv = await tx.inventory.findUnique({
+                        where: {
+                            productId_warehouseId: {
+                                productId: newProduct.id,
+                                warehouseId: defaultWarehouse.id
+                            }
+                        }
+                    });
+                    if (!existingInv) {
+                        await tx.inventory.create({
+                            data: {
+                                productId: newProduct.id,
+                                warehouseId: defaultWarehouse.id,
+                                quantity: 0
+                            }
+                        });
+                    }
+                }
+
+                item.productId = newProduct.id;
+            }
+        }
+    }
+}
+
 export async function createPurchaseBill(data: any) {
     const user = await verifyActionPermission('PURCHASE_BILLS_CREATE');
+    const uId = user ? (user as any).id : null;
+
+    // Tự động tạo sản phẩm vào kho/danh mục nếu là nhập tự do
+    await ensureCustomProductsExist(prisma, data.items, 'PURCHASE');
 
     let code = data.code;
     if (!code) {
@@ -424,7 +593,7 @@ export async function createPurchaseBill(data: any) {
             totalAmount: data.totalAmount,
             subTotal: data.subTotal || 0,
             taxAmount: data.taxAmount || 0,
-            creatorId: user ? (user as any).id : null,
+            creatorId: uId,
             items: {
                 create: data.items.map((item: any) => {
                     const lineSubTotal = item.quantity * item.unitPrice;
@@ -446,12 +615,28 @@ export async function createPurchaseBill(data: any) {
         }
     });
 
+    if (uId) {
+        try {
+            await prisma.purchaseBillActivityLog.create({
+                data: {
+                    billId: bill.id,
+                    userId: uId,
+                    action: 'CREATED',
+                    details: `Khởi tạo hóa đơn mua hàng: ${bill.code}`
+                }
+            });
+        } catch (logErr) {
+            console.error("Lỗi ghi log khởi tạo PB:", logErr);
+        }
+    }
+
     revalidatePath('/purchasing/bills');
     return bill;
 }
 
 export async function approvePurchaseBill(billId: string, toWarehouseId: string) {
-    const user = await verifyActionPermission('PURCHASE_BILLS_EDIT_ALL'); // Adjust to generic edit or custom approval perms
+    const user = await verifyActionPermission('PURCHASE_BILLS_EDIT_ALL');
+    const uId = user ? (user as any).id : null;
 
     return prisma.$transaction(async (tx: any) => {
         // 1. Get the bill
@@ -469,7 +654,7 @@ export async function approvePurchaseBill(billId: string, toWarehouseId: string)
 
         if (inventoryItems.length > 0) {
             // 2. Create Inventory Transaction IN
-            const invTxCode = `IN-${bill.code}`; // Link codes visually
+            const invTxCode = `IN-${bill.code}`;
             await tx.inventoryTransaction.create({
                 data: {
                     code: invTxCode,
@@ -479,7 +664,7 @@ export async function approvePurchaseBill(billId: string, toWarehouseId: string)
                     notes: `Nhập kho tự động từ Hóa đơn mua hàng ${bill.code}`,
                     toWarehouseId: toWarehouseId,
                     supplierId: bill.supplierId,
-                    creatorId: user ? (user as any).id : null,
+                    creatorId: uId,
                     items: {
                         create: inventoryItems.map((item: any) => ({
                             productId: item.productId,
@@ -530,63 +715,316 @@ export async function approvePurchaseBill(billId: string, toWarehouseId: string)
             data: { status: 'APPROVED' }
         });
 
+        if (uId) {
+            await tx.purchaseBillActivityLog.create({
+                data: {
+                    billId: bill.id,
+                    userId: uId,
+                    action: 'APPROVED',
+                    details: `Duyệt nhập kho & ghi nhận công nợ Nhà cung cấp (${bill.totalAmount.toLocaleString('vi-VN')} đ)`
+                }
+            });
+        }
+
         return updatedBill;
     });
 }
 
 export async function updatePurchaseBill(id: string, data: any) {
-    const existing = await prisma.purchaseBill.findUnique({ where: { id } });
+    const existing = await prisma.purchaseBill.findUnique({
+        where: { id },
+        include: { items: { include: { product: true } }, supplier: true }
+    });
     if (!existing) throw new Error("Không tìm thấy hóa đơn");
     
-    await verifyActionOwnership('PURCHASE_BILLS', 'EDIT', existing.creatorId);
+    const user = await verifyActionOwnership('PURCHASE_BILLS', 'EDIT', existing.creatorId);
+    const uId = user ? (user as any).id : existing.creatorId;
 
-    if (existing?.status !== 'DRAFT') throw new Error("Chỉ có thể sửa hóa đơn Nháp");
+    if (existing.status === 'CANCELLED') {
+        throw new Error("Không thể chỉnh sửa hóa đơn đã bị hủy.");
+    }
 
-    const bill = await prisma.purchaseBill.update({
-        where: { id },
-        data: {
-            code: data.code,
-            supplierInvoice: data.supplierInvoice,
-            supplierId: data.supplierId,
-            orderId: data.orderId || null,
-            projectId: data.projectId || null,
-            date: data.date ? new Date(data.date) : new Date(),
-            dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
-            notes: data.notes,
-            tags: data.tags || null,
-            attachment: data.attachment !== undefined ? data.attachment : existing.attachment,
-            totalAmount: data.totalAmount,
-            subTotal: data.subTotal || 0,
-            taxAmount: data.taxAmount || 0,
-            items: {
-                deleteMany: {},
-                create: data.items.map((item: any) => {
-                    const lineSubTotal = item.quantity * item.unitPrice;
-                    const lineTaxAmount = lineSubTotal * (item.taxRate || 0) / 100;
-                    const isExternal = item.productId === 'EXTERNAL' || !item.productId;
-                    return {
-                        productId: isExternal ? null : item.productId,
-                        productName: isExternal ? item.productName || item.customName : null,
-                        unit: item.unit || null,
-                        description: item.description || null,
-                        quantity: item.quantity,
-                        unitPrice: item.unitPrice,
-                        taxRate: item.taxRate || 0,
-                        taxAmount: lineTaxAmount,
-                        totalPrice: lineSubTotal + lineTaxAmount
-                    };
-                })
-            }
-        },
-        include: {
-            supplier: true,
-            creator: true
-        }
+    // Tự động tạo sản phẩm vào kho/danh mục nếu là nhập tự do
+    await ensureCustomProductsExist(prisma, data.items, 'PURCHASE');
+
+    const isApprovedOrPaid = existing.status === 'APPROVED' || existing.status === 'PARTIAL_PAID' || existing.status === 'PAID';
+
+    // Format new items
+    const formattedNewItems = data.items.map((item: any) => {
+        const lineSubTotal = item.quantity * item.unitPrice;
+        const lineTaxAmount = lineSubTotal * (item.taxRate || 0) / 100;
+        const isExternal = item.productId === 'EXTERNAL' || !item.productId;
+        return {
+            productId: isExternal ? null : item.productId,
+            productName: isExternal ? item.productName || item.customName : null,
+            unit: item.unit || null,
+            description: item.description || null,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            taxRate: item.taxRate || 0,
+            taxAmount: lineTaxAmount,
+            totalPrice: lineSubTotal + lineTaxAmount
+        };
     });
 
-    revalidatePath('/purchasing/bills');
-    revalidatePath(`/purchasing/bills/${id}`);
-    return bill;
+    const diffChanges = computePurchaseBillDiff(existing, data, existing.items, data.items);
+
+    if (!isApprovedOrPaid) {
+        // Simple draft update
+        const bill = await prisma.purchaseBill.update({
+            where: { id },
+            data: {
+                code: data.code,
+                supplierInvoice: data.supplierInvoice,
+                supplierId: data.supplierId,
+                orderId: data.orderId || null,
+                projectId: data.projectId || null,
+                date: data.date ? new Date(data.date) : new Date(),
+                dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
+                notes: data.notes,
+                tags: data.tags || null,
+                attachment: data.attachment !== undefined ? data.attachment : existing.attachment,
+                totalAmount: data.totalAmount,
+                subTotal: data.subTotal || 0,
+                taxAmount: data.taxAmount || 0,
+                items: {
+                    deleteMany: {},
+                    create: formattedNewItems
+                }
+            },
+            include: {
+                supplier: true,
+                creator: true
+            }
+        });
+
+        if (uId) {
+            try {
+                await prisma.purchaseBillActivityLog.create({
+                    data: {
+                        billId: id,
+                        userId: uId,
+                        action: 'UPDATED',
+                        details: JSON.stringify({
+                            type: 'UPDATE_DIFF',
+                            summary: 'Cập nhật thông tin hóa đơn mua hàng (Nháp)',
+                            changes: diffChanges.length > 0 ? diffChanges : ['Cập nhật thông tin chung']
+                        })
+                    }
+                });
+            } catch (logErr) {
+                console.error("Lỗi ghi log PB draft update:", logErr);
+            }
+        }
+
+        revalidatePath('/purchasing/bills');
+        revalidatePath(`/purchasing/bills/${id}`);
+        return bill;
+    }
+
+    // Adjustment for APPROVED / PARTIAL_PAID / PAID bill
+    return prisma.$transaction(async (tx: any) => {
+        const currentBill = await tx.purchaseBill.findUnique({
+            where: { id },
+            include: { items: true, supplier: true }
+        });
+
+        if (!currentBill) throw new Error("Hóa đơn không tồn tại");
+
+        const invTxCode = `IN-${currentBill.code}`;
+        const invTx = await tx.inventoryTransaction.findUnique({
+            where: { code: invTxCode },
+            include: { items: true }
+        });
+
+        let targetWarehouseId = invTx?.toWarehouseId;
+        if (!targetWarehouseId) {
+            const defaultWh = await tx.warehouse.findFirst({ where: { isDefault: true } }) || await tx.warehouse.findFirst();
+            if (defaultWh) targetWarehouseId = defaultWh.id;
+        }
+
+        // 1. Rollback old inventory
+        if (invTx && invTx.status === 'COMPLETED' && invTx.toWarehouseId) {
+            for (const oldItem of invTx.items) {
+                const inv = await tx.inventory.findUnique({
+                    where: {
+                        productId_warehouseId: {
+                            productId: oldItem.productId,
+                            warehouseId: invTx.toWarehouseId
+                        }
+                    }
+                });
+
+                if (inv) {
+                    await tx.inventory.update({
+                        where: { id: inv.id },
+                        data: { quantity: inv.quantity - oldItem.quantity }
+                    });
+                }
+            }
+        }
+
+        // 2. Apply new internal products into inventory
+        const newInventoryItems = formattedNewItems.filter((i: any) => i.productId !== null);
+
+        if (targetWarehouseId && newInventoryItems.length > 0) {
+            for (const item of newInventoryItems) {
+                const inv = await tx.inventory.findUnique({
+                    where: {
+                        productId_warehouseId: {
+                            productId: item.productId,
+                            warehouseId: targetWarehouseId
+                        }
+                    }
+                });
+
+                if (inv) {
+                    await tx.inventory.update({
+                        where: { id: inv.id },
+                        data: { quantity: inv.quantity + item.quantity }
+                    });
+                } else {
+                    await tx.inventory.create({
+                        data: {
+                            productId: item.productId,
+                            warehouseId: targetWarehouseId,
+                            quantity: item.quantity
+                        }
+                    });
+                }
+            }
+
+            // Update or create InventoryTransaction
+            if (invTx) {
+                await tx.inventoryTransactionItem.deleteMany({ where: { transactionId: invTx.id } });
+                await tx.inventoryTransaction.update({
+                    where: { id: invTx.id },
+                    data: {
+                        status: 'COMPLETED',
+                        notes: `Nhập kho tự động từ Hóa đơn mua hàng ${currentBill.code} (Đã đồng bộ điều chỉnh lúc ${new Date().toLocaleString('vi-VN')})`,
+                        items: {
+                            create: newInventoryItems.map((item: any) => ({
+                                productId: item.productId,
+                                quantity: item.quantity,
+                                price: item.unitPrice
+                            }))
+                        }
+                    }
+                });
+            } else {
+                await tx.inventoryTransaction.create({
+                    data: {
+                        code: invTxCode,
+                        type: 'IN',
+                        status: 'COMPLETED',
+                        date: new Date(),
+                        notes: `Nhập kho tự động từ Hóa đơn mua hàng ${currentBill.code}`,
+                        toWarehouseId: targetWarehouseId,
+                        supplierId: currentBill.supplierId,
+                        creatorId: uId,
+                        items: {
+                            create: newInventoryItems.map((item: any) => ({
+                                productId: item.productId,
+                                quantity: item.quantity,
+                                price: item.unitPrice
+                            }))
+                        }
+                    }
+                });
+            }
+        }
+
+        // 3. Update Supplier Debt
+        const oldTotal = currentBill.totalAmount || 0;
+        const newTotal = data.totalAmount || 0;
+        const delta = newTotal - oldTotal;
+
+        // If supplier changed
+        if (currentBill.supplierId !== data.supplierId) {
+            // Deduct old supplier
+            await tx.supplier.update({
+                where: { id: currentBill.supplierId },
+                data: { totalDebt: Math.max(0, currentBill.supplier.totalDebt - oldTotal) }
+            });
+            // Add new supplier
+            const newSup = await tx.supplier.findUnique({ where: { id: data.supplierId } });
+            if (newSup) {
+                await tx.supplier.update({
+                    where: { id: data.supplierId },
+                    data: { totalDebt: newSup.totalDebt + newTotal }
+                });
+            }
+        } else {
+            await tx.supplier.update({
+                where: { id: currentBill.supplierId },
+                data: { totalDebt: Math.max(0, currentBill.supplier.totalDebt + delta) }
+            });
+        }
+
+        // 4. Determine new bill status based on paidAmount
+        let newStatus = currentBill.status;
+        const paid = currentBill.paidAmount || 0;
+        if (paid >= newTotal && newTotal > 0) {
+            newStatus = 'PAID';
+        } else if (paid > 0) {
+            newStatus = 'PARTIAL_PAID';
+        } else {
+            newStatus = 'APPROVED';
+        }
+
+        // 5. Update Bill records
+        const updatedBill = await tx.purchaseBill.update({
+            where: { id },
+            data: {
+                code: data.code,
+                supplierInvoice: data.supplierInvoice,
+                supplierId: data.supplierId,
+                orderId: data.orderId || null,
+                projectId: data.projectId || null,
+                date: data.date ? new Date(data.date) : new Date(),
+                dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
+                notes: data.notes,
+                tags: data.tags || null,
+                status: newStatus,
+                attachment: data.attachment !== undefined ? data.attachment : currentBill.attachment,
+                totalAmount: newTotal,
+                subTotal: data.subTotal || 0,
+                taxAmount: data.taxAmount || 0,
+                items: {
+                    deleteMany: {},
+                    create: formattedNewItems
+                }
+            },
+            include: {
+                supplier: true,
+                creator: true
+            }
+        });
+
+        // 6. Record Activity Log
+        const logChanges = [...diffChanges];
+        logChanges.push(`🔄 **Hệ thống tự động đồng bộ**: Đã hoàn nhập và cập nhật lại tồn kho theo danh mục mới.`);
+        logChanges.push(`💳 **Công nợ NCC tự động cập nhật**: ${delta >= 0 ? '+' : ''}${delta.toLocaleString('vi-VN')} đ (Tổng nợ mới ghi nhận: ${newTotal.toLocaleString('vi-VN')} đ).`);
+
+        if (uId) {
+            await tx.purchaseBillActivityLog.create({
+                data: {
+                    billId: id,
+                    userId: uId,
+                    action: 'ADJUSTED',
+                    details: JSON.stringify({
+                        type: 'UPDATE_DIFF',
+                        summary: 'Điều chỉnh hóa đơn mua hàng (đã đồng bộ kho & công nợ NCC)',
+                        changes: logChanges
+                    })
+                }
+            });
+        }
+
+        revalidatePath('/purchasing/bills');
+        revalidatePath(`/purchasing/bills/${id}`);
+        return updatedBill;
+    });
 }
 
 export async function updatePurchaseBillNotes(id: string, notes: string) {
@@ -648,6 +1086,7 @@ export async function deletePurchaseBill(id: string) {
 
 export async function cancelPurchaseBill(id: string) {
     const user = await verifyActionPermission('PURCHASE_BILLS_EDIT_ALL');
+    const uId = user ? (user as any).id : null;
 
     return prisma.$transaction(async (tx: any) => {
         const bill = await tx.purchaseBill.findUnique({
@@ -706,11 +1145,21 @@ export async function cancelPurchaseBill(id: string) {
             });
         }
 
-        // Add an activity log or just update status
         const updatedBill = await tx.purchaseBill.update({
             where: { id },
             data: { status: 'CANCELLED', notes: `${bill.notes || ''}\n[Đã hủy bởi ${(user as any)?.name || 'System'}]`.trim() }
         });
+
+        if (uId) {
+            await tx.purchaseBillActivityLog.create({
+                data: {
+                    billId: id,
+                    userId: uId,
+                    action: 'CANCELLED',
+                    details: `Hủy hóa đơn mua hàng, hoàn tác tồn kho và giảm trừ công nợ NCC (${bill.totalAmount.toLocaleString('vi-VN')} đ)`
+                }
+            });
+        }
 
         revalidatePath('/purchasing/bills');
         return updatedBill;
