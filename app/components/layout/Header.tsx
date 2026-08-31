@@ -26,30 +26,30 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
                 WebkitBackdropFilter: 'blur(12px)'
             }}
         >
-            <div className="flex items-center gap-2 md:gap-4 flex-1 max-w-[600px]">
+            <div className="flex items-center gap-1.5 sm:gap-2 md:gap-4 flex-1 max-w-[600px] min-w-0">
                 {onMenuToggle && (
                     <button
                         onClick={onMenuToggle}
-                        className="show-on-mobile"
-                        style={{ padding: '0.5rem', borderRadius: 'var(--radius)', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                        className="show-on-mobile shrink-0"
+                        style={{ padding: '0.4rem', borderRadius: 'var(--radius)', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
                         aria-label="Open menu"
                     >
                         <Menu size={20} />
                     </button>
                 )}
 
-                <div className="flex items-center gap-2 flex-grow max-w-[500px]">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-grow max-w-[500px] min-w-0">
                     <GlobalSearch />
                     <QuickCreateMenu />
                 </div>
 
-                {/* Greeting on mobile */}
-                <div className="hidden sm:flex md:hidden flex-col ml-1">
+                {/* Greeting on tablet */}
+                <div className="hidden sm:flex md:hidden flex-col ml-1 shrink-0">
                     <span className="text-xs text-slate-500">Mừng trở lại,</span>
                     <span className="text-sm font-semibold text-slate-800 leading-tight">{session?.user?.name || 'Administrator'}</span>
                 </div>
             </div>
-            <div className="flex items-center gap-2 md:gap-3">
+            <div className="flex items-center gap-1 sm:gap-2 md:gap-3 shrink-0">
                 {session?.user && <ChatWidget currentUser={session.user} />}
                 <LanguageSwitcher />
                 <HeaderAttendance />

@@ -8,29 +8,35 @@ import { buildViewFilter } from '@/lib/permissions';
 
 export type SearchResult = {
     id: string;
-    type: 'CUSTOMER' | 'SUPPLIER' | 'SALES_ESTIMATE' | 'SALES_ORDER' | 'SALES_INVOICE' | 'PURCHASE_ORDER' | 'PURCHASE_BILL' | 'QUOTE' | 'CONTRACT' | 'TASK' | 'LEAD';
+    type: 'CUSTOMER' | 'SUPPLIER' | 'SALES_ESTIMATE' | 'SALES_ORDER' | 'SALES_INVOICE' | 'PURCHASE_ORDER' | 'PURCHASE_BILL' | 'QUOTE' | 'CONTRACT' | 'TASK' | 'LEAD' | 'PRODUCT' | 'EXPENSE' | 'DISPATCH' | 'HANDOVER' | 'PAYMENT_REQUEST';
     title: string;
     subtitle?: string;
     badge?: string;
+    matchSnippet?: string;
+    matchLabel?: string;
     link: string;
     date?: string;
 };
 
-function getMatchSnippet(text: string | null | undefined, search: string, label: string): string | null {
+function getMatchSnippet(text: string | null | undefined, search: string, label: string): { text: string; label: string } | null {
     if (!text) return null;
-    const cleanText = text.replace(/<[^>]+>/g, ' ');
+    const cleanText = text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
     const lowerText = cleanText.toLowerCase();
     const searchLower = search.toLowerCase();
     const idx = lowerText.indexOf(searchLower);
     if (idx > -1) {
-        const start = Math.max(0, idx - 15);
-        const snippet = cleanText.substring(start, idx + searchLower.length + 30).replace(/\s+/g, ' ').trim();
-        return `Trong ${label}: "...${snippet}..."`;
+        const start = Math.max(0, idx - 25);
+        const end = Math.min(cleanText.length, idx + searchLower.length + 45);
+        const snippet = (start > 0 ? '...' : '') + cleanText.substring(start, end).trim() + (end < cleanText.length ? '...' : '');
+        return {
+            text: snippet,
+            label: `Trong ${label}`
+        };
     }
     return null;
 }
 
-export async function globalSearch(query: string): Promise<SearchResult[]> {
+export async function globalSearch(query: string, filterCategory?: string): Promise<SearchResult[]> {
     if (!query || query.trim().length === 0) return [];
     const search = query.trim();
     if (search.length < 2) return [];
@@ -45,6 +51,7 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
     const searchLower = search.toLowerCase();
 
     try {
+        // 1. CUSTOMERS
         let custFilter: any = buildViewFilter(userId, perms, 'CUSTOMERS', 'creatorId');
         if (custFilter.creatorId) {
             custFilter = {
@@ -71,37 +78,84 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
                                 { phone: { contains: search } },
                                 { email: { contains: search } },
                                 { taxCode: { contains: search } },
-                                { notes: { some: { content: { contains: search } } } }
+                                { address: { contains: search } },
+                                { notes: { some: { content: { contains: search } } } },
+                                { contacts: { some: { OR: [{ name: { contains: search } }, { phone: { contains: search } }, { email: { contains: search } }] } } }
                             ]
                         }
                     ]
                 } as any,
                 take: limit, select: {
-                    id: true, name: true, phone: true, email: true, taxCode: true,
-                    notes: { where: { content: { contains: search } }, take: 1, select: { content: true } }
+                    id: true, name: true, phone: true, email: true, taxCode: true, address: true,
+                    notes: { where: { content: { contains: search } }, take: 1, select: { content: true } },
+                    contacts: { where: { OR: [{ name: { contains: search } }, { phone: { contains: search } }, { email: { contains: search } }] }, take: 1, select: { name: true, phone: true } }
                 }
             });
             customers.forEach((c: any) => {
+                let matchSnippetObj: { text: string; label: string } | null = null;
                 let context: string | null = null;
                 if (!c.name?.toLowerCase().includes(searchLower) && !c.phone?.toLowerCase().includes(searchLower)) {
                     if (c.email?.toLowerCase().includes(searchLower)) context = `Email: ${c.email}`;
                     else if (c.taxCode?.toLowerCase().includes(searchLower)) context = `MST: ${c.taxCode}`;
-                    else if (c.notes?.length > 0) context = getMatchSnippet(c.notes[0].content, search, 'ghi chú');
+                    else if (c.address?.toLowerCase().includes(searchLower)) context = `Đ/C: ${c.address}`;
+                    else if (c.contacts?.length > 0) context = `Liên hệ: ${c.contacts[0].name} (${c.contacts[0].phone || ''})`;
+                    
+                    if (c.notes?.length > 0) {
+                        matchSnippetObj = getMatchSnippet(c.notes[0].content, search, 'ghi chú');
+                    }
+                } else if (c.notes?.length > 0) {
+                    matchSnippetObj = getMatchSnippet(c.notes[0].content, search, 'ghi chú');
                 }
-                const sub = c.phone || 'Khách hàng';
-                results.push({ id: c.id, type: 'CUSTOMER', title: c.name, subtitle: context ? `${sub} • ${context}` : sub, link: `/customers/${c.id}` });
+                const sub = c.phone || c.email || 'Khách hàng';
+                results.push({
+                    id: c.id,
+                    type: 'CUSTOMER',
+                    title: c.name,
+                    subtitle: context ? `${sub} • ${context}` : sub,
+                    matchSnippet: matchSnippetObj?.text,
+                    matchLabel: matchSnippetObj?.label,
+                    link: `/customers/${c.id}`
+                });
             });
         }
 
+        // 2. SUPPLIERS
         const suppFilter = buildViewFilter(userId, perms, 'SUPPLIERS');
         if (suppFilter.id !== 'UNAUTHORIZED_NO_ACCESS') {
             const suppliers = await prisma.supplier.findMany({
-                where: { OR: [{ name: { contains: search } }, { code: { contains: search } }, { phone: { contains: search } }] },
-                take: limit, select: { id: true, name: true, code: true, phone: true }
+                where: {
+                    AND: [
+                        suppFilter,
+                        {
+                            OR: [
+                                { name: { contains: search } },
+                                { code: { contains: search } },
+                                { phone: { contains: search } },
+                                { email: { contains: search } },
+                                { taxCode: { contains: search } },
+                                { address: { contains: search } },
+                                { notes: { contains: search } }
+                            ]
+                        }
+                    ]
+                } as any,
+                take: limit, select: { id: true, name: true, code: true, phone: true, notes: true }
             });
-            suppliers.forEach((s: any) => results.push({ id: s.id, type: 'SUPPLIER', title: s.name, subtitle: `${s.code} ${s.phone ? '- ' + s.phone : ''}`, link: `/suppliers/${s.id}` }));
+            suppliers.forEach((s: any) => {
+                const noteMatch = getMatchSnippet(s.notes, search, 'ghi chú');
+                results.push({
+                    id: s.id,
+                    type: 'SUPPLIER',
+                    title: s.name,
+                    subtitle: `${s.code} ${s.phone ? '• ' + s.phone : ''}`,
+                    matchSnippet: noteMatch?.text,
+                    matchLabel: noteMatch?.label,
+                    link: `/suppliers/${s.id}`
+                });
+            });
         }
 
+        // 3. SALES ESTIMATES
         let estFilter: any = buildViewFilter(userId, perms, 'SALES_ESTIMATES', 'creatorId');
         if (estFilter.creatorId) estFilter = { OR: [{ creatorId: userId }, { salespersonId: userId }, { managers: { some: { id: userId } } }] };
         if (estFilter.id !== 'UNAUTHORIZED_NO_ACCESS') {
@@ -114,26 +168,45 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
                                 { code: { contains: search } },
                                 { notes: { contains: search } },
                                 { tags: { contains: search } },
-                                { customer: { name: { contains: search } } }
+                                { customer: { name: { contains: search } } },
+                                { items: { some: { OR: [{ customName: { contains: search } }, { description: { contains: search } }, { product: { name: { contains: search } } }] } } }
                             ]
                         }
                     ]
                 } as any,
                 take: limit, select: {
                     id: true, code: true, date: true, status: true, notes: true, tags: true,
-                    customer: { select: { name: true } }
+                    customer: { select: { name: true } },
+                    items: {
+                        where: { OR: [{ customName: { contains: search } }, { description: { contains: search } }, { product: { name: { contains: search } } }] },
+                        take: 1,
+                        select: { customName: true, description: true, product: { select: { name: true } } }
+                    }
                 }
             });
             estimates.forEach((e: any) => {
-                let context = null;
-                if (!e.code?.toLowerCase().includes(searchLower) && !e.customer?.name?.toLowerCase().includes(searchLower)) {
-                    context = getMatchSnippet(e.notes, search, 'ghi chú') || getMatchSnippet(e.tags, search, 'thẻ');
+                let matchSnippetObj = getMatchSnippet(e.notes, search, 'ghi chú') ||
+                                      getMatchSnippet(e.tags, search, 'thẻ');
+                if (!matchSnippetObj && e.items?.length > 0) {
+                    const itemText = e.items[0].customName || e.items[0].product?.name || e.items[0].description;
+                    matchSnippetObj = getMatchSnippet(itemText, search, 'sản phẩm');
                 }
                 const sub = e.customer?.name || 'Khách lẻ';
-                results.push({ id: e.id, type: 'SALES_ESTIMATE', title: `BG (ERP): ${e.code}`, subtitle: context ? `${sub} • ${context}` : sub, badge: e.status, date: e.date.toISOString(), link: `/sales/estimates/${e.id}` });
+                results.push({
+                    id: e.id,
+                    type: 'SALES_ESTIMATE',
+                    title: `Báo Giá: ${e.code}`,
+                    subtitle: sub,
+                    badge: e.status,
+                    matchSnippet: matchSnippetObj?.text,
+                    matchLabel: matchSnippetObj?.label,
+                    date: e.date.toISOString(),
+                    link: `/sales/estimates/${e.id}`
+                });
             });
         }
 
+        // 4. SALES ORDERS
         let orderFilter: any = buildViewFilter(userId, perms, 'SALES_ORDERS', 'creatorId');
         if (orderFilter.id !== 'UNAUTHORIZED_NO_ACCESS') {
             const orders = await prisma.salesOrder.findMany({
@@ -144,26 +217,44 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
                             OR: [
                                 { code: { contains: search } },
                                 { notes: { contains: search } },
-                                { customer: { name: { contains: search } } }
+                                { customer: { name: { contains: search } } },
+                                { items: { some: { OR: [{ customName: { contains: search } }, { description: { contains: search } }, { product: { name: { contains: search } } }] } } }
                             ]
                         }
                     ]
                 } as any,
                 take: limit, select: {
                     id: true, code: true, date: true, status: true, notes: true,
-                    customer: { select: { name: true } }
+                    customer: { select: { name: true } },
+                    items: {
+                        where: { OR: [{ customName: { contains: search } }, { description: { contains: search } }, { product: { name: { contains: search } } }] },
+                        take: 1,
+                        select: { customName: true, description: true, product: { select: { name: true } } }
+                    }
                 }
             });
             orders.forEach((o: any) => {
-                let context = null;
-                if (!o.code?.toLowerCase().includes(searchLower) && !o.customer?.name?.toLowerCase().includes(searchLower)) {
-                    context = getMatchSnippet(o.notes, search, 'ghi chú');
+                let matchSnippetObj = getMatchSnippet(o.notes, search, 'ghi chú');
+                if (!matchSnippetObj && o.items?.length > 0) {
+                    const itemText = o.items[0].customName || o.items[0].product?.name || o.items[0].description;
+                    matchSnippetObj = getMatchSnippet(itemText, search, 'sản phẩm');
                 }
                 const sub = o.customer?.name || 'Khách lẻ';
-                results.push({ id: o.id, type: 'SALES_ORDER', title: `Đơn Hàng: ${o.code}`, subtitle: context ? `${sub} • ${context}` : sub, badge: o.status, date: o.date.toISOString(), link: `/sales/orders/${o.id}` });
+                results.push({
+                    id: o.id,
+                    type: 'SALES_ORDER',
+                    title: `Đơn Hàng: ${o.code}`,
+                    subtitle: sub,
+                    badge: o.status,
+                    matchSnippet: matchSnippetObj?.text,
+                    matchLabel: matchSnippetObj?.label,
+                    date: o.date.toISOString(),
+                    link: `/sales/orders/${o.id}`
+                });
             });
         }
 
+        // 5. SALES INVOICES
         let invFilter: any = buildViewFilter(userId, perms, 'SALES_INVOICES', 'creatorId');
         if (invFilter.creatorId) invFilter = { OR: [{ creatorId: userId }, { salespersonId: userId }, { managers: { some: { id: userId } } }] };
         if (invFilter.id !== 'UNAUTHORIZED_NO_ACCESS') {
@@ -178,6 +269,7 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
                                 { tags: { contains: search } },
                                 { customer: { name: { contains: search } } },
                                 { invoiceNotes: { some: { content: { contains: search } } } },
+                                { items: { some: { OR: [{ customName: { contains: search } }, { description: { contains: search } }, { product: { name: { contains: search } } }] } } }
                             ]
                         }
                     ]
@@ -185,20 +277,128 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
                 take: limit, select: {
                     id: true, code: true, date: true, status: true, notes: true, tags: true,
                     customer: { select: { name: true } },
-                    invoiceNotes: { where: { content: { contains: search } }, take: 1, select: { content: true } }
+                    invoiceNotes: { where: { content: { contains: search } }, take: 1, select: { content: true } },
+                    items: {
+                        where: { OR: [{ customName: { contains: search } }, { description: { contains: search } }, { product: { name: { contains: search } } }] },
+                        take: 1,
+                        select: { customName: true, description: true, product: { select: { name: true } } }
+                    }
                 }
             });
             invoices.forEach((i: any) => {
-                let context = null;
-                if (!i.code?.toLowerCase().includes(searchLower) && !i.customer?.name?.toLowerCase().includes(searchLower)) {
-                    context = getMatchSnippet(i.notes, search, 'ghi chú') || getMatchSnippet(i.tags, search, 'thẻ');
-                    if (!context && i.invoiceNotes?.length > 0) context = getMatchSnippet(i.invoiceNotes[0].content, search, 'ghi chú hóa đơn');
+                let matchSnippetObj = getMatchSnippet(i.notes, search, 'ghi chú') || getMatchSnippet(i.tags, search, 'thẻ');
+                if (!matchSnippetObj && i.invoiceNotes?.length > 0) {
+                    matchSnippetObj = getMatchSnippet(i.invoiceNotes[0].content, search, 'ghi chú hóa đơn');
+                }
+                if (!matchSnippetObj && i.items?.length > 0) {
+                    const itemText = i.items[0].customName || i.items[0].product?.name || i.items[0].description;
+                    matchSnippetObj = getMatchSnippet(itemText, search, 'sản phẩm');
                 }
                 const sub = i.customer?.name || 'Khách lẻ';
-                results.push({ id: i.id, type: 'SALES_INVOICE', title: `HĐ Bán: ${i.code}`, subtitle: context ? `${sub} • ${context}` : sub, badge: i.status, date: i.date.toISOString(), link: `/sales/invoices/${i.id}` });
+                results.push({
+                    id: i.id,
+                    type: 'SALES_INVOICE',
+                    title: `HĐ Bán: ${i.code}`,
+                    subtitle: sub,
+                    badge: i.status,
+                    matchSnippet: matchSnippetObj?.text,
+                    matchLabel: matchSnippetObj?.label,
+                    date: i.date.toISOString(),
+                    link: `/sales/invoices/${i.id}`
+                });
             });
         }
 
+        // 6. PURCHASE ORDERS
+        const poFilter = buildViewFilter(userId, perms, 'PURCHASE_ORDERS', 'creatorId');
+        if (poFilter.id !== 'UNAUTHORIZED_NO_ACCESS') {
+            const pos = await prisma.purchaseOrder.findMany({
+                where: {
+                    AND: [
+                        poFilter,
+                        {
+                            OR: [
+                                { code: { contains: search } },
+                                { notes: { contains: search } },
+                                { supplier: { name: { contains: search } } },
+                                { items: { some: { OR: [{ productName: { contains: search } }, { description: { contains: search } }] } } }
+                            ]
+                        }
+                    ]
+                } as any,
+                take: limit, select: {
+                    id: true, code: true, date: true, status: true, notes: true,
+                    supplier: { select: { name: true } },
+                    items: { where: { OR: [{ productName: { contains: search } }, { description: { contains: search } }] }, take: 1, select: { productName: true, description: true } }
+                }
+            });
+            pos.forEach((p: any) => {
+                let matchSnippetObj = getMatchSnippet(p.notes, search, 'ghi chú');
+                if (!matchSnippetObj && p.items?.length > 0) {
+                    matchSnippetObj = getMatchSnippet(p.items[0].productName || p.items[0].description, search, 'sản phẩm');
+                }
+                results.push({
+                    id: p.id,
+                    type: 'PURCHASE_ORDER',
+                    title: `Đơn Mua: ${p.code}`,
+                    subtitle: p.supplier?.name || 'NCC',
+                    badge: p.status,
+                    matchSnippet: matchSnippetObj?.text,
+                    matchLabel: matchSnippetObj?.label,
+                    date: p.date.toISOString(),
+                    link: `/purchasing/orders/${p.id}`
+                });
+            });
+        }
+
+        // 7. PURCHASE BILLS
+        const pbFilter = buildViewFilter(userId, perms, 'PURCHASE_BILLS', 'creatorId');
+        if (pbFilter.id !== 'UNAUTHORIZED_NO_ACCESS') {
+            const pbs = await prisma.purchaseBill.findMany({
+                where: {
+                    AND: [
+                        pbFilter,
+                        {
+                            OR: [
+                                { code: { contains: search } },
+                                { supplierInvoice: { contains: search } },
+                                { notes: { contains: search } },
+                                { tags: { contains: search } },
+                                { supplier: { name: { contains: search } } },
+                                { items: { some: { OR: [{ productName: { contains: search } }, { description: { contains: search } }] } } }
+                            ]
+                        }
+                    ]
+                } as any,
+                take: limit, select: {
+                    id: true, code: true, supplierInvoice: true, date: true, status: true, notes: true,
+                    supplier: { select: { name: true } },
+                    items: { where: { OR: [{ productName: { contains: search } }, { description: { contains: search } }] }, take: 1, select: { productName: true, description: true } }
+                }
+            });
+            pbs.forEach((b: any) => {
+                let matchSnippetObj = getMatchSnippet(b.notes, search, 'ghi chú');
+                if (!matchSnippetObj && b.supplierInvoice?.toLowerCase().includes(searchLower)) {
+                    matchSnippetObj = { text: `Số HĐ NCC: ${b.supplierInvoice}`, label: 'Số hóa đơn NCC' };
+                }
+                if (!matchSnippetObj && b.items?.length > 0) {
+                    matchSnippetObj = getMatchSnippet(b.items[0].productName || b.items[0].description, search, 'sản phẩm');
+                }
+                results.push({
+                    id: b.id,
+                    type: 'PURCHASE_BILL',
+                    title: `HĐ Mua: ${b.code}`,
+                    subtitle: b.supplier?.name || 'NCC',
+                    badge: b.status,
+                    matchSnippet: matchSnippetObj?.text,
+                    matchLabel: matchSnippetObj?.label,
+                    date: b.date.toISOString(),
+                    link: `/purchasing/bills/${b.id}`
+                });
+            });
+        }
+
+        // 8. QUOTES
         const qFilter = buildViewFilter(userId, perms, 'QUOTES', 'creatorId');
         if (qFilter.id !== 'UNAUTHORIZED_NO_ACCESS') {
             const quotes = await prisma.quote.findMany({
@@ -220,15 +420,23 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
                 }
             });
             quotes.forEach((q: any) => {
-                let context = null;
-                if (!q.title?.toLowerCase().includes(searchLower) && !q.customer?.name?.toLowerCase().includes(searchLower)) {
-                    context = getMatchSnippet(q.content, search, 'nội dung');
-                }
+                const matchSnippetObj = getMatchSnippet(q.content, search, 'nội dung');
                 const sub = q.customer?.name || 'KH Tự do';
-                results.push({ id: q.id, type: 'QUOTE', title: q.title, subtitle: context ? `${sub} • ${context}` : sub, badge: q.status, date: q.createdAt.toISOString(), link: `/quotes/${q.id}` });
+                results.push({
+                    id: q.id,
+                    type: 'QUOTE',
+                    title: q.title,
+                    subtitle: sub,
+                    badge: q.status,
+                    matchSnippet: matchSnippetObj?.text,
+                    matchLabel: matchSnippetObj?.label,
+                    date: q.createdAt.toISOString(),
+                    link: `/quotes/${q.id}`
+                });
             });
         }
 
+        // 9. CONTRACTS
         const cFilter = buildViewFilter(userId, perms, 'CONTRACTS', 'creatorId');
         if (cFilter.id !== 'UNAUTHORIZED_NO_ACCESS') {
             const contracts = await prisma.contract.findMany({
@@ -250,15 +458,23 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
                 }
             });
             contracts.forEach((c: any) => {
-                let context = null;
-                if (!c.title?.toLowerCase().includes(searchLower) && !c.customer?.name?.toLowerCase().includes(searchLower)) {
-                    context = getMatchSnippet(c.content, search, 'nội dung');
-                }
+                const matchSnippetObj = getMatchSnippet(c.content, search, 'nội dung');
                 const sub = c.customer?.name || 'KH Tự do';
-                results.push({ id: c.id, type: 'CONTRACT', title: c.title, subtitle: context ? `${sub} • ${context}` : sub, badge: c.status, date: c.createdAt.toISOString(), link: `/contracts/${c.id}` });
+                results.push({
+                    id: c.id,
+                    type: 'CONTRACT',
+                    title: c.title,
+                    subtitle: sub,
+                    badge: c.status,
+                    matchSnippet: matchSnippetObj?.text,
+                    matchLabel: matchSnippetObj?.label,
+                    date: c.createdAt.toISOString(),
+                    link: `/contracts/${c.id}`
+                });
             });
         }
 
+        // 10. TASKS
         const taskFilter = buildViewFilter(userId, perms, 'TASKS', 'creatorId');
         if (taskFilter.id !== 'UNAUTHORIZED_NO_ACCESS') {
             const tasks = await prisma.task.findMany({
@@ -288,17 +504,29 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
                 }
             });
             tasks.forEach((t: any) => {
-                let context = null;
-                if (!t.title?.toLowerCase().includes(searchLower)) {
-                    context = getMatchSnippet(t.description, search, 'mô tả');
-                    if (!context && t.checklists?.length > 0) context = getMatchSnippet(t.checklists[0].title, search, 'mục con');
-                    if (!context && t.comments?.length > 0) context = getMatchSnippet(t.comments[0].content, search, 'bình luận');
+                let matchSnippetObj = getMatchSnippet(t.description, search, 'mô tả');
+                if (!matchSnippetObj && t.checklists?.length > 0) {
+                    matchSnippetObj = getMatchSnippet(t.checklists[0].title, search, 'mục kiểm tra');
+                }
+                if (!matchSnippetObj && t.comments?.length > 0) {
+                    matchSnippetObj = getMatchSnippet(t.comments[0].content, search, 'bình luận');
                 }
                 const sub = `Ưu tiên: ${t.priority}`;
-                results.push({ id: t.id, type: 'TASK', title: t.title, subtitle: context ? `${sub} • ${context}` : sub, badge: t.status, date: t.dueDate?.toISOString(), link: `/tasks/${t.id}` });
+                results.push({
+                    id: t.id,
+                    type: 'TASK',
+                    title: t.title,
+                    subtitle: sub,
+                    badge: t.status,
+                    matchSnippet: matchSnippetObj?.text,
+                    matchLabel: matchSnippetObj?.label,
+                    date: t.dueDate?.toISOString(),
+                    link: `/tasks/${t.id}`
+                });
             });
         }
 
+        // 11. LEADS
         const isAdmin = (session.user as any).role === 'ADMIN' || (session.user as any).role === 'MANAGER';
         let leadFilter: any = {};
         if (!isAdmin) {
@@ -335,14 +563,101 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
                 }
             });
             leads.forEach((l: any) => {
-                let context = null;
-                if (!l.name?.toLowerCase().includes(searchLower) && !l.code?.toLowerCase().includes(searchLower)) {
-                    context = getMatchSnippet(l.notes, search, 'mô tả');
-                    if (!context && l.leadNotes?.length > 0) context = getMatchSnippet(l.leadNotes[0].content, search, 'ghi chú');
-                    if (!context && l.comments?.length > 0) context = getMatchSnippet(l.comments[0].content, search, 'bình luận');
+                let matchSnippetObj = getMatchSnippet(l.notes, search, 'mô tả');
+                if (!matchSnippetObj && l.leadNotes?.length > 0) {
+                    matchSnippetObj = getMatchSnippet(l.leadNotes[0].content, search, 'ghi chú cơ hội');
+                }
+                if (!matchSnippetObj && l.comments?.length > 0) {
+                    matchSnippetObj = getMatchSnippet(l.comments[0].content, search, 'bình luận');
                 }
                 const sub = l.customer?.name || 'Khách lẻ / Tiềm năng';
-                results.push({ id: l.id, type: 'LEAD', title: `[${l.code}] ${l.name}`, subtitle: context ? `${sub} • ${context}` : sub, badge: l.status, link: `/sales/leads/${l.id}` });
+                results.push({
+                    id: l.id,
+                    type: 'LEAD',
+                    title: `[${l.code}] ${l.name}`,
+                    subtitle: sub,
+                    badge: l.status,
+                    matchSnippet: matchSnippetObj?.text,
+                    matchLabel: matchSnippetObj?.label,
+                    link: `/sales/leads/${l.id}`
+                });
+            });
+        }
+
+        // 12. PRODUCTS & INVENTORY
+        const prodFilter = buildViewFilter(userId, perms, 'PRODUCTS');
+        if (prodFilter.id !== 'UNAUTHORIZED_NO_ACCESS') {
+            const products = await prisma.product.findMany({
+                where: {
+                    AND: [
+                        prodFilter,
+                        {
+                            OR: [
+                                { name: { contains: search } },
+                                { sku: { contains: search } },
+                                { description: { contains: search } },
+                                { notes: { contains: search } }
+                            ]
+                        }
+                    ]
+                } as any,
+                take: limit,
+                select: { id: true, name: true, sku: true, salePrice: true, unit: true, description: true, notes: true }
+            });
+            products.forEach((p: any) => {
+                let matchSnippetObj = getMatchSnippet(p.description, search, 'mô tả') || getMatchSnippet(p.notes, search, 'ghi chú');
+                results.push({
+                    id: p.id,
+                    type: 'PRODUCT',
+                    title: p.name,
+                    subtitle: `SKU: ${p.sku} • ${p.salePrice.toLocaleString('vi-VN')} đ/${p.unit || 'Cái'}`,
+                    matchSnippet: matchSnippetObj?.text,
+                    matchLabel: matchSnippetObj?.label,
+                    link: `/inventory/products`
+                });
+            });
+        }
+
+        // 13. EXPENSES
+        const expFilter = buildViewFilter(userId, perms, 'SALES_EXPENSES', 'creatorId');
+        if (expFilter.id !== 'UNAUTHORIZED_NO_ACCESS') {
+            const expenses = await prisma.expense.findMany({
+                where: {
+                    AND: [
+                        expFilter,
+                        {
+                            OR: [
+                                { code: { contains: search } },
+                                { payee: { contains: search } },
+                                { description: { contains: search } },
+                                { reference: { contains: search } },
+                                { notes: { some: { content: { contains: search } } } }
+                            ]
+                        }
+                    ]
+                } as any,
+                take: limit,
+                select: {
+                    id: true, code: true, amount: true, payee: true, description: true, status: true, date: true,
+                    notes: { where: { content: { contains: search } }, take: 1, select: { content: true } }
+                }
+            });
+            expenses.forEach((ex: any) => {
+                let matchSnippetObj = getMatchSnippet(ex.description, search, 'mô tả');
+                if (!matchSnippetObj && ex.notes?.length > 0) {
+                    matchSnippetObj = getMatchSnippet(ex.notes[0].content, search, 'ghi chú chi phí');
+                }
+                results.push({
+                    id: ex.id,
+                    type: 'EXPENSE',
+                    title: `Chi Phí: ${ex.code} - ${ex.amount.toLocaleString('vi-VN')} đ`,
+                    subtitle: ex.payee ? `Người nhận: ${ex.payee}` : 'Chi phí',
+                    badge: ex.status,
+                    matchSnippet: matchSnippetObj?.text,
+                    matchLabel: matchSnippetObj?.label,
+                    date: ex.date.toISOString(),
+                    link: `/sales/expenses`
+                });
             });
         }
 
