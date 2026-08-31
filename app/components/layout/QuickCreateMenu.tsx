@@ -42,18 +42,13 @@ export function QuickCreateMenu() {
     if (!session || filteredItems.length === 0) return null;
 
     return (
-        <div className="relative ml-2" ref={menuRef}>
+        <div className="relative ml-0 sm:ml-1 shrink-0" ref={menuRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center justify-center rounded-full bg-green-500 text-white hover:bg-green-600 focus:outline-none transition-all shadow-md animate-quick-create"
-                style={{
-                    width: '36px',
-                    height: '36px',
-                    flexShrink: 0
-                }}
+                className="flex items-center justify-center rounded-full bg-emerald-500 text-white hover:bg-emerald-600 focus:outline-none transition-all shadow-sm w-[32px] h-[32px] sm:w-[36px] sm:h-[36px] shrink-0"
                 title="Tạo Nhanh"
             >
-                <Plus size={20} strokeWidth={3} />
+                <Plus size={18} strokeWidth={2.5} />
             </button>
 
             {isOpen && (

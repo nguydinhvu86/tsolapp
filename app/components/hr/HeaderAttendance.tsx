@@ -159,14 +159,15 @@ export function HeaderAttendance() {
 
     return (
         <>
-            <div className="flex items-center gap-2 mr-2">
+            <div className="flex items-center gap-1 sm:gap-2 mr-0 sm:mr-1">
                 {(!hasCheckedIn || hasCheckedOut) && (
                     <button
                         onClick={() => openModal('IN')}
                         title="Chấm công vào làm"
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100"
+                        className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors border bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 shrink-0"
                     >
-                        <LogIn className="w-4 h-4" /> Check In
+                        <LogIn className="w-4 h-4 shrink-0" />
+                        <span className="hidden sm:inline">Check In</span>
                     </button>
                 )}
 
@@ -174,16 +175,17 @@ export function HeaderAttendance() {
                     <button
                         onClick={() => openModal('OUT')}
                         title="Chấm công tan làm"
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 rounded-lg text-sm font-medium transition-colors"
+                        className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 rounded-lg text-xs sm:text-sm font-medium transition-colors shrink-0"
                     >
-                        <LogOut className="w-4 h-4" /> Check Out
+                        <LogOut className="w-4 h-4 shrink-0" />
+                        <span className="hidden sm:inline">Check Out</span>
                     </button>
                 )}
 
                 {/* We can still keep the CheckCircle just for visual completion if they checked out at least once, but shrink it */}
                 {hasCheckedOut && (
-                    <div title="Đã có ca làm việc hoàn thành" className="hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
-                        <CheckCircle className="w-4 h-4" />
+                    <div title="Đã có ca làm việc hoàn thành" className="hidden lg:flex items-center justify-center w-7 h-7 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
+                        <CheckCircle className="w-3.5 h-3.5" />
                     </div>
                 )}
             </div>

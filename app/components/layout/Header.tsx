@@ -18,14 +18,15 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
 
     return (
         <header
-            className="app-header sticky top-0 z-50 px-4 md:px-8 flex items-center justify-between border-b border-slate-200"
+            className="app-header sticky top-0 z-50 px-3 sm:px-4 md:px-8 flex items-center justify-between border-b border-slate-200"
             style={{
                 height: '64px',
-                backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                backgroundColor: 'rgba(255, 255, 255, 0.85)',
                 backdropFilter: 'blur(12px)',
                 WebkitBackdropFilter: 'blur(12px)'
             }}
         >
+            {/* Left section */}
             <div className="flex items-center gap-1.5 sm:gap-2 md:gap-4 flex-1 max-w-[600px] min-w-0">
                 {onMenuToggle && (
                     <button
@@ -38,32 +39,41 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
                     </button>
                 )}
 
-                <div className="flex items-center gap-1.5 sm:gap-2 flex-grow max-w-[500px] min-w-0">
+                <div className="flex items-center gap-1 sm:gap-2 flex-grow max-w-[500px] min-w-0">
                     <GlobalSearch />
                     <QuickCreateMenu />
                 </div>
 
-                {/* Greeting on tablet */}
-                <div className="hidden sm:flex md:hidden flex-col ml-1 shrink-0">
+                {/* Greeting on large screens */}
+                <div className="hidden lg:flex flex-col ml-1 shrink-0">
                     <span className="text-xs text-slate-500">Mừng trở lại,</span>
                     <span className="text-sm font-semibold text-slate-800 leading-tight">{session?.user?.name || 'Administrator'}</span>
                 </div>
             </div>
-            <div className="flex items-center gap-1 sm:gap-2 md:gap-3 shrink-0">
-                {session?.user && <ChatWidget currentUser={session.user} />}
-                <LanguageSwitcher />
+
+            {/* Right section */}
+            <div className="flex items-center gap-1 sm:gap-2 md:gap-2.5 shrink-0">
+                {session?.user && (
+                    <div className="hidden sm:flex">
+                        <ChatWidget currentUser={session.user} />
+                    </div>
+                )}
+                <div className="hidden md:flex">
+                    <LanguageSwitcher />
+                </div>
                 <HeaderAttendance />
-                <PushPermissionToggle />
+                <div className="hidden sm:flex">
+                    <PushPermissionToggle />
+                </div>
                 <NotificationBell />
-                <Link href="/profile" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', cursor: 'pointer', padding: '0.5rem', borderRadius: '8px', transition: 'background 0.2s' }} className="hover:bg-slate-100">
+                <Link href="/profile" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', cursor: 'pointer', padding: '0.2rem', borderRadius: '8px', transition: 'background 0.2s' }} className="hover:bg-slate-100 shrink-0">
                     <AvatarImage
                         src={session?.user?.avatar}
                         name={session?.user?.name}
-                        size={40}
+                        size={34}
                         style={{ boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
                         fallbackStyle={{ backgroundColor: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
                     />
-
                 </Link>
 
                 <div
@@ -74,10 +84,10 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
                         } catch(e) { console.error('Logout error', e) }
                         signOut({ callbackUrl: '/login' });
                     }}
+                    className="hidden md:flex"
                     style={{
                         cursor: 'pointer',
                         color: 'var(--danger)',
-                        display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         width: '36px',
@@ -90,6 +100,6 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
                     <LogOut size={18} />
                 </div>
             </div>
-        </header >
+        </header>
     );
 }

@@ -314,7 +314,7 @@ export function GlobalSearch() {
             </div>
 
             {/* 2. MOBILE SEARCH TRIGGER BUTTON */}
-            <div className="mobile-only flex items-center">
+            <div className="mobile-only flex items-center shrink-0">
                 <button
                     type="button"
                     onClick={() => setIsMobileOpen(true)}
@@ -322,8 +322,7 @@ export function GlobalSearch() {
                     aria-label="Tìm kiếm toàn hệ thống"
                     title="Tìm kiếm toàn hệ thống"
                 >
-                    <Search size={19} className="text-slate-600" />
-                    <span className="mobile-search-text text-xs text-slate-500 font-medium hidden xs:inline">Tìm kiếm...</span>
+                    <Search size={18} className="text-slate-600 shrink-0" />
                 </button>
             </div>
 
@@ -490,17 +489,20 @@ export function GlobalSearch() {
                 .mobile-search-btn {
                     display: flex;
                     align-items: center;
-                    gap: 6px;
-                    padding: 7px 10px;
+                    justify-content: center;
+                    width: 34px;
+                    height: 34px;
+                    padding: 0;
                     border-radius: 9999px;
                     background: #f1f5f9;
                     border: 1px solid #e2e8f0;
                     cursor: pointer;
                     transition: all 0.2s ease;
+                    flex-shrink: 0;
                 }
                 .mobile-search-btn:active {
                     background: #e2e8f0;
-                    transform: scale(0.97);
+                    transform: scale(0.95);
                 }
 
                 /* Mobile Search Modal Overlay */
