@@ -245,32 +245,16 @@ export async function uploadInvoiceFiles(invoiceId: string, formData: FormData) 
         throw new Error("Không thể trích xuất dữ liệu từ File XML này. Có thể XML không đúng chuẩn của Tổng cục Thuế.");
     }
 
-    // 3. Xử lý lại Supplier (Map NCC theo MST thật từ file XML)
-    let finalSupplierId = invoice.supplierId;
-    if (invoiceData.supplierTaxCode) {
-         let existingSup = await prisma.supplier.findFirst({
-             where: { taxCode: { contains: invoiceData.supplierTaxCode } }
-         });
-         
-         if (existingSup) {
-             finalSupplierId = existingSup.id;
-         } else {
-             const count = await prisma.supplier.count();
-             const sCode = `NCC-${(count + 1).toString().padStart(6, '0')}`;
-             existingSup = await prisma.supplier.create({
-                 data: {
-                     code: sCode,
-                     name: invoiceData.supplierName || 'NCC Mới từ Hóa Đơn',
-                     taxCode: invoiceData.supplierTaxCode,
-                     totalDebt: 0
-                 }
-             });
-             finalSupplierId = existingSup.id;
-         }
-    }
-
+    // 3. Xử lý lại Supplier (Map NCC chính xác theo MST/Tên thật từ file XML)
+    const { resolveSupplierForInvoice } = await import('@/lib/supplier-matcher');
+    
     // 4. Update Invoice
     return prisma.$transaction(async (tx: any) => {
+        const finalSupplierId = await resolveSupplierForInvoice(tx, {
+            supplierTaxCode: invoiceData.supplierTaxCode,
+            supplierName: invoiceData.supplierName,
+            autoCreate: true
+        });
          // Cập nhật thông tin invoice gốc
          await tx.supplierInvoice.update({
              where: { id: invoiceId },
@@ -347,3 +331,60 @@ export async function deleteInvoice(invoiceId: string) {
         return true;
     });
 }
+
+export async function assignInvoiceSupplier(invoiceId: string, supplierId: string | null) {
+    await verifyActionPermission('ACCOUNTING_CREATE');
+
+    let updateData: any = {
+        supplierId: supplierId || null,
+    };
+
+    if (supplierId) {
+        const sup = await prisma.supplier.findUnique({ where: { id: supplierId } });
+        if (!sup) throw new Error("Không tìm thấy Nhà cung cấp được chọn");
+        updateData.supplierName = sup.name;
+        if (sup.taxCode) {
+            updateData.supplierTaxCode = sup.taxCode;
+        }
+    }
+
+    await prisma.supplierInvoice.update({
+        where: { id: invoiceId },
+        data: updateData
+    });
+
+    revalidatePath('/accounting/invoices');
+    return { success: true };
+}
+
+export async function autoReassignAllInvoices() {
+    await verifyActionPermission('ACCOUNTING_CREATE');
+    const { resolveSupplierForInvoice } = await import('@/lib/supplier-matcher');
+
+    const invoices = await prisma.supplierInvoice.findMany({
+        where: {
+            status: { in: ['NEW', 'DRAFT'] }
+        }
+    });
+
+    let updatedCount = 0;
+    for (const inv of invoices) {
+        const supId = await resolveSupplierForInvoice(prisma, {
+            supplierTaxCode: inv.supplierTaxCode,
+            supplierName: inv.supplierName,
+            autoCreate: false
+        });
+
+        if (supId && supId !== inv.supplierId) {
+            await prisma.supplierInvoice.update({
+                where: { id: inv.id },
+                data: { supplierId: supId }
+            });
+            updatedCount++;
+        }
+    }
+
+    revalidatePath('/accounting/invoices');
+    return { success: true, updatedCount };
+}
+

@@ -16,13 +16,19 @@ export default async function AccountingInvoicesPage() {
         const { redirect } = await import('next/navigation');
         redirect('/dashboard');
     }
-    const invoices = await prisma.supplierInvoice.findMany({
-        orderBy: { issueDate: 'desc' },
-        include: {
-            supplier: true,
-            items: true
-        }
-    });
+    const [invoices, suppliers] = await Promise.all([
+        prisma.supplierInvoice.findMany({
+            orderBy: { issueDate: 'desc' },
+            include: {
+                supplier: true,
+                items: true
+            }
+        }),
+        prisma.supplier.findMany({
+            orderBy: { name: 'asc' },
+            select: { id: true, code: true, name: true, taxCode: true }
+        })
+    ]);
 
     return (
         <div className="p-6">
@@ -30,7 +36,7 @@ export default async function AccountingInvoicesPage() {
                 <h1 className="text-2xl font-bold">Quản lý Hóa Đơn Điện Tử Đầu Vào</h1>
             </div>
             
-            <InvoiceDashboardClient initialInvoices={invoices} />
+            <InvoiceDashboardClient initialInvoices={invoices} suppliers={suppliers} />
         </div>
     );
 }

@@ -1,6 +1,7 @@
 import imaps from 'imap-simple';
 import { simpleParser, Attachment } from 'mailparser';
 import { parseXmlInvoice } from './invoice-parser';
+import { resolveSupplierForInvoice, normalizeTaxCode } from './supplier-matcher';
 import { PrismaClient } from '@prisma/client';
 import crypto from 'crypto';
 import fs from 'fs';
@@ -127,31 +128,24 @@ export async function fetchUnreadInvoices() {
 
 
 
-            // Map Supplier by TaxCode
-            let supplierId = null;
-            if (invoiceData.supplierTaxCode) {
-                const supplier = await prisma.supplier.findFirst({
-                    where: { taxCode: { contains: invoiceData.supplierTaxCode } }
-                });
-                if (supplier) {
-                    supplierId = supplier.id;
-                } else {
-                    const count = await prisma.supplier.count();
-                    const sCode = `NCC-${(count + 1).toString().padStart(6, '0')}`;
-                    const newSupplier = await prisma.supplier.create({
-                        data: {
-                            code: sCode,
-                            name: invoiceData.supplierName || 'NCC Mới từ Hóa Đơn',
-                            taxCode: invoiceData.supplierTaxCode,
-                            totalDebt: 0
-                        }
-                    });
-                    supplierId = newSupplier.id;
-                }
-            }
+            // Map Supplier accurately by TaxCode / Name without duplicate or misallocation
+            const cleanTaxCode = normalizeTaxCode(invoiceData.supplierTaxCode);
+            const isDraft = !xmlAttachment || (invoiceData.supplierName && invoiceData.supplierName.includes('Bản Nháp'));
+
+            let supplierId = await resolveSupplierForInvoice(prisma, {
+                supplierTaxCode: cleanTaxCode || invoiceData.supplierTaxCode,
+                supplierName: invoiceData.supplierName,
+                autoCreate: !isDraft && Boolean(cleanTaxCode) // Không tự ý tạo NCC rác nếu chỉ là bản nháp email
+            });
 
             const existing = await prisma.supplierInvoice.findFirst({
-                where: { invoiceNumber: invoiceData.invoiceNumber, supplierTaxCode: invoiceData.supplierTaxCode }
+                where: { 
+                    invoiceNumber: invoiceData.invoiceNumber,
+                    OR: [
+                        { supplierTaxCode: invoiceData.supplierTaxCode },
+                        ...(cleanTaxCode ? [{ supplierTaxCode: cleanTaxCode }] : [])
+                    ]
+                }
             });
 
             if (!existing) {

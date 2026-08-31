@@ -1,11 +1,11 @@
 'use client';
 import React, { useState, useEffect, useMemo } from 'react';
 import { FileText, Download, CheckCircle, PackagePlus, AlertCircle, RefreshCw, Settings, Eye, X, Search, Filter, Trash } from 'lucide-react';
-import { importInventoryFromInvoice, triggerManualScan, uploadInvoiceFiles, deleteInvoice } from './actions';
+import { importInventoryFromInvoice, triggerManualScan, uploadInvoiceFiles, deleteInvoice, assignInvoiceSupplier, autoReassignAllInvoices } from './actions';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-export default function InvoiceDashboardClient({ initialInvoices }: { initialInvoices: any[] }) {
+export default function InvoiceDashboardClient({ initialInvoices, suppliers = [] }: { initialInvoices: any[]; suppliers?: any[] }) {
     const [invoices, setInvoices] = useState(initialInvoices);
     const [isProcessing, setIsProcessing] = useState(false);
 
@@ -211,6 +211,53 @@ export default function InvoiceDashboardClient({ initialInvoices }: { initialInv
          }
     };
 
+    const handleReassignSupplier = async (invoiceId: string, supplierId: string) => {
+        setIsProcessing(true);
+        try {
+            await assignInvoiceSupplier(invoiceId, supplierId || null);
+            const selectedSup = suppliers.find(s => s.id === supplierId);
+            setInvoices(invoices.map(i => {
+                if (i.id === invoiceId) {
+                    return {
+                        ...i,
+                        supplierId: supplierId || null,
+                        supplierName: selectedSup ? selectedSup.name : i.supplierName,
+                        supplier: selectedSup || null
+                    };
+                }
+                return i;
+            }));
+            if (viewingInvoice && viewingInvoice.id === invoiceId) {
+                setViewingInvoice({
+                    ...viewingInvoice,
+                    supplierId: supplierId || null,
+                    supplierName: selectedSup ? selectedSup.name : viewingInvoice.supplierName,
+                    supplier: selectedSup || null
+                });
+            }
+            alert("Cập nhật phân bổ Nhà Cung Cấp thành công!");
+            router.refresh();
+        } catch (e: any) {
+            alert(e.message || "Lỗi khi gán Nhà Cung Cấp");
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleAutoReassignAll = async () => {
+        if (!confirm("Hệ thống sẽ tự động quét lại toàn bộ hóa đơn và phân bổ chuẩn xác vào đúng Nhà Cung Cấp theo MST và Tên chuẩn. Bạn có chắc chắn?")) return;
+        setIsProcessing(true);
+        try {
+            const res = await autoReassignAllInvoices();
+            alert(`Hoàn tất! Đã tự động chuẩn hóa và phân bổ lại cho ${res.updatedCount || 0} hóa đơn.`);
+            router.refresh();
+        } catch (e: any) {
+            alert(e.message || "Lỗi khi phân bổ tự động");
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
     return (
         <div className="space-y-4">
             <input 
@@ -234,17 +281,28 @@ export default function InvoiceDashboardClient({ initialInvoices }: { initialInv
                     </div>
                 </div>
                 
-                <div className="flex gap-3 relative z-10 w-full sm:w-auto mt-2 sm:mt-0">
+                <div className="flex gap-2.5 relative z-10 w-full sm:w-auto mt-2 sm:mt-0 flex-wrap">
                     <button 
                         onClick={handleManualScan} 
                         disabled={isProcessing}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl hover:bg-indigo-700 font-bold transition shadow-sm disabled:opacity-75 disabled:cursor-not-allowed"
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-indigo-600 text-white px-4 py-2.5 rounded-xl hover:bg-indigo-700 font-bold transition shadow-sm disabled:opacity-75 disabled:cursor-not-allowed text-xs sm:text-sm"
                     >
-                        <RefreshCw size={18} className={isProcessing ? 'animate-spin' : ''} />
+                        <RefreshCw size={16} className={isProcessing ? 'animate-spin' : ''} />
                         {isProcessing ? 'Đang khởi chạy...' : 'Quét Email Ngay'}
                     </button>
-                    <Link href="/accounting/settings" className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-gray-50 text-gray-700 border border-gray-200 px-5 py-2.5 rounded-xl hover:bg-gray-100 hover:text-indigo-600 hover:border-indigo-200 font-bold transition shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
-                        <Settings size={18} /> Cấu Hình
+
+                    <button 
+                        onClick={handleAutoReassignAll} 
+                        disabled={isProcessing}
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white text-indigo-700 border border-indigo-200 hover:bg-indigo-50 px-4 py-2.5 rounded-xl font-bold transition shadow-sm disabled:opacity-75 text-xs sm:text-sm"
+                        title="Tự động so khớp lại MST và Tên để gán đúng Nhà Cung Cấp cho các hóa đơn"
+                    >
+                        <CheckCircle size={16} className="text-indigo-600" />
+                        Phân Bổ Lại NCC
+                    </button>
+
+                    <Link href="/accounting/settings" className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-gray-50 text-gray-700 border border-gray-200 px-4 py-2.5 rounded-xl hover:bg-gray-100 hover:text-indigo-600 hover:border-indigo-200 font-bold transition shadow-[0_2px_4px_rgba(0,0,0,0.02)] text-xs sm:text-sm">
+                        <Settings size={16} /> Cấu Hình
                     </Link>
                 </div>
             </div>
@@ -611,13 +669,44 @@ export default function InvoiceDashboardClient({ initialInvoices }: { initialInv
                     <div className="p-6 overflow-y-auto">
                         <div className="grid grid-cols-2 gap-4 mb-6">
                             <div>
-                                <p className="text-sm text-gray-500">Tên Nhà Cung Cấp</p>
-                                <p className="font-semibold">{viewingInvoice.supplierName}</p>
+                                <p className="text-sm text-gray-500">Tên Nhà Cung Cấp Trên HĐ</p>
+                                <p className="font-semibold text-slate-900">{viewingInvoice.supplierName}</p>
                             </div>
                             <div>
-                                <p className="text-sm text-gray-500">Mã Số Thuế</p>
-                                <p className="font-semibold">{viewingInvoice.supplierTaxCode}</p>
+                                <p className="text-sm text-gray-500">Mã Số Thuế Trên HĐ</p>
+                                <p className="font-semibold text-slate-900">{viewingInvoice.supplierTaxCode}</p>
                             </div>
+
+                            <div className="col-span-2 bg-slate-50 border border-slate-200 p-3.5 rounded-xl">
+                                <div className="flex items-center justify-between gap-2 mb-1.5">
+                                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Phân Bổ Nhà Cung Cấp Hệ Thống:</label>
+                                    {viewingInvoice.supplierId ? (
+                                        <span className="text-xs font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-md flex items-center gap-1">
+                                            <CheckCircle size={12} /> Đã map NCC
+                                        </span>
+                                    ) : (
+                                        <span className="text-xs font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded-md flex items-center gap-1">
+                                            <AlertCircle size={12} /> Chưa map NCC
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="flex gap-2 items-center">
+                                    <select
+                                        value={viewingInvoice.supplierId || ''}
+                                        onChange={(e) => handleReassignSupplier(viewingInvoice.id, e.target.value)}
+                                        disabled={isProcessing}
+                                        className="flex-1 bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 shadow-sm"
+                                    >
+                                        <option value="">-- Chưa gán Nhà Cung Cấp (Bỏ gán) --</option>
+                                        {suppliers.map(s => (
+                                            <option key={s.id} value={s.id}>
+                                                [{s.code}] {s.name} {s.taxCode ? `(MST: ${s.taxCode})` : ''}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
                             <div>
                                 <p className="text-sm text-gray-500">Ngày Lập Hóa Đơn</p>
                                 <p className="font-semibold">{viewingInvoice.issueDate ? new Date(viewingInvoice.issueDate).toLocaleDateString('vi-VN') : 'N/A'}</p>

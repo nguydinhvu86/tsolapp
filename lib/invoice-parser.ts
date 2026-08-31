@@ -1,4 +1,5 @@
 import { XMLParser } from 'fast-xml-parser';
+import { normalizeTaxCode } from './supplier-matcher';
 
 export interface InvoiceExtractedData {
     invoiceNumber: string;
@@ -22,7 +23,7 @@ export function parseXmlInvoice(xmlString: string): InvoiceExtractedData | null 
     try {
         const parser = new XMLParser({
             ignoreAttributes: false,
-            parseTagValue: true,
+            parseTagValue: false, // Giữ nguyên chuỗi gốc, không tự động parse số làm mất số 0 đầu của MST hay Số HĐ
             trimValues: true,
         });
 
@@ -43,7 +44,7 @@ export function parseXmlInvoice(xmlString: string): InvoiceExtractedData | null 
 
         // 1. Thông tin chung (TTChung)
         const ttChung = findNode(root, 'TTChung') || root;
-        const invoiceNumber = ttChung?.SHDon?.toString() || ttChung?.['SHDON']?.toString() || 'UNKNOWN';
+        let invoiceNumber = (ttChung?.SHDon || ttChung?.['SHDON'] || ttChung?.SoHDon || ttChung?.['SOHDON'] || 'UNKNOWN').toString().trim();
         
         let issueDate = null;
         if (ttChung?.NLap) {
@@ -52,13 +53,16 @@ export function parseXmlInvoice(xmlString: string): InvoiceExtractedData | null 
 
         // 2. Thông tin người bán (NBan)
         const nBan = findNode(root, 'NBan') || findNode(root, 'NBAN') || root;
-        const supplierName = nBan?.Ten || nBan?.['TEN'] || 'Chưa định dạng Tên NCC';
-        const supplierTaxCode = nBan?.MST?.toString() || nBan?.['MST']?.toString() || '';
+        const rawSupplierName = nBan?.Ten || nBan?.['TEN'] || nBan?.TenNBan || nBan?.['TENNBAN'] || 'Chưa định dạng Tên NCC';
+        const supplierName = rawSupplierName.toString().trim();
+        
+        const rawSupplierTaxCode = (nBan?.MST || nBan?.['MST'] || nBan?.MSTNBan || nBan?.['MSTNBAN'] || '').toString().trim();
+        const supplierTaxCode = normalizeTaxCode(rawSupplierTaxCode) || rawSupplierTaxCode;
 
         // 3. Thông tin thanh toán (TToan)
         const tToan = findNode(root, 'TToan') || findNode(root, 'TTOAN') || root;
-        const totalAmount = parseFloat(tToan?.TgTTTBSo || tToan?.['TGTTTBSO'] || 0);
-        const taxAmount   = parseFloat(tToan?.TgTThue || tToan?.['TGTTHUE'] || 0);
+        const totalAmount = parseFloat(tToan?.TgTTTBSo || tToan?.['TGTTTBSO'] || tToan?.TongTienThanhToan || 0) || 0;
+        const taxAmount   = parseFloat(tToan?.TgTThue || tToan?.['TGTTHUE'] || tToan?.TienThue || 0) || 0;
 
         // 4. Hàng hoá dịch vụ (HHDVu)
         const items: InvoiceExtractedItem[] = [];
