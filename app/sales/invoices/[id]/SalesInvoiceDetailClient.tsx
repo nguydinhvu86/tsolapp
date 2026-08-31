@@ -950,10 +950,10 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                         today: new Date().toLocaleDateString('vi-VN'),
                         code: invoice.code,
                         totalAmount: formatMoney(invoice.totalAmount),
-                        link: `${window.location.origin}/public/sales/invoice/${invoice.id}`
+                        link: typeof window !== 'undefined' ? `${window.location.origin}/public/sales/invoice/${invoice.id}` : '',
                     }}
                     templates={emailTemplates || []}
-                    printUrl={`${window.location.origin}/public/sales/invoice/${invoice.id}`}
+                    printUrl={typeof window !== 'undefined' ? `${window.location.origin}/public/sales/invoice/${invoice.id}` : ''}
                     documentName={`HoaDon_${invoice.code}.pdf`}
                     onSend={async (data) => {
                         const res = await sendInvoiceEmail(invoice.id, data.to, data.subject, data.htmlBody, data.attachmentName, data.attachmentBase64);

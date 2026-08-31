@@ -461,10 +461,10 @@ export default function SalesOrderDetailClient({ initialData, customers, product
                     today: new Date().toLocaleDateString('vi-VN'),
                     code: order.code,
                     totalAmount: formatMoney(order.totalAmount),
-                    link: `${window.location.origin}/public/sales/order/${order.id}`
+                    link: typeof window !== 'undefined' ? `${window.location.origin}/public/sales/order/${order.id}` : ''
                 }}
                 templates={emailTemplates || []}
-                printUrl={`${window.location.origin}/public/sales/order/${order.id}`}
+                printUrl={typeof window !== 'undefined' ? `${window.location.origin}/public/sales/order/${order.id}` : ''}
                 documentName={`DonHang_${order.code}.pdf`}
                 onSend={async (data) => {
                     const res = await sendOrderEmail(order.id, data.to, data.subject, data.htmlBody, data.attachmentName, data.attachmentBase64);

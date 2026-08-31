@@ -1026,10 +1026,10 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                     today: new Date().toLocaleDateString('vi-VN'),
                     code: estimate.code,
                     totalAmount: formatMoney(estimate.totalAmount),
-                    link: `${window.location.origin}/public/sales/estimate/${estimate.id}`
+                    link: typeof window !== 'undefined' ? `${window.location.origin}/public/sales/estimate/${estimate.id}` : ''
                 }}
                 templates={emailTemplates || []}
-                printUrl={`${window.location.origin}/public/sales/estimate/${estimate.id}`}
+                printUrl={typeof window !== 'undefined' ? `${window.location.origin}/public/sales/estimate/${estimate.id}` : ''}
                 documentName={`BaoGia_${estimate.code}.pdf`}
                 onSend={async (data) => {
                     const res = await sendEstimateEmail(estimate.id, data.to, data.subject, data.htmlBody, data.attachmentName, data.attachmentBase64);
