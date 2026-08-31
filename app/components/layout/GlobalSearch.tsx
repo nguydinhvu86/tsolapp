@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import {
     Search,
@@ -19,8 +20,6 @@ import {
     ArrowLeft,
     WalletCards,
     Sparkles,
-    FileEdit,
-    MessageSquare,
     CornerDownLeft
 } from 'lucide-react';
 import { globalSearch, SearchResult } from './actions';
@@ -33,11 +32,15 @@ export function GlobalSearch() {
     const [isOpen, setIsOpen] = useState(false);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
     const [activeFilter, setActiveFilter] = useState<string>('ALL');
-    const [selectedIndex, setSelectedIndex] = useState<number>(-1);
+    const [mounted, setMounted] = useState(false);
 
     const desktopWrapperRef = useRef<HTMLDivElement>(null);
     const desktopInputRef = useRef<HTMLInputElement>(null);
     const mobileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     // Global shortcut Ctrl+K / Cmd+K
     useEffect(() => {
@@ -66,7 +69,7 @@ export function GlobalSearch() {
             document.body.style.overflow = 'hidden';
             setTimeout(() => {
                 mobileInputRef.current?.focus();
-            }, 100);
+            }, 80);
         } else {
             document.body.style.overflow = '';
         }
@@ -100,34 +103,33 @@ export function GlobalSearch() {
             try {
                 const data = await globalSearch(query);
                 setResults(data);
-                setSelectedIndex(-1);
             } catch (error) {
                 console.error('Search failed', error);
                 setResults([]);
             } finally {
                 setIsLoading(false);
             }
-        }, 350); // 350ms snappy debounce
+        }, 300);
 
         return () => clearTimeout(timer);
     }, [query, isMobileOpen]);
 
     const getIconForType = (type: SearchResult['type']) => {
         switch (type) {
-            case 'CUSTOMER': return <User size={16} className="text-blue-600" />;
-            case 'SUPPLIER': return <Building2 size={16} className="text-amber-600" />;
-            case 'SALES_ESTIMATE': return <Calculator size={16} className="text-emerald-600" />;
-            case 'SALES_ORDER': return <ShoppingCart size={16} className="text-purple-600" />;
-            case 'SALES_INVOICE': return <Receipt size={16} className="text-rose-600" />;
-            case 'PURCHASE_ORDER': return <ShoppingCart size={16} className="text-orange-600" />;
-            case 'PURCHASE_BILL': return <Receipt size={16} className="text-teal-600" />;
-            case 'QUOTE': return <FileText size={16} className="text-cyan-600" />;
-            case 'CONTRACT': return <FileSignature size={16} className="text-indigo-600" />;
-            case 'TASK': return <CheckSquare size={16} className="text-violet-600" />;
-            case 'LEAD': return <Target size={16} className="text-pink-600" />;
-            case 'PRODUCT': return <Package size={16} className="text-sky-600" />;
-            case 'EXPENSE': return <WalletCards size={16} className="text-amber-700" />;
-            default: return <FileText size={16} className="text-gray-600" />;
+            case 'CUSTOMER': return <User size={18} className="text-blue-600" />;
+            case 'SUPPLIER': return <Building2 size={18} className="text-amber-600" />;
+            case 'SALES_ESTIMATE': return <Calculator size={18} className="text-emerald-600" />;
+            case 'SALES_ORDER': return <ShoppingCart size={18} className="text-purple-600" />;
+            case 'SALES_INVOICE': return <Receipt size={18} className="text-rose-600" />;
+            case 'PURCHASE_ORDER': return <ShoppingCart size={18} className="text-orange-600" />;
+            case 'PURCHASE_BILL': return <Receipt size={18} className="text-teal-600" />;
+            case 'QUOTE': return <FileText size={18} className="text-cyan-600" />;
+            case 'CONTRACT': return <FileSignature size={18} className="text-indigo-600" />;
+            case 'TASK': return <CheckSquare size={18} className="text-violet-600" />;
+            case 'LEAD': return <Target size={18} className="text-pink-600" />;
+            case 'PRODUCT': return <Package size={18} className="text-sky-600" />;
+            case 'EXPENSE': return <WalletCards size={18} className="text-amber-700" />;
+            default: return <FileText size={18} className="text-gray-600" />;
         }
     };
 
@@ -326,10 +328,10 @@ export function GlobalSearch() {
                 </button>
             </div>
 
-            {/* 3. MOBILE FULL-SCREEN SEARCH MODAL OVERLAY */}
-            {isMobileOpen && (
-                <div className="mobile-search-overlay">
-                    {/* Header */}
+            {/* 3. MOBILE FULL-SCREEN SEARCH MODAL OVERLAY (MOUNTED TO BODY VIA PORTAL) */}
+            {mounted && isMobileOpen && typeof document !== 'undefined' && createPortal(
+                <div className="mobile-search-overlay-fullscreen">
+                    {/* Header bar */}
                     <div className="mobile-search-header">
                         <button
                             type="button"
@@ -344,7 +346,7 @@ export function GlobalSearch() {
                             <input
                                 ref={mobileInputRef}
                                 type="text"
-                                placeholder="Tìm kiếm khách hàng, đơn hàng, ghi chú..."
+                                placeholder="Tìm khách hàng, đơn hàng, ghi chú..."
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
                                 className="mobile-input"
@@ -400,14 +402,14 @@ export function GlobalSearch() {
                                 </div>
                             </div>
                         ) : isLoading ? (
-                            <div className="gs-empty-state pt-12">
+                            <div className="gs-empty-state pt-16">
                                 <Loader2 className="gs-spinner text-indigo-600" size={32} />
                                 <span className="font-medium text-slate-700 mt-2">Đang tìm kiếm chuyên sâu...</span>
                             </div>
                         ) : filteredResults.length === 0 ? (
-                            <div className="gs-empty-state pt-12 px-4 text-center">
+                            <div className="gs-empty-state pt-16 px-4 text-center">
                                 <Search size={36} className="text-slate-300 mb-2" />
-                                <span className="font-semibold text-slate-800 text-sm">Không tìm thấy kết quả nào</span>
+                                <span className="font-semibold text-slate-800 text-base">Không tìm thấy kết quả nào</span>
                                 <span className="text-xs text-slate-500 mt-1">Không có mục nào khớp với "{query}" trong tên, mã hoặc nội dung ghi chú.</span>
                             </div>
                         ) : (
@@ -444,8 +446,10 @@ export function GlobalSearch() {
                                                         </div>
                                                         {res.matchSnippet && (
                                                             <div className="mobile-match-snippet">
-                                                                <span className="mobile-match-tag">{res.matchLabel || 'Ghi chú'}</span>
-                                                                <span className="mobile-match-text">"{res.matchSnippet}"</span>
+                                                                <div className="mobile-match-header">
+                                                                    <span className="mobile-match-tag">{res.matchLabel || 'Ghi chú'}</span>
+                                                                </div>
+                                                                <div className="mobile-match-text">"{res.matchSnippet}"</div>
                                                             </div>
                                                         )}
                                                     </div>
@@ -457,7 +461,8 @@ export function GlobalSearch() {
                             </div>
                         )}
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             <style jsx global>{`
@@ -505,22 +510,28 @@ export function GlobalSearch() {
                     transform: scale(0.95);
                 }
 
-                /* Mobile Search Modal Overlay */
-                .mobile-search-overlay {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background: #ffffff;
-                    z-index: 99999;
-                    display: flex;
-                    flex-direction: column;
-                    animation: mobileSlideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+                /* Mobile Fullscreen Search Modal Overlay (Mounted to Body) */
+                .mobile-search-overlay-fullscreen {
+                    position: fixed !important;
+                    top: 0 !important;
+                    left: 0 !important;
+                    right: 0 !important;
+                    bottom: 0 !important;
+                    width: 100vw !important;
+                    height: 100vh !important;
+                    height: 100dvh !important;
+                    background: #ffffff !important;
+                    z-index: 999999 !important;
+                    display: flex !important;
+                    flex-direction: column !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    overflow: hidden !important;
+                    animation: mobileSearchFadeIn 0.2s ease-out;
                 }
 
-                @keyframes mobileSlideIn {
-                    from { transform: translateY(15px); opacity: 0; }
+                @keyframes mobileSearchFadeIn {
+                    from { transform: translateY(12px); opacity: 0; }
                     to { transform: translateY(0); opacity: 1; }
                 }
 
@@ -528,9 +539,11 @@ export function GlobalSearch() {
                     display: flex;
                     align-items: center;
                     gap: 8px;
-                    padding: 10px 14px;
-                    border-bottom: 1px solid #f1f5f9;
+                    padding: 12px 14px;
+                    border-bottom: 1px solid #e2e8f0;
                     background: #ffffff;
+                    flex-shrink: 0;
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
                 }
 
                 .mobile-back-btn {
@@ -542,6 +555,7 @@ export function GlobalSearch() {
                     display: flex;
                     align-items: center;
                     justify-content: center;
+                    flex-shrink: 0;
                 }
                 .mobile-back-btn:active {
                     background: #f1f5f9;
@@ -552,15 +566,15 @@ export function GlobalSearch() {
                     display: flex;
                     align-items: center;
                     gap: 8px;
-                    background: #f8fafc;
-                    border: 1px solid #e2e8f0;
+                    background: #f1f5f9;
+                    border: 1px solid #cbd5e1;
                     border-radius: 9999px;
-                    padding: 6px 12px;
+                    padding: 8px 14px;
                 }
                 .mobile-input-box:focus-within {
                     border-color: #6366f1;
                     background: #ffffff;
-                    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+                    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
                 }
 
                 .mobile-input {
@@ -568,8 +582,8 @@ export function GlobalSearch() {
                     border: none;
                     background: transparent;
                     outline: none;
-                    font-size: 0.9375rem;
-                    color: #1e293b;
+                    font-size: 1rem;
+                    color: #0f172a;
                     min-width: 0;
                 }
                 .mobile-input::placeholder {
@@ -596,25 +610,26 @@ export function GlobalSearch() {
                     display: flex;
                     align-items: center;
                     gap: 6px;
-                    padding: 8px 12px;
-                    background: #fafafa;
-                    border-bottom: 1px solid #f1f5f9;
+                    padding: 10px 14px;
+                    background: #f8fafc;
+                    border-bottom: 1px solid #e2e8f0;
                     overflow-x: auto;
                     white-space: nowrap;
+                    flex-shrink: 0;
                     -webkit-overflow-scrolling: touch;
                 }
 
                 .mobile-filter-pill {
                     display: inline-flex;
                     align-items: center;
-                    gap: 4px;
-                    padding: 4px 10px;
-                    font-size: 0.75rem;
+                    gap: 5px;
+                    padding: 6px 12px;
+                    font-size: 0.8125rem;
                     font-weight: 500;
                     border-radius: 9999px;
                     background: #ffffff;
-                    border: 1px solid #e2e8f0;
-                    color: #64748b;
+                    border: 1px solid #cbd5e1;
+                    color: #475569;
                     cursor: pointer;
                     flex-shrink: 0;
                     transition: all 0.15s ease;
@@ -626,8 +641,8 @@ export function GlobalSearch() {
                     font-weight: 600;
                 }
                 .mobile-pill-count {
-                    font-size: 0.65rem;
-                    padding: 1px 5px;
+                    font-size: 0.6875rem;
+                    padding: 1px 6px;
                     border-radius: 9999px;
                     background: rgba(0, 0, 0, 0.08);
                 }
@@ -639,7 +654,9 @@ export function GlobalSearch() {
                 .mobile-results-container {
                     flex: 1;
                     overflow-y: auto;
-                    padding-bottom: 24px;
+                    padding: 0 0 32px 0;
+                    background: #ffffff;
+                    -webkit-overflow-scrolling: touch;
                 }
 
                 .mobile-search-prompt {
@@ -647,18 +664,18 @@ export function GlobalSearch() {
                     flex-direction: column;
                     align-items: center;
                     justify-content: center;
-                    padding: 48px 20px;
+                    padding: 56px 20px;
                     text-align: center;
                 }
                 .prompt-icon-box {
-                    width: 60px;
-                    height: 60px;
-                    border-radius: 16px;
+                    width: 64px;
+                    height: 64px;
+                    border-radius: 18px;
                     background: #eef2ff;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    margin-bottom: 14px;
+                    margin-bottom: 16px;
                 }
                 .prompt-quick-tags {
                     display: flex;
@@ -667,7 +684,7 @@ export function GlobalSearch() {
                     justify-content: center;
                 }
                 .prompt-tag {
-                    padding: 5px 12px;
+                    padding: 6px 14px;
                     font-size: 0.8125rem;
                     color: #4f46e5;
                     background: #eef2ff;
@@ -680,27 +697,29 @@ export function GlobalSearch() {
                 }
 
                 .mobile-category-block {
-                    margin-bottom: 12px;
+                    margin-bottom: 16px;
                 }
                 .mobile-category-header {
-                    padding: 6px 14px;
+                    padding: 8px 16px;
                     font-size: 0.75rem;
                     font-weight: 700;
-                    color: #64748b;
+                    color: #475569;
                     text-transform: uppercase;
-                    background: #f8fafc;
-                    border-top: 1px solid #f1f5f9;
-                    border-bottom: 1px solid #f1f5f9;
+                    letter-spacing: 0.05em;
+                    background: #f1f5f9;
+                    border-top: 1px solid #e2e8f0;
+                    border-bottom: 1px solid #e2e8f0;
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
                 }
                 .mobile-category-count {
-                    font-size: 0.7rem;
-                    padding: 2px 6px;
+                    font-size: 0.75rem;
+                    padding: 2px 8px;
                     border-radius: 9999px;
                     background: #e2e8f0;
-                    color: #475569;
+                    color: #334155;
+                    font-weight: 600;
                 }
 
                 .mobile-items-list {
@@ -710,91 +729,89 @@ export function GlobalSearch() {
                 .mobile-item-card {
                     display: flex;
                     align-items: flex-start;
-                    gap: 10px;
-                    padding: 10px 14px;
-                    border-bottom: 1px solid #f8fafc;
+                    gap: 12px;
+                    padding: 12px 16px;
+                    border-bottom: 1px solid #f1f5f9;
                     text-decoration: none;
                     transition: background 0.15s ease;
                 }
                 .mobile-item-card:active {
-                    background: #f1f5f9;
+                    background: #f8fafc;
                 }
                 .mobile-item-icon {
-                    padding: 8px;
-                    background: #f1f5f9;
-                    border-radius: 8px;
+                    padding: 10px;
+                    background: #f8fafc;
+                    border-radius: 10px;
                     border: 1px solid #e2e8f0;
                     margin-top: 2px;
+                    flex-shrink: 0;
                 }
                 .mobile-item-info {
                     flex: 1;
                     min-width: 0;
                     display: flex;
                     flex-direction: column;
+                    gap: 2px;
                 }
                 .mobile-item-title-row {
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
-                    gap: 6px;
+                    gap: 8px;
                 }
                 .mobile-item-title {
-                    font-size: 0.875rem;
+                    font-size: 0.9375rem;
                     font-weight: 600;
                     color: #0f172a;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
+                    word-break: break-word;
                 }
                 .mobile-item-badge {
-                    font-size: 0.65rem;
+                    font-size: 0.6875rem;
                     font-weight: 600;
-                    padding: 2px 6px;
-                    border-radius: 4px;
+                    padding: 2px 8px;
+                    border-radius: 6px;
                     background: #f1f5f9;
-                    color: #475569;
+                    color: #334155;
                     flex-shrink: 0;
                 }
                 .mobile-item-subtitle-row {
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
-                    gap: 6px;
-                    margin-top: 2px;
+                    gap: 8px;
                 }
                 .mobile-item-subtitle {
-                    font-size: 0.78125rem;
-                    color: #64748b;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
+                    font-size: 0.8125rem;
+                    color: #475569;
+                    word-break: break-word;
                 }
                 .mobile-item-date {
-                    font-size: 0.6875rem;
+                    font-size: 0.75rem;
                     color: #94a3b8;
                     flex-shrink: 0;
                 }
                 .mobile-match-snippet {
-                    margin-top: 5px;
-                    padding: 4px 8px;
+                    margin-top: 6px;
+                    padding: 6px 10px;
                     background: #fefce8;
                     border: 1px solid #fef08a;
-                    border-radius: 6px;
+                    border-radius: 8px;
+                    font-size: 0.8125rem;
                     display: flex;
-                    align-items: center;
-                    gap: 6px;
-                    font-size: 0.75rem;
+                    flex-direction: column;
+                    gap: 2px;
                 }
                 .mobile-match-tag {
+                    font-size: 0.6875rem;
                     font-weight: 700;
                     color: #854d0e;
-                    flex-shrink: 0;
+                    text-transform: uppercase;
+                    letter-spacing: 0.04em;
                 }
                 .mobile-match-text {
                     color: #713f12;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    white-space: nowrap;
+                    word-break: break-word;
+                    line-height: 1.4;
                 }
 
                 /* Desktop Styles */
@@ -871,7 +888,7 @@ export function GlobalSearch() {
                     top: 100%;
                     left: 0;
                     width: 100%;
-                    min-width: 480px;
+                    min-width: 540px;
                     background: white;
                     border-bottom-left-radius: 12px;
                     border-bottom-right-radius: 12px;

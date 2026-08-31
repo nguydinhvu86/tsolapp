@@ -45,7 +45,7 @@ export async function globalSearch(query: string, filterCategory?: string): Prom
     if (!session || !session.user) return [];
 
     const results: SearchResult[] = [];
-    const limit = 5;
+    const limit = 8;
     const userId = session.user.id;
     const perms = (session.user.permissions as string[]) || [];
     const searchLower = search.toLowerCase();
