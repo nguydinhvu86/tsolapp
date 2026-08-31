@@ -58,7 +58,13 @@ export async function updateEmployeeProfile(userId: string, profileData: any) {
 
 export async function createLaborContract(userId: string, data: any) {
     try {
-        const u = await verifyActionPermission('USERS_EDIT_ALL');
+        const session = await getServerSession(authOptions);
+        if (!session?.user) throw new Error("Unauthorized: Vui lòng đăng nhập");
+        const isAdmin = session.user.role === 'ADMIN';
+        const perms = (session.user.permissions as string[]) || [];
+        if (!isAdmin && !perms.includes('EMPLOYEES_EDIT') && !perms.includes('EMPLOYEES_CREATE') && !perms.includes('USERS_EDIT')) {
+            throw new Error("Forbidden: Bạn không có quyền thêm hợp đồng lao động");
+        }
 
         const contract = await prisma.laborContract.create({
             data: {
@@ -69,7 +75,7 @@ export async function createLaborContract(userId: string, data: any) {
                 endDate: data.endDate ? new Date(data.endDate) : null,
                 fileUrl: data.fileUrl,
                 status: "ACTIVE",
-                creatorId: u ? (u as any).id : 'system'
+                creatorId: session.user.id
             }
         });
 

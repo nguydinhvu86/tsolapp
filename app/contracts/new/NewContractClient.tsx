@@ -10,17 +10,26 @@ import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { createContract } from '../actions';
 import { useRouter } from 'next/navigation';
 
-export function NewContractClient({ templates, customers, projects, preselectedCustomerId }: { templates: ContractTemplate[], customers: Customer[], projects: any[], preselectedCustomerId?: string }) {
+export function NewContractClient({ templates, customers, projects, preselectedCustomerId, preselectedProjectId }: { templates: ContractTemplate[], customers: Customer[], projects: any[], preselectedCustomerId?: string, preselectedProjectId?: string }) {
     const router = useRouter();
     const [templateId, setTemplateId] = useState('');
     const [customerId, setCustomerId] = useState(preselectedCustomerId || '');
-    const [projectId, setProjectId] = useState('');
+    const [projectId, setProjectId] = useState(preselectedProjectId || '');
+    const [customTitle, setCustomTitle] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [variables, setVariables] = useState<Record<string, string>>({});
     const [previewContent, setPreviewContent] = useState('');
 
     const selectedTemplate = templates.find(t => t.id === templateId);
     const selectedCustomer = customers.find(c => c.id === customerId);
+
+    // Auto-update title when customer changes unless user manually typed
+    useEffect(() => {
+        if (selectedCustomer && !customTitle) {
+            setCustomTitle(`Hợp đồng - ${selectedCustomer.name} - ${new Date().toLocaleDateString('vi-VN')}`);
+        }
+    }, [selectedCustomer]);
 
     // Extract variables from template
     useEffect(() => {
@@ -104,24 +113,34 @@ export function NewContractClient({ templates, customers, projects, preselectedC
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!selectedTemplate || !selectedCustomer) {
-            alert('Vui lòng chọn đầy đủ Mẫu hợp đồng và Khách hàng');
+        if (!selectedTemplate) {
+            alert('Vui lòng chọn Mẫu hợp đồng');
             return;
         }
 
+        if (!selectedCustomer) {
+            alert('Vui lòng chọn Khách hàng');
+            return;
+        }
+
+        const finalTitle = customTitle.trim() || `Hợp đồng - ${selectedCustomer.name} - ${new Date().toLocaleDateString('vi-VN')}`;
+
+        setIsSubmitting(true);
         try {
             const result = await createContract({
-                title: `Hợp đồng - ${selectedCustomer.name} - ${new Date().toLocaleDateString('vi-VN')}`,
-                content: previewContent,
+                title: finalTitle,
+                content: previewContent || selectedTemplate.content,
                 variables: JSON.stringify(variables),
                 customerId: selectedCustomer.id,
                 templateId: selectedTemplate.id,
-                projectId: projectId || undefined
+                projectId: projectId.trim() ? projectId : undefined
             });
-            router.push('/contracts');
-        } catch (error) {
+            router.push(`/contracts/${result.id}`);
+        } catch (error: any) {
             console.error('Lỗi khi tạo hợp đồng:', error);
-            alert(`Có lỗi xảy ra: ${error instanceof Error ? error.message : JSON.stringify(error)}`);
+            alert(`Có lỗi xảy ra: ${error?.message || JSON.stringify(error)}`);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -132,7 +151,17 @@ export function NewContractClient({ templates, customers, projects, preselectedC
                     <h3 style={{ marginBottom: '1rem' }}>1. Thông tin cơ bản</h3>
                     <div className="flex flex-col gap-4">
                         <div className="flex flex-col gap-2">
-                            <label style={{ fontWeight: 500, fontSize: '0.875rem' }}>Chọn Mẫu Hợp Đồng</label>
+                            <label style={{ fontWeight: 500, fontSize: '0.875rem' }}>Tiêu Đề Hợp Đồng</label>
+                            <Input
+                                label=""
+                                value={customTitle}
+                                onChange={e => setCustomTitle(e.target.value)}
+                                placeholder="Nhập tên hợp đồng..."
+                            />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <label style={{ fontWeight: 500, fontSize: '0.875rem' }}>Chọn Mẫu Hợp Đồng <span className="text-red-500">*</span></label>
                             <select className="input" value={templateId} onChange={e => setTemplateId(e.target.value)}>
                                 <option value="">-- Chọn một mẫu --</option>
                                 {templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
@@ -140,7 +169,7 @@ export function NewContractClient({ templates, customers, projects, preselectedC
                         </div>
 
                         <div className="flex flex-col gap-2">
-                            <label style={{ fontWeight: 500, fontSize: '0.875rem' }}>Chọn Khách Hàng</label>
+                            <label style={{ fontWeight: 500, fontSize: '0.875rem' }}>Chọn Khách Hàng <span className="text-red-500">*</span></label>
                             <SearchableSelect
                                 value={customerId}
                                 onChange={setCustomerId}
@@ -154,7 +183,7 @@ export function NewContractClient({ templates, customers, projects, preselectedC
                             <SearchableSelect
                                 value={projectId}
                                 onChange={setProjectId}
-                                options={projects?.map(p => ({ value: p.id, label: p.title })) || []}
+                                options={projects?.map(p => ({ value: p.id, label: p.code ? `[${p.code}] ${p.name}` : p.name })) || []}
                                 placeholder="-- Chọn dự án --"
                             />
                         </div>
@@ -196,7 +225,9 @@ export function NewContractClient({ templates, customers, projects, preselectedC
                         </div>
 
                         <div style={{ marginTop: '2rem' }}>
-                            <Button onClick={handleSubmit} className="w-full">Tạo Hợp Đồng</Button>
+                            <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full">
+                                {isSubmitting ? 'Đang khởi tạo hợp đồng...' : 'Tạo Hợp Đồng'}
+                            </Button>
                         </div>
                     </Card>
                 )}

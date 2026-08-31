@@ -12,14 +12,25 @@ export async function createContract(data: { title: string, content: string, var
     const user = await verifyActionPermission('CONTRACTS_CREATE');
     const uId = user ? (user as any).id : creatorId;
     
+    if (!data.customerId) throw new Error("Vui lòng chọn khách hàng");
+    if (!data.templateId) throw new Error("Vui lòng chọn mẫu hợp đồng");
+    if (!data.title || data.title.trim() === '') throw new Error("Vui lòng nhập tiêu đề hợp đồng");
+
     // Extract virtual fields not belonging to Contract model
     const { assignedToId, projectId, ...contractData } = data;
+
+    // Verify project if provided
+    let validProjectId: string | undefined = undefined;
+    if (projectId && projectId.trim() !== '') {
+        const p = await prisma.project.findUnique({ where: { id: projectId } });
+        if (p) validProjectId = p.id;
+    }
 
     const contract = await prisma.contract.create({ 
         data: {
             ...contractData,
             creatorId: uId,
-            ...(projectId ? { projects: { connect: [{ id: projectId }] } } : {})
+            ...(validProjectId ? { projects: { connect: [{ id: validProjectId }] } } : {})
         } 
     });
 
@@ -29,7 +40,7 @@ export async function createContract(data: { title: string, content: string, var
             data.customerId,
             session.user.id,
             'TẠO_HỢP_ĐỒNG',
-            `Đã tạo Hợp Đồng [${contract.title}]` // Assuming contract.title is used for the message, as contract.code might not exist or be available here.
+            `Đã tạo Hợp Đồng [${contract.title}]`
         );
     }
 
