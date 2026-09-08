@@ -14,7 +14,7 @@ import {
     Plus, Edit, Trash2, Eye, ChevronUp, ChevronDown, ArrowUpDown, 
     Search, Users, TrendingUp, RefreshCcw, Activity, Sparkles, 
     Loader2, Building2, CreditCard, FileText, CheckCircle2, AlertCircle, 
-    Globe, Mail, Phone, MapPin, DollarSign 
+    Globe, Mail, Phone, MapPin, DollarSign, X 
 } from 'lucide-react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
@@ -23,6 +23,33 @@ import { useTranslation } from '@/app/i18n/LanguageContext';
 import { ClickToCallButton } from '@/app/components/ClickToCallButton';
 
 export type CustomerWithStats = Customer & { revenue?: number, lastActivityAt?: Date | string };
+
+function getInitials(name: string) {
+    if (!name) return 'KH';
+    const clean = name.replace(/^(công ty|cty|tnhh|cổ phần|cp|mtv|tư vấn|đầu tư|thương mại|dịch vụ)\s+/gi, '').trim();
+    const words = clean.split(/\s+/).filter(Boolean);
+    if (words.length >= 2) {
+        return (words[0][0] + words[1][0]).toUpperCase();
+    }
+    return (words[0] || name).slice(0, 2).toUpperCase();
+}
+
+const AVATAR_GRADIENTS = [
+    'from-emerald-500 to-teal-600',
+    'from-blue-500 to-indigo-600',
+    'from-indigo-500 to-purple-600',
+    'from-violet-500 to-pink-600',
+    'from-amber-500 to-orange-600',
+    'from-rose-500 to-pink-600',
+    'from-cyan-500 to-blue-600'
+];
+
+function getAvatarGradient(id: string) {
+    if (!id) return AVATAR_GRADIENTS[0];
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) hash = (hash << 5) - hash + id.charCodeAt(i);
+    return AVATAR_GRADIENTS[Math.abs(hash) % AVATAR_GRADIENTS.length];
+}
 
 const emptyCustomerForm = {
     code: '',
@@ -263,235 +290,397 @@ export function CustomerClient({ initialData, users, isAdminOrManager, initialEm
     };
 
     return (
-        <div className="flex flex-col gap-6">
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-                <Card
-                    className={`summary-card cursor-pointer transition-all hover:-translate-y-1 ${activeFilter === 'ALL' ? 'ring-2 ring-indigo-500 ring-offset-2' : ''}`}
-                    style={{ padding: '1.25rem', border: activeFilter === 'ALL' ? '2px solid #6366f1' : '1px solid var(--border)' }}
-                    onClick={() => setActiveFilter('ALL')}
-                >
+        <div className="flex flex-col gap-5">
+            {/* Top Page Tech Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/80">
+                <div>
+                    <div className="flex items-center gap-2 mb-1">
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-2xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            CRM &amp; Đối Tác
+                        </span>
+                        <span className="text-[11px] font-semibold text-slate-400">|</span>
+                        <span className="text-[11px] font-medium text-slate-500">Hệ sinh thái khách hàng B2B</span>
+                    </div>
                     <div className="flex items-center gap-3">
-                        <div style={{ padding: '0.75rem', borderRadius: 'var(--radius)', backgroundColor: '#e0e7ff', color: '#4f46e5' }}>
-                            <Users size={24} />
-                        </div>
-                        <div>
-                            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#1e3a8a', margin: 0 }}>{t('customers.titleAll')}</h3>
-                            <p style={{ fontSize: '0.875rem', color: '#6366f1', margin: 0, marginTop: '4px' }}>{customers.length} {t('customers.allDesc')}</p>
-                        </div>
-                    </div>
-                </Card>
-
-                <Card
-                    className={`summary-card cursor-pointer transition-all hover:-translate-y-1 ${activeFilter === 'TOP_REVENUE_5' ? 'ring-2 ring-emerald-500 ring-offset-2' : ''}`}
-                    style={{ padding: '1.25rem', border: activeFilter === 'TOP_REVENUE_5' ? '2px solid #10b981' : '1px solid var(--border)' }}
-                    onClick={() => setActiveFilter('TOP_REVENUE_5')}
-                >
-                    <div className="flex items-center gap-3">
-                        <div style={{ padding: '0.75rem', borderRadius: 'var(--radius)', backgroundColor: '#d1fae5', color: '#059669' }}>
-                            <TrendingUp size={24} />
-                        </div>
-                        <div>
-                            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#064e3b', margin: 0 }}>{t('customers.titleTop')}</h3>
-                            <p style={{ fontSize: '0.875rem', color: '#10b981', margin: 0, marginTop: '4px' }}>{t('customers.topDesc')}</p>
-                        </div>
-                    </div>
-                </Card>
-
-                <Card
-                    className={`summary-card cursor-pointer transition-all hover:-translate-y-1 ${activeFilter === 'RECENT_10' ? 'ring-2 ring-amber-500 ring-offset-2' : ''}`}
-                    style={{ padding: '1.25rem', border: activeFilter === 'RECENT_10' ? '2px solid #f59e0b' : '1px solid var(--border)' }}
-                    onClick={() => setActiveFilter('RECENT_10')}
-                >
-                    <div className="flex items-center gap-3">
-                        <div style={{ padding: '0.75rem', borderRadius: 'var(--radius)', backgroundColor: '#fef3c7', color: '#d97706' }}>
-                            <Activity size={24} />
-                        </div>
-                        <div>
-                            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#78350f', margin: 0 }}>{t('customers.titleRecent')}</h3>
-                            <p style={{ fontSize: '0.875rem', color: '#f59e0b', margin: 0, marginTop: '4px' }}>{t('customers.recentDesc')}</p>
-                        </div>
-                    </div>
-                </Card>
-
-                <Card
-                    className={`summary-card cursor-pointer transition-all hover:-translate-y-1 ${activeFilter === 'RECENT_UPDATED' ? 'ring-2 ring-sky-500 ring-offset-2' : ''}`}
-                    style={{ padding: '1.25rem', border: activeFilter === 'RECENT_UPDATED' ? '2px solid #0ea5e9' : '1px solid var(--border)' }}
-                    onClick={() => setActiveFilter('RECENT_UPDATED')}
-                >
-                    <div className="flex items-center gap-3">
-                        <div style={{ padding: '0.75rem', borderRadius: 'var(--radius)', backgroundColor: '#e0f2fe', color: '#0284c7' }}>
-                            <RefreshCcw size={24} />
-                        </div>
-                        <div>
-                            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#0c4a6e', margin: 0 }}>{t('customers.titleUpdated')}</h3>
-                            <p style={{ fontSize: '0.875rem', color: '#0ea5e9', margin: 0, marginTop: '4px' }}>{t('customers.updatedDesc')}</p>
-                        </div>
-                    </div>
-                </Card>
-            </div>
-
-            <Card>
-                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
-                    <div className="flex gap-2 items-center w-full sm:w-[350px]" style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '0.5rem 1rem', background: '#fff' }}>
-                        <Search size={18} color="var(--text-muted)" />
-                        <input
-                            style={{ border: 'none', outline: 'none', background: 'transparent', width: '100%', fontSize: '0.9375rem' }}
-                            placeholder="Tìm theo Mã, Tên, MST, SĐT, Email..."
-                            value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row gap-3 items-center w-full sm:w-auto">
-                        {canCreate && (
-                            <Button onClick={() => openModal()} className="gap-2 bg-primary text-white hover:bg-primary-hover">
-                                <Plus size={18} /> {t('customers.addCustomer')}
-                            </Button>
-                        )}
+                        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Quản lý Khách hàng</h1>
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs">
+                            {customers.length}
+                        </span>
                     </div>
                 </div>
 
-                <div className="overflow-x-auto pb-4">
-                    <Table>
-                        <thead className="whitespace-nowrap">
-                            <tr>
-                                <th onClick={() => handleSort('code')} style={{ cursor: 'pointer', userSelect: 'none', width: '110px' }}>
-                                    <div className="flex items-center gap-1">Mã KH {sortField === 'code' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
+                <div className="flex items-center gap-2.5 shrink-0">
+                    {canCreate && (
+                        <Button
+                            onClick={() => openModal()}
+                            className="btn btn-primary gap-2 h-[34px] px-3.5 text-xs font-bold rounded-lg shadow-sm"
+                        >
+                            <Plus size={15} className="stroke-[2.5]" />
+                            <span>{t('customers.addCustomer')}</span>
+                        </Button>
+                    )}
+                </div>
+            </div>
+
+            {/* Futuristic KPI / Filter Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                <div
+                    className={`relative cursor-pointer transition-all duration-200 rounded-xl p-3.5 bg-white border shadow-xs hover:-translate-y-0.5 hover:shadow-sm ${
+                        activeFilter === 'ALL'
+                            ? 'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/20'
+                            : 'border-slate-200/90 hover:border-slate-300'
+                    }`}
+                    onClick={() => setActiveFilter('ALL')}
+                >
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs shadow-emerald-500/20 shrink-0">
+                                <Users size={20} className="stroke-[2.2]" />
+                            </div>
+                            <div>
+                                <h3 className="text-xs font-bold text-slate-800 tracking-tight">{t('customers.titleAll')}</h3>
+                                <p className="text-[11px] text-slate-500 mt-0.5">{customers.length} {t('customers.allDesc')}</p>
+                            </div>
+                        </div>
+                        <span className={`text-base font-extrabold font-mono ${activeFilter === 'ALL' ? 'text-emerald-700' : 'text-slate-800'}`}>
+                            {customers.length}
+                        </span>
+                    </div>
+                </div>
+
+                <div
+                    className={`relative cursor-pointer transition-all duration-200 rounded-xl p-3.5 bg-white border shadow-xs hover:-translate-y-0.5 hover:shadow-sm ${
+                        activeFilter === 'TOP_REVENUE_5'
+                            ? 'border-emerald-600 ring-2 ring-emerald-500/20 bg-emerald-50/20'
+                            : 'border-slate-200/90 hover:border-slate-300'
+                    }`}
+                    onClick={() => setActiveFilter('TOP_REVENUE_5')}
+                >
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xs shadow-indigo-500/20 shrink-0">
+                                <TrendingUp size={20} className="stroke-[2.2]" />
+                            </div>
+                            <div>
+                                <h3 className="text-xs font-bold text-slate-800 tracking-tight">{t('customers.titleTop')}</h3>
+                                <p className="text-[11px] text-slate-500 mt-0.5">{t('customers.topDesc')}</p>
+                            </div>
+                        </div>
+                        <span className={`text-base font-extrabold font-mono ${activeFilter === 'TOP_REVENUE_5' ? 'text-indigo-700' : 'text-slate-800'}`}>
+                            5
+                        </span>
+                    </div>
+                </div>
+
+                <div
+                    className={`relative cursor-pointer transition-all duration-200 rounded-xl p-3.5 bg-white border shadow-xs hover:-translate-y-0.5 hover:shadow-sm ${
+                        activeFilter === 'RECENT_10'
+                            ? 'border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/20'
+                            : 'border-slate-200/90 hover:border-slate-300'
+                    }`}
+                    onClick={() => setActiveFilter('RECENT_10')}
+                >
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-xs shadow-amber-500/20 shrink-0">
+                                <Activity size={20} className="stroke-[2.2]" />
+                            </div>
+                            <div>
+                                <h3 className="text-xs font-bold text-slate-800 tracking-tight">{t('customers.titleRecent')}</h3>
+                                <p className="text-[11px] text-slate-500 mt-0.5">{t('customers.recentDesc')}</p>
+                            </div>
+                        </div>
+                        <span className={`text-base font-extrabold font-mono ${activeFilter === 'RECENT_10' ? 'text-amber-700' : 'text-slate-800'}`}>
+                            10
+                        </span>
+                    </div>
+                </div>
+
+                <div
+                    className={`relative cursor-pointer transition-all duration-200 rounded-xl p-3.5 bg-white border shadow-xs hover:-translate-y-0.5 hover:shadow-sm ${
+                        activeFilter === 'RECENT_UPDATED'
+                            ? 'border-sky-500 ring-2 ring-sky-500/20 bg-sky-50/20'
+                            : 'border-slate-200/90 hover:border-slate-300'
+                    }`}
+                    onClick={() => setActiveFilter('RECENT_UPDATED')}
+                >
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-sky-500 text-white flex items-center justify-center shadow-xs shadow-sky-500/20 shrink-0">
+                                <RefreshCcw size={20} className="stroke-[2.2]" />
+                            </div>
+                            <div>
+                                <h3 className="text-xs font-bold text-slate-800 tracking-tight">{t('customers.titleUpdated')}</h3>
+                                <p className="text-[11px] text-slate-500 mt-0.5">{t('customers.updatedDesc')}</p>
+                            </div>
+                        </div>
+                        <span className={`text-base font-extrabold font-mono ${activeFilter === 'RECENT_UPDATED' ? 'text-sky-700' : 'text-slate-800'}`}>
+                            10
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Main Data Container */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+                {/* Search & Actions Toolbar */}
+                <div className="p-3.5 border-b border-slate-200/80 bg-slate-50/50 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                    <div className="relative w-full sm:w-[360px]">
+                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        <input
+                            type="text"
+                            placeholder="Tìm kiếm theo Mã, Tên, MST, SĐT, Email..."
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                            className="w-full h-[34px] pl-9 pr-8 text-xs bg-white border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all shadow-2xs"
+                        />
+                        {searchTerm && (
+                            <button
+                                onClick={() => setSearchTerm('')}
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
+                            >
+                                <X size={13} />
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-semibold text-slate-500 bg-white px-2.5 py-1 rounded-md border border-slate-200 shadow-2xs">
+                            Hiển thị <span className="text-slate-900 font-bold">{filteredAndSortedCustomers.length}</span> / {customers.length} khách hàng
+                        </span>
+                    </div>
+                </div>
+
+                {/* High Density Table */}
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="border-b border-slate-200/90 bg-slate-100/70">
+                                <th onClick={() => handleSort('code')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[100px] hover:bg-slate-200/50 transition-colors">
+                                    <div className="flex items-center gap-1.5">
+                                        MÃ KH
+                                        {sortField === 'code' ? (sortOrder === 'asc' ? <ChevronUp size={12} className="text-primary" /> : <ChevronDown size={12} className="text-primary" />) : <ArrowUpDown size={11} className="opacity-30" />}
+                                    </div>
                                 </th>
-                                <th onClick={() => handleSort('name')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                                    <div className="flex items-center gap-1">{t('customers.name')} {sortField === 'name' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
+                                <th onClick={() => handleSort('name')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider hover:bg-slate-200/50 transition-colors">
+                                    <div className="flex items-center gap-1.5">
+                                        {t('customers.name')}
+                                        {sortField === 'name' ? (sortOrder === 'asc' ? <ChevronUp size={12} className="text-primary" /> : <ChevronDown size={12} className="text-primary" />) : <ArrowUpDown size={11} className="opacity-30" />}
+                                    </div>
                                 </th>
-                                <th onClick={() => handleSort('taxCode')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                                    <div className="flex items-center gap-1">{t('customers.taxCode')} {sortField === 'taxCode' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
+                                <th onClick={() => handleSort('taxCode')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[125px] hover:bg-slate-200/50 transition-colors">
+                                    <div className="flex items-center gap-1.5">
+                                        {t('customers.taxCode')}
+                                        {sortField === 'taxCode' ? (sortOrder === 'asc' ? <ChevronUp size={12} className="text-primary" /> : <ChevronDown size={12} className="text-primary" />) : <ArrowUpDown size={11} className="opacity-30" />}
+                                    </div>
                                 </th>
-                                <th onClick={() => handleSort('phone')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                                    <div className="flex items-center gap-1">{t('customers.phone')} {sortField === 'phone' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
+                                <th onClick={() => handleSort('phone')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[140px] hover:bg-slate-200/50 transition-colors">
+                                    <div className="flex items-center gap-1.5">
+                                        {t('customers.phone')}
+                                        {sortField === 'phone' ? (sortOrder === 'asc' ? <ChevronUp size={12} className="text-primary" /> : <ChevronDown size={12} className="text-primary" />) : <ArrowUpDown size={11} className="opacity-30" />}
+                                    </div>
                                 </th>
-                                <th onClick={() => handleSort('email')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                                    <div className="flex items-center gap-1">{t('customers.email')} {sortField === 'email' ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}</div>
+                                <th className="py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[220px]">
+                                    Email & Địa Chỉ
                                 </th>
-                                <th style={{ width: '100px', textAlign: 'right' }}>{t('customers.action')}</th>
+                                <th onClick={() => handleSort('totalDebt')} className="cursor-pointer select-none py-2.5 px-3.5 text-right text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[120px] hover:bg-slate-200/50 transition-colors">
+                                    <div className="flex items-center justify-end gap-1.5">
+                                        Công Nợ
+                                        {sortField === 'totalDebt' ? (sortOrder === 'asc' ? <ChevronUp size={12} className="text-primary" /> : <ChevronDown size={12} className="text-primary" />) : <ArrowUpDown size={11} className="opacity-30" />}
+                                    </div>
+                                </th>
+                                <th className="py-2.5 px-3.5 text-right text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[90px]">
+                                    {t('customers.action')}
+                                </th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody className="divide-y divide-slate-100">
                             {paginatedItems.length === 0 ? (
-                                <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>{t('customers.empty')}</td></tr>
-                            ) : paginatedItems.map(customer => (
-                                <tr key={customer.id}>
-                                    <td>
-                                        <span className="font-mono text-xs font-semibold px-2 py-1 bg-slate-100 text-slate-700 rounded-md border border-slate-200">
-                                            {customer.code || '--'}
-                                        </span>
-                                    </td>
-                                    <td className="align-top sm:align-middle">
-                                        <div className="w-[200px] sm:w-[280px] md:w-auto font-semibold whitespace-normal break-words">
-                                            <Link
-                                                href={`/customers/${customer.id}`}
-                                                className="text-indigo-600 hover:text-indigo-800 hover:underline text-[14px] leading-snug block font-medium"
-                                            >
-                                                {customer.name}
-                                            </Link>
-                                            {customer.shortName && (
-                                                <span className="text-xs text-gray-500 block font-normal mt-0.5">
-                                                    ({customer.shortName})
-                                                </span>
-                                            )}
-                                        </div>
-                                        {activeFilter === 'TOP_REVENUE_5' && customer.revenue ? (
-                                            <div style={{ fontSize: '0.75rem', color: '#059669', marginTop: '0.25rem', fontWeight: 500 }}>{t('customers.revenue')} {formatMoney(customer.revenue)}</div>
-                                        ) : null}
-                                    </td>
-                                    <td>
-                                        {customer.taxCode ? (
-                                            <span className="font-mono text-xs text-gray-800 bg-gray-50 px-2 py-0.5 rounded border border-gray-200">
-                                                {customer.taxCode}
-                                            </span>
-                                        ) : (
-                                            <span className="text-gray-400 text-xs">-</span>
-                                        )}
-                                    </td>
-                                    <td style={{ color: 'var(--text-muted)' }}>
-                                        {customer.phone ? (
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-sm">{customer.phone}</span>
-                                                <ClickToCallButton phoneNumber={customer.phone} className="scale-90 origin-left" />
+                                <tr>
+                                    <td colSpan={7} className="py-12 text-center text-slate-400">
+                                        <div className="flex flex-col items-center justify-center gap-2">
+                                            <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                                                <Search size={18} />
                                             </div>
-                                        ) : '-'}
-                                    </td>
-                                    <td style={{ color: 'var(--text-muted)' }} className="text-sm">{customer.email || '-'}</td>
-                                    <td>
-                                        <div className="flex gap-2 justify-end">
-                                            <Link href={`/customers/${customer.id}`} style={{ color: 'var(--primary)', display: 'flex' }} title={t('customers.viewDetails')}>
-                                                <Eye size={18} />
-                                            </Link>
-                                            {canEdit && (
-                                                <button onClick={() => openModal(customer)} style={{ color: 'var(--text-muted)', cursor: 'pointer', background: 'none', border: 'none' }} title={t('customers.edit')}>
-                                                    <Edit size={18} />
-                                                </button>
-                                            )}
-                                            {canDelete && (
-                                                <button onClick={() => handleDelete(customer.id)} style={{ color: 'var(--danger)', cursor: 'pointer', background: 'none', border: 'none' }} title={t('customers.delete')}>
-                                                    <Trash2 size={18} />
-                                                </button>
-                                            )}
+                                            <p className="text-xs font-semibold text-slate-600">{t('customers.empty')}</p>
+                                            <p className="text-[11px] text-slate-400">Không tìm thấy khách hàng nào phù hợp với bộ lọc.</p>
                                         </div>
                                     </td>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </Table>
-                </div>
-                <Pagination {...paginationProps} />
+                            ) : paginatedItems.map(customer => {
+                                const initials = getInitials(customer.name);
+                                const gradient = getAvatarGradient(customer.id);
 
-                {/* MODAL THÊM / SỬA KHÁCH HÀNG */}
+                                return (
+                                    <tr key={customer.id} className="hover:bg-slate-50/80 transition-colors group">
+                                        <td className="py-2.5 px-3.5 align-middle">
+                                            <span className="font-mono text-[11px] font-semibold px-2 py-0.5 bg-slate-100 text-slate-700 rounded border border-slate-200 shadow-2xs inline-block">
+                                                {customer.code || '--'}
+                                            </span>
+                                        </td>
+                                        <td className="py-2.5 px-3.5 align-middle">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${gradient} text-white font-bold text-[11px] flex items-center justify-center shadow-2xs shrink-0`}>
+                                                    {initials}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <Link
+                                                        href={`/customers/${customer.id}`}
+                                                        className="text-slate-900 font-semibold text-xs hover:text-primary transition-colors block truncate max-w-[280px] sm:max-w-[360px] md:max-w-none"
+                                                    >
+                                                        {customer.name}
+                                                    </Link>
+                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                        {customer.shortName && (
+                                                            <span className="text-[11px] text-slate-500 font-normal">
+                                                                ({customer.shortName})
+                                                            </span>
+                                                        )}
+                                                        {customer.contactName && (
+                                                            <span className="text-[11px] text-slate-500 font-normal">
+                                                                • LH: {customer.contactName}
+                                                            </span>
+                                                        )}
+                                                        {activeFilter === 'TOP_REVENUE_5' && customer.revenue ? (
+                                                            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                                                                {t('customers.revenue')} {formatMoney(customer.revenue)}
+                                                            </span>
+                                                        ) : null}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="py-2.5 px-3.5 align-middle">
+                                            {customer.taxCode ? (
+                                                <span className="font-mono text-[11px] font-medium text-slate-700 bg-slate-50 px-2 py-0.5 rounded border border-slate-200 inline-flex items-center gap-1 shadow-2xs">
+                                                    {customer.taxCode}
+                                                </span>
+                                            ) : (
+                                                <span className="text-slate-300 text-xs">-</span>
+                                            )}
+                                        </td>
+                                        <td className="py-2.5 px-3.5 align-middle text-slate-600">
+                                            {customer.phone ? (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs font-medium font-mono text-slate-800">{customer.phone}</span>
+                                                    <ClickToCallButton phoneNumber={customer.phone} />
+                                                </div>
+                                            ) : (
+                                                <span className="text-slate-300 text-xs">-</span>
+                                            )}
+                                        </td>
+                                        <td className="py-2.5 px-3.5 align-middle text-slate-600 text-xs">
+                                            {customer.email && (
+                                                <div className="truncate block max-w-[200px] text-[11px] text-slate-700 font-medium" title={customer.email}>
+                                                    {customer.email}
+                                                </div>
+                                            )}
+                                            {customer.address && (
+                                                <div className="truncate block max-w-[200px] text-[11px] text-slate-400 mt-0.5" title={customer.address}>
+                                                    {customer.address}
+                                                </div>
+                                            )}
+                                            {!customer.email && !customer.address && (
+                                                <span className="text-slate-300 text-xs">-</span>
+                                            )}
+                                        </td>
+                                        <td className="py-2.5 px-3.5 align-middle text-right">
+                                            <span className={`font-mono text-xs font-bold ${(customer.totalDebt || 0) > 0 ? 'text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200' : 'text-slate-700'}`}>
+                                                {formatMoney(customer.totalDebt || 0)}
+                                            </span>
+                                        </td>
+                                        <td className="py-2.5 px-3.5 align-middle text-right">
+                                            <div className="flex items-center justify-end gap-1 opacity-90 group-hover:opacity-100 transition-opacity">
+                                                <Link
+                                                    href={`/customers/${customer.id}`}
+                                                    className="w-7 h-7 rounded-lg flex items-center justify-center text-primary hover:bg-emerald-50 transition-colors"
+                                                    title={t('customers.viewDetails')}
+                                                >
+                                                    <Eye size={14} />
+                                                </Link>
+                                                {canEdit && (
+                                                    <button
+                                                        onClick={() => openModal(customer)}
+                                                        className="w-7 h-7 rounded-lg flex items-center justify-center text-amber-600 hover:bg-amber-50 hover:text-amber-700 transition-colors cursor-pointer"
+                                                        title={t('customers.edit')}
+                                                    >
+                                                        <Edit size={14} />
+                                                    </button>
+                                                )}
+                                                {canDelete && (
+                                                    <button
+                                                        onClick={() => handleDelete(customer.id)}
+                                                        className="w-7 h-7 rounded-lg flex items-center justify-center text-rose-500 hover:bg-rose-50 hover:text-rose-600 transition-colors cursor-pointer"
+                                                        title={t('customers.delete')}
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Pagination */}
+                <div className="p-3 border-t border-slate-200/80 bg-slate-50/50">
+                    <Pagination {...paginationProps} />
+                </div>
+            </div>
+
+            {/* MODAL THÊM / SỬA KHÁCH HÀNG */}
                 {isModalOpen && (
-                    <div className="modal-backdrop">
-                        <div className="modal-container" style={{ maxWidth: '850px', maxHeight: '92vh' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
+                    <div className="modal-backdrop" style={{ position: 'fixed', inset: 0, padding: '1rem', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(2px)' }}>
+                        <div className="modal-container shadow-2xl w-full max-w-[850px]" style={{ maxHeight: '92vh', background: '#ffffff', borderRadius: '12px', display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                            <div className="px-4 py-3 border-b border-slate-200 flex justify-between items-center bg-white">
                                 <div>
-                                    <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
+                                    <h2 className="text-[15px] font-bold text-slate-800">
                                         {editingId ? 'Cập Nhật Hồ Sơ Khách Hàng' : 'Thêm Mới Khách Hàng'}
                                     </h2>
-                                    <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                                    <p className="text-[11px] text-slate-500 mt-0.5">
                                         Nhập mã số thuế để tra cứu tự động hoặc điền thông tin chi tiết
                                     </p>
                                 </div>
                                 <button
                                     onClick={closeModal}
-                                    style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-muted)' }}
+                                    className="text-slate-400 hover:text-slate-600 p-1 rounded-md hover:bg-slate-100 transition-colors"
                                 >
-                                    &times;
+                                    <X size={18} />
                                 </button>
                             </div>
 
                             {/* Tax Lookup Quick Bar */}
-                            <div className="bg-indigo-50/70 border-b border-indigo-100 p-4 sm:px-6">
-                                <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-                                    <div className="flex-1 flex items-center bg-white rounded-lg border border-indigo-200 px-3 py-1.5 shadow-sm focus-within:ring-2 focus-within:ring-indigo-400 focus-within:border-indigo-400">
-                                        <Sparkles className="text-indigo-500 mr-2 shrink-0" size={18} />
+                            <div className="bg-emerald-50/60 border-b border-emerald-100 px-4 py-2.5">
+                                <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
+                                    <div className="flex-1 flex items-center bg-white rounded-lg border border-emerald-200 px-2.5 py-1 shadow-2xs focus-within:ring-1 focus-within:ring-emerald-500 focus-within:border-emerald-500 h-[34px]">
+                                        <Sparkles className="text-emerald-600 mr-2 shrink-0" size={15} />
                                         <input
                                             type="text"
-                                            placeholder="Nhập Mã số thuế để tự động tra cứu..."
+                                            placeholder="Nhập Mã số thuế để tự động tra cứu thông tin..."
                                             value={formData.taxCode || ''}
                                             onChange={e => setFormData({ ...formData, taxCode: e.target.value })}
                                             onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleTaxLookup(); } }}
-                                            className="w-full bg-transparent border-none outline-none text-sm font-medium text-slate-800 placeholder-slate-400"
+                                            className="w-full bg-transparent border-none outline-none text-xs font-medium text-slate-800 placeholder-slate-400"
                                         />
                                     </div>
                                     <button
                                         type="button"
                                         onClick={handleTaxLookup}
                                         disabled={isLookingUpTax || !formData.taxCode?.trim()}
-                                        className="btn bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 shadow-sm shrink-0 transition-all disabled:opacity-50 cursor-pointer"
+                                        className="h-[34px] bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 shadow-2xs shrink-0 transition-all disabled:opacity-50 cursor-pointer"
                                     >
                                         {isLookingUpTax ? (
                                             <>
-                                                <Loader2 className="animate-spin" size={16} />
+                                                <Loader2 className="animate-spin" size={14} />
                                                 <span>Đang tra cứu...</span>
                                             </>
                                         ) : (
                                             <>
-                                                <Search size={16} />
+                                                <Search size={14} />
                                                 <span>Tra cứu</span>
                                             </>
                                         )}
@@ -499,94 +688,94 @@ export function CustomerClient({ initialData, users, isAdminOrManager, initialEm
                                 </div>
 
                                 {taxLookupMessage && (
-                                    <div className={`mt-2.5 p-2.5 rounded-lg text-xs font-medium flex items-center gap-2 ${
+                                    <div className={`mt-2 p-2 rounded-lg text-xs font-medium flex items-center gap-2 ${
                                         taxLookupMessage.type === 'success' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-rose-100 text-rose-800 border border-rose-200'
                                     }`}>
-                                        {taxLookupMessage.type === 'success' ? <CheckCircle2 size={16} className="shrink-0" /> : <AlertCircle size={16} className="shrink-0" />}
+                                        {taxLookupMessage.type === 'success' ? <CheckCircle2 size={14} className="shrink-0" /> : <AlertCircle size={14} className="shrink-0" />}
                                         <span>{taxLookupMessage.text}</span>
                                     </div>
                                 )}
                             </div>
 
                             {/* Tabs Header */}
-                            <div className="flex border-b border-gray-200 px-6 bg-slate-50 gap-2 overflow-x-auto hide-scrollbar">
+                            <div className="flex border-b border-slate-200 px-4 bg-slate-50 gap-1 overflow-x-auto hide-scrollbar">
                                 <button
                                     type="button"
                                     onClick={() => setActiveTab('general')}
-                                    className={`py-3 px-3 text-xs sm:text-sm font-semibold border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
-                                        activeTab === 'general' ? 'border-indigo-600 text-indigo-600 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700'
+                                    className={`py-2 px-3 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
+                                        activeTab === 'general' ? 'border-primary text-primary bg-white' : 'border-transparent text-slate-500 hover:text-slate-700'
                                     }`}
                                 >
-                                    <Building2 size={16} /> Thông Tin Chung & Thuế
+                                    <Building2 size={14} /> Thông Tin Chung & Thuế
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setActiveTab('contact')}
-                                    className={`py-3 px-3 text-xs sm:text-sm font-semibold border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
-                                        activeTab === 'contact' ? 'border-indigo-600 text-indigo-600 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700'
+                                    className={`py-2 px-3 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
+                                        activeTab === 'contact' ? 'border-primary text-primary bg-white' : 'border-transparent text-slate-500 hover:text-slate-700'
                                     }`}
                                 >
-                                    <Phone size={16} /> Liên Hệ & Địa Chỉ
+                                    <Phone size={14} /> Liên Hệ & Địa Chỉ
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setActiveTab('financial')}
-                                    className={`py-3 px-3 text-xs sm:text-sm font-semibold border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
-                                        activeTab === 'financial' ? 'border-indigo-600 text-indigo-600 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700'
+                                    className={`py-2 px-3 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
+                                        activeTab === 'financial' ? 'border-primary text-primary bg-white' : 'border-transparent text-slate-500 hover:text-slate-700'
                                     }`}
                                 >
-                                    <CreditCard size={16} /> Tài Chính & Ngân Hàng
+                                    <CreditCard size={14} /> Tài Chính & Ngân Hàng
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setActiveTab('notes')}
-                                    className={`py-3 px-3 text-xs sm:text-sm font-semibold border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
-                                        activeTab === 'notes' ? 'border-indigo-600 text-indigo-600 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700'
+                                    className={`py-2 px-3 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
+                                        activeTab === 'notes' ? 'border-primary text-primary bg-white' : 'border-transparent text-slate-500 hover:text-slate-700'
                                     }`}
                                 >
-                                    <FileText size={16} /> Ghi Chú
+                                    <FileText size={14} /> Ghi Chú
                                 </button>
                             </div>
 
                             {/* Form Content */}
-                            <form id="customerForm" onSubmit={handleSubmit} style={{ padding: '1.5rem', overflowY: 'auto', maxHeight: 'calc(92vh - 240px)' }}>
+                            <form id="customerForm" onSubmit={handleSubmit} className="p-4 overflow-y-auto" style={{ maxHeight: 'calc(92vh - 220px)' }}>
                                 {activeTab === 'general' && (
-                                    <div className="space-y-4">
-                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div className="space-y-3">
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-3">
                                             <div>
-                                                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Mã Khách Hàng</label>
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Mã Khách Hàng</label>
                                                 <input
                                                     type="text"
                                                     value={formData.code || ''}
                                                     onChange={e => setFormData({ ...formData, code: e.target.value })}
                                                     placeholder="Tự động sinh (KH-xxxx)"
-                                                    className="input w-full font-mono text-sm"
+                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-mono text-slate-900 bg-white"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Mã Số Thuế</label>
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Mã Số Thuế</label>
                                                 <input
                                                     type="text"
                                                     value={formData.taxCode || ''}
                                                     onChange={e => setFormData({ ...formData, taxCode: e.target.value })}
                                                     placeholder="Ví dụ: 0101248141"
-                                                    className="input w-full font-mono text-sm"
+                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-mono text-slate-900 bg-white"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Trạng Thái MST</label>
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Trạng Thái MST</label>
                                                 <input
                                                     type="text"
                                                     value={formData.taxStatus || ''}
                                                     onChange={e => setFormData({ ...formData, taxStatus: e.target.value })}
                                                     placeholder="NNT đang hoạt động"
-                                                    className="input w-full text-sm bg-gray-50"
+                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-slate-50"
                                                 />
                                             </div>
                                         </div>
 
                                         <div>
-                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">
+                                            <label className="block text-xs font-semibold text-slate-600 mb-1">
                                                 Tên Khách Hàng / Công Ty <span className="text-red-500">*</span>
                                             </label>
                                             <input
@@ -595,124 +784,124 @@ export function CustomerClient({ initialData, users, isAdminOrManager, initialEm
                                                 value={formData.name || ''}
                                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
                                                 placeholder="Tên đầy đủ theo đăng ký kinh doanh..."
-                                                className="input w-full font-medium"
+                                                className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-semibold text-slate-900 bg-white"
                                             />
                                         </div>
 
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
                                             <div>
-                                                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Tên Viết Tắt / Giao Dịch</label>
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Tên Viết Tắt / Giao Dịch</label>
                                                 <input
                                                     type="text"
                                                     value={formData.shortName || ''}
                                                     onChange={e => setFormData({ ...formData, shortName: e.target.value })}
                                                     placeholder="Ví dụ: FPT CORP, VINAMILK"
-                                                    className="input w-full text-sm"
+                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Tên Quốc Tế</label>
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Tên Quốc Tế</label>
                                                 <input
                                                     type="text"
                                                     value={formData.internationalName || ''}
                                                     onChange={e => setFormData({ ...formData, internationalName: e.target.value })}
                                                     placeholder="International / English name..."
-                                                    className="input w-full text-sm"
+                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
                                                 />
                                             </div>
                                         </div>
 
                                         <div>
-                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Ngành Nghề / Lĩnh Vực Hoạt Động</label>
+                                            <label className="block text-xs font-semibold text-slate-600 mb-1">Ngành Nghề / Lĩnh Vực Hoạt Động</label>
                                             <input
                                                 type="text"
                                                 value={formData.businessType || ''}
                                                 onChange={e => setFormData({ ...formData, businessType: e.target.value })}
                                                 placeholder="Ví dụ: Công nghệ thông tin, Xây dựng, Bán lẻ..."
-                                                className="input w-full text-sm"
+                                                className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
                                             />
                                         </div>
                                     </div>
                                 )}
 
                                 {activeTab === 'contact' && (
-                                    <div className="space-y-4">
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-3">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
                                             <div>
-                                                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Người Đại Diện / Người Liên Hệ Chính</label>
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Người Đại Diện / Người Liên Hệ Chính</label>
                                                 <input
                                                     type="text"
                                                     value={formData.contactName || ''}
                                                     onChange={e => setFormData({ ...formData, contactName: e.target.value })}
                                                     placeholder="Họ và tên người đại diện"
-                                                    className="input w-full text-sm"
+                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Số Điện Thoại</label>
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Số Điện Thoại</label>
                                                 <input
                                                     type="text"
                                                     value={formData.phone || ''}
                                                     onChange={e => setFormData({ ...formData, phone: e.target.value })}
                                                     placeholder="0987xxxxxx"
-                                                    className="input w-full text-sm"
+                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
                                                 />
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
                                             <div>
-                                                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Email Doanh Nghiệp / Liên Hệ</label>
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Email Doanh Nghiệp / Liên Hệ</label>
                                                 <input
                                                     type="email"
                                                     value={formData.email || ''}
                                                     onChange={e => setFormData({ ...formData, email: e.target.value })}
                                                     placeholder="contact@company.com"
-                                                    className="input w-full text-sm"
+                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Website</label>
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Website</label>
                                                 <input
                                                     type="text"
                                                     value={formData.website || ''}
                                                     onChange={e => setFormData({ ...formData, website: e.target.value })}
                                                     placeholder="https://company.com"
-                                                    className="input w-full text-sm"
+                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
                                                 />
                                             </div>
                                         </div>
 
                                         <div>
-                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Địa Chỉ Trụ Sở / Đăng Ký Kinh Doanh</label>
+                                            <label className="block text-xs font-semibold text-slate-600 mb-1">Địa Chỉ Trụ Sở / Đăng Ký Kinh Doanh</label>
                                             <input
                                                 type="text"
                                                 value={formData.address || ''}
                                                 onChange={e => setFormData({ ...formData, address: e.target.value })}
                                                 placeholder="Địa chỉ trụ sở chính..."
-                                                className="input w-full text-sm"
+                                                className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
                                             />
                                         </div>
 
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
                                             <div>
-                                                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Địa Chỉ Xuất Hóa Đơn</label>
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Địa Chỉ Xuất Hóa Đơn</label>
                                                 <input
                                                     type="text"
                                                     value={formData.billingAddress || ''}
                                                     onChange={e => setFormData({ ...formData, billingAddress: e.target.value })}
-                                                    placeholder="Địa chỉ ghi trên hóa đơn VAT..."
-                                                    className="input w-full text-sm"
+                                                    placeholder="Địa chỉ ghi trên hóa đơn GTGT..."
+                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Địa Chỉ Giao Nhận Hàng</label>
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Địa Chỉ Giao Hàng</label>
                                                 <input
                                                     type="text"
                                                     value={formData.shippingAddress || ''}
                                                     onChange={e => setFormData({ ...formData, shippingAddress: e.target.value })}
-                                                    placeholder="Địa chỉ kho / giao hàng..."
-                                                    className="input w-full text-sm"
+                                                    placeholder="Kho hàng / Địa chỉ nhận hàng..."
+                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
                                                 />
                                             </div>
                                         </div>
@@ -720,54 +909,54 @@ export function CustomerClient({ initialData, users, isAdminOrManager, initialEm
                                 )}
 
                                 {activeTab === 'financial' && (
-                                    <div className="space-y-4">
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-3">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
                                             <div>
-                                                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Tên Ngân Hàng</label>
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Ngân Hàng Giao Dịch</label>
                                                 <input
                                                     type="text"
                                                     value={formData.bankName || ''}
                                                     onChange={e => setFormData({ ...formData, bankName: e.target.value })}
                                                     placeholder="Ví dụ: Vietcombank, Techcombank, MB Bank..."
-                                                    className="input w-full text-sm"
+                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Số Tài Khoản</label>
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Số Tài Khoản Ngân Hàng</label>
                                                 <input
                                                     type="text"
                                                     value={formData.bankAccount || ''}
                                                     onChange={e => setFormData({ ...formData, bankAccount: e.target.value })}
                                                     placeholder="Số tài khoản ngân hàng..."
-                                                    className="input w-full font-mono text-sm"
+                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-mono text-slate-900 bg-white"
                                                 />
                                             </div>
                                         </div>
 
                                         <div>
-                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Chi Nhánh Ngân Hàng</label>
+                                            <label className="block text-xs font-semibold text-slate-600 mb-1">Chi Nhánh Ngân Hàng</label>
                                             <input
                                                 type="text"
                                                 value={formData.bankBranch || ''}
                                                 onChange={e => setFormData({ ...formData, bankBranch: e.target.value })}
                                                 placeholder="Ví dụ: Chi nhánh TP.HCM, Chi nhánh Hà Nội..."
-                                                className="input w-full text-sm"
+                                                className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
                                             />
                                         </div>
 
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
                                             <div>
-                                                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Điều Khoản Thanh Toán</label>
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Điều Khoản Thanh Toán</label>
                                                 <input
                                                     type="text"
                                                     value={formData.paymentTerms || ''}
                                                     onChange={e => setFormData({ ...formData, paymentTerms: e.target.value })}
                                                     placeholder="Ví dụ: Thanh toán ngay, Gối đầu 30 ngày..."
-                                                    className="input w-full text-sm"
+                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Hạn Mức Công Nợ (VNĐ)</label>
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Hạn Mức Công Nợ (VNĐ)</label>
                                                 <input
                                                     type="number"
                                                     min="0"
@@ -775,7 +964,7 @@ export function CustomerClient({ initialData, users, isAdminOrManager, initialEm
                                                     value={formData.creditLimit || ''}
                                                     onChange={e => setFormData({ ...formData, creditLimit: parseFloat(e.target.value) || 0 })}
                                                     placeholder="0"
-                                                    className="input w-full font-mono text-sm"
+                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-mono text-slate-900 bg-white"
                                                 />
                                             </div>
                                         </div>
@@ -783,16 +972,15 @@ export function CustomerClient({ initialData, users, isAdminOrManager, initialEm
                                 )}
 
                                 {activeTab === 'notes' && (
-                                    <div className="space-y-4">
+                                    <div className="space-y-3">
                                         <div>
-                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Ghi Chú Nội Bộ</label>
+                                            <label className="block text-xs font-semibold text-slate-600 mb-1">Ghi Chú Nội Bộ</label>
                                             <textarea
-                                                rows={5}
+                                                rows={4}
                                                 value={formData.internalNotes || ''}
                                                 onChange={e => setFormData({ ...formData, internalNotes: e.target.value })}
                                                 placeholder="Nhập các thông tin lưu ý đặc biệt, chính sách riêng dành cho khách hàng này..."
-                                                className="input w-full text-sm"
-                                                style={{ resize: 'vertical' }}
+                                                className="w-full border border-slate-200 rounded-lg p-2 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all resize-none text-slate-900 bg-white placeholder:text-slate-400"
                                             />
                                         </div>
                                     </div>
@@ -800,30 +988,34 @@ export function CustomerClient({ initialData, users, isAdminOrManager, initialEm
                             </form>
 
                             {/* Modal Footer */}
-                            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface)' }}>
+                            <div className="px-4 py-3 border-t border-slate-200 flex justify-between items-center bg-slate-50">
                                 <div className="text-xs text-slate-500">
                                     <span className="font-semibold">{activeTab === 'general' ? 'Bước 1/4' : activeTab === 'contact' ? 'Bước 2/4' : activeTab === 'financial' ? 'Bước 3/4' : 'Bước 4/4'}</span>: {
                                         activeTab === 'general' ? 'Thông tin chung & Thuế' : activeTab === 'contact' ? 'Liên hệ & Địa chỉ' : activeTab === 'financial' ? 'Tài chính' : 'Ghi chú'
                                     }
                                 </div>
                                 <div className="flex gap-2">
-                                    <Button variant="secondary" onClick={closeModal} disabled={isSubmitting}>
+                                    <button
+                                        type="button"
+                                        onClick={closeModal}
+                                        disabled={isSubmitting}
+                                        className="h-[34px] px-4 border border-slate-300 rounded-lg hover:bg-white text-xs font-semibold text-slate-600 transition-all"
+                                    >
                                         {t('customers.cancel')}
-                                    </Button>
-                                    <Button
+                                    </button>
+                                    <button
                                         type="submit"
                                         form="customerForm"
                                         disabled={isSubmitting}
-                                        className="bg-primary text-white hover:bg-primary-hover"
+                                        className="h-[34px] px-5 bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 text-xs font-bold shadow-xs transition-all"
                                     >
                                         {isSubmitting ? 'Đang lưu...' : t('customers.save')}
-                                    </Button>
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
                 )}
-            </Card>
         </div>
     );
 }

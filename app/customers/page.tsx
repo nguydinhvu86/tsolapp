@@ -70,16 +70,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: { 
         prisma.customer.findMany({
             where: customerFilter,
             orderBy: { createdAt: 'desc' },
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                phone: true,
-                address: true,
-                taxCode: true,
-                totalDebt: true,
-                createdAt: true,
-                updatedAt: true,
+            include: {
                 salesInvoices: {
                     select: {
                         status: true,
@@ -123,16 +114,11 @@ export default async function CustomersPage({ searchParams }: { searchParams: { 
     });
 
     return (
-        <div>
-            <div className="flex justify-between items-center" style={{ marginBottom: '2rem' }}>
-                <h1>Quản lý Khách hàng</h1>
-            </div>
-            <CustomerClient
-                initialData={customersWithStats as any}
-                users={users}
-                isAdminOrManager={isAdminOrManager}
-                initialEmployeeId={employeeIdFromUrl}
-            />
-        </div>
+        <CustomerClient
+            initialData={customersWithStats as any}
+            users={users}
+            isAdminOrManager={isAdminOrManager}
+            initialEmployeeId={employeeIdFromUrl}
+        />
     );
 }

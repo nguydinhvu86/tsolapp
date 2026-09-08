@@ -20,8 +20,8 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
         <header
             className="app-header sticky top-0 z-50 px-3 sm:px-4 md:px-8 flex items-center justify-between border-b border-slate-200"
             style={{
-                height: '64px',
-                backgroundColor: 'rgba(255, 255, 255, 0.85)',
+                height: '56px',
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
                 backdropFilter: 'blur(12px)',
                 WebkitBackdropFilter: 'blur(12px)'
             }}
@@ -46,8 +46,8 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
 
                 {/* Greeting on large screens */}
                 <div className="hidden lg:flex flex-col ml-1 shrink-0">
-                    <span className="text-xs text-slate-500">Mừng trở lại,</span>
-                    <span className="text-sm font-semibold text-slate-800 leading-tight">{session?.user?.name || 'Administrator'}</span>
+                    <span className="text-[11px] font-medium text-slate-400">Mừng trở lại,</span>
+                    <span className="text-xs font-semibold text-slate-800 leading-tight">{session?.user?.name || 'Administrator'}</span>
                 </div>
             </div>
 
@@ -70,9 +70,9 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
                     <AvatarImage
                         src={session?.user?.avatar}
                         name={session?.user?.name}
-                        size={34}
+                        size={32}
                         style={{ boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
-                        fallbackStyle={{ backgroundColor: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
+                        fallbackStyle={{ backgroundColor: 'rgba(5, 166, 19, 0.1)', color: 'var(--primary)', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
                     />
                 </Link>
 
@@ -90,14 +90,14 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
                         color: 'var(--danger)',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        width: '36px',
-                        height: '36px',
+                        width: '32px',
+                        height: '32px',
                         borderRadius: '8px',
                         background: '#fee2e2'
                     }}
                     title="Đăng xuất"
                 >
-                    <LogOut size={18} />
+                    <LogOut size={16} />
                 </div>
             </div>
         </header>

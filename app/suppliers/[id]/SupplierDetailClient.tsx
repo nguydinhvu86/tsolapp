@@ -17,6 +17,8 @@ import { SupplierContactsPanel } from '@/app/components/suppliers/SupplierContac
 import { ClickToCallButton } from '@/app/components/ClickToCallButton';
 import { CustomerCallLogsPanel } from '@/app/components/customers/CustomerCallLogsPanel';
 
+import { StatusBadge } from '@/app/components/ui/StatusBadge';
+
 export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, warehouses }: { supplier: any, users: any[], tasks: any[], warehouses?: any[] }) {
     const router = useRouter();
     const [supplier, setSupplier] = useState(initialSupplier);
@@ -232,56 +234,32 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 6, minimumFractionDigits: 0 }).format(amount || 0);
     };
 
-
     const tabs = [
-        { id: 'orders', label: 'Đơn Đặt Hàng', count: supplier.orders?.length || 0, icon: <ShoppingCart size={16} /> },
-        { id: 'bills', label: 'Hóa Đơn Mua', count: supplier.bills?.filter((b: any) => ['DRAFT', 'APPROVED', 'PARTIAL_PAID'].includes(b.status)).length || 0, icon: <FileDown size={16} /> },
-        { id: 'invoices', label: 'Hóa Đơn VAT', count: supplier.invoices?.length || 0, icon: <FileText size={16} /> },
-        { id: 'payments', label: 'Thanh Toán', count: supplier.payments?.length || 0, icon: <Wallet size={16} /> },
-        { id: 'contacts', label: 'Người Liên Hệ', count: supplier.contacts?.length || 0, icon: <Users size={16} /> },
-        { id: 'debt', label: 'Tổng Công Nợ', count: null, icon: <DollarSign size={16} /> },
-        { id: 'statement', label: 'Sao Kê Công Nợ', count: '-', icon: <FileSpreadsheet size={16} /> },
-        { id: 'calllogs', label: 'Gọi Điện (PBX)', count: supplier.callLogs?.length || 0, icon: <Phone size={16} /> },
+        { id: 'orders', label: 'Đơn Đặt Hàng', count: supplier.orders?.length || 0, icon: <ShoppingCart size={15} /> },
+        { id: 'bills', label: 'Hóa Đơn Mua', count: supplier.bills?.filter((b: any) => ['DRAFT', 'APPROVED', 'PARTIAL_PAID'].includes(b.status)).length || 0, icon: <FileDown size={15} /> },
+        { id: 'invoices', label: 'Hóa Đơn VAT', count: supplier.invoices?.length || 0, icon: <FileText size={15} /> },
+        { id: 'payments', label: 'Thanh Toán', count: supplier.payments?.length || 0, icon: <Wallet size={15} /> },
+        { id: 'contacts', label: 'Người Liên Hệ', count: supplier.contacts?.length || 0, icon: <Users size={15} /> },
+        { id: 'debt', label: 'Tổng Công Nợ', count: null, icon: <DollarSign size={15} /> },
+        { id: 'statement', label: 'Sao Kê Công Nợ', count: '-', icon: <FileSpreadsheet size={15} /> },
+        { id: 'calllogs', label: 'Gọi Điện (PBX)', count: supplier.callLogs?.length || 0, icon: <Phone size={15} /> },
     ];
 
-    const getStatusBadge = (status: string, type: 'order' | 'bill') => {
-        let text = status;
-        let color = '#6b7280';
-        let bg = '#f3f4f6';
-
-        if (type === 'order') {
-            switch (status) {
-                case 'DRAFT': text = 'Nháp'; break;
-                case 'SENT': text = 'Đã Gửi'; color = '#1d4ed8'; bg = '#dbeafe'; break;
-                case 'COMPLETED': text = 'Hoàn Thành'; color = '#15803d'; bg = '#dcfce7'; break;
-            }
-        } else {
-            switch (status) {
-                case 'DRAFT': text = 'Nháp'; break;
-                case 'APPROVED': text = 'Đã Duyệt (Nợ)'; color = '#1d4ed8'; bg = '#dbeafe'; break;
-                case 'PARTIAL_PAID': text = 'Đã Trả 1 Phần'; color = '#b45309'; bg = '#fef3c7'; break;
-                case 'PAID': text = 'Đã Thanh Toán'; color = '#15803d'; bg = '#dcfce7'; break;
-            }
-        }
-
-        return <span style={{ padding: '0.25rem 0.75rem', border: `1px solid ${bg === '#f3f4f6' ? '#e5e7eb' : bg}`, borderRadius: '1rem', fontSize: '0.75rem', backgroundColor: bg === '#fef3c7' ? 'transparent' : bg === '#dbeafe' ? '#eff6ff' : bg, color: color, fontWeight: 500 }}>{text}</span>;
-    };
-
     return (
-        <div className="p-4 md:p-8 max-w-full mx-auto bg-slate-50 min-h-[calc(100vh-64px)]">
+        <div className="p-4 md:p-6 max-w-full mx-auto bg-slate-50 min-h-[calc(100vh-64px)]">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                <div className="flex items-start sm:items-center gap-4">
-                    <button onClick={() => router.push('/suppliers')} className="p-2 rounded-full bg-white border border-gray-200 cursor-pointer flex items-center justify-center text-gray-700 hover:bg-gray-50 flex-shrink-0">
-                        <ArrowLeft size={20} />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+                <div className="flex items-center gap-3">
+                    <button onClick={() => router.push('/suppliers')} className="w-9 h-9 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all flex items-center justify-center shadow-xs cursor-pointer">
+                        <ArrowLeft size={18} />
                     </button>
                     <div>
-                        <h1 className="text-xl md:text-2xl font-extrabold m-0 text-gray-900 leading-tight">Chi tiết Nhà cung cấp</h1>
-                        <p className="text-gray-500 mt-1 text-sm">Quản lý thông tin và tài liệu liên kết.</p>
+                        <h1 className="text-lg font-bold m-0 text-slate-900 tracking-tight leading-tight">Chi tiết Nhà cung cấp</h1>
+                        <p className="text-slate-500 mt-0.5 text-xs">Quản lý hồ sơ NCC, công nợ và chuỗi hóa đơn mua.</p>
                     </div>
                 </div>
-                <button onClick={handleOpenEdit} className="btn btn-secondary flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white font-medium cursor-pointer sm:w-auto w-full justify-center">
-                    <Edit2 size={16} /> Chỉnh sửa
+                <button onClick={handleOpenEdit} className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 font-semibold text-xs shadow-xs cursor-pointer sm:w-auto w-full h-[34px]">
+                    <Edit2 size={14} /> Chỉnh sửa
                 </button>
             </div>
 
@@ -289,90 +267,90 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
                 {/* Left Column */}
                 <div className="flex flex-col gap-6 flex-1 min-w-0 w-full">
                     {/* Top Info Card */}
-                    <div className="p-4 md:p-6 bg-white rounded-lg border border-gray-200 flex flex-col md:flex-row gap-4 md:gap-6 items-start md:items-center">
-                        <div className="w-16 h-16 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 flex-shrink-0">
-                            <Building size={32} />
+                    <div className="p-4 sm:p-5 bg-white rounded-xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row gap-4 items-start md:items-center">
+                        <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 flex-shrink-0 shadow-2xs">
+                            <Building size={24} />
                         </div>
                         <div className="flex-1 min-w-0 w-full">
                             <div className="flex items-center gap-2 flex-wrap mb-1">
-                                <span className="font-mono text-xs font-bold px-2.5 py-0.5 bg-indigo-100 text-indigo-700 rounded-md border border-indigo-200">
+                                <span className="font-mono text-[11px] font-bold px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded border border-indigo-200/80">
                                     {supplier.code}
                                 </span>
                                 {supplier.taxStatus && (
-                                    <span className="text-xs font-semibold px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded border border-emerald-200">
+                                    <span className="text-[11px] font-medium px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded border border-emerald-200/80">
                                         {supplier.taxStatus}
                                     </span>
                                 )}
                             </div>
-                            <h2 className="text-lg md:text-xl font-bold text-gray-900 truncate" title={supplier.name}>{supplier.name}</h2>
+                            <h2 className="text-base font-bold text-slate-900 tracking-tight truncate" title={supplier.name}>{supplier.name}</h2>
                             {supplier.shortName && (
-                                <p className="text-xs text-gray-500 font-medium mb-3 mt-0.5">
-                                    Tên viết tắt: <span className="text-gray-700">{supplier.shortName}</span>
+                                <p className="text-[11px] text-slate-500 font-medium mb-3 mt-0.5">
+                                    Tên viết tắt: <span className="text-slate-700 font-semibold">{supplier.shortName}</span>
                                     {supplier.internationalName && ` • Tên quốc tế: ${supplier.internationalName}`}
                                 </p>
                             )}
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mt-3">
-                                <div className="flex gap-3 items-center min-w-0">
-                                    <div className="p-2 bg-gray-100 rounded-full text-gray-500 shrink-0"><Mail size={16} /></div>
-                                    <div className="min-w-0">
-                                        <span className="block text-[0.65rem] text-gray-500 uppercase tracking-wider font-semibold">Email</span>
-                                        <span className="text-sm font-medium text-gray-900 truncate block">{supplier.email || '--'}</span>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 w-full text-left mt-3">
+                                <div className="flex items-start gap-2.5 p-2 rounded-lg bg-slate-50/60 border border-slate-100/80">
+                                    <div className="mt-0.5 w-6 h-6 rounded-md bg-white border border-slate-200/60 flex items-center justify-center text-slate-400 flex-shrink-0"><Mail size={13} /></div>
+                                    <div className="min-w-0 flex-1">
+                                        <span className="block text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Email</span>
+                                        <span className="text-xs font-semibold text-slate-800 truncate block mt-0.5">{supplier.email || '--'}</span>
                                     </div>
                                 </div>
-                                <div className="flex gap-3 items-center min-w-0">
-                                    <div className="p-2 bg-gray-100 rounded-full text-gray-500 shrink-0"><Phone size={16} /></div>
-                                    <div className="min-w-0">
-                                        <span className="block text-[0.65rem] text-gray-500 uppercase tracking-wider font-semibold">Số Điện Thoại</span>
-                                        <div className="text-sm font-medium text-gray-900 truncate flex items-center gap-2">
+                                <div className="flex items-start gap-2.5 p-2 rounded-lg bg-slate-50/60 border border-slate-100/80">
+                                    <div className="mt-0.5 w-6 h-6 rounded-md bg-white border border-slate-200/60 flex items-center justify-center text-slate-400 flex-shrink-0"><Phone size={13} /></div>
+                                    <div className="min-w-0 flex-1">
+                                        <span className="block text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Số Điện Thoại</span>
+                                        <div className="text-xs font-semibold font-mono text-slate-800 truncate flex items-center gap-1.5 mt-0.5">
                                             {supplier.phone || '--'}
                                             {supplier.phone && <ClickToCallButton phoneNumber={supplier.phone} />}
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex gap-3 items-center min-w-0">
-                                    <div className="p-2 bg-gray-100 rounded-full text-gray-500 shrink-0"><FileText size={16} /></div>
-                                    <div className="min-w-0">
-                                        <span className="block text-[0.65rem] text-gray-500 uppercase tracking-wider font-semibold">Mã Số Thuế</span>
-                                        <span className="text-sm font-medium font-mono text-gray-900 truncate block">{supplier.taxCode || '--'}</span>
+                                <div className="flex items-start gap-2.5 p-2 rounded-lg bg-slate-50/60 border border-slate-100/80">
+                                    <div className="mt-0.5 w-6 h-6 rounded-md bg-white border border-slate-200/60 flex items-center justify-center text-slate-400 flex-shrink-0"><FileText size={13} /></div>
+                                    <div className="min-w-0 flex-1">
+                                        <span className="block text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Mã Số Thuế</span>
+                                        <span className="text-xs font-semibold font-mono text-slate-800 truncate block mt-0.5">{supplier.taxCode || '--'}</span>
                                     </div>
                                 </div>
-                                <div className="flex gap-3 items-center min-w-0">
-                                    <div className="p-2 bg-gray-100 rounded-full text-gray-500 shrink-0"><Users size={16} /></div>
-                                    <div className="min-w-0">
-                                        <span className="block text-[0.65rem] text-gray-500 uppercase tracking-wider font-semibold">Người Đại Diện / Liên Hệ</span>
-                                        <span className="text-sm font-medium text-gray-900 truncate block">{supplier.contactName || '--'}</span>
+                                <div className="flex items-start gap-2.5 p-2 rounded-lg bg-slate-50/60 border border-slate-100/80">
+                                    <div className="mt-0.5 w-6 h-6 rounded-md bg-white border border-slate-200/60 flex items-center justify-center text-slate-400 flex-shrink-0"><Users size={13} /></div>
+                                    <div className="min-w-0 flex-1">
+                                        <span className="block text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Người Đại Diện / Liên Hệ</span>
+                                        <span className="text-xs font-semibold text-slate-800 truncate block mt-0.5">{supplier.contactName || '--'}</span>
                                     </div>
                                 </div>
-                                <div className="flex gap-3 items-center min-w-0">
-                                    <div className="p-2 bg-gray-100 rounded-full text-gray-500 shrink-0"><CreditCard size={16} /></div>
-                                    <div className="min-w-0">
-                                        <span className="block text-[0.65rem] text-gray-500 uppercase tracking-wider font-semibold">Tài Khoản Ngân Hàng</span>
-                                        <span className="text-sm font-medium text-gray-900 truncate block">
+                                <div className="flex items-start gap-2.5 p-2 rounded-lg bg-slate-50/60 border border-slate-100/80">
+                                    <div className="mt-0.5 w-6 h-6 rounded-md bg-white border border-slate-200/60 flex items-center justify-center text-slate-400 flex-shrink-0"><CreditCard size={13} /></div>
+                                    <div className="min-w-0 flex-1">
+                                        <span className="block text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Tài Khoản Ngân Hàng</span>
+                                        <span className="text-xs font-medium text-slate-700 truncate block mt-0.5">
                                             {supplier.bankAccount ? `${supplier.bankAccount} (${supplier.bankName || ''})` : '--'}
                                         </span>
                                     </div>
                                 </div>
-                                <div className="flex gap-3 items-center min-w-0">
-                                    <div className="p-2 bg-red-50 rounded-full text-red-500 shrink-0"><DollarSign size={16} /></div>
-                                    <div className="min-w-0">
-                                        <span className="block text-[0.65rem] text-gray-500 uppercase tracking-wider font-semibold">Công Nợ Hiện Tại</span>
-                                        <span className="text-sm font-bold text-red-600 truncate block">{formatMoney(computedDebt)}</span>
+                                <div className="flex items-start gap-2.5 p-2 rounded-lg bg-rose-50/50 border border-rose-100">
+                                    <div className="mt-0.5 w-6 h-6 rounded-md bg-white border border-rose-200 flex items-center justify-center text-rose-500 flex-shrink-0"><DollarSign size={13} /></div>
+                                    <div className="min-w-0 flex-1">
+                                        <span className="block text-[10px] text-rose-600 uppercase tracking-wider font-semibold">Công Nợ Hiện Tại</span>
+                                        <span className="text-xs font-bold font-mono text-rose-600 truncate block mt-0.5">{formatMoney(computedDebt)}</span>
                                     </div>
                                 </div>
-                                <div className="flex gap-3 items-center min-w-0 sm:col-span-2">
-                                    <div className="p-2 bg-gray-100 rounded-full text-gray-500 shrink-0"><MapPin size={16} /></div>
-                                    <div className="min-w-0">
-                                        <span className="block text-[0.65rem] text-gray-500 uppercase tracking-wider font-semibold">Địa Chỉ Trụ Sở</span>
-                                        <span className="text-sm font-medium text-gray-900 truncate block" title={supplier.address || ''}>{supplier.address || '--'}</span>
+                                <div className="flex items-start gap-2.5 p-2 rounded-lg bg-slate-50/60 border border-slate-100/80 sm:col-span-2">
+                                    <div className="mt-0.5 w-6 h-6 rounded-md bg-white border border-slate-200/60 flex items-center justify-center text-slate-400 flex-shrink-0"><MapPin size={13} /></div>
+                                    <div className="min-w-0 flex-1">
+                                        <span className="block text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Địa Chỉ Trụ Sở</span>
+                                        <span className="text-xs font-medium text-slate-700 truncate block mt-0.5" title={supplier.address || ''}>{supplier.address || '--'}</span>
                                     </div>
                                 </div>
                                 {supplier.website && (
-                                    <div className="flex gap-3 items-center min-w-0">
-                                        <div className="p-2 bg-gray-100 rounded-full text-gray-500 shrink-0"><Globe size={16} /></div>
-                                        <div className="min-w-0">
-                                            <span className="block text-[0.65rem] text-gray-500 uppercase tracking-wider font-semibold">Website</span>
-                                            <a href={supplier.website.startsWith('http') ? supplier.website : `https://${supplier.website}`} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-indigo-600 hover:underline truncate block">{supplier.website}</a>
+                                    <div className="flex items-start gap-2.5 p-2 rounded-lg bg-slate-50/60 border border-slate-100/80">
+                                        <div className="mt-0.5 w-6 h-6 rounded-md bg-white border border-slate-200/60 flex items-center justify-center text-slate-400 flex-shrink-0"><Globe size={13} /></div>
+                                        <div className="min-w-0 flex-1">
+                                            <span className="block text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Website</span>
+                                            <a href={supplier.website.startsWith('http') ? supplier.website : `https://${supplier.website}`} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-[var(--primary)] hover:underline truncate block mt-0.5">{supplier.website}</a>
                                         </div>
                                     </div>
                                 )}
@@ -381,22 +359,22 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
                     </div>
 
                     {/* Tabs area */}
-                    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden w-full">
-                        <div className="flex border-b border-gray-200 overflow-x-auto px-4 hide-scrollbar">
+                    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden w-full shadow-xs">
+                        <div className="flex border-b border-slate-200 overflow-x-auto px-2 hide-scrollbar bg-slate-50/50">
                             {tabs.map((tab) => {
                                 const isActive = activeTab === tab.id;
                                 return (
                                     <button
                                         key={tab.id}
                                         onClick={() => setActiveTab(tab.id)}
-                                        className={`flex gap-2 items-center px-4 py-4 border-none bg-transparent cursor-pointer text-sm whitespace-nowrap transition-all relative
-                                            ${isActive ? 'font-semibold text-indigo-600 border-b-2 border-indigo-600' : 'font-medium text-gray-500 border-b-2 border-transparent'}`}
+                                        className={`flex gap-2 items-center px-4 py-3 border-none bg-transparent cursor-pointer text-xs sm:text-sm whitespace-nowrap transition-all relative font-medium
+                                            ${isActive ? 'font-semibold text-emerald-700 border-b-2 border-emerald-600 bg-white' : 'text-slate-600 border-b-2 border-transparent hover:text-slate-900'}`}
                                     >
-                                        <span className={isActive ? 'text-indigo-600' : 'text-gray-400'}>{tab.icon}</span>
+                                        <span className={isActive ? 'text-emerald-600' : 'text-slate-400'}>{tab.icon}</span>
                                         {tab.label}
                                         {tab.count !== null && (
-                                            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold
-                                                ${isActive ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-500'}`}>
+                                            <span className={`px-2 py-0.5 rounded-full text-xs font-bold
+                                                ${isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
                                                 {tab.count}
                                             </span>
                                         )}
@@ -406,41 +384,41 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
                         </div>
 
                         {/* Tab Content Header */}
-                        <div className="p-4 md:p-6 flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-4 border-b border-gray-100">
-                            <h3 className="text-base font-semibold m-0">Danh sách hồ sơ</h3>
-                            {activeTab === 'orders' && <Link href={`/purchasing/orders?supplierId=${supplier.id}`} className="btn btn-primary px-4 py-2 rounded-lg text-sm w-full sm:w-auto text-center">+ Tạo Đơn Hàng</Link>}
-                            {activeTab === 'bills' && <Link href={`/purchasing/bills?supplierId=${supplier.id}`} className="btn btn-primary px-4 py-2 rounded-lg text-sm w-full sm:w-auto text-center">+ Tạo Hóa Đơn</Link>}
-                            {activeTab === 'payments' && <Link href={`/purchasing/payments?supplierId=${supplier.id}`} className="btn btn-primary px-4 py-2 rounded-lg text-sm w-full sm:w-auto text-center">+ Tạo Phiếu Chi</Link>}
+                        <div className="p-4 md:p-5 flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-3 border-b border-slate-100 bg-white">
+                            <h3 className="text-sm font-bold text-slate-800 m-0">Danh sách hồ sơ</h3>
+                            {activeTab === 'orders' && <Link href={`/purchasing/orders?supplierId=${supplier.id}`} className="btn btn-primary px-3.5 py-1.5 rounded-lg text-xs font-semibold w-full sm:w-auto text-center shadow-xs">+ Tạo Đơn Hàng</Link>}
+                            {activeTab === 'bills' && <Link href={`/purchasing/bills?supplierId=${supplier.id}`} className="btn btn-primary px-3.5 py-1.5 rounded-lg text-xs font-semibold w-full sm:w-auto text-center shadow-xs">+ Tạo Hóa Đơn</Link>}
+                            {activeTab === 'payments' && <Link href={`/purchasing/payments?supplierId=${supplier.id}`} className="btn btn-primary px-3.5 py-1.5 rounded-lg text-xs font-semibold w-full sm:w-auto text-center shadow-xs">+ Tạo Phiếu Chi</Link>}
                         </div>
 
                         {/* Tab Content Grid */}
-                        <div className="p-4 md:p-6 overflow-x-auto w-full">
+                        <div className="p-4 md:p-5 overflow-x-auto w-full">
                             {activeTab === 'orders' && (
-                                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
-                                    <thead style={{ borderBottom: '1px solid #e5e7eb', color: '#6b7280', fontSize: '0.75rem', textTransform: 'uppercase' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
+                                    <thead style={{ borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase' }}>
                                         <tr>
-                                            <th style={{ padding: '1rem 0', fontWeight: 600 }}>Mã HS</th>
-                                            <th style={{ padding: '1rem 0', fontWeight: 600 }}>Tiêu đề</th>
-                                            <th style={{ padding: '1rem 0', fontWeight: 600 }}>Trạng thái</th>
-                                            <th style={{ padding: '1rem 0', fontWeight: 600 }}>Ngày tạo</th>
-                                            <th style={{ padding: '1rem 0', fontWeight: 600, textAlign: 'right' }}>Thao tác</th>
+                                            <th style={{ padding: '0.75rem 0', fontWeight: 600 }}>Mã HS</th>
+                                            <th style={{ padding: '0.75rem 0', fontWeight: 600 }}>Tiêu đề</th>
+                                            <th style={{ padding: '0.75rem 0', fontWeight: 600 }}>Trạng thái</th>
+                                            <th style={{ padding: '0.75rem 0', fontWeight: 600 }}>Ngày tạo</th>
+                                            <th style={{ padding: '0.75rem 0', fontWeight: 600, textAlign: 'right' }}>Thao tác</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {supplier.orders?.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>Không có dữ liệu.</td></tr>}
+                                        {supplier.orders?.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', padding: '2.5rem', color: '#94a3b8' }}>Không có dữ liệu.</td></tr>}
                                         {supplier.orders?.map((order: any) => (
-                                            <tr key={order.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                                                <td style={{ padding: '1rem 0', fontWeight: 500 }}>
-                                                    <Link href={`/purchasing/orders/${order.id}`} className="hover:text-primary transition-colors text-gray-500">{order.code}</Link>
+                                            <tr key={order.id} className="hover:bg-slate-50/70 transition-colors" style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                                <td style={{ padding: '0.875rem 0', fontWeight: 600 }}>
+                                                    <Link href={`/purchasing/orders/${order.id}`} className="hover:text-emerald-600 font-mono transition-colors text-slate-500">{order.code}</Link>
                                                 </td>
-                                                <td style={{ padding: '1rem 0', fontWeight: 500 }}>
-                                                    <Link href={`/purchasing/orders/${order.id}`} className="hover:text-primary transition-colors text-gray-900">Đơn hàng {order.code} - {formatMoney(order.totalAmount)}</Link>
+                                                <td style={{ padding: '0.875rem 0', fontWeight: 500 }}>
+                                                    <Link href={`/purchasing/orders/${order.id}`} className="hover:text-emerald-600 transition-colors text-slate-900">Đơn hàng {order.code} - <span className="font-semibold">{formatMoney(order.totalAmount)}</span></Link>
                                                 </td>
-                                                <td style={{ padding: '1rem 0' }}>{getStatusBadge(order.status, 'order')}</td>
-                                                <td style={{ padding: '1rem 0', color: '#4b5563' }}>{formatDate(order.date)}</td>
-                                                <td style={{ padding: '1rem 0', textAlign: 'right' }}>
-                                                    <Link href={`/purchasing/orders/${order.id}`} style={{ display: 'inline-block', border: 'none', background: '#e0e7ff', color: '#4f46e5', padding: '0.4rem 0.6rem', borderRadius: '0.25rem', cursor: 'pointer' }}>
-                                                        <Search size={16} />
+                                                <td style={{ padding: '0.875rem 0' }}><StatusBadge status={order.status} /></td>
+                                                <td style={{ padding: '0.875rem 0', color: '#64748b' }}>{formatDate(order.date)}</td>
+                                                <td style={{ padding: '0.875rem 0', textAlign: 'right' }}>
+                                                    <Link href={`/purchasing/orders/${order.id}`} className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-600 transition-all inline-flex items-center justify-center border border-slate-200">
+                                                        <Search size={14} />
                                                     </Link>
                                                 </td>
                                             </tr>
@@ -450,38 +428,38 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
                             )}
 
                             {activeTab === 'bills' && (
-                                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
-                                    <thead style={{ borderBottom: '1px solid #e5e7eb', color: '#6b7280', fontSize: '0.75rem', textTransform: 'uppercase' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
+                                    <thead style={{ borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase' }}>
                                         <tr>
-                                            <th style={{ padding: '1rem 0', fontWeight: 600 }}>Mã HS</th>
-                                            <th style={{ padding: '1rem 0', fontWeight: 600 }}>Tiêu đề</th>
-                                            <th style={{ padding: '1rem 0', fontWeight: 600, cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('status')}>
+                                            <th style={{ padding: '0.75rem 0', fontWeight: 600 }}>Mã HS</th>
+                                            <th style={{ padding: '0.75rem 0', fontWeight: 600 }}>Tiêu đề</th>
+                                            <th style={{ padding: '0.75rem 0', fontWeight: 600, cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('status')}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                                                     Trạng thái
-                                                    {sortConfig?.key === 'status' ? (sortConfig.direction === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />) : <ArrowUpDown size={14} className="text-gray-300" />}
+                                                    {sortConfig?.key === 'status' ? (sortConfig.direction === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />) : <ArrowUpDown size={13} className="text-slate-300" />}
                                                 </div>
                                             </th>
-                                            <th style={{ padding: '1rem 0', fontWeight: 600 }}>Thẻ Quản Lý</th>
-                                            <th style={{ padding: '1rem 0', fontWeight: 600, cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('date')}>
+                                            <th style={{ padding: '0.75rem 0', fontWeight: 600 }}>Thẻ Quản Lý</th>
+                                            <th style={{ padding: '0.75rem 0', fontWeight: 600, cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('date')}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                                                     Ngày tạo
-                                                    {sortConfig?.key === 'date' ? (sortConfig.direction === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />) : <ArrowUpDown size={14} className="text-gray-300" />}
+                                                    {sortConfig?.key === 'date' ? (sortConfig.direction === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />) : <ArrowUpDown size={13} className="text-slate-300" />}
                                                 </div>
                                             </th>
-                                            <th style={{ padding: '1rem 0', fontWeight: 600, textAlign: 'right' }}>Thao tác</th>
+                                            <th style={{ padding: '0.75rem 0', fontWeight: 600, textAlign: 'right' }}>Thao tác</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {sortedBills?.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>Không có dữ liệu.</td></tr>}
+                                        {sortedBills?.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2.5rem', color: '#94a3b8' }}>Không có dữ liệu.</td></tr>}
                                         {sortedBills?.map((bill: any) => (
-                                            <tr key={bill.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                                                <td style={{ padding: '1rem 0', fontWeight: 500 }}>
-                                                    <Link href={`/purchasing/bills/${bill.id}`} className="hover:text-primary transition-colors text-gray-500">{bill.code}</Link>
+                                            <tr key={bill.id} className="hover:bg-slate-50/70 transition-colors" style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                                <td style={{ padding: '0.875rem 0', fontWeight: 600 }}>
+                                                    <Link href={`/purchasing/bills/${bill.id}`} className="hover:text-emerald-600 font-mono transition-colors text-slate-500">{bill.code}</Link>
                                                 </td>
-                                                <td style={{ padding: '1rem 0', fontWeight: 500 }}>
-                                                    <Link href={`/purchasing/bills/${bill.id}`} className="hover:text-primary transition-colors text-gray-900">Hóa đơn {bill.supplierInvoice || bill.code} - {formatMoney(bill.totalAmount)}</Link>
+                                                <td style={{ padding: '0.875rem 0', fontWeight: 500 }}>
+                                                    <Link href={`/purchasing/bills/${bill.id}`} className="hover:text-emerald-600 transition-colors text-slate-900">Hóa đơn {bill.supplierInvoice || bill.code} - <span className="font-semibold">{formatMoney(bill.totalAmount)}</span></Link>
                                                 </td>
-                                                <td style={{ padding: '1rem 0' }}>{getStatusBadge(bill.status, 'bill')}</td>
+                                                <td style={{ padding: '0.875rem 0' }}><StatusBadge status={bill.status} /></td>
                                                 <td style={{ padding: '1rem 0' }}>
                                                     {editingTagsBillId === bill.id ? (
                                                         <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>

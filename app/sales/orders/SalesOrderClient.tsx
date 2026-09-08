@@ -8,10 +8,11 @@ import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
-import { Plus, Edit2, Trash2, Save, X, Printer, PackageCheck, Search, Calendar, LayoutList, FolderClock, CheckCircle2, XCircle, FileText, ChevronUp, ChevronDown, Eye, Link as LinkIcon, Download, Check, ArrowRightLeft } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Printer, PackageCheck, Search, Calendar, LayoutList, FolderClock, CheckCircle2, XCircle, FileText, ChevronUp, ChevronDown, Eye, Link as LinkIcon, Download, Check, ArrowRightLeft, ArrowUpDown } from 'lucide-react';
 import { submitSalesOrder, updateSalesOrderStatus, deleteSalesOrder, updateSalesOrder, convertOrderToInvoice } from './actions';
 import { formatMoney, formatDate, formatTaxRate, calcPreTaxPrice, calcTaxAmount } from '@/lib/utils/formatters';
 import { TaxRateSelect, TaxBadge } from '@/app/components/ui/TaxRateSelect';
+import { StatusBadge } from '@/app/components/ui/StatusBadge';
 import Link from 'next/link';
 
 export default function SalesOrderClient({ initialOrders, customers, products, nextCode, initialAction, initialCustomerId, users, currentUserId, isAdminOrManager, projects }: any) {
@@ -421,33 +422,56 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
 
     return (
         <>
-            <Card className="p-6">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                    <h2 className="text-xl font-semibold">Danh sách Đơn Hỏi Mua / Đặt Hàng</h2>
-                    <Button onClick={handleOpenCreate} className="flex justify-center items-center gap-2 w-full sm:w-auto">
-                        <Plus size={16} /> Tạo Đơn Đặt Hàng Mới
-                    </Button>
+            <div className="flex flex-col gap-5">
+                {/* Top Page Tech Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/80">
+                    <div>
+                        <div className="flex items-center gap-2 mb-1">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-2xs">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                BÁN HÀNG &amp; ĐƠN ĐẶT HÀNG (SO)
+                            </span>
+                            <span className="text-[11px] font-semibold text-slate-400">|</span>
+                            <span className="text-[11px] font-medium text-slate-500">Quản lý theo dõi tiến trình và trạng thái các đơn đặt hàng</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Đơn Đặt Hàng Bán</h1>
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs">
+                                {orders.length}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2.5 shrink-0">
+                        <Button
+                            onClick={handleOpenCreate}
+                            className="btn btn-primary gap-2 h-[34px] px-3.5 text-xs font-bold rounded-lg shadow-sm"
+                        >
+                            <Plus size={15} className="stroke-[2.5]" />
+                            <span>Tạo Đơn Đặt Hàng Mới</span>
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Filter Cards */}
-                <div className="flex flex-wrap gap-4 mb-6">
+                <div className="flex flex-wrap gap-3 mb-5">
                     {statsCards.map(stat => (
                         <div
                             key={stat.id}
                             onClick={() => setStatusFilter(stat.id)}
-                            className={`stat-card ${stat.colorClass} cursor-pointer flex-1 min-w-[160px] ${statusFilter === stat.id ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+                            className={`stat-card ${stat.colorClass} cursor-pointer flex-1 min-w-[150px] transition-all hover:-translate-y-0.5 ${statusFilter === stat.id ? 'ring-2 ring-primary ring-offset-2' : ''}`}
                         >
-                            <div className="flex justify-between items-start mb-2">
-                                <span className="stat-title text-sm font-semibold uppercase tracking-wide">{stat.label}</span>
-                                <div className="stat-icon p-2 rounded-full flex items-center justify-center">
-                                    <stat.icon size={18} />
+                            <div className="flex justify-between items-start mb-1.5">
+                                <span className="stat-title text-[10px] font-bold uppercase tracking-wider">{stat.label}</span>
+                                <div className="stat-icon p-1.5 rounded-full flex items-center justify-center">
+                                    <stat.icon size={15} />
                                 </div>
                             </div>
                             <div className="stat-info">
-                                <span className="stat-value text-3xl font-bold">{stat.count}</span>
+                                <span className="stat-value text-2xl font-bold">{stat.count}</span>
                             </div>
                             {stat.amount > 0 && (
-                                <div className="mt-2 text-xs font-semibold opacity-80 break-words whitespace-nowrap overflow-hidden text-ellipsis">
+                                <div className="mt-1.5 text-[11px] font-semibold opacity-85 break-words whitespace-nowrap overflow-hidden text-ellipsis">
                                     {formatMoney(stat.amount)}
                                 </div>
                             )}
@@ -456,29 +480,29 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                 </div>
 
                 {/* Filter Ribbon */}
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 mb-6 flex gap-4 items-center flex-wrap">
+                <div className="bg-slate-50/80 border border-slate-200 rounded-xl p-3 mb-5 flex gap-3 items-center flex-wrap">
                     <div className="flex-1 relative min-w-[200px]">
                         <input
                             type="text"
                             placeholder="Tìm theo Mã SO, Tên khách hàng..."
-                            className="px-3 border border-slate-300 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 w-full bg-white"
+                            className="px-3 border border-slate-300 py-1.5 rounded-lg text-xs outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 w-full bg-white shadow-xs"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
                         />
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Calendar size={16} className="text-gray-400" />
+                    <div className="flex items-center gap-1.5 text-xs">
+                        <Calendar size={14} className="text-slate-400" />
                         <input
                             type="date"
-                            className="border border-slate-300 px-3 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 bg-white"
+                            className="border border-slate-300 px-2.5 py-1.5 rounded-lg text-xs outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 bg-white shadow-xs"
                             value={dateFrom}
                             onChange={e => setDateFrom(e.target.value)}
                             title="Từ ngày"
                         />
-                        <span className="text-gray-400">-</span>
+                        <span className="text-slate-400">-</span>
                         <input
                             type="date"
-                            className="border border-slate-300 px-3 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 bg-white"
+                            className="border border-slate-300 px-2.5 py-1.5 rounded-lg text-xs outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 bg-white shadow-xs"
                             value={dateTo}
                             onChange={e => setDateTo(e.target.value)}
                             title="Đến ngày"
@@ -487,9 +511,9 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
 
                     {/* Employee Filter */}
                     {isAdminOrManager && users && users.length > 0 && (
-                        <div className="shrink-0 min-w-[200px] w-full sm:w-auto">
+                        <div className="shrink-0 min-w-[180px] w-full sm:w-auto">
                             <select
-                                className="h-[40px] w-full px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-700 outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+                                className="h-[34px] w-full px-2.5 rounded-lg border border-slate-300 bg-white text-xs text-slate-700 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 cursor-pointer shadow-xs"
                                 defaultValue={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('employeeId') || '' : ''}
                                 onChange={(e) => {
                                     const newEmployeeId = e.target.value;
@@ -502,7 +526,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                                     window.location.href = `/sales/orders?${params.toString()}`;
                                 }}
                             >
-                                <option value="">Lọc theo: Tất cả nhân viên</option>
+                                <option value="">Lọc: Tất cả nhân viên</option>
                                 {users.map((u: any) => (
                                     <option key={u.id} value={u.id}>{u.name}</option>
                                 ))}
@@ -510,114 +534,109 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                         </div>
                     )}
 
-                    <div className="flex items-center gap-2 min-w-[200px]">
+                    <div className="flex items-center gap-2 min-w-[180px]">
                         <select
-                            className="border border-slate-300 px-3 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 w-full bg-white cursor-pointer"
+                            className="border border-slate-300 px-2.5 py-1.5 rounded-lg text-xs outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 w-full bg-white cursor-pointer shadow-xs"
                             value={sortBy}
                             onChange={e => setSortBy(e.target.value)}
                         >
                             <option value="date_desc">Ngày (Mới nhất)</option>
                             <option value="date_asc">Ngày (Cũ nhất)</option>
-                            <option value="amount_desc">Tổng Tiền (Cao xuống thấp)</option>
-                            <option value="amount_asc">Tổng Tiền (Thấp lên cao)</option>
+                            <option value="amount_desc">Tổng Tiền (Cao $\rightarrow$ Thấp)</option>
+                            <option value="amount_asc">Tổng Tiền (Thấp $\rightarrow$ Cao)</option>
                             <option value="code_asc">Mã SO (A-Z)</option>
                             <option value="code_desc">Mã SO (Z-A)</option>
                         </select>
                     </div>
                 </div>
 
-
-                <Table>
-                    <thead>
-                        <tr>
-                            <th className="text-left font-medium text-gray-500 pb-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('code')}>
-                                <div className="flex items-center gap-1">
-                                    Mã SO {sortBy === 'code_asc' ? <ChevronUp size={14} /> : sortBy === 'code_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
-                                </div>
-                            </th>
-                            <th className="text-left font-medium text-gray-500 pb-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('date')}>
-                                <div className="flex items-center gap-1">
-                                    Ngày Lập {sortBy === 'date_asc' ? <ChevronUp size={14} /> : sortBy === 'date_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
-                                </div>
-                            </th>
-                            <th className="text-left font-medium text-gray-500 pb-3">Khách Hàng</th>
-                            <th className="text-right font-medium text-gray-500 pb-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('amount')}>
-                                <div className="flex items-center justify-end gap-1">
-                                    Tổng Tiền {sortBy === 'amount_asc' ? <ChevronUp size={14} /> : sortBy === 'amount_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
-                                </div>
-                            </th>
-                            <th className="text-center font-medium text-gray-500 pb-3">Trạng Thái</th>
-                            <th className="text-right font-medium text-gray-500 pb-3">Thao Tác</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {paginatedItems.map((o: any) => (
-                            <tr key={o.id} className="border-t border-gray-100">
-                                <td className="py-3 items-center gap-2 flex">
-                                    <PackageCheck size={16} className="text-blue-500" />
-                                    <Link href={`/sales/orders/${o.id}`} className="font-semibold text-gray-800 hover:text-primary hover:underline transition-colors block">
-                                        {o.code}
-                                    </Link>
-                                </td>
-                                <td className="py-3 text-gray-600" suppressHydrationWarning>{formatDate(new Date(o.date))}</td>
-                                <td className="py-3">
-                                    {o.customerId ? (
-                                        <Link href={`/customers/${o.customerId}`} className="font-medium text-gray-800 hover:text-primary hover:underline transition-colors block">
-                                            {o.customer?.name}
-                                        </Link>
-                                    ) : (
-                                        o.customer?.name
-                                    )}
-                                </td>
-                                <td className="py-3 text-right font-medium">{formatMoney(o.totalAmount)}</td>
-                                <td className="py-3 text-center">
-                                    <span className={`px-2 py-1 rounded text-xs font-medium border ${o.status === 'SENT' ? 'bg-blue-50 text-blue-600 border-blue-200' :
-                                        o.status === 'CONFIRMED' ? 'bg-green-50 text-green-600 border-green-200' :
-                                            o.status === 'COMPLETED' ? 'bg-purple-50 text-purple-600 border-purple-200' :
-                                                o.status === 'CANCELLED' ? 'bg-red-50 text-red-600 border-red-200' :
-                                                    'bg-gray-50 text-gray-600 border-gray-200'
-                                        }`}>
-                                        {o.status}
-                                    </span>
-                                </td>
-                                <td className="py-3 text-right">
-                                    <div className="flex justify-end items-center gap-2">
-                                        <div className="flex items-center gap-1 mr-1">
-                                            {o.status === 'DRAFT' && (
-                                                <button onClick={() => handleEdit(o)} title="Chỉnh sửa" className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors">
-                                                    <Edit2 size={15} />
-                                                </button>
-                                            )}
-                                            <Link href={`/sales/orders/${o.id}`} title="Xem chi tiết" className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors block">
-                                                <Eye size={15} />
-                                            </Link>
-                                            <Link href={`/print/sales/order/${o.id}`} target="_blank" title="Tải PDF / In ấn" className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors block">
-                                                <Download size={15} />
-                                            </Link>
-                                            <Link href={`/public/sales/order/${o.id}`} target="_blank" title="Link xem Public" className="p-2 text-slate-500 hover:text-teal-600 hover:bg-teal-50 transition-colors block">
-                                                <LinkIcon size={15} />
-                                            </Link>
-                                            <button onClick={() => handleDelete(o.id)} className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors" title="Xóa">
-                                                <Trash2 size={15} />
-                                            </button>
-                                        </div>
-
-                                        {o.status === 'DRAFT' && (
-                                            <Button variant="secondary" onClick={() => handleStatusChange(o.id, 'CONFIRMED')} title="Chốt Đơn" className="px-3 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-300 py-1.5 text-xs font-semibold flex-shrink-0 shadow-sm transition-all rounded-md">
-                                                Chốt Đơn
-                                            </Button>
-                                        )}
-                                        {o.status === 'CONFIRMED' && (
-                                            <Button variant="secondary" onClick={() => handleStatusChange(o.id, 'COMPLETED')} className="text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title="Hoàn Thành">
-                                                <PackageCheck size={14} className="mr-1.5 inline-block" /> Xong
-                                            </Button>
-                                        )}
-                                        {(o.status === 'DRAFT' || o.status === 'CONFIRMED') && (
-                                            <Button variant="secondary" onClick={() => setConvertModalId(o.id)} className="text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title="Tạo Hóa Đơn Tự Động">
-                                                <ArrowRightLeft size={14} className="mr-1.5 inline-block" /> Lên Hóa Đơn
-                                            </Button>
-                                        )}
+                <div className="overflow-x-auto pb-2">
+                    <Table>
+                        <thead className="bg-slate-50/80 border-b border-slate-200">
+                            <tr>
+                                <th className="text-left font-bold text-[11px] text-slate-600 uppercase tracking-wider py-3 px-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('code')}>
+                                    <div className="flex items-center gap-1">
+                                        Mã SO {sortBy === 'code_asc' ? <ChevronUp size={13} /> : sortBy === 'code_desc' ? <ChevronDown size={13} /> : <ArrowUpDown size={13} className="opacity-30" />}
                                     </div>
+                                </th>
+                                <th className="text-left font-bold text-[11px] text-slate-600 uppercase tracking-wider py-3 px-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('date')}>
+                                    <div className="flex items-center gap-1">
+                                        Ngày Lập {sortBy === 'date_asc' ? <ChevronUp size={13} /> : sortBy === 'date_desc' ? <ChevronDown size={13} /> : <ArrowUpDown size={13} className="opacity-30" />}
+                                    </div>
+                                </th>
+                                <th className="text-left font-bold text-[11px] text-slate-600 uppercase tracking-wider py-3 px-3">Khách Hàng</th>
+                                <th className="text-right font-bold text-[11px] text-slate-600 uppercase tracking-wider py-3 px-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('amount')}>
+                                    <div className="flex items-center justify-end gap-1">
+                                        Tổng Tiền {sortBy === 'amount_asc' ? <ChevronUp size={13} /> : sortBy === 'amount_desc' ? <ChevronDown size={13} /> : <ArrowUpDown size={13} className="opacity-30" />}
+                                    </div>
+                                </th>
+                                <th className="text-center font-bold text-[11px] text-slate-600 uppercase tracking-wider py-3 px-3">Trạng Thái</th>
+                                <th className="text-right font-bold text-[11px] text-slate-600 uppercase tracking-wider py-3 px-3">Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {paginatedItems.map((o: any) => (
+                                <tr key={o.id} className="hover:bg-slate-50/70 transition-colors">
+                                    <td className="py-3 px-3">
+                                        <div className="flex items-center gap-1.5">
+                                            <PackageCheck size={15} className="text-emerald-600" />
+                                            <Link href={`/sales/orders/${o.id}`} className="font-semibold text-slate-900 hover:text-emerald-700 hover:underline transition-colors block text-xs">
+                                                {o.code}
+                                            </Link>
+                                        </div>
+                                    </td>
+                                    <td className="py-3 px-3 text-slate-600 text-xs" suppressHydrationWarning>{formatDate(new Date(o.date))}</td>
+                                    <td className="py-3 px-3">
+                                        {o.customerId ? (
+                                            <Link href={`/customers/${o.customerId}`} className="font-semibold text-slate-900 hover:text-emerald-700 hover:underline transition-colors block text-xs">
+                                                {o.customer?.name}
+                                            </Link>
+                                        ) : (
+                                            <span className="text-xs text-slate-800">{o.customer?.name}</span>
+                                        )}
+                                    </td>
+                                    <td className="py-3 px-3 text-right font-bold text-xs text-slate-900">{formatMoney(o.totalAmount)}</td>
+                                    <td className="py-3 px-3 text-center">
+                                        <StatusBadge status={o.status} />
+                                    </td>
+                                    <td className="py-3 px-3 text-right">
+                                        <div className="flex justify-end items-center gap-1.5">
+                                            <div className="flex items-center gap-1">
+                                                {o.status === 'DRAFT' && (
+                                                    <button onClick={() => handleEdit(o)} title="Chỉnh sửa" className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors">
+                                                        <Edit2 size={15} />
+                                                    </button>
+                                                )}
+                                                <Link href={`/sales/orders/${o.id}`} title="Xem chi tiết" className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors block">
+                                                    <Eye size={15} />
+                                                </Link>
+                                                <Link href={`/print/sales/order/${o.id}`} target="_blank" title="Tải PDF / In ấn" className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors block">
+                                                    <Download size={15} />
+                                                </Link>
+                                                <Link href={`/public/sales/order/${o.id}`} target="_blank" title="Link xem Public" className="p-1.5 text-slate-500 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors block">
+                                                    <LinkIcon size={15} />
+                                                </Link>
+                                                <button onClick={() => handleDelete(o.id)} className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Xóa">
+                                                    <Trash2 size={15} />
+                                                </button>
+                                            </div>
+
+                                            {o.status === 'DRAFT' && (
+                                                <Button variant="secondary" onClick={() => handleStatusChange(o.id, 'CONFIRMED')} title="Chốt Đơn" className="px-2.5 border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-300 py-1 text-[11px] font-semibold flex-shrink-0 shadow-xs transition-all rounded-md">
+                                                    Chốt Đơn
+                                                </Button>
+                                            )}
+                                            {o.status === 'CONFIRMED' && (
+                                                <Button variant="secondary" onClick={() => handleStatusChange(o.id, 'COMPLETED')} className="text-indigo-700 bg-indigo-50 border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300 px-2.5 flex-shrink-0 py-1 text-[11px] font-semibold shadow-xs transition-all rounded-md" title="Hoàn Thành">
+                                                    <PackageCheck size={13} className="mr-1 inline-block" /> Xong
+                                                </Button>
+                                            )}
+                                            {(o.status === 'DRAFT' || o.status === 'CONFIRMED') && (
+                                                <Button variant="secondary" onClick={() => setConvertModalId(o.id)} className="text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300 px-2.5 flex-shrink-0 py-1 text-[11px] font-semibold shadow-xs transition-all rounded-md" title="Tạo Hóa Đơn Tự Động">
+                                                    <ArrowRightLeft size={13} className="mr-1 inline-block" /> Lên Hóa Đơn
+                                                </Button>
+                                            )}
+                                        </div>
                                 </td>
                             </tr>
                         ))}
@@ -637,24 +656,25 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                         </tr>
                     </tfoot>
                 </Table>
+                </div>
                 <Pagination {...paginationProps} />
-            </Card >
+            </div>
 
             <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title={formData.id ? "Sửa Đơn Đặt Hàng" : "Tạo Đơn Đặt Hàng Mới"} maxWidth="1000px">
-                <div className="flex flex-col gap-6 py-2">
+                <div className="flex flex-col gap-4 py-1">
                     <div>
-                        <h3 className="text-[1.1rem] font-semibold text-gray-800 mb-4">Thông tin chung</h3>
-                        <div className="grid grid-cols-2 gap-x-5 gap-y-4 bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                        <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Thông tin chung</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-2xs">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Mã Đơn</label>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">Mã Đơn</label>
                                 <input
-                                    type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white"
+                                    type="text" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
                                     value={formData.code}
                                     onChange={e => setFormData({ ...formData, code: e.target.value })}
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Khách Hàng (*)</label>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">Khách Hàng (*)</label>
                                 <SearchableSelect
                                     options={customers.map((c: any) => ({ value: c.id, label: c.name }))}
                                     value={formData.customerId || ''}
@@ -663,15 +683,15 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Ngày Lập Đơn</label>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">Ngày Lập Đơn</label>
                                 <input
-                                    type="date" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white"
+                                    type="date" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
                                     value={formData.date}
                                     onChange={e => setFormData({ ...formData, date: e.target.value })}
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Dự Án Lắp Đặt (Tùy chọn)</label>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">Dự Án Lắp Đặt (Tùy chọn)</label>
                                 <SearchableSelect
                                     options={projects?.map((p: any) => ({ value: p.id, label: p.title })) || []}
                                     value={formData.projectId || ''}
@@ -680,17 +700,17 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Hiệu Lực Đến</label>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">Hiệu Lực Đến</label>
                                 <input
-                                    type="date" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white"
+                                    type="date" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
                                     value={formData.validUntil || ''}
                                     onChange={e => setFormData({ ...formData, validUntil: e.target.value })}
                                 />
                             </div>
-                            <div className="col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Ghi chú</label>
+                            <div className="md:col-span-2">
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">Ghi chú</label>
                                 <input
-                                    type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white"
+                                    type="text" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white placeholder:text-slate-400"
                                     value={formData.notes || ''}
                                     onChange={e => setFormData({ ...formData, notes: e.target.value })}
                                     placeholder="Ghi chú thêm..."
@@ -700,37 +720,37 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                     </div>
 
                     <div>
-                        <h3 className="text-[1.1rem] font-semibold text-gray-800 mb-4">Chi tiết Sản Phẩm</h3>
-                        <div className="flex flex-col bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-                            <div className="mb-4 flex items-center gap-4 border-b border-gray-100 pb-3">
-                                <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
-                                    <input type="radio" className="accent-indigo-600 w-4 h-4 cursor-pointer" checked={!isCustomProduct} onChange={() => setIsCustomProduct(false)} />
+                        <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Chi tiết Sản Phẩm</h3>
+                        <div className="flex flex-col bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-2xs">
+                            <div className="mb-3 flex items-center gap-4 border-b border-slate-100 pb-2.5">
+                                <label className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-slate-700">
+                                    <input type="radio" className="accent-emerald-600 w-3.5 h-3.5 cursor-pointer" checked={!isCustomProduct} onChange={() => setIsCustomProduct(false)} />
                                     <span>Chọn từ kho</span>
                                 </label>
-                                <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
-                                    <input type="radio" className="accent-indigo-600 w-4 h-4 cursor-pointer" checked={isCustomProduct} onChange={() => setIsCustomProduct(true)} />
+                                <label className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-slate-700">
+                                    <input type="radio" className="accent-emerald-600 w-3.5 h-3.5 cursor-pointer" checked={isCustomProduct} onChange={() => setIsCustomProduct(true)} />
                                     <span>Nhập tự do ngoài hệ thống</span>
                                 </label>
                                 {isCustomProduct && (
-                                    <span className="text-xs text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-md font-medium flex items-center gap-1">
-                                        ✨ Tự động lưu vào kho cho các lần sau
+                                    <span className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md font-medium flex items-center gap-1">
+                                        ✨ Tự động lưu vào kho
                                     </span>
                                 )}
                                 <div className="ml-auto">
-                                    <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-indigo-900 bg-indigo-50/80 border border-indigo-200 px-3 py-1.5 rounded-lg select-none hover:bg-indigo-100/80 transition-colors">
+                                    <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold text-emerald-900 bg-emerald-50/80 border border-emerald-200 px-2.5 py-1 rounded-lg select-none hover:bg-emerald-100/80 transition-colors">
                                         <input
                                             type="checkbox"
                                             checked={isPriceInclusiveVat}
                                             onChange={(e) => setIsPriceInclusiveVat(e.target.checked)}
-                                            className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 accent-indigo-600 cursor-pointer"
+                                            className="w-3.5 h-3.5 rounded text-emerald-600 focus:ring-emerald-500 accent-emerald-600 cursor-pointer"
                                         />
                                         <span>Đã có thuế VAT (Nhập giá sau thuế)</span>
                                     </label>
                                 </div>
                             </div>
-                            <div className="flex flex-wrap gap-3 items-end mb-2">
+                            <div className="flex flex-wrap gap-2.5 items-end mb-2">
                                 <div className="flex-1 min-w-[150px]">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Tên Sản Phẩm</label>
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1">Tên Sản Phẩm</label>
                                     {!isCustomProduct ? (
                                         <SearchableSelect
                                             options={products.map((p: any) => ({ value: p.id, label: `${p.sku} - ${p.name}` }))}
@@ -739,44 +759,44 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                                             placeholder="-- Chọn Sản Phẩm --"
                                         />
                                     ) : (
-                                        <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" placeholder="Nhập tên dịch vụ/sản phẩm..." value={customName} onChange={e => setCustomName(e.target.value)} />
+                                        <input type="text" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white placeholder:text-slate-400" placeholder="Nhập tên dịch vụ/sản phẩm..." value={customName} onChange={e => setCustomName(e.target.value)} />
                                     )}
                                 </div>
                                 {isCustomProduct && (
-                                    <div className="w-24 shrink-0">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1.5">ĐVT</label>
-                                        <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white text-center" placeholder="Đơn vị" value={customUnit} onChange={e => setCustomUnit(e.target.value)} />
+                                    <div className="w-20 shrink-0">
+                                        <label className="block text-xs font-semibold text-slate-600 mb-1">ĐVT</label>
+                                        <input type="text" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white text-center" placeholder="Đơn vị" value={customUnit} onChange={e => setCustomUnit(e.target.value)} />
                                     </div>
                                 )}
-                                <div className="w-40 shrink-0">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                        {isPriceInclusiveVat ? 'Đơn giá (gồm VAT)' : 'Đơn giá'}
+                                <div className="w-36 shrink-0">
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1">
+                                        {isPriceInclusiveVat ? 'Đ.giá (gồm VAT)' : 'Đơn giá'}
                                     </label>
-                                    <input type="number" step="any" min="0" className={`w-full border rounded-lg p-2.5 outline-none transition-all text-gray-900 bg-white ${isPriceInclusiveVat ? 'border-emerald-400 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 bg-emerald-50/20 font-semibold text-emerald-800' : 'border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'}`} value={price} onChange={e => setPrice(parseFloat(e.target.value) || 0)} />
+                                    <input type="number" step="any" min="0" className={`w-full h-[34px] border rounded-lg px-2.5 py-1 text-xs outline-none transition-all text-slate-900 bg-white ${isPriceInclusiveVat ? 'border-emerald-400 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 bg-emerald-50/20 font-semibold text-emerald-800' : 'border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary/20'}`} value={price} onChange={e => setPrice(parseFloat(e.target.value) || 0)} />
                                 </div>
-                                <div className="w-28 shrink-0">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Thuế suất</label>
+                                <div className="w-24 shrink-0">
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1">Thuế suất</label>
                                     <TaxRateSelect
                                         value={customTaxRate}
                                         onChange={(val) => setCustomTaxRate(val)}
                                     />
                                 </div>
-                                <div className="w-20 shrink-0">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">SL</label>
-                                    <input type="number" step="any" min="0.0001" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-center text-gray-900 bg-white" value={qty} onChange={e => setQty(parseFloat(e.target.value) || 0)} />
+                                <div className="w-16 shrink-0">
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1">SL</label>
+                                    <input type="number" step="any" min="0.0001" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-center text-slate-900 bg-white" value={qty} onChange={e => setQty(parseFloat(e.target.value) || 0)} />
                                 </div>
-                                <div className="w-24 shrink-0 flex flex-col items-center justify-center">
-                                    <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wide text-center">T/Phần bộ?</label>
-                                    <div className="h-[46px] flex items-center justify-center">
-                                        <input type="checkbox" className="w-6 h-6 outline-none cursor-pointer accent-indigo-600 rounded" checked={isSubItem} onChange={e => setIsSubItem(e.target.checked)} />
+                                <div className="w-20 shrink-0 flex flex-col items-center justify-center">
+                                    <label className="block text-[10px] font-semibold text-slate-400 mb-1 uppercase tracking-wide text-center">T/Phần bộ?</label>
+                                    <div className="h-[34px] flex items-center justify-center">
+                                        <input type="checkbox" className="w-4 h-4 outline-none cursor-pointer accent-emerald-600 rounded" checked={isSubItem} onChange={e => setIsSubItem(e.target.checked)} />
                                     </div>
                                 </div>
-                                <Button onClick={handleAddItem} variant="secondary" className="shrink-0 mb-[2px] h-[46px] px-6 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 shadow-sm font-semibold rounded-lg">Thêm</Button>
+                                <Button onClick={handleAddItem} variant="secondary" className="shrink-0 h-[34px] px-4 border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 shadow-2xs font-semibold text-xs rounded-lg flex items-center justify-center">Thêm</Button>
                             </div>
 
                             {/* Calculation preview when isPriceInclusiveVat is ON */}
                             {isPriceInclusiveVat && price > 0 && (
-                                <div className="mb-4 p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg text-xs flex flex-wrap items-center gap-x-5 gap-y-1.5 text-emerald-900 shadow-sm animate-fadeIn">
+                                <div className="mb-3 p-2 bg-emerald-50/80 border border-emerald-200/80 rounded-lg text-xs flex flex-wrap items-center gap-x-4 gap-y-1 text-emerald-900 shadow-2xs animate-fadeIn">
                                     <div>💡 <strong>Giá đã gồm VAT:</strong> {formatMoney(price)}</div>
                                     <div>➔ <strong>Đơn giá trước thuế:</strong> <span className="font-bold text-blue-700">{formatMoney(calcPreTaxPrice(price, customTaxRate))}</span></div>
                                     <div>➔ <strong>Thuế suất:</strong> <TaxBadge rate={customTaxRate} /></div>
@@ -786,75 +806,75 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                             )}
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Chi tiết Kỹ Thuật / Ghi chú cho khách hàng <span className="text-gray-400 font-normal">(In dưới tên SP)</span></label>
-                                <div className="flex items-center gap-4 mb-2">
-                                    <label className={`flex items-center gap-2 cursor-pointer text-sm font-medium ${isCustomProduct ? 'text-gray-400' : 'text-gray-700'}`}>
-                                        <input type="radio" className="accent-indigo-600 w-4 h-4 cursor-pointer" checked={useInventoryDescription && !isCustomProduct} onChange={() => handleDescSourceChange(true)} disabled={isCustomProduct} />
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">Chi tiết Kỹ Thuật / Ghi chú cho khách hàng <span className="text-slate-400 font-normal">(In dưới tên SP)</span></label>
+                                <div className="flex items-center gap-3 mb-1.5">
+                                    <label className={`flex items-center gap-1.5 cursor-pointer text-xs font-medium ${isCustomProduct ? 'text-slate-400' : 'text-slate-700'}`}>
+                                        <input type="radio" className="accent-emerald-600 w-3.5 h-3.5 cursor-pointer" checked={useInventoryDescription && !isCustomProduct} onChange={() => handleDescSourceChange(true)} disabled={isCustomProduct} />
                                         <span>Lấy mô tả từ kho</span>
                                     </label>
-                                    <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
-                                        <input type="radio" className="accent-indigo-600 w-4 h-4 cursor-pointer" checked={!useInventoryDescription || isCustomProduct} onChange={() => handleDescSourceChange(false)} />
+                                    <label className="flex items-center gap-1.5 cursor-pointer text-xs font-medium text-slate-700">
+                                        <input type="radio" className="accent-emerald-600 w-3.5 h-3.5 cursor-pointer" checked={!useInventoryDescription || isCustomProduct} onChange={() => handleDescSourceChange(false)} />
                                         <span>Tự nhập mô tả</span>
                                     </label>
                                 </div>
-                                <textarea rows={2} className={`w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all resize-none text-sm text-gray-900 bg-white`} placeholder="Ghi chú thêm thông số, tính năng cho sản phẩm này..." value={customDescription} onChange={e => setCustomDescription(e.target.value)}></textarea>
+                                <textarea rows={2} className={`w-full border border-slate-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all resize-none text-xs text-slate-900 bg-white placeholder:text-slate-400`} placeholder="Ghi chú thêm thông số, tính năng cho sản phẩm này..." value={customDescription} onChange={e => setCustomDescription(e.target.value)}></textarea>
                             </div>
 
                             {formData.items.length > 0 && (
-                                <div className="border border-gray-200 rounded-xl overflow-x-auto mt-2 border-t pt-4">
-                                    <table className="w-full min-w-[600px] text-sm bg-white text-left">
-                                        <thead className="bg-slate-50 border-b border-gray-200 text-gray-600">
+                                <div className="border border-slate-200 rounded-xl overflow-x-auto mt-2 border-t pt-3">
+                                    <table className="w-full min-w-[600px] text-xs bg-white text-left">
+                                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
                                             <tr>
-                                                <th className="p-3 font-medium">Sản Phẩm</th>
-                                                <th className="p-3 font-medium text-center w-20">SL</th>
-                                                <th className="p-3 font-medium text-right w-32">Đ.Giá</th>
-                                                <th className="p-3 font-medium text-center w-24">Thuế</th>
-                                                <th className="p-3 font-medium text-right w-36">Thành Tiền</th>
-                                                <th className="p-3 font-medium text-center w-12"></th>
+                                                <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider">Sản Phẩm</th>
+                                                <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider text-center w-16">SL</th>
+                                                <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider text-right w-28">Đ.Giá</th>
+                                                <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider text-center w-20">Thuế</th>
+                                                <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider text-right w-32">Thành Tiền</th>
+                                                <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider text-center w-10"></th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-gray-100">
+                                        <tbody className="divide-y divide-slate-100">
                                             {formData.items.map((item: any, i: number) => (
-                                                <tr key={i} className={`hover:bg-slate-50 transition-colors ${item.isSubItem ? 'bg-slate-50/50' : ''}`}>
-                                                    <td className="p-3 text-gray-800" style={item.isSubItem ? { paddingLeft: '2rem' } : {}}>
-                                                        <div className="font-semibold flex items-center gap-2">
-                                                            {item.isSubItem && <span className="text-gray-400">↳</span>}
-                                                            <span className={item.isSubItem ? 'text-gray-600 font-medium' : ''}>{item.productName || item.customName}</span>
+                                                <tr key={i} className={`hover:bg-slate-50/80 transition-colors ${item.isSubItem ? 'bg-slate-50/50' : ''}`}>
+                                                    <td className="p-2.5 text-slate-800" style={item.isSubItem ? { paddingLeft: '1.5rem' } : {}}>
+                                                        <div className="font-semibold flex items-center gap-1.5">
+                                                            {item.isSubItem && <span className="text-slate-400">↳</span>}
+                                                            <span className={item.isSubItem ? 'text-slate-600 font-medium' : ''}>{item.productName || item.customName}</span>
                                                         </div>
-                                                        {item.description && <div className="text-xs text-gray-500 mt-0.5 max-w-sm whitespace-pre-wrap">{item.description}</div>}
+                                                        {item.description && <div className="text-[11px] text-slate-500 mt-0.5 max-w-sm whitespace-pre-wrap">{item.description}</div>}
                                                     </td>
-                                                    <td className="p-3 text-center text-gray-800">
-                                                        {item.quantity} <span className="text-xs text-gray-500 ml-1">{item.unit}</span>
+                                                    <td className="p-2.5 text-center text-slate-800 font-mono">
+                                                        {item.quantity} <span className="text-[11px] text-slate-500 ml-0.5">{item.unit}</span>
                                                     </td>
-                                                    <td className="p-3 text-right text-gray-600 font-medium">{formatMoney(item.unitPrice)}</td>
-                                                    <td className="p-3 text-center bg-gray-50 border-x border-white">
+                                                    <td className="p-2.5 text-right text-slate-700 font-mono">{formatMoney(item.unitPrice)}</td>
+                                                    <td className="p-2.5 text-center bg-slate-50/50 border-x border-slate-100">
                                                         <TaxBadge rate={item.taxRate} />
                                                     </td>
-                                                    <td className="p-3 text-right font-semibold text-gray-900">{formatMoney(item.totalPrice)}</td>
-                                                    <td className="p-3 text-center">
+                                                    <td className="p-2.5 text-right font-bold text-slate-900 font-mono">{formatMoney(item.totalPrice)}</td>
+                                                    <td className="p-2.5 text-center">
                                                         <div className="flex items-center justify-center gap-1">
-                                                            <button type="button" onClick={() => handleEditItem(i)} className="text-blue-500 hover:text-blue-700 p-1.5 hover:bg-blue-50 rounded-md transition-colors" title="Sửa dòng này"><Edit2 size={16} /></button>
-                                                            <button type="button" onClick={() => handleRemoveItem(i)} className="text-red-400 hover:text-red-600 p-1.5 hover:bg-red-50 rounded-md transition-colors" title="Xóa"><Trash2 size={16} /></button>
+                                                            <button type="button" onClick={() => handleEditItem(i)} className="text-blue-600 hover:text-blue-800 p-1 hover:bg-blue-50 rounded transition-colors" title="Sửa dòng này"><Edit2 size={14} /></button>
+                                                            <button type="button" onClick={() => handleRemoveItem(i)} className="text-rose-500 hover:text-rose-700 p-1 hover:bg-rose-50 rounded transition-colors" title="Xóa"><Trash2 size={14} /></button>
                                                         </div>
                                                     </td>
                                                 </tr>
                                             ))}
                                         </tbody>
-                                        <tfoot className="bg-slate-50 border-t border-gray-200 text-gray-700">
+                                        <tfoot className="bg-slate-50 border-t border-slate-200 text-slate-700 text-xs">
                                             <tr>
-                                                <td colSpan={4} className="p-3 text-right text-sm">Tổng tiền trước thuế:</td>
-                                                <td className="p-3 text-right font-medium">{formatMoney(formData.subTotal || 0)}</td>
-                                                <td className="p-3"></td>
+                                                <td colSpan={4} className="p-2.5 text-right">Tổng tiền trước thuế:</td>
+                                                <td className="p-2.5 text-right font-medium font-mono">{formatMoney(formData.subTotal || 0)}</td>
+                                                <td className="p-2.5"></td>
                                             </tr>
                                             <tr>
-                                                <td colSpan={4} className="p-3 text-right text-sm">Tổng tiền thuế:</td>
-                                                <td className="p-3 text-right font-medium text-gray-500">{formatMoney(formData.taxAmount || 0)}</td>
-                                                <td className="p-3"></td>
+                                                <td colSpan={4} className="p-2.5 text-right">Tổng tiền thuế:</td>
+                                                <td className="p-2.5 text-right font-medium text-slate-500 font-mono">{formatMoney(formData.taxAmount || 0)}</td>
+                                                <td className="p-2.5"></td>
                                             </tr>
-                                            <tr className="border-t border-gray-200">
-                                                <td colSpan={4} className="p-3 text-right font-semibold text-base">Tổng Cộng:</td>
-                                                <td className="p-3 text-right font-bold text-indigo-700 text-lg">{formatMoney(formData.totalAmount || 0)}</td>
-                                                <td className="p-3"></td>
+                                            <tr className="border-t border-slate-200">
+                                                <td colSpan={4} className="p-2.5 text-right font-bold text-xs">Tổng Cộng:</td>
+                                                <td className="p-2.5 text-right font-bold text-emerald-700 text-sm font-mono">{formatMoney(formData.totalAmount || 0)}</td>
+                                                <td className="p-2.5"></td>
                                             </tr>
                                         </tfoot>
                                     </table>
@@ -863,10 +883,10 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                         </div>
                     </div>
 
-                    <div className="flex justify-start gap-3 mt-4">
-                        <Button onClick={() => setIsFormOpen(false)} variant="secondary" className="px-6 py-2 border-gray-200 shadow-sm text-gray-700 font-medium bg-white hover:bg-gray-50">Hủy</Button>
-                        <Button onClick={handleSave} className="flex items-center gap-2 px-8 py-2 font-medium bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-all text-white">
-                            <Save size={16} /> Lưu Đơn Hàng
+                    <div className="flex justify-start gap-2.5 mt-2">
+                        <Button onClick={() => setIsFormOpen(false)} variant="secondary" className="px-4 h-[34px] text-xs border-slate-200 shadow-2xs text-slate-700 font-semibold bg-white hover:bg-slate-50 flex justify-center items-center">Hủy</Button>
+                        <Button onClick={handleSave} className="flex items-center justify-center gap-1.5 px-6 h-[34px] text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 shadow-2xs transition-all text-white rounded-lg">
+                            <Save size={14} /> Lưu Đơn Hàng
                         </Button>
                     </div>
                 </div>

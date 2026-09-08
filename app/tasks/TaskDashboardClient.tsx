@@ -6,7 +6,7 @@ import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Table } from '@/app/components/ui/Table';
 import { Modal } from '@/app/components/ui/Modal';
-import { Plus, Trash2, MessageSquare, Edit2, ChevronUp, ChevronDown, Download, List, Clock, Loader2, Search, CheckCircle2, AlertTriangle, Filter } from 'lucide-react';
+import { Plus, Trash2, MessageSquare, Edit2, ChevronUp, ChevronDown, Download, List, Clock, Loader2, Search, CheckCircle2, AlertTriangle, Filter, X, Check, ArrowUpDown, Eye, Building2, FileText, UserCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { createTask, updateTaskStatus, deleteTask, searchEntities, updateTask, startTaskTimer, stopTaskTimer } from './actions';
@@ -21,6 +21,26 @@ function formatTimer(seconds: number) {
     if (h > 0) return `${h}h${m}m${s}s`;
     if (m > 0) return `${m}m${s}s`;
     return `${s}s`;
+}
+
+function getInitials(name: string) {
+    if (!name) return 'U';
+    const clean = name.trim();
+    const parts = clean.split(/\s+/).filter(Boolean);
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function getStatusBadgeClass(status: string) {
+    switch (status) {
+        case 'TODO': return 'bg-amber-50 text-amber-700 border-amber-200';
+        case 'IN_PROGRESS': return 'bg-blue-50 text-blue-700 border-blue-200';
+        case 'REVIEW': return 'bg-sky-50 text-sky-700 border-sky-200';
+        case 'DONE': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+        case 'PAUSED': return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+        case 'CANCELLED': return 'bg-slate-100 text-slate-500 border-slate-200';
+        default: return 'bg-slate-50 text-slate-700 border-slate-200';
+    }
 }
 
 function TimerCell({ task, session }: { task: any, session: any }) {
@@ -75,26 +95,27 @@ function TimerCell({ task, session }: { task: any, session: any }) {
 
     if (activeLog) {
         return (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+            <div className="flex flex-col items-center gap-1">
                 <button 
                     onClick={handleStop} 
                     disabled={isLoading}
-                    className="animate-pulse"
-                    style={{ backgroundColor: 'var(--danger)', color: 'white', border: 'none', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, cursor: isLoading ? 'not-allowed' : 'pointer' }}>
+                    className="inline-flex items-center justify-center gap-1 h-[24px] px-2 bg-rose-600 hover:bg-rose-700 text-white rounded text-[10px] font-bold shadow-2xs animate-pulse cursor-pointer transition-all"
+                >
                     {isLoading ? '...' : `⏹ Dừng (${formatTimer(elapsed)})`}
                 </button>
             </div>
         );
     } else {
         return (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+            <div className="flex flex-col items-center gap-0.5">
                 <button 
                     onClick={handleStart} 
                     disabled={isLoading}
-                    style={{ backgroundColor: '#e2e8f0', color: '#1e293b', border: '1px solid #cbd5e1', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, cursor: isLoading ? 'not-allowed' : 'pointer' }}>
+                    className="inline-flex items-center justify-center gap-1 h-[22px] px-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300/80 rounded text-[10px] font-semibold transition-all cursor-pointer shadow-2xs"
+                >
                     {isLoading ? '...' : `▶ Bắt Đầu`}
                 </button>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{timeDisplay}</span>
+                <span className="text-[10px] font-mono text-slate-400">{timeDisplay}</span>
             </div>
         );
     }
@@ -623,396 +644,550 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
     };
 
     const filterOptions = [
-        { id: 'ALL', label: 'TẤT CẢ', icon: List, count: filterCounts.all, color: { bg: '#faf5ff', text: '#9333ea', border: '#e9d5ff', iconBg: '#f3e8ff' } },
-        { id: 'TODO', label: 'CẦN LÀM', icon: Clock, count: filterCounts.todo, color: { bg: '#fffbeb', text: '#d97706', border: '#fde047', iconBg: '#fef3c7' } },
-        { id: 'IN_PROGRESS', label: 'ĐANG LÀM', icon: Loader2, count: filterCounts.inProgress, color: { bg: '#eff6ff', text: '#3b82f6', border: '#bfdbfe', iconBg: '#dbeafe' } },
-        { id: 'REVIEW', label: 'CHỜ DUYỆT', icon: Search, count: filterCounts.review, color: { bg: '#f0f9ff', text: '#0284c7', border: '#bae6fd', iconBg: '#e0f2fe' } },
-        { id: 'DONE', label: 'HOÀN THÀNH', icon: CheckCircle2, count: filterCounts.done, color: { bg: '#f0fdf4', text: '#16a34a', border: '#bbf7d0', iconBg: '#dcfce7' } },
-        { id: 'OVERDUE', label: 'QUÁ HẠN', icon: AlertTriangle, count: filterCounts.overdue, color: { bg: '#fef2f2', text: '#dc2626', border: '#fecaca', iconBg: '#fee2e2' } },
+        { id: 'ALL', label: 'TẤT CẢ', sub: 'Đang xử lý', icon: List, count: filterCounts.all, colorClass: 'text-indigo-600 bg-indigo-50 border-indigo-200' },
+        { id: 'TODO', label: 'CẦN LÀM', sub: 'Chưa bắt đầu', icon: Clock, count: filterCounts.todo, colorClass: 'text-amber-600 bg-amber-50 border-amber-200' },
+        { id: 'IN_PROGRESS', label: 'ĐANG LÀM', sub: 'Đang triển khai', icon: Loader2, count: filterCounts.inProgress, colorClass: 'text-blue-600 bg-blue-50 border-blue-200' },
+        { id: 'REVIEW', label: 'CHỜ DUYỆT', sub: 'Đang nghiệm thu', icon: Search, count: filterCounts.review, colorClass: 'text-sky-600 bg-sky-50 border-sky-200' },
+        { id: 'DONE', label: 'HOÀN THÀNH', sub: 'Đã hoàn tất', icon: CheckCircle2, count: filterCounts.done, colorClass: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
+        { id: 'OVERDUE', label: 'QUÁ HẠN', sub: 'Cần xử lý ngay', icon: AlertTriangle, count: filterCounts.overdue, colorClass: 'text-rose-600 bg-rose-50 border-rose-200' },
     ];
 
     return (
-        <div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+        <div className="flex flex-col gap-5">
+            {/* Top Page Tech Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/80">
+                <div>
+                    <div className="flex items-center gap-2 mb-1">
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-2xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Workspace &amp; Tiến độ
+                        </span>
+                        <span className="text-[11px] font-semibold text-slate-400">|</span>
+                        <span className="text-[11px] font-medium text-slate-500">Quản lý &amp; Điều phối công việc đa dự án</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Quản lý Công Việc (Tasks)</h1>
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs">
+                            {initialTasks.length}
+                        </span>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 shrink-0">
+                    {canCreate && (
+                        <Button
+                            onClick={() => setCreateModalOpen(true)}
+                            className="btn btn-primary gap-2 h-[34px] px-3.5 text-xs font-bold rounded-lg shadow-sm"
+                        >
+                            <Plus size={15} className="stroke-[2.5]" />
+                            <span>Giao Việc Mới</span>
+                        </Button>
+                    )}
+                </div>
+            </div>
+
+            {/* Quick KPI Stats Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
                 {filterOptions.map((f) => {
                     const isActive = filterStatus === f.id;
                     const Icon = f.icon;
                     return (
                         <div
                             key={f.id}
-                            style={{
-                                padding: '1.25rem',
-                                cursor: 'pointer',
-                                border: isActive ? `2px solid ${f.color.text}` : `1px solid ${f.color.border}`,
-                                backgroundColor: f.color.bg,
-                                color: f.color.text,
-                                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                boxShadow: isActive ? '0 4px 6px -1px rgb(0 0 0 / 0.1)' : '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-                                borderRadius: '12px',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '0.75rem'
-                            }}
-                            onMouseEnter={(e) => {
-                                if (!isActive) {
-                                    e.currentTarget.style.transform = 'translateY(-2px)';
-                                    e.currentTarget.style.boxShadow = '0 10px 15px -3px rgb(0 0 0 / 0.1)';
-                                    e.currentTarget.style.borderColor = f.color.text;
-                                }
-                            }}
-                            onMouseLeave={(e) => {
-                                if (!isActive) {
-                                    e.currentTarget.style.transform = 'translateY(0)';
-                                    e.currentTarget.style.boxShadow = '0 1px 2px 0 rgb(0 0 0 / 0.05)';
-                                    e.currentTarget.style.borderColor = f.color.border;
-                                }
-                            }}
                             onClick={() => setFilterStatus(f.id)}
+                            className={`cursor-pointer transition-all duration-200 rounded-xl p-3.5 bg-white border shadow-xs hover:-translate-y-0.5 hover:shadow-sm ${
+                                isActive
+                                    ? 'border-primary ring-2 ring-primary/20 bg-primary/5'
+                                    : 'border-slate-200/90 hover:border-slate-300'
+                            }`}
                         >
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.5px' }}>{f.label}</span>
-                                <div style={{ padding: '6px', borderRadius: '8px', backgroundColor: f.color.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Icon size={18} />
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{f.label}</span>
+                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${f.colorClass} border shadow-2xs`}>
+                                    <Icon size={14} className="stroke-[2.2]" />
                                 </div>
                             </div>
-                            <div style={{ fontSize: '2.25rem', fontWeight: 800, lineHeight: 1 }}>
-                                {f.count}
+                            <div className="flex items-baseline justify-between">
+                                <span className="text-2xl font-black font-mono text-slate-900 tracking-tight">
+                                    {f.count}
+                                </span>
+                                <span className="text-[10px] text-slate-400 font-medium">
+                                    {f.sub}
+                                </span>
                             </div>
                         </div>
                     );
                 })}
             </div>
 
-            <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                {canCreate && (
-                    <Button onClick={() => setCreateModalOpen(true)} className="gap-2">
-                        <Plus size={18} /> Giao Việc Mới
-                    </Button>
-                )}
-                <Button variant="secondary" onClick={handleExportCSV} className="gap-2">
-                    <Download size={18} /> Xuất Báo Cáo
-                </Button>
-
-                {/* Advanced Filter Dropdown */}
-                <div style={{ position: 'relative', flex: 1, maxWidth: '250px', marginLeft: 'auto' }}>
-                    <Search size={16} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                    <input 
-                        type="text" 
-                        placeholder="Tìm kiếm công việc..." 
-                        value={globalFilter}
-                        onChange={(e) => setGlobalFilter(e.target.value)}
-                        style={{ width: '100%', padding: '0.4rem 1rem 0.4rem 2.25rem', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '0.85rem' }}
-                    />
-                </div>
-
-                <div style={{ position: 'relative' }}>
-                    <Button
-                        variant={filterStatus === 'ALL' ? 'secondary' : 'primary'}
-                        onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}
-                        className="gap-2"
-                    >
-                        <Filter size={18} /> Lọc ({filterStatus}) <ChevronDown size={14} />
-                    </Button>
-                    {isFilterMenuOpen && (
-                        <div style={{
-                            position: 'absolute', top: 'calc(100% + 4px)', left: 0,
-                            backgroundColor: 'white', border: '1px solid var(--border)', borderRadius: '6px',
-                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-                            zIndex: 50, width: '240px', paddingTop: '0.5rem', paddingBottom: '0.5rem', overflow: 'hidden'
-                        }}>
-                            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                                {/* Group: All */}
-                                <div
-                                    onClick={() => { setFilterStatus('ALL'); setIsFilterMenuOpen(false); }}
-                                    style={{ padding: '8px 16px', fontSize: '0.9rem', cursor: 'pointer', backgroundColor: filterStatus === 'ALL' ? 'var(--surface)' : 'white', fontWeight: filterStatus === 'ALL' ? 600 : 400 }}
-                                    onMouseOver={(e: any) => e.target.style.backgroundColor = 'var(--surface)'}
-                                    onMouseOut={(e: any) => e.target.style.backgroundColor = filterStatus === 'ALL' ? 'var(--surface)' : 'white'}
+            {/* Main Data Container */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+                {/* Search & Actions Toolbar */}
+                <div className="p-3.5 border-b border-slate-200/80 bg-slate-50/50 flex flex-col md:flex-row justify-between md:items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-2.5">
+                        {/* Search Input */}
+                        <div className="relative w-full sm:w-[280px]">
+                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                            <input
+                                type="text"
+                                placeholder="Tìm theo tên, mô tả, khách hàng..."
+                                value={globalFilter}
+                                onChange={(e) => setGlobalFilter(e.target.value)}
+                                className="w-full h-[34px] pl-9 pr-8 text-xs bg-white border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all shadow-2xs"
+                            />
+                            {globalFilter && (
+                                <button
+                                    onClick={() => setGlobalFilter('')}
+                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
                                 >
-                                    Toàn bộ
-                                </div>
-                                <div style={{ borderBottom: '1px solid var(--border)', margin: '4px 0' }} />
-
-                                {/* Group: Status */}
-                                <div style={{ padding: '4px 16px', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Trạng Thái</div>
-                                {[{ id: 'TODO', label: 'Cần làm' }, { id: 'IN_PROGRESS', label: 'Đang làm' }, { id: 'REVIEW', label: 'Chờ duyệt' }, { id: 'DONE', label: 'Hoàn thành' }, { id: 'PAUSED', label: 'Tạm ngưng' }, { id: 'CANCELLED', label: 'Đã hủy' }].map(item => (
-                                    <div
-                                        key={item.id}
-                                        onClick={() => { setFilterStatus(item.id); setIsFilterMenuOpen(false); }}
-                                        style={{ padding: '8px 16px', fontSize: '0.9rem', cursor: 'pointer', backgroundColor: filterStatus === item.id ? 'var(--surface)' : 'white', fontWeight: filterStatus === item.id ? 600 : 400 }}
-                                        onMouseOver={(e: any) => e.target.style.backgroundColor = 'var(--surface)'}
-                                        onMouseOut={(e: any) => e.target.style.backgroundColor = filterStatus === item.id ? 'var(--surface)' : 'white'}
-                                    >
-                                        {item.label}
-                                    </div>
-                                ))}
-                                <div style={{ borderBottom: '1px solid var(--border)', margin: '4px 0' }} />
-
-                                {/* Group: Time */}
-                                <div style={{ padding: '4px 16px', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Thời Gian</div>
-                                {[{ id: 'TODAY', label: 'Hôm nay' }, { id: 'OVERDUE', label: 'Quá hạn' }, { id: 'UPCOMING', label: 'Sắp tới' }].map(item => (
-                                    <div
-                                        key={item.id}
-                                        onClick={() => { setFilterStatus(item.id); setIsFilterMenuOpen(false); }}
-                                        style={{ padding: '8px 16px', fontSize: '0.9rem', cursor: 'pointer', backgroundColor: filterStatus === item.id ? 'var(--surface)' : 'white', fontWeight: filterStatus === item.id ? 600 : 400 }}
-                                        onMouseOver={(e: any) => e.target.style.backgroundColor = 'var(--surface)'}
-                                        onMouseOut={(e: any) => e.target.style.backgroundColor = filterStatus === item.id ? 'var(--surface)' : 'white'}
-                                    >
-                                        {item.label}
-                                    </div>
-                                ))}
-                                <div style={{ borderBottom: '1px solid var(--border)', margin: '4px 0' }} />
-
-                                {/* Group: Assignment */}
-                                <div style={{ padding: '4px 16px', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Người Thực Hiện</div>
-                                {[{ id: 'ASSIGNED_ME', label: 'Giao cho tôi' }, { id: 'FOLLOWING', label: 'Tôi đang theo dõi' }, { id: 'UNASSIGNED', label: 'Chưa phân công' }].map(item => (
-                                    <div
-                                        key={item.id}
-                                        onClick={() => { setFilterStatus(item.id); setIsFilterMenuOpen(false); }}
-                                        style={{ padding: '8px 16px', fontSize: '0.9rem', cursor: 'pointer', backgroundColor: filterStatus === item.id ? 'var(--surface)' : 'white', fontWeight: filterStatus === item.id ? 600 : 400 }}
-                                        onMouseOver={(e: any) => e.target.style.backgroundColor = 'var(--surface)'}
-                                        onMouseOut={(e: any) => e.target.style.backgroundColor = filterStatus === item.id ? 'var(--surface)' : 'white'}
-                                    >
-                                        {item.label}
-                                    </div>
-                                ))}
-                                <div style={{ borderBottom: '1px solid var(--border)', margin: '4px 0' }} />
-
-                                {/* Group: Other */}
-                                <div style={{ padding: '4px 16px', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Loại Công Việc</div>
-                                {[{ id: 'RECURRING', label: 'Định kỳ (Lặp lại)' }].map(item => (
-                                    <div
-                                        key={item.id}
-                                        onClick={() => { setFilterStatus(item.id); setIsFilterMenuOpen(false); }}
-                                        style={{ padding: '8px 16px', fontSize: '0.9rem', cursor: 'pointer', backgroundColor: filterStatus === item.id ? 'var(--surface)' : 'white', fontWeight: filterStatus === item.id ? 600 : 400 }}
-                                        onMouseOver={(e: any) => e.target.style.backgroundColor = 'var(--surface)'}
-                                        onMouseOut={(e: any) => e.target.style.backgroundColor = filterStatus === item.id ? 'var(--surface)' : 'white'}
-                                    >
-                                        {item.label}
-                                    </div>
-                                ))}
-                            </div>
+                                    <X size={13} />
+                                </button>
+                            )}
                         </div>
-                    )}
+
+                        {/* Filter Dropdown */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}
+                                className="h-[34px] px-3 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 shadow-2xs cursor-pointer transition-all"
+                            >
+                                <Filter size={13} className="text-slate-500" />
+                                <span>Lọc: {filterStatus}</span>
+                                <ChevronDown size={12} className="text-slate-400" />
+                            </button>
+                            {isFilterMenuOpen && (
+                                <div className="absolute top-full left-0 mt-1 w-60 bg-white border border-slate-200 rounded-xl shadow-lg z-50 py-1.5 max-h-96 overflow-y-auto">
+                                    <div
+                                        onClick={() => { setFilterStatus('ALL'); setIsFilterMenuOpen(false); }}
+                                        className={`px-3 py-2 text-xs cursor-pointer font-medium hover:bg-slate-50 flex items-center justify-between ${filterStatus === 'ALL' ? 'text-primary bg-emerald-50/50 font-bold' : 'text-slate-700'}`}
+                                    >
+                                        <span>Toàn bộ đang xử lý</span>
+                                        {filterStatus === 'ALL' && <Check size={13} className="text-primary" />}
+                                    </div>
+                                    <div className="my-1 border-t border-slate-100" />
+                                    <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Trạng Thái</div>
+                                    {[
+                                        { id: 'TODO', label: 'Cần làm' },
+                                        { id: 'IN_PROGRESS', label: 'Đang làm' },
+                                        { id: 'REVIEW', label: 'Chờ duyệt' },
+                                        { id: 'DONE', label: 'Hoàn thành' },
+                                        { id: 'PAUSED', label: 'Tạm ngưng' },
+                                        { id: 'CANCELLED', label: 'Đã hủy' }
+                                    ].map(item => (
+                                        <div
+                                            key={item.id}
+                                            onClick={() => { setFilterStatus(item.id); setIsFilterMenuOpen(false); }}
+                                            className={`px-3 py-1.5 text-xs cursor-pointer hover:bg-slate-50 flex items-center justify-between ${filterStatus === item.id ? 'text-primary bg-emerald-50/50 font-bold' : 'text-slate-700'}`}
+                                        >
+                                            <span>{item.label}</span>
+                                            {filterStatus === item.id && <Check size={13} className="text-primary" />}
+                                        </div>
+                                    ))}
+                                    <div className="my-1 border-t border-slate-100" />
+                                    <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Thời Gian</div>
+                                    {[
+                                        { id: 'TODAY', label: 'Hôm nay' },
+                                        { id: 'OVERDUE', label: 'Quá hạn' },
+                                        { id: 'UPCOMING', label: 'Sắp tới' }
+                                    ].map(item => (
+                                        <div
+                                            key={item.id}
+                                            onClick={() => { setFilterStatus(item.id); setIsFilterMenuOpen(false); }}
+                                            className={`px-3 py-1.5 text-xs cursor-pointer hover:bg-slate-50 flex items-center justify-between ${filterStatus === item.id ? 'text-primary bg-emerald-50/50 font-bold' : 'text-slate-700'}`}
+                                        >
+                                            <span>{item.label}</span>
+                                            {filterStatus === item.id && <Check size={13} className="text-primary" />}
+                                        </div>
+                                    ))}
+                                    <div className="my-1 border-t border-slate-100" />
+                                    <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Người Thực Hiện</div>
+                                    {[
+                                        { id: 'ASSIGNED_ME', label: 'Giao cho tôi' },
+                                        { id: 'FOLLOWING', label: 'Tôi theo dõi' },
+                                        { id: 'UNASSIGNED', label: 'Chưa phân công' }
+                                    ].map(item => (
+                                        <div
+                                            key={item.id}
+                                            onClick={() => { setFilterStatus(item.id); setIsFilterMenuOpen(false); }}
+                                            className={`px-3 py-1.5 text-xs cursor-pointer hover:bg-slate-50 flex items-center justify-between ${filterStatus === item.id ? 'text-primary bg-emerald-50/50 font-bold' : 'text-slate-700'}`}
+                                        >
+                                            <span>{item.label}</span>
+                                            {filterStatus === item.id && <Check size={13} className="text-primary" />}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2.5">
+                        {/* View Switcher */}
+                        <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                            <button
+                                onClick={() => setViewMode('LIST')}
+                                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
+                                    viewMode === 'LIST'
+                                        ? 'bg-white text-slate-900 shadow-2xs'
+                                        : 'text-slate-600 hover:text-slate-900'
+                                }`}
+                            >
+                                <List size={13} />
+                                <span>Dạng Bảng</span>
+                            </button>
+                            <button
+                                onClick={() => setViewMode('GANTT')}
+                                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
+                                    viewMode === 'GANTT'
+                                        ? 'bg-white text-slate-900 shadow-2xs'
+                                        : 'text-slate-600 hover:text-slate-900'
+                                }`}
+                            >
+                                <Clock size={13} />
+                                <span>Gantt</span>
+                            </button>
+                        </div>
+
+                        {/* Export CSV */}
+                        <button
+                            onClick={handleExportCSV}
+                            className="h-[34px] px-3 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 shadow-2xs cursor-pointer transition-all"
+                        >
+                            <Download size={13} className="text-slate-500" />
+                            <span>Xuất CSV</span>
+                        </button>
+
+                        <span className="text-[11px] font-semibold text-slate-500 bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 shadow-2xs">
+                            <span className="text-slate-900 font-bold">{filteredTasks.length}</span> việc
+                        </span>
+                    </div>
                 </div>
 
-                <div style={{ display: 'flex', borderRadius: '8px', border: '1px solid var(--border)', overflow: 'hidden', marginLeft: 'auto' }}>
-                    <button 
-                        onClick={() => setViewMode('LIST')} 
-                        style={{ padding: '6px 16px', backgroundColor: viewMode === 'LIST' ? 'var(--primary)' : 'white', color: viewMode === 'LIST' ? 'white' : 'var(--text-main)', fontSize: '0.85rem', fontWeight: 600 }}>
-                        <List size={14} style={{ display: 'inline-block', marginRight: '6px', verticalAlign: 'text-bottom' }} /> Dạng Bảng
-                    </button>
-                    <button 
-                        onClick={() => setViewMode('GANTT')} 
-                        style={{ padding: '6px 16px', backgroundColor: viewMode === 'GANTT' ? 'var(--primary)' : 'white', color: viewMode === 'GANTT' ? 'white' : 'var(--text-main)', fontSize: '0.85rem', fontWeight: 600 }}>
-                        <Clock size={14} style={{ display: 'inline-block', marginRight: '6px', verticalAlign: 'text-bottom' }} /> Gantt
-                    </button>
-                </div>
-            </div>
+                {viewMode === 'LIST' && (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="border-b border-slate-200/90 bg-slate-100/70">
+                                    <th onClick={() => handleSort('title')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider hover:bg-slate-200/50 transition-colors">
+                                        <div className="flex items-center gap-1.5">
+                                            TÊN CÔNG VIỆC
+                                            {sortField === 'title' ? (sortDirection === 'asc' ? <ChevronUp size={12} className="text-primary" /> : <ChevronDown size={12} className="text-primary" />) : <ArrowUpDown size={11} className="opacity-30" />}
+                                        </div>
+                                    </th>
+                                    <th onClick={() => handleSort('assignees')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[180px] hover:bg-slate-200/50 transition-colors">
+                                        <div className="flex items-center gap-1.5">
+                                            NGƯỜI PHỤ TRÁCH
+                                            {sortField === 'assignees' ? (sortDirection === 'asc' ? <ChevronUp size={12} className="text-primary" /> : <ChevronDown size={12} className="text-primary" />) : <ArrowUpDown size={11} className="opacity-30" />}
+                                        </div>
+                                    </th>
+                                    <th onClick={() => handleSort('priority')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[110px] hover:bg-slate-200/50 transition-colors">
+                                        <div className="flex items-center gap-1.5">
+                                            MỨC ĐỘ
+                                            {sortField === 'priority' ? (sortDirection === 'asc' ? <ChevronUp size={12} className="text-primary" /> : <ChevronDown size={12} className="text-primary" />) : <ArrowUpDown size={11} className="opacity-30" />}
+                                        </div>
+                                    </th>
+                                    <th onClick={() => handleSort('startDate')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[105px] hover:bg-slate-200/50 transition-colors">
+                                        <div className="flex items-center gap-1.5">
+                                            BẮT ĐẦU
+                                            {sortField === 'startDate' ? (sortDirection === 'asc' ? <ChevronUp size={12} className="text-primary" /> : <ChevronDown size={12} className="text-primary" />) : <ArrowUpDown size={11} className="opacity-30" />}
+                                        </div>
+                                    </th>
+                                    <th onClick={() => handleSort('dueDate')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[105px] hover:bg-slate-200/50 transition-colors">
+                                        <div className="flex items-center gap-1.5">
+                                            DEADLINE
+                                            {sortField === 'dueDate' ? (sortDirection === 'asc' ? <ChevronUp size={12} className="text-primary" /> : <ChevronDown size={12} className="text-primary" />) : <ArrowUpDown size={11} className="opacity-30" />}
+                                        </div>
+                                    </th>
+                                    <th className="py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[170px]">LIÊN QUAN</th>
+                                    <th className="py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[130px]">TÌNH TRẠNG</th>
+                                    <th className="py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider text-center w-[95px]">THỜI GIAN</th>
+                                    <th className="py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[110px]">TIẾN ĐỘ</th>
+                                    <th className="py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider text-right w-[90px]">THAO TÁC</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {paginatedItems.map((task: any) => {
+                                    const overdue = isOverdue(task.dueDate, task.status);
+                                    const isDueSoon = task.dueDate && new Date(task.dueDate).getTime() - new Date().getTime() < 86400000 && task.status !== 'DONE';
 
-            {viewMode === 'LIST' && (
-            <Card>
-                <div style={{ overflowX: 'auto' }}>
-                    <Table>
-                        <thead>
-                            <tr>
-                                <th onClick={() => handleSort('title')} style={{ cursor: 'pointer' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        Tên Công Việc
-                                        {sortField === 'title' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
-                                    </div>
-                                </th>
-                                <th onClick={() => handleSort('assignees')} style={{ cursor: 'pointer' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        Người Phụ Trách
-                                        {sortField === 'assignees' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
-                                    </div>
-                                </th>
-                                <th onClick={() => handleSort('priority')} style={{ cursor: 'pointer' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        Mức Độ
-                                        {sortField === 'priority' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
-                                    </div>
-                                </th>
-                                <th onClick={() => handleSort('startDate')} style={{ cursor: 'pointer' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        Ngày Bắt Đầu
-                                        {sortField === 'startDate' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
-                                    </div>
-                                </th>
-                                <th onClick={() => handleSort('dueDate')} style={{ cursor: 'pointer' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        Deadline
-                                        {sortField === 'dueDate' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
-                                    </div>
-                                </th>
-                                <th>Liên Quan</th>
-                                <th>Tình Trạng</th>
-                                <th style={{ textAlign: 'center' }}>Thời Gian</th>
-                                <th>Tiến Độ</th>
-                                <th style={{ width: '100px', textAlign: 'center' }}>Hành Động</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {paginatedItems.map((task: any) => {
-                                const assigneesNames = task.assignees?.map((a: any) => a.user.name || a.user.email).join(', ') || 'Chưa gán';
-                                const isDueSoon = task.dueDate && new Date(task.dueDate).getTime() - new Date().getTime() < 86400000 && task.status !== 'DONE';
-                                const overdue = isOverdue(task.dueDate, task.status);
+                                    return (
+                                        <tr key={task.id} className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 last:border-0 group">
+                                            {/* Title */}
+                                            <td className="py-2.5 px-3.5 align-middle">
+                                                <div className="flex items-start gap-2">
+                                                    <div className="min-w-0">
+                                                        <Link
+                                                            href={`/tasks/${task.id}`}
+                                                            className="text-slate-900 font-semibold text-xs hover:text-primary transition-colors block truncate max-w-[280px] sm:max-w-[340px]"
+                                                        >
+                                                            {task.title}
+                                                        </Link>
+                                                        <div className="flex items-center gap-2 mt-0.5">
+                                                            {overdue && (
+                                                                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80 uppercase tracking-wide">
+                                                                    QUÁ HẠN
+                                                                </span>
+                                                            )}
+                                                            {task.contract && (
+                                                                <span className="text-[11px] text-slate-500 truncate max-w-[200px]" title={task.contract.title}>
+                                                                    HĐ: {task.contract.title}
+                                                                </span>
+                                                            )}
+                                                            {task.customer && !task.contract && (
+                                                                <span className="text-[11px] text-slate-500 truncate max-w-[200px]" title={task.customer.name}>
+                                                                    KH: {task.customer.name}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
 
-                                let rowClass = 'transition-colors';
-                                let rowStyle: React.CSSProperties = {};
+                                            {/* Assignees */}
+                                            <td className="py-2.5 px-3.5 align-middle">
+                                                {task.assignees && task.assignees.length > 0 ? (
+                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                        {task.assignees.slice(0, 2).map((a: any, idx: number) => (
+                                                            <span
+                                                                key={a.id || idx}
+                                                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-700 text-[11px] font-medium max-w-[130px] truncate shadow-2xs"
+                                                                title={a.user?.name || a.user?.email}
+                                                            >
+                                                                <span className="w-4 h-4 rounded-full bg-emerald-600 text-white text-[9px] font-bold inline-flex items-center justify-center shrink-0">
+                                                                    {getInitials(a.user?.name || a.user?.email)}
+                                                                </span>
+                                                                <span className="truncate">{a.user?.name || a.user?.email}</span>
+                                                            </span>
+                                                        ))}
+                                                        {task.assignees.length > 2 && (
+                                                            <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                                                                +{task.assignees.length - 2}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-slate-400 text-xs italic">Chưa gán</span>
+                                                )}
+                                            </td>
 
-                                if (task.status === 'PAUSED') {
-                                    rowClass = 'transition-colors bg-yellow-200';
-                                } else if (task.status !== 'DONE' && task.status !== 'CANCELLED') {
-                                    if (task.priority === 'URGENT') {
-                                        rowStyle = { animation: 'priority-urgent-bg-blink 1.5s linear infinite' };
-                                        rowClass = '';
-                                    } else if (task.priority === 'HIGH') {
-                                        rowStyle = { animation: 'priority-high-bg-blink 2s ease-in-out infinite' };
-                                        rowClass = '';
-                                    }
-                                }
-
-                                return (
-                                    <tr key={task.id} className={rowClass} style={rowStyle}>
-                                        <td>
-                                            <div style={{ fontWeight: 500, color: isDueSoon ? 'var(--danger)' : 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                <Link href={`/tasks/${task.id}`} className="text-blue-600 hover:underline">
-                                                    {task.title}
-                                                </Link>
-                                                {overdue && (
-                                                    <span className="animate-pulse bg-red-600 text-white px-2 py-0.5 rounded text-xs font-bold block" style={{ whiteSpace: 'nowrap' }}>
-                                                        QUÁ HẠN
+                                            {/* Priority */}
+                                            <td className="py-2.5 px-3.5 align-middle">
+                                                {task.priority === 'URGENT' && (
+                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 shadow-2xs">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                                                        Khẩn cấp
                                                     </span>
                                                 )}
-                                            </div>
-                                            {task.contract && <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Hợp đồng: {task.contract.title}</div>}
-                                            {task.customer && <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Khách hàng: {task.customer.name}</div>}
-                                        </td>
-                                        <td>{assigneesNames}</td>
-                                        <td>
-                                            <span style={{
-                                                padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600,
-                                                backgroundColor: task.priority === 'URGENT' ? 'var(--danger)' : (task.priority === 'HIGH' ? 'var(--warning)' : '#e2e8f0'),
-                                                color: task.priority === 'URGENT' || task.priority === 'HIGH' ? '#fff' : '#000'
-                                            }}>
-                                                {task.priority}
-                                            </span>
-                                        </td>
-                                        <td style={{ color: 'var(--text-main)' }}>
-                                            {task.startDate ? formatDate(new Date(task.startDate)) : (task.createdAt ? formatDate(new Date(task.createdAt)) : '-')}
-                                        </td>
-                                        <td style={{ color: isDueSoon ? 'var(--danger)' : 'inherit' }}>
-                                            {task.dueDate ? formatDate(new Date(task.dueDate)) : '-'}
-                                        </td>
-                                        <td>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '0.8rem' }}>
-                                                {task.leadId && task.lead && <div><span style={{ color: 'var(--text-muted)' }}>Cơ hội:</span> <Link href={`/leads/${task.leadId}`} className="text-blue-600 hover:underline">{task.lead.name}</Link></div>}
-                                                {task.customerId && task.customer && <div><span style={{ color: 'var(--text-muted)' }}>Khách hàng:</span> <Link href={`/customers/${task.customerId}`} className="text-blue-600 hover:underline">{task.customer.name}</Link></div>}
-                                                {task.contractId && task.contract && <div><span style={{ color: 'var(--text-muted)' }}>Hợp đồng:</span> <Link href={`/contracts/${task.contractId}`} className="text-blue-600 hover:underline">{task.contract.title}</Link></div>}
-                                                {task.appendixId && task.appendix && <div><span style={{ color: 'var(--text-muted)' }}>Phụ lục HĐ:</span> <Link href={`/contract-appendices/${task.appendixId}`} className="text-blue-600 hover:underline">{task.appendix.title}</Link></div>}
-                                                {task.quoteId && task.quote && <div><span style={{ color: 'var(--text-muted)' }}>Báo giá:</span> <Link href={`/quotes/${task.quoteId}`} className="text-blue-600 hover:underline">{task.quote.title}</Link></div>}
-                                                {task.handoverId && task.handover && <div><span style={{ color: 'var(--text-muted)' }}>Bàn giao:</span> <Link href={`/handovers/${task.handoverId}`} className="text-blue-600 hover:underline">{task.handover.title}</Link></div>}
-                                                {task.paymentReqId && task.paymentReq && <div><span style={{ color: 'var(--text-muted)' }}>Đ/N thanh toán:</span> <Link href={`/payment-requests/${task.paymentReqId}`} className="text-blue-600 hover:underline">{task.paymentReq.title}</Link></div>}
-                                                {task.dispatchId && task.dispatch && <div><span style={{ color: 'var(--text-muted)' }}>Công văn:</span> <Link href={`/dispatches/${task.dispatchId}`} className="text-blue-600 hover:underline">{task.dispatch.title}</Link></div>}
-
-                                                {task.supplierId && task.supplier && <div><span style={{ color: 'var(--text-muted)' }}>Nhà C.Cấp:</span> <Link href={`/suppliers/${task.supplierId}`} className="text-blue-600 hover:underline">{task.supplier.name}</Link></div>}
-                                                {task.purchaseOrderId && task.purchaseOrder && <div><span style={{ color: 'var(--text-muted)' }}>Đơn mua:</span> <Link href={`/purchasing/orders/${task.purchaseOrderId}`} className="text-blue-600 hover:underline">{task.purchaseOrder.code}</Link></div>}
-                                                {task.purchaseBillId && task.purchaseBill && <div><span style={{ color: 'var(--text-muted)' }}>Hóa đơn mua:</span> <Link href={`/purchasing/bills/${task.purchaseBillId}`} className="text-blue-600 hover:underline">{task.purchaseBill.code}</Link></div>}
-                                                {task.purchasePaymentId && task.purchasePayment && <div><span style={{ color: 'var(--text-muted)' }}>Phiếu chi (Mua):</span> <Link href={`/purchasing/payments/${task.purchasePaymentId}`} className="text-blue-600 hover:underline">{task.purchasePayment.code}</Link></div>}
-                                                {task.expenseId && task.expense && <div><span style={{ color: 'var(--text-muted)' }}>Phiếu chi:</span> <Link href={`/sales/expenses/${task.expenseId}`} className="text-blue-600 hover:underline">{task.expense.description || task.expense.code}</Link></div>}
-
-                                                {task.salesOrderId && task.salesOrder && <div><span style={{ color: 'var(--text-muted)' }}>Đơn hàng (Sales):</span> <Link href={`/sales/orders/${task.salesOrderId}`} className="text-blue-600 hover:underline">{task.salesOrder.code}</Link></div>}
-                                                {task.salesInvoiceId && task.salesInvoice && <div><span style={{ color: 'var(--text-muted)' }}>Hóa đơn (Sales):</span> <Link href={`/sales/invoices/${task.salesInvoiceId}`} className="text-blue-600 hover:underline">{task.salesInvoice.code}</Link></div>}
-                                                {task.salesEstimateId && task.salesEstimate && <div><span style={{ color: 'var(--text-muted)' }}>Báo giá (ERP):</span> <Link href={`/sales/estimates/${task.salesEstimateId}`} className="text-blue-600 hover:underline">{task.salesEstimate.code}</Link></div>}
-                                                {task.salesPaymentId && task.salesPayment && <div><span style={{ color: 'var(--text-muted)' }}>Phiếu thu:</span> <Link href={`/sales/payments/${task.salesPaymentId}`} className="text-blue-600 hover:underline">{task.salesPayment.code}</Link></div>}
-
-                                                {!task.customerId && !task.contractId && !task.quoteId && !task.handoverId && !task.paymentReqId && !task.dispatchId && !task.salesOrderId && !task.salesInvoiceId && !task.salesEstimateId && !task.salesPaymentId && !task.leadId && !task.appendixId && !task.supplierId && !task.expenseId && !task.purchaseOrderId && !task.purchaseBillId && !task.purchasePaymentId && <span style={{ color: 'var(--text-muted)' }}>-</span>}
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <select
-                                                value={task.status}
-                                                onChange={(e) => canEdit ? updateStatus(task.id, e.target.value) : null}
-                                                disabled={!canEdit}
-                                                style={{
-                                                    padding: '4px 8px', borderRadius: 'var(--radius)',
-                                                    border: '1px solid var(--border)', fontSize: '0.85rem',
-                                                    backgroundColor: 'transparent', cursor: canEdit ? 'pointer' : 'default'
-                                                }}
-                                            >
-                                                <option value="TODO">Cần Làm</option>
-                                                <option value="IN_PROGRESS">Đang Xử Lý</option>
-                                                <option value="REVIEW">Chờ Duyệt</option>
-                                                <option value="DONE">Hoàn Thành</option>
-                                                <option value="PAUSED">Tạm Ngưng</option>
-                                                <option value="CANCELLED">Đã Hủy</option>
-                                            </select>
-                                        </td>
-                                        <td style={{ textAlign: 'center' }}>
-                                            <TimerCell task={task} session={session} />
-                                        </td>
-                                        <td>{renderProgress(task)}</td>
-                                        <td>
-                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                                                <Link href={`/tasks/${task.id}`}>
-                                                    <button style={{ color: 'var(--primary)', padding: '4px' }} title="Chi tiết"><MessageSquare size={18} /></button>
-                                                </Link>
-                                                {canEdit && (
-                                                    <button onClick={() => openEditModal(task)} style={{ color: 'var(--text-main)', padding: '4px' }} title="Sửa">
-                                                        <Edit2 size={18} />
-                                                    </button>
+                                                {task.priority === 'HIGH' && (
+                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs">
+                                                        Cao
+                                                    </span>
                                                 )}
-                                                {canDelete && (
-                                                    <button onClick={() => handleDelete(task.id)} style={{ color: 'var(--danger)', padding: '4px' }} title="Xóa">
-                                                        <Trash2 size={18} />
-                                                    </button>
+                                                {task.priority === 'MEDIUM' && (
+                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 shadow-2xs">
+                                                        Vừa
+                                                    </span>
                                                 )}
+                                                {task.priority === 'LOW' && (
+                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 shadow-2xs">
+                                                        Thấp
+                                                    </span>
+                                                )}
+                                            </td>
+
+                                            {/* Start Date */}
+                                            <td className="py-2.5 px-3.5 align-middle font-mono text-xs text-slate-600">
+                                                {task.startDate ? formatDate(new Date(task.startDate)) : (task.createdAt ? formatDate(new Date(task.createdAt)) : '-')}
+                                            </td>
+
+                                            {/* Due Date */}
+                                            <td className="py-2.5 px-3.5 align-middle font-mono text-xs">
+                                                {task.dueDate ? (
+                                                    <span className={overdue ? 'text-rose-600 font-bold' : (isDueSoon ? 'text-amber-600 font-semibold' : 'text-slate-700')}>
+                                                        {formatDate(new Date(task.dueDate))}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-slate-300">-</span>
+                                                )}
+                                            </td>
+
+                                            {/* Related Entity */}
+                                            <td className="py-2.5 px-3.5 align-middle text-xs text-slate-600">
+                                                <div className="flex flex-col gap-1 max-w-[160px]">
+                                                    {task.leadId && task.lead && (
+                                                        <Link href={`/leads/${task.leadId}`} className="text-slate-700 hover:text-primary truncate block font-medium">
+                                                            Cơ hội: {task.lead.name}
+                                                        </Link>
+                                                    )}
+                                                    {task.customerId && task.customer && (
+                                                        <Link href={`/customers/${task.customerId}`} className="text-slate-700 hover:text-primary truncate block font-medium">
+                                                            KH: {task.customer.name}
+                                                        </Link>
+                                                    )}
+                                                    {task.contractId && task.contract && (
+                                                        <Link href={`/contracts/${task.contractId}`} className="text-slate-700 hover:text-primary truncate block font-medium">
+                                                            HĐ: {task.contract.title}
+                                                        </Link>
+                                                    )}
+                                                    {task.salesInvoiceId && task.salesInvoice && (
+                                                        <Link href={`/sales/invoices/${task.salesInvoiceId}`} className="text-primary hover:underline truncate block font-mono text-[11px] font-bold">
+                                                            HĐ (Sales): {task.salesInvoice.code}
+                                                        </Link>
+                                                    )}
+                                                    {task.salesOrderId && task.salesOrder && (
+                                                        <Link href={`/sales/orders/${task.salesOrderId}`} className="text-primary hover:underline truncate block font-mono text-[11px] font-bold">
+                                                            Đơn: {task.salesOrder.code}
+                                                        </Link>
+                                                    )}
+                                                    {task.salesEstimateId && task.salesEstimate && (
+                                                        <Link href={`/sales/estimates/${task.salesEstimateId}`} className="text-primary hover:underline truncate block font-mono text-[11px] font-bold">
+                                                            Báo giá: {task.salesEstimate.code}
+                                                        </Link>
+                                                    )}
+                                                    {task.purchaseOrderId && task.purchaseOrder && (
+                                                        <Link href={`/purchasing/orders/${task.purchaseOrderId}`} className="text-blue-600 hover:underline truncate block font-mono text-[11px] font-bold">
+                                                            Đơn mua: {task.purchaseOrder.code}
+                                                        </Link>
+                                                    )}
+                                                    {task.purchaseBillId && task.purchaseBill && (
+                                                        <Link href={`/purchasing/bills/${task.purchaseBillId}`} className="text-blue-600 hover:underline truncate block font-mono text-[11px] font-bold">
+                                                            HĐ mua: {task.purchaseBill.code}
+                                                        </Link>
+                                                    )}
+                                                    {!task.customerId && !task.contractId && !task.salesOrderId && !task.salesInvoiceId && !task.salesEstimateId && !task.purchaseOrderId && !task.purchaseBillId && !task.leadId && (
+                                                        <span className="text-slate-300">-</span>
+                                                    )}
+                                                </div>
+                                            </td>
+
+                                            {/* Status */}
+                                            <td className="py-2.5 px-3.5 align-middle">
+                                                <select
+                                                    value={task.status}
+                                                    onChange={(e) => canEdit ? updateStatus(task.id, e.target.value) : null}
+                                                    disabled={!canEdit}
+                                                    className={`text-xs font-semibold px-2 py-1 rounded-md border shadow-2xs transition-all cursor-pointer focus:outline-none ${getStatusBadgeClass(task.status)}`}
+                                                >
+                                                    <option value="TODO">Cần Làm</option>
+                                                    <option value="IN_PROGRESS">Đang Xử Lý</option>
+                                                    <option value="REVIEW">Chờ Duyệt</option>
+                                                    <option value="DONE">Hoàn Thành</option>
+                                                    <option value="PAUSED">Tạm Ngưng</option>
+                                                    <option value="CANCELLED">Đã Hủy</option>
+                                                </select>
+                                            </td>
+
+                                            {/* Time Tracking */}
+                                            <td className="py-2.5 px-3.5 align-middle text-center">
+                                                <TimerCell task={task} session={session} />
+                                            </td>
+
+                                            {/* Progress */}
+                                            <td className="py-2.5 px-3.5 align-middle">
+                                                {task.checklists && task.checklists.length > 0 ? (
+                                                    <div className="flex flex-col gap-1 w-20">
+                                                        <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden border border-slate-200/50">
+                                                            <div
+                                                                className={`h-full rounded-full transition-all ${
+                                                                    task.checklists.filter((c: any) => c.isCompleted).length === task.checklists.length
+                                                                        ? 'bg-emerald-500'
+                                                                        : 'bg-primary'
+                                                                }`}
+                                                                style={{
+                                                                    width: `${Math.round((task.checklists.filter((c: any) => c.isCompleted).length / task.checklists.length) * 100)}%`
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <span className="text-[10px] font-mono text-slate-500 font-semibold">
+                                                            {task.checklists.filter((c: any) => c.isCompleted).length}/{task.checklists.length} ({Math.round((task.checklists.filter((c: any) => c.isCompleted).length / task.checklists.length) * 100)}%)
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-slate-300 text-xs">-</span>
+                                                )}
+                                            </td>
+
+                                            {/* Actions */}
+                                            <td className="py-2.5 px-3.5 align-middle text-right">
+                                                <div className="flex items-center justify-end gap-1">
+                                                    <Link
+                                                        href={`/tasks/${task.id}`}
+                                                        className="p-1 text-slate-400 hover:text-primary hover:bg-emerald-50 rounded transition-colors"
+                                                        title="Xem chi tiết"
+                                                    >
+                                                        <Eye size={14} />
+                                                    </Link>
+                                                    {canEdit && (
+                                                        <button
+                                                            onClick={() => openEditModal(task)}
+                                                            className="p-1 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded transition-colors cursor-pointer"
+                                                            title="Sửa"
+                                                        >
+                                                            <Edit2 size={14} />
+                                                        </button>
+                                                    )}
+                                                    {canDelete && (
+                                                        <button
+                                                            onClick={() => handleDelete(task.id)}
+                                                            className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer"
+                                                            title="Xóa"
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+
+                                {sortedTasks.length === 0 && (
+                                    <tr>
+                                        <td colSpan={10} className="py-12 text-center text-slate-400">
+                                            <div className="flex flex-col items-center justify-center gap-2">
+                                                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                                                    <Search size={18} />
+                                                </div>
+                                                <p className="text-xs font-semibold text-slate-600">Không có công việc nào</p>
+                                                <p className="text-[11px] text-slate-400">Không tìm thấy công việc phù hợp với bộ lọc hiện tại.</p>
                                             </div>
                                         </td>
                                     </tr>
-                                );
-                            })}
+                                )}
+                            </tbody>
+                        </table>
 
-                            {sortedTasks.length === 0 && (
-                                <tr>
-                                    <td colSpan={9} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-                                        Không có công việc nào thỏa mãn điều kiện lọc.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </Table>
-                    {sortedTasks.length > 0 && (
-                        <div style={{ marginTop: '1rem', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
-                            <Pagination {...paginationProps} />
-                        </div>
-                    )}
-                </div>
-            </Card>
-            )}
-
-            {viewMode === 'GANTT' && (
-                <Card style={{ padding: '1.5rem', backgroundColor: '#f8fafc' }}>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Clock size={18} className="text-blue-600" />
-                        Tiến Độ Dự Án
-                    </h3>
-                    <GanttChart 
-                        tasks={ganttTasks} 
-                        viewMode="Day"
-                        onTaskClick={(t) => openEditModal(filteredTasks.find((task: any) => task.id === t.id))}
-                        onDateChange={async (t, start, end) => {
-                            if (!session?.user?.id) return;
-                            await updateTask(t.id, { startDate: new Date(start), dueDate: new Date(end) }, session.user.id);
-                            router.refresh();
-                        }}
-                    />
-                    <div style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                        * Kéo thả thanh cuộn để thay đổi ngày bắt đầu/kết thúc. Nhấp đúp lại công việc để chỉnh sửa chi tiết.
+                        {sortedTasks.length > 0 && (
+                            <div className="p-3 border-t border-slate-200/80 bg-slate-50/50">
+                                <Pagination {...paginationProps} />
+                            </div>
+                        )}
                     </div>
-                </Card>
-            )}
+                )}
+
+                {viewMode === 'GANTT' && (
+                    <div className="p-5 bg-slate-50/50">
+                        <div className="flex items-center gap-2 mb-3">
+                            <Clock size={16} className="text-primary" />
+                            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Tiến Độ Dự Án (Gantt Chart)</h3>
+                        </div>
+                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs overflow-x-auto">
+                            <GanttChart 
+                                tasks={ganttTasks} 
+                                viewMode="Day"
+                                onTaskClick={(t) => openEditModal(filteredTasks.find((task: any) => task.id === t.id))}
+                                onDateChange={async (t, start, end) => {
+                                    if (!session?.user?.id) return;
+                                    await updateTask(t.id, { startDate: new Date(start), dueDate: new Date(end) }, session.user.id);
+                                    router.refresh();
+                                }}
+                            />
+                        </div>
+                        <p className="mt-2 text-[11px] text-slate-400">
+                            * Kéo thả thanh timeline để thay đổi ngày bắt đầu/deadline. Nhấp đúp vào thanh để xem chi tiết.
+                        </p>
+                    </div>
+                )}
+            </div>
 
             <Modal isOpen={isCreateModalOpen} onClose={() => setCreateModalOpen(false)} title="Giao Việc Mới">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', paddingTop: '1rem' }}>

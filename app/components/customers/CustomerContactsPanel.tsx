@@ -159,7 +159,7 @@ export function CustomerContactsPanel({ customerId, contacts }: CustomerContacts
                                             <Phone size={14} color="#94a3b8" />
                                             <div className="flex items-center gap-2">
                                                 <a href={`tel:${contact.phone}`} style={{ color: 'inherit', textDecoration: 'none' }} className="hover:text-blue-600">{contact.phone}</a>
-                                                <ClickToCallButton phoneNumber={contact.phone} className="scale-90 origin-left" />
+                                                <ClickToCallButton phoneNumber={contact.phone} />
                                             </div>
                                         </div>
                                     )}
@@ -168,7 +168,7 @@ export function CustomerContactsPanel({ customerId, contacts }: CustomerContacts
                                             <Smartphone size={14} color="#94a3b8" />
                                             <div className="flex items-center gap-2">
                                                 <a href={`tel:${contact.otherPhone}`} style={{ color: 'inherit', textDecoration: 'none' }} className="hover:text-blue-600">{contact.otherPhone}</a>
-                                                <ClickToCallButton phoneNumber={contact.otherPhone} className="scale-90 origin-left" />
+                                                <ClickToCallButton phoneNumber={contact.otherPhone} />
                                             </div>
                                         </div>
                                     )}

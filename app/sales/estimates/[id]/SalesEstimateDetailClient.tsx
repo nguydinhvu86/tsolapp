@@ -17,6 +17,7 @@ import { useSession } from 'next-auth/react';
 import { DocumentManagersPanel } from '@/app/components/shared/DocumentManagersPanel';
 import { EmailLogTable } from '@/app/components/ui/EmailLogTable';
 import { DocumentSignatureBlock } from '@/app/components/ui/DocumentSignatureBlock';
+import { StatusBadge } from '@/app/components/ui/StatusBadge';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 export default function SalesEstimateDetailClient({ initialData, customers, products, users, emailTemplates, settings }: any) {
@@ -98,111 +99,150 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
         const titleRowNumber = 6;
         ws.mergeCells(titleRowNumber, 1, titleRowNumber, colCount);
         ws.getCell(`A${titleRowNumber}`).value = 'BẢNG BÁO GIÁ';
-        ws.getCell(`A${titleRowNumber}`).font = { size: 16, bold: true, name: 'Times New Roman' };
-        ws.getCell(`A${titleRowNumber}`).alignment = { vertical: 'middle', horizontal: 'center' };
-        ws.getRow(titleRowNumber).height = 30;
+        ws.getCell(`A${titleRowNumber}`).font = { bold: true, size: 16 };
+        ws.getCell(`A${titleRowNumber}`).alignment = { horizontal: 'center' };
 
-        const codeRow = ws.addRow([`Số: ${estimate.code}   |   Ngày: ${formatDate(estimate.date)}`]);
-        ws.mergeCells(codeRow.number, 1, codeRow.number, colCount);
-        codeRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' };
-        codeRow.getCell(1).font = { italic: true };
+        ws.mergeCells(7, 1, 7, colCount);
+        ws.getCell('A7').value = `Mã: ${estimate.code} - Ngày: ${formatDate(estimate.date)}`;
+        ws.getCell('A7').alignment = { horizontal: 'center' };
+        ws.getCell('A7').font = { italic: true };
 
         ws.addRow([]);
-        
-        const infoTitleRow = ws.addRow(['THÔNG TIN KHÁCH HÀNG', '', '', `ĐIỀU KIỆN BÁO GIÁ`]);
-        ws.mergeCells(infoTitleRow.number, 1, infoTitleRow.number, 3);
-        infoTitleRow.getCell(1).font = { bold: true };
-        infoTitleRow.getCell(4).font = { bold: true };
-        
-        const infoRow1 = ws.addRow([`Khách hàng: ${estimate.customer?.name || ''}`, '', '', `Hiệu lực đến: ${estimate.validUntil ? formatDate(estimate.validUntil) : '---'}`]);
-        ws.mergeCells(infoRow1.number, 1, infoRow1.number, 3);
-        
-        const infoRow2 = ws.addRow([`Người liên hệ: ${estimate.customer?.phone || ''}`, '', '', `Người lập: ${estimate.creator?.name || ''}`]);
-        ws.mergeCells(infoRow2.number, 1, infoRow2.number, 3);
-        
+
+        // Customer Info
+        ws.addRow(['Kính gửi (Khách hàng):', estimate.customer?.name || '']);
+        ws.getCell(`A${ws.rowCount}`).font = { bold: true };
+        ws.getCell(`B${ws.rowCount}`).font = { bold: true };
+
+        if (estimate.customer?.address) {
+            ws.addRow(['Địa chỉ:', estimate.customer.address]);
+        }
+        if (estimate.customer?.taxCode) {
+            ws.addRow(['Mã số thuế:', estimate.customer.taxCode]);
+        }
+        if (estimate.customer?.phone || estimate.customer?.email) {
+            ws.addRow(['Liên hệ:', `${estimate.customer?.phone || ''} - ${estimate.customer?.email || ''}`]);
+        }
+        if (estimate.salesperson?.name || estimate.creator?.name) {
+            ws.addRow(['Người báo giá:', estimate.salesperson?.name || estimate.creator?.name]);
+        }
+
         ws.addRow([]);
 
+        // Table Header
         const headerRow = ws.addRow(headers);
-        headerRow.eachCell((cell) => {
-            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF05A613' } };
-            cell.alignment = { vertical: 'middle', horizontal: 'center' };
-            cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
-        });
-
-        let currentIndex = 1;
-        estimate.items?.forEach((item: any) => {
-            const row: any[] = [];
-            row.push(item.isSubItem ? '-' : currentIndex++);
-            
-            let name = item.customName || item.product?.name || '';
-            if (item.description) name += `\r\n${item.description}`;
-            if (item.product?.sku) name += `\r\nSKU: ${item.product.sku}`;
-            if (estimate.templateType === 'WITH_IMAGES' && item.manufacture) name += `\r\nHãng: ${item.manufacture}`;
-
-            row.push(item.isSubItem ? `  ↳ ${name}` : name);
-            
-            if (estimate.templateType === 'PROJECT_BREAKDOWN') {
-                row.push(item.manufacture || '');
-                row.push(item.warranty || '');
-                row.push(item.quantity);
-                row.push(item.unit || item.product?.unit || '');
-                row.push(item.unitPrice);
-                row.push(item.laborPrice || 0);
-                row.push(item.quantity * item.unitPrice);
-                row.push(item.quantity * (item.laborPrice || 0));
-            } else if (estimate.templateType === 'WITH_IMAGES') {
-                row.push(item.origin || '');
-                row.push(item.warranty || '');
-                row.push(item.quantity);
-                row.push(item.unit || item.product?.unit || '');
-                row.push(item.unitPrice);
-                row.push(formatTaxRate(item.taxRate));
-                row.push(item.totalPrice);
-            } else {
-                row.push(item.quantity);
-                row.push(item.unit || item.product?.unit || '');
-                row.push(item.unitPrice);
-                row.push(formatTaxRate(item.taxRate));
-                row.push(item.totalPrice);
-            }
-            
-            const addedRow = ws.addRow(row);
-            addedRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-                if (colNumber <= colCount) {
-                    cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
-                    
-                    const headerValue = headers[colNumber - 1];
-                    const isCenterCol = ['STT', 'SL', 'Thuế (%)', 'ĐVT', 'Xuất Xứ', 'Hãng SX', 'Bảo Hành'].includes(headerValue);
-
-                    if (isCenterCol) {
-                        cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
-                    } else {
-                        cell.alignment = { vertical: 'middle', wrapText: true };
-                    }
-                    
-                    if (typeof cell.value === 'number' && colNumber > 1) {
-                         cell.numFmt = '#,##0';
-                    }
-                }
-            });
-        });
-
-        ws.addRow([]);
+        headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
         
-        const addSummary = (label: string, val: any, bold: boolean = false) => {
-            const rowData = Array(colCount).fill('');
-            rowData[0] = label;
-            rowData[colCount - 1] = val;
+        // Style Header Cells
+        for (let i = 1; i <= colCount; i++) {
+            const cell = headerRow.getCell(i);
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FF05A613' }
+            };
+            cell.border = {
+                top: {style:'thin'},
+                left: {style:'thin'},
+                bottom: {style:'thin'},
+                right: {style:'thin'}
+            };
+        }
+
+        // Table Body
+        estimate.items?.forEach((item: any, index: number) => {
+            let rowData: any[] = [];
+            const itemName = item.customName || item.product?.name || '';
+            const desc = item.description ? `\n${item.description}` : '';
+            const fullTitle = item.isSubItem ? `   ↳ ${itemName}${desc}` : `${itemName}${desc}`;
+
+            if (estimate.templateType === 'PROJECT_BREAKDOWN') {
+                const totalVatTu = (item.quantity || 0) * (item.unitPrice || 0);
+                const totalNhanCong = (item.quantity || 0) * (item.laborPrice || 0);
+                rowData = [
+                    index + 1,
+                    fullTitle,
+                    item.manufacture || item.product?.brand || '',
+                    item.warranty || item.product?.warranty || '',
+                    item.quantity,
+                    item.unit || item.product?.unit || '',
+                    item.unitPrice,
+                    item.laborPrice || 0,
+                    totalVatTu,
+                    totalNhanCong
+                ];
+            } else if (estimate.templateType === 'WITH_IMAGES') {
+                rowData = [
+                    index + 1,
+                    fullTitle,
+                    item.origin || '',
+                    item.warranty || item.product?.warranty || '',
+                    item.quantity,
+                    item.unit || item.product?.unit || '',
+                    item.unitPrice,
+                    item.taxRate !== null && item.taxRate !== undefined ? `${item.taxRate}%` : '0%',
+                    item.totalPrice
+                ];
+            } else {
+                rowData = [
+                    index + 1,
+                    fullTitle,
+                    item.quantity,
+                    item.unit || item.product?.unit || '',
+                    item.unitPrice,
+                    item.taxRate !== null && item.taxRate !== undefined ? `${item.taxRate}%` : '0%',
+                    item.totalPrice
+                ];
+            }
+
+            const row = ws.addRow(rowData);
+            row.alignment = { vertical: 'middle', wrapText: true };
             
-            const r = ws.addRow(rowData);
+            // Format numbers
+            for (let i = 1; i <= colCount; i++) {
+                const cell = row.getCell(i);
+                cell.border = {
+                    top: {style:'thin'},
+                    left: {style:'thin'},
+                    bottom: {style:'thin'},
+                    right: {style:'thin'}
+                };
+            }
+
+            if (estimate.templateType === 'PROJECT_BREAKDOWN') {
+                row.getCell(7).numFmt = '#,##0';
+                row.getCell(8).numFmt = '#,##0';
+                row.getCell(9).numFmt = '#,##0';
+                row.getCell(10).numFmt = '#,##0';
+                row.getCell(5).alignment = { horizontal: 'center', vertical: 'middle' };
+                row.getCell(6).alignment = { horizontal: 'center', vertical: 'middle' };
+            } else if (estimate.templateType === 'WITH_IMAGES') {
+                row.getCell(7).numFmt = '#,##0';
+                row.getCell(9).numFmt = '#,##0';
+                row.getCell(5).alignment = { horizontal: 'center', vertical: 'middle' };
+                row.getCell(6).alignment = { horizontal: 'center', vertical: 'middle' };
+                row.getCell(8).alignment = { horizontal: 'center', vertical: 'middle' };
+            } else {
+                row.getCell(5).numFmt = '#,##0';
+                row.getCell(7).numFmt = '#,##0';
+                row.getCell(3).alignment = { horizontal: 'center', vertical: 'middle' };
+                row.getCell(4).alignment = { horizontal: 'center', vertical: 'middle' };
+                row.getCell(6).alignment = { horizontal: 'center', vertical: 'middle' };
+            }
+        });
+
+        // Summary Rows
+        const addSummary = (label: string, value: number, bold: boolean = false) => {
+            const r = ws.addRow([]);
             ws.mergeCells(r.number, 1, r.number, colCount - 1);
+            r.getCell(1).value = label;
+            r.getCell(colCount).value = value;
             
             const labelCell = r.getCell(1);
             labelCell.alignment = { horizontal: 'right', vertical: 'middle' };
             
             const valCell = r.getCell(colCount);
-            valCell.alignment = { horizontal: 'right', vertical: 'middle' };
             valCell.numFmt = '#,##0';
             
             if (bold) {
@@ -210,12 +250,7 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
             }
             
             for (let i = 1; i <= colCount; i++) {
-                r.getCell(i).border = { 
-                    top: {style:'thin'}, 
-                    left: {style:'thin'}, 
-                    bottom: {style:'thin'}, 
-                    right: {style:'thin'} 
-                };
+                r.getCell(i).border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
             }
             return r;
         };
@@ -224,23 +259,15 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
             let sumVatTu = 0;
             let sumNhanCong = 0;
             estimate.items?.forEach((i: any) => { sumVatTu += i.quantity * i.unitPrice; sumNhanCong += i.quantity * (i.laborPrice || 0); });
-            
             addSummary('Tổng Cộng Vật Tư:', sumVatTu);
             addSummary('Tổng Cộng Nhân Công:', sumNhanCong);
             addSummary('Tổng Cộng Chưa Thuế:', sumVatTu + sumNhanCong);
             addSummary('VAT Tax:', estimate.taxAmount);
-            const lastRow = addSummary('TỔNG CỘNG (GỒM VAT):', estimate.totalAmount, true);
-            lastRow.getCell(colCount).font = { bold: true, color: { argb: 'FF05A613' }, size: 12 };
-        } else if (estimate.templateType === 'WITH_IMAGES') {
-            addSummary('Tổng Tiền Trước Thuế:', estimate.subTotal);
-            addSummary('Tổng Tiền Thuế:', estimate.taxAmount);
-            const lastRow = addSummary('TỔNG CỘNG:', estimate.totalAmount, true);
-            lastRow.getCell(colCount).font = { bold: true, color: { argb: 'FF10B981' }, size: 12 };
+            addSummary('TỔNG CỘNG (GỒM VAT):', estimate.totalAmount, true);
         } else {
             addSummary('Tổng Tiền Trước Thuế:', estimate.subTotal);
             addSummary('Tổng Tiền Thuế:', estimate.taxAmount);
-            const lastRow = addSummary('TỔNG CỘNG:', estimate.totalAmount, true);
-            lastRow.getCell(colCount).font = { bold: true, color: { argb: 'FF10B981' }, size: 12 };
+            addSummary('TỔNG CỘNG:', estimate.totalAmount, true);
         }
 
         ws.addRow([]);
@@ -251,12 +278,7 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
         ws.getCell(`A${ws.rowCount}`).font = { bold: true, underline: true };
         
         if (settings?.BANK_INFO_CONTENT) {
-            const contentLines = settings.BANK_INFO_CONTENT.split('\n');
-            contentLines.forEach((line: string) => {
-                if (line.trim()) {
-                    ws.addRow([line.trim()]);
-                }
-            });
+            settings.BANK_INFO_CONTENT.split('\n').forEach((line: string) => { if (line.trim()) ws.addRow([line.trim()]); });
         } else {
             ws.addRow(['- Vui lòng chuyển khoản theo thông tin đính kèm hoặc liên hệ kế toán để lấy thông tin chi tiết.']);
         }
@@ -267,52 +289,27 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
         // Signatures
         const sigRow = ws.addRow([]);
         const mid = Math.floor(colCount / 2);
-        
         ws.mergeCells(sigRow.number, 1, sigRow.number, mid);
-        const custCell = sigRow.getCell(1);
-        custCell.value = 'XÁC NHẬN CỦA KHÁCH HÀNG';
-        custCell.font = { bold: true };
-        custCell.alignment = { horizontal: 'center' };
-        
+        ws.getCell(1, 1).value = 'XÁC NHẬN CỦA KHÁCH HÀNG';
+        ws.getCell(1, 1).font = { bold: true };
+        ws.getCell(1, 1).alignment = { horizontal: 'center' };
         ws.mergeCells(sigRow.number, mid + 1, sigRow.number, colCount);
-        const compCell = sigRow.getCell(mid + 1);
-        compCell.value = 'ĐẠI DIỆN CÔNG TY';
-        compCell.font = { bold: true };
-        compCell.alignment = { horizontal: 'center' };
+        ws.getCell(1, mid + 1).value = 'ĐẠI DIỆN CÔNG TY';
+        ws.getCell(1, mid + 1).font = { bold: true };
+        ws.getCell(1, mid + 1).alignment = { horizontal: 'center' };
         
         const subSigRow = ws.addRow([]);
         ws.mergeCells(subSigRow.number, 1, subSigRow.number, mid);
-        const subCustCell = subSigRow.getCell(1);
-        subCustCell.value = '(Ký, ghi rõ họ tên)';
-        subCustCell.font = { italic: true };
-        subCustCell.alignment = { horizontal: 'center' };
-        
+        ws.getCell(subSigRow.number, 1).value = '(Ký, ghi rõ họ tên)';
+        ws.getCell(subSigRow.number, 1).font = { italic: true };
+        ws.getCell(subSigRow.number, 1).alignment = { horizontal: 'center' };
         ws.mergeCells(subSigRow.number, mid + 1, subSigRow.number, colCount);
-        const subCompCell = subSigRow.getCell(mid + 1);
-        subCompCell.value = '(Ký, ghi rõ họ tên)';
-        subCompCell.font = { italic: true };
-        subCompCell.alignment = { horizontal: 'center' };
+        ws.getCell(subSigRow.number, mid + 1).value = '(Ký, ghi rõ họ tên)';
+        ws.getCell(subSigRow.number, mid + 1).font = { italic: true };
+        ws.getCell(subSigRow.number, mid + 1).alignment = { horizontal: 'center' };
         
-        ws.addRow([]);
-        ws.addRow([]);
-        ws.addRow([]);
-        ws.addRow([]);
-
         const buffer = await wb.xlsx.writeBuffer();
         saveAs(new Blob([buffer]), `Bao_Gia_${estimate.code}.xlsx`);
-    };
-
-
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'DRAFT': return <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">Bản Dự Thảo</span>;
-            case 'SENT': return <span className="px-2 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">Đã Gửi KH</span>;
-            case 'ACCEPTED': return <span className="px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">Khách Chốt</span>;
-            case 'ORDERED': return <span className="px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">Đã Lên Đơn</span>;
-            case 'INVOICED': return <span className="px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">Đã Lên Hóa Đơn</span>;
-            case 'REJECTED': return <span className="px-2 py-1 rounded-full bg-red-100 text-red-700 text-xs font-semibold">Từ Chối</span>;
-            default: return <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">{status}</span>;
-        }
     };
 
     const handleStatusChange = async (newStatus: string) => {
@@ -374,95 +371,80 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
         }
     };
 
-    const tabs = [
-        { id: 'items', label: 'Chi tiết sản phẩm', icon: <ShoppingCart size={18} />, count: estimate.items?.length || 0 }
-    ] as const;
-
     return (
         <div style={{ padding: '0', maxWidth: '100%', margin: '0 auto', fontFamily: 'Inter, sans-serif' }}>
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 md:mb-8">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-5">
+                <div className="flex items-center gap-3">
                     <button
                         onClick={() => router.back()}
-                        style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            width: '40px', height: '40px', borderRadius: '50%', border: '1px solid #e2e8f0',
-                            backgroundColor: 'white', color: '#64748b', cursor: 'pointer', transition: 'all 0.2s'
-                        }}
-                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.color = '#0f172a'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'white'; e.currentTarget.style.color = '#64748b'; }}
+                        className="w-9 h-9 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 flex items-center justify-center transition-all shadow-xs cursor-pointer"
                     >
-                        <ArrowLeft size={20} />
+                        <ArrowLeft size={18} />
                     </button>
                     <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.25rem' }}>
-                            <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#0f172a', margin: 0, letterSpacing: '-0.025em' }}>
+                        <div className="flex flex-wrap items-center gap-2.5 mb-0.5">
+                            <h1 className="text-lg font-bold text-slate-900 m-0 tracking-tight">
                                 Báo Giá {estimate.code}
                             </h1>
-                            {getStatusBadge(estimate.status)}
+                            <StatusBadge status={estimate.status} />
                         </div>
-                        <p style={{ color: '#64748b', margin: 0, fontSize: '0.875rem' }}>Quản lý chi tiết báo giá và các công việc liên quan.</p>
+                        <p className="text-slate-500 m-0 text-xs">Quản lý chi tiết báo giá và các công việc liên quan.</p>
                     </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
+                <div className="flex flex-wrap items-center gap-2 w-full md:w-auto mt-2 md:mt-0">
                     <button
                         onClick={handleCopyPublicLink}
-                        className="btn btn-secondary"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: 'white', color: '#475569', border: '1px solid #cbd5e1', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition-colors shadow-xs cursor-pointer h-[34px]"
                     >
-                        <Copy size={16} /> {copied ? 'Đã sao chép' : 'Copy Link Gửi KH'}
+                        <Copy size={14} /> {copied ? 'Đã sao chép' : 'Copy Link Gửi KH'}
                     </button>
                     <Link
                         href={`/print/sales/estimate/${estimate.id}`}
                         target="_blank"
-                        className="btn btn-secondary"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#f1f5f9', color: '#3b82f6', border: '1px solid #bfdbfe', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200 transition-colors shadow-xs cursor-pointer no-underline h-[34px]"
                     >
-                        <ExternalLink size={16} /> Xem Bản In
+                        <ExternalLink size={14} /> Xem Bản In
                     </Link>
                     <button
                         onClick={handleExportExcel}
-                        className="btn btn-secondary hover:bg-emerald-50 transition-colors"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors shadow-xs cursor-pointer h-[34px]"
                     >
-                        <FileDown size={16} /> Xuất Excel
+                        <FileDown size={14} /> Xuất Excel
                     </button>
                     <button
                         onClick={() => router.push(`/sales/estimates?edit=${estimate.id}`)}
-                        className="btn btn-secondary hover:bg-slate-100 transition-colors"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition-colors shadow-xs cursor-pointer h-[34px]"
                     >
-                        <Edit2 size={16} /> Chỉnh Sửa
+                        <Edit2 size={14} /> Chỉnh Sửa
                     </button>
                     <button
                         onClick={() => setIsEmailModalOpen(true)}
-                        className="btn btn-primary"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#10b981', color: 'white', border: 'none', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                        className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white border border-emerald-600 hover:bg-emerald-700 transition-colors shadow-xs cursor-pointer h-[34px]"
                     >
-                        <Mail size={16} /> Gửi Email
+                        <Mail size={14} /> Gửi Email
                     </button>
                     {(estimate.status === 'EXPIRED' || estimate.status === 'REJECTED') && (
                         <button
                             onClick={handleClone}
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors shadow-xs cursor-pointer h-[34px]"
                         >
-                            <Copy size={16} /> Tạo Bản Sao Mới
+                            <Copy size={14} /> Tạo Bản Sao Mới
                         </button>
                     )}
                     {(estimate.status === 'DRAFT' || estimate.status === 'SENT' || estimate.status === 'ACCEPTED') && (
                         <>
                             <button
                                 onClick={() => setIsConvertOrderModalOpen(true)}
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#e0e7ff', color: '#4338ca', border: '1px solid #c7d2fe', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-colors shadow-xs cursor-pointer h-[34px]"
                             >
-                                <ArrowRightLeft size={16} /> Lên Đơn Hàng
+                                <ArrowRightLeft size={14} /> Lên Đơn Hàng
                             </button>
                             <button
                                 onClick={() => setIsConvertModalOpen(true)}
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#fffbeb', color: '#d97706', border: '1px solid #fde68a', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors shadow-xs cursor-pointer h-[34px]"
                             >
-                                <ArrowRightLeft size={16} /> Lên Hóa Đơn
+                                <ArrowRightLeft size={14} /> Lên Hóa Đơn
                             </button>
                         </>
                     )}
@@ -470,8 +452,7 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                     {estimate.status === 'DRAFT' && (
                         <button
                             onClick={() => handleStatusChange('SENT')}
-                            className="btn btn-primary"
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.25rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#3b82f6', color: 'white', border: 'none', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white border border-blue-600 hover:bg-blue-700 transition-colors shadow-xs cursor-pointer h-[34px]"
                         >
                             Ghi Nhận Đã Gửi Khách
                         </button>
@@ -480,15 +461,13 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                         <>
                             <button
                                 onClick={() => handleStatusChange('ACCEPTED')}
-                                className="btn btn-primary"
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.25rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#10b981', color: 'white', border: 'none', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white border border-emerald-600 hover:bg-emerald-700 transition-colors shadow-xs cursor-pointer h-[34px]"
                             >
                                 Khách Chốt
                             </button>
                             <button
                                 onClick={() => handleStatusChange('REJECTED')}
-                                className="btn btn-primary"
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.25rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#ef4444', color: 'white', border: 'none', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-rose-600 text-white border border-rose-600 hover:bg-rose-700 transition-colors shadow-xs cursor-pointer h-[34px]"
                             >
                                 Từ Chối
                             </button>
@@ -551,44 +530,38 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                     </div>
 
                     {/* Tabs area */}
-                    <div style={{ backgroundColor: 'white', borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }}>
-                        <div className="flex overflow-x-auto whitespace-nowrap border-b border-gray-200 px-2 pb-1 sm:pb-0 scrollbar-hide">
+                    <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+                        <div className="flex overflow-x-auto whitespace-nowrap border-b border-slate-200 px-2 bg-slate-50/50 hide-scrollbar">
                             <button
                                 onClick={() => setActiveTab('items')}
-                                style={{
-                                    flex: 1, padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                                    backgroundColor: 'transparent', border: 'none', borderBottom: activeTab === 'items' ? '2px solid #6366f1' : '2px solid transparent',
-                                    color: activeTab === 'items' ? '#4f46e5' : '#64748b', fontWeight: activeTab === 'items' ? 600 : 500, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.2s'
-                                }}
+                                className={`flex-1 py-3 px-4 flex items-center justify-center gap-2 bg-transparent border-none cursor-pointer text-xs sm:text-sm font-medium transition-all relative
+                                    ${activeTab === 'items' ? 'font-semibold text-emerald-700 border-b-2 border-emerald-600 bg-white' : 'text-slate-600 border-b-2 border-transparent hover:text-slate-900'}`}
                             >
-                                <ShoppingCart size={16} /> Chi Tiết
-                                <span style={{ backgroundColor: activeTab === 'items' ? '#e0e7ff' : '#f1f5f9', color: activeTab === 'items' ? '#4f46e5' : '#64748b', padding: '0.1rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 600 }}>
+                                <ShoppingCart size={15} /> Chi Tiết
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-bold
+                                    ${activeTab === 'items' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
                                     {estimate.items?.length || 0}
                                 </span>
                             </button>
                             <button
                                 onClick={() => setActiveTab('emailLogs')}
-                                style={{
-                                    flex: 1, padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                                    backgroundColor: 'transparent', border: 'none', borderBottom: activeTab === 'emailLogs' ? '2px solid #6366f1' : '2px solid transparent',
-                                    color: activeTab === 'emailLogs' ? '#4f46e5' : '#64748b', fontWeight: activeTab === 'emailLogs' ? 600 : 500, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.2s'
-                                }}
+                                className={`flex-1 py-3 px-4 flex items-center justify-center gap-2 bg-transparent border-none cursor-pointer text-xs sm:text-sm font-medium transition-all relative
+                                    ${activeTab === 'emailLogs' ? 'font-semibold text-emerald-700 border-b-2 border-emerald-600 bg-white' : 'text-slate-600 border-b-2 border-transparent hover:text-slate-900'}`}
                             >
-                                <Mail size={16} /> Lịch Sử Email
-                                <span style={{ backgroundColor: activeTab === 'emailLogs' ? '#e0e7ff' : '#f1f5f9', color: activeTab === 'emailLogs' ? '#4f46e5' : '#64748b', padding: '0.1rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 600 }}>
+                                <Mail size={15} /> Lịch Sử Email
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-bold
+                                    ${activeTab === 'emailLogs' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
                                     {estimate.emailLogs?.length || 0}
                                 </span>
                             </button>
                             <button
                                 onClick={() => setActiveTab('managers')}
-                                style={{
-                                    flex: 1, padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                                    backgroundColor: 'transparent', border: 'none', borderBottom: activeTab === 'managers' ? '2px solid #6366f1' : '2px solid transparent',
-                                    color: activeTab === 'managers' ? '#4f46e5' : '#64748b', fontWeight: activeTab === 'managers' ? 600 : 500, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.2s'
-                                }}
+                                className={`flex-1 py-3 px-4 flex items-center justify-center gap-2 bg-transparent border-none cursor-pointer text-xs sm:text-sm font-medium transition-all relative
+                                    ${activeTab === 'managers' ? 'font-semibold text-emerald-700 border-b-2 border-emerald-600 bg-white' : 'text-slate-600 border-b-2 border-transparent hover:text-slate-900'}`}
                             >
-                                <UserCheck size={16} /> Người Phụ Trách
-                                <span style={{ backgroundColor: activeTab === 'managers' ? '#e0e7ff' : '#f1f5f9', color: activeTab === 'managers' ? '#4f46e5' : '#64748b', padding: '0.1rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 600 }}>
+                                <UserCheck size={15} /> Người Phụ Trách
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-bold
+                                    ${activeTab === 'managers' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
                                     {estimate.managers?.length || 0}
                                 </span>
                             </button>

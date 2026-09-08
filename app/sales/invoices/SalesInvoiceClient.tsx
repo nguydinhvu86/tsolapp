@@ -9,7 +9,7 @@ import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
-import { Plus, Edit2, Trash2, Save, X, Printer, Search, Calendar, PackageCheck, Eye, Download, LinkIcon, CheckCircle2, FileSearch, LayoutList, FileText, ChevronUp, ChevronDown, Undo2, XCircle, AlertTriangle, Info, ShieldAlert, Copy, Clock } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Printer, Search, Calendar, PackageCheck, Eye, Download, LinkIcon, CheckCircle2, FileSearch, LayoutList, FileText, ChevronUp, ChevronDown, Undo2, XCircle, AlertTriangle, Info, ShieldAlert, Copy, Clock, ArrowUpDown } from 'lucide-react';
 import { submitSalesInvoice, approveSalesInvoice, deleteSalesInvoice, updateSalesInvoice, cancelSalesInvoice, updateSalesInvoiceStatus, restoreSalesInvoice, updateSalesInvoiceTags } from './actions';
 import { formatMoney, formatDate, formatTaxRate, calcPreTaxPrice, calcTaxAmount } from '@/lib/utils/formatters';
 import { TaxRateSelect, TaxBadge } from '@/app/components/ui/TaxRateSelect';
@@ -715,42 +715,82 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         .status-badge {
             display: inline-flex;
             align-items: center;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.75rem;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 11.5px;
             font-weight: 600;
-            letter-spacing: 0.025em;
+            line-height: 1.3;
+            letter-spacing: -0.01em;
+            transition: all 0.15s ease;
         }
-        .badge-success { background: #d1fae5; color: #047857; border: 1px solid #a7f3d0; }
-        .badge-warning { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
-        .badge-neutral { background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
-        .badge-info { background: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; }
-        .badge-danger { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+        .badge-success { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+        .badge-warning { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+        .badge-neutral { background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; }
+        .badge-info { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        .badge-danger { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+        .badge-overdue { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
         
         .status-select {
             appearance: none;
             cursor: pointer;
             outline: none;
-            text-align: center;
-            padding-right: 28px !important;
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            text-align: left;
+            padding: 3px 22px 3px 8px !important;
+            border-radius: 6px;
+            font-size: 11.5px;
+            font-weight: 600;
+            line-height: 1.3;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
             background-position: right 4px center;
-            background-repeat: no-slash;
-            background-size: 1.2em 1.2em;
+            background-repeat: no-repeat;
+            background-size: 14px 14px;
         }
-        .status-select:hover { filter: brightness(0.95); }
+        .status-select:hover { opacity: 0.92; }
+
+        @keyframes overduePulse {
+            0%, 100% {
+                background-color: #ffffff;
+            }
+            50% {
+                background-color: #fff1f2;
+            }
+        }
+        .row-overdue-pulse {
+            animation: overduePulse 3.5s ease-in-out infinite;
+        }
+        .row-overdue-pulse:hover {
+            background-color: #ffe4e6 !important;
+        }
     `;
 
     return (
-        <Card className="p-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                <h2 className="text-xl font-semibold">{t('invoices.title')}</h2>
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+        <div className="flex flex-col gap-5">
+            {/* Top Page Tech Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/80">
+                <div>
+                    <div className="flex items-center gap-2 mb-1">
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-2xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            BÁN HÀNG &amp; HÓA ĐƠN
+                        </span>
+                        <span className="text-[11px] font-semibold text-slate-400">|</span>
+                        <span className="text-[11px] font-medium text-slate-500">Quản lý xuất hóa đơn bán hàng, theo dõi công nợ và hạn thanh toán</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">{t('invoices.title')}</h1>
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs">
+                            {invoices.length}
+                        </span>
+                    </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0">
                     {isAdminOrManager && users && users.length > 0 && (
-                        <div className="flex items-center gap-2 w-full sm:w-auto">
-                            <span className="text-sm text-gray-500 font-medium whitespace-nowrap">{t('invoices.filterEmployee')}</span>
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-[11px] text-slate-500 font-medium whitespace-nowrap">{t('invoices.filterEmployee')}:</span>
                             <select
-                                className="flex-1 sm:flex-initial px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 outline-none focus:border-blue-500"
+                                className="h-[34px] px-2.5 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-700 outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 shadow-2xs cursor-pointer"
                                 defaultValue={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('employeeId') || '' : ''}
                                 onChange={(e) => {
                                     const newEmployeeId = e.target.value;
@@ -760,7 +800,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                     } else {
                                         params.delete('employeeId');
                                     }
-                                    router.push(`/sales/invoices?${params.toString()}`);
+                                    window.location.href = `/sales/invoices?${params.toString()}`;
                                 }}
                             >
                                 <option value="">{t('invoices.allEmployees')}</option>
@@ -770,9 +810,12 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                             </select>
                         </div>
                     )}
-                    <Button onClick={() => isFormOpen ? setIsFormOpen(false) : handleOpenCreate()} className="flex justify-center items-center gap-2 w-full sm:w-auto">
-                        {isFormOpen ? <X size={16} /> : <Plus size={16} />}
-                        {isFormOpen ? t('invoices.cancel') : t('invoices.createInvoice')}
+                    <Button
+                        onClick={handleOpenCreate}
+                        className="btn btn-primary gap-2 h-[34px] px-3.5 text-xs font-bold rounded-lg shadow-sm"
+                    >
+                        <Plus size={15} className="stroke-[2.5]" />
+                        <span>{t('invoices.createInvoice')}</span>
                     </Button>
                 </div>
             </div>
@@ -780,24 +823,24 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
             <style dangerouslySetInnerHTML={{ __html: premiumCSS }} />
 
             {/* Filter Cards */}
-            <div className="flex flex-wrap gap-4 mb-6">
+            <div className="flex flex-wrap gap-3 mb-5">
                 {statsCards.map(stat => (
                     <div
                         key={stat.id}
                         onClick={() => setStatusFilter(stat.id)}
-                        className={`stat-card ${stat.colorClass} cursor-pointer flex-1 min-w-[160px] ${statusFilter === stat.id ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+                        className={`stat-card ${stat.colorClass} cursor-pointer flex-1 min-w-[140px] transition-all hover:-translate-y-0.5 ${statusFilter === stat.id ? 'ring-2 ring-primary ring-offset-2' : ''}`}
                     >
-                        <div className="flex justify-between items-start mb-2">
-                            <span className="stat-title text-sm font-semibold uppercase tracking-wide">{stat.label}</span>
-                            <div className="stat-icon p-2 rounded-full flex items-center justify-center">
-                                <stat.icon size={18} />
+                        <div className="flex justify-between items-start mb-1.5">
+                            <span className="stat-title text-[10px] font-bold uppercase tracking-wider">{stat.label}</span>
+                            <div className="stat-icon p-1.5 rounded-full flex items-center justify-center">
+                                <stat.icon size={15} />
                             </div>
                         </div>
                         <div className="stat-info">
-                            <span className="stat-value text-3xl font-bold">{stat.count}</span>
+                            <span className="stat-value text-2xl font-bold">{stat.count}</span>
                         </div>
                         {stat.amount > 0 && (
-                            <div className="mt-2 text-xs font-semibold opacity-80 break-words whitespace-nowrap overflow-hidden text-ellipsis">
+                            <div className="mt-1.5 text-[11px] font-semibold opacity-85 break-words whitespace-nowrap overflow-hidden text-ellipsis">
                                 {formatMoney(stat.amount)}
                             </div>
                         )}
@@ -806,37 +849,37 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
             </div>
 
             {/* Filter Ribbon */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 mb-6 flex gap-4 items-center flex-wrap">
+            <div className="bg-slate-50/80 border border-slate-200 rounded-xl p-3 mb-5 flex gap-3 items-center flex-wrap">
                 <div className="flex-1 relative min-w-[200px]">
                     <input
                         type="text"
                         placeholder={t('invoices.searchPlaceholder')}
-                        className="px-3 border border-slate-300 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 w-full bg-white"
+                        className="px-3 border border-slate-300 py-1.5 rounded-lg text-xs outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 w-full bg-white shadow-xs"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                     />
                 </div>
-                <div className="flex items-center gap-2">
-                    <Calendar size={16} className="text-gray-400" />
+                <div className="flex items-center gap-1.5 text-xs">
+                    <Calendar size={14} className="text-slate-400" />
                     <input
                         type="date"
-                        className="border border-slate-300 px-3 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 bg-white"
+                        className="border border-slate-300 px-2.5 py-1.5 rounded-lg text-xs outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 bg-white shadow-xs"
                         value={dateFrom}
                         onChange={e => setDateFrom(e.target.value)}
                         title={t('invoices.fromDate')}
                     />
-                    <span className="text-gray-400">-</span>
+                    <span className="text-slate-400">-</span>
                     <input
                         type="date"
-                        className="border border-slate-300 px-3 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 bg-white"
+                        className="border border-slate-300 px-2.5 py-1.5 rounded-lg text-xs outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 bg-white shadow-xs"
                         value={dateTo}
                         onChange={e => setDateTo(e.target.value)}
                         title={t('invoices.toDate')}
                     />
                 </div>
-                <div className="flex items-center gap-2 min-w-[200px]">
+                <div className="flex items-center gap-2 min-w-[180px]">
                     <select
-                        className="border border-slate-300 px-3 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 w-full bg-white cursor-pointer"
+                        className="border border-slate-300 px-2.5 py-1.5 rounded-lg text-xs outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 w-full bg-white cursor-pointer shadow-xs"
                         value={sortBy}
                         onChange={e => setSortBy(e.target.value)}
                     >
@@ -852,450 +895,466 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
             </div>
 
             <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title={formData.id ? (formData.status !== 'DRAFT' ? 'Điều Chỉnh Hóa Đơn Bán Hàng' : t('invoices.editInvoice')) : t('invoices.createInvoiceModal')} maxWidth="1000px">
-                <div className="p-4">
+                <div className="flex flex-col gap-4 py-1">
                     {formData.id && formData.status && formData.status !== 'DRAFT' && (
-                        <div className="p-3.5 mb-5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5 shadow-2xs">
-                            <AlertTriangle className="text-amber-600 shrink-0 mt-0.5" size={16} />
+                        <div className="p-3 mb-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-2 shadow-2xs">
+                            <AlertTriangle className="text-amber-600 shrink-0 mt-0.5" size={14} />
                             <div>
-                                <strong className="block font-semibold mb-0.5 text-sm">Điều chỉnh hóa đơn đã duyệt & ghi nhận nợ</strong>
+                                <strong className="block font-semibold mb-0.5 text-xs">Điều chỉnh hóa đơn đã duyệt & ghi nhận nợ</strong>
                                 Hóa đơn này đã được ghi nhận công nợ và xuất kho. Khi lưu điều chỉnh, hệ thống sẽ <strong>tự động hoàn nhập kho cũ, xuất kho mới và tính toán lại công nợ khách hàng</strong>, đồng thời ghi nhật ký kiểm toán (log) chi tiết.
                             </div>
                         </div>
                     )}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                        <div>
-                            <label className="block text-sm text-gray-600 mb-1">{t('invoices.code')}</label>
-                            <input
-                                type="text" className="w-full border rounded p-2 bg-gray-100"
-                                value={formData.code}
-                                readOnly
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm text-gray-600 mb-1">{t('invoices.order')}</label>
-                            <SearchableSelect
-                                options={[{ value: '', label: t('invoices.orderSelect') }, ...confirmedOrders.map((o: any) => ({ value: o.id, label: `${o.code} - ${o.customer?.name || 'KH'}` }))]}
-                                value={formData.orderId || ''}
-                                onChange={handleOrderSelect}
-                                placeholder={t('invoices.orderSelect')}
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm text-gray-600 mb-1">{t('invoices.customerReq')}</label>
-                            <SearchableSelect
-                                options={customers.map((c: any) => ({ value: c.id, label: c.name }))}
-                                value={formData.customerId || ''}
-                                onChange={val => setFormData({ ...formData, customerId: val })}
-                                placeholder={t('invoices.customerSelect')}
-                                disabled={!!formData.orderId}
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm text-gray-600 mb-1">{t('invoices.dueDateString')}</label>
-                            <input
-                                type="date" className="w-full border rounded p-2"
-                                value={formData.dueDate}
-                                onChange={e => setFormData({ ...formData, dueDate: e.target.value })}
-                            />
-                        </div>
-                        <div className="md:col-span-4 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-4">
+                    <div>
+                        <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Thông tin chung</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-x-4 gap-y-3 bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-2xs">
                             <div>
-                                <label className="block text-sm text-gray-600 mb-1">{t('invoices.salespersonString')}</label>
-                                <SearchableSelect
-                                    options={users?.map((u: any) => ({ value: u.id, label: u.name })) || []}
-                                    value={formData.salespersonId || ''}
-                                    onChange={val => setFormData({ ...formData, salespersonId: val })}
-                                    placeholder={t('invoices.salespersonSelect')}
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">{t('invoices.code')}</label>
+                                <input
+                                    type="text" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs bg-slate-100 text-slate-700 font-mono"
+                                    value={formData.code}
+                                    readOnly
                                 />
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">{t('invoices.order')}</label>
+                                <SearchableSelect
+                                    options={[{ value: '', label: t('invoices.orderSelect') }, ...confirmedOrders.map((o: any) => ({ value: o.id, label: `${o.code} - ${o.customer?.name || 'KH'}` }))]}
+                                    value={formData.orderId || ''}
+                                    onChange={handleOrderSelect}
+                                    placeholder={t('invoices.orderSelect')}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">{t('invoices.customerReq')}</label>
+                                <SearchableSelect
+                                    options={customers.map((c: any) => ({ value: c.id, label: c.name }))}
+                                    value={formData.customerId || ''}
+                                    onChange={val => setFormData({ ...formData, customerId: val })}
+                                    placeholder={t('invoices.customerSelect')}
+                                    disabled={!!formData.orderId}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">{t('invoices.dueDateString')}</label>
+                                <input
+                                    type="date" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
+                                    value={formData.dueDate}
+                                    onChange={e => setFormData({ ...formData, dueDate: e.target.value })}
+                                />
+                            </div>
+                            <div className="md:col-span-4 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
                                 <div>
-                                    <label className="block text-sm text-gray-600 mb-1">{t('invoices.generalNotes')}</label>
-                                    <input
-                                        type="text" className="w-full border rounded p-2"
-                                        value={formData.notes || ''}
-                                        onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                                        placeholder={t('invoices.generalNotesPlaceholder')}
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1">{t('invoices.salespersonString')}</label>
+                                    <SearchableSelect
+                                        options={users?.map((u: any) => ({ value: u.id, label: u.name })) || []}
+                                        value={formData.salespersonId || ''}
+                                        onChange={val => setFormData({ ...formData, salespersonId: val })}
+                                        placeholder={t('invoices.salespersonSelect')}
                                     />
                                 </div>
-                                <div>
-                                    <label className="block text-sm text-gray-600 mb-1">{t('invoices.tags')}</label>
-                                    <input
-                                        type="text" className="w-full border rounded p-2"
-                                        value={formData.tags || ''}
-                                        onChange={e => setFormData({ ...formData, tags: e.target.value })}
-                                        placeholder={t('invoices.tagsPlaceholder')}
-                                    />
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+                                    <div>
+                                        <label className="block text-xs font-semibold text-slate-600 mb-1">{t('invoices.generalNotes')}</label>
+                                        <input
+                                            type="text" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white placeholder:text-slate-400"
+                                            value={formData.notes || ''}
+                                            onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                                            placeholder={t('invoices.generalNotesPlaceholder')}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold text-slate-600 mb-1">{t('invoices.tags')}</label>
+                                        <input
+                                            type="text" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white placeholder:text-slate-400"
+                                            value={formData.tags || ''}
+                                            onChange={e => setFormData({ ...formData, tags: e.target.value })}
+                                            placeholder={t('invoices.tagsPlaceholder')}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <h3 className="font-medium mb-4 mt-6">{t('invoices.productDetails')}</h3>
-                    <div className="flex flex-col bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-                        <div className="mb-4 flex flex-wrap items-center gap-4 border-b border-gray-100 pb-3">
-                            <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
-                                <input type="radio" className="accent-indigo-600 w-4 h-4 cursor-pointer" checked={!isCustomProduct} onChange={() => setIsCustomProduct(false)} />
-                                <span>{t('invoices.selectFromInventory')}</span>
-                            </label>
-                            <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
-                                <input type="radio" className="accent-indigo-600 w-4 h-4 cursor-pointer" checked={isCustomProduct} onChange={() => setIsCustomProduct(true)} />
-                                <span>{t('invoices.enterCustomProduct')}</span>
-                            </label>
-                            {isCustomProduct && (
-                                <span className="text-xs text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-md font-medium flex items-center gap-1">
-                                    ✨ Tự động lưu vào kho cho các lần sau
-                                </span>
-                            )}
-                            <div className="ml-auto">
-                                <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-indigo-900 bg-indigo-50/80 border border-indigo-200 px-3 py-1.5 rounded-lg select-none hover:bg-indigo-100/80 transition-colors">
-                                    <input
-                                        type="checkbox"
-                                        checked={isPriceInclusiveVat}
-                                        onChange={(e) => setIsPriceInclusiveVat(e.target.checked)}
-                                        className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 accent-indigo-600 cursor-pointer"
-                                    />
-                                    <span>Đã có thuế VAT (Nhập giá sau thuế)</span>
+                    <div>
+                        <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">{t('invoices.productDetails')}</h3>
+                        <div className="flex flex-col bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-2xs">
+                            <div className="mb-3 flex flex-wrap items-center gap-4 border-b border-slate-100 pb-2.5">
+                                <label className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-slate-700">
+                                    <input type="radio" className="accent-emerald-600 w-3.5 h-3.5 cursor-pointer" checked={!isCustomProduct} onChange={() => setIsCustomProduct(false)} />
+                                    <span>{t('invoices.selectFromInventory')}</span>
                                 </label>
-                            </div>
-                        </div>
-                        <div className="flex flex-col md:flex-row gap-3 md:items-end mb-2">
-                            <div className="flex-1 w-full min-w-[150px]">
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('invoices.productName')}</label>
-                                {!isCustomProduct ? (
-                                    <SearchableSelect
-                                        options={products.map((p: any) => ({ value: p.id, label: `${p.sku} - ${p.name} (Tồn: ${p.inventories?.[0]?.quantity || 0})` }))}
-                                        value={selectedProduct || ''}
-                                        onChange={handleProductSelect}
-                                        placeholder={t('invoices.productSelect')}
-                                    />
-                                ) : (
-                                    <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" placeholder={t('invoices.productNamePlaceholder')} value={customName} onChange={e => setCustomName(e.target.value)} />
+                                <label className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-slate-700">
+                                    <input type="radio" className="accent-emerald-600 w-3.5 h-3.5 cursor-pointer" checked={isCustomProduct} onChange={() => setIsCustomProduct(true)} />
+                                    <span>{t('invoices.enterCustomProduct')}</span>
+                                </label>
+                                {isCustomProduct && (
+                                    <span className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md font-medium flex items-center gap-1">
+                                        ✨ Tự động lưu vào kho
+                                    </span>
                                 )}
+                                <div className="ml-auto">
+                                    <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold text-emerald-900 bg-emerald-50/80 border border-emerald-200 px-2.5 py-1 rounded-lg select-none hover:bg-emerald-100/80 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            checked={isPriceInclusiveVat}
+                                            onChange={(e) => setIsPriceInclusiveVat(e.target.checked)}
+                                            className="w-3.5 h-3.5 rounded text-emerald-600 focus:ring-emerald-500 accent-emerald-600 cursor-pointer"
+                                        />
+                                        <span>Đã có thuế VAT (Nhập giá sau thuế)</span>
+                                    </label>
+                                </div>
                             </div>
-                            {isCustomProduct && (
+                            <div className="flex flex-col md:flex-row gap-2.5 md:items-end mb-2">
+                                <div className="flex-1 w-full min-w-[150px]">
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1">{t('invoices.productName')}</label>
+                                    {!isCustomProduct ? (
+                                        <SearchableSelect
+                                            options={products.map((p: any) => ({ value: p.id, label: `${p.sku} - ${p.name} (Tồn: ${p.inventories?.[0]?.quantity || 0})` }))}
+                                            value={selectedProduct || ''}
+                                            onChange={handleProductSelect}
+                                            placeholder={t('invoices.productSelect')}
+                                        />
+                                    ) : (
+                                        <input type="text" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white placeholder:text-slate-400" placeholder={t('invoices.productNamePlaceholder')} value={customName} onChange={e => setCustomName(e.target.value)} />
+                                    )}
+                                </div>
+                                {isCustomProduct && (
+                                    <div className="w-full md:w-20 shrink-0">
+                                        <label className="block text-xs font-semibold text-slate-600 mb-1">{t('invoices.unit')}</label>
+                                        <input type="text" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white text-center" placeholder={t('invoices.unitPlaceholder')} value={customUnit} onChange={e => setCustomUnit(e.target.value)} />
+                                    </div>
+                                )}
+                                <div className="w-full md:w-36 shrink-0">
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1">
+                                        {isPriceInclusiveVat ? 'Đ.giá (gồm VAT)' : t('invoices.unitPrice')}
+                                    </label>
+                                    <input type="number" step="any" min="0" className={`w-full h-[34px] border rounded-lg px-2.5 py-1 text-xs outline-none transition-all text-slate-900 bg-white ${isPriceInclusiveVat ? 'border-emerald-400 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 bg-emerald-50/20 font-semibold text-emerald-800' : 'border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary/20'}`} value={price} onChange={e => setPrice(parseFloat(e.target.value) || 0)} />
+                                </div>
                                 <div className="w-full md:w-24 shrink-0">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('invoices.unit')}</label>
-                                    <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white text-center" placeholder={t('invoices.unitPlaceholder')} value={customUnit} onChange={e => setCustomUnit(e.target.value)} />
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1">{t('invoices.taxRateLabel')}</label>
+                                    <TaxRateSelect
+                                        value={customTaxRate}
+                                        onChange={(val) => setCustomTaxRate(val)}
+                                    />
+                                </div>
+                                <div className="w-full md:w-16 shrink-0">
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1">{t('invoices.quantityLabel')}</label>
+                                    <input type="number" step="any" min="0.0001" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-center text-slate-900 bg-white" value={qty} onChange={e => setQty(parseFloat(e.target.value) || 0)} />
+                                </div>
+                                <div className="w-full md:w-20 shrink-0 flex flex-col items-center justify-center">
+                                    <label className="block text-[10px] font-semibold text-slate-400 mb-1 uppercase tracking-wide">T/Phần bộ?</label>
+                                    <div className="h-[34px] flex items-center justify-center">
+                                        <input type="checkbox" className="w-4 h-4 outline-none cursor-pointer accent-emerald-600 rounded" checked={isSubItem} onChange={e => setIsSubItem(e.target.checked)} />
+                                    </div>
+                                </div>
+                                <Button onClick={handleAddItem} variant="secondary" className="w-full md:w-auto shrink-0 h-[34px] px-4 border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 shadow-2xs font-semibold text-xs rounded-lg flex items-center justify-center">{t('invoices.addButton')}</Button>
+                            </div>
+
+                            {/* Calculation preview when isPriceInclusiveVat is ON */}
+                            {isPriceInclusiveVat && price > 0 && (
+                                <div className="mb-3 p-2 bg-emerald-50/80 border border-emerald-200/80 rounded-lg text-xs flex flex-wrap items-center gap-x-4 gap-y-1 text-emerald-900 shadow-2xs animate-fadeIn">
+                                    <div>💡 <strong>Giá đã gồm VAT:</strong> {formatMoney(price)}</div>
+                                    <div>➔ <strong>Đơn giá trước thuế:</strong> <span className="font-bold text-blue-700">{formatMoney(calcPreTaxPrice(price, customTaxRate))}</span></div>
+                                    <div>➔ <strong>Thuế suất:</strong> <TaxBadge rate={customTaxRate} /></div>
+                                    <div>➔ <strong>Tiền thuế/SP:</strong> <span className="font-semibold text-amber-700">{formatMoney(price - calcPreTaxPrice(price, customTaxRate))}</span></div>
+                                    <div>➔ <strong>Thành tiền ({qty} {isCustomProduct ? customUnit : (products.find((p: any) => p.id === selectedProduct)?.unit || 'Cái')}):</strong> <span className="font-bold text-emerald-700">{formatMoney(price * qty)}</span></div>
                                 </div>
                             )}
-                            <div className="w-full md:w-40 shrink-0">
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                    {isPriceInclusiveVat ? 'Đơn giá (gồm VAT)' : t('invoices.unitPrice')}
-                                </label>
-                                <input type="number" step="any" min="0" className={`w-full border rounded-lg p-2.5 outline-none transition-all text-gray-900 bg-white ${isPriceInclusiveVat ? 'border-emerald-400 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 bg-emerald-50/20 font-semibold text-emerald-800' : 'border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'}`} value={price} onChange={e => setPrice(parseFloat(e.target.value) || 0)} />
-                            </div>
-                            <div className="w-full md:w-28 shrink-0">
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('invoices.taxRateLabel')}</label>
-                                <TaxRateSelect
-                                    value={customTaxRate}
-                                    onChange={(val) => setCustomTaxRate(val)}
-                                />
-                            </div>
-                            <div className="w-full md:w-20 shrink-0">
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('invoices.quantityLabel')}</label>
-                                <input type="number" step="any" min="0.0001" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-center text-gray-900 bg-white" value={qty} onChange={e => setQty(parseFloat(e.target.value) || 0)} />
-                            </div>
-                            <div className="w-full md:w-32 shrink-0 flex flex-col items-center justify-center">
-                                <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wide">Thành phần bộ?</label>
-                                <div className="h-[46px] flex items-center justify-center">
-                                    <input type="checkbox" className="w-6 h-6 outline-none cursor-pointer accent-indigo-600 rounded" checked={isSubItem} onChange={e => setIsSubItem(e.target.checked)} />
+
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">{t('invoices.techDetailsDesc')} <span className="text-slate-400 font-normal">{t('invoices.techDetailsDescSub')}</span></label>
+                                <div className="flex items-center gap-3 mb-1.5">
+                                    <label className={`flex items-center gap-1.5 cursor-pointer text-xs font-medium ${isCustomProduct ? 'text-slate-400' : 'text-slate-700'}`}>
+                                        <input type="radio" className="accent-emerald-600 w-3.5 h-3.5 cursor-pointer" checked={useInventoryDescription && !isCustomProduct} onChange={() => handleDescSourceChange(true)} disabled={isCustomProduct} />
+                                        <span>{t('invoices.descFromInventory')}</span>
+                                    </label>
+                                    <label className="flex items-center gap-1.5 cursor-pointer text-xs font-medium text-slate-700">
+                                        <input type="radio" className="accent-emerald-600 w-3.5 h-3.5 cursor-pointer" checked={!useInventoryDescription || isCustomProduct} onChange={() => handleDescSourceChange(false)} />
+                                        <span>{t('invoices.descCustom')}</span>
+                                    </label>
                                 </div>
+                                <textarea rows={2} className={`w-full border border-slate-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all resize-none text-xs text-slate-900 bg-white placeholder:text-slate-400`} placeholder={t('invoices.descPlaceholder')} value={customDescription} onChange={e => setCustomDescription(e.target.value)}></textarea>
                             </div>
-                            <Button onClick={handleAddItem} variant="secondary" className="w-full md:w-auto shrink-0 md:mb-[2px] h-[46px] px-4 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 shadow-sm font-semibold rounded-lg">{t('invoices.addButton')}</Button>
-                        </div>
-
-                        {/* Calculation preview when isPriceInclusiveVat is ON */}
-                        {isPriceInclusiveVat && price > 0 && (
-                            <div className="mb-4 p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg text-xs flex flex-wrap items-center gap-x-5 gap-y-1.5 text-emerald-900 shadow-sm animate-fadeIn">
-                                <div>💡 <strong>Giá đã gồm VAT:</strong> {formatMoney(price)}</div>
-                                <div>➔ <strong>Đơn giá trước thuế:</strong> <span className="font-bold text-blue-700">{formatMoney(calcPreTaxPrice(price, customTaxRate))}</span></div>
-                                <div>➔ <strong>Thuế suất:</strong> <TaxBadge rate={customTaxRate} /></div>
-                                <div>➔ <strong>Tiền thuế/SP:</strong> <span className="font-semibold text-amber-700">{formatMoney(price - calcPreTaxPrice(price, customTaxRate))}</span></div>
-                                <div>➔ <strong>Thành tiền ({qty} {isCustomProduct ? customUnit : (products.find((p: any) => p.id === selectedProduct)?.unit || 'Cái')}):</strong> <span className="font-bold text-emerald-700">{formatMoney(price * qty)}</span></div>
-                            </div>
-                        )}
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('invoices.techDetailsDesc')} <span className="text-gray-400 font-normal">{t('invoices.techDetailsDescSub')}</span></label>
-                            <div className="flex items-center gap-4 mb-2">
-                                <label className={`flex items-center gap-2 cursor-pointer text-sm font-medium ${isCustomProduct ? 'text-gray-400' : 'text-gray-700'}`}>
-                                    <input type="radio" className="accent-indigo-600 w-4 h-4 cursor-pointer" checked={useInventoryDescription && !isCustomProduct} onChange={() => handleDescSourceChange(true)} disabled={isCustomProduct} />
-                                    <span>{t('invoices.descFromInventory')}</span>
-                                </label>
-                                <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
-                                    <input type="radio" className="accent-indigo-600 w-4 h-4 cursor-pointer" checked={!useInventoryDescription || isCustomProduct} onChange={() => handleDescSourceChange(false)} />
-                                    <span>{t('invoices.descCustom')}</span>
-                                </label>
-                            </div>
-                            <textarea rows={2} className={`w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all resize-none text-sm text-gray-900 bg-white`} placeholder={t('invoices.descPlaceholder')} value={customDescription} onChange={e => setCustomDescription(e.target.value)}></textarea>
                         </div>
                     </div>
 
                     {formData.items.length > 0 && (
-                        <div className="border border-gray-200 rounded-xl overflow-x-auto mt-2 border-t pt-4">
-                            <table className="w-full min-w-[600px] text-sm mb-4 bg-white text-left">
-                                <thead className="bg-slate-50 border-b border-gray-200 text-gray-600">
+                        <div className="border border-slate-200 rounded-xl overflow-x-auto mt-1 border-t pt-3">
+                            <table className="w-full min-w-[600px] text-xs mb-2 bg-white text-left">
+                                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
                                     <tr>
-                                        <th className="p-3 font-medium">{t('invoices.colProduct')}</th>
-                                        <th className="p-3 font-medium text-center w-20">{t('invoices.colQty')}</th>
-                                        <th className="p-3 font-medium text-right w-32">{t('invoices.colPrice')}</th>
-                                        <th className="p-3 font-medium text-center w-24">{t('invoices.colTax')}</th>
-                                        <th className="p-3 font-medium text-right w-36">{t('invoices.colAmountRow')}</th>
-                                        <th className="p-3 font-medium text-center w-12"></th>
+                                        <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider">{t('invoices.colProduct')}</th>
+                                        <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider text-center w-16">{t('invoices.colQty')}</th>
+                                        <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider text-right w-28">{t('invoices.colPrice')}</th>
+                                        <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider text-center w-20">{t('invoices.colTax')}</th>
+                                        <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider text-right w-32">{t('invoices.colAmountRow')}</th>
+                                        <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider text-center w-10"></th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-100">
+                                <tbody className="divide-y divide-slate-100">
                                     {formData.items.map((item: any, i: number) => (
-                                        <tr key={i} className={`hover:bg-slate-50 transition-colors ${item.isSubItem ? 'bg-slate-50/50' : ''}`}>
-                                            <td className="p-3 text-gray-800" style={item.isSubItem ? { paddingLeft: '2rem' } : {}}>
-                                                <div className="font-semibold flex items-center gap-2">
-                                                    {item.isSubItem && <span className="text-gray-400">↳</span>}
-                                                    <span className={item.isSubItem ? 'text-gray-600 font-medium' : ''}>{item.productName || item.customName}</span>
+                                        <tr key={i} className={`hover:bg-slate-50/80 transition-colors ${item.isSubItem ? 'bg-slate-50/50' : ''}`}>
+                                            <td className="p-2.5 text-slate-800" style={item.isSubItem ? { paddingLeft: '1.5rem' } : {}}>
+                                                <div className="font-semibold flex items-center gap-1.5">
+                                                    {item.isSubItem && <span className="text-slate-400">↳</span>}
+                                                    <span className={item.isSubItem ? 'text-slate-600 font-medium' : ''}>{item.productName || item.customName}</span>
                                                 </div>
-                                                {item.description && <div className="text-xs text-gray-500 mt-0.5 max-w-sm whitespace-pre-wrap">{item.description}</div>}
+                                                {item.description && <div className="text-[11px] text-slate-500 mt-0.5 max-w-sm whitespace-pre-wrap">{item.description}</div>}
                                             </td>
-                                            <td className="p-3 text-center text-gray-800">
-                                                {item.quantity} <span className="text-xs text-gray-500 ml-1">{item.unit}</span>
+                                            <td className="p-2.5 text-center text-slate-800 font-mono">
+                                                {item.quantity} <span className="text-[11px] text-slate-500 ml-0.5">{item.unit}</span>
                                             </td>
-                                            <td className="p-3 text-right text-gray-600 font-medium">{formatMoney(item.unitPrice)}</td>
-                                            <td className="p-3 text-center bg-gray-50 border-x border-white">
+                                            <td className="p-2.5 text-right text-slate-700 font-mono">{formatMoney(item.unitPrice)}</td>
+                                            <td className="p-2.5 text-center bg-slate-50/50 border-x border-slate-100">
                                                 <TaxBadge rate={item.taxRate} />
                                             </td>
-                                            <td className="p-2 border text-right font-medium">{formatMoney(item.totalPrice)}</td>
-                                            <td className="p-2 border text-center">
-                                                <div className="flex items-center justify-center gap-2">
-                                                    <button type="button" onClick={() => handleEditItem(i)} className="text-blue-500 hover:text-blue-700 transition-colors" title={t('invoices.edit')}><Edit2 size={14} /></button>
-                                                    <button type="button" onClick={() => handleRemoveItem(i)} className="text-red-500 hover:text-red-700 transition-colors" title={t('invoices.delete')}><Trash2 size={14} /></button>
+                                            <td className="p-2.5 text-right font-bold text-slate-900 font-mono">{formatMoney(item.totalPrice)}</td>
+                                            <td className="p-2.5 text-center">
+                                                <div className="flex items-center justify-center gap-1">
+                                                    <button type="button" onClick={() => handleEditItem(i)} className="text-blue-600 hover:text-blue-800 p-1 hover:bg-blue-50 rounded transition-colors" title={t('invoices.edit')}><Edit2 size={14} /></button>
+                                                    <button type="button" onClick={() => handleRemoveItem(i)} className="text-rose-500 hover:text-rose-700 p-1 hover:bg-rose-50 rounded transition-colors" title={t('invoices.delete')}><Trash2 size={14} /></button>
                                                 </div>
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
-                                <tfoot>
+                                <tfoot className="bg-slate-50 border-t border-slate-200 text-slate-700 text-xs">
                                     <tr>
-                                        <td colSpan={4} className="p-2 border text-right font-medium text-gray-600 text-sm">{t('invoices.subTotal')}:</td>
-                                        <td className="p-2 border text-right font-medium text-gray-800">{formatMoney(formData.subTotal || 0)}</td>
-                                        <td className="p-2 border"></td>
+                                        <td colSpan={4} className="p-2.5 text-right font-medium">{t('invoices.subTotal')}:</td>
+                                        <td className="p-2.5 text-right font-medium font-mono text-slate-800">{formatMoney(formData.subTotal || 0)}</td>
+                                        <td className="p-2.5"></td>
                                     </tr>
                                     <tr>
-                                        <td colSpan={4} className="p-2 border text-right font-medium text-gray-600 text-sm">{t('invoices.totalTax')}:</td>
-                                        <td className="p-2 border text-right font-medium text-gray-800">{formatMoney(formData.taxAmount || 0)}</td>
-                                        <td className="p-2 border"></td>
+                                        <td colSpan={4} className="p-2.5 text-right font-medium">{t('invoices.totalTax')}:</td>
+                                        <td className="p-2.5 text-right font-medium font-mono text-slate-500">{formatMoney(formData.taxAmount || 0)}</td>
+                                        <td className="p-2.5"></td>
                                     </tr>
-                                    <tr>
-                                        <td colSpan={4} className="p-2 border text-right font-bold">{t('invoices.grandTotal')}:</td>
-                                        <td className="p-2 border text-right font-bold text-primary">{formatMoney(formData.totalAmount || 0)}</td>
-                                        <td className="p-2 border"></td>
+                                    <tr className="border-t border-slate-200">
+                                        <td colSpan={4} className="p-2.5 text-right font-bold text-xs">{t('invoices.grandTotal')}:</td>
+                                        <td className="p-2.5 text-right font-bold text-emerald-700 text-sm font-mono">{formatMoney(formData.totalAmount || 0)}</td>
+                                        <td className="p-2.5"></td>
                                     </tr>
                                 </tfoot>
                             </table>
                         </div>
                     )}
 
-                    <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-200 mt-4">
-                        <Button onClick={handleSave} variant="secondary" className="w-full sm:w-auto flex justify-center items-center gap-2 border-gray-300">
-                            <Save size={16} /> <span>{t('invoices.modalSaveBtn')}</span>
+                    <div className="flex flex-col sm:flex-row justify-end gap-2.5 pt-3 border-t border-slate-200 mt-2">
+                        <Button onClick={() => setIsFormOpen(false)} variant="secondary" className="w-full sm:w-auto h-[34px] px-4 text-xs font-semibold border-slate-200 text-slate-700 bg-white hover:bg-slate-50 shadow-2xs rounded-lg">
+                            {t('invoices.cancel')}
                         </Button>
-                        <Button onClick={handleSaveAndApprove} className="w-full sm:w-auto flex justify-center items-center gap-2 bg-primary hover:bg-primary-dark text-white">
-                            <CheckCircle2 size={16} /> <span>{t('invoices.modalSaveAndApproveBtn')}</span>
+                        <Button onClick={handleSave} variant="secondary" className="w-full sm:w-auto flex justify-center items-center gap-1.5 h-[34px] px-4 text-xs font-semibold border-slate-200 text-slate-700 bg-white hover:bg-slate-50 shadow-2xs rounded-lg">
+                            <Save size={14} /> <span>{formData.id ? (formData.status !== 'DRAFT' ? 'Cập Nhật Điều Chỉnh' : t('invoices.saveInvoice')) : t('invoices.modalSaveBtn')}</span>
                         </Button>
+                        {(!formData.id || formData.status === 'DRAFT') && (
+                            <Button onClick={handleSaveAndApprove} className="w-full sm:w-auto flex justify-center items-center gap-1.5 h-[34px] px-5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg border-emerald-600 shadow-2xs">
+                                <CheckCircle2 size={14} /> <span>{t('invoices.modalSaveAndApproveBtn')}</span>
+                            </Button>
+                        )}
                     </div>
                 </div>
             </Modal>
 
-            <Table>
-                <thead>
-                    <tr>
-                        <th className="text-left font-medium text-gray-500 pb-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('code')}>
-                            <div className="flex items-center gap-1">
-                                {t('invoices.colCode')} {sortBy === 'code_asc' ? <ChevronUp size={14} /> : sortBy === 'code_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
-                            </div>
-                        </th>
-                        <th className="text-left font-medium text-gray-500 pb-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('date')}>
-                            <div className="flex items-center gap-1">
-                                {t('invoices.colDate')} <div className="text-xs text-gray-400 font-normal">{t('invoices.colDateSub')}</div>
-                                {sortBy === 'date_asc' ? <ChevronUp size={14} /> : sortBy === 'date_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
-                            </div>
-                        </th>
-                        <th className="text-left font-medium text-gray-500 pb-3">{t('invoices.colCustomer')} / {t('invoices.colOrder')}</th>
-                        <th className="text-left font-medium text-gray-500 pb-3">{t('invoices.salespersonString')}</th>
-                        <th className="text-left font-medium text-gray-500 pb-3">{t('invoices.tags')}</th>
-                        <th className="text-right font-medium text-gray-500 pb-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('amount')}>
-                            <div className="flex items-center justify-end gap-1">
-                                {t('invoices.colAmount')} {sortBy === 'amount_asc' ? <ChevronUp size={14} /> : sortBy === 'amount_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
-                            </div>
-                        </th>
-                        <th className="text-right font-medium text-gray-500 pb-3">{t('invoices.colCollected')}</th>
-                        <th className="text-center font-medium text-gray-500 pb-3">{t('invoices.colStatus')}</th>
-                        <th className="text-right font-medium text-gray-500 pb-3">{t('invoices.colAction')}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {paginatedItems.map((inv: any) => (
-                        <tr key={inv.id} className="border-t border-gray-100">
-                            <td className="py-3 items-center gap-2 flex">
-                                <FileText size={16} className={`text-primary/70 ${inv.dueDate && new Date(inv.dueDate).getTime() < new Date().setHours(0, 0, 0, 0) && !['DRAFT', 'PAID', 'CANCELLED'].includes(inv.status) ? 'text-red-500' : ''}`} />
-                                <Link href={`/sales/invoices/${inv.id}`} className={`font-semibold hover:text-primary hover:underline transition-colors block ${inv.dueDate && new Date(inv.dueDate).getTime() < new Date().setHours(0, 0, 0, 0) && !['DRAFT', 'PAID', 'CANCELLED'].includes(inv.status) ? 'text-red-600' : 'text-gray-800'}`}>
-                                    {inv.code}
-                                </Link>
-                                {inv.orderId && <span className="text-[10px] bg-blue-100 text-blue-600 px-1 rounded ml-1">{t('invoices.inherited') || 'Kế thừa'}</span>}
-                            </td>
-                            <td className="py-3">
-                                <div className={`font-medium ${inv.dueDate && new Date(inv.dueDate).getTime() < new Date().setHours(0, 0, 0, 0) && !['DRAFT', 'PAID', 'CANCELLED'].includes(inv.status) ? 'text-red-600' : 'text-gray-900'}`}>{formatDate(inv.date)}</div>
-                                {inv.dueDate && (
-                                    <div className="flex items-center gap-1 text-xs text-red-500 mt-1" title={t('invoices.dueDateString')}>
-                                        <Calendar size={12} /> {t('invoices.dueDateString')}: {formatDate(inv.dueDate)}
-                                    </div>
-                                )}
-                            </td>
-                            <td className="py-3">
-                                {inv.customerId ? (
-                                    <Link href={`/customers/${inv.customerId}`} className="font-medium text-indigo-600 hover:text-indigo-800 transition-colors block">
-                                        {inv.customer?.name}
-                                    </Link>
-                                ) : (
-                                    <span className="font-medium text-gray-800 block">{inv.customer?.name}</span>
-                                )}
-                                {inv.order && (
-                                    <Link href={`/sales/orders/${inv.order.id}`} className="text-xs text-blue-600 hover:underline mt-1 inline-flex items-center gap-1">
-                                        <LinkIcon size={10} /> SO: {inv.order.code}
-                                    </Link>
-                                )}
-                            </td>
-                            <td className="py-3">
-                                <div className="flex items-center gap-2">
-                                    <AvatarImage
-                                        src={inv.salesperson?.avatarUrl}
-                                        name={inv.salesperson?.name || inv.creator?.name || '?'}
-                                        size={24}
-                                    />
-                                    <span className="text-sm font-medium text-slate-700">{inv.salesperson?.name || inv.creator?.name || t('invoices.unknown') || 'Không rõ'}</span>
+            <div className="overflow-x-auto pb-2">
+                <Table>
+                    <thead className="bg-slate-50/80 border-b border-slate-200">
+                        <tr>
+                            <th className="text-left font-bold text-[11px] text-slate-600 uppercase tracking-wider py-3 px-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('code')}>
+                                <div className="flex items-center gap-1">
+                                    {t('invoices.colCode')} {sortBy === 'code_asc' ? <ChevronUp size={13} /> : sortBy === 'code_desc' ? <ChevronDown size={13} /> : <ArrowUpDown size={13} className="opacity-30" />}
                                 </div>
-                            </td>
-                            <td className="py-3">
-                                <div className="group/tags relative cursor-text min-h-[28px] flex items-center rounded border border-transparent hover:border-gray-200 hover:bg-gray-50 transition-colors"
-                                     onClick={(e) => {
-                                         if (editingTagsInvoiceId !== inv.id) {
-                                             setEditingTagsInvoiceId(inv.id);
-                                             setEditingTagsValue(inv.tags || '');
-                                         }
-                                     }}>
-                                    {editingTagsInvoiceId === inv.id ? (
-                                        <div className="flex flex-col gap-1 w-full" onClick={(e) => e.stopPropagation()}>
-                                            <input
-                                                autoFocus
-                                                type="text"
-                                                className="w-full text-xs p-1 border border-indigo-300 rounded outline-none focus:ring-2 focus:ring-indigo-100 shadow-sm"
-                                                value={editingTagsValue}
-                                                onChange={(e) => setEditingTagsValue(e.target.value)}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') handleSaveTagsInline(inv.id);
-                                                    if (e.key === 'Escape') setEditingTagsInvoiceId(null);
-                                                }}
-                                                placeholder="Ngăn cách bằng dấu phẩy..."
-                                            />
-                                            <div className="flex gap-1 justify-end">
-                                                <button onClick={() => setEditingTagsInvoiceId(null)} className="p-0.5 rounded text-gray-500 hover:bg-gray-200" title="Hủy">
-                                                    <X size={12} />
-                                                </button>
-                                                <button onClick={() => handleSaveTagsInline(inv.id)} className="p-0.5 rounded text-indigo-600 hover:bg-indigo-100 font-bold" title="Lưu">
-                                                    <CheckCircle2 size={12} />
-                                                </button>
-                                            </div>
+                            </th>
+                            <th className="text-left font-bold text-[11px] text-slate-600 uppercase tracking-wider py-3 px-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('date')}>
+                                <div className="flex items-center gap-1">
+                                    {t('invoices.colDate')}
+                                    {sortBy === 'date_asc' ? <ChevronUp size={13} /> : sortBy === 'date_desc' ? <ChevronDown size={13} /> : <ArrowUpDown size={13} className="opacity-30" />}
+                                </div>
+                            </th>
+                            <th className="text-left font-bold text-[11px] text-slate-600 uppercase tracking-wider py-3 px-3">{t('invoices.colCustomer')} / {t('invoices.colOrder')}</th>
+                            <th className="text-left font-bold text-[11px] text-slate-600 uppercase tracking-wider py-3 px-3">{t('invoices.salespersonString')}</th>
+                            <th className="text-left font-bold text-[11px] text-slate-600 uppercase tracking-wider py-3 px-3">{t('invoices.tags')}</th>
+                            <th className="text-right font-bold text-[11px] text-slate-600 uppercase tracking-wider py-3 px-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('amount')}>
+                                <div className="flex items-center justify-end gap-1">
+                                    {t('invoices.colAmount')} {sortBy === 'amount_asc' ? <ChevronUp size={13} /> : sortBy === 'amount_desc' ? <ChevronDown size={13} /> : <ArrowUpDown size={13} className="opacity-30" />}
+                                </div>
+                            </th>
+                            <th className="text-right font-bold text-[11px] text-slate-600 uppercase tracking-wider py-3 px-3">{t('invoices.colCollected')}</th>
+                            <th className="text-center font-bold text-[11px] text-slate-600 uppercase tracking-wider py-3 px-3">{t('invoices.colStatus')}</th>
+                            <th className="text-right font-bold text-[11px] text-slate-600 uppercase tracking-wider py-3 px-3">{t('invoices.colAction')}</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                        {paginatedItems.map((inv: any) => {
+                            const isOverdue = inv.dueDate && new Date(inv.dueDate).getTime() < new Date().setHours(0, 0, 0, 0) && !['DRAFT', 'PAID', 'CANCELLED'].includes(inv.status);
+                            
+                            let badgeColorClass = 'badge-neutral';
+                            if (inv.status === 'PAID') badgeColorClass = 'badge-success';
+                            else if (inv.status === 'PARTIAL_PAID') badgeColorClass = 'badge-warning';
+                            else if (inv.status === 'CANCELLED') badgeColorClass = 'badge-neutral text-slate-400 line-through';
+                            else if (isOverdue) badgeColorClass = 'badge-overdue';
+                            else if (inv.status === 'ISSUED') badgeColorClass = 'badge-info';
+
+                            return (
+                                <tr key={inv.id} className={`transition-colors ${isOverdue ? 'row-overdue-pulse' : 'hover:bg-slate-50/70'}`}>
+                                    <td className="py-3 px-3 whitespace-nowrap">
+                                        <div className="flex items-center gap-1.5">
+                                            <FileText size={14} className="text-slate-400 shrink-0" />
+                                            <Link href={`/sales/invoices/${inv.id}`} className="font-mono font-bold hover:text-emerald-700 hover:underline transition-colors block text-xs text-slate-900 tracking-tight">
+                                                {inv.code}
+                                            </Link>
+                                            {inv.orderId && <span className="text-[10px] bg-blue-50 text-blue-700 border border-blue-200/80 px-1 py-0.2 rounded font-medium shrink-0">{t('invoices.inherited') || 'SO'}</span>}
                                         </div>
-                                    ) : (
-                                        <div className="w-full px-1">
-                                            {inv.tags ? (
-                                                <TagDisplay tagsString={inv.tags} />
+                                    </td>
+                                    <td className="py-3 px-3 whitespace-nowrap">
+                                        <div className="text-xs font-mono text-slate-700 font-medium">{formatDate(inv.date)}</div>
+                                        {inv.dueDate && (
+                                            <div className={`flex items-center gap-1 text-[10.5px] font-mono mt-0.5 ${isOverdue ? 'text-rose-600 font-semibold' : 'text-slate-400'}`} title={t('invoices.dueDateString')}>
+                                                <Clock size={10} className="shrink-0" /> {formatDate(inv.dueDate)}
+                                            </div>
+                                        )}
+                                    </td>
+                                    <td className="py-3 px-3 min-w-[190px] max-w-[260px]">
+                                        {inv.customerId ? (
+                                            <Link href={`/customers/${inv.customerId}`} className="font-semibold text-slate-800 hover:text-emerald-700 hover:underline transition-colors block text-xs truncate" title={inv.customer?.name}>
+                                                {inv.customer?.name}
+                                            </Link>
+                                        ) : (
+                                            <span className="font-semibold text-slate-800 text-xs block truncate" title={inv.customer?.name}>{inv.customer?.name}</span>
+                                        )}
+                                        {inv.order && (
+                                            <Link href={`/sales/orders/${inv.order.id}`} className="text-[11px] font-mono text-blue-600 hover:underline mt-0.5 inline-flex items-center gap-1 font-medium">
+                                                <LinkIcon size={10} /> SO: {inv.order.code}
+                                            </Link>
+                                        )}
+                                    </td>
+                                    <td className="py-3 px-3 whitespace-nowrap">
+                                        <div className="flex items-center gap-2">
+                                            <AvatarImage
+                                                src={inv.salesperson?.avatarUrl}
+                                                name={inv.salesperson?.name || inv.creator?.name || '?'}
+                                                size={20}
+                                            />
+                                            <span className="text-xs font-medium text-slate-700 truncate max-w-[130px]">{inv.salesperson?.name || inv.creator?.name || t('invoices.unknown') || 'Không rõ'}</span>
+                                        </div>
+                                    </td>
+                                    <td className="py-3 px-3">
+                                        <div className="group/tags relative cursor-text min-h-[26px] flex items-center rounded-md border border-transparent hover:border-slate-200 hover:bg-slate-50/80 px-1 transition-colors"
+                                             onClick={(e) => {
+                                                 if (editingTagsInvoiceId !== inv.id) {
+                                                     setEditingTagsInvoiceId(inv.id);
+                                                     setEditingTagsValue(inv.tags || '');
+                                                 }
+                                             }}>
+                                            {editingTagsInvoiceId === inv.id ? (
+                                                <div className="flex flex-col gap-1 w-full py-0.5" onClick={(e) => e.stopPropagation()}>
+                                                    <input
+                                                        autoFocus
+                                                        type="text"
+                                                        className="w-full text-xs px-2 py-1 border border-primary rounded-md outline-none focus:ring-1 focus:ring-primary shadow-2xs bg-white"
+                                                        value={editingTagsValue}
+                                                        onChange={(e) => setEditingTagsValue(e.target.value)}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') handleSaveTagsInline(inv.id);
+                                                            if (e.key === 'Escape') setEditingTagsInvoiceId(null);
+                                                        }}
+                                                        placeholder="tag1, tag2..."
+                                                    />
+                                                    <div className="flex gap-1 justify-end">
+                                                        <button onClick={() => setEditingTagsInvoiceId(null)} className="p-0.5 rounded text-slate-500 hover:bg-slate-200" title="Hủy">
+                                                            <X size={12} />
+                                                        </button>
+                                                        <button onClick={() => handleSaveTagsInline(inv.id)} className="p-0.5 rounded text-emerald-600 hover:bg-emerald-100 font-bold" title="Lưu">
+                                                            <CheckCircle2 size={12} />
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             ) : (
-                                                <span className="text-[11px] text-gray-400 opacity-0 group-hover/tags:opacity-100 transition-opacity border border-dashed border-gray-300 rounded px-2 py-0.5 inline-block">
-                                                    + Thêm thẻ
-                                                </span>
+                                                <div className="w-full">
+                                                    {inv.tags ? (
+                                                        <TagDisplay tagsString={inv.tags} />
+                                                    ) : (
+                                                        <span className="text-[11px] text-slate-400 opacity-0 group-hover/tags:opacity-100 transition-opacity rounded px-1.5 py-0.5 inline-flex items-center gap-1 bg-slate-100/60">
+                                                            <Plus size={10} /> Thẻ
+                                                        </span>
+                                                    )}
+                                                </div>
                                             )}
                                         </div>
-                                    )}
-                                </div>
-                            </td>
-                            <td className="py-3 text-right font-bold text-gray-800">{formatMoney(inv.totalAmount)}</td>
-                            <td className="py-3 text-right text-green-600 font-medium">{formatMoney(inv.paidAmount)}</td>
-                            <td className="py-3 text-center">
-                                <div className="flex flex-col items-center gap-1">
-                                    <select
-                                        className={`status-badge status-select appearance-none ${inv.status === 'ISSUED' ? 'badge-info' :
-                                            inv.status === 'PARTIAL_PAID' ? 'badge-warning' :
-                                                inv.status === 'PAID' ? 'badge-success' :
-                                                    inv.status === 'CANCELLED' ? 'badge-danger' :
-                                                        'badge-neutral'
-                                            } ${inv.dueDate && new Date(inv.dueDate).getTime() < new Date().setHours(0, 0, 0, 0) && !['DRAFT', 'PAID', 'CANCELLED'].includes(inv.status) ? 'border-red-500 shadow-[0_0_0_1px_rgba(239,68,68,1)]' : ''}`}
-                                        value={inv.status}
-                                        onChange={(e) => handleStatusChange(inv.id, e.target.value)}
-                                        title={inv.status === 'CANCELLED' ? (t('invoices.statusCancelled') || "Hóa đơn đã phân hủy") : (t('invoices.clickToChange') || "Nhấn để đổi trạng thái")}
-                                        disabled={inv.status === 'CANCELLED'}
-                                    >
-                                        <option value="DRAFT" className="bg-white text-gray-900">{t('invoices.statsDraft')}</option>
-                                        <option value="ISSUED" className="bg-white text-gray-900">{t('invoices.statsIssued')}</option>
-                                        <option value="PARTIAL_PAID" className="bg-white text-gray-900">{t('invoices.statsPartialPaid')}</option>
-                                        <option value="PAID" className="bg-white text-gray-900">{t('invoices.statsPaid')}</option>
-                                        {inv.status === 'CANCELLED' && <option value="CANCELLED" className="bg-white text-gray-900">{t('invoices.cancel')}</option>}
-                                    </select>
-                                    {inv.dueDate && new Date(inv.dueDate).getTime() < new Date().setHours(0, 0, 0, 0) && !['DRAFT', 'PAID', 'CANCELLED'].includes(inv.status) && (
-                                        <span className="text-[10px] font-bold text-white bg-red-600 px-1.5 py-0.5 rounded-sm uppercase tracking-wider animate-pulse" title={t('invoices.overdueAlert') || "Hóa đơn đã quá hạn thanh toán"}>{t('invoices.statsOverdue')}</span>
-                                    )}
-                                </div>
-                            </td>
-                            <td className="py-3 text-right">
-                                <div className="flex justify-end gap-2 items-center">
-                                    <div className="flex items-center gap-1 mr-1">
-                                        {inv.status !== 'CANCELLED' && (
-                                            <button
-                                                onClick={() => handleEdit(inv)}
-                                                title={inv.status === 'DRAFT' ? t('invoices.edit') : 'Điều chỉnh hóa đơn đã duyệt (tự động hoàn nhập và cập nhật kho & công nợ)'}
-                                                className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                                    </td>
+                                    <td className="py-3 px-3 text-right font-mono font-bold text-xs text-slate-900 whitespace-nowrap">{formatMoney(inv.totalAmount)}</td>
+                                    <td className="py-3 px-3 text-right font-mono font-bold text-xs whitespace-nowrap">
+                                        <span className={inv.paidAmount > 0 ? 'text-emerald-600' : 'text-slate-400'}>{formatMoney(inv.paidAmount)}</span>
+                                    </td>
+                                    <td className="py-3 px-3 text-center whitespace-nowrap">
+                                        <div className="inline-flex items-center justify-center">
+                                            <select
+                                                className={`status-badge status-select ${badgeColorClass}`}
+                                                value={inv.status}
+                                                onChange={(e) => handleStatusChange(inv.id, e.target.value)}
+                                                title={inv.status === 'CANCELLED' ? (t('invoices.statusCancelled') || "Hóa đơn đã phân hủy") : (t('invoices.clickToChange') || "Nhấn để đổi trạng thái")}
+                                                disabled={inv.status === 'CANCELLED'}
                                             >
-                                                <Edit2 size={15} />
+                                                <option value="DRAFT" className="bg-white text-slate-800">{t('invoices.statsDraft')}</option>
+                                                <option value="ISSUED" className="bg-white text-slate-800">{isOverdue ? `${t('invoices.statsIssued')} (Quá hạn)` : t('invoices.statsIssued')}</option>
+                                                <option value="PARTIAL_PAID" className="bg-white text-slate-800">{t('invoices.statsPartialPaid')}</option>
+                                                <option value="PAID" className="bg-white text-slate-800">{t('invoices.statsPaid')}</option>
+                                                {inv.status === 'CANCELLED' && <option value="CANCELLED" className="bg-white text-slate-800">{t('invoices.cancel')}</option>}
+                                            </select>
+                                        </div>
+                                    </td>
+                                    <td className="py-3 px-3 text-right whitespace-nowrap">
+                                        <div className="flex justify-end gap-1 items-center">
+                                            {inv.status === 'DRAFT' && (
+                                                <button onClick={() => handleApprove(inv.id)} className="text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 px-2 py-1 text-[11px] font-semibold flex items-center gap-1 shadow-2xs transition-all rounded-md mr-1" title={t('invoices.actionApproveDesc') || "Duyệt để Ghi nhận Nợ & Xuất Kho"}>
+                                                    <CheckCircle2 size={12} /> {t('invoices.actionApprove')}
+                                                </button>
+                                            )}
+                                            {inv.status !== 'CANCELLED' && (
+                                                <button
+                                                    onClick={() => handleEdit(inv)}
+                                                    title={inv.status === 'DRAFT' ? t('invoices.edit') : 'Điều chỉnh hóa đơn'}
+                                                    className="p-1 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors"
+                                                >
+                                                    <Edit2 size={14} />
+                                                </button>
+                                            )}
+                                            <button onClick={() => handleCopy(inv)} title={t('invoices.copy')} className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors">
+                                                <Copy size={14} />
                                             </button>
-                                        )}
-                                        <button onClick={() => handleCopy(inv)} title={t('invoices.copy')} className="p-2 text-slate-500 hover:text-green-600 hover:bg-green-50 transition-colors">
-                                            <Copy size={15} />
-                                        </button>
-                                        <Link href={`/sales/invoices/${inv.id}`} title={t('invoices.viewDetails')} className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors block">
-                                            <Eye size={15} />
-                                        </Link>
-                                        <Link href={`/print/sales/invoice/${inv.id}`} target="_blank" title={t('invoices.printPdf')} className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors block">
-                                            <Printer size={15} />
-                                        </Link>
-                                        {inv.status !== 'CANCELLED' && (
-                                            <button onClick={() => handleCancel(inv.id)} title={t('invoices.cancelInvoice')} className="p-2 text-slate-500 hover:text-orange-600 hover:bg-orange-50 transition-colors block">
-                                                <XCircle size={15} />
-                                            </button>
-                                        )}
-                                        {inv.status === 'CANCELLED' && (
-                                            <button onClick={() => handleRestore(inv.id)} title={t('invoices.restoreInvoice')} className="p-2 text-slate-500 hover:text-green-600 hover:bg-green-50 transition-colors block">
-                                                <Undo2 size={15} />
-                                            </button>
-                                        )}
-                                        {inv.status === 'DRAFT' && (
-                                            <button onClick={() => handleDelete(inv.id, inv.status)} title={t('invoices.delete')} className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors block">
-                                                <Trash2 size={15} />
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    {inv.status === 'DRAFT' && (
-                                        <Button variant="secondary" onClick={() => handleApprove(inv.id)} className="text-amber-600 border-amber-600 px-2 py-1 flex-shrink-0 text-xs flex items-center gap-1 shadow-sm transition-all rounded-md" title={t('invoices.actionApproveDesc') || "Duyệt để Ghi nhận Nợ & Xuất Kho"}>
-                                            <CheckCircle2 size={14} className="mr-0.5" /> {t('invoices.actionApprove')}
-                                        </Button>
-                                    )}
-                                </div>
-                            </td>
-                        </tr>
-                    ))}
-                    {paginatedItems.length === 0 && (
-                        <tr><td colSpan={7} className="py-8 text-center text-gray-500">{t('invoices.emptyNoMatch')}</td></tr>
-                    )}
-                </tbody>
-            </Table>
+                                            <Link href={`/sales/invoices/${inv.id}`} title={t('invoices.viewDetails')} className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors block">
+                                                <Eye size={14} />
+                                            </Link>
+                                            <Link href={`/print/sales/invoice/${inv.id}`} target="_blank" title={t('invoices.printPdf')} className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors block">
+                                                <Printer size={14} />
+                                            </Link>
+                                            {inv.status !== 'CANCELLED' && (
+                                                <button onClick={() => handleCancel(inv.id)} title={t('invoices.cancelInvoice')} className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors block">
+                                                    <XCircle size={14} />
+                                                </button>
+                                            )}
+                                            {inv.status === 'CANCELLED' && (
+                                                <button onClick={() => handleRestore(inv.id)} title={t('invoices.restoreInvoice')} className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors block">
+                                                    <Undo2 size={14} />
+                                                </button>
+                                            )}
+                                            {inv.status === 'DRAFT' && (
+                                                <button onClick={() => handleDelete(inv.id, inv.status)} title={t('invoices.delete')} className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors block">
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                        {paginatedItems.length === 0 && (
+                            <tr><td colSpan={9} className="py-8 text-center text-slate-400 text-xs">{t('invoices.emptyNoMatch')}</td></tr>
+                        )}
+                    </tbody>
+                </Table>
+            </div>
             <Pagination {...paginationProps} />
 
             {/* Generic Action Modal */}
@@ -1339,6 +1398,6 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                     </div>
                 </div>
             </Modal>
-        </Card>
+        </div>
     );
 }

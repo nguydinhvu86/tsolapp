@@ -4,7 +4,21 @@ import React, { useState } from 'react';
 import { Phone, Loader2 } from 'lucide-react';
 import { clickToCall } from '@/app/call-center/actions';
 
-export function ClickToCallButton({ phoneNumber, className }: { phoneNumber: string, className?: string }) {
+interface ClickToCallButtonProps {
+    phoneNumber: string;
+    className?: string;
+    showText?: boolean;
+    label?: string;
+    size?: 'xs' | 'sm' | 'md';
+}
+
+export function ClickToCallButton({ 
+    phoneNumber, 
+    className,
+    showText = false,
+    label = 'Gọi',
+    size = 'xs'
+}: ClickToCallButtonProps) {
     const [loading, setLoading] = useState(false);
 
     if (!phoneNumber) return null;
@@ -24,15 +38,31 @@ export function ClickToCallButton({ phoneNumber, className }: { phoneNumber: str
          }
     };
 
+    if (!showText) {
+        return (
+            <button 
+                type="button"
+                onClick={handleCall} 
+                disabled={loading}
+                title={`Gọi ${phoneNumber} qua tổng đài PBX`}
+                className={`inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white border border-emerald-200/80 active:scale-95 transition-all shadow-2xs shrink-0 cursor-pointer ${className || ''}`}
+            >
+                {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Phone className="w-3 h-3" />}
+            </button>
+        );
+    }
+
     return (
          <button 
+             type="button"
              onClick={handleCall} 
              disabled={loading}
-             title="Click-to-Call (Gọi qua tổng đài PBX)"
-             className={`inline-flex items-center justify-center gap-1.5 px-2 py-1 bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 border border-green-200 rounded-md transition-colors text-sm font-medium ${className || ''}`}
+             title={`Gọi ${phoneNumber} qua tổng đài PBX`}
+             className={`inline-flex items-center justify-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white border border-emerald-200/80 rounded-md active:scale-95 transition-all text-xs font-semibold whitespace-nowrap shadow-2xs cursor-pointer ${className || ''}`}
          >
              {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Phone className="w-3.5 h-3.5" />}
-             <span>Gọi Ngay</span>
+             <span>{label}</span>
          </button>
     );
 }
+

@@ -26,9 +26,6 @@ export default async function ContractsPage() {
 
     return (
         <div>
-            <div className="flex justify-between items-center" style={{ marginBottom: '2rem' }}>
-                <h1>Quản lý Hợp đồng đã tạo</h1>
-            </div>
             <ContractDashboardClient initialData={contracts} />
         </div>
     );

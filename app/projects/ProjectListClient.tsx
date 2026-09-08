@@ -3,10 +3,10 @@ import { formatDate } from '@/lib/utils/formatters';
 import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
-import { Table } from '@/app/components/ui/Table';
 import { Modal } from '@/app/components/ui/Modal';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
-import { Plus, Trash2, Edit2, ChevronUp, ChevronDown, List, Target, Users, LayoutDashboard, Clock, Pause, CheckCircle, XCircle } from 'lucide-react';
+import { Pagination, usePagination } from '@/app/components/ui/Pagination';
+import { Plus, Trash2, Edit2, ChevronUp, ChevronDown, List, Target, Users, LayoutDashboard, Clock, Pause, CheckCircle, XCircle, ArrowUpDown, X, Search } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -252,103 +252,118 @@ export function ProjectListClient({ initialProjects, users, customers = [] }: { 
         }
     }
 
+    const { paginatedItems: paginatedProjects, paginationProps } = usePagination(sortedProjects, 20);
+
     return (
-        <div>
+        <div className="space-y-6">
             {/* KPI Cards for Projects */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-                <div style={{ padding: '1.25rem', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ padding: '12px', backgroundColor: '#dbeafe', color: '#3b82f6', borderRadius: '10px' }}>
-                        <Target size={24} />
-                    </div>
-                    <div>
-                        <div style={{ color: '#3b82f6', fontWeight: 600, fontSize: '0.85rem', textTransform: 'uppercase' }}>Tổng Dự Án</div>
-                        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1e3a8a' }}>{initialProjects.length}</div>
-                    </div>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div
+                    onClick={() => setStatusFilter('ALL')}
+                    className={`stat-card stat-card-blue cursor-pointer transition-all ${statusFilter === 'ALL' ? 'ring-2 ring-primary ring-offset-2 scale-[1.02] shadow-md' : 'hover:-translate-y-0.5'}`}
+                >
+                    <div className="stat-title text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Tổng Dự Án</div>
+                    <div className="stat-value text-2xl font-black text-blue-700">{initialProjects.length}</div>
+                    <div className="text-xs text-slate-400 mt-1 font-medium">Tất cả dự án</div>
                 </div>
-                <div style={{ padding: '1.25rem', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ padding: '12px', backgroundColor: '#dcfce7', color: '#16a34a', borderRadius: '10px' }}>
-                        <LayoutDashboard size={24} />
+
+                <div
+                    onClick={() => setStatusFilter('IN_PROGRESS')}
+                    className={`stat-card stat-card-emerald cursor-pointer transition-all ${statusFilter === 'IN_PROGRESS' ? 'ring-2 ring-primary ring-offset-2 scale-[1.02] shadow-md' : 'hover:-translate-y-0.5'}`}
+                >
+                    <div className="stat-title text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Đang Triển Khai</div>
+                    <div className="stat-value text-2xl font-black text-emerald-600">
+                        {initialProjects.filter(p => p.status === 'IN_PROGRESS' || p.status === 'TODO').length}
                     </div>
-                    <div>
-                        <div style={{ color: '#16a34a', fontWeight: 600, fontSize: '0.85rem', textTransform: 'uppercase' }}>Đang Triển Khai</div>
-                        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#14532d' }}>
-                            {initialProjects.filter(p => p.status === 'IN_PROGRESS' || p.status === 'TODO').length}
-                        </div>
-                    </div>
+                    <div className="text-xs text-slate-400 mt-1 font-medium">Đang tiến hành</div>
                 </div>
-                <div style={{ padding: '1.25rem', backgroundColor: '#fefce8', border: '1px solid #fef08a', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ padding: '12px', backgroundColor: '#fef9c3', color: '#ca8a04', borderRadius: '10px' }}>
-                        <Pause size={24} />
+
+                <div
+                    onClick={() => setStatusFilter('PAUSED')}
+                    className={`stat-card stat-card-amber cursor-pointer transition-all ${statusFilter === 'PAUSED' ? 'ring-2 ring-primary ring-offset-2 scale-[1.02] shadow-md' : 'hover:-translate-y-0.5'}`}
+                >
+                    <div className="stat-title text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Tạm Ngưng</div>
+                    <div className="stat-value text-2xl font-black text-amber-600">
+                        {initialProjects.filter(p => p.status === 'PAUSED').length}
                     </div>
-                    <div>
-                        <div style={{ color: '#ca8a04', fontWeight: 600, fontSize: '0.85rem', textTransform: 'uppercase' }}>Tạm Ngưng</div>
-                        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#713f12' }}>
-                            {initialProjects.filter(p => p.status === 'PAUSED').length}
-                        </div>
-                    </div>
+                    <div className="text-xs text-slate-400 mt-1 font-medium">Tạm hoãn</div>
                 </div>
-                <div style={{ padding: '1.25rem', backgroundColor: '#f0fdfa', border: '1px solid #a7f3d0', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ padding: '12px', backgroundColor: '#ccfbf1', color: '#0d9488', borderRadius: '10px' }}>
-                        <CheckCircle size={24} />
+
+                <div
+                    onClick={() => setStatusFilter('DONE')}
+                    className={`stat-card stat-card-green cursor-pointer transition-all ${statusFilter === 'DONE' ? 'ring-2 ring-primary ring-offset-2 scale-[1.02] shadow-md' : 'hover:-translate-y-0.5'}`}
+                >
+                    <div className="stat-title text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Hoàn Thành</div>
+                    <div className="stat-value text-2xl font-black text-emerald-700">
+                        {initialProjects.filter(p => p.status === 'DONE').length}
                     </div>
-                    <div>
-                        <div style={{ color: '#0d9488', fontWeight: 600, fontSize: '0.85rem', textTransform: 'uppercase' }}>Hoàn Thành</div>
-                        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#115e59' }}>
-                            {initialProjects.filter(p => p.status === 'DONE').length}
-                        </div>
-                    </div>
+                    <div className="text-xs text-slate-400 mt-1 font-medium">Đã kết thúc</div>
                 </div>
-                <div style={{ padding: '1.25rem', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ padding: '12px', backgroundColor: '#fee2e2', color: '#ef4444', borderRadius: '10px' }}>
-                        <XCircle size={24} />
+
+                <div
+                    onClick={() => setStatusFilter('CANCELLED')}
+                    className={`stat-card stat-card-red cursor-pointer transition-all ${statusFilter === 'CANCELLED' ? 'ring-2 ring-primary ring-offset-2 scale-[1.02] shadow-md' : 'hover:-translate-y-0.5'}`}
+                >
+                    <div className="stat-title text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Đã Hủy</div>
+                    <div className="stat-value text-2xl font-black text-rose-600">
+                        {initialProjects.filter(p => p.status === 'CANCELLED').length}
                     </div>
-                    <div>
-                        <div style={{ color: '#ef4444', fontWeight: 600, fontSize: '0.85rem', textTransform: 'uppercase' }}>Đã Hủy</div>
-                        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#7f1d1d' }}>
-                            {initialProjects.filter(p => p.status === 'CANCELLED').length}
-                        </div>
-                    </div>
+                    <div className="text-xs text-slate-400 mt-1 font-medium">Đã hủy bỏ</div>
                 </div>
             </div>
 
-            <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                {canCreate && (
-                    <Button onClick={() => setCreateModalOpen(true)} className="gap-2">
-                        <Plus size={18} /> Tạo Dự Án Mới
-                    </Button>
-                )}
-                
-                <div style={{ display: 'flex', backgroundColor: '#f1f5f9', padding: '4px', borderRadius: '8px', gap: '4px' }}>
-                    <button 
-                        onClick={() => setViewMode('LIST')}
-                        style={{ padding: '6px 12px', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px',
-                                 backgroundColor: viewMode === 'LIST' ? 'white' : 'transparent', color: viewMode === 'LIST' ? '#0f172a' : '#64748b', boxShadow: viewMode === 'LIST' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' }}>
-                        <List size={16} /> Danh sách
-                    </button>
-                    <button 
-                        onClick={() => setViewMode('KANBAN')}
-                        style={{ padding: '6px 12px', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px',
-                                 backgroundColor: viewMode === 'KANBAN' ? 'white' : 'transparent', color: viewMode === 'KANBAN' ? '#0f172a' : '#64748b', boxShadow: viewMode === 'KANBAN' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' }}>
-                        <LayoutDashboard size={16} /> Kanban
-                    </button>
+            {/* Filter Ribbon & Actions */}
+            <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-sm flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+                <div className="flex items-center gap-2">
+                    {canCreate && (
+                        <Button onClick={() => setCreateModalOpen(true)} className="gap-2 shadow-sm whitespace-nowrap">
+                            <Plus size={18} /> Tạo Dự Án Mới
+                        </Button>
+                    )}
+
+                    <div className="flex bg-slate-100 p-1 rounded-lg gap-1 border border-slate-200/60">
+                        <button
+                            onClick={() => setViewMode('LIST')}
+                            className={`px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all ${viewMode === 'LIST' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                        >
+                            <List size={14} /> Danh sách
+                        </button>
+                        <button
+                            onClick={() => setViewMode('KANBAN')}
+                            className={`px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all ${viewMode === 'KANBAN' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                        >
+                            <LayoutDashboard size={14} /> Kanban
+                        </button>
+                    </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.5rem', flex: 1, justifyContent: 'flex-end', alignItems: 'center' }}>
-                    <div style={{ position: 'relative' }}>
+                <div className="flex flex-wrap gap-2.5 items-center flex-1 md:justify-end">
+                    <div className="relative min-w-[200px] flex-1 md:flex-none">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
                         <input
                             type="text"
                             placeholder="Tìm kiếm dự án..."
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
-                            style={{ padding: '0.55rem 1rem', borderRadius: '8px', border: '1px solid var(--border)', width: '260px', outline: 'none', fontSize: '0.85rem' }}
+                            className="w-full md:w-[220px] h-9 pl-8 pr-7 text-[13px] bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:border-emerald-500 text-slate-800 placeholder:text-slate-400 font-medium"
                         />
+                        {searchQuery && (
+                            <button
+                                type="button"
+                                onClick={() => setSearchQuery('')}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full"
+                            >
+                                <X size={13} />
+                            </button>
+                        )}
                     </div>
+
                     <select
                         value={assigneeFilter}
                         onChange={e => setAssigneeFilter(e.target.value)}
-                        style={{ padding: '0.55rem 0.75rem', borderRadius: '8px', border: '1px solid var(--border)', outline: 'none', fontSize: '0.85rem', backgroundColor: 'white' }}
+                        className="h-9 px-2.5 text-[13px] bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:border-emerald-500 text-slate-700 font-medium cursor-pointer"
                     >
-                        <option value="ALL">Tất cả người dùng</option>
+                        <option value="ALL">Tất cả thành viên</option>
                         {users.map(u => (
                             <option key={u.id} value={u.id}>{u.name || u.email}</option>
                         ))}
@@ -357,7 +372,7 @@ export function ProjectListClient({ initialProjects, users, customers = [] }: { 
                     <select
                         value={statusFilter}
                         onChange={e => setStatusFilter(e.target.value)}
-                        style={{ padding: '0.55rem 0.75rem', borderRadius: '8px', border: '1px solid var(--border)', outline: 'none', fontSize: '0.85rem', backgroundColor: 'white' }}
+                        className="h-9 px-2.5 text-[13px] bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:border-emerald-500 text-slate-700 font-medium cursor-pointer"
                     >
                         <option value="ALL">Tất cả trạng thái</option>
                         <option value="TODO">Chuẩn Bị</option>
@@ -370,119 +385,125 @@ export function ProjectListClient({ initialProjects, users, customers = [] }: { 
             </div>
 
             {viewMode === 'LIST' && (
-                <Card>
-                <div style={{ overflowX: 'auto' }}>
-                    <Table>
+                <div className="table-wrapper">
+                    <table>
                         <thead>
                             <tr>
-                                <th onClick={() => handleSort('title')} style={{ cursor: 'pointer', minWidth: '250px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <th onClick={() => handleSort('title')} className="cursor-pointer hover:bg-slate-100/80 text-[11px] font-bold uppercase tracking-wider text-slate-600 min-w-[240px]">
+                                    <div className="flex items-center gap-1">
                                         Tên Dự Án
-                                        {sortField === 'title' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
+                                        {sortField === 'title' ? (sortDirection === 'asc' ? <ChevronUp size={13} className="text-slate-400" /> : <ChevronDown size={13} className="text-slate-400" />) : <ArrowUpDown size={13} className="text-slate-300" />}
                                     </div>
                                 </th>
-                                <th>Thành Viên</th>
-                                <th onClick={() => handleSort('dueDate')} style={{ cursor: 'pointer' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <th className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Thành Viên</th>
+                                <th onClick={() => handleSort('dueDate')} className="cursor-pointer hover:bg-slate-100/80 text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                                    <div className="flex items-center gap-1">
                                         Hạn Chót
-                                        {sortField === 'dueDate' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
+                                        {sortField === 'dueDate' ? (sortDirection === 'asc' ? <ChevronUp size={13} className="text-slate-400" /> : <ChevronDown size={13} className="text-slate-400" />) : <ArrowUpDown size={13} className="text-slate-300" />}
                                     </div>
                                 </th>
-                                <th>Trạng Thái</th>
-                                <th onClick={() => handleSort('progress')} style={{ cursor: 'pointer', minWidth: '150px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <th className="text-center text-[11px] font-bold uppercase tracking-wider text-slate-600">Trạng Thái</th>
+                                <th onClick={() => handleSort('progress')} className="cursor-pointer hover:bg-slate-100/80 text-[11px] font-bold uppercase tracking-wider text-slate-600 min-w-[150px]">
+                                    <div className="flex items-center gap-1">
                                         Tiến Độ Tham Khảo
-                                        {sortField === 'progress' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
+                                        {sortField === 'progress' ? (sortDirection === 'asc' ? <ChevronUp size={13} className="text-slate-400" /> : <ChevronDown size={13} className="text-slate-400" />) : <ArrowUpDown size={13} className="text-slate-300" />}
                                     </div>
                                 </th>
-                                <th style={{ width: '100px', textAlign: 'center' }}>Hành Động</th>
+                                <th className="text-center text-[11px] font-bold uppercase tracking-wider text-slate-600 w-[100px]">Hành Động</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            {sortedProjects.map((project: any) => {
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                            {paginatedProjects.map((project: any) => {
                                 const isDueSoon = project.dueDate && new Date(project.dueDate).getTime() - new Date().getTime() < 86400000 && project.status !== 'DONE';
                                 const assigneesCount = project.assignees?.length || 0;
 
                                 return (
-                                    <tr key={project.id}>
-                                        <td>
-                                            <div style={{ fontWeight: 600, fontSize: '1rem', color: isDueSoon ? 'var(--danger)' : 'var(--text-main)' }}>
-                                                <Link href={`/projects/${project.id}`} className="text-blue-600 hover:underline">
+                                    <tr key={project.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                        <td className="p-3">
+                                            <div className="font-semibold text-[13px]">
+                                                <Link href={`/projects/${project.id}`} className="text-slate-900 hover:text-emerald-600 transition-colors">
                                                     {project.title}
                                                 </Link>
                                             </div>
-                                            <div style={{ display: 'flex', gap: '8px', marginTop: '6px', marginBottom: '4px' }}>
-                                                <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backgroundColor: project.priority === 'URGENT' ? '#fef2f2' : project.priority === 'HIGH' ? '#fffbeb' : '#f8fafc', color: project.priority === 'URGENT' ? '#ef4444' : project.priority === 'HIGH' ? '#d97706' : '#64748b' }}>
+                                            <div className="flex items-center gap-1.5 mt-1">
+                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${project.priority === 'URGENT' ? 'bg-rose-50 text-rose-600 border border-rose-200' : project.priority === 'HIGH' ? 'bg-amber-50 text-amber-600 border border-amber-200' : 'bg-slate-100 text-slate-600'}`}>
                                                     {project.priority || 'MEDIUM'}
                                                 </span>
-                                                <span style={{ fontSize: '0.65rem', fontWeight: 600, padding: '2px 6px', borderRadius: '4px', backgroundColor: '#f1f5f9', color: '#64748b' }}>
+                                                <span className="font-mono text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
                                                     {project.code || 'PRJ'}
                                                 </span>
                                             </div>
                                             {project.description && (
-                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '300px' }}>
+                                                <div className="text-xs text-slate-400 mt-1 line-clamp-1 max-w-[320px]">
                                                     {project.description}
                                                 </div>
                                             )}
                                         </td>
-                                        <td>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                <Users size={16} color="var(--text-muted)" />
-                                                <span style={{ fontSize: '0.9rem', color: 'var(--text-main)', fontWeight: 500 }}>
-                                                    {assigneesCount} người
-                                                </span>
+                                        <td className="p-3">
+                                            <div className="flex items-center gap-1.5 text-slate-600 text-xs font-medium">
+                                                <Users size={14} className="text-slate-400" />
+                                                <span>{assigneesCount} người</span>
                                             </div>
                                         </td>
-                                        <td style={{ color: isDueSoon ? 'var(--danger)' : 'inherit', fontWeight: isDueSoon ? 600 : 400 }}>
+                                        <td className="p-3 text-xs" style={{ color: isDueSoon ? '#dc2626' : 'inherit', fontWeight: isDueSoon ? 600 : 400 }}>
                                             {project.dueDate ? formatDate(new Date(project.dueDate)) : '-'}
                                         </td>
-                                        <td>
+                                        <td className="p-3 text-center">
                                             <select
                                                 value={project.status}
                                                 onChange={(e) => handleStatusChange(project.id, e.target.value)}
                                                 disabled={!canEdit}
+                                                className="text-[11px] font-semibold rounded-full px-2.5 py-0.5 border cursor-pointer focus:outline-none transition-colors"
                                                 style={{
-                                                    padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600,
-                                                    border: '1px solid var(--border)', cursor: canEdit ? 'pointer' : 'default',
-                                                    backgroundColor: project.status === 'DONE' ? '#dcfce7' : (project.status === 'IN_PROGRESS' ? '#dbeafe' : project.status === 'PAUSED' ? '#fef9c3' : '#f1f5f9'),
-                                                    color: project.status === 'DONE' ? '#16a34a' : (project.status === 'IN_PROGRESS' ? '#2563eb' : project.status === 'PAUSED' ? '#ca8a04' : '#475569')
+                                                    backgroundColor: project.status === 'DONE' ? '#ecfdf5' : (project.status === 'IN_PROGRESS' ? '#eff6ff' : project.status === 'PAUSED' ? '#fefce8' : project.status === 'CANCELLED' ? '#fef2f2' : '#f8fafc'),
+                                                    color: project.status === 'DONE' ? '#047857' : (project.status === 'IN_PROGRESS' ? '#1d4ed8' : project.status === 'PAUSED' ? '#a16207' : project.status === 'CANCELLED' ? '#b91c1c' : '#475569'),
+                                                    borderColor: project.status === 'DONE' ? '#a7f3d0' : (project.status === 'IN_PROGRESS' ? '#bfdbfe' : project.status === 'PAUSED' ? '#fde047' : project.status === 'CANCELLED' ? '#fecaca' : '#e2e8f0'),
                                                 }}
                                             >
-                                                <option value="TODO" style={{ backgroundColor: 'white', color: '#475569' }}>Chuẩn Bị</option>
-                                                <option value="IN_PROGRESS" style={{ backgroundColor: 'white', color: '#2563eb' }}>Đang Thực Hiện</option>
-                                                <option value="PAUSED" style={{ backgroundColor: 'white', color: '#ca8a04' }}>Tạm Ngưng</option>
-                                                <option value="DONE" style={{ backgroundColor: 'white', color: '#16a34a' }}>Hoàn Thành</option>
-                                                <option value="CANCELLED" style={{ backgroundColor: 'white', color: '#dc2626' }}>Đã Hủy</option>
+                                                <option value="TODO">Chuẩn Bị</option>
+                                                <option value="IN_PROGRESS">Đang Thực Hiện</option>
+                                                <option value="PAUSED">Tạm Ngưng</option>
+                                                <option value="DONE">Hoàn Thành</option>
+                                                <option value="CANCELLED">Đã Hủy</option>
                                             </select>
                                         </td>
-                                        <td>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                <div style={{ flex: 1, backgroundColor: '#e2e8f0', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
-                                                    <div style={{
-                                                        width: `${project.progress || 0}%`,
-                                                        backgroundColor: project.progress === 100 ? '#10b981' : 'var(--primary)',
-                                                        height: '100%',
-                                                        transition: 'width 0.3s ease'
-                                                    }} />
+                                        <td className="p-3">
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex-1 bg-slate-100 h-2 rounded-full overflow-hidden">
+                                                    <div
+                                                        className="h-full rounded-full transition-all duration-300"
+                                                        style={{
+                                                            width: `${project.progress || 0}%`,
+                                                            backgroundColor: project.progress === 100 ? '#10b981' : '#05A613',
+                                                        }}
+                                                    />
                                                 </div>
-                                                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)', minWidth: '40px', textAlign: 'right' }}>
+                                                <span className="text-xs font-bold text-slate-700 min-w-[36px] text-right">
                                                     {project.progress || 0}%
                                                 </span>
                                             </div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                                            <div className="text-[11px] text-slate-400 mt-1">
                                                 {project.completedTasks} / {project.totalTasks} công việc con
                                             </div>
                                         </td>
-                                        <td>
-                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                                        <td className="p-3">
+                                            <div className="flex items-center justify-center gap-1">
                                                 {canEdit && (
-                                                    <button onClick={() => openEditModal(project)} style={{ color: 'var(--text-main)', padding: '4px' }} title="Sửa">
-                                                        <Edit2 size={18} />
+                                                    <button
+                                                        onClick={() => openEditModal(project)}
+                                                        className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                                        title="Sửa"
+                                                    >
+                                                        <Edit2 size={16} />
                                                     </button>
                                                 )}
                                                 {canDelete && (
-                                                    <button onClick={() => handleDelete(project.id)} style={{ color: 'var(--danger)', padding: '4px' }} title="Xóa">
-                                                        <Trash2 size={18} />
+                                                    <button
+                                                        onClick={() => handleDelete(project.id)}
+                                                        className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                                                        title="Xóa"
+                                                    >
+                                                        <Trash2 size={16} />
                                                     </button>
                                                 )}
                                             </div>
@@ -492,20 +513,21 @@ export function ProjectListClient({ initialProjects, users, customers = [] }: { 
                             })}
                             {initialProjects.length === 0 && (
                                 <tr>
-                                    <td colSpan={6} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-                                            <Target size={48} strokeWidth={1} style={{ opacity: 0.5 }} />
-                                            <div style={{ fontSize: '1.1rem', fontWeight: 500 }}>Chưa có dự án nào</div>
-                                            <div>Tạo dự án mới để bắt đầu theo dõi tiến độ tổng thể.</div>
+                                    <td colSpan={6} className="p-12 text-center text-slate-400">
+                                        <div className="flex flex-col items-center gap-2">
+                                            <Target size={40} strokeWidth={1.5} className="text-slate-300" />
+                                            <div className="font-semibold text-slate-700 text-sm">Chưa có dự án nào</div>
+                                            <div className="text-xs text-slate-400">Tạo dự án mới để bắt đầu theo dõi tiến độ tổng thể.</div>
                                         </div>
                                     </td>
                                 </tr>
                             )}
                         </tbody>
-                    </Table>
+                    </table>
+                    <Pagination {...paginationProps} />
                 </div>
-            </Card>
             )}
+
 
             {viewMode === 'KANBAN' && isMounted && (
                 <DragDropContext onDragEnd={onDragEnd}>

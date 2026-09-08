@@ -19,6 +19,8 @@ import { DocumentManagersPanel } from '@/app/components/shared/DocumentManagersP
 import { EmailLogTable } from '@/app/components/ui/EmailLogTable';
 import { DocumentSignatureBlock } from '@/app/components/ui/DocumentSignatureBlock';
 
+import { StatusBadge } from '@/app/components/ui/StatusBadge';
+
 export default function SalesInvoiceDetailClient({ initialData, customers, products, users, emailTemplates, settings }: any) {
     const router = useRouter();
     const { data: session } = useSession();
@@ -60,18 +62,6 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
         navigator.clipboard.writeText(publicUrl);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
-    };
-
-
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'DRAFT': return <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-sm font-semibold border border-gray-200">Bản Dự Thảo</span>;
-            case 'ISSUED': return <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold border border-blue-200">Ghi Nhận Nợ / Xuất Kho</span>;
-            case 'PARTIAL_PAID': return <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-sm font-semibold border border-amber-200">Đã Thu Một Phần</span>;
-            case 'PAID': return <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-semibold border border-green-200">Hoàn Tất Thu</span>;
-            case 'CANCELLED': return <span className="px-3 py-1 rounded-full bg-red-100 text-red-700 text-sm font-semibold border border-red-200">Đã Hủy</span>;
-            default: return <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-sm font-semibold border border-gray-200">{status}</span>;
-        }
     };
 
     const handleApprove = async () => {
@@ -215,90 +205,87 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
     };
 
     const tabs = [
-        { id: 'items', label: 'Chi tiết sản phẩm xuất bán', icon: <ShoppingCart size={18} />, count: invoice.items?.length || 0 }
+        { id: 'items', label: 'Chi tiết sản phẩm xuất bán', icon: <ShoppingCart size={16} />, count: invoice.items?.length || 0 }
     ] as const;
 
     return (
-        <div style={{ padding: '0', maxWidth: '100%', margin: '0 auto', fontFamily: 'Inter, sans-serif' }}>
-            {/* Header Area */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 md:mb-8">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div className="space-y-6">
+            {/* Header & Action Toolbar */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-slate-200">
+                <div className="flex items-center gap-3">
                     <button
                         onClick={() => router.push('/sales/invoices')}
-                        style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            width: '40px', height: '40px', borderRadius: '50%', border: '1px solid #e2e8f0',
-                            backgroundColor: 'white', color: '#64748b', cursor: 'pointer', transition: 'all 0.2s'
-                        }}
-                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.color = '#0f172a'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'white'; e.currentTarget.style.color = '#64748b'; }}
+                        className="w-9 h-9 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-center text-slate-500 hover:text-slate-900 transition-colors shadow-xs"
                     >
-                        <ArrowLeft size={20} />
+                        <ArrowLeft size={18} />
                     </button>
                     <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.25rem' }}>
-                            <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#0f172a', margin: 0, letterSpacing: '-0.025em' }}>
-                                Hóa Đơn {invoice.code}
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-lg font-bold text-slate-900 tracking-tight">
+                                Hóa Đơn <span className="font-mono text-slate-700">{invoice.code}</span>
                             </h1>
-                            {getStatusBadge(invoice.status)}
-                            {invoice.orderId && <span className="px-2 py-1 rounded bg-blue-100 text-blue-700 text-xs font-semibold">Kế thừa: {invoice.order?.code || 'Order'}</span>}
+                            <StatusBadge status={invoice.status} />
+                            {invoice.orderId && (
+                                <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/60 text-[11px] font-semibold">
+                                    Kế thừa: {invoice.order?.code || 'Order'}
+                                </span>
+                            )}
                         </div>
-                        <p style={{ color: '#64748b', margin: 0, fontSize: '0.875rem' }}>Chi tiết Hóa đơn bán hàng, Công nợ và Lịch sử thanh toán.</p>
+                        <p className="text-xs text-slate-500 mt-0.5">Chi tiết Hóa đơn bán hàng, Công nợ và Lịch sử thanh toán.</p>
                     </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
+                <div className="flex flex-wrap items-center gap-2">
                     <button
                         onClick={handleCopyPublicLink}
-                        className="btn btn-secondary"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: 'white', color: '#475569', border: '1px solid #cbd5e1', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-xs transition-colors"
                     >
-                        <Copy size={16} /> {copied ? 'Đã sao chép' : 'Copy Link Gửi KH'}
+                        <Copy size={14} className="text-slate-500" />
+                        {copied ? 'Đã sao chép' : 'Copy Link Gửi KH'}
                     </button>
                     <Link
                         href={`/print/sales/invoice/${invoice.id}`}
                         target="_blank"
-                        className="btn btn-secondary"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#f1f5f9', color: '#3b82f6', border: '1px solid #bfdbfe', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-sky-200 bg-sky-50/50 text-xs font-semibold text-sky-700 hover:bg-sky-100/60 shadow-xs transition-colors"
                     >
-                        <ExternalLink size={16} /> Xem Bản In
+                        <ExternalLink size={14} />
+                        Xem Bản In
                     </Link>
                     <button
                         onClick={() => router.push(`/sales/invoices?edit=${invoice.id}`)}
-                        className="btn btn-secondary hover:bg-slate-100 transition-colors"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-xs transition-colors"
                     >
-                        <Edit2 size={16} /> Chỉnh Sửa
+                        <Edit2 size={14} className="text-slate-500" />
+                        Chỉnh Sửa
                     </button>
                     <button
                         onClick={() => setIsEmailModalOpen(true)}
-                        className="btn btn-primary"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#10b981', color: 'white', border: 'none', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-xs font-semibold text-emerald-800 hover:bg-emerald-100/80 shadow-xs transition-colors"
                     >
-                        <Mail size={16} /> Gửi Email
+                        <Mail size={14} className="text-emerald-700" />
+                        Gửi Email
                     </button>
+
                     {invoice.status === 'DRAFT' && (
                         <button
                             onClick={handleApprove}
-                            className="btn btn-primary"
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.25rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#10b981', color: 'white', border: 'none', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[var(--primary)] text-xs font-semibold text-white hover:opacity-90 shadow-xs transition-all"
                         >
-                            <CheckCircle2 size={18} /> Ghi Nhận & Xuất Kho
+                            <CheckCircle2 size={14} />
+                            Ghi Nhận & Xuất Kho
                         </button>
                     )}
                     {invoice.status === 'ISSUED' && (
                         <>
                             <button
                                 onClick={openPartialPaymentModal}
-                                className="btn btn-primary"
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.25rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#f59e0b', color: 'white', border: 'none', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-200 bg-amber-50 text-xs font-semibold text-amber-800 hover:bg-amber-100/80 shadow-xs transition-colors"
                             >
                                 Thu Một Phần
                             </button>
                             <button
                                 onClick={handleFullPayment}
-                                className="btn btn-primary"
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.25rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#10b981', color: 'white', border: 'none', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[var(--primary)] text-xs font-semibold text-white hover:opacity-90 shadow-xs transition-all"
                             >
                                 Đã Thu Đủ Tiền
                             </button>
@@ -308,15 +295,13 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                         <>
                             <button
                                 onClick={openPartialPaymentModal}
-                                className="btn btn-primary"
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.25rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#f59e0b', color: 'white', border: 'none', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-200 bg-amber-50 text-xs font-semibold text-amber-800 hover:bg-amber-100/80 shadow-xs transition-colors"
                             >
-                                Tiếp Tục Thu Một Phần
+                                Tiếp Tục Thu
                             </button>
                             <button
                                 onClick={handleFullPayment}
-                                className="btn btn-primary"
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.25rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#10b981', color: 'white', border: 'none', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[var(--primary)] text-xs font-semibold text-white hover:opacity-90 shadow-xs transition-all"
                             >
                                 Đã Thu Đủ Tiền
                             </button>
@@ -326,88 +311,90 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                     {invoice.status !== 'CANCELLED' && (
                         <button
                             onClick={handleCancel}
-                            className="btn btn-secondary hover:bg-red-50"
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.25rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: 'white', color: '#dc2626', border: '1px solid #fecaca', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-200 bg-rose-50 text-xs font-semibold text-rose-700 hover:bg-rose-100 shadow-xs transition-colors"
                         >
-                            <XCircle size={18} /> Hủy Hóa Đơn
+                            <XCircle size={14} />
+                            Hủy Hóa Đơn
                         </button>
                     )}
                     {invoice.status === 'CANCELLED' && (
                         <button
                             onClick={handleRestore}
-                            className="btn btn-primary"
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.25rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#3b82f6', color: 'white', border: 'none', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-sky-600 text-xs font-semibold text-white hover:bg-sky-700 shadow-xs transition-all"
                         >
-                            <Undo2 size={18} /> Khôi Phục Hóa Đơn
+                            <Undo2 size={14} />
+                            Khôi Phục
                         </button>
                     )}
                 </div>
             </div>
 
             {isOverdue && (
-                <div className="animate-priority-urgent-bg" style={{ border: '2px solid #ef4444', borderRadius: 'var(--radius, 1rem)', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1.25rem', color: '#991b1b', boxShadow: '0 0 15px rgba(239, 68, 68, 0.4)', marginBottom: '2rem', backgroundColor: '#fef2f2', animation: 'priority-urgent-bg-blink 1.5s linear infinite' }}>
-                    <AlertTriangle size={32} />
+                <div className="rounded-xl p-4 flex items-center gap-3 bg-rose-50 border border-rose-200 text-rose-900 shadow-xs">
+                    <AlertTriangle size={20} className="text-rose-600 shrink-0" />
                     <div>
-                        <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>HÓA ĐƠN ĐÃ QUÁ HẠN THANH TOÁN</h3>
-                        <p style={{ margin: 0, fontSize: '1rem', fontWeight: 600, marginTop: '0.25rem' }}>Hóa đơn này đã quá hạn thanh toán ({formatDate(invoice.dueDate)}). Vui lòng ưu tiên xử lý và thu hồi công nợ.</p>
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-rose-800">Hóa đơn đã quá hạn thanh toán</h3>
+                        <p className="text-xs text-rose-700 mt-0.5 font-medium">Hạn thanh toán là {formatDate(invoice.dueDate)}. Vui lòng ưu tiên xử lý và thu hồi công nợ.</p>
                     </div>
                 </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Left Column: Details & Tabs */}
-                <div className="lg:col-span-2 flex flex-col gap-6">
+                <div className="lg:col-span-2 space-y-6">
 
-                    {/* Summary Card */}
-                    <div style={{ backgroundColor: 'white', borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)', overflow: 'hidden' }}>
-                        <div style={{ padding: '1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f8fafc' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <div style={{ width: '40px', height: '40px', borderRadius: '0.5rem', backgroundColor: '#e0e7ff', color: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <FileText size={20} />
+                    {/* Summary Info Card */}
+                    <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+                        <div className="p-4 sm:p-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-[var(--primary)] flex items-center justify-center border border-emerald-200/60">
+                                    <FileText size={16} />
                                 </div>
                                 <div>
-                                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: '#0f172a' }}>Thông tin chung</h3>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.25rem' }}>
+                                    <h3 className="text-sm font-semibold text-slate-900">Thông tin chung</h3>
+                                    <div className="flex items-center gap-3 mt-0.5">
                                         {invoice.creator && (
-                                            <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                                <User size={14} /> Lập bởi: {invoice.creator.name}
+                                            <p className="text-[11px] text-slate-500 flex items-center gap-1">
+                                                <User size={12} className="text-slate-400" /> Lập bởi: {invoice.creator.name}
                                             </p>
                                         )}
-                                        <p style={{ margin: 0, fontSize: '0.875rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                            <User size={14} /> Người bán: {invoice.salesperson?.name || invoice.creator?.name || '---'}
+                                        <p className="text-[11px] text-[var(--primary)] font-medium flex items-center gap-1">
+                                            <User size={12} /> Người bán: {invoice.salesperson?.name || invoice.creator?.name || '---'}
                                         </p>
                                     </div>
                                 </div>
                             </div>
-                            <div style={{ textAlign: 'right' }}>
-                                <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.25rem' }}>Tổng thanh toán</div>
-                                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a' }}>{formatMoney(invoice.totalAmount)}</div>
+                            <div className="text-right">
+                                <div className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Tổng thanh toán</div>
+                                <div className="text-base font-bold text-slate-900 font-mono">{formatMoney(invoice.totalAmount)}</div>
                             </div>
                         </div>
 
-                        <div className="p-4 sm:p-6">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                <div>
-                                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Khách Hàng</div>
-                                    <div style={{ fontSize: '1rem', fontWeight: 500, color: '#0f172a' }}>{invoice.customer?.name}</div>
-                                    <a href={`/customers/${invoice.customerId}`} style={{ fontSize: '0.875rem', color: '#3b82f6', textDecoration: 'none', display: 'inline-block', marginTop: '0.25rem' }}>Xem hồ sơ khách hàng →</a>
+                        <div className="p-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="p-3 bg-slate-50/60 rounded-lg border border-slate-100">
+                                    <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Khách Hàng</div>
+                                    <div className="text-xs font-semibold text-slate-800">{invoice.customer?.name}</div>
+                                    <Link href={`/customers/${invoice.customerId}`} className="text-[11px] text-[var(--primary)] hover:underline font-medium inline-block mt-1">
+                                        Xem hồ sơ khách hàng →
+                                    </Link>
                                 </div>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50/60 rounded-lg border border-slate-100">
                                     <div>
-                                        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Ngày Lập</div>
-                                        <div style={{ fontSize: '0.875rem', color: '#334155' }}>{formatDate(invoice.date)}</div>
+                                        <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Ngày Lập</div>
+                                        <div className="text-xs font-medium text-slate-700">{formatDate(invoice.date)}</div>
                                     </div>
                                     <div>
-                                        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Hạn Thanh Toán</div>
-                                        <div style={{ fontSize: '0.875rem', color: '#334155' }}>{formatDate(invoice.dueDate)}</div>
+                                        <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Hạn Thanh Toán</div>
+                                        <div className="text-xs font-medium text-slate-700">{formatDate(invoice.dueDate)}</div>
                                     </div>
                                 </div>
 
                                 {invoice.notes && (
-                                    <div style={{ gridColumn: '1 / -1', marginTop: '0.5rem', padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '0.5rem', border: '1px dashed #cbd5e1' }}>
-                                        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>Ghi chú Hóa Đơn</div>
-                                        <div style={{ fontSize: '0.875rem', color: '#334155', whiteSpace: 'pre-wrap' }}>{invoice.notes}</div>
+                                    <div className="col-span-full p-3 bg-slate-50/50 rounded-lg border border-slate-100">
+                                        <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Ghi chú Hóa Đơn</div>
+                                        <div className="text-xs text-slate-600 leading-relaxed whitespace-pre-wrap">{invoice.notes}</div>
                                     </div>
                                 )}
                             </div>
@@ -415,139 +402,123 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                     </div>
 
                     {/* Tabs Area */}
-                    <div style={{ backgroundColor: 'white', borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
-                        <div className="flex overflow-x-auto whitespace-nowrap border-b border-gray-200 px-2 pb-1 sm:pb-0 scrollbar-hide">
+                    <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+                        <div className="flex border-b border-slate-100 bg-slate-50/50 px-4 pt-2">
                             {tabs.map(tab => (
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id as any)}
-                                    style={{
-                                        display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '1rem 1.25rem',
-                                        fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer',
-                                        backgroundColor: 'transparent',
-                                        border: 'none',
-                                        borderBottom: activeTab === tab.id ? '2px solid #4f46e5' : '2px solid transparent',
-                                        color: activeTab === tab.id ? '#4f46e5' : '#64748b',
-                                        transition: 'all 0.2s'
-                                    }}
+                                    className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-all ${
+                                        activeTab === tab.id
+                                            ? 'border-[var(--primary)] text-[var(--primary)] bg-white rounded-t-lg shadow-2xs'
+                                            : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100/50'
+                                    }`}
                                 >
                                     {tab.icon}
                                     {tab.label}
-                                    <span style={{
-                                        backgroundColor: activeTab === tab.id ? '#e0e7ff' : '#f1f5f9',
-                                        color: activeTab === tab.id ? '#4f46e5' : '#64748b',
-                                        padding: '0.125rem 0.5rem', borderRadius: '1rem', fontSize: '0.75rem', fontWeight: 600
-                                    }}>
+                                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                                        activeTab === tab.id ? 'bg-emerald-50 text-[var(--primary)]' : 'bg-slate-200/60 text-slate-600'
+                                    }`}>
                                         {tab.count}
                                     </span>
                                 </button>
                             ))}
                             <button
                                 onClick={() => setActiveTab('emailLogs')}
-                                style={{
-                                    display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '1rem 1.25rem',
-                                    fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer',
-                                    backgroundColor: 'transparent',
-                                    border: 'none',
-                                    borderBottom: activeTab === 'emailLogs' ? '2px solid #4f46e5' : '2px solid transparent',
-                                    color: activeTab === 'emailLogs' ? '#4f46e5' : '#64748b',
-                                    transition: 'all 0.2s'
-                                }}
+                                className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-all ${
+                                    activeTab === 'emailLogs'
+                                        ? 'border-[var(--primary)] text-[var(--primary)] bg-white rounded-t-lg shadow-2xs'
+                                        : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100/50'
+                                }`}
                             >
                                 <Mail size={16} />
                                 Lịch Sử Email
-                                <span style={{
-                                    backgroundColor: activeTab === 'emailLogs' ? '#e0e7ff' : '#f1f5f9',
-                                    color: activeTab === 'emailLogs' ? '#4f46e5' : '#64748b',
-                                    padding: '0.125rem 0.5rem', borderRadius: '1rem', fontSize: '0.75rem', fontWeight: 600
-                                }}>
+                                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                                    activeTab === 'emailLogs' ? 'bg-emerald-50 text-[var(--primary)]' : 'bg-slate-200/60 text-slate-600'
+                                }`}>
                                     {invoice.emailLogs?.length || 0}
                                 </span>
                             </button>
                             <button
                                 onClick={() => setActiveTab('managers')}
-                                style={{
-                                    display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '1rem 1.25rem',
-                                    fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer',
-                                    backgroundColor: 'transparent',
-                                    border: 'none',
-                                    borderBottom: activeTab === 'managers' ? '2px solid #4f46e5' : '2px solid transparent',
-                                    color: activeTab === 'managers' ? '#4f46e5' : '#64748b',
-                                    transition: 'all 0.2s'
-                                }}
+                                className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-all ${
+                                    activeTab === 'managers'
+                                        ? 'border-[var(--primary)] text-[var(--primary)] bg-white rounded-t-lg shadow-2xs'
+                                        : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100/50'
+                                }`}
                             >
                                 <UserCheck size={16} />
                                 Người Phụ Trách
-                                <span style={{
-                                    backgroundColor: activeTab === 'managers' ? '#e0e7ff' : '#f1f5f9',
-                                    color: activeTab === 'managers' ? '#4f46e5' : '#64748b',
-                                    padding: '0.125rem 0.5rem', borderRadius: '1rem', fontSize: '0.75rem', fontWeight: 600
-                                }}>
+                                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                                    activeTab === 'managers' ? 'bg-emerald-50 text-[var(--primary)]' : 'bg-slate-200/60 text-slate-600'
+                                }`}>
                                     {invoice.managers?.length || 0}
                                 </span>
                             </button>
                         </div>
 
-                        <div style={{ padding: '1.5rem' }}>
+                        <div className="p-5">
                             {activeTab === 'items' && (
-                                <div className="overflow-x-auto w-full">
-                                    <table className="w-full min-w-[700px] border-collapse text-sm">
+                                <div className="overflow-x-auto w-full rounded-lg border border-slate-100">
+                                    <table className="w-full text-left text-xs border-collapse">
                                         <thead>
-                                            <tr style={{ borderBottom: '2px solid #e2e8f0', textAlign: 'left', color: '#64748b' }}>
-                                                <th style={{ padding: '0.75rem 0.5rem', fontWeight: 600 }}>Tên Sản phẩm / Dịch vụ</th>
-                                                <th style={{ padding: '0.75rem 0.5rem', fontWeight: 600, textAlign: 'center' }}>Số Lượng</th>
-                                                <th style={{ padding: '0.75rem 0.5rem', fontWeight: 600, textAlign: 'right' }}>Đơn Giá</th>
-                                                <th style={{ padding: '0.75rem 0.5rem', fontWeight: 600, textAlign: 'center' }}>Thuế suất</th>
-                                                <th style={{ padding: '0.75rem 0.5rem', fontWeight: 600, textAlign: 'right' }}>Thành Tiền</th>
+                                            <tr className="bg-slate-50/80 text-slate-600 border-b border-slate-200">
+                                                <th className="py-2.5 px-3.5 font-semibold">Tên Sản phẩm / Dịch vụ</th>
+                                                <th className="py-2.5 px-3.5 font-semibold text-center">Số Lượng</th>
+                                                <th className="py-2.5 px-3.5 font-semibold text-right">Đơn Giá</th>
+                                                <th className="py-2.5 px-3.5 font-semibold text-center">Thuế suất</th>
+                                                <th className="py-2.5 px-3.5 font-semibold text-right">Thành Tiền</th>
                                             </tr>
                                         </thead>
-                                        <tbody>
-                                            {invoice.items?.map((item: any, idx: number) => (
-                                                <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: item.isSubItem ? '#f8fafc' : 'transparent' }}>
-                                                    <td style={{ padding: '1rem 0.5rem', paddingLeft: item.isSubItem ? '2.5rem' : '0.5rem', color: item.isSubItem ? '#64748b' : '#0f172a', fontWeight: 500 }}>
-                                                        <div className="flex items-center gap-2">
-                                                            {item.isSubItem && <span className="text-gray-400">↳</span>}
-                                                            <span>{item.customName || item.product?.name || `Sản phẩm tự do`}</span>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {invoice.items?.map((item: any) => (
+                                                <tr key={item.id} className={`hover:bg-slate-50/50 transition-colors ${item.isSubItem ? 'bg-slate-50/30' : ''}`}>
+                                                    <td className={`py-3 px-3.5 font-medium ${item.isSubItem ? 'pl-8 text-slate-600' : 'text-slate-800'}`}>
+                                                        <div className="flex items-center gap-1.5">
+                                                            {item.isSubItem && <span className="text-slate-400 text-xs">↳</span>}
+                                                            <span className="font-semibold">{item.customName || item.product?.name || `Sản phẩm tự do`}</span>
                                                         </div>
-                                                        {item.product?.sku && <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>SKU: {item.product.sku}</div>}
-                                                        {item.description && <div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.25rem', whiteSpace: 'pre-wrap', fontWeight: 400 }}>{item.description}</div>}
+                                                        {item.product?.sku && <div className="text-[11px] font-mono text-slate-400 mt-0.5">SKU: {item.product.sku}</div>}
+                                                        {item.description && <div className="text-xs text-slate-500 mt-1 whitespace-pre-wrap font-normal leading-relaxed">{item.description}</div>}
                                                     </td>
-                                                    <td style={{ padding: '1rem 0.5rem', textAlign: 'center', color: '#334155' }}>
-                                                        {item.quantity} <span style={{ fontSize: '0.75rem', color: '#64748b', marginLeft: '0.25rem' }}>{item.unit || item.product?.unit || ''}</span>
+                                                    <td className="py-3 px-3.5 text-center text-slate-600 font-medium">
+                                                        {item.quantity} <span className="text-[11px] text-slate-400">{item.unit || item.product?.unit || ''}</span>
                                                     </td>
-                                                    <td style={{ padding: '1rem 0.5rem', textAlign: 'right', color: '#334155' }}>{formatMoney(item.unitPrice)}</td>
-                                                    <td style={{ padding: '1rem 0.5rem', textAlign: 'center' }}>
+                                                    <td className="py-3 px-3.5 text-right font-mono text-slate-700">{formatMoney(item.unitPrice)}</td>
+                                                    <td className="py-3 px-3.5 text-center">
                                                         <TaxBadge rate={item.taxRate} />
                                                     </td>
-                                                    <td style={{ padding: '1rem 0.5rem', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>{formatMoney(item.totalPrice)}</td>
+                                                    <td className="py-3 px-3.5 text-right font-mono font-semibold text-slate-900">{formatMoney(item.totalPrice)}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
                                     </table>
 
                                     {/* Totals Box */}
-                                    <div className="mt-8 flex justify-end w-full">
-                                        <div className="w-full sm:w-80 bg-slate-50 rounded-xl p-6 border border-slate-200">
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', fontSize: '0.875rem', color: '#475569' }}>
+                                    <div className="mt-6 flex justify-end">
+                                        <div className="w-full sm:w-80 bg-slate-50/70 rounded-xl p-4 border border-slate-200/80 space-y-2.5">
+                                            <div className="flex justify-between text-xs text-slate-600">
                                                 <span>Tổng tiền hàng:</span>
-                                                <span style={{ fontWeight: 500, color: '#0f172a' }}>{formatMoney(invoice.subTotal)}</span>
+                                                <span className="font-mono font-medium text-slate-800">{formatMoney(invoice.subTotal)}</span>
                                             </div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', fontSize: '0.875rem', color: '#475569' }}>
+                                            <div className="flex justify-between text-xs text-slate-600">
                                                 <span>Tổng thuế GTGT:</span>
-                                                <span style={{ fontWeight: 500, color: '#0f172a' }}>{formatMoney(invoice.taxAmount)}</span>
+                                                <span className="font-mono font-medium text-slate-800">{formatMoney(invoice.taxAmount)}</span>
                                             </div>
-                                            <div style={{ height: '1px', backgroundColor: '#cbd5e1', margin: '1rem 0' }}></div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                                                <span style={{ fontWeight: 600, color: '#0f172a' }}>Tổng Hóa Đơn:</span>
-                                                <span style={{ fontSize: '1.25rem', fontWeight: 700, color: '#e11d48' }}>{formatMoney(invoice.totalAmount)}</span>
+                                            <div className="h-px bg-slate-200 my-2"></div>
+                                            <div className="flex justify-between items-center text-xs font-semibold text-slate-900">
+                                                <span>Tổng Hóa Đơn:</span>
+                                                <span className="font-mono text-sm font-bold text-slate-900">{formatMoney(invoice.totalAmount)}</span>
                                             </div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', fontSize: '0.875rem' }}>
-                                                <span style={{ color: '#475569' }}>Đã Thu Trước Đó:</span>
-                                                <span style={{ fontWeight: 600, color: '#059669' }}>{formatMoney(invoice.paidAmount || 0)}</span>
+                                            <div className="flex justify-between items-center text-xs text-slate-600">
+                                                <span>Đã Thu Trước Đó:</span>
+                                                <span className="font-mono font-semibold text-emerald-700">{formatMoney(invoice.paidAmount || 0)}</span>
                                             </div>
-                                            <div style={{ borderTop: '2px dashed #cbd5e1', paddingTop: '0.75rem', marginTop: '0.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <span style={{ fontWeight: 700, color: '#0f172a' }}>Còn Phải Thu:</span>
-                                                <span style={{ fontSize: '1.25rem', fontWeight: 800, color: remainingAmount > 0 ? '#e11d48' : '#059669' }}>{formatMoney(remainingAmount)}</span>
+                                            <div className="border-t border-dashed border-slate-200 pt-2.5 flex justify-between items-center">
+                                                <span className="text-xs font-bold text-slate-900">Còn Phải Thu:</span>
+                                                <span className={`font-mono text-sm font-bold ${remainingAmount > 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
+                                                    {formatMoney(remainingAmount)}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>

@@ -13,6 +13,8 @@ import { DocumentPreviewModal } from '@/app/components/ui/DocumentPreviewModal';
 import { CheckCircle2, DollarSign } from 'lucide-react';
 import { PurchaseBillActivityLog } from '@/app/components/purchasing/PurchaseBillActivityLog';
 
+import { StatusBadge } from '@/app/components/ui/StatusBadge';
+
 export function PurchaseBillDetailClient({ bill, tasks, users, warehouses }: { bill: any, tasks: any[], users: any[], warehouses?: any[] }) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'items' | 'payments' | 'tasks' | 'logs'>('items');
@@ -162,87 +164,71 @@ export function PurchaseBillDetailClient({ bill, tasks, users, warehouses }: { b
         }
     };
 
-
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'DRAFT': return <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">Lưu Nháp</span>;
-            case 'APPROVED': return <span className="px-2 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">Đã Duyệt (Nợ)</span>;
-            case 'PARTIAL_PAID': return <span className="px-2 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">Thanh toán 1 phần</span>;
-            case 'PAID': return <span className="px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">Đã Thanh Toán Tối Đa</span>;
-            default: return <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">{status}</span>;
-        }
-    };
-
     const tabs = [
-        { id: 'items', label: 'Sản phẩm Nhập', icon: <ShoppingCart size={18} />, count: localBill.items?.length || 0 },
-        { id: 'payments', label: 'Thanh Toán (Chi)', icon: <CreditCard size={18} />, count: localBill.allocations?.length || 0 },
-        { id: 'logs', label: 'Lịch sử & Điều chỉnh', icon: <Activity size={18} />, count: localBill.activityLogs?.length || 0 },
-        { id: 'tasks', label: 'Công việc', icon: <CheckSquare size={18} />, count: tasks.length },
+        { id: 'items', label: 'Sản phẩm Nhập', icon: <ShoppingCart size={15} />, count: localBill.items?.length || 0 },
+        { id: 'payments', label: 'Thanh Toán (Chi)', icon: <CreditCard size={15} />, count: localBill.allocations?.length || 0 },
+        { id: 'logs', label: 'Lịch sử & Điều chỉnh', icon: <Activity size={15} />, count: localBill.activityLogs?.length || 0 },
+        { id: 'tasks', label: 'Công việc', icon: <CheckSquare size={15} />, count: tasks.length },
     ] as const;
 
     return (
-        <div className="p-4 md:p-8 max-w-full mx-auto font-sans bg-slate-50 min-h-screen">
-            <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 mb-8">
-                <div className="flex items-start sm:items-center gap-4">
+        <div className="p-4 md:p-6 max-w-full mx-auto font-sans bg-slate-50 min-h-screen">
+            <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 mb-6">
+                <div className="flex items-center gap-3">
                     <button
                         onClick={() => router.back()}
-                        className="flex items-center justify-center w-10 h-10 rounded-full border border-gray-200 bg-white text-gray-500 cursor-pointer transition-all hover:bg-gray-100 hover:text-gray-900 shrink-0"
+                        className="w-9 h-9 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 flex items-center justify-center transition-all shadow-xs shrink-0 cursor-pointer"
                     >
-                        <ArrowLeft size={20} />
+                        <ArrowLeft size={18} />
                     </button>
                     <div>
-                        <div className="flex flex-wrap items-center gap-3 mb-1">
-                            <h1 className="text-xl md:text-2xl font-bold text-gray-900 m-0 tracking-tight">
+                        <div className="flex flex-wrap items-center gap-2.5 mb-0.5">
+                            <h1 className="text-lg font-bold text-slate-900 m-0 tracking-tight">
                                 Hóa Đơn {bill.code}
                             </h1>
-                            {getStatusBadge(bill.status)}
+                            <StatusBadge status={bill.status} />
                         </div>
-                        <p className="text-gray-500 m-0 text-sm">Quản lý chi tiết hóa đơn, xác nhận tiền chi trả cho nhà cung cấp.</p>
+                        <p className="text-slate-500 m-0 text-xs">Quản lý chi tiết hóa đơn, xác nhận tiền chi trả cho nhà cung cấp.</p>
                     </div>
                 </div>
 
-                <div className="flex flex-wrap gap-3 w-full lg:w-auto">
+                <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
                     <button
                         onClick={handleCopyPublicLink}
-                        className="btn btn-secondary flex-1 sm:flex-none justify-center"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: 'white', color: '#475569', border: '1px solid #cbd5e1', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition-colors shadow-xs cursor-pointer h-[34px]"
                     >
-                        <Copy size={16} /> {copied ? 'Đã sao chép' : 'Copy Link Gửi KH'}
+                        <Copy size={14} /> {copied ? 'Đã sao chép' : 'Copy Link Gửi KH'}
                     </button>
                     <Link
                         href={`/public/purchasing/bills/${bill.id}`}
                         target="_blank"
-                        className="btn btn-secondary flex-1 sm:flex-none justify-center"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#f1f5f9', color: '#3b82f6', border: '1px solid #bfdbfe', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200 transition-colors shadow-xs cursor-pointer no-underline h-[34px]"
                     >
-                        <ExternalLink size={16} /> Xem Bản In
+                        <ExternalLink size={14} /> Xem Bản In
                     </Link>
                     {localBill.status !== 'CANCELLED' && (
                         <Link
                             href={`/purchasing/bills?edit=${localBill.id}`}
-                            className="btn btn-secondary flex-1 sm:flex-none justify-center hover:bg-slate-100 transition-colors"
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition-colors shadow-xs cursor-pointer no-underline h-[34px]"
                         >
-                            <Edit2 size={16} /> Chỉnh Sửa
+                            <Edit2 size={14} /> Chỉnh Sửa
                         </Link>
                     )}
                     {localBill.status === 'DRAFT' && (
                         <button
                             onClick={() => setIsApproveModalOpen(true)}
-                            className="btn btn-primary"
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.25rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#10b981', color: 'white', border: 'none', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white border border-emerald-600 hover:bg-emerald-700 transition-colors shadow-xs cursor-pointer h-[34px]"
                         >
-                            <CheckCircle2 size={18} /> Duyệt Nợ & Nhập Kho
+                            <CheckCircle2 size={15} /> Duyệt Nợ & Nhập Kho
                         </button>
                     )}
                     {localBill.status === 'APPROVED' && (
                         <button
                             onClick={handleCancel}
                             disabled={isSubmitting}
-                            className="btn btn-secondary w-full sm:w-auto justify-center"
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: 'white', color: '#ea580c', border: '1px solid #fdba74', cursor: isSubmitting ? 'not-allowed' : 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white text-rose-600 border border-rose-200 hover:bg-rose-50 transition-colors shadow-xs cursor-pointer h-[34px] disabled:opacity-50"
                         >
-                            <XCircle size={16} /> {isSubmitting ? 'Đang xử lý...' : 'Hủy Hóa Đơn'}
+                            <XCircle size={14} /> {isSubmitting ? 'Đang xử lý...' : 'Hủy Hóa Đơn'}
                         </button>
                     )}
                     {localBill.status !== 'DRAFT' && localBill.status !== 'CANCELLED' && remainingAmount > 0 && (
@@ -252,17 +238,15 @@ export function PurchaseBillDetailClient({ bill, tasks, users, warehouses }: { b
                                     setPaymentData({ amount: remainingAmount, method: 'BANK_TRANSFER', notes: `Chi tiền thanh toán hóa đơn ${localBill.code}` });
                                     setIsPaymentModalOpen(true);
                                 }}
-                                className="btn btn-primary w-full sm:w-auto justify-center"
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.25rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: '#10b981', color: 'white', border: 'none', cursor: 'pointer', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white border border-emerald-600 hover:bg-emerald-700 transition-colors shadow-xs cursor-pointer h-[34px]"
                             >
-                                <CreditCard size={18} /> Chi Tiền Thanh Toán
+                                <CreditCard size={15} /> Chi Tiền Thanh Toán
                             </button>
                             <Link
                                 href={`/purchasing/payments?supplierId=${localBill.supplierId}`}
-                                className="btn btn-secondary w-full sm:w-auto justify-center"
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: 'white', color: '#475569', border: '1px solid #cbd5e1', textDecoration: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition-colors shadow-xs cursor-pointer no-underline h-[34px]"
                             >
-                                <ExternalLink size={16} /> DS Phiếu Chi
+                                <ExternalLink size={14} /> DS Phiếu Chi
                             </Link>
                         </>
                     )}
@@ -270,30 +254,30 @@ export function PurchaseBillDetailClient({ bill, tasks, users, warehouses }: { b
             </div>
 
             {isOverdue && (
-                <div className="animate-overdue-bg" style={{ border: '1px solid #fde047', borderRadius: 'var(--radius, 1rem)', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1.25rem', color: '#854d0e', marginBottom: '2rem', backgroundColor: '#fefce8' }}>
-                    <AlertTriangle size={32} className="text-yellow-500" />
+                <div className="animate-overdue-bg" style={{ border: '1px solid #fde047', borderRadius: '0.75rem', padding: '1rem', display: 'flex', alignItems: 'center', gap: '1rem', color: '#854d0e', marginBottom: '1.5rem', backgroundColor: '#fefce8' }}>
+                    <AlertTriangle size={24} className="text-yellow-500 shrink-0" />
                     <div>
-                        <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700 }}>HÓA ĐƠN MUA HÀNG ĐÃ ĐẾN HẠN THANH TOÁN</h3>
-                        <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 500, marginTop: '0.25rem' }}>Hóa đơn này đã đến hạn thanh toán cho Nhà Cung Cấp ({formatDate(localBill.dueDate)}). Vui lòng ưu tiên tạo Lệnh Chi để quyết toán công nợ.</p>
+                        <h3 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 700 }}>HÓA ĐƠN MUA HÀNG ĐÃ ĐẾN HẠN THANH TOÁN</h3>
+                        <p style={{ margin: 0, fontSize: '0.8125rem', fontWeight: 500, marginTop: '0.25rem' }}>Hóa đơn này đã đến hạn thanh toán cho Nhà Cung Cấp ({formatDate(localBill.dueDate)}). Vui lòng ưu tiên tạo Lệnh Chi để quyết toán công nợ.</p>
                     </div>
                 </div>
             )}
 
-            <div className="flex flex-col xl:flex-row gap-8 w-full items-start">
+            <div className="flex flex-col xl:flex-row gap-6 w-full items-start">
                 {/* Left Column: Details & Tabs */}
-                <div className="flex flex-col gap-8 flex-1 min-w-0 w-full">
+                <div className="flex flex-col gap-6 flex-1 min-w-0 w-full">
 
                     {/* Summary Card */}
-                    <div className="bg-white rounded-2xl p-4 md:p-6 border border-gray-200 shadow-sm">
-                        <h2 className="text-lg font-semibold text-slate-800 mb-5 flex items-center gap-2">
-                            <FileText size={20} className="text-indigo-500" /> Thông tin chung
+                    <div className="bg-white rounded-xl p-4 md:p-5 border border-slate-200 shadow-xs">
+                        <h2 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <FileText size={18} className="text-emerald-600" /> Thông tin chung
                         </h2>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             <div className="sm:col-span-2">
                                 <p className="text-xs uppercase font-semibold text-slate-400 mb-1">Nhà Cung Cấp</p>
                                 <div className="flex items-center gap-2 overflow-hidden">
                                     <Building size={16} className="text-slate-500 shrink-0" />
-                                    <Link href={`/suppliers/${bill.supplierId}`} className="font-semibold text-indigo-600 no-underline hover:underline text-base truncate">
+                                    <Link href={`/suppliers/${bill.supplierId}`} className="font-semibold text-slate-800 hover:text-emerald-600 no-underline text-sm truncate">
                                         {bill.supplier?.name}
                                     </Link>
                                 </div>
@@ -301,33 +285,33 @@ export function PurchaseBillDetailClient({ bill, tasks, users, warehouses }: { b
                             <div>
                                 <p className="text-xs uppercase font-semibold text-slate-400 mb-1">Tham Chiếu Đơn Hàng</p>
                                 {bill.order ? (
-                                    <Link href={`/purchasing/orders/${bill.order.id}`} className="font-semibold text-indigo-600 no-underline hover:underline text-base">
+                                    <Link href={`/purchasing/orders/${bill.order.id}`} className="font-semibold text-emerald-600 font-mono no-underline hover:underline text-sm">
                                         {bill.order.code}
                                     </Link>
-                                ) : <span className="text-slate-400 text-base">-- Không có --</span>}
+                                ) : <span className="text-slate-400 text-sm">-- Không có --</span>}
                             </div>
                             <div>
                                 <p className="text-xs uppercase font-semibold text-slate-400 mb-1">Ngày Hóa Đơn</p>
-                                <div className="flex items-center gap-2 text-slate-700 font-medium text-base">
-                                    <Calendar size={16} className="text-slate-500" />
+                                <div className="flex items-center gap-2 text-slate-700 font-medium text-sm">
+                                    <Calendar size={15} className="text-slate-500" />
                                     {formatDate(bill.date)}
                                 </div>
                             </div>
-                            <div className="sm:col-span-2 lg:col-span-4 mt-2">
-                                <p className="text-xs uppercase font-semibold text-slate-400 mb-3">Tình Trạng Kế Toán</p>
-                                <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
+                            <div className="sm:col-span-2 lg:col-span-4 mt-1 pt-3 border-t border-slate-100">
+                                <p className="text-xs uppercase font-semibold text-slate-400 mb-2">Tình Trạng Kế Toán</p>
+                                <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
                                     <div>
-                                        <p className="m-0 font-bold text-slate-800 text-lg">{formatMoney(bill.totalAmount)}</p>
+                                        <p className="m-0 font-bold text-slate-900 text-base">{formatMoney(bill.totalAmount)}</p>
                                         <p className="m-0 text-xs text-slate-500">Cần thanh toán</p>
                                     </div>
                                     <div className="text-slate-200 hidden sm:block">|</div>
                                     <div>
-                                        <p className="m-0 font-bold text-emerald-500 text-lg">{formatMoney(bill.paidAmount)}</p>
+                                        <p className="m-0 font-bold text-emerald-600 text-base">{formatMoney(bill.paidAmount)}</p>
                                         <p className="m-0 text-xs text-slate-500">Đã chi (Đã thanh toán)</p>
                                     </div>
                                     <div className="text-slate-200 hidden sm:block">|</div>
                                     <div>
-                                        <p className="m-0 font-bold text-red-500 text-lg">{formatMoney(bill.totalAmount - bill.paidAmount)}</p>
+                                        <p className="m-0 font-bold text-rose-600 text-base">{formatMoney(bill.totalAmount - bill.paidAmount)}</p>
                                         <p className="m-0 text-xs text-slate-500">Dư nợ</p>
                                     </div>
                                 </div>
@@ -336,27 +320,27 @@ export function PurchaseBillDetailClient({ bill, tasks, users, warehouses }: { b
                             {localBill.notes && (
                                 <div style={{ gridColumn: '1 / -1' }}>
                                     <p style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600, color: '#94a3b8', marginBottom: '0.25rem' }}>Ghi Chú</p>
-                                    <p style={{ margin: 0, color: '#475569', fontSize: '0.875rem', backgroundColor: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', whiteSpace: 'pre-wrap' }}>{localBill.notes}</p>
+                                    <p style={{ margin: 0, color: '#475569', fontSize: '0.8125rem', backgroundColor: '#f8fafc', padding: '0.625rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', whiteSpace: 'pre-wrap' }}>{localBill.notes}</p>
                                 </div>
                             )}
                         </div>
                     </div>
 
                     {/* Tabs area */}
-                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm w-full overflow-hidden">
-                        <div className="flex border-b border-gray-200 overflow-x-auto hide-scrollbar px-2">
+                    <div className="bg-white rounded-xl border border-slate-200 shadow-xs w-full overflow-hidden">
+                        <div className="flex border-b border-slate-200 overflow-x-auto hide-scrollbar px-2 bg-slate-50/50">
                             {tabs.map((tab) => {
                                 const isActive = activeTab === tab.id;
                                 return (
                                     <button
                                         key={tab.id}
                                         onClick={() => setActiveTab(tab.id as any)}
-                                        className={`flex items-center justify-center gap-2 px-6 py-4 border-none bg-transparent cursor-pointer text-sm whitespace-nowrap transition-all relative
-                                            ${isActive ? 'font-semibold text-indigo-600 border-b-2 border-indigo-600' : 'font-medium text-slate-500 border-b-2 border-transparent hover:text-slate-700'}`}
+                                        className={`flex items-center justify-center gap-2 px-4 py-3 border-none bg-transparent cursor-pointer text-xs sm:text-sm whitespace-nowrap transition-all relative font-medium
+                                            ${isActive ? 'font-semibold text-emerald-700 border-b-2 border-emerald-600 bg-white' : 'text-slate-600 border-b-2 border-transparent hover:text-slate-900'}`}
                                     >
-                                        {tab.icon} {tab.label}
-                                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold
-                                            ${isActive ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-500'}`}>
+                                        <span className={isActive ? 'text-emerald-600' : 'text-slate-400'}>{tab.icon}</span> {tab.label}
+                                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold
+                                            ${isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
                                             {tab.count}
                                         </span>
                                     </button>

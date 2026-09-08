@@ -7,16 +7,14 @@ interface TagDisplayProps {
 }
 
 const colorPairs = [
-    { bg: '#eff6ff', text: '#1d4ed8', border: '#bfdbfe' }, // blue
-    { bg: '#ecfdf5', text: '#047857', border: '#a7f3d0' }, // emerald
-    { bg: '#fffbeb', text: '#b45309', border: '#fde68a' }, // amber
-    { bg: '#fff1f2', text: '#be123c', border: '#fecdd3' }, // rose
-    { bg: '#faf5ff', text: '#7e22ce', border: '#e9d5ff' }, // purple
-    { bg: '#eef2ff', text: '#4338ca', border: '#c7d2fe' }, // indigo
-    { bg: '#ecfeff', text: '#0e7490', border: '#a5f3fc' }, // cyan
-    { bg: '#fdf4ff', text: '#a21caf', border: '#f5d0fe' }, // fuchsia
-    { bg: '#f0f9ff', text: '#0369a1', border: '#bae6fd' }, // sky
-    { bg: '#f0fdfa', text: '#0f766e', border: '#99f6e4' }, // teal
+    { bg: '#f1f5f9', text: '#334155', border: '#e2e8f0' }, // slate
+    { bg: '#eff6ff', text: '#1e40af', border: '#dbeafe' }, // blue
+    { bg: '#f0fdf4', text: '#166534', border: '#dcfce7' }, // emerald
+    { bg: '#fff7ed', text: '#9a3412', border: '#ffedd5' }, // orange
+    { bg: '#faf5ff', text: '#6b21a8', border: '#f3e8ff' }, // purple
+    { bg: '#f0fdfa', text: '#115e59', border: '#ccfbf1' }, // teal
+    { bg: '#fdf2f8', text: '#9d174d', border: '#fce7f3' }, // pink
+    { bg: '#f8fafc', text: '#475569', border: '#cbd5e1' }, // zinc
 ];
 
 function getHash(str: string): number {
@@ -38,13 +36,13 @@ export function TagDisplay({ tagsString, className = '', size = 'sm' }: TagDispl
     if (tags.length === 0) return null;
 
     const sizeStyles = {
-        sm: { fontSize: '11px', padding: '2px 8px', lineHeight: '1.2' },
-        md: { fontSize: '12px', padding: '4px 10px', lineHeight: '1.4' },
-        lg: { fontSize: '14px', padding: '6px 12px', lineHeight: '1.5' },
+        sm: { fontSize: '11px', padding: '1.5px 6px', lineHeight: '1.3' },
+        md: { fontSize: '12px', padding: '3px 8px', lineHeight: '1.3' },
+        lg: { fontSize: '13px', padding: '4px 10px', lineHeight: '1.4' },
     };
 
     return (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }} className={className}>
+        <div style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '4px', alignItems: 'center' }} className={className}>
             {tags.map((tag, i) => {
                 const colorIndex = getHash(tag.toLowerCase()) % colorPairs.length;
                 const colors = colorPairs[colorIndex];
@@ -56,12 +54,14 @@ export function TagDisplay({ tagsString, className = '', size = 'sm' }: TagDispl
                             display: 'inline-flex',
                             alignItems: 'center',
                             fontWeight: 500,
-                            borderRadius: '9999px',
+                            borderRadius: '5px',
                             borderWidth: '1px',
                             borderStyle: 'solid',
                             backgroundColor: colors.bg,
                             color: colors.text,
                             borderColor: colors.border,
+                            letterSpacing: '-0.01em',
+                            whiteSpace: 'nowrap',
                             ...sizeStyles[size]
                         }}
                     >
@@ -72,3 +72,4 @@ export function TagDisplay({ tagsString, className = '', size = 'sm' }: TagDispl
         </div>
     );
 }
+

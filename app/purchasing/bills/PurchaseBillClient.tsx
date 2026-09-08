@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Plus, Search, Eye, Trash2, Calendar, FileText, FileDown, CheckCircle, ArrowUpDown, Edit2, XCircle, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Eye, Trash2, Calendar, FileText, FileDown, CheckCircle, ArrowUpDown, Edit2, XCircle, AlertTriangle, X } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { createPurchaseBill, approvePurchaseBill, deletePurchaseBill, updatePurchaseBill, cancelPurchaseBill } from '@/app/purchasing/actions';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { TagDisplay } from '@/app/components/ui/TagDisplay';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
+import { StatusBadge } from '@/app/components/ui/StatusBadge';
 import { useTranslation } from '@/app/i18n/LanguageContext';
 import { formatMoney, formatDate, formatTaxRate, calcPreTaxPrice, calcTaxAmount } from '@/lib/utils/formatters';
 import { TaxRateSelect, TaxBadge } from '@/app/components/ui/TaxRateSelect';
@@ -681,16 +682,26 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                 )}
             </div>
 
-            <div className="card search-card mb-6">
-                <div className="search-input-wrapper">
-                    <Search className="search-icon" size={20} />
+            {/* Filter Ribbon */}
+            <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 mb-6 shadow-sm flex gap-3 items-center flex-wrap">
+                <div className="flex-1 min-w-[240px] relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                     <input
                         type="text"
                         placeholder={t('purchaseBills.searchPlaceholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="input"
+                        className="w-full h-9 pl-9 pr-8 text-[13px] bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 text-slate-800 placeholder:text-slate-400 transition-all font-medium"
                     />
+                    {searchQuery && (
+                        <button
+                            type="button"
+                            onClick={() => setSearchQuery('')}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full hover:bg-slate-200/60"
+                        >
+                            <X size={14} />
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -699,37 +710,37 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                 <table>
                     <thead>
                         <tr>
-                            <th onClick={() => requestSort('code')} className="cursor-pointer hover:bg-gray-100">
-                                <div className="flex items-center gap-1">{t('purchaseBills.colSystemCode')} <ArrowUpDown size={14} className="text-gray-400" /></div>
+                            <th onClick={() => requestSort('code')} className="cursor-pointer hover:bg-slate-100/80 text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                                <div className="flex items-center gap-1">{t('purchaseBills.colSystemCode')} <ArrowUpDown size={13} className="text-slate-400" /></div>
                             </th>
-                            <th onClick={() => requestSort('supplierInvoice')} className="cursor-pointer hover:bg-gray-100">
-                                <div className="flex items-center gap-1">{t('purchaseBills.colSupplierInvoice')} <ArrowUpDown size={14} className="text-gray-400" /></div>
+                            <th onClick={() => requestSort('supplierInvoice')} className="cursor-pointer hover:bg-slate-100/80 text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                                <div className="flex items-center gap-1">{t('purchaseBills.colSupplierInvoice')} <ArrowUpDown size={13} className="text-slate-400" /></div>
                             </th>
-                            <th onClick={() => requestSort('date')} className="cursor-pointer hover:bg-gray-100">
-                                <div className="flex items-center gap-1">{t('purchaseBills.colDateSupplier')} <ArrowUpDown size={14} className="text-gray-400" /></div>
+                            <th onClick={() => requestSort('date')} className="cursor-pointer hover:bg-slate-100/80 text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                                <div className="flex items-center gap-1">{t('purchaseBills.colDateSupplier')} <ArrowUpDown size={13} className="text-slate-400" /></div>
                             </th>
-                            <th className="text-left font-medium text-gray-900 dark:text-gray-100">
+                            <th className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
                                 {t('purchaseBills.colTags')}
                             </th>
-                            <th onClick={() => requestSort('dueDate')} className="cursor-pointer hover:bg-gray-100 text-center">
-                                <div className="flex items-center justify-center gap-1">{t('purchaseBills.colDueDate')} <ArrowUpDown size={14} className="text-gray-400" /></div>
+                            <th onClick={() => requestSort('dueDate')} className="cursor-pointer hover:bg-slate-100/80 text-center text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                                <div className="flex items-center justify-center gap-1">{t('purchaseBills.colDueDate')} <ArrowUpDown size={13} className="text-slate-400" /></div>
                             </th>
-                            <th onClick={() => requestSort('totalAmount')} className="cursor-pointer hover:bg-gray-100 text-right">
-                                <div className="flex items-center justify-end gap-1">{t('purchaseBills.colTotal')} <ArrowUpDown size={14} className="text-gray-400" /></div>
+                            <th onClick={() => requestSort('totalAmount')} className="cursor-pointer hover:bg-slate-100/80 text-right text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                                <div className="flex items-center justify-end gap-1">{t('purchaseBills.colTotal')} <ArrowUpDown size={13} className="text-slate-400" /></div>
                             </th>
-                            <th onClick={() => requestSort('paidAmount')} className="cursor-pointer hover:bg-gray-100 text-right">
-                                <div className="flex items-center justify-end gap-1">{t('purchaseBills.colPaid')} <ArrowUpDown size={14} className="text-gray-400" /></div>
+                            <th onClick={() => requestSort('paidAmount')} className="cursor-pointer hover:bg-slate-100/80 text-right text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                                <div className="flex items-center justify-end gap-1">{t('purchaseBills.colPaid')} <ArrowUpDown size={13} className="text-slate-400" /></div>
                             </th>
-                            <th onClick={() => requestSort('status')} className="cursor-pointer hover:bg-gray-100 text-center">
-                                <div className="flex items-center justify-center gap-1">{t('purchaseBills.colStatus')} <ArrowUpDown size={14} className="text-gray-400" /></div>
+                            <th onClick={() => requestSort('status')} className="cursor-pointer hover:bg-slate-100/80 text-center text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                                <div className="flex items-center justify-center gap-1">{t('purchaseBills.colStatus')} <ArrowUpDown size={13} className="text-slate-400" /></div>
                             </th>
-                            <th className="text-center">{t('purchaseBills.colActions')}</th>
+                            <th className="text-center text-[11px] font-bold uppercase tracking-wider text-slate-600">{t('purchaseBills.colActions')}</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                         {paginatedItems.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="p-8 text-center text-gray-500">
+                                <td colSpan={9} className="p-8 text-center text-slate-500 font-medium text-[13px]">
                                     {t('purchaseBills.noBillsFound')}
                                 </td>
                             </tr>
@@ -739,79 +750,81 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                 const trStyle: React.CSSProperties = isOverdue ? { animation: 'overdue-bg-blink 2.5s ease-in-out infinite' } : {};
 
                                 return (
-                                    <tr key={bill.id} style={trStyle} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                                        <td className="p-4 text-sm font-bold text-gray-900 dark:text-gray-100">
-                                            <Link href={`/purchasing/bills/${bill.id}`} className="hover:text-primary hover:underline">
+                                    <tr key={bill.id} style={trStyle} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                        <td className="p-3 text-[13px]">
+                                            <Link href={`/purchasing/bills/${bill.id}`} className="font-mono font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/80 hover:bg-emerald-100 hover:text-emerald-800 transition-colors inline-block">
                                                 {bill.code}
                                             </Link>
                                         </td>
-                                        <td className="p-4 text-sm text-gray-600 dark:text-gray-300">{bill.supplierInvoice || '--'}</td>
-                                        <td className="p-4">
-                                            <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-1">
-                                                <Calendar size={13} /> {formatDate(bill.date)}
+                                        <td className="p-3 text-[13px] text-slate-600 dark:text-slate-300 font-mono">{bill.supplierInvoice || '--'}</td>
+                                        <td className="p-3">
+                                            <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-0.5">
+                                                <Calendar size={12} className="text-slate-400" /> {formatDate(bill.date)}
                                             </div>
-                                            <Link href={`/suppliers/${bill.supplierId}`} className="font-semibold text-primary hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">
+                                            <Link href={`/suppliers/${bill.supplierId}`} className="font-semibold text-[13px] text-slate-900 hover:text-emerald-600 transition-colors">
                                                 {bill.supplier?.name}
                                             </Link>
                                         </td>
-                                        <td className="p-4">
+                                        <td className="p-3">
                                             <TagDisplay tagsString={bill.tags} />
                                         </td>
-                                        <td className="p-4 text-center">
+                                        <td className="p-3 text-center text-[13px]">
                                             <span style={{ color: isOverdue ? '#dc2626' : 'inherit', fontWeight: isOverdue ? 600 : 'normal' }}>
                                                 {bill.dueDate ? formatDate(bill.dueDate) : '--'}
                                             </span>
                                         </td>
-                                        <td className="p-4 text-right">
-                                            <div className="font-semibold text-gray-900 dark:text-gray-100">{formatMoney(bill.totalAmount || 0)}</div>
+                                        <td className="p-3 text-right">
+                                            <div className="font-bold text-[13px] text-slate-900 dark:text-slate-100">{formatMoney(bill.totalAmount || 0)}</div>
                                         </td>
-                                        <td className="p-4 text-right">
-                                            <div className="font-medium text-green-600 dark:text-green-500">{formatMoney(bill.paidAmount || 0)}</div>
+                                        <td className="p-3 text-right">
+                                            <div className="font-semibold text-[13px] text-emerald-600 dark:text-emerald-500">{formatMoney(bill.paidAmount || 0)}</div>
                                         </td>
-                                        <td className="p-4 text-center">{getStatusBadge(bill.status)}</td>
-                                        <td className="p-4">
-                                            <div className="flex items-center justify-center gap-2">
+                                        <td className="p-3 text-center">
+                                            <StatusBadge status={bill.status} />
+                                        </td>
+                                        <td className="p-3">
+                                            <div className="flex items-center justify-center gap-1">
                                                 <Link
                                                     href={`/purchasing/bills/${bill.id}`}
-                                                    className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded inline-block"
+                                                    className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors inline-block"
                                                     title={t('purchaseBills.viewTooltip')}
                                                 >
-                                                    <Eye size={18} />
+                                                    <Eye size={16} />
                                                 </Link>
                                                 {bill.status !== 'CANCELLED' && (
                                                     <button
                                                         onClick={() => handleEdit(bill)}
-                                                        className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded inline-block"
+                                                        className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors inline-block"
                                                         title={bill.status === 'DRAFT' ? t('purchaseBills.editTooltip') : 'Điều chỉnh hóa đơn đã duyệt (tự động cập nhật kho & công nợ)'}
                                                     >
-                                                        <Edit2 size={18} />
+                                                        <Edit2 size={16} />
                                                     </button>
                                                 )}
                                                 {bill.status === 'DRAFT' && (
                                                     <>
                                                         <button
                                                             onClick={() => { setSelectedBill(bill); setIsApproveModalOpen(true); }}
-                                                            className="p-1.5 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded flex items-center gap-1 text-xs font-semibold px-2"
+                                                            className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg flex items-center gap-1 text-xs font-semibold px-2 transition-colors"
                                                             title={t('purchaseBills.approveTooltip')}
                                                         >
-                                                            <CheckCircle size={16} /> {t('purchaseBills.approveBtn')}
+                                                            <CheckCircle size={15} /> {t('purchaseBills.approveBtn')}
                                                         </button>
                                                         <button
                                                             onClick={() => handleDelete(bill.id, bill.code)}
-                                                            className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded inline-block"
+                                                            className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors inline-block"
                                                             title={t('purchaseBills.deleteTooltip')}
                                                         >
-                                                            <Trash2 size={18} />
+                                                            <Trash2 size={16} />
                                                         </button>
                                                     </>
                                                 )}
                                                 {bill.status === 'APPROVED' && (
                                                     <button
                                                         onClick={() => handleCancel(bill.id, bill.code)}
-                                                        className="p-1.5 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded inline-block"
+                                                        className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors inline-block"
                                                         title={t('purchaseBills.cancelBillTooltip')}
                                                     >
-                                                        <XCircle size={18} />
+                                                        <XCircle size={16} />
                                                     </button>
                                                 )}
                                             </div>
@@ -861,29 +874,30 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
 
             {/* Create Modal (similar to PO but with invoice inputs) */}
             {isCreateModalOpen && (
-                <div className="modal-backdrop">
-                    <div className="modal-container flex max-w-4xl shadow-2xl">
-                        {/* Similar form as PO, omitted repetitive boilerplate for brevity, ensuring essential inputs exist */}
-                        <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
-                            <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                <FileDown className="text-primary" /> {(formData as any).id ? t('purchaseBills.editTitle') : t('purchaseBills.addTitle')}
+                <div className="modal-backdrop" style={{ position: 'fixed', inset: 0, padding: '1rem', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(2px)' }}>
+                    <div className="modal-container flex max-w-[920px] w-full shadow-2xl" style={{ maxHeight: '92vh', background: '#ffffff', borderRadius: '12px', display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                        <div className="px-4 py-3 border-b border-slate-200 flex justify-between items-center bg-white">
+                            <h2 className="text-[15px] font-bold text-slate-800 flex items-center gap-2">
+                                <FileDown className="text-primary" size={18} /> {(formData as any).id ? t('purchaseBills.editTitle') : t('purchaseBills.addTitle')}
                             </h2>
-                            <button onClick={() => setIsCreateModalOpen(false)} className="text-gray-400 hover:text-gray-600">×</button>
+                            <button onClick={() => setIsCreateModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-md hover:bg-slate-100 transition-colors">
+                                <X size={18} />
+                            </button>
                         </div>
-                        <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 140px)' }}>
+                        <div className="p-4 overflow-y-auto" style={{ maxHeight: 'calc(92vh - 120px)' }}>
                             {(formData as any).id && (formData as any).status && (formData as any).status !== 'DRAFT' && (
-                                <div className="p-3.5 mb-5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-200 text-xs flex items-start gap-2.5 shadow-2xs">
-                                    <AlertTriangle className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" size={16} />
+                                <div className="p-3 mb-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5 shadow-2xs">
+                                    <AlertTriangle className="text-amber-600 shrink-0 mt-0.5" size={15} />
                                     <div>
-                                        <strong className="block font-semibold mb-0.5 text-sm">Điều chỉnh hóa đơn đã duyệt & ghi nhận nợ</strong>
+                                        <strong className="block font-semibold mb-0.5 text-xs">Điều chỉnh hóa đơn đã duyệt & ghi nhận nợ</strong>
                                         Hóa đơn này đã được ghi nhận nợ và nhập kho. Khi lưu điều chỉnh, hệ thống sẽ <strong>tự động hoàn tác và cập nhật lại tồn kho & công nợ nhà cung cấp</strong> tương ứng với danh sách sản phẩm mới, đồng thời ghi log chi tiết.
                                     </div>
                                 </div>
                             )}
-                            <form id="billForm" onSubmit={handleSubmit} className="space-y-6">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 bg-gray-50 dark:bg-gray-800/30 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
+                            <form id="billForm" onSubmit={handleSubmit} className="space-y-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-x-4 gap-y-3 bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-2xs">
                                     <div className="sm:col-span-2 lg:col-span-1">
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('purchaseBills.supplierLabel')}</label>
+                                        <label className="block text-xs font-semibold text-slate-600 mb-1">{t('purchaseBills.supplierLabel')}</label>
                                         <SearchableSelect
                                             value={formData.supplierId}
                                             onChange={(val) => setFormData({ ...formData, supplierId: val })}
@@ -892,7 +906,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                         />
                                     </div>
                                     <div className="sm:col-span-2 lg:col-span-1">
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dự án</label>
+                                        <label className="block text-xs font-semibold text-slate-600 mb-1">Dự án</label>
                                         <SearchableSelect
                                             value={formData.projectId || ''}
                                             onChange={(val) => setFormData({ ...formData, projectId: val })}
@@ -901,7 +915,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                         />
                                     </div>
                                     <div className="sm:col-span-2 lg:col-span-1">
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('purchaseBills.orderLabel')}</label>
+                                        <label className="block text-xs font-semibold text-slate-600 mb-1">{t('purchaseBills.orderLabel')}</label>
                                         <SearchableSelect
                                             value={formData.orderId || ''}
                                             onChange={handleOrderSelect}
@@ -910,7 +924,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('purchaseBills.dateLabel')}</label>
+                                        <label className="block text-xs font-semibold text-slate-600 mb-1">{t('purchaseBills.dateLabel')}</label>
                                         <input type="date" required value={formData.date} onChange={e => {
                                             const newDateStr = e.target.value;
                                             if (newDateStr) {
@@ -920,45 +934,45 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                             } else {
                                                 setFormData({ ...formData, date: newDateStr });
                                             }
-                                        }} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2.5" />
+                                        }} className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white" />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('purchaseBills.dueDateLabel')}</label>
-                                        <input type="date" required value={formData.dueDate} onChange={e => setFormData({ ...formData, dueDate: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2.5" />
+                                        <label className="block text-xs font-semibold text-slate-600 mb-1">{t('purchaseBills.dueDateLabel')}</label>
+                                        <input type="date" required value={formData.dueDate} onChange={e => setFormData({ ...formData, dueDate: e.target.value })} className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white" />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('purchaseBills.supplierInvoiceLabel')}</label>
-                                        <input type="text" value={formData.supplierInvoice} onChange={e => setFormData({ ...formData, supplierInvoice: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2.5" placeholder="VD: HD-1234" />
+                                        <label className="block text-xs font-semibold text-slate-600 mb-1">{t('purchaseBills.supplierInvoiceLabel')}</label>
+                                        <input type="text" value={formData.supplierInvoice} onChange={e => setFormData({ ...formData, supplierInvoice: e.target.value })} className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white placeholder:text-slate-400" placeholder="VD: HD-1234" />
                                     </div>
                                     <div className="sm:col-span-2 lg:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('purchaseBills.notesLabel')}</label>
-                                        <input type="text" value={formData.notes || ''} onChange={e => setFormData({ ...formData, notes: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2.5" placeholder="Ghi chú thêm..." />
+                                        <label className="block text-xs font-semibold text-slate-600 mb-1">{t('purchaseBills.notesLabel')}</label>
+                                        <input type="text" value={formData.notes || ''} onChange={e => setFormData({ ...formData, notes: e.target.value })} className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white placeholder:text-slate-400" placeholder="Ghi chú thêm..." />
                                     </div>
-                                    <div className="sm:col-span-2 lg:col-span-3">
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('purchaseBills.tagsLabel')}</label>
-                                        <input type="text" value={formData.tags || ''} onChange={e => setFormData({ ...formData, tags: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2.5" placeholder="VD: Nhập khẩu, Quan trọng..." />
+                                    <div className="sm:col-span-2 lg:col-span-2">
+                                        <label className="block text-xs font-semibold text-slate-600 mb-1">{t('purchaseBills.tagsLabel')}</label>
+                                        <input type="text" value={formData.tags || ''} onChange={e => setFormData({ ...formData, tags: e.target.value })} className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white placeholder:text-slate-400" placeholder="VD: Nhập khẩu, Quan trọng..." />
                                     </div>
                                 </div>
 
                                 {/* Attachments Section */}
                                 <div>
-                                    <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2">
-                                        <FileText size={16} className="text-gray-500" /> {t('purchaseBills.attachments')}
+                                    <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                        <FileText size={14} className="text-slate-500" /> {t('purchaseBills.attachments')}
                                     </h3>
 
                                     {formData.attachments.length > 0 && (
-                                        <div className="space-y-2 mb-3">
+                                        <div className="space-y-1.5 mb-2.5">
                                             {formData.attachments.map((doc, idx) => (
-                                                <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded">
-                                                            <FileText size={18} />
+                                                <div key={idx} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+                                                    <div className="flex items-center gap-2.5">
+                                                        <div className="p-1.5 bg-blue-50 text-blue-600 rounded">
+                                                            <FileText size={15} />
                                                         </div>
                                                         <div>
-                                                            <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                                                            <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-blue-600 hover:underline">
                                                                 {doc.name}
                                                             </a>
-                                                            <div className="text-xs text-gray-500 mt-0.5">
+                                                            <div className="text-[11px] text-slate-400">
                                                                 {new Date(doc.uploadedAt).toLocaleString('vi-VN')}
                                                             </div>
                                                         </div>
@@ -971,9 +985,9 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                                             newDocs.splice(idx, 1);
                                                             setFormData({ ...formData, attachments: newDocs });
                                                         }}
-                                                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                                                        className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
                                                     >
-                                                        <Trash2 size={16} />
+                                                        <Trash2 size={14} />
                                                     </button>
                                                 </div>
                                             ))}
@@ -1014,14 +1028,14 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                         <button
                                             type="button"
                                             disabled={isUploading}
-                                            className="flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:border-primary hover:text-primary transition-colors w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="flex items-center justify-center gap-1.5 px-3 py-1.5 border border-dashed border-slate-300 rounded-lg text-xs font-semibold text-slate-600 hover:border-primary hover:text-primary transition-colors w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             {isUploading ? (
-                                                <span className="flex items-center gap-2">
-                                                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div> {t('purchaseBills.uploadingBtn')}
+                                                <span className="flex items-center gap-1.5">
+                                                    <div className="w-3.5 h-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div> {t('purchaseBills.uploadingBtn')}
                                                 </span>
                                             ) : (
-                                                <><Plus size={16} /> {t('purchaseBills.addDocumentBtn')}</>
+                                                <><Plus size={14} /> {t('purchaseBills.addDocumentBtn')}</>
                                             )}
                                         </button>
                                     </div>
@@ -1029,43 +1043,43 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
 
                                 {/* Products Table */}
                                 <div>
-                                    <div className="flex justify-between items-center mb-3">
-                                        <h3 className="font-semibold text-gray-800 dark:text-gray-200 text-lg flex items-center gap-2">
-                                            <FileText size={18} /> {t('purchaseBills.itemsTitle')}
+                                    <div className="flex justify-between items-center mb-2">
+                                        <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                                            <FileText size={14} className="text-slate-500" /> {t('purchaseBills.itemsTitle')}
                                         </h3>
                                     </div>
 
                                     {/* Sub-Form for Add Item */}
-                                    <div className="flex flex-col bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mb-4">
-                                        <div className="mb-4 flex flex-wrap items-center gap-4 border-b border-gray-100 dark:border-gray-700 pb-3">
-                                            <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
-                                                <input type="radio" className="accent-primary w-4 h-4 cursor-pointer" checked={!isCustomProduct} onChange={() => setIsCustomProduct(false)} />
+                                    <div className="flex flex-col bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-2xs mb-3">
+                                        <div className="mb-3 flex flex-wrap items-center gap-4 border-b border-slate-100 pb-2.5">
+                                            <label className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-slate-700">
+                                                <input type="radio" className="accent-emerald-600 w-3.5 h-3.5 cursor-pointer" checked={!isCustomProduct} onChange={() => setIsCustomProduct(false)} />
                                                 <span>{t('purchaseBills.selectFromInventory')}</span>
                                             </label>
-                                            <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
-                                                <input type="radio" className="accent-primary w-4 h-4 cursor-pointer" checked={isCustomProduct} onChange={() => setIsCustomProduct(true)} />
+                                            <label className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-slate-700">
+                                                <input type="radio" className="accent-emerald-600 w-3.5 h-3.5 cursor-pointer" checked={isCustomProduct} onChange={() => setIsCustomProduct(true)} />
                                                 <span>{t('purchaseBills.customEntry')}</span>
                                             </label>
                                             {isCustomProduct && (
-                                                <span className="text-xs text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800 px-2.5 py-1 rounded-md font-medium flex items-center gap-1">
+                                                <span className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md font-medium flex items-center gap-1">
                                                     ✨ Tự động lưu vào kho cho các lần sau
                                                 </span>
                                             )}
                                             <div className="ml-auto">
-                                                <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-emerald-900 dark:text-emerald-300 bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-3 py-1.5 rounded-lg select-none hover:bg-emerald-100/80 transition-colors">
+                                                <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold text-emerald-900 bg-emerald-50/80 border border-emerald-200 px-2.5 py-1 rounded-lg select-none hover:bg-emerald-100/80 transition-colors">
                                                     <input
                                                         type="checkbox"
                                                         checked={isPriceInclusiveVat}
                                                         onChange={(e) => setIsPriceInclusiveVat(e.target.checked)}
-                                                        className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 accent-emerald-600 cursor-pointer"
+                                                        className="w-3.5 h-3.5 rounded text-emerald-600 focus:ring-emerald-500 accent-emerald-600 cursor-pointer"
                                                     />
                                                     <span>Đã có thuế VAT (Nhập giá sau thuế)</span>
                                                 </label>
                                             </div>
                                         </div>
-                                        <div className="flex flex-wrap gap-3 items-end mb-2">
-                                            <div className="flex-1 min-w-[250px]">
-                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('purchaseBills.productNameLabel')}</label>
+                                        <div className="flex flex-col md:flex-row gap-2.5 md:items-end mb-2">
+                                            <div className="flex-1 w-full min-w-0">
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">{t('purchaseBills.productNameLabel')}</label>
                                                 {!isCustomProduct ? (
                                                     <SearchableSelect
                                                         options={products.map((p: any) => ({ value: p.id, label: `${p.sku} - ${p.name}` }))}
@@ -1074,99 +1088,99 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                                         placeholder={t('purchaseBills.selectProductPlaceholder')}
                                                     />
                                                 ) : (
-                                                    <input type="text" className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700" placeholder={t('purchaseBills.customNamePlaceholder')} value={customName} onChange={e => setCustomName(e.target.value)} />
+                                                    <input type="text" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white placeholder:text-slate-400" placeholder={t('purchaseBills.customNamePlaceholder')} value={customName} onChange={e => setCustomName(e.target.value)} />
                                                 )}
                                             </div>
                                             {isCustomProduct && (
-                                                <div className="w-24 shrink-0">
-                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('purchaseBills.unitLabel')}</label>
-                                                    <input type="text" className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 text-center" placeholder={t('purchaseBills.unitPlaceholder')} value={customUnit} onChange={e => setCustomUnit(e.target.value)} />
+                                                <div className="w-full md:w-20">
+                                                    <label className="block text-xs font-semibold text-slate-600 mb-1">{t('purchaseBills.unitLabel')}</label>
+                                                    <input type="text" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white text-center" placeholder={t('purchaseBills.unitPlaceholder')} value={customUnit} onChange={e => setCustomUnit(e.target.value)} />
                                                 </div>
                                             )}
-                                            <div className="w-36 shrink-0">
-                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                                            <div className="w-full md:w-36">
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">
                                                     {isPriceInclusiveVat ? 'Đơn giá (gồm VAT)' : t('purchaseBills.unitPriceLabel')}
                                                 </label>
-                                                <input type="number" step="any" min="0" className={`w-full border rounded-lg p-2.5 outline-none transition-all text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 ${isPriceInclusiveVat ? 'border-emerald-400 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 bg-emerald-50/20 font-semibold text-emerald-800 dark:text-emerald-300' : 'border-gray-300 dark:border-gray-600 focus:border-primary focus:ring-1 focus:ring-primary'}`} value={price} onChange={e => setPrice(parseFloat(e.target.value) || 0)} />
+                                                <input type="number" step="any" min="0" className={`w-full h-[34px] border rounded-lg px-2.5 py-1 text-xs outline-none transition-all text-slate-900 bg-white ${isPriceInclusiveVat ? 'border-emerald-400 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 bg-emerald-50/20 font-semibold text-emerald-800' : 'border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary/20'}`} value={price} onChange={e => setPrice(parseFloat(e.target.value) || 0)} />
                                             </div>
-                                            <div className="w-32 shrink-0">
-                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('purchaseBills.taxLabel')}</label>
+                                            <div className="w-full md:w-24">
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">{t('purchaseBills.taxLabel')}</label>
                                                 <TaxRateSelect
                                                     value={customTaxRate}
                                                     onChange={(val) => setCustomTaxRate(val)}
                                                 />
                                             </div>
-                                            <div className="w-20 shrink-0">
-                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('purchaseBills.qtyLabel')}</label>
-                                                <input type="number" step="any" min="0.0001" className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-center text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700" value={qty} onChange={e => setQty(parseFloat(e.target.value) || 0)} />
+                                            <div className="w-full md:w-16">
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">{t('purchaseBills.qtyLabel')}</label>
+                                                <input type="number" step="any" min="0.0001" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-center text-slate-900 bg-white" value={qty} onChange={e => setQty(parseFloat(e.target.value) || 0)} />
                                             </div>
-                                            <button type="button" onClick={handleAddItem} className="shrink-0 mb-[2px] h-[46px] px-6 border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 shadow-sm font-semibold rounded-lg dark:border-primary/50 dark:text-primary-light">{t('purchaseBills.addItemBtn')}</button>
+                                            <button type="button" onClick={handleAddItem} className="h-[34px] px-5 border border-primary/40 text-primary bg-primary/10 hover:bg-primary hover:text-white transition-all text-xs font-semibold rounded-lg shrink-0">{t('purchaseBills.addItemBtn')}</button>
                                         </div>
 
                                         {/* Realtime calculation preview when isPriceInclusiveVat is ON */}
                                         {isPriceInclusiveVat && price > 0 && (
-                                            <div className="mb-4 p-2.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs flex flex-wrap items-center gap-x-5 gap-y-1.5 text-emerald-900 dark:text-emerald-200 shadow-sm animate-fadeIn">
+                                            <div className="mb-3 p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-xs flex flex-wrap items-center gap-x-4 gap-y-1 text-emerald-900 shadow-2xs">
                                                 <div>💡 <strong>Giá đã gồm VAT:</strong> {formatMoney(price)}</div>
-                                                <div>➔ <strong>Đơn giá trước thuế:</strong> <span className="font-bold text-blue-700 dark:text-blue-400">{formatMoney(calcPreTaxPrice(price, customTaxRate))}</span></div>
+                                                <div>➔ <strong>Đơn giá trước thuế:</strong> <span className="font-bold text-blue-700">{formatMoney(calcPreTaxPrice(price, customTaxRate))}</span></div>
                                                 <div>➔ <strong>Thuế suất:</strong> <TaxBadge rate={customTaxRate} /></div>
-                                                <div>➔ <strong>Tiền thuế/SP:</strong> <span className="font-semibold text-amber-700 dark:text-amber-400">{formatMoney(price - calcPreTaxPrice(price, customTaxRate))}</span></div>
-                                                <div>➔ <strong>Thành tiền ({qty} {isCustomProduct ? customUnit : (products.find((p: any) => p.id === selectedProduct)?.unit || 'Cái')}):</strong> <span className="font-bold text-emerald-700 dark:text-emerald-300">{formatMoney(price * qty)}</span></div>
+                                                <div>➔ <strong>Tiền thuế/SP:</strong> <span className="font-semibold text-amber-700">{formatMoney(price - calcPreTaxPrice(price, customTaxRate))}</span></div>
+                                                <div>➔ <strong>Thành tiền ({qty} {isCustomProduct ? customUnit : (products.find((p: any) => p.id === selectedProduct)?.unit || 'Cái')}):</strong> <span className="font-bold text-emerald-700">{formatMoney(price * qty)}</span></div>
                                             </div>
                                         )}
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('purchaseBills.itemNotesLabel')} <span className="text-gray-400 font-normal">({t('purchaseBills.printedOnTransfer')})</span></label>
-                                            <div className="flex flex-wrap items-center gap-4 mb-2">
-                                                <label className={`flex items-center gap-2 cursor-pointer text-sm font-medium ${isCustomProduct ? 'text-gray-400' : 'text-gray-700 dark:text-gray-300'}`}>
-                                                    <input type="radio" className="accent-primary w-4 h-4 cursor-pointer" checked={useInventoryDescription && !isCustomProduct} onChange={() => handleDescSourceChange(true)} disabled={isCustomProduct} />
+                                            <label className="block text-xs font-semibold text-slate-600 mb-1">{t('purchaseBills.itemNotesLabel')} <span className="text-slate-400 font-normal">({t('purchaseBills.printedOnTransfer')})</span></label>
+                                            <div className="flex flex-wrap items-center gap-4 mb-1.5">
+                                                <label className={`flex items-center gap-1.5 cursor-pointer text-xs font-medium ${isCustomProduct ? 'text-slate-400' : 'text-slate-700'}`}>
+                                                    <input type="radio" className="accent-emerald-600 w-3.5 h-3.5 cursor-pointer" checked={useInventoryDescription && !isCustomProduct} onChange={() => handleDescSourceChange(true)} disabled={isCustomProduct} />
                                                     <span>{t('purchaseBills.useInventoryDesc')}</span>
                                                 </label>
-                                                <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
-                                                    <input type="radio" className="accent-primary w-4 h-4 cursor-pointer" checked={!useInventoryDescription || isCustomProduct} onChange={() => handleDescSourceChange(false)} />
+                                                <label className="flex items-center gap-1.5 cursor-pointer text-xs font-medium text-slate-700">
+                                                    <input type="radio" className="accent-emerald-600 w-3.5 h-3.5 cursor-pointer" checked={!useInventoryDescription || isCustomProduct} onChange={() => handleDescSourceChange(false)} />
                                                     <span>{t('purchaseBills.customDesc')}</span>
                                                 </label>
                                             </div>
-                                            <textarea rows={2} className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-none text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700`} placeholder={t('purchaseBills.itemNotesPlaceholder')} value={customDescription} onChange={e => setCustomDescription(e.target.value)}></textarea>
+                                            <textarea rows={2} className="w-full border border-slate-200 rounded-lg p-2 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all resize-none text-slate-900 bg-white placeholder:text-slate-400" placeholder={t('purchaseBills.itemNotesPlaceholder')} value={customDescription} onChange={e => setCustomDescription(e.target.value)}></textarea>
                                         </div>
                                     </div>
 
                                     {/* Read-Only Items Table */}
                                     {billItems.length > 0 && (
-                                        <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-x-auto mt-2 border-t pt-4">
-                                            <table className="w-full min-w-[600px] text-sm mb-4 bg-white dark:bg-gray-800 text-left">
-                                                <thead className="bg-slate-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400">
+                                        <div className="border border-slate-200 rounded-xl overflow-x-auto mt-2 border-t pt-3">
+                                            <table className="w-full min-w-[600px] text-xs mb-3 bg-white text-left">
+                                                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
                                                     <tr>
-                                                        <th className="p-3 font-medium">{t('purchaseBills.colProductName')}</th>
-                                                        <th className="p-3 font-medium text-center w-20">{t('purchaseBills.colQty')}</th>
-                                                        <th className="p-3 font-medium text-right w-32">{t('purchaseBills.colUnitPrice')}</th>
-                                                        <th className="p-3 font-medium text-center w-24">{t('purchaseBills.colTax')}</th>
-                                                        <th className="p-3 font-medium text-right w-36">{t('purchaseBills.colLineTotal')}</th>
-                                                        <th className="p-3 font-medium text-center w-16"></th>
+                                                        <th className="p-2.5 font-semibold">{t('purchaseBills.colProductName')}</th>
+                                                        <th className="p-2.5 font-semibold text-center w-20">{t('purchaseBills.colQty')}</th>
+                                                        <th className="p-2.5 font-semibold text-right w-32">{t('purchaseBills.colUnitPrice')}</th>
+                                                        <th className="p-2.5 font-semibold text-center w-24">{t('purchaseBills.colTax')}</th>
+                                                        <th className="p-2.5 font-semibold text-right w-36">{t('purchaseBills.colLineTotal')}</th>
+                                                        <th className="p-2.5 font-semibold text-center w-16"></th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                                                <tbody className="divide-y divide-slate-100">
                                                     {billItems.map((item, i) => {
                                                         const rowSubtotal = item.quantity * item.unitPrice;
                                                         const rowTax = calcTaxAmount(rowSubtotal, item.taxRate);
                                                         const rowTotal = rowSubtotal + rowTax;
                                                         return (
-                                                            <tr key={i} className="hover:bg-slate-50 dark:hover:bg-gray-800/50 transition-colors">
-                                                                <td className="p-3 text-gray-800 dark:text-gray-200">
+                                                            <tr key={i} className="hover:bg-slate-50 transition-colors">
+                                                                <td className="p-2.5 text-slate-800">
                                                                     <div className="font-semibold">{item.productName || item.customName}</div>
-                                                                    {item.description && <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 max-w-sm whitespace-pre-wrap">{item.description}</div>}
+                                                                    {item.description && <div className="text-[11px] text-slate-500 mt-0.5 max-w-sm whitespace-pre-wrap">{item.description}</div>}
                                                                 </td>
-                                                                <td className="p-3 text-center text-gray-800 dark:text-gray-200">
-                                                                    {item.quantity} <span className="text-xs text-gray-500 ml-1">{item.unit}</span>
+                                                                <td className="p-2.5 text-center text-slate-800">
+                                                                    {item.quantity} <span className="text-[11px] text-slate-500 ml-1">{item.unit}</span>
                                                                 </td>
-                                                                <td className="p-3 text-right text-gray-600 dark:text-gray-300 font-medium">{formatMoney(item.unitPrice)}</td>
-                                                                <td className="p-3 text-center bg-gray-50 dark:bg-gray-800/30 border-x border-white dark:border-gray-800">
+                                                                <td className="p-2.5 text-right text-slate-600 font-medium">{formatMoney(item.unitPrice)}</td>
+                                                                <td className="p-2.5 text-center bg-slate-50/50 border-x border-slate-100">
                                                                     <TaxBadge rate={item.taxRate} />
                                                                 </td>
-                                                                <td className="p-3 text-right font-medium text-gray-800 dark:text-gray-200">{formatMoney(rowTotal)}</td>
-                                                                <td className="p-3 text-center">
-                                                                    <div className="flex items-center justify-center gap-2">
-                                                                        <button type="button" onClick={() => handleEditItem(i)} className="text-blue-500 hover:text-blue-700 transition-colors" title={t('purchaseBills.editItemTooltip')}><Edit2 size={14} /></button>
-                                                                        <button type="button" onClick={() => handleRemoveItem(i)} className="text-red-500 hover:text-red-700 transition-colors" title={t('purchaseBills.removeItemTooltip')}><Trash2 size={14} /></button>
+                                                                <td className="p-2.5 text-right font-semibold text-slate-800">{formatMoney(rowTotal)}</td>
+                                                                <td className="p-2.5 text-center">
+                                                                    <div className="flex items-center justify-center gap-1.5">
+                                                                        <button type="button" onClick={() => handleEditItem(i)} className="p-1 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors" title={t('purchaseBills.editItemTooltip')}><Edit2 size={13} /></button>
+                                                                        <button type="button" onClick={() => handleRemoveItem(i)} className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors" title={t('purchaseBills.removeItemTooltip')}><Trash2 size={13} /></button>
                                                                     </div>
                                                                 </td>
                                                             </tr>
@@ -1174,20 +1188,20 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                                     })}
                                                 </tbody>
                                                 <tfoot>
-                                                    <tr className="bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
-                                                        <td colSpan={4} className="p-3 text-right font-medium text-gray-600 dark:text-gray-400 text-sm">{t('purchaseBills.subTotal')}:</td>
-                                                        <td className="p-3 text-right font-medium text-gray-800 dark:text-gray-200 text-sm">{formatMoney(calculateSubTotal())}</td>
-                                                        <td className="p-3 border"></td>
+                                                    <tr className="bg-slate-50/80 border-t border-slate-200">
+                                                        <td colSpan={4} className="p-2.5 text-right font-medium text-slate-600 text-xs">{t('purchaseBills.subTotal')}:</td>
+                                                        <td className="p-2.5 text-right font-semibold text-slate-800 text-xs">{formatMoney(calculateSubTotal())}</td>
+                                                        <td className="p-2.5"></td>
                                                     </tr>
-                                                    <tr className="bg-gray-50 dark:bg-gray-800/50">
-                                                        <td colSpan={4} className="p-3 text-right font-medium text-gray-600 dark:text-gray-400 text-sm">{t('purchaseBills.totalTax')}:</td>
-                                                        <td className="p-3 text-right font-medium text-gray-800 dark:text-gray-200 text-sm">{formatMoney(calculateTax())}</td>
-                                                        <td className="p-3 border"></td>
+                                                    <tr className="bg-slate-50/80">
+                                                        <td colSpan={4} className="p-2.5 text-right font-medium text-slate-600 text-xs">{t('purchaseBills.totalTax')}:</td>
+                                                        <td className="p-2.5 text-right font-semibold text-slate-800 text-xs">{formatMoney(calculateTax())}</td>
+                                                        <td className="p-2.5"></td>
                                                     </tr>
-                                                    <tr className="bg-slate-100 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-700">
-                                                        <td colSpan={4} className="p-3 text-right font-bold text-gray-800 dark:text-gray-200">{t('purchaseBills.grandTotal')}:</td>
-                                                        <td className="p-3 text-right font-bold text-primary text-[15px]">{formatMoney(calculateTotal())}</td>
-                                                        <td className="p-3 border"></td>
+                                                    <tr className="bg-emerald-50/50 border-t border-emerald-200">
+                                                        <td colSpan={4} className="p-2.5 text-right font-bold text-slate-800 text-xs">{t('purchaseBills.grandTotal')}:</td>
+                                                        <td className="p-2.5 text-right font-bold text-emerald-700 text-sm">{formatMoney(calculateTotal())}</td>
+                                                        <td className="p-2.5"></td>
                                                     </tr>
                                                 </tfoot>
                                             </table>
@@ -1196,9 +1210,9 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                 </div>
                             </form>
                         </div>
-                        <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 flex justify-end gap-3 mt-auto">
-                            <button type="button" onClick={() => setIsCreateModalOpen(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50 font-medium">{t('purchaseBills.cancelBtn')}</button>
-                            <button type="submit" form="billForm" disabled={isSubmitting || billItems.length === 0} className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 font-bold">{isSubmitting ? t('purchaseBills.savingBtn') : t('purchaseBills.saveBtn')}</button>
+                        <div className="px-4 py-3 border-t border-slate-200 bg-slate-50 flex justify-end gap-2.5 mt-auto">
+                            <button type="button" onClick={() => setIsCreateModalOpen(false)} className="h-[34px] px-4 border border-slate-300 rounded-lg hover:bg-white text-xs font-semibold text-slate-600 transition-all">{t('purchaseBills.cancelBtn')}</button>
+                            <button type="submit" form="billForm" disabled={isSubmitting || billItems.length === 0} className="h-[34px] px-5 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 text-xs font-bold shadow-xs transition-all">{isSubmitting ? t('purchaseBills.savingBtn') : t('purchaseBills.saveBtn')}</button>
                         </div>
                     </div>
                 </div>

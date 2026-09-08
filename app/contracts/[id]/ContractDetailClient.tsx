@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { useTranslation } from '@/app/i18n/LanguageContext';
 
 import { Watermark } from '@/app/components/ui/Watermark';
+import { StatusBadge } from '@/app/components/ui/StatusBadge';
 
 export function ContractDetailClient({ contract, settings }: { contract: any, settings?: Record<string, string> }) {
     const { t } = useTranslation();
@@ -20,61 +21,54 @@ export function ContractDetailClient({ contract, settings }: { contract: any, se
     const [activeTab, setActiveTab] = useState<'content' | 'appendices'>('content');
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '1200px', margin: '0 auto' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', maxWidth: '1200px', margin: '0 auto' }}>
             {/* Header Area (No Print) */}
-            <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <button onClick={() => router.push('/contracts')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '50%', background: 'var(--surface)', border: '1px solid var(--border)', cursor: 'pointer', transition: 'all 0.2s', boxShadow: 'var(--shadow-sm)' }}>
-                        <ArrowLeft size={18} color="var(--text-main)" />
+            <div className="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <button 
+                        onClick={() => router.push('/contracts')} 
+                        className="w-9 h-9 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 flex items-center justify-center transition-all shadow-xs cursor-pointer"
+                    >
+                        <ArrowLeft size={18} />
                     </button>
                     <div>
-                        <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 0.25rem 0', color: 'var(--text-main)', letterSpacing: '-0.025em' }}>
+                        <h1 className="text-lg font-bold text-slate-900 m-0 tracking-tight">
                             {contract.title}
                         </h1>
-                        <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                        <p className="text-xs text-slate-500 m-0 mt-0.5">
                             {t('contractDetails.draftAt')} {formatDate(new Date(contract.createdAt))}
                         </p>
                     </div>
                 </div>
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <div className="flex items-center gap-2">
                     {activeTab === 'content' && <PrintButton />}
-                    <Button onClick={() => router.push(`/contract-appendices/new?contractId=${contract.id}`)} className="gap-2" style={{ background: 'var(--success)' }}>
-                        <Plus size={18} /> {t('contractDetails.createAppendix')}
+                    <Button 
+                        onClick={() => router.push(`/contract-appendices/new?contractId=${contract.id}`)} 
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white border border-emerald-600 hover:bg-emerald-700 transition-colors shadow-xs h-[34px]"
+                    >
+                        <Plus size={14} /> {t('contractDetails.createAppendix')}
                     </Button>
                 </div>
             </div>
 
             {/* Navigation Tabs (No Print) */}
-            <Card className="no-print" style={{ padding: '0', overflow: 'hidden' }}>
-                <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', background: '#fafafa' }}>
+            <Card className="no-print p-0 overflow-hidden border-slate-200 shadow-xs">
+                <div className="flex border-b border-slate-200 bg-slate-50/50">
                     <button
                         onClick={() => setActiveTab('content')}
-                        style={{
-                            display: 'flex', alignItems: 'center', gap: '0.5rem',
-                            padding: '1rem 1.5rem', border: 'none', background: 'none', cursor: 'pointer',
-                            borderBottom: activeTab === 'content' ? '2px solid var(--primary)' : '2px solid transparent',
-                            color: activeTab === 'content' ? 'var(--primary)' : 'var(--text-muted)',
-                            fontWeight: activeTab === 'content' ? 600 : 500, fontSize: '0.9375rem', outline: 'none'
-                        }}
+                        className={`flex items-center gap-2 px-5 py-3 border-none bg-transparent cursor-pointer text-xs sm:text-sm font-medium transition-all relative
+                            ${activeTab === 'content' ? 'font-semibold text-emerald-700 border-b-2 border-emerald-600 bg-white' : 'text-slate-600 border-b-2 border-transparent hover:text-slate-900'}`}
                     >
-                        <FileText size={18} /> {t('contractDetails.tabContent')}
+                        <FileText size={15} /> {t('contractDetails.tabContent')}
                     </button>
                     <button
                         onClick={() => setActiveTab('appendices')}
-                        style={{
-                            display: 'flex', alignItems: 'center', gap: '0.5rem',
-                            padding: '1rem 1.5rem', border: 'none', background: 'none', cursor: 'pointer',
-                            borderBottom: activeTab === 'appendices' ? '2px solid var(--primary)' : '2px solid transparent',
-                            color: activeTab === 'appendices' ? 'var(--primary)' : 'var(--text-muted)',
-                            fontWeight: activeTab === 'appendices' ? 600 : 500, fontSize: '0.9375rem', outline: 'none'
-                        }}
+                        className={`flex items-center gap-2 px-5 py-3 border-none bg-transparent cursor-pointer text-xs sm:text-sm font-medium transition-all relative
+                            ${activeTab === 'appendices' ? 'font-semibold text-emerald-700 border-b-2 border-emerald-600 bg-white' : 'text-slate-600 border-b-2 border-transparent hover:text-slate-900'}`}
                     >
-                        <FileText size={18} /> {t('contractDetails.tabAppendices')}
-                        <span style={{
-                            background: activeTab === 'appendices' ? 'rgba(79, 70, 229, 0.1)' : 'var(--border)',
-                            color: activeTab === 'appendices' ? 'var(--primary)' : 'var(--text-main)',
-                            padding: '0.125rem 0.5rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700
-                        }}>
+                        <FileText size={15} /> {t('contractDetails.tabAppendices')}
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold
+                            ${activeTab === 'appendices' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
                             {contract.appendices.length}
                         </span>
                     </button>
@@ -155,7 +149,7 @@ export function ContractDetailClient({ contract, settings }: { contract: any, se
 
             {/* Tab: Appendices (No Print, Management Interface) */}
             {activeTab === 'appendices' && (
-                <Card className="no-print" style={{ padding: '1.5rem' }}>
+                <Card className="no-print p-4 md:p-5 border-slate-200 shadow-xs">
                     <Table>
                         <thead>
                             <tr>
@@ -173,25 +167,16 @@ export function ContractDetailClient({ contract, settings }: { contract: any, se
                                     </td>
                                 </tr>
                             ) : contract.appendices.map((apx: any) => (
-                                <tr key={apx.id}>
-                                    <td style={{ fontWeight: 500, color: 'var(--text-main)' }}>{apx.title}</td>
+                                <tr key={apx.id} className="hover:bg-slate-50/70 transition-colors">
+                                    <td style={{ fontWeight: 500, color: '#0f172a' }}>{apx.title}</td>
                                     <td>
-                                        <span style={{
-                                            backgroundColor: '#f1f5f9', color: '#64748b',
-                                            padding: '0.25rem 0.75rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 600
-                                        }}>
-                                            {apx.status}
-                                        </span>
+                                        <StatusBadge status={apx.status} />
                                     </td>
-                                    <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }} suppressHydrationWarning>{formatDate(new Date(apx.createdAt))}</td>
+                                    <td style={{ color: 'var(--text-muted)', fontSize: '0.8125rem' }} suppressHydrationWarning>{formatDate(new Date(apx.createdAt))}</td>
                                     <td>
                                         <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                                            <Link href={`/contract-appendices/${apx.id}`} style={{
-                                                width: '32px', height: '32px', borderRadius: '8px',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                background: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)', transition: 'all 0.2s'
-                                            }} title={t('contractDetails.viewAndPrint')}>
-                                                <Eye size={16} />
+                                            <Link href={`/contract-appendices/${apx.id}`} className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-600 transition-all inline-flex items-center justify-center border border-slate-200" title={t('contractDetails.viewAndPrint')}>
+                                                <Eye size={15} />
                                             </Link>
                                         </div>
                                     </td>

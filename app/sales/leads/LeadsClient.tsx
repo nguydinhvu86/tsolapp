@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Plus, Search, LayoutGrid, List, Calendar, Phone, FileText, CheckCircle, Trash2, ChevronUp, ChevronDown, Edit2, Eye } from 'lucide-react';
+import { Plus, Search, LayoutGrid, List, Calendar, Phone, FileText, CheckCircle, Trash2, ChevronUp, ChevronDown, Edit2, Eye, X, ArrowUpDown } from 'lucide-react';
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { updateLeadStatus } from './actions';
 import { Card } from '@/app/components/ui/Card';
@@ -301,33 +301,41 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
             </div>
 
             {/* Filter Ribbon */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 mb-6 flex gap-4 items-center flex-wrap">
+            <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 mb-6 shadow-sm flex gap-3 items-center flex-wrap">
                 {/* Search */}
-                <div className="flex-1 min-w-[200px] relative">
+                <div className="flex-1 min-w-[220px] relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                     <input
                         type="text"
                         placeholder={t('leads.searchPlaceholder')}
-                        className="h-[40px] w-full px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-700 outline-none transition-all placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                        className="w-full h-9 pl-9 pr-8 text-[13px] bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 text-slate-800 placeholder:text-slate-400 transition-all font-medium"
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
                     />
+                    {searchTerm && (
+                        <button
+                            type="button"
+                            onClick={() => setSearchTerm('')}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full hover:bg-slate-200/60"
+                        >
+                            <X size={14} />
+                        </button>
+                    )}
                 </div>
 
                 {/* Date Filter */}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 shrink-0 w-full md:w-auto">
-                    <span className="text-sm text-gray-500 sm:hidden">{t('leads.fromDate')}:</span>
+                <div className="flex items-center gap-1.5 shrink-0">
                     <input
                         type="date"
-                        className="h-[40px] px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-700 outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                        className="h-9 px-2.5 text-[12px] bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:border-emerald-500 text-slate-700 font-medium"
                         value={dateFrom}
                         onChange={e => setDateFrom(e.target.value)}
                         title={t('leads.fromDate')}
                     />
-                    <span className="text-gray-400 hidden sm:inline">-</span>
-                    <span className="text-sm text-gray-500 sm:hidden mt-1">{t('leads.toDate')}:</span>
+                    <span className="text-slate-400 text-xs">-</span>
                     <input
                         type="date"
-                        className="h-[40px] px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-700 outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                        className="h-9 px-2.5 text-[12px] bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:border-emerald-500 text-slate-700 font-medium"
                         value={dateTo}
                         onChange={e => setDateTo(e.target.value)}
                         title={t('leads.toDate')}
@@ -336,9 +344,9 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
 
                 {/* Employee Filter */}
                 {isAdminOrManager && users && users.length > 0 && (
-                    <div className="shrink-0 w-full md:w-auto md:min-w-[200px]">
+                    <div className="shrink-0 w-full sm:w-auto sm:min-w-[180px]">
                         <select
-                            className="h-[40px] w-full px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-700 outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+                            className="h-9 w-full px-3 text-[13px] bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:border-emerald-500 text-slate-700 font-medium cursor-pointer"
                             defaultValue={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('employeeId') || '' : ''}
                             onChange={(e) => {
                                 const newEmployeeId = e.target.value;
@@ -360,9 +368,9 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
                 )}
 
                 {/* Status Filter */}
-                <div className="shrink-0 w-full md:w-auto md:min-w-[200px]">
+                <div className="shrink-0 min-w-[150px]">
                     <select
-                        className="h-[40px] w-full px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-700 outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+                        className="h-9 w-full px-3 text-[13px] bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:border-emerald-500 text-slate-700 font-medium cursor-pointer"
                         value={statusFilter}
                         onChange={e => setStatusFilter(e.target.value)}
                     >
@@ -377,9 +385,9 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
                 </div>
 
                 {/* Sort By Dropdown */}
-                <div className="shrink-0 min-w-[170px]">
+                <div className="shrink-0 min-w-[160px]">
                     <select
-                        className="h-[40px] w-full px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-700 outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+                        className="h-9 w-full px-3 text-[13px] bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:border-emerald-500 text-slate-700 font-medium cursor-pointer"
                         value={sortBy}
                         onChange={e => setSortBy(e.target.value)}
                     >
@@ -395,7 +403,7 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
 
             {/* KANBAN VIEW */}
             {viewMode === 'kanban' && (
-                <div className="w-full overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm" style={{ minHeight: '600px' }}>
+                <div className="w-full overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm" style={{ minHeight: '600px' }}>
                     <div className="flex h-full min-h-[600px]" style={{ minWidth: '100%' }}>
                         {STATUSES.filter(s => {
                             if (statusFilter === 'ACTIVE') return !['WON', 'LOST'].includes(s.id);
@@ -404,18 +412,17 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
                         }).map((status, index, arr) => (
                             <div
                                 key={status.id}
-                                className={`flex flex-col flex-1 min-w-[250px] shrink-0 transition-colors duration-200 ${index < arr.length - 1 ? 'border-r border-gray-200' : ''}`}
+                                className={`flex flex-col flex-1 min-w-[250px] shrink-0 transition-colors duration-200 ${index < arr.length - 1 ? 'border-r border-slate-200' : ''}`}
                                 style={{ backgroundColor: status.color.colBg }}
                                 onDragOver={handleDragOver}
                                 onDrop={(e) => handleDrop(e, status.id)}
                             >
-                                <div className="p-4 text-center" style={{ backgroundColor: status.color.bg }}>
+                                <div className="p-3.5 text-center border-b border-slate-200/60" style={{ backgroundColor: status.color.bg }}>
                                     <h3
-                                        className="font-bold uppercase"
+                                        className="font-bold uppercase tracking-wider"
                                         style={{
                                             color: status.color.text,
-                                            letterSpacing: '0.02em',
-                                            fontSize: '13px',
+                                            fontSize: '12px',
                                             whiteSpace: 'nowrap',
                                             overflow: 'hidden',
                                             textOverflow: 'ellipsis'
@@ -433,34 +440,34 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
                                             onDragStart={(e) => handleDragStart(e, lead.id)}
                                             onDragEnd={handleDragEnd}
                                             onClick={() => router.push(`/sales/leads/${lead.id}`)}
-                                            className={`bg-white p-4 rounded-lg shadow-[0_1px_3px_rgba(0,0,0,0.05)] border border-gray-200 cursor-move transition-all group hover:shadow-md hover:border-indigo-300 relative ${draggedLeadId === lead.id ? 'opacity-40 scale-95 border-dashed border-indigo-400' : ''}`}
+                                            className={`bg-white p-3.5 rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] border border-slate-200/80 cursor-move transition-all group hover:shadow-md hover:border-emerald-300 relative ${draggedLeadId === lead.id ? 'opacity-40 scale-95 border-dashed border-emerald-400' : ''}`}
                                         >
-                                            <div className="absolute top-4 right-4 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div className="absolute top-3.5 right-3.5 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <LayoutGrid size={14} />
                                             </div>
                                             <div className="flex justify-between items-start mb-2">
-                                                <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 rounded-full">{lead.code}</span>
+                                                <span className="font-mono text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/80">{lead.code}</span>
                                             </div>
-                                            <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-indigo-600 transition-colors line-clamp-2">
+                                            <h3 className="font-semibold text-[13px] text-slate-900 mb-1 group-hover:text-emerald-600 transition-colors line-clamp-2">
                                                 {lead.name}
                                             </h3>
-                                            <p className="text-sm text-gray-600 mb-3 truncate">
+                                            <p className="text-xs text-slate-500 mb-3 truncate">
                                                 {lead.customer?.name || lead.company || lead.contactName || t('leads.unknownCustomer')}
                                             </p>
 
-                                            <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-100">
-                                                <div className="font-semibold text-gray-900">
+                                            <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
+                                                <div className="font-bold text-slate-900">
                                                     {formatMoney(lead.estimatedValue || 0)}
                                                 </div>
-                                                <div className="flex items-center gap-1">
-                                                    <Calendar size={12} />
+                                                <div className="flex items-center gap-1 text-slate-400 text-[11px]">
+                                                    <Calendar size={11} />
                                                     {formatDate(lead.createdAt || new Date())}
                                                 </div>
                                             </div>
                                         </div>
                                     ))}
                                     {leadsByStatus[status.id].length === 0 && (
-                                        <div className="text-center py-8 text-gray-400 text-sm italic border-2 border-dashed border-gray-200 bg-white/50 rounded-lg">
+                                        <div className="text-center py-8 text-slate-400 text-xs italic border border-dashed border-slate-200 bg-white/50 rounded-lg">
                                             {t('leads.emptyKanban')}
                                         </div>
                                     )}
@@ -473,62 +480,62 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
 
             {/* TABLE VIEW */}
             {viewMode === 'table' && (
-                <div className="w-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden overflow-x-auto mb-4">
-                    <Table className="min-w-[900px]">
-                        <thead className="whitespace-nowrap">
+                <div className="table-wrapper">
+                    <table>
+                        <thead>
                             <tr>
-                                <th className="text-left font-medium text-gray-500 pb-3 cursor-pointer hover:text-indigo-600 transition-colors select-none" onClick={() => handleSort('code')}>
+                                <th className="text-[11px] font-bold uppercase tracking-wider text-slate-600 cursor-pointer hover:bg-slate-100/80 transition-colors select-none" onClick={() => handleSort('code')}>
                                     <div className="flex items-center gap-1">
-                                        {t('leads.code')} {sortBy === 'code_asc' ? <ChevronUp size={14} /> : sortBy === 'code_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
+                                        {t('leads.code')} {sortBy === 'code_asc' ? <ChevronUp size={13} className="text-slate-400" /> : sortBy === 'code_desc' ? <ChevronDown size={13} className="text-slate-400" /> : <ArrowUpDown size={13} className="text-slate-300" />}
                                     </div>
                                 </th>
-                                <th className="text-left font-medium text-gray-500 pb-3 cursor-pointer hover:text-indigo-600 transition-colors select-none" onClick={() => handleSort('date')}>
+                                <th className="text-[11px] font-bold uppercase tracking-wider text-slate-600 cursor-pointer hover:bg-slate-100/80 transition-colors select-none" onClick={() => handleSort('date')}>
                                     <div className="flex items-center gap-1">
-                                        {t('leads.createdAt')} {sortBy === 'date_asc' ? <ChevronUp size={14} /> : sortBy === 'date_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
+                                        {t('leads.createdAt')} {sortBy === 'date_asc' ? <ChevronUp size={13} className="text-slate-400" /> : sortBy === 'date_desc' ? <ChevronDown size={13} className="text-slate-400" /> : <ArrowUpDown size={13} className="text-slate-300" />}
                                     </div>
                                 </th>
-                                <th className="text-left font-medium text-gray-500 pb-3">{t('leads.name')}</th>
-                                <th className="text-left font-medium text-gray-500 pb-3">{t('leads.customer')}</th>
-                                <th className="text-right font-medium text-gray-500 pb-3 cursor-pointer hover:text-indigo-600 transition-colors select-none" onClick={() => handleSort('amount')}>
+                                <th className="text-[11px] font-bold uppercase tracking-wider text-slate-600">{t('leads.name')}</th>
+                                <th className="text-[11px] font-bold uppercase tracking-wider text-slate-600">{t('leads.customer')}</th>
+                                <th className="text-right text-[11px] font-bold uppercase tracking-wider text-slate-600 cursor-pointer hover:bg-slate-100/80 transition-colors select-none" onClick={() => handleSort('amount')}>
                                     <div className="flex items-center justify-end gap-1">
-                                        {t('leads.estimatedValue')} {sortBy === 'amount_asc' ? <ChevronUp size={14} /> : sortBy === 'amount_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
+                                        {t('leads.estimatedValue')} {sortBy === 'amount_asc' ? <ChevronUp size={13} className="text-slate-400" /> : sortBy === 'amount_desc' ? <ChevronDown size={13} className="text-slate-400" /> : <ArrowUpDown size={13} className="text-slate-300" />}
                                     </div>
                                 </th>
-                                <th className="text-center font-medium text-gray-500 pb-3">{t('leads.status')}</th>
-                                <th className="text-right font-medium text-gray-500 pb-3">{t('leads.action')}</th>
+                                <th className="text-center text-[11px] font-bold uppercase tracking-wider text-slate-600">{t('leads.status')}</th>
+                                <th className="text-center text-[11px] font-bold uppercase tracking-wider text-slate-600">{t('leads.action')}</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                             {tableLeads.map(lead => {
                                 const statusObj = STATUSES.find(s => s.id === lead.status) || STATUSES[0];
                                 return (
                                     <tr
                                         key={lead.id}
-                                        className="border-t border-gray-100 group"
+                                        className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
                                     >
-                                        <td className="py-3">
-                                            <Link href={`/sales/leads/${lead.id}`} className="font-semibold text-gray-800 hover:text-indigo-600 hover:underline transition-colors block">
+                                        <td className="p-3 text-[13px]">
+                                            <Link href={`/sales/leads/${lead.id}`} className="font-mono font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/80 hover:bg-emerald-100 hover:text-emerald-800 transition-colors inline-block">
                                                 {lead.code}
                                             </Link>
                                         </td>
-                                        <td className="py-3 text-gray-600">
+                                        <td className="p-3 text-xs text-slate-500">
                                             {formatDate(lead.createdAt || new Date())}
                                         </td>
-                                        <td className="py-3">
-                                            <Link href={`/sales/leads/${lead.id}`} className="font-medium text-gray-900 hover:text-indigo-600 line-clamp-1 block">
+                                        <td className="p-3">
+                                            <Link href={`/sales/leads/${lead.id}`} className="font-semibold text-[13px] text-slate-900 hover:text-emerald-600 transition-colors line-clamp-1 block">
                                                 {lead.name}
                                             </Link>
                                         </td>
-                                        <td className="py-3">
-                                            <div className="text-gray-900 font-medium">{lead.customer?.name || lead.company || '—'}</div>
-                                            <div className="text-xs text-gray-500 mt-0.5">{lead.customer?.phone || lead.phone || lead.customer?.email || lead.email || '—'}</div>
+                                        <td className="p-3">
+                                            <div className="text-[13px] font-medium text-slate-900">{lead.customer?.name || lead.company || '—'}</div>
+                                            <div className="text-xs text-slate-400 mt-0.5">{lead.customer?.phone || lead.phone || lead.customer?.email || lead.email || '—'}</div>
                                         </td>
-                                        <td className="py-3 text-right font-bold text-gray-800">
-                                            {formatMoney(lead.estimatedValue || 0)}
+                                        <td className="p-3 text-right">
+                                            <div className="font-bold text-[13px] text-slate-900">{formatMoney(lead.estimatedValue || 0)}</div>
                                         </td>
-                                        <td className="py-3 text-center">
+                                        <td className="p-3 text-center">
                                             <select
-                                                className={`status-badge status-select appearance-none ${statusObj.badgeClass}`}
+                                                className={`text-[11px] font-semibold rounded-full px-2.5 py-0.5 border cursor-pointer focus:outline-none transition-colors ${statusObj.badgeClass}`}
                                                 value={lead.status}
                                                 onChange={(e) => handleStatusChange(lead.id, e.target.value)}
                                                 title={t('leads.clickToChange')}
@@ -542,12 +549,12 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
                                                 <option value="LOST" className="bg-white text-gray-900">{t('leads.statusLost')}</option>
                                             </select>
                                         </td>
-                                        <td className="py-3 text-right">
-                                            <div className="flex justify-end items-center gap-1">
-                                                <Link href={`/sales/leads/${lead.id}`} title={t('leads.viewDetails')} className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors block rounded-md">
+                                        <td className="p-3">
+                                            <div className="flex items-center justify-center gap-1">
+                                                <Link href={`/sales/leads/${lead.id}`} title={t('leads.viewDetails')} className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                                                     <Eye size={16} />
                                                 </Link>
-                                                <Link href={`/sales/leads/${lead.id}`} title={t('leads.edit')} className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors block rounded-md">
+                                                <Link href={`/sales/leads/${lead.id}`} title={t('leads.edit')} className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors">
                                                     <Edit2 size={16} />
                                                 </Link>
                                             </div>
@@ -557,13 +564,13 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
                             })}
                             {filteredLeads.length === 0 && (
                                 <tr>
-                                    <td colSpan={7} className="py-12 text-center text-gray-500 bg-slate-50 border border-dashed border-gray-200 mt-4 rounded-xl">
+                                    <td colSpan={7} className="p-8 text-center text-slate-500 font-medium text-[13px]">
                                         {t('leads.emptyTable')}
                                     </td>
                                 </tr>
                             )}
                         </tbody>
-                    </Table>
+                    </table>
                     <Pagination {...paginationProps} />
                 </div>
             )}

@@ -51,7 +51,7 @@ export function SearchableSelect({
             <div
                 onClick={() => !disabled && setIsOpen(!isOpen)}
                 style={{
-                    padding: '0.5rem 0.75rem',
+                    padding: '0.35rem 0.65rem',
                     border: '1px solid var(--border)',
                     borderRadius: 'var(--radius)',
                     backgroundColor: disabled ? '#f8fafc' : 'white',
@@ -59,9 +59,9 @@ export function SearchableSelect({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    minHeight: '42px',
+                    minHeight: '34px',
                     transition: 'border-color 0.2s, box-shadow 0.2s',
-                    boxShadow: isOpen ? '0 0 0 2px rgba(99, 102, 241, 0.2)' : 'none',
+                    boxShadow: isOpen ? '0 0 0 2px rgba(5, 166, 19, 0.15)' : 'none',
                     borderColor: isOpen ? 'var(--primary)' : 'var(--border)'
                 }}
             >
@@ -69,12 +69,13 @@ export function SearchableSelect({
                     color: selectedOption ? 'var(--text-main)' : 'var(--text-muted)',
                     whiteSpace: 'nowrap',
                     overflowX: 'auto',
-                    fontSize: '0.875rem',
+                    fontSize: '0.75rem',
+                    fontWeight: selectedOption ? 500 : 400,
                     flex: 1,
                     minWidth: 0,
-                    marginRight: '8px',
+                    marginRight: '6px',
                     scrollbarWidth: 'thin',
-                    paddingBottom: '2px' // So scrollbar doesn't clip
+                    paddingBottom: '1px' // So scrollbar doesn't clip
                 }}
                     className="custom-scrollbar"
                 >

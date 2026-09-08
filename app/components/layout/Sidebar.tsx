@@ -175,52 +175,52 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
         return (
             <div ref={setNodeRef} style={{ ...style, display: 'flex', flexDirection: 'column' }}>
                 <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                    <div {...attributes} {...listeners} style={{ cursor: 'grab', padding: '0.5rem 0.25rem', color: 'var(--text-muted)' }}>
-                        <GripVertical size={16} />
+                    <div {...attributes} {...listeners} style={{ cursor: 'grab', padding: '0.35rem 0.2rem', color: '#64748b' }}>
+                        <GripVertical size={14} />
                     </div>
                     <button
                         onClick={() => toggleSubMenu(item.name)}
                         style={{
                             flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            padding: '0.75rem 1rem 0.75rem 0.25rem', borderRadius: 'var(--radius)',
-                            backgroundColor: 'transparent', border: 'none', cursor: 'pointer',
-                            color: isChildActive ? 'white' : '#94a3b8',
-                            fontSize: '0.875rem', fontWeight: 500, transition: 'all 0.2s', outline: 'none'
+                            padding: '0.45rem 0.75rem 0.45rem 0.25rem', borderRadius: '8px',
+                            backgroundColor: isChildActive ? 'rgba(255,255,255,0.06)' : 'transparent', border: 'none', cursor: 'pointer',
+                            color: isChildActive ? '#ffffff' : '#94a3b8',
+                            fontSize: '0.8125rem', fontWeight: isChildActive ? 600 : 500, transition: 'all 0.15s ease', outline: 'none'
                         }}
                     >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            {item.icon && <item.icon size={20} />}
-                            {t(item.nameKey) !== item.nameKey ? t(item.nameKey) : item.name}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                            {item.icon && <item.icon size={17} />}
+                            <span className="truncate">{t(item.nameKey) !== item.nameKey ? t(item.nameKey) : item.name}</span>
                         </div>
-                        {isOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                        {isOpen ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
                     </button>
                 </div>
                 {isOpen && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginLeft: '2.25rem', marginTop: '0.25rem', borderLeft: '2px solid var(--border)', paddingLeft: '0.75rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', marginLeft: '1.75rem', marginTop: '0.15rem', borderLeft: '1px solid rgba(255,255,255,0.12)', paddingLeft: '0.5rem' }}>
                         {visibleChildren.map((child: any) => {
                             if (child.children) {
                                 const isGrandChildActive = child.children.some((gChild: any) => pathname?.startsWith(gChild.href) || pathname === gChild.href);
                                 const isChildOpen = openSubMenus[child.name] !== undefined ? openSubMenus[child.name] : isGrandChildActive;
                                 return (
-                                    <div key={child.name} style={{ display: 'flex', flexDirection: 'column', marginTop: '0.25rem' }}>
+                                    <div key={child.name} style={{ display: 'flex', flexDirection: 'column', marginTop: '0.15rem' }}>
                                         <button
                                             onClick={() => toggleSubMenu(child.name)}
                                             style={{
                                                 width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                padding: '0.5rem 0.75rem', borderRadius: 'var(--radius)',
+                                                padding: '0.35rem 0.6rem', borderRadius: '6px',
                                                 backgroundColor: 'transparent', border: 'none', cursor: 'pointer',
-                                                color: isGrandChildActive ? 'white' : '#94a3b8',
-                                                fontWeight: 500, transition: 'all 0.2s', outline: 'none', fontSize: '0.875rem'
+                                                color: isGrandChildActive ? '#ffffff' : '#94a3b8',
+                                                fontWeight: 500, transition: 'all 0.15s', outline: 'none', fontSize: '0.8125rem'
                                             }}
                                         >
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                {child.icon ? <child.icon size={18} /> : <FileCode size={18} />}
-                                                {t(child.nameKey) !== child.nameKey ? t(child.nameKey) : child.name}
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                                                {child.icon ? <child.icon size={15} /> : <FileCode size={15} />}
+                                                <span className="truncate">{t(child.nameKey) !== child.nameKey ? t(child.nameKey) : child.name}</span>
                                             </div>
-                                            {isChildOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                                            {isChildOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                                         </button>
                                         {isChildOpen && (
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', marginLeft: '1.25rem', marginTop: '0.15rem', borderLeft: '1px solid var(--border)', paddingLeft: '0.5rem' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', marginLeft: '1rem', marginTop: '0.1rem', borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '0.45rem' }}>
                                                 {child.children.map((gChild: any) => {
                                                     const isActive = pathname?.startsWith(gChild.href) || pathname === gChild.href;
                                                     return (
@@ -229,14 +229,14 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
                                                             href={gChild.href}
                                                             onClick={() => { if (onClose && window.innerWidth < 768) onClose(); }}
                                                             style={{
-                                                                padding: '0.4rem 0.75rem', borderRadius: 'var(--radius)',
-                                                                backgroundColor: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
-                                                                color: isActive ? 'white' : '#94a3b8',
-                                                                fontSize: '0.875rem', fontWeight: isActive ? 600 : 400, textDecoration: 'none',
-                                                                transition: 'all 0.2s', display: 'block'
+                                                                padding: '0.3rem 0.6rem', borderRadius: '6px',
+                                                                backgroundColor: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
+                                                                color: isActive ? '#ffffff' : '#94a3b8',
+                                                                fontSize: '0.8125rem', fontWeight: isActive ? 600 : 400, textDecoration: 'none',
+                                                                transition: 'all 0.15s', display: 'block'
                                                             }}
                                                         >
-                                                            {t(gChild.nameKey) !== gChild.nameKey ? t(gChild.nameKey) : gChild.name}
+                                                            <span className="truncate">{t(gChild.nameKey) !== gChild.nameKey ? t(gChild.nameKey) : gChild.name}</span>
                                                         </Link>
                                                     )
                                                 })}
@@ -253,14 +253,14 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
                                     href={child.href}
                                     onClick={() => { if (onClose && window.innerWidth < 768) onClose(); }}
                                     style={{
-                                        padding: '0.5rem 0.75rem', borderRadius: 'var(--radius)',
-                                        backgroundColor: isChildMenuActive ? 'rgba(255,255,255,0.1)' : 'transparent',
-                                        color: isChildMenuActive ? 'white' : '#94a3b8',
-                                        fontSize: '0.875rem', fontWeight: isChildMenuActive ? 600 : 500, textDecoration: 'none',
-                                        transition: 'all 0.2s', display: 'block'
+                                        padding: '0.35rem 0.6rem', borderRadius: '6px',
+                                        backgroundColor: isChildMenuActive ? 'rgba(255,255,255,0.08)' : 'transparent',
+                                        color: isChildMenuActive ? '#ffffff' : '#94a3b8',
+                                        fontSize: '0.8125rem', fontWeight: isChildMenuActive ? 600 : 500, textDecoration: 'none',
+                                        transition: 'all 0.15s', display: 'block'
                                     }}
                                 >
-                                    {t(child.nameKey) !== child.nameKey ? t(child.nameKey) : child.name}
+                                    <span className="truncate">{t(child.nameKey) !== child.nameKey ? t(child.nameKey) : child.name}</span>
                                 </Link>
                             )
                         })}
@@ -273,22 +273,22 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
     const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href));
     return (
         <div ref={setNodeRef} style={{ ...style, display: 'flex', alignItems: 'center', width: '100%' }}>
-            <div {...attributes} {...listeners} style={{ cursor: 'grab', padding: '0.5rem 0.25rem', color: 'var(--text-muted)' }}>
-                <GripVertical size={16} />
+            <div {...attributes} {...listeners} style={{ cursor: 'grab', padding: '0.35rem 0.2rem', color: '#64748b' }}>
+                <GripVertical size={14} />
             </div>
             <Link
                 href={item.href}
                 onClick={() => { if (onClose && window.innerWidth < 768) onClose(); }}
                 style={{
-                    flex: 1, display: 'flex', alignItems: 'center', gap: '0.75rem',
-                    padding: '0.75rem 1rem 0.75rem 0.25rem', borderRadius: 'var(--radius)',
-                    backgroundColor: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
-                    color: isActive ? 'white' : '#94a3b8',
-                    fontSize: '0.875rem', fontWeight: isActive ? 600 : 500, transition: 'all 0.2s ease', textDecoration: 'none'
+                    flex: 1, display: 'flex', alignItems: 'center', gap: '0.625rem',
+                    padding: '0.45rem 0.75rem 0.45rem 0.25rem', borderRadius: '8px',
+                    backgroundColor: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
+                    color: isActive ? '#ffffff' : '#94a3b8',
+                    fontSize: '0.8125rem', fontWeight: isActive ? 600 : 500, transition: 'all 0.15s ease', textDecoration: 'none'
                 }}
             >
-                <item.icon size={20} />
-                {t(item.nameKey) !== item.nameKey ? t(item.nameKey) : item.name}
+                <item.icon size={17} />
+                <span className="truncate">{t(item.nameKey) !== item.nameKey ? t(item.nameKey) : item.name}</span>
             </Link>
         </div>
     );

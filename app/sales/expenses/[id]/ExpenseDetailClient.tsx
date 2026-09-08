@@ -60,7 +60,7 @@ export function ExpenseDetailClient({ initialData }: { initialData: ExpenseWithR
                         Quay lại danh sách Phiếu Chi
                     </Link>
                     <div className="flex items-center gap-3">
-                        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Chi tiết Phiếu Chi</h1>
+                        <h1 className="text-lg font-bold text-slate-800 tracking-tight">Chi tiết Phiếu Chi</h1>
                         <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-sm font-semibold rounded-md border border-emerald-200 shadow-sm flex items-center gap-1.5">
                             <CheckCircle2 size={14} /> Hoàn Thành
                         </span>

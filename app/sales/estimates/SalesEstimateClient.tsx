@@ -10,7 +10,7 @@ import { Button } from '@/app/components/ui/Button';
 import { useTranslation } from '@/app/i18n/LanguageContext';
 import { Modal } from '@/app/components/ui/Modal';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
-import { Plus, Edit2, Trash2, Save, X, Printer, FileText, Search, Calendar, FolderClock, LayoutList, CheckCircle2, XCircle, Eye, Link as LinkIcon, Download, ChevronUp, ChevronDown, Check, ArrowRightLeft, ShoppingCart, Copy } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Printer, FileText, Search, Calendar, FolderClock, LayoutList, CheckCircle2, XCircle, Eye, Link as LinkIcon, Download, ChevronUp, ChevronDown, Check, ArrowRightLeft, ShoppingCart, Copy, ArrowUpDown } from 'lucide-react';
 import { submitSalesEstimate, updateSalesEstimateStatus, deleteSalesEstimate, updateSalesEstimate, convertEstimateToInvoice, convertEstimateToOrder } from './actions';
 import { formatMoney, formatDate, formatTaxRate, calcPreTaxPrice, calcTaxAmount } from '@/lib/utils/formatters';
 import { TaxRateSelect, TaxBadge } from '@/app/components/ui/TaxRateSelect';
@@ -561,48 +561,72 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         .status-badge {
             display: inline-flex;
             align-items: center;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.75rem;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 11.5px;
             font-weight: 600;
-            letter-spacing: 0.025em;
+            line-height: 1.3;
+            letter-spacing: -0.01em;
+            transition: all 0.15s ease;
         }
-        .badge-success { background: #d1fae5; color: #047857; border: 1px solid #a7f3d0; }
-        .badge-warning { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
-        .badge-neutral { background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
-        .badge-info { background: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; }
-        .badge-danger { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
-        .badge-purple { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
-        .badge-expired { background: #f3f4f6; color: #6b7280; border: 1px solid #d1d5db; text-decoration: line-through; }
-        .stat-card-gray { background-color: #f3f4f6; color: #4b5563; border-color: #e5e7eb; }
-        .stat-card-gray .stat-icon { background-color: #e5e7eb; color: #6b7280; }
-        .stat-card-gray:hover { border-color: #d1d5db; background-color: #e5e7eb; }
+        .badge-success { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+        .badge-warning { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+        .badge-neutral { background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; }
+        .badge-info { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        .badge-danger { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+        .badge-purple { background: #faf5ff; color: #6b21a8; border: 1px solid #f3e8ff; }
+        .badge-expired { background: #f1f5f9; color: #94a3b8; border: 1px solid #e2e8f0; }
+        .stat-card-gray { background-color: #f8fafc; color: #475569; border-color: #e2e8f0; }
+        .stat-card-gray .stat-icon { background-color: #f1f5f9; color: #64748b; }
+        .stat-card-gray:hover { border-color: #cbd5e1; background-color: #f1f5f9; }
         
         .status-select {
             appearance: none;
             cursor: pointer;
             outline: none;
-            text-align: center;
-            padding-right: 28px !important;
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            text-align: left;
+            padding: 3px 22px 3px 8px !important;
+            border-radius: 6px;
+            font-size: 11.5px;
+            font-weight: 600;
+            line-height: 1.3;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
             background-position: right 4px center;
-            background-repeat: no-slash;
-            background-size: 1.2em 1.2em;
+            background-repeat: no-repeat;
+            background-size: 14px 14px;
         }
-        .status-select:hover { filter: brightness(0.95); }
+        .status-select:hover { opacity: 0.92; }
     `;
 
     return (
         <>
-            <Card className="p-6">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                    <h2 className="text-xl font-semibold">Báo Giá ERP</h2>
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+            <div className="flex flex-col gap-5">
+                {/* Top Page Tech Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/80">
+                    <div>
+                        <div className="flex items-center gap-2 mb-1">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-2xs">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                BÁN HÀNG &amp; BÁO GIÁ
+                            </span>
+                            <span className="text-[11px] font-semibold text-slate-400">|</span>
+                            <span className="text-[11px] font-medium text-slate-500">Quản lý báo giá, theo dõi phản hồi và chuyển đổi sang đơn hàng</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Báo Giá Bán Hàng</h1>
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs">
+                                {estimates.length}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0">
                         {isAdminOrManager && users && users.length > 0 && (
-                            <div className="flex items-center gap-2 w-full sm:w-auto">
-                                <span className="text-sm text-gray-500 font-medium whitespace-nowrap">Lọc nhân viên:</span>
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[11px] text-slate-500 font-medium whitespace-nowrap">Nhân viên:</span>
                                 <select
-                                    className="flex-1 sm:flex-initial px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 outline-none focus:border-blue-500"
+                                    className="h-[34px] px-2.5 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-700 outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 shadow-2xs cursor-pointer"
                                     defaultValue={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('employeeId') || '' : ''}
                                     onChange={(e) => {
                                         const newEmployeeId = e.target.value;
@@ -612,7 +636,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                         } else {
                                             params.delete('employeeId');
                                         }
-                                        router.push(`/sales/estimates?${params.toString()}`);
+                                        window.location.href = `/sales/estimates?${params.toString()}`;
                                     }}
                                 >
                                     <option value="">Tất cả nhân viên</option>
@@ -622,32 +646,36 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                 </select>
                             </div>
                         )}
-                        <Button onClick={handleOpenCreate} className="flex justify-center items-center gap-2 w-full sm:w-auto">
-                            <Plus size={16} /> Tạo Báo Giá Mới
+                        <Button
+                            onClick={handleOpenCreate}
+                            className="btn btn-primary gap-2 h-[34px] px-3.5 text-xs font-bold rounded-lg shadow-sm"
+                        >
+                            <Plus size={15} className="stroke-[2.5]" />
+                            <span>Tạo Báo Giá Mới</span>
                         </Button>
                     </div>
                 </div>
 
                 <style dangerouslySetInnerHTML={{ __html: premiumCSS }} />
                 {/* Filter Cards */}
-                <div className="flex flex-wrap gap-4 mb-6">
+                <div className="flex flex-wrap gap-3 mb-5">
                     {statsCards.map(stat => (
                         <div
                             key={stat.id}
                             onClick={() => setStatusFilter(stat.id)}
-                            className={`stat-card ${stat.colorClass} cursor-pointer flex-1 min-w-[160px] ${statusFilter === stat.id ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+                            className={`stat-card ${stat.colorClass} cursor-pointer flex-1 min-w-[140px] transition-all hover:-translate-y-0.5 ${statusFilter === stat.id ? 'ring-2 ring-primary ring-offset-2' : ''}`}
                         >
-                            <div className="flex justify-between items-start mb-2">
-                                <span className="stat-title text-sm font-semibold uppercase tracking-wide">{stat.label}</span>
-                                <div className="stat-icon p-2 rounded-full flex items-center justify-center">
-                                    <stat.icon size={18} />
+                            <div className="flex justify-between items-start mb-1.5">
+                                <span className="stat-title text-[10px] font-bold uppercase tracking-wider">{stat.label}</span>
+                                <div className="stat-icon p-1.5 rounded-full flex items-center justify-center">
+                                    <stat.icon size={15} />
                                 </div>
                             </div>
                             <div className="stat-info">
-                                <span className="stat-value text-3xl font-bold">{stat.count}</span>
+                                <span className="stat-value text-2xl font-bold">{stat.count}</span>
                             </div>
                             {stat.amount > 0 && (
-                                <div className="mt-2 text-xs font-semibold opacity-80 break-words whitespace-nowrap overflow-hidden text-ellipsis">
+                                <div className="mt-1.5 text-[11px] font-semibold opacity-85 break-words whitespace-nowrap overflow-hidden text-ellipsis">
                                     {formatMoney(stat.amount)}
                                 </div>
                             )}
@@ -656,155 +684,126 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                 </div>
 
                 {/* Filter Ribbon */}
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 mb-6 flex gap-4 items-center flex-wrap">
+                <div className="bg-slate-50/80 border border-slate-200 rounded-xl p-3 mb-5 flex gap-3 items-center flex-wrap">
                     <div className="flex-1 relative min-w-[200px]">
                         <input
                             type="text"
                             placeholder="Tìm theo Mã BG, Tên khách hàng..."
-                            className="px-3 border border-slate-300 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 w-full bg-white"
+                            className="px-3 border border-slate-300 py-1.5 rounded-lg text-xs outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 w-full bg-white shadow-xs"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
                         />
                     </div>
-                    {/* Create Button */}
-                    <div className="shrink-0">
-                        <button onClick={handleOpenCreate} className="btn-primary w-full sm:w-auto mt-4 sm:mt-0 font-semibold h-[40px] px-6 text-[13px] shadow-sm flex items-center justify-center transition-all hover:-translate-y-0.5" title="Tạo mới Báo giá">
-                            <Plus size={16} className="mr-2 shrink-0" />
-                            Tạo Báo Giá
-                        </button>
-                    </div>
 
                     {/* Date Filter */}
-                    <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
-                        <Calendar size={16} className="text-gray-400 hidden sm:block" />
+                    <div className="flex items-center gap-1.5 text-xs">
+                        <Calendar size={14} className="text-slate-400 hidden sm:block" />
                         <input
                             type="date"
-                            className="h-[40px] flex-1 sm:w-auto px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-700 outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                            className="border border-slate-300 px-2.5 py-1.5 rounded-lg text-xs outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 bg-white shadow-xs"
                             value={dateFrom}
                             onChange={e => setDateFrom(e.target.value)}
                             title="Từ ngày"
                         />
-                        <span className="text-gray-400">-</span>
+                        <span className="text-slate-400">-</span>
                         <input
                             type="date"
-                            className="h-[40px] flex-1 sm:w-auto px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-700 outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                            className="border border-slate-300 px-2.5 py-1.5 rounded-lg text-xs outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 bg-white shadow-xs"
                             value={dateTo}
                             onChange={e => setDateTo(e.target.value)}
                             title="Đến ngày"
                         />
                     </div>
 
-                    {/* Employee Filter */}
-                    {isAdminOrManager && users && users.length > 0 && (
-                        <div className="shrink-0 min-w-[200px] w-full sm:w-auto">
-                            <select
-                                className="h-[40px] w-full px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-700 outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
-                                defaultValue={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('employeeId') || '' : ''}
-                                onChange={(e) => {
-                                    const newEmployeeId = e.target.value;
-                                    const params = new URLSearchParams(window.location.search);
-                                    if (newEmployeeId) {
-                                        params.set('employeeId', newEmployeeId);
-                                    } else {
-                                        params.delete('employeeId');
-                                    }
-                                    window.location.href = `/sales/estimates?${params.toString()}`;
-                                }}
-                            >
-                                <option value="">Lọc theo: Tất cả nhân viên</option>
-                                {users.map((u: any) => (
-                                    <option key={u.id} value={u.id}>{u.name}</option>
-                                ))}
-                            </select>
-                        </div>
-                    )}
-                    <div className="flex items-center gap-2 min-w-[200px]">
+                    <div className="flex items-center gap-2 min-w-[180px]">
                         <select
-                            className="border border-slate-300 px-3 py-2 rounded-lg text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 w-full bg-white cursor-pointer"
+                            className="border border-slate-300 px-2.5 py-1.5 rounded-lg text-xs outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 w-full bg-white cursor-pointer shadow-xs"
                             value={sortBy}
                             onChange={e => setSortBy(e.target.value)}
                         >
                             <option value="createdAt_desc">Mới tạo nhất</option>
                             <option value="date_desc">Ngày (Mới nhất)</option>
                             <option value="date_asc">Ngày (Cũ nhất)</option>
-                            <option value="amount_desc">Tổng Tiền (Cao xuống thấp)</option>
-                            <option value="amount_asc">Tổng Tiền (Thấp lên cao)</option>
+                            <option value="amount_desc">Tổng Tiền (Cao $\rightarrow$ Thấp)</option>
+                            <option value="amount_asc">Tổng Tiền (Thấp $\rightarrow$ Cao)</option>
                             <option value="code_asc">Mã BG (A-Z)</option>
                             <option value="code_desc">Mã BG (Z-A)</option>
                         </select>
                     </div>
                 </div>
 
-                <Table>
-                    <thead className="bg-slate-50 border-b border-gray-200">
-                        <tr>
-                            <th className="text-left font-medium text-gray-500 pb-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('code')}>
-                                <div className="flex items-center gap-1">
-                                    {t('estimates.code')} {sortBy === 'code_asc' ? <ChevronUp size={14} /> : sortBy === 'code_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
-                                </div>
-                            </th>
-                            <th className="text-left font-medium text-gray-500 pb-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('date')}>
-                                <div className="flex items-center gap-1">
-                                    {t('estimates.dateCreatedExpire')} <div className="text-xs text-gray-400 font-normal">{t('estimates.dateCreatedExpireSub')}</div>
-                                    {sortBy === 'date_asc' ? <ChevronUp size={14} /> : sortBy === 'date_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
-                                </div>
-                            </th>
-                            <th className="text-left font-medium text-gray-500 pb-3">{t('estimates.customer')}</th>
-                            <th className="text-left font-medium text-gray-500 pb-3">{t('estimates.salesperson')}</th>
-                            <th className="text-left font-medium text-gray-500 pb-3">{t('estimates.tags')}</th>
-                            <th className="text-right font-medium text-gray-500 pb-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('amount')}>
-                                <div className="flex items-center justify-end gap-1">
-                                    {t('estimates.totalAmount')} {sortBy === 'amount_asc' ? <ChevronUp size={14} /> : sortBy === 'amount_desc' ? <ChevronDown size={14} /> : <div className="w-[14px]"></div>}
-                                </div>
-                            </th>
-                            <th className="text-center font-medium text-gray-500 pb-3">{t('estimates.status')}</th>
-                            <th className="text-right font-medium text-gray-500 pb-3">{t('estimates.action')}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {paginatedItems.map((est: any) => {
-                            const isExpired = est.status === 'EXPIRED';
-                            return (
-                                <tr key={est.id} className={`border-t border-gray-100 ${isExpired ? 'bg-gray-50/50' : ''}`}>
-                                    <td className="py-3 items-center gap-2 flex">
-                                        <FileText size={16} className={`text-primary/70 ${isExpired ? 'text-gray-400' : ''}`} />
-                                        <Link href={`/sales/estimates/${est.id}`} className={`font-semibold hover:text-primary hover:underline transition-colors block ${isExpired ? 'text-gray-500' : 'text-gray-800'}`}>
-                                            {est.code}
-                                        </Link>
-                                    </td>
-                                    <td className="py-3">
-                                        <div className={`font-medium ${isExpired ? 'text-gray-500' : 'text-gray-600'}`} suppressHydrationWarning>{formatDate(new Date(est.date))}</div>
-                                        {est.validUntil && (
-                                            <div className={`text-xs mt-1 flex items-center gap-1 ${isExpired ? 'text-red-600 font-semibold' : 'text-red-500'}`} title={t('estimates.validUntil')}>
-                                                <Calendar size={12} /> {t('estimates.validUntil')} {formatDate(est.validUntil)}
+                <div className="overflow-x-auto pb-2">
+                    <Table>
+                        <thead className="bg-slate-50/80 border-b border-slate-200">
+                            <tr>
+                                <th className="text-left font-bold text-[11px] text-slate-600 uppercase tracking-wider py-3 px-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('code')}>
+                                    <div className="flex items-center gap-1">
+                                        {t('estimates.code')} {sortBy === 'code_asc' ? <ChevronUp size={13} /> : sortBy === 'code_desc' ? <ChevronDown size={13} /> : <ArrowUpDown size={13} className="opacity-30" />}
+                                    </div>
+                                </th>
+                                <th className="text-left font-bold text-[11px] text-slate-600 uppercase tracking-wider py-3 px-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('date')}>
+                                    <div className="flex items-center gap-1">
+                                        {t('estimates.dateCreatedExpire')}
+                                        {sortBy === 'date_asc' ? <ChevronUp size={13} /> : sortBy === 'date_desc' ? <ChevronDown size={13} /> : <ArrowUpDown size={13} className="opacity-30" />}
+                                    </div>
+                                </th>
+                                <th className="text-left font-bold text-[11px] text-slate-600 uppercase tracking-wider py-3 px-3">{t('estimates.customer')}</th>
+                                <th className="text-left font-bold text-[11px] text-slate-600 uppercase tracking-wider py-3 px-3">{t('estimates.salesperson')}</th>
+                                <th className="text-left font-bold text-[11px] text-slate-600 uppercase tracking-wider py-3 px-3">{t('estimates.tags')}</th>
+                                <th className="text-right font-bold text-[11px] text-slate-600 uppercase tracking-wider py-3 px-3 cursor-pointer hover:text-primary transition-colors select-none" onClick={() => handleSort('amount')}>
+                                    <div className="flex items-center justify-end gap-1">
+                                        {t('estimates.totalAmount')} {sortBy === 'amount_asc' ? <ChevronUp size={13} /> : sortBy === 'amount_desc' ? <ChevronDown size={13} /> : <ArrowUpDown size={13} className="opacity-30" />}
+                                    </div>
+                                </th>
+                                <th className="text-center font-bold text-[11px] text-slate-600 uppercase tracking-wider py-3 px-3">{t('estimates.status')}</th>
+                                <th className="text-right font-bold text-[11px] text-slate-600 uppercase tracking-wider py-3 px-3">{t('estimates.action')}</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {paginatedItems.map((est: any) => {
+                                const isExpired = est.status === 'EXPIRED';
+                                return (
+                                    <tr key={est.id} className={`hover:bg-slate-50/70 transition-colors ${isExpired ? 'bg-slate-50/50' : ''}`}>
+                                        <td className="py-3 px-3">
+                                            <div className="flex items-center gap-1.5">
+                                                <FileText size={15} className={`text-emerald-600 ${isExpired ? 'text-slate-400' : ''}`} />
+                                                <Link href={`/sales/estimates/${est.id}`} className={`font-semibold hover:text-emerald-700 hover:underline transition-colors block text-xs ${isExpired ? 'text-slate-500' : 'text-slate-900'}`}>
+                                                    {est.code}
+                                                </Link>
                                             </div>
-                                        )}
-                                    </td>
-                                    <td className="py-3">
-                                        {est.customerId ? (
-                                            <Link href={`/customers/${est.customerId}`} className="font-medium text-gray-800 hover:text-primary hover:underline transition-colors block">
-                                                {est.customer?.name}
-                                            </Link>
-                                        ) : (
-                                            est.customer?.name
-                                        )}
-                                    </td>
-                                    <td className="py-3">
-                                        <div className="flex items-center gap-2">
-                                            <AvatarImage
-                                                src={est.salesperson?.avatar}
-                                                name={est.salesperson?.name}
-                                                className="w-7 h-7 bg-slate-100 border border-slate-200"
-                                            />
-                                            <span className="font-medium text-gray-800">{est.salesperson?.name || t('common.unassigned')}</span>
-                                        </div>
-                                    </td>
-                                    <td className="py-3">
-                                        <TagDisplay tagsString={est.tags} />
-                                    </td>
-                                    <td className="py-3 text-right font-bold text-gray-800">{formatMoney(est.totalAmount)}</td>
-                                    <td className="py-3 text-center">
-                                        <div className="flex flex-col items-center gap-1">
+                                        </td>
+                                        <td className="py-3 px-3">
+                                            <div className={`text-xs ${isExpired ? 'text-slate-500' : 'text-slate-700 font-medium'}`} suppressHydrationWarning>{formatDate(new Date(est.date))}</div>
+                                            {est.validUntil && (
+                                                <div className={`text-[11px] mt-0.5 flex items-center gap-1 ${isExpired ? 'text-rose-600 font-semibold' : 'text-rose-500'}`} title={t('estimates.validUntil')}>
+                                                    <Calendar size={11} /> {t('estimates.validUntil')} {formatDate(est.validUntil)}
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td className="py-3 px-3">
+                                            {est.customerId ? (
+                                                <Link href={`/customers/${est.customerId}`} className="font-semibold text-slate-900 hover:text-emerald-700 hover:underline transition-colors block text-xs">
+                                                    {est.customer?.name}
+                                                </Link>
+                                            ) : (
+                                                <span className="text-xs text-slate-800">{est.customer?.name}</span>
+                                            )}
+                                        </td>
+                                        <td className="py-3 px-3">
+                                            <div className="flex items-center gap-2">
+                                                <AvatarImage
+                                                    src={est.salesperson?.avatar}
+                                                    name={est.salesperson?.name}
+                                                    className="w-6 h-6 bg-slate-100 border border-slate-200"
+                                                />
+                                                <span className="text-xs text-slate-700 font-medium">{est.salesperson?.name || t('common.unassigned')}</span>
+                                            </div>
+                                        </td>
+                                        <td className="py-3 px-3">
+                                            <TagDisplay tagsString={est.tags} />
+                                        </td>
+                                        <td className="py-3 px-3 text-right font-bold text-xs text-slate-900">{formatMoney(est.totalAmount)}</td>
+                                        <td className="py-3 px-3 text-center">
                                             <select
                                                 className={`status-badge status-select appearance-none ${est.status === 'SENT' ? 'badge-info' :
                                                     est.status === 'ACCEPTED' ? 'badge-success' :
@@ -828,88 +827,88 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                                 <option value="REJECTED" className="bg-white text-gray-900">Từ Chối</option>
                                                 {est.status === 'EXPIRED' && <option value="EXPIRED" className="bg-white text-gray-900">Hết Hiệu Lực</option>}
                                             </select>
-                                        </div>
-                                    </td>
-                                    <td className="py-3 text-right">
-                                        <div className="flex justify-end items-center gap-2">
-                                            <div className="flex items-center gap-1 mr-1">
-                                                {est.status === 'DRAFT' && (
-                                                    <button onClick={() => handleEdit(est)} title={t('estimates.edit')} className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors">
-                                                        <Edit2 size={15} />
+                                        </td>
+                                        <td className="py-3 px-3 text-right">
+                                            <div className="flex justify-end items-center gap-1.5">
+                                                <div className="flex items-center gap-1">
+                                                    {est.status === 'DRAFT' && (
+                                                        <button onClick={() => handleEdit(est)} title={t('estimates.edit')} className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors">
+                                                            <Edit2 size={15} />
+                                                        </button>
+                                                    )}
+                                                    <button onClick={() => handleCopy(est)} title={t('estimates.copy')} className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors">
+                                                        <Copy size={15} />
                                                     </button>
-                                                )}
-                                                <button onClick={() => handleCopy(est)} title={t('estimates.copy')} className="p-2 text-slate-500 hover:text-green-600 hover:bg-green-50 transition-colors">
-                                                    <Copy size={15} />
-                                                </button>
-                                                <Link href={`/sales/estimates/${est.id}`} title={t('estimates.viewDetails')} className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors block">
-                                                    <Eye size={15} />
-                                                </Link>
-                                                <Link href={`/print/sales/estimate/${est.id}`} target="_blank" title={t('estimates.printPdf')} className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors block">
-                                                    <Download size={15} />
-                                                </Link>
-                                                <Link href={`/public/sales/estimate/${est.id}`} target="_blank" title={t('estimates.publicUrl')} className="p-2 text-slate-500 hover:text-teal-600 hover:bg-teal-50 transition-colors block">
-                                                    <LinkIcon size={15} />
-                                                </Link>
-                                                <button onClick={() => handleDelete(est.id)} className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors" title={t('estimates.delete')}>
-                                                    <Trash2 size={15} />
-                                                </button>
-                                            </div>
+                                                    <Link href={`/sales/estimates/${est.id}`} title={t('estimates.viewDetails')} className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors block">
+                                                        <Eye size={15} />
+                                                    </Link>
+                                                    <Link href={`/print/sales/estimate/${est.id}`} target="_blank" title={t('estimates.printPdf')} className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors block">
+                                                        <Download size={15} />
+                                                    </Link>
+                                                    <Link href={`/public/sales/estimate/${est.id}`} target="_blank" title={t('estimates.publicUrl')} className="p-1.5 text-slate-500 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors block">
+                                                        <LinkIcon size={15} />
+                                                    </Link>
+                                                    <button onClick={() => handleDelete(est.id)} className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title={t('estimates.delete')}>
+                                                        <Trash2 size={15} />
+                                                    </button>
+                                                </div>
 
-                                            {est.status === 'DRAFT' && (
-                                                <Button variant="secondary" onClick={() => handleStatusChange(est.id, 'SENT')} title={t('estimates.actionSend')} className="px-3 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-300 py-1.5 text-xs font-semibold flex-shrink-0 shadow-sm transition-all rounded-md">
-                                                    {t('estimates.actionSendShort')}
-                                                </Button>
-                                            )}
-                                            {est.status === 'SENT' && (
-                                                <Button variant="secondary" onClick={() => handleStatusChange(est.id, 'ACCEPTED')} className="text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title={t('estimates.actionAccept')}>
-                                                    <Check size={14} className="mr-1.5 inline-block" /> {t('estimates.actionAcceptShort')}
-                                                </Button>
-                                            )}
-                                            {(est.status === 'DRAFT' || est.status === 'SENT' || est.status === 'ACCEPTED') && (
-                                                <>
-                                                    <Button variant="secondary" onClick={() => setConvertOrderModalId(est.id)} className="text-indigo-700 bg-indigo-50 border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title={t('estimates.actionCreateOrder')}>
-                                                        <ArrowRightLeft size={14} className="mr-1.5 inline-block" /> Lên Đơn
+                                                {est.status === 'DRAFT' && (
+                                                    <Button variant="secondary" onClick={() => handleStatusChange(est.id, 'SENT')} title={t('estimates.actionSend')} className="px-2.5 border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-300 py-1 text-[11px] font-semibold flex-shrink-0 shadow-xs transition-all rounded-md">
+                                                        {t('estimates.actionSendShort')}
                                                     </Button>
-                                                    <Button variant="secondary" onClick={() => setConvertModalId(est.id)} className="text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title={t('estimates.actionCreateInvoice')}>
-                                                        <ArrowRightLeft size={14} className="mr-1.5 inline-block" /> Lên Hóa Đơn
+                                                )}
+                                                {est.status === 'SENT' && (
+                                                    <Button variant="secondary" onClick={() => handleStatusChange(est.id, 'ACCEPTED')} className="text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 px-2.5 flex-shrink-0 py-1 text-[11px] font-semibold shadow-xs transition-all rounded-md" title={t('estimates.actionAccept')}>
+                                                        <Check size={13} className="mr-1 inline-block" /> {t('estimates.actionAcceptShort')}
                                                     </Button>
-                                                </>
-                                            )}
-                                            {est.status === 'EXPIRED' && (
-                                                <Button variant="secondary" onClick={() => handleCopy(est)} className="text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 px-3 flex-shrink-0 py-1.5 text-xs font-semibold shadow-sm transition-all rounded-md" title="Tạo một báo giá mới sao chép toàn bộ dữ liệu này">
-                                                    <Copy size={14} className="mr-1.5 inline-block" /> Tạo Lại Mới
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            )
-                        })}
-                        {paginatedItems.length === 0 && (
-                            <tr><td colSpan={7} className="py-8 text-center text-gray-500">
-                                {estimates.length === 0 ? t('estimates.emptyNoEstimates') : t('estimates.emptyNoMatch')}
-                            </td></tr>
-                        )}
-                    </tbody>
-                </Table>
+                                                )}
+                                                {(est.status === 'DRAFT' || est.status === 'SENT' || est.status === 'ACCEPTED') && (
+                                                    <>
+                                                        <Button variant="secondary" onClick={() => setConvertOrderModalId(est.id)} className="text-indigo-700 bg-indigo-50 border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300 px-2.5 flex-shrink-0 py-1 text-[11px] font-semibold shadow-xs transition-all rounded-md" title={t('estimates.actionCreateOrder')}>
+                                                            <ArrowRightLeft size={13} className="mr-1 inline-block" /> Lên Đơn
+                                                        </Button>
+                                                        <Button variant="secondary" onClick={() => setConvertModalId(est.id)} className="text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300 px-2.5 flex-shrink-0 py-1 text-[11px] font-semibold shadow-xs transition-all rounded-md" title={t('estimates.actionCreateInvoice')}>
+                                                            <ArrowRightLeft size={13} className="mr-1 inline-block" /> Lên HĐ
+                                                        </Button>
+                                                    </>
+                                                )}
+                                                {est.status === 'EXPIRED' && (
+                                                    <Button variant="secondary" onClick={() => handleCopy(est)} className="text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 px-2.5 flex-shrink-0 py-1 text-[11px] font-semibold shadow-xs transition-all rounded-md" title="Tạo một báo giá mới sao chép toàn bộ dữ liệu này">
+                                                        <Copy size={13} className="mr-1 inline-block" /> Tạo Lại Mới
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                            {paginatedItems.length === 0 && (
+                                <tr><td colSpan={8} className="py-8 text-center text-slate-400 text-xs">
+                                    {estimates.length === 0 ? t('estimates.emptyNoEstimates') : t('estimates.emptyNoMatch')}
+                                </td></tr>
+                            )}
+                        </tbody>
+                    </Table>
+                </div>
                 <Pagination {...paginationProps} />
-            </Card>
+            </div>
 
             <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title={formData.id ? t('estimates.modalEditTitle') : t('estimates.modalCreateTitle')} maxWidth="1000px">
-                <div className="flex flex-col gap-6 py-2">
+                <div className="flex flex-col gap-4 py-1">
                     <div>
-                        <h3 className="text-[1.1rem] font-semibold text-gray-800 mb-4">{t('estimates.generalInfo')}</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-4 bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                        <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">{t('estimates.generalInfo')}</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-2xs">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('estimates.estimateCode')}</label>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">{t('estimates.estimateCode')}</label>
                                 <input
-                                    type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white"
+                                    type="text" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
                                     value={formData.code}
                                     onChange={e => setFormData({ ...formData, code: e.target.value })}
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('estimates.customerReq')}</label>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">{t('estimates.customerReq')}</label>
                                 <SearchableSelect
                                     options={customers.map((c: any) => ({ value: c.id, label: c.name }))}
                                     value={formData.customerId}
@@ -918,7 +917,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('estimates.lead')}</label>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">{t('estimates.lead')}</label>
                                 <SearchableSelect
                                     options={leads?.map((l: any) => ({ value: l.id, label: l.name })) || []}
                                     value={formData.leadId}
@@ -934,7 +933,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Dự án liên kết</label>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">Dự án liên kết</label>
                                 <SearchableSelect
                                     options={projects?.map((p: any) => ({ value: p.id, label: p.code + ' - ' + p.name })) || []}
                                     value={formData.projectId}
@@ -943,39 +942,39 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                 />
                             </div>
                             <div className="md:col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Mẫu báo giá</label>
-                                <div className="grid grid-cols-3 gap-3">
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">Mẫu báo giá</label>
+                                <div className="grid grid-cols-3 gap-2">
                                     {['STANDARD', 'WITH_IMAGES', 'PROJECT_BREAKDOWN'].map(tmpl => (
                                         <div
                                             key={tmpl}
                                             onClick={() => setFormData({ ...formData, templateType: tmpl })}
-                                            className={`cursor-pointer border rounded-lg p-3 text-center transition-all ${formData.templateType === tmpl ? 'border-primary bg-primary/5 text-primary font-semibold ring-1 ring-primary' : 'border-gray-200 hover:border-gray-300 text-gray-600 bg-gray-50'}`}
+                                            className={`cursor-pointer border rounded-lg py-1.5 px-2.5 text-center text-xs transition-all ${formData.templateType === tmpl ? 'border-primary bg-emerald-50 text-emerald-800 font-semibold ring-1 ring-emerald-500' : 'border-slate-200 hover:border-slate-300 text-slate-600 bg-slate-50/50'}`}
                                         >
-                                            {tmpl === 'STANDARD' ? 'Tiêu Chuẩn' : tmpl === 'WITH_IMAGES' ? 'Thiết bị (Có hình)' : 'Công trình (Tách vật tư & nhân công)'}
+                                            {tmpl === 'STANDARD' ? 'Tiêu Chuẩn' : tmpl === 'WITH_IMAGES' ? 'Thiết bị (Có hình)' : 'Công trình (Tách VT & N.Công)'}
                                         </div>
                                     ))}
                                 </div>
                             </div>
 
-                            <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-4">
+                            <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('estimates.estimateDate')}</label>
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1">{t('estimates.estimateDate')}</label>
                                     <input
-                                        type="date" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white"
+                                        type="date" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
                                         value={formData.date}
                                         onChange={e => setFormData({ ...formData, date: e.target.value })}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('estimates.validUntilDate')}</label>
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1">{t('estimates.validUntilDate')}</label>
                                     <input
-                                        type="date" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white"
+                                        type="date" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
                                         value={formData.validUntil}
                                         onChange={e => setFormData({ ...formData, validUntil: e.target.value })}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('estimates.salespersonReq')}</label>
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1">{t('estimates.salespersonReq')}</label>
                                     <SearchableSelect
                                         options={users?.map((u: any) => ({ value: u.id, label: u.name })) || []}
                                         value={formData.salespersonId}
@@ -984,20 +983,20 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                     />
                                 </div>
                             </div>
-                            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-4">
+                            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('estimates.notes')}</label>
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1">{t('estimates.notes')}</label>
                                     <input
-                                        type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white"
+                                        type="text" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white placeholder:text-slate-400"
                                         value={formData.notes || ''}
                                         onChange={e => setFormData({ ...formData, notes: e.target.value })}
                                         placeholder={t('estimates.notesPlaceholder')}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('estimates.tags')}</label>
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1">{t('estimates.tags')}</label>
                                     <input
-                                        type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white"
+                                        type="text" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white placeholder:text-slate-400"
                                         value={formData.tags || ''}
                                         onChange={e => setFormData({ ...formData, tags: e.target.value })}
                                         placeholder={t('estimates.tagsPlaceholder')}
@@ -1008,37 +1007,37 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                     </div>
 
                     <div>
-                        <h3 className="text-[1.1rem] font-semibold text-gray-800 mb-4">Chi tiết Sản Phẩm</h3>
-                        <div className="flex flex-col bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-                            <div className="mb-4 flex items-center gap-4 border-b border-gray-100 pb-3">
-                                <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
-                                    <input type="radio" className="accent-indigo-600 w-4 h-4 cursor-pointer" checked={!isCustomProduct} onChange={() => setIsCustomProduct(false)} />
+                        <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Chi tiết Sản Phẩm</h3>
+                        <div className="flex flex-col bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-2xs">
+                            <div className="mb-3 flex items-center gap-4 border-b border-slate-100 pb-2.5">
+                                <label className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-slate-700">
+                                    <input type="radio" className="accent-emerald-600 w-3.5 h-3.5 cursor-pointer" checked={!isCustomProduct} onChange={() => setIsCustomProduct(false)} />
                                     <span>Chọn từ kho</span>
                                 </label>
-                                <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
-                                    <input type="radio" className="accent-indigo-600 w-4 h-4 cursor-pointer" checked={isCustomProduct} onChange={() => setIsCustomProduct(true)} />
+                                <label className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-slate-700">
+                                    <input type="radio" className="accent-emerald-600 w-3.5 h-3.5 cursor-pointer" checked={isCustomProduct} onChange={() => setIsCustomProduct(true)} />
                                     <span>Nhập tự do ngoài hệ thống</span>
                                 </label>
                                 {isCustomProduct && (
-                                    <span className="text-xs text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-md font-medium flex items-center gap-1">
-                                        ✨ Tự động lưu vào kho cho các lần sau
+                                    <span className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md font-medium flex items-center gap-1">
+                                        ✨ Tự động lưu vào kho
                                     </span>
                                 )}
                                 <div className="ml-auto">
-                                    <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-indigo-900 bg-indigo-50/80 border border-indigo-200 px-3 py-1.5 rounded-lg select-none hover:bg-indigo-100/80 transition-colors">
+                                    <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold text-emerald-900 bg-emerald-50/80 border border-emerald-200 px-2.5 py-1 rounded-lg select-none hover:bg-emerald-100/80 transition-colors">
                                         <input
                                             type="checkbox"
                                             checked={isPriceInclusiveVat}
                                             onChange={(e) => setIsPriceInclusiveVat(e.target.checked)}
-                                            className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 accent-indigo-600 cursor-pointer"
+                                            className="w-3.5 h-3.5 rounded text-emerald-600 focus:ring-emerald-500 accent-emerald-600 cursor-pointer"
                                         />
                                         <span>Đã có thuế VAT (Nhập giá sau thuế)</span>
                                     </label>
                                 </div>
                             </div>
-                            <div className="flex flex-col md:flex-row gap-3 md:items-end mb-2">
+                            <div className="flex flex-col md:flex-row gap-2.5 md:items-end mb-2">
                                 <div className="flex-1 w-full min-w-0">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Tên Sản Phẩm</label>
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1">Tên Sản Phẩm</label>
                                     {!isCustomProduct ? (
                                         <SearchableSelect
                                             options={products.map((p: any) => ({ value: p.id, label: `${p.sku} - ${p.name}` }))}
@@ -1047,44 +1046,44 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                             placeholder="-- Chọn Sản Phẩm --"
                                         />
                                     ) : (
-                                        <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" placeholder="Nhập tên dịch vụ/sản phẩm..." value={customName} onChange={e => setCustomName(e.target.value)} />
+                                        <input type="text" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white placeholder:text-slate-400" placeholder="Nhập tên dịch vụ/sản phẩm..." value={customName} onChange={e => setCustomName(e.target.value)} />
                                     )}
                                 </div>
                                 {isCustomProduct && (
-                                    <div className="w-full md:w-24">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1.5">ĐVT</label>
-                                        <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white text-center" placeholder="Đơn vị" value={customUnit} onChange={e => setCustomUnit(e.target.value)} />
+                                    <div className="w-full md:w-20">
+                                        <label className="block text-xs font-semibold text-slate-600 mb-1">ĐVT</label>
+                                        <input type="text" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white text-center" placeholder="Đơn vị" value={customUnit} onChange={e => setCustomUnit(e.target.value)} />
                                     </div>
                                 )}
-                                <div className="w-full md:w-40">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                        {isPriceInclusiveVat ? 'Đơn giá (gồm VAT)' : (formData.templateType === 'PROJECT_BREAKDOWN' ? 'Đ.giá vật tư' : 'Đơn giá')}
+                                <div className="w-full md:w-36">
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1">
+                                        {isPriceInclusiveVat ? 'Đ.giá (gồm VAT)' : (formData.templateType === 'PROJECT_BREAKDOWN' ? 'Đ.giá vật tư' : 'Đơn giá')}
                                     </label>
-                                    <input type="number" step="any" min="0" className={`w-full border rounded-lg p-2.5 outline-none transition-all text-gray-900 bg-white ${isPriceInclusiveVat ? 'border-emerald-400 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 bg-emerald-50/20 font-semibold text-emerald-800' : 'border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'}`} value={price} onChange={e => setPrice(parseFloat(e.target.value) || 0)} />
+                                    <input type="number" step="any" min="0" className={`w-full h-[34px] border rounded-lg px-2.5 py-1 text-xs outline-none transition-all text-slate-900 bg-white ${isPriceInclusiveVat ? 'border-emerald-400 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 bg-emerald-50/20 font-semibold text-emerald-800' : 'border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary/20'}`} value={price} onChange={e => setPrice(parseFloat(e.target.value) || 0)} />
                                 </div>
-                                <div className="w-full md:w-28">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Thuế suất</label>
+                                <div className="w-full md:w-24">
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1">Thuế suất</label>
                                     <TaxRateSelect
                                         value={customTaxRate}
                                         onChange={(val) => setCustomTaxRate(val)}
                                     />
                                 </div>
-                                <div className="w-full md:w-20">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">SL</label>
-                                    <input type="number" step="any" min="0.0001" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-center text-gray-900 bg-white" value={qty} onChange={e => setQty(parseFloat(e.target.value) || 0)} />
+                                <div className="w-full md:w-16">
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1">SL</label>
+                                    <input type="number" step="any" min="0.0001" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-center text-slate-900 bg-white" value={qty} onChange={e => setQty(parseFloat(e.target.value) || 0)} />
                                 </div>
-                                <div className="w-full md:w-24 flex flex-col items-center justify-center">
-                                    <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wide text-center">T/Phần bộ?</label>
-                                    <div className="h-[46px] flex items-center justify-center">
-                                        <input type="checkbox" className="w-6 h-6 outline-none cursor-pointer accent-indigo-600 rounded" checked={isSubItem} onChange={e => setIsSubItem(e.target.checked)} />
+                                <div className="w-full md:w-20 flex flex-col items-center justify-center">
+                                    <label className="block text-[10px] font-semibold text-slate-400 mb-1 uppercase tracking-wide text-center">T/Phần bộ?</label>
+                                    <div className="h-[34px] flex items-center justify-center">
+                                        <input type="checkbox" className="w-4 h-4 outline-none cursor-pointer accent-emerald-600 rounded" checked={isSubItem} onChange={e => setIsSubItem(e.target.checked)} />
                                     </div>
                                 </div>
-                                <Button onClick={handleAddItem} variant="secondary" className="w-full md:w-auto md:mb-[2px] h-[46px] px-6 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 shadow-sm font-semibold rounded-lg">Thêm</Button>
+                                <Button onClick={handleAddItem} variant="secondary" className="w-full md:w-auto h-[34px] px-4 border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 shadow-2xs font-semibold text-xs rounded-lg flex items-center justify-center">Thêm</Button>
                             </div>
 
                             {/* Calculation preview when isPriceInclusiveVat is ON */}
                             {isPriceInclusiveVat && price > 0 && (
-                                <div className="mb-4 p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg text-xs flex flex-wrap items-center gap-x-5 gap-y-1.5 text-emerald-900 shadow-sm animate-fadeIn">
+                                <div className="mb-3 p-2 bg-emerald-50/80 border border-emerald-200/80 rounded-lg text-xs flex flex-wrap items-center gap-x-4 gap-y-1 text-emerald-900 shadow-2xs animate-fadeIn">
                                     <div>💡 <strong>Giá đã gồm VAT:</strong> {formatMoney(price)}</div>
                                     <div>➔ <strong>Đơn giá trước thuế:</strong> <span className="font-bold text-blue-700">{formatMoney(calcPreTaxPrice(price, customTaxRate))}</span></div>
                                     <div>➔ <strong>Thuế suất:</strong> <TaxBadge rate={customTaxRate} /></div>
@@ -1094,118 +1093,118 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                             )}
 
                             {(formData.templateType === 'WITH_IMAGES' || formData.templateType === 'PROJECT_BREAKDOWN') && (
-                                <div className="flex flex-col md:flex-row gap-3 md:items-end mb-4 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                <div className="flex flex-col md:flex-row gap-2.5 md:items-end mb-3 bg-slate-50/70 p-2.5 rounded-lg border border-slate-200">
                                     {(formData.templateType === 'WITH_IMAGES' || formData.templateType === 'PROJECT_BREAKDOWN') && (
                                         <>
                                             <div className="w-full md:flex-1">
-                                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Link ảnh <span className="text-gray-400 font-normal">(URL)</span></label>
-                                                <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" placeholder="https://..." value={itemImageUrl} onChange={e => setItemImageUrl(e.target.value)} />
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Link ảnh <span className="text-slate-400 font-normal">(URL)</span></label>
+                                                <input type="text" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white" placeholder="https://..." value={itemImageUrl} onChange={e => setItemImageUrl(e.target.value)} />
                                             </div>
-                                            <div className="w-full md:w-32">
-                                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Hãng SX</label>
-                                                <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" placeholder="VD: Sony" value={itemManufacture} onChange={e => setItemManufacture(e.target.value)} />
+                                            <div className="w-full md:w-28">
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Hãng SX</label>
+                                                <input type="text" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white" placeholder="VD: Sony" value={itemManufacture} onChange={e => setItemManufacture(e.target.value)} />
                                             </div>
-                                            <div className="w-full md:w-32">
-                                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Xuất xứ</label>
-                                                <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" placeholder="VD: Nhật Bản" value={itemOrigin} onChange={e => setItemOrigin(e.target.value)} />
+                                            <div className="w-full md:w-28">
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Xuất xứ</label>
+                                                <input type="text" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white" placeholder="VD: Nhật Bản" value={itemOrigin} onChange={e => setItemOrigin(e.target.value)} />
                                             </div>
-                                            <div className="w-full md:w-32">
-                                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Bảo hành</label>
-                                                <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" placeholder="VD: 12 tháng" value={itemWarranty} onChange={e => setItemWarranty(e.target.value)} />
+                                            <div className="w-full md:w-28">
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Bảo hành</label>
+                                                <input type="text" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white" placeholder="VD: 12 tháng" value={itemWarranty} onChange={e => setItemWarranty(e.target.value)} />
                                             </div>
                                         </>
                                     )}
                                     {formData.templateType === 'PROJECT_BREAKDOWN' && (
-                                        <div className="w-full md:w-64">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1.5">Đ.giá nhân công <span className="text-gray-400 font-normal">(/1 {!isCustomProduct ? products.find((p: any) => p.id === selectedProduct)?.unit || customUnit : customUnit})</span></label>
-                                            <input type="number" step="any" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-gray-900 bg-white" value={itemLaborPrice} onChange={e => setItemLaborPrice(parseFloat(e.target.value) || 0)} />
+                                        <div className="w-full md:w-48">
+                                            <label className="block text-xs font-semibold text-slate-600 mb-1">Đ.giá nhân công <span className="text-slate-400 font-normal">(/1 {!isCustomProduct ? products.find((p: any) => p.id === selectedProduct)?.unit || customUnit : customUnit})</span></label>
+                                            <input type="number" step="any" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white" value={itemLaborPrice} onChange={e => setItemLaborPrice(parseFloat(e.target.value) || 0)} />
                                         </div>
                                     )}
                                 </div>
                             )}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Chi tiết Kỹ Thuật / Ghi chú cho khách hàng <span className="text-gray-400 font-normal">(In dưới tên SP)</span></label>
-                                <div className="flex items-center gap-4 mb-2">
-                                    <label className={`flex items-center gap-2 cursor-pointer text-sm font-medium ${isCustomProduct ? 'text-gray-400' : 'text-gray-700'}`}>
-                                        <input type="radio" className="accent-indigo-600 w-4 h-4 cursor-pointer" checked={useInventoryDescription && !isCustomProduct} onChange={() => handleDescSourceChange(true)} disabled={isCustomProduct} />
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">Chi tiết Kỹ Thuật / Ghi chú cho khách hàng <span className="text-slate-400 font-normal">(In dưới tên SP)</span></label>
+                                <div className="flex items-center gap-3 mb-1.5">
+                                    <label className={`flex items-center gap-1.5 cursor-pointer text-xs font-medium ${isCustomProduct ? 'text-slate-400' : 'text-slate-700'}`}>
+                                        <input type="radio" className="accent-emerald-600 w-3.5 h-3.5 cursor-pointer" checked={useInventoryDescription && !isCustomProduct} onChange={() => handleDescSourceChange(true)} disabled={isCustomProduct} />
                                         <span>Lấy mô tả từ kho</span>
                                     </label>
-                                    <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
-                                        <input type="radio" className="accent-indigo-600 w-4 h-4 cursor-pointer" checked={!useInventoryDescription || isCustomProduct} onChange={() => handleDescSourceChange(false)} />
+                                    <label className="flex items-center gap-1.5 cursor-pointer text-xs font-medium text-slate-700">
+                                        <input type="radio" className="accent-emerald-600 w-3.5 h-3.5 cursor-pointer" checked={!useInventoryDescription || isCustomProduct} onChange={() => handleDescSourceChange(false)} />
                                         <span>Tự nhập mô tả</span>
                                     </label>
                                 </div>
-                                <textarea rows={2} className={`w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all resize-none text-sm ${useInventoryDescription && !isCustomProduct ? 'bg-slate-50 text-gray-500' : 'text-gray-900 bg-white'}`} placeholder="Ghi chú thêm thông số, tính năng cho sản phẩm này..." value={customDescription} onChange={e => setCustomDescription(e.target.value)} disabled={useInventoryDescription && !isCustomProduct}></textarea>
+                                <textarea rows={2} className={`w-full border border-slate-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all resize-none text-xs ${useInventoryDescription && !isCustomProduct ? 'bg-slate-50 text-slate-500' : 'text-slate-900 bg-white placeholder:text-slate-400'}`} placeholder="Ghi chú thêm thông số, tính năng cho sản phẩm này..." value={customDescription} onChange={e => setCustomDescription(e.target.value)} disabled={useInventoryDescription && !isCustomProduct}></textarea>
                             </div>
 
                             {formData.items.length > 0 && (
-                                <div className="border border-gray-200 rounded-xl overflow-x-auto border-t mt-4 pt-4">
-                                    <table className="w-full min-w-[600px] text-sm bg-white text-left">
-                                        <thead className="bg-slate-50 border-b border-gray-200 text-gray-600">
+                                <div className="border border-slate-200 rounded-xl overflow-x-auto border-t mt-3 pt-3">
+                                    <table className="w-full min-w-[600px] text-xs bg-white text-left">
+                                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
                                             <tr>
-                                                <th className="p-3 font-medium">Sản Phẩm</th>
-                                                <th className="p-3 font-medium text-center w-20">SL</th>
-                                                <th className="p-3 font-medium text-right w-32">{formData.templateType === 'PROJECT_BREAKDOWN' ? 'Đ.Giá Vật Tư' : 'Đ.Giá'}</th>
+                                                <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider">Sản Phẩm</th>
+                                                <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider text-center w-16">SL</th>
+                                                <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider text-right w-28">{formData.templateType === 'PROJECT_BREAKDOWN' ? 'Đ.Giá Vật Tư' : 'Đ.Giá'}</th>
                                                 {formData.templateType === 'PROJECT_BREAKDOWN' && (
-                                                    <th className="p-3 font-medium text-right w-32">Đ.Giá N.Công</th>
+                                                    <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider text-right w-28">Đ.Giá N.Công</th>
                                                 )}
-                                                <th className="p-3 font-medium text-center w-24">Thuế</th>
-                                                <th className="p-3 font-medium text-right w-36">Thành Tiền</th>
-                                                <th className="p-3 font-medium text-center w-12"></th>
+                                                <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider text-center w-20">Thuế</th>
+                                                <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider text-right w-32">Thành Tiền</th>
+                                                <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider text-center w-10"></th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-gray-100">
+                                        <tbody className="divide-y divide-slate-100">
                                             {formData.items.map((item: any, i: number) => (
-                                                <tr key={i} className={`hover:bg-slate-50 transition-colors ${item.isSubItem ? 'bg-slate-50/50' : ''}`}>
-                                                    <td className="p-3 text-gray-800" style={item.isSubItem ? { paddingLeft: '2rem' } : {}}>
-                                                        <div className="font-semibold flex items-center gap-2">
-                                                            {item.isSubItem && <span className="text-gray-400">↳</span>}
-                                                            <span className={item.isSubItem ? 'text-gray-600 font-medium' : ''}>{item.productName || item.customName}</span>
+                                                <tr key={i} className={`hover:bg-slate-50/80 transition-colors ${item.isSubItem ? 'bg-slate-50/50' : ''}`}>
+                                                    <td className="p-2.5 text-slate-800" style={item.isSubItem ? { paddingLeft: '1.5rem' } : {}}>
+                                                        <div className="font-semibold flex items-center gap-1.5">
+                                                            {item.isSubItem && <span className="text-slate-400">↳</span>}
+                                                            <span className={item.isSubItem ? 'text-slate-600 font-medium' : ''}>{item.productName || item.customName}</span>
                                                         </div>
-                                                        {item.description && <div className="text-xs text-gray-500 mt-0.5 max-w-sm whitespace-pre-wrap">{item.description}</div>}
+                                                        {item.description && <div className="text-[11px] text-slate-500 mt-0.5 max-w-sm whitespace-pre-wrap">{item.description}</div>}
                                                         {(formData.templateType === 'WITH_IMAGES' || formData.templateType === 'PROJECT_BREAKDOWN') && (
-                                                             <div className="text-[11px] text-gray-500 mt-1 flex flex-wrap gap-2">
-                                                                {item.manufacture && <span>Hãng: <span className="font-medium text-gray-700">{item.manufacture}</span></span>}
-                                                                {item.origin && <span>XX: <span className="font-medium text-gray-700">{item.origin}</span></span>}
-                                                                {item.warranty && <span>BH: <span className="font-medium text-gray-700">{item.warranty}</span></span>}
+                                                             <div className="text-[10px] text-slate-500 mt-0.5 flex flex-wrap gap-2">
+                                                                {item.manufacture && <span>Hãng: <span className="font-medium text-slate-700">{item.manufacture}</span></span>}
+                                                                {item.origin && <span>XX: <span className="font-medium text-slate-700">{item.origin}</span></span>}
+                                                                {item.warranty && <span>BH: <span className="font-medium text-slate-700">{item.warranty}</span></span>}
                                                             </div>
                                                         )}
                                                     </td>
-                                                    <td className="p-3 text-center text-gray-800">
-                                                        {item.quantity} <span className="text-xs text-gray-500 ml-1">{item.unit}</span>
+                                                    <td className="p-2.5 text-center text-slate-800 font-mono">
+                                                        {item.quantity} <span className="text-[11px] text-slate-500 ml-0.5">{item.unit}</span>
                                                     </td>
-                                                    <td className="p-3 text-right text-gray-600 font-medium">{formatMoney(item.unitPrice)}</td>
+                                                    <td className="p-2.5 text-right text-slate-700 font-mono">{formatMoney(item.unitPrice)}</td>
                                                     {formData.templateType === 'PROJECT_BREAKDOWN' && (
-                                                        <td className="p-3 text-right text-indigo-600 font-medium">{formatMoney(item.laborPrice || 0)}</td>
+                                                        <td className="p-2.5 text-right text-emerald-700 font-mono">{formatMoney(item.laborPrice || 0)}</td>
                                                     )}
-                                                    <td className="p-3 text-center bg-gray-50 border-x border-white">
+                                                    <td className="p-2.5 text-center bg-slate-50/50 border-x border-slate-100">
                                                         <TaxBadge rate={item.taxRate} />
                                                     </td>
-                                                    <td className="p-3 text-right font-semibold text-gray-900">{formatMoney(item.totalPrice)}</td>
-                                                    <td className="p-3 text-center">
+                                                    <td className="p-2.5 text-right font-bold text-slate-900 font-mono">{formatMoney(item.totalPrice)}</td>
+                                                    <td className="p-2.5 text-center">
                                                         <div className="flex items-center justify-center gap-1">
-                                                            <button type="button" onClick={() => handleEditItem(i)} className="text-blue-500 hover:text-blue-700 p-1.5 hover:bg-blue-50 rounded-md transition-colors" title="Sửa dòng này"><Edit2 size={16} /></button>
-                                                            <button type="button" onClick={() => handleRemoveItem(i)} className="text-red-400 hover:text-red-600 p-1.5 hover:bg-red-50 rounded-md transition-colors" title="Xóa"><Trash2 size={16} /></button>
+                                                            <button type="button" onClick={() => handleEditItem(i)} className="text-blue-600 hover:text-blue-800 p-1 hover:bg-blue-50 rounded transition-colors" title="Sửa dòng này"><Edit2 size={14} /></button>
+                                                            <button type="button" onClick={() => handleRemoveItem(i)} className="text-rose-500 hover:text-rose-700 p-1 hover:bg-rose-50 rounded transition-colors" title="Xóa"><Trash2 size={14} /></button>
                                                         </div>
                                                     </td>
                                                 </tr>
                                             ))}
                                         </tbody>
-                                        <tfoot className="bg-slate-50 border-t border-gray-200 text-gray-700">
+                                        <tfoot className="bg-slate-50 border-t border-slate-200 text-slate-700 text-xs">
                                             <tr>
-                                                <td colSpan={formData.templateType === 'PROJECT_BREAKDOWN' ? 5 : 4} className="p-3 text-right text-sm">{t('estimates.subTotal')}:</td>
-                                                <td className="p-3 text-right font-medium">{formatMoney(formData.subTotal || 0)}</td>
-                                                <td className="p-3"></td>
+                                                <td colSpan={formData.templateType === 'PROJECT_BREAKDOWN' ? 5 : 4} className="p-2.5 text-right">{t('estimates.subTotal')}:</td>
+                                                <td className="p-2.5 text-right font-medium font-mono">{formatMoney(formData.subTotal || 0)}</td>
+                                                <td className="p-2.5"></td>
                                             </tr>
                                             <tr>
-                                                <td colSpan={formData.templateType === 'PROJECT_BREAKDOWN' ? 5 : 4} className="p-3 text-right text-sm">{t('estimates.totalTax')}:</td>
-                                                <td className="p-3 text-right font-medium text-gray-500">{formatMoney(formData.taxAmount || 0)}</td>
-                                                <td className="p-3"></td>
+                                                <td colSpan={formData.templateType === 'PROJECT_BREAKDOWN' ? 5 : 4} className="p-2.5 text-right">{t('estimates.totalTax')}:</td>
+                                                <td className="p-2.5 text-right font-medium text-slate-500 font-mono">{formatMoney(formData.taxAmount || 0)}</td>
+                                                <td className="p-2.5"></td>
                                             </tr>
-                                            <tr className="border-t border-gray-200">
-                                                <td colSpan={formData.templateType === 'PROJECT_BREAKDOWN' ? 5 : 4} className="p-3 text-right font-semibold text-base">{t('estimates.grandTotal')}:</td>
-                                                <td className="p-3 text-right font-bold text-indigo-700 text-lg">{formatMoney(formData.totalAmount || 0)}</td>
-                                                <td className="p-3"></td>
+                                            <tr className="border-t border-slate-200">
+                                                <td colSpan={formData.templateType === 'PROJECT_BREAKDOWN' ? 5 : 4} className="p-2.5 text-right font-bold text-xs">{t('estimates.grandTotal')}:</td>
+                                                <td className="p-2.5 text-right font-bold text-emerald-700 text-sm font-mono">{formatMoney(formData.totalAmount || 0)}</td>
+                                                <td className="p-2.5"></td>
                                             </tr>
                                         </tfoot>
                                     </table>
@@ -1214,10 +1213,10 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                         </div>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row justify-start gap-3 mt-4">
-                        <Button onClick={() => setIsFormOpen(false)} variant="secondary" className="w-full sm:w-auto px-6 py-2 border-gray-200 shadow-sm text-gray-700 font-medium bg-white hover:bg-gray-50 flex justify-center">{t('estimates.btnCancel')}</Button>
-                        <Button onClick={handleSave} className="w-full sm:w-auto flex justify-center items-center gap-2 px-8 py-2 font-medium bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-all text-white">
-                            <Save size={16} /> <span>{t('estimates.btnSave')}</span>
+                    <div className="flex flex-col sm:flex-row justify-start gap-2.5 mt-2">
+                        <Button onClick={() => setIsFormOpen(false)} variant="secondary" className="w-full sm:w-auto px-4 h-[34px] text-xs border-slate-200 shadow-2xs text-slate-700 font-semibold bg-white hover:bg-slate-50 flex justify-center items-center">{t('estimates.btnCancel')}</Button>
+                        <Button onClick={handleSave} className="w-full sm:w-auto flex justify-center items-center gap-1.5 px-6 h-[34px] text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 shadow-2xs transition-all text-white rounded-lg">
+                            <Save size={14} /> <span>{t('estimates.btnSave')}</span>
                         </Button>
                     </div>
                 </div>

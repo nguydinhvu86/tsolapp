@@ -6,7 +6,7 @@ import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/Input';
 import { Table } from '@/app/components/ui/Table';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
-import { Plus, Search, Edit, Trash2, Package, Layers } from 'lucide-react';
+import { Plus, Search, Edit, Edit2, Trash2, Package, Layers, X, Eye } from 'lucide-react';
 import { createProduct, updateProduct, deleteProduct, createProductGroup, updateProductGroup, deleteProductGroup } from '../actions';
 import { useRouter } from 'next/navigation';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
@@ -222,31 +222,31 @@ export default function ProductClient({ initialProducts, warehouses = [], produc
                     </div>
                 </div>
             )}
-            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fafafa', flexWrap: 'wrap', gap: '1rem' }}>
-                <div style={{ position: 'relative', width: '300px' }}>
-                    <Search size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+            <div className="p-4 border-b border-slate-200/80 bg-slate-50/50 flex justify-between items-center flex-wrap gap-3">
+                <div className="flex-1 min-w-[220px] max-w-[320px] relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                     <input
                         type="text"
                         placeholder={t('products.searchPlaceholder')}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        style={{
-                            width: '100%', padding: '0.625rem 1rem 0.625rem 2.5rem',
-                            border: '1px solid var(--border)', borderRadius: 'var(--radius)',
-                            outline: 'none', transition: 'border-color 0.2s', fontSize: '0.875rem'
-                        }}
+                        className="w-full h-9 pl-9 pr-8 text-[13px] bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 text-slate-800 placeholder:text-slate-400 transition-all font-medium"
                     />
+                    {searchTerm && (
+                        <button
+                            type="button"
+                            onClick={() => setSearchTerm('')}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full"
+                        >
+                            <X size={14} />
+                        </button>
+                    )}
                 </div>
-                <div style={{ flex: 1, minWidth: '200px' }}>
+                <div className="w-[200px]">
                     <select
                         value={selectedWarehouseId}
                         onChange={(e) => setSelectedWarehouseId(e.target.value)}
-                        style={{
-                            width: '100%', padding: '0.625rem 1rem',
-                            border: '1px solid var(--border)', borderRadius: 'var(--radius)',
-                            outline: 'none', transition: 'border-color 0.2s', fontSize: '0.875rem',
-                            backgroundColor: 'white'
-                        }}
+                        className="w-full h-9 px-3 text-[13px] bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 text-slate-700 font-medium cursor-pointer"
                     >
                         <option value="">{t('products.warehouseAll')}</option>
                         {warehouses.map(w => (
@@ -254,29 +254,31 @@ export default function ProductClient({ initialProducts, warehouses = [], produc
                         ))}
                     </select>
                 </div>
-                <Button variant="secondary" onClick={() => setIsGroupModalOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: 'auto' }}>
-                    <Layers size={16} /> {t('products.manageGroupsBtn')}
-                </Button>
-                <Button onClick={openCreateModal} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Plus size={16} /> {t('products.addProductBtn')}
-                </Button>
+                <div className="flex items-center gap-2 ml-auto">
+                    <Button variant="secondary" onClick={() => setIsGroupModalOpen(true)} className="flex items-center gap-1.5 h-9 text-xs">
+                        <Layers size={15} /> {t('products.manageGroupsBtn')}
+                    </Button>
+                    <Button onClick={openCreateModal} className="flex items-center gap-1.5 h-9 text-xs shadow-sm">
+                        <Plus size={16} /> {t('products.addProductBtn')}
+                    </Button>
+                </div>
             </div>
 
-            <div style={{ padding: '0' }}>
-                <Table>
+            <div className="table-wrapper !border-none !rounded-none">
+                <table>
                     <thead>
                         <tr>
-                            <th>{t('products.colType')}</th>
-                            <th>{t('products.colSku')}</th>
-                            <th>{t('products.colName')}</th>
-                            <th style={{ textAlign: 'center' }}>{t('products.colUnit')}</th>
-                            <th style={{ textAlign: 'right' }}>{t('products.colPrice')}</th>
-                            <th style={{ textAlign: 'center' }}>{t('products.colTax')}</th>
-                            <th style={{ textAlign: 'center' }}>{selectedWarehouseId ? t('products.colStockWarehouse') : t('products.colStockTotal')}</th>
-                            <th style={{ width: '100px', textAlign: 'right' }}>{t('products.colActions')}</th>
+                            <th className="text-[11px] font-bold uppercase tracking-wider text-slate-600">{t('products.colType')}</th>
+                            <th className="text-[11px] font-bold uppercase tracking-wider text-slate-600">{t('products.colSku')}</th>
+                            <th className="text-[11px] font-bold uppercase tracking-wider text-slate-600">{t('products.colName')}</th>
+                            <th className="text-center text-[11px] font-bold uppercase tracking-wider text-slate-600">{t('products.colUnit')}</th>
+                            <th className="text-right text-[11px] font-bold uppercase tracking-wider text-slate-600">{t('products.colPrice')}</th>
+                            <th className="text-center text-[11px] font-bold uppercase tracking-wider text-slate-600">{t('products.colTax')}</th>
+                            <th className="text-center text-[11px] font-bold uppercase tracking-wider text-slate-600">{selectedWarehouseId ? t('products.colStockWarehouse') : t('products.colStockTotal')}</th>
+                            <th className="text-center text-[11px] font-bold uppercase tracking-wider text-slate-600 w-[100px]">{t('products.colActions')}</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                         {paginatedItems.length > 0 ? paginatedItems.map((p) => {
                             let displayedStock = 0;
                             if (selectedWarehouseId) {
@@ -289,64 +291,70 @@ export default function ProductClient({ initialProducts, warehouses = [], produc
                             const isLowStock = p.type === 'PRODUCT' && !selectedWarehouseId && displayedStock <= p.minStockLevel;
 
                             return (
-                                <tr key={p.id}>
-                                    <td>
-                                        <span style={{
-                                            padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600,
-                                            backgroundColor: p.type === 'PRODUCT' ? '#dbeafe' : '#fef3c7',
-                                            color: p.type === 'PRODUCT' ? '#1e40af' : '#b45309'
-                                        }}>
+                                <tr key={p.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                    <td className="p-3">
+                                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${p.type === 'PRODUCT' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
                                             {p.type === 'PRODUCT' ? t('products.typeProduct') : t('products.typeService')}
                                         </span>
                                     </td>
-                                    <td style={{ fontWeight: 600, color: 'var(--text-muted)' }}>{p.sku}</td>
-                                    <td>
+                                    <td className="p-3 font-mono text-[11px] font-semibold text-slate-600">{p.sku}</td>
+                                    <td className="p-3">
                                         <button
                                             onClick={() => setViewingProduct(p)}
-                                            style={{
-                                                fontWeight: 600, color: 'var(--primary)',
-                                                background: 'none', border: 'none', padding: 0,
-                                                cursor: 'pointer', textAlign: 'left',
-                                                textDecoration: 'underline'
-                                            }}
+                                            className="font-semibold text-[13px] text-slate-900 hover:text-emerald-600 text-left transition-colors"
                                             title={t('products.tooltipViewDetails')}
                                         >
                                             {p.name}
                                         </button>
                                     </td>
-                                    <td style={{ textAlign: 'center' }}>{p.unit || 'Cái'}</td>
-                                    <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--primary)' }}>{formatMoney(p.salePrice)}</td>
-                                    <td style={{ textAlign: 'center' }}>
+                                    <td className="p-3 text-center text-xs text-slate-600">{p.unit || 'Cái'}</td>
+                                    <td className="p-3 text-right font-bold text-[13px] text-slate-900">{formatMoney(p.salePrice)}</td>
+                                    <td className="p-3 text-center">
                                         <TaxBadge rate={p.taxRate} />
                                     </td>
-                                    <td style={{ textAlign: 'center' }}>
+                                    <td className="p-3 text-center">
                                         {p.type === 'PRODUCT' ? (
-                                            <span style={{
-                                                padding: '0.25rem 0.75rem', borderRadius: '999px', fontSize: '0.875rem', fontWeight: 700,
-                                                backgroundColor: isLowStock ? '#fee2e2' : '#dcfce7',
-                                                color: isLowStock ? '#ef4444' : '#16a34a'
-                                            }}>
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${isLowStock ? 'bg-rose-50 text-rose-600 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
                                                 {displayedStock}
                                             </span>
-                                        ) : <span style={{ color: 'var(--text-muted)' }}>-</span>}
+                                        ) : <span className="text-slate-400">-</span>}
                                     </td>
-                                    <td>
-                                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                                            <button onClick={() => openEditModal(p)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><Edit size={16} /></button>
-                                            <button onClick={() => handleDelete(p.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)' }}><Trash2 size={16} /></button>
+                                    <td className="p-3">
+                                        <div className="flex items-center justify-center gap-1">
+                                            <button
+                                                onClick={() => setViewingProduct(p)}
+                                                className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                title={t('products.tooltipViewDetails')}
+                                            >
+                                                <Eye size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => openEditModal(p)}
+                                                className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                                title={t('products.editProductModalTitle')}
+                                            >
+                                                <Edit2 size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(p.id)}
+                                                className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                                                title="Xóa"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
                             )
                         }) : (
                             <tr>
-                                <td colSpan={8} style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
+                                <td colSpan={8} className="p-8 text-center text-slate-500 font-medium text-[13px]">
                                     {t('products.noProductsFound')}
                                 </td>
                             </tr>
                         )}
                     </tbody>
-                </Table>
+                </table>
                 <Pagination {...paginationProps} />
             </div>
 

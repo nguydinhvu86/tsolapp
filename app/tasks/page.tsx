@@ -84,17 +84,11 @@ export default async function TasksPage({
     ]);
 
     return (
-        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <div className="flex justify-between items-center" style={{ marginBottom: '1.5rem' }}>
-                <div>
-                    <h1 style={{ marginBottom: '0.25rem' }}>Quản lý Công Việc (Tasks)</h1>
-                    <p style={{ color: 'var(--text-muted)' }}>Theo dõi, giao việc và cập nhật tiến độ cho mọi dự án.</p>
-                </div>
-            </div>
-
+        <div className="flex flex-col gap-5">
             <TaskDashboardClient
                 initialTasks={tasks as any}
                 users={users}
+                canCreateTask={canCreate}
             />
         </div>
     );

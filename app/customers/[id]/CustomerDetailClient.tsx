@@ -27,6 +27,8 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 import { ClickToCallButton } from '@/app/components/ClickToCallButton';
 import { Sparkles, Loader2, Building, CreditCard, Globe, CheckCircle2, AlertCircle } from 'lucide-react';
 
+import { StatusBadge } from '@/app/components/ui/StatusBadge';
+
 export function CustomerDetailClient({ customer, tasks, users, emailTemplates = [], savedMenuOrder = "[]" }: { customer: any, tasks: any[], users: any[], emailTemplates?: any[], savedMenuOrder?: string }) {
     const router = useRouter();
     const { data: session } = useSession();
@@ -218,48 +220,51 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             {/* Header / Back Navigation */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-                <button onClick={() => router.push('/customers')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '50%', background: 'var(--surface)', border: '1px solid var(--border)', cursor: 'pointer', transition: 'all 0.2s', boxShadow: 'var(--shadow-sm)' }}>
-                    <ArrowLeft size={18} color="var(--text-main)" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+                <button 
+                    onClick={() => router.push('/customers')} 
+                    className="w-9 h-9 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all flex items-center justify-center shadow-xs cursor-pointer"
+                >
+                    <ArrowLeft size={18} />
                 </button>
                 <div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 0.25rem 0', color: 'var(--text-main)', letterSpacing: '-0.025em' }}>
+                    <h1 className="text-lg font-bold text-slate-900 tracking-tight m-0">
                         Chi tiết Khách hàng
                     </h1>
-                    <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem' }}>Quản lý thông tin và tài liệu liên kết.</p>
+                    <p className="text-xs text-slate-500 m-0 mt-0.5">Quản lý hồ sơ, công nợ và chuỗi chứng từ liên kết.</p>
                 </div>
             </div>
 
             {/* Customer Info Card */}
-            <Card className="p-5 sm:p-8">
-                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-8">
-                    <div className="flex-shrink-0 w-20 h-20 rounded-2xl bg-indigo-100 flex items-center justify-center text-indigo-600">
-                        <User size={40} />
+            <Card className="p-4 sm:p-5 border-slate-200 shadow-xs">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[var(--primary)] shadow-2xs">
+                        <User size={24} />
                     </div>
                     <div className="flex-1 w-full flex flex-col items-center sm:items-start text-center sm:text-left">
-                        <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center gap-4 mb-6 w-full">
+                        <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center gap-3 mb-4 w-full">
                             <div>
                                 <div className="flex items-center gap-2 flex-wrap mb-1">
-                                    <span className="font-mono text-xs font-bold px-2.5 py-0.5 bg-indigo-100 text-indigo-700 rounded-md border border-indigo-200">
+                                    <span className="font-mono text-[11px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded border border-emerald-200/80">
                                         {customer.code || 'KH-CHƯA CÓ'}
                                     </span>
                                     {customer.taxStatus && (
-                                        <span className="text-xs font-semibold px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded border border-emerald-200">
+                                        <span className="text-[11px] font-medium px-2 py-0.5 bg-slate-100 text-slate-600 rounded border border-slate-200/80">
                                             {customer.taxStatus}
                                         </span>
                                     )}
                                 </div>
-                                <h2 className="text-xl sm:text-2xl font-bold m-0 text-slate-800 break-words">{customer.name}</h2>
+                                <h2 className="text-base font-bold m-0 text-slate-900 tracking-tight break-words">{customer.name}</h2>
                                 {customer.shortName && (
-                                    <p className="text-sm text-slate-500 font-medium m-0 mt-0.5">
-                                        Tên viết tắt: <span className="text-slate-700">{customer.shortName}</span>
+                                    <p className="text-[11px] text-slate-500 font-medium m-0 mt-0.5">
+                                        Tên viết tắt: <span className="text-slate-700 font-semibold">{customer.shortName}</span>
                                         {customer.internationalName && ` • Tên quốc tế: ${customer.internationalName}`}
                                     </p>
                                 )}
                             </div>
-                            <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                            <div className="flex flex-wrap gap-1.5 w-full md:w-auto">
                                 <Button
                                     onClick={() => {
                                         setTaxLookupMessage(null);
@@ -288,17 +293,17 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                         });
                                         setIsEditModalOpen(true);
                                     }}
-                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-slate-100 text-slate-700 border-none px-4 py-2 rounded-lg cursor-pointer hover:bg-slate-200 transition-colors shadow-sm font-medium text-sm h-[36px]"
+                                    className="flex-1 md:flex-none inline-flex items-center justify-center gap-1 bg-white text-slate-700 border border-slate-200 px-2.5 py-1 rounded-lg hover:bg-slate-50 transition-colors shadow-2xs font-semibold text-xs h-[30px]"
                                     title="Sửa thông tin khách hàng"
                                 >
-                                    <Edit size={16} /> Sửa Hồ Sơ
+                                    <Edit size={13} className="text-slate-500" /> Sửa Hồ Sơ
                                 </Button>
                                 <Button
                                     onClick={() => setIsPasswordModalOpen(true)}
-                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-primary text-white border-none px-4 py-2 rounded-lg cursor-pointer hover:bg-primary-hover transition-colors shadow-sm font-medium text-sm h-[36px]"
+                                    className="flex-1 md:flex-none inline-flex items-center justify-center gap-1 bg-slate-50 text-slate-700 border border-slate-200 px-2.5 py-1 rounded-lg hover:bg-slate-100 transition-colors shadow-2xs font-semibold text-xs h-[30px]"
                                     title="Cấp quyền đăng nhập Customer Portal"
                                 >
-                                    <UserCheck size={16} /> Tài khoản Portal
+                                    <UserCheck size={13} className="text-slate-500" /> Tài khoản Portal
                                 </Button>
                                 <Button
                                     onClick={(e) => {
@@ -306,82 +311,82 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                         navigator.clipboard.writeText(window.location.origin + '/portal/login');
                                         alert('Đã copy link: ' + window.location.origin + '/portal/login');
                                     }}
-                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-primary text-white border-none px-4 py-2 rounded-lg cursor-pointer hover:bg-primary-hover transition-colors shadow-sm font-medium text-sm h-[36px]"
+                                    className="flex-1 md:flex-none inline-flex items-center justify-center gap-1 bg-slate-50 text-slate-700 border border-slate-200 px-2.5 py-1 rounded-lg hover:bg-slate-100 transition-colors shadow-2xs font-semibold text-xs h-[30px]"
                                     title="Copy đường dẫn đăng nhập Portal"
                                 >
-                                    <LinkIcon size={16} /> Link Portal
+                                    <LinkIcon size={13} className="text-slate-500" /> Link Portal
                                 </Button>
                                 <Button
                                     onClick={() => setIsEmailModalOpen(true)}
-                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-primary text-white border-none px-4 py-2 rounded-lg cursor-pointer hover:bg-primary-hover transition-colors shadow-sm font-medium text-sm h-[36px]"
+                                    className="flex-1 md:flex-none inline-flex items-center justify-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-lg hover:bg-emerald-100/80 transition-colors shadow-2xs font-semibold text-xs h-[30px]"
                                     title="Gửi Email"
                                 >
-                                    <Mail size={16} /> Gửi Email
+                                    <Mail size={13} className="text-emerald-700" /> Gửi Email
                                 </Button>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 w-full text-left">
-                            <div className="flex items-start gap-3">
-                                <div className="mt-0.5 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 flex-shrink-0"><Mail size={16} /></div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 w-full text-left">
+                            <div className="flex items-start gap-2.5 p-2 rounded-lg bg-slate-50/60 border border-slate-100/80">
+                                <div className="mt-0.5 w-6 h-6 rounded-md bg-white border border-slate-200/60 flex items-center justify-center text-slate-400 flex-shrink-0"><Mail size={13} /></div>
                                 <div className="min-w-0 flex-1">
-                                    <p className="m-0 text-xs font-semibold text-slate-500 uppercase">Email</p>
-                                    <p className="m-0 text-[15px] font-medium break-words">{customer.email || 'Chưa cập nhật'}</p>
+                                    <p className="m-0 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Email</p>
+                                    <p className="m-0 text-xs font-semibold text-slate-800 break-words mt-0.5">{customer.email || 'Chưa cập nhật'}</p>
                                 </div>
                             </div>
-                            <div className="flex items-start gap-3">
-                                <div className="mt-0.5 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 flex-shrink-0"><Phone size={16} /></div>
+                            <div className="flex items-start gap-2.5 p-2 rounded-lg bg-slate-50/60 border border-slate-100/80">
+                                <div className="mt-0.5 w-6 h-6 rounded-md bg-white border border-slate-200/60 flex items-center justify-center text-slate-400 flex-shrink-0"><Phone size={13} /></div>
                                 <div className="min-w-0 flex-1">
-                                    <p className="m-0 text-xs font-semibold text-slate-500 uppercase">Số Điện Thoại</p>
-                                    <div className="flex items-center gap-2">
-                                        <p className="m-0 text-[15px] font-medium break-words">{customer.phone || 'Chưa cập nhật'}</p>
+                                    <p className="m-0 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Số Điện Thoại</p>
+                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                        <p className="m-0 text-xs font-semibold text-slate-800 break-words font-mono">{customer.phone || 'Chưa cập nhật'}</p>
                                         {customer.phone && <ClickToCallButton phoneNumber={customer.phone} className="ml-1" />}
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex items-start gap-3">
-                                <div className="mt-0.5 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 flex-shrink-0"><Building2 size={16} /></div>
+                            <div className="flex items-start gap-2.5 p-2 rounded-lg bg-slate-50/60 border border-slate-100/80">
+                                <div className="mt-0.5 w-6 h-6 rounded-md bg-white border border-slate-200/60 flex items-center justify-center text-slate-400 flex-shrink-0"><Building2 size={13} /></div>
                                 <div className="min-w-0 flex-1">
-                                    <p className="m-0 text-xs font-semibold text-slate-500 uppercase">Mã Số Thuế</p>
-                                    <p className="m-0 text-[15px] font-medium font-mono break-words">{customer.taxCode || 'Chưa cập nhật'}</p>
+                                    <p className="m-0 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Mã Số Thuế</p>
+                                    <p className="m-0 text-xs font-semibold font-mono text-slate-800 break-words mt-0.5">{customer.taxCode || 'Chưa cập nhật'}</p>
                                 </div>
                             </div>
-                            <div className="flex items-start gap-3">
-                                <div className="mt-0.5 w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600 flex-shrink-0"><HandCoins size={16} /></div>
+                            <div className="flex items-start gap-2.5 p-2 rounded-lg bg-rose-50/50 border border-rose-100">
+                                <div className="mt-0.5 w-6 h-6 rounded-md bg-white border border-rose-200 flex items-center justify-center text-rose-600 flex-shrink-0"><HandCoins size={13} /></div>
                                 <div className="min-w-0 flex-1">
-                                    <p className="m-0 text-xs font-semibold text-red-600 uppercase">Tổng Dư Nợ Hóa Đơn</p>
-                                    <p className="m-0 text-[16px] font-bold text-red-600 break-words">{formatMoney(computedDebt)}</p>
+                                    <p className="m-0 text-[10px] font-semibold text-rose-600 uppercase tracking-wider">Tổng Dư Nợ Hóa Đơn</p>
+                                    <p className="m-0 text-xs font-bold text-rose-600 font-mono break-words mt-0.5">{formatMoney(computedDebt)}</p>
                                 </div>
                             </div>
-                            <div className="flex items-start gap-3">
-                                <div className="mt-0.5 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 flex-shrink-0"><User size={16} /></div>
+                            <div className="flex items-start gap-2.5 p-2 rounded-lg bg-slate-50/60 border border-slate-100/80">
+                                <div className="mt-0.5 w-6 h-6 rounded-md bg-white border border-slate-200/60 flex items-center justify-center text-slate-400 flex-shrink-0"><User size={13} /></div>
                                 <div className="min-w-0 flex-1">
-                                    <p className="m-0 text-xs font-semibold text-slate-500 uppercase">Người Đại Diện / Liên Hệ</p>
-                                    <p className="m-0 text-[15px] font-medium break-words">{customer.contactName || 'Chưa cập nhật'}</p>
+                                    <p className="m-0 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Người Đại Diện / Liên Hệ</p>
+                                    <p className="m-0 text-xs font-semibold text-slate-800 break-words mt-0.5">{customer.contactName || 'Chưa cập nhật'}</p>
                                 </div>
                             </div>
-                            <div className="flex items-start gap-3">
-                                <div className="mt-0.5 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 flex-shrink-0"><CreditCard size={16} /></div>
+                            <div className="flex items-start gap-2.5 p-2 rounded-lg bg-slate-50/60 border border-slate-100/80">
+                                <div className="mt-0.5 w-6 h-6 rounded-md bg-white border border-slate-200/60 flex items-center justify-center text-slate-400 flex-shrink-0"><CreditCard size={13} /></div>
                                 <div className="min-w-0 flex-1">
-                                    <p className="m-0 text-xs font-semibold text-slate-500 uppercase">Tài Khoản Ngân Hàng</p>
-                                    <p className="m-0 text-[14px] font-medium break-words">
+                                    <p className="m-0 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Tài Khoản Ngân Hàng</p>
+                                    <p className="m-0 text-xs font-medium text-slate-700 break-words mt-0.5">
                                         {customer.bankAccount ? `${customer.bankAccount} (${customer.bankName || ''})` : 'Chưa cập nhật'}
                                     </p>
                                 </div>
                             </div>
-                            <div className="flex items-start gap-3 lg:col-span-2">
-                                <div className="mt-0.5 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 flex-shrink-0"><MapPin size={16} /></div>
+                            <div className="flex items-start gap-2.5 p-2 rounded-lg bg-slate-50/60 border border-slate-100/80 lg:col-span-2">
+                                <div className="mt-0.5 w-6 h-6 rounded-md bg-white border border-slate-200/60 flex items-center justify-center text-slate-400 flex-shrink-0"><MapPin size={13} /></div>
                                 <div className="min-w-0 flex-1">
-                                    <p className="m-0 text-xs font-semibold text-slate-500 uppercase">Địa Chỉ Trụ Sở</p>
-                                    <p className="m-0 text-[15px] font-medium break-words">{customer.address || 'Chưa cập nhật'}</p>
+                                    <p className="m-0 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Địa Chỉ Trụ Sở</p>
+                                    <p className="m-0 text-xs font-medium text-slate-700 break-words mt-0.5">{customer.address || 'Chưa cập nhật'}</p>
                                 </div>
                             </div>
                             {customer.billingAddress && (
-                                <div className="flex items-start gap-3 lg:col-span-1">
-                                    <div className="mt-0.5 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 flex-shrink-0"><FileText size={16} /></div>
+                                <div className="flex items-start gap-2.5 p-2 rounded-lg bg-slate-50/60 border border-slate-100/80 lg:col-span-1">
+                                    <div className="mt-0.5 w-6 h-6 rounded-md bg-white border border-slate-200/60 flex items-center justify-center text-slate-400 flex-shrink-0"><FileText size={13} /></div>
                                     <div className="min-w-0 flex-1">
-                                        <p className="m-0 text-xs font-semibold text-slate-500 uppercase">Địa Chỉ Hóa Đơn</p>
-                                        <p className="m-0 text-[14px] font-medium break-words">{customer.billingAddress}</p>
+                                        <p className="m-0 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Địa Chỉ Hóa Đơn</p>
+                                        <p className="m-0 text-xs font-medium text-slate-700 break-words mt-0.5">{customer.billingAddress}</p>
                                     </div>
                                 </div>
                             )}
@@ -428,30 +433,30 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                                                 }}
                                                                 style={{
                                                                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                                    padding: '0.625rem 0.875rem', border: '1px solid', 
-                                                                    borderColor: isActive ? '#2563eb' : 'transparent',
+                                                                    padding: '0.55rem 0.75rem', border: '1px solid', 
+                                                                    borderColor: isActive ? '#05A613' : '#e2e8f0',
                                                                     borderRadius: '8px',
-                                                                    background: isActive ? '#eff6ff' : snapshot.isDragging ? '#f8fafc' : '#f8fafc',
+                                                                    background: isActive ? '#f0fdf4' : snapshot.isDragging ? '#f8fafc' : '#ffffff',
                                                                     cursor: snapshot.isDragging ? 'grabbing' : 'pointer',
-                                                                    color: isActive ? '#2563eb' : '#475569',
-                                                                    fontWeight: isActive ? 600 : 500, fontSize: '0.85rem', transition: 'all 0.2s ease',
+                                                                    color: isActive ? '#15803d' : '#475569',
+                                                                    fontWeight: isActive ? 600 : 500, fontSize: '0.8125rem', transition: 'all 0.15s ease',
                                                                     outline: 'none', textAlign: 'left',
                                                                     width: '100%',
                                                                     whiteSpace: 'nowrap',
                                                                     boxShadow: snapshot.isDragging ? '0 4px 6px -1px rgb(0 0 0 / 0.1)' : 'none',
                                                                     ...provided.draggableProps.style
                                                                 }}
-                                                                className={`hover:bg-slate-100 ${snapshot.isDragging ? 'ring-2 ring-blue-500 ring-inset z-50' : ''}`}
+                                                                className={`hover:bg-slate-50 hover:border-slate-300 ${snapshot.isDragging ? 'ring-2 ring-emerald-500 ring-inset z-50' : ''}`}
                                                             >
                                                                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
-                                                                    <Icon size={16} style={{ color: isActive ? '#2563eb' : '#94a3b8' }} />
+                                                                    <Icon size={15} style={{ color: isActive ? '#05A613' : '#94a3b8' }} />
                                                                     {tab.name}
                                                                 </span>
                                                                 <span style={{
-                                                                    background: isActive ? '#bfdbfe' : '#e2e8f0',
-                                                                    color: isActive ? '#1d4ed8' : '#475569',
-                                                                    padding: '0.125rem 0.5rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 700,
-                                                                    minWidth: '24px', textAlign: 'center'
+                                                                    background: isActive ? '#dcfce7' : '#f1f5f9',
+                                                                    color: isActive ? '#166534' : '#64748b',
+                                                                    padding: '0.125rem 0.45rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 700,
+                                                                    minWidth: '22px', textAlign: 'center'
                                                                 }}>
                                                                     {tab.count}
                                                                 </span>
@@ -476,28 +481,28 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                             onClick={() => setActiveTab(tab.id as any)}
                                             style={{
                                                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                padding: '0.625rem 0.875rem', border: '1px solid', 
-                                                borderColor: isActive ? '#2563eb' : 'transparent',
+                                                padding: '0.55rem 0.75rem', border: '1px solid', 
+                                                borderColor: isActive ? '#05A613' : '#e2e8f0',
                                                 borderRadius: '8px',
-                                                background: isActive ? '#eff6ff' : '#f8fafc',
+                                                background: isActive ? '#f0fdf4' : '#ffffff',
                                                 cursor: 'pointer',
-                                                color: isActive ? '#2563eb' : '#475569',
-                                                fontWeight: isActive ? 600 : 500, fontSize: '0.85rem', transition: 'all 0.2s ease',
+                                                color: isActive ? '#15803d' : '#475569',
+                                                fontWeight: isActive ? 600 : 500, fontSize: '0.8125rem', transition: 'all 0.15s ease',
                                                 outline: 'none', textAlign: 'left',
                                                 width: '100%',
                                                 whiteSpace: 'nowrap'
                                             }}
-                                            className="hover:bg-slate-100"
+                                            className="hover:bg-slate-50 hover:border-slate-300"
                                         >
                                             <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
-                                                <Icon size={16} style={{ color: isActive ? '#2563eb' : '#94a3b8' }} />
+                                                <Icon size={15} style={{ color: isActive ? '#05A613' : '#94a3b8' }} />
                                                 {tab.name}
                                             </span>
                                             <span style={{
-                                                background: isActive ? '#bfdbfe' : '#e2e8f0',
-                                                color: isActive ? '#1d4ed8' : '#475569',
-                                                padding: '0.125rem 0.5rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 700,
-                                                minWidth: '24px', textAlign: 'center'
+                                                background: isActive ? '#dcfce7' : '#f1f5f9',
+                                                color: isActive ? '#166534' : '#64748b',
+                                                padding: '0.125rem 0.45rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 700,
+                                                minWidth: '22px', textAlign: 'center'
                                             }}>
                                                 {tab.count}
                                             </span>
@@ -1167,38 +1172,27 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
     );
 }
 
-function DocumentRow({ doc, type, getStatusColor }: { doc: any, type: string, getStatusColor: (s: string) => { bg: string, color: string, text: string } }) {
-    const statusObj = getStatusColor(doc.status);
+function DocumentRow({ doc, type }: { doc: any, type: string, getStatusColor?: any }) {
     return (
-        <tr>
-            <td style={{ fontWeight: 600, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                <Link href={`/${type}/${doc.id}`} className="hover:text-primary hover:underline" style={{ color: 'inherit', textDecoration: 'none' }}>
+        <tr className="hover:bg-slate-50/70 transition-colors">
+            <td style={{ fontWeight: 600, color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
+                <Link href={`/${type}/${doc.id}`} className="hover:text-emerald-600 hover:underline font-mono" style={{ color: 'inherit', textDecoration: 'none' }}>
                     #{doc.code || doc.id.slice(-6).toUpperCase()}
                 </Link>
             </td>
-            <td style={{ fontWeight: 500, color: 'var(--text-main)' }}>
-                <Link href={`/${type}/${doc.id}`} className="hover:text-primary hover:underline" style={{ color: 'inherit', textDecoration: 'none' }}>
+            <td style={{ fontWeight: 500, color: '#0f172a' }}>
+                <Link href={`/${type}/${doc.id}`} className="hover:text-emerald-600 hover:underline" style={{ color: 'inherit', textDecoration: 'none' }}>
                     {doc.title || doc.name}
                 </Link>
             </td>
             <td>
-                <span style={{
-                    backgroundColor: statusObj.bg, color: statusObj.color,
-                    padding: '0.25rem 0.75rem', borderRadius: '999px',
-                    fontSize: '0.75rem', fontWeight: 600, display: 'inline-block'
-                }}>
-                    {statusObj.text}
-                </span>
+                <StatusBadge status={doc.status} />
             </td>
-            <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }} suppressHydrationWarning>{formatDate(new Date(doc.createdAt))}</td>
+            <td style={{ color: 'var(--text-muted)', fontSize: '0.8125rem' }} suppressHydrationWarning>{formatDate(new Date(doc.createdAt))}</td>
             <td>
                 <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                    <Link href={`/${type}/${doc.id}`} style={{
-                        width: '32px', height: '32px', borderRadius: '8px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        background: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)', transition: 'all 0.2s'
-                    }} title="Xem chi tiết & In">
-                        <Eye size={16} />
+                    <Link href={`/${type}/${doc.id}`} className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-600 transition-all flex items-center justify-center border border-slate-200" title="Xem chi tiết & In">
+                        <Eye size={15} />
                     </Link>
                 </div>
             </td>
@@ -1206,18 +1200,17 @@ function DocumentRow({ doc, type, getStatusColor }: { doc: any, type: string, ge
     );
 }
 
-export function SalesDocumentRow({ doc, type, getStatusColor }: { doc: any, type: string, getStatusColor: (s: string) => { bg: string, color: string, text: string } }) {
-    const statusObj = getStatusColor(doc.status);
+export function SalesDocumentRow({ doc, type }: { doc: any, type: string, getStatusColor?: any }) {
     return (
-        <tr>
-            <td style={{ fontWeight: 600, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                <Link href={`/${type}/${doc.id}`} className="hover:text-primary hover:underline" style={{ color: 'inherit', textDecoration: 'none' }}>
+        <tr className="hover:bg-slate-50/70 transition-colors">
+            <td style={{ fontWeight: 600, color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
+                <Link href={`/${type}/${doc.id}`} className="hover:text-emerald-600 hover:underline font-mono" style={{ color: 'inherit', textDecoration: 'none' }}>
                     #{doc.code}
                 </Link>
             </td>
-            <td style={{ fontWeight: 500, color: 'var(--text-main)' }}>
-                <Link href={`/${type}/${doc.id}`} className="hover:text-primary hover:underline block" style={{ color: 'inherit', textDecoration: 'none' }}>
-                    {doc.notes || 'Hồ sơ Bán Hàng'} - Trị giá: {formatMoney(doc.totalAmount || doc.amount || 0)}
+            <td style={{ fontWeight: 500, color: '#0f172a' }}>
+                <Link href={`/${type}/${doc.id}`} className="hover:text-emerald-600 hover:underline block" style={{ color: 'inherit', textDecoration: 'none' }}>
+                    {doc.notes || 'Hồ sơ Bán Hàng'} - Trị giá: <span className="font-semibold">{formatMoney(doc.totalAmount || doc.amount || 0)}</span>
                 </Link>
                 {type !== 'sales/invoices' && doc.tags && (
                     <div style={{ marginTop: '0.375rem' }}>
@@ -1231,23 +1224,13 @@ export function SalesDocumentRow({ doc, type, getStatusColor }: { doc: any, type
                 </td>
             )}
             <td>
-                <span style={{
-                    backgroundColor: statusObj.bg, color: statusObj.color,
-                    padding: '0.25rem 0.75rem', borderRadius: '999px',
-                    fontSize: '0.75rem', fontWeight: 600, display: 'inline-block'
-                }}>
-                    {statusObj.text}
-                </span>
+                <StatusBadge status={doc.status} />
             </td>
-            <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }} suppressHydrationWarning>{formatDate(new Date(doc.createdAt))}</td>
+            <td style={{ color: 'var(--text-muted)', fontSize: '0.8125rem' }} suppressHydrationWarning>{formatDate(new Date(doc.createdAt))}</td>
             <td>
                 <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                    <Link href={`/${type}/${doc.id}`} style={{
-                        width: '32px', height: '32px', borderRadius: '8px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        background: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)', transition: 'all 0.2s'
-                    }} title="Tới phân hệ">
-                        <Eye size={16} />
+                    <Link href={`/${type}/${doc.id}`} className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-600 transition-all flex items-center justify-center border border-slate-200" title="Tới phân hệ">
+                        <Eye size={15} />
                     </Link>
                 </div>
             </td>

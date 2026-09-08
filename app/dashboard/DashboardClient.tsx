@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { DollarSign, Receipt, CreditCard, Users, Box, Briefcase, Plus, X, CheckCircle2, Circle, Clock, CheckCheck, Calendar as CalendarIcon, Globe, Lock } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { DollarSign, Receipt, CreditCard, Users, Box, Briefcase, Plus, X, CheckCircle2, Circle, Clock, CheckCheck, Calendar as CalendarIcon, Globe, Lock, ArrowRight, Building2, HandCoins } from 'lucide-react';
 import { AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { DashboardCalendar } from './DashboardCalendar';
@@ -400,75 +400,128 @@ function InvoiceStatusWidget({ invoices }: { invoices: any[] }) {
     const displayInvoices = activeTab === 'OVERDUE' ? overdueInvoices : dueSoonInvoices;
 
     return (
-        <div className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col h-full" style={{ minHeight: '430px', maxHeight: '460px' }}>
-            <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-3">
-                <h3 className="text-lg font-semibold text-gray-800">{t("dashboard.invoice.title")}</h3>
-                <a href={`/sales/invoices?filter=${activeTab}`} className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 transition-colors text-right">
-                    {t("dashboard.invoice.viewAll")} <span style={{ fontSize: '10px' }}>▶</span>
+        <div className="p-5 bg-white rounded-2xl border border-slate-200/80 shadow-xs flex flex-col h-full hover:shadow-md transition-shadow" style={{ minHeight: '430px', maxHeight: '460px' }}>
+            <div className="flex justify-between items-center mb-3.5 pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-50 text-[#05A613] flex items-center justify-center ring-1 ring-emerald-500/20 shrink-0">
+                        <Receipt size={16} />
+                    </div>
+                    <div>
+                        <h3 className="text-sm font-bold text-slate-800 tracking-tight leading-tight">{t("dashboard.invoice.title")}</h3>
+                        <p className="text-[11px] text-slate-400 font-medium leading-none mt-0.5">Theo dõi hạn thu & công nợ</p>
+                    </div>
+                </div>
+                <a
+                    href={`/sales/invoices?filter=${activeTab}`}
+                    className="text-xs text-primary hover:text-emerald-700 font-semibold flex items-center gap-1 group/link transition-colors py-1 px-2 rounded-lg hover:bg-emerald-50/60"
+                >
+                    <span>{t("dashboard.invoice.viewAll")}</span>
+                    <ArrowRight size={13} className="transition-transform group-hover/link:translate-x-0.5" />
                 </a>
             </div>
 
-            {/* Tabs */}
-            <div className="flex gap-2 mb-5">
+            {/* Segmented Pill Tabs */}
+            <div className="p-1 bg-slate-100/90 rounded-xl flex gap-1 mb-3.5 border border-slate-200/50">
                 <button
-                    className={`flex-1 py-2 px-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 ${activeTab === 'OVERDUE' ? 'bg-red-50 text-red-700 shadow-sm border border-red-100' : 'bg-gray-50 text-gray-500 hover:bg-gray-100 border border-transparent'}`}
+                    type="button"
+                    className={`flex-1 py-1.5 px-3 rounded-lg font-semibold text-xs transition-all flex items-center justify-center gap-2 ${
+                        activeTab === 'OVERDUE'
+                            ? 'bg-white text-rose-700 shadow-xs border border-rose-200/60 font-bold'
+                            : 'text-slate-500 hover:text-slate-800 hover:bg-white/60 border border-transparent'
+                    }`}
                     onClick={() => setActiveTab('OVERDUE')}
                 >
-                    {t("dashboard.invoice.overdue")}
-                    <span className={`px-1.5 py-0.5 rounded-md text-[11px] font-bold ${activeTab === 'OVERDUE' ? 'bg-red-200 text-red-800' : 'bg-gray-200 text-gray-600'}`}>{overdueInvoices.length}</span>
+                    <span>{t("dashboard.invoice.overdue")}</span>
+                    <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold leading-none ${
+                        activeTab === 'OVERDUE' ? 'bg-rose-100 text-rose-700' : 'bg-slate-200/80 text-slate-600'
+                    }`}>
+                        {overdueInvoices.length}
+                    </span>
                 </button>
                 <button
-                    className={`flex-1 py-2 px-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 ${activeTab === 'DUE_SOON' ? 'bg-orange-50 text-orange-700 shadow-sm border border-orange-100' : 'bg-gray-50 text-gray-500 hover:bg-gray-100 border border-transparent'}`}
+                    type="button"
+                    className={`flex-1 py-1.5 px-3 rounded-lg font-semibold text-xs transition-all flex items-center justify-center gap-2 ${
+                        activeTab === 'DUE_SOON'
+                            ? 'bg-white text-amber-700 shadow-xs border border-amber-200/60 font-bold'
+                            : 'text-slate-500 hover:text-slate-800 hover:bg-white/60 border border-transparent'
+                    }`}
                     onClick={() => setActiveTab('DUE_SOON')}
                 >
-                    {t("dashboard.invoice.dueSoon")}
-                    <span className={`px-1.5 py-0.5 rounded-md text-[11px] font-bold ${activeTab === 'DUE_SOON' ? 'bg-orange-200 text-orange-800' : 'bg-gray-200 text-gray-600'}`}>{dueSoonInvoices.length}</span>
+                    <span>{t("dashboard.invoice.dueSoon")}</span>
+                    <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold leading-none ${
+                        activeTab === 'DUE_SOON' ? 'bg-amber-100 text-amber-700' : 'bg-slate-200/80 text-slate-600'
+                    }`}>
+                        {dueSoonInvoices.length}
+                    </span>
                 </button>
             </div>
 
             {/* List */}
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-1" style={{ maxHeight: '350px' }}>
                 {displayInvoices.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-gray-400 text-sm h-full">
-                        <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mb-3">
-                            <CheckCircle2 size={28} className="text-emerald-400" />
+                    <div className="flex flex-col items-center justify-center py-10 text-slate-400 text-sm h-full">
+                        <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center mb-2.5 text-emerald-500 shadow-xs">
+                            <CheckCircle2 size={22} />
                         </div>
-                        <span className="text-center px-4 font-medium text-gray-500">{activeTab === 'OVERDUE' ? t("dashboard.invoice.emptyOverdue") : t("dashboard.invoice.emptyDueSoon")}</span>
+                        <span className="text-center px-4 font-medium text-slate-500 text-xs">
+                            {activeTab === 'OVERDUE' ? t("dashboard.invoice.emptyOverdue") : t("dashboard.invoice.emptyDueSoon")}
+                        </span>
                     </div>
                 ) : (
-                    <div className="space-y-3">
-                        {displayInvoices.map(inv => (
-                            <div key={inv.id} className="p-4 border border-gray-100 rounded-xl hover:shadow-md hover:border-blue-100 transition-all duration-200 bg-white group flex flex-col gap-3 relative overflow-hidden">
-                                {/* Left accent border */}
-                                <div className={`absolute left-0 top-0 bottom-0 w-1 ${activeTab === 'OVERDUE' ? 'bg-red-500' : 'bg-orange-500'}`}></div>
-
-                                <div className="flex justify-between items-start pl-1">
-                                    <div className="flex flex-col gap-1.5">
-                                        <a href={`/sales/invoices/${inv.id}`} className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors text-sm" title={inv.code}>
+                    <div className="space-y-2.5">
+                        {displayInvoices.map(inv => {
+                            const remaining = inv.totalAmount - (inv.paidAmount || 0);
+                            const isOverdue = activeTab === 'OVERDUE';
+                            return (
+                                <div
+                                    key={inv.id}
+                                    className="group p-3 rounded-xl border border-slate-200/80 bg-white hover:border-emerald-500/40 hover:shadow-xs transition-all duration-150 flex flex-col gap-2"
+                                >
+                                    {/* Row 1: Code + Due Date */}
+                                    <div className="flex items-center justify-between gap-2">
+                                        <a
+                                            href={`/sales/invoices/${inv.id}`}
+                                            className="font-mono font-bold text-xs text-slate-800 group-hover:text-primary transition-colors flex items-center gap-1.5 tracking-tight truncate"
+                                            title={inv.code}
+                                        >
+                                            <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-primary"></span>
                                             {inv.code}
                                         </a>
-                                        <div className="text-[13px] text-gray-500 flex items-center gap-1.5 truncate max-w-[180px]" title={inv.customer?.name}>
-                                            <Users size={12} className="text-gray-400 shrink-0" />
-                                            <span className="truncate">{inv.customer?.name}</span>
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-col items-end shrink-0">
-                                        <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-md tracking-wider ${activeTab === 'OVERDUE' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-orange-50 text-orange-600 border border-orange-100'}`}>
+                                        <span className={`inline-flex items-center gap-1 text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md border shrink-0 ${
+                                            isOverdue
+                                                ? 'bg-rose-50 text-rose-700 border-rose-200/70'
+                                                : 'bg-amber-50 text-amber-700 border-amber-200/70'
+                                        }`}>
+                                            <Clock size={11} className={isOverdue ? 'text-rose-500' : 'text-amber-500'} />
                                             {formatDate(new Date(inv.dueDate))}
                                         </span>
                                     </div>
+
+                                    {/* Row 2: Customer Name */}
+                                    <div className="flex items-center gap-1.5 text-xs text-slate-500 truncate" title={inv.customer?.name}>
+                                        <Building2 size={12} className="text-slate-400 shrink-0" />
+                                        <span className="truncate font-medium text-slate-600">{inv.customer?.name || 'Khách lẻ'}</span>
+                                    </div>
+
+                                    {/* Row 3: Remaining amount */}
+                                    <div className="flex items-center justify-between pt-2 border-t border-slate-100/80">
+                                        <span className="text-[11px] font-medium text-slate-400">
+                                            {t("dashboard.invoice.toBeCollected")}
+                                        </span>
+                                        <span className={`font-mono font-bold text-xs tracking-tight ${
+                                            isOverdue ? 'text-rose-600' : 'text-amber-600'
+                                        }`}>
+                                            {formatMoney(remaining)}
+                                        </span>
+                                    </div>
                                 </div>
-                                <div className="flex justify-between items-end mt-1 pt-3 border-t border-gray-50 pl-1">
-                                    <span className="text-[12px] text-gray-500 font-medium">{t("dashboard.invoice.toBeCollected")}</span>
-                                    <span className={`font-black text-sm ${activeTab === 'OVERDUE' ? 'text-red-600' : 'text-orange-600'}`}>{formatMoney(inv.totalAmount - (inv.paidAmount || 0))}</span>
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>
         </div>
-    )
+    );
 }
 
 import { useRouter } from 'next/navigation';

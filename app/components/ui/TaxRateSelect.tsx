@@ -50,7 +50,7 @@ export function TaxRateSelect({
                     placeholder="%"
                     value={numValue >= 0 ? numValue : 0}
                     onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-                    className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-center text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 ${className}`}
+                    className={`w-full h-[34px] border border-slate-200 dark:border-gray-600 rounded-lg px-2 py-1 outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-center text-xs text-slate-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${className}`}
                 />
                 <button
                     type="button"
@@ -59,7 +59,7 @@ export function TaxRateSelect({
                         onChange(10);
                     }}
                     title="Chọn từ danh sách"
-                    className="px-1.5 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border"
+                    className="h-[34px] px-2 text-xs text-slate-500 hover:text-slate-800 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg border border-slate-200 shrink-0"
                 >
                     ✕
                 </button>
@@ -71,7 +71,7 @@ export function TaxRateSelect({
         <select
             value={numValue}
             onChange={handleSelectChange}
-            className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-center text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 text-sm font-medium ${className}`}
+            className={`w-full h-[34px] border border-slate-200 dark:border-gray-600 rounded-lg px-2 py-1 outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-center text-xs text-slate-800 dark:text-gray-100 bg-white dark:bg-gray-700 font-medium ${className}`}
         >
             <option value="-1">KCT</option>
             <option value="0">0%</option>
