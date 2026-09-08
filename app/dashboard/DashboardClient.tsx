@@ -192,31 +192,31 @@ function TodoListWidget() {
 
     return (
         <div className="flex flex-col h-full">
-            <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                    <CheckCircle2 size={20} className="text-green-600" />
+            <div className="flex items-center justify-between mb-3">
+                <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2">
+                    <CheckCircle2 size={18} className="text-emerald-600" />
                     {t("dashboard.todo.title")}
                 </h3>
             </div>
 
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-3">
                 <button
                     onClick={() => setIsAddTodoModalOpen(true)}
-                    className="flex-1 text-white font-medium py-2 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-sm bg-green-600 hover:bg-green-700"
+                    className="flex-1 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-colors shadow-xs bg-emerald-600 hover:bg-emerald-700"
                 >
-                    <Plus size={18} />
+                    <Plus size={15} />
                     <span>{t("dashboard.todo.create")}</span>
                 </button>
                 <button
                     onClick={() => setShowAll(!showAll)}
                     disabled={todos.length === 0}
-                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-colors border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
                 >
                     <span>{showAll ? t("dashboard.todo.collapse") : `${t("dashboard.todo.viewAll")} (${todos.length})`}</span>
                 </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto pr-1" style={{ maxHeight: showAll ? '400px' : 'auto' }}>
+            <div className="flex-1 overflow-y-auto pr-1" style={{ maxHeight: showAll ? '350px' : 'auto' }}>
                 {todos.length === 0 ? (
                     <EmptyState 
                         icon={CheckCircle2}
@@ -224,11 +224,11 @@ function TodoListWidget() {
                         description="Bắt đầu ngày mới bằng cách ghi chú công việc cần làm."
                     />
                 ) : (
-                    <ul className="space-y-2">
+                    <ul className="space-y-1.5">
                         {displayedTodos.map(todo => (
                             <li
                                 key={todo.id}
-                                className={`flex items-start gap-2.5 p-3 rounded-lg group transition-all ${todo.completed ? 'bg-gray-50/50 opacity-75 border border-transparent' : 'bg-white shadow-sm border border-gray-100 hover:border-green-200'}`}
+                                className={`flex items-start gap-2 p-2.5 rounded-lg group transition-all ${todo.completed ? 'bg-slate-50/60 opacity-75 border border-transparent' : 'bg-white shadow-xs border border-slate-200/80 hover:border-emerald-300'}`}
                             >
                                 {editingTodoId === todo.id ? (
                                     <div className="flex-1 w-full">
@@ -627,30 +627,30 @@ export function DashboardClient({
     const isDebtUp = debtGrowth >= 0;
 
     return (
-        <div className="bg-gray-50/50 min-h-screen p-4 xl:p-8 pt-4 xl:pt-6">
-            <div className="w-full mx-auto space-y-8 pb-10">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 md:mb-8 -mx-2 md:mx-0">
+        <div className="bg-gray-50/50 min-h-screen p-3.5 xl:p-6 pt-3 xl:pt-4">
+            <div className="w-full mx-auto space-y-5 pb-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4 -mx-1 md:mx-0">
                     <div>
-                        <h2 className="text-3xl font-bold text-gray-800 tracking-tight">{t("dashboard.header.title")}</h2>
-                        <p className="text-gray-600 mt-1">{t("dashboard.header.subtitle")}</p>
+                        <h2 className="text-2xl font-bold text-slate-800 tracking-tight">{t("dashboard.header.title")}</h2>
+                        <p className="text-xs text-slate-500 mt-0.5">{t("dashboard.header.subtitle")}</p>
                     </div>
-                    <div className="flex flex-col sm:flex-row md:items-center items-stretch gap-3 w-full md:w-auto">
-                        <div className="flex items-center gap-2 mr-2">
-                           <a href="/sales/estimates/new" className="hidden lg:flex items-center gap-1.5 px-3 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-xl text-sm font-semibold transition-colors border border-emerald-100 shadow-sm">
-                               <Receipt size={16} className="shrink-0" /> <span className="whitespace-nowrap">Báo giá</span>
+                    <div className="flex flex-col sm:flex-row md:items-center items-stretch gap-2.5 w-full md:w-auto">
+                        <div className="flex items-center gap-2 mr-1">
+                           <a href="/sales/estimates/new" className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-semibold transition-colors border border-emerald-200/60 shadow-xs">
+                               <Receipt size={14} className="shrink-0" /> <span className="whitespace-nowrap">Báo giá</span>
                            </a>
-                           <a href="/customers" className="hidden lg:flex items-center gap-1.5 px-3 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl text-sm font-semibold transition-colors border border-blue-100 shadow-sm">
-                               <Users size={16} className="shrink-0" /> <span className="whitespace-nowrap">Khách hàng</span>
+                           <a href="/customers" className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-semibold transition-colors border border-blue-200/60 shadow-xs">
+                               <Users size={14} className="shrink-0" /> <span className="whitespace-nowrap">Khách hàng</span>
                            </a>
-                           <button onClick={() => setIsAddEventModalOpen(true)} className="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-xl text-sm font-semibold transition-colors border border-indigo-100 shadow-sm">
-                               <Briefcase size={16} className="shrink-0" /> <span className="whitespace-nowrap">Giao việc</span>
+                           <button onClick={() => setIsAddEventModalOpen(true)} className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-xs font-semibold transition-colors border border-indigo-200/60 shadow-xs">
+                               <Briefcase size={14} className="shrink-0" /> <span className="whitespace-nowrap">Giao việc</span>
                            </button>
                         </div>
                         {isAdminOrManager && users && users.length > 0 && (
                             <div className="flex items-center gap-2 w-full sm:w-auto">
-                                <span className="text-sm text-gray-500 font-medium whitespace-nowrap">{t("dashboard.header.displayBy")}</span>
+                                <span className="text-xs text-slate-500 font-medium whitespace-nowrap">{t("dashboard.header.displayBy")}</span>
                                 <select
-                                    className="flex-1 sm:flex-none px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm"
+                                    className="flex-1 sm:flex-none px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-xs"
                                     value={currentEmployeeId || ''}
                                     onChange={(e) => {
                                         const newEmployeeId = e.target.value;
@@ -672,7 +672,7 @@ export function DashboardClient({
                         )}
                         <button
                             onClick={() => setIsCustomizeMode(!isCustomizeMode)}
-                            className={`w-full sm:w-auto px-4 py-2 rounded-xl font-medium text-sm transition-colors border flex-shrink-0 shadow-sm ${isCustomizeMode ? 'bg-primary text-white border-primary cursor-pointer' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                            className={`w-full sm:w-auto px-3 py-1.5 rounded-lg font-medium text-xs transition-colors border flex-shrink-0 shadow-xs ${isCustomizeMode ? 'bg-primary text-white border-primary cursor-pointer' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}
                         >
                             {isCustomizeMode ? "Hoàn tất chỉnh sửa" : t("dashboard.header.customize")}
                         </button>
@@ -705,80 +705,80 @@ export function DashboardClient({
                                                         )}
 
                                                         {widgetId === 'kpi_cards' && (
-                                                            /* KPI Cards - Modernized White Style */
-                                                            <div className="gap-5 mb-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
-                                                                <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+                                                            /* KPI Cards - Modernized High-Density Style */
+                                                            <div className="gap-3.5 mb-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+                                                                <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-xs hover:shadow-sm transition-all duration-200 relative overflow-hidden group">
                                                                     <div className="absolute opacity-0 group-hover:opacity-100 top-0 left-0 w-1 h-full bg-blue-500 transition-opacity"></div>
-                                                                    <div className="flex justify-between items-start mb-4">
-                                                                        <span className="text-[13px] font-bold text-gray-500 uppercase tracking-wider">{t("dashboard.kpi.revenue")}</span>
-                                                                        <div className="bg-blue-50 text-blue-600 p-2.5 rounded-xl">
-                                                                            <DollarSign size={22} strokeWidth={2.5} />
+                                                                    <div className="flex justify-between items-start mb-3">
+                                                                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t("dashboard.kpi.revenue")}</span>
+                                                                        <div className="bg-blue-50 text-blue-600 p-1.5 rounded-lg">
+                                                                            <DollarSign size={18} strokeWidth={2.2} />
                                                                         </div>
                                                                     </div>
                                                                     <div className="flex flex-col gap-1">
-                                                                        <span className="text-3xl font-black text-gray-900 truncate" title={formatMoney(revenueThisMonth)}>{formatMoney(revenueThisMonth)}</span>
-                                                                        <div className="flex items-center gap-2 mt-1">
-                                                                            <span className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[12px] font-bold ${isRevenueUp ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                                                                        <span className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight tabular-nums truncate" title={formatMoney(revenueThisMonth)}>{formatMoney(revenueThisMonth)}</span>
+                                                                        <div className="flex items-center gap-1.5 mt-0.5">
+                                                                            <span className={`flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] font-semibold ${isRevenueUp ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' : 'bg-rose-50 text-rose-700 border border-rose-200/60'}`}>
                                                                                 {isRevenueUp ? '↑' : '↓'} {Math.abs(revenueGrowth).toFixed(1)}%
                                                                             </span>
-                                                                            <span className="text-xs font-medium text-gray-400">{t("dashboard.kpi.vsLastMonth")}</span>
+                                                                            <span className="text-[11px] font-medium text-slate-400">{t("dashboard.kpi.vsLastMonth")}</span>
                                                                         </div>
                                                                     </div>
                                                                 </div>
 
-                                                                <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+                                                                <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-xs hover:shadow-sm transition-all duration-200 relative overflow-hidden group">
                                                                     <div className="absolute opacity-0 group-hover:opacity-100 top-0 left-0 w-1 h-full bg-indigo-500 transition-opacity"></div>
-                                                                    <div className="flex justify-between items-start mb-4">
-                                                                        <span className="text-[13px] font-bold text-gray-500 uppercase tracking-wider">{t("dashboard.kpi.invoices")}</span>
-                                                                        <div className="bg-indigo-50 text-indigo-600 p-2.5 rounded-xl">
-                                                                            <Receipt size={22} strokeWidth={2.5} />
+                                                                    <div className="flex justify-between items-start mb-3">
+                                                                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t("dashboard.kpi.invoices")}</span>
+                                                                        <div className="bg-indigo-50 text-indigo-600 p-1.5 rounded-lg">
+                                                                            <Receipt size={18} strokeWidth={2.2} />
                                                                         </div>
                                                                     </div>
                                                                     <div className="flex flex-col gap-1">
-                                                                        <span className="text-3xl font-black text-gray-900">{invoicesThisMonth}</span>
-                                                                        <div className="flex items-center gap-2 mt-1">
-                                                                            <span className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[12px] font-bold ${isInvoiceUp ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                                                                        <span className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight tabular-nums">{invoicesThisMonth}</span>
+                                                                        <div className="flex items-center gap-1.5 mt-0.5">
+                                                                            <span className={`flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] font-semibold ${isInvoiceUp ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' : 'bg-rose-50 text-rose-700 border border-rose-200/60'}`}>
                                                                                 {isInvoiceUp ? '↑' : '↓'} {Math.abs(invoiceGrowth).toFixed(1)}%
                                                                             </span>
-                                                                            <span className="text-xs font-medium text-gray-400">{t("dashboard.kpi.vsLastMonth")}</span>
+                                                                            <span className="text-[11px] font-medium text-slate-400">{t("dashboard.kpi.vsLastMonth")}</span>
                                                                         </div>
                                                                     </div>
                                                                 </div>
 
-                                                                <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+                                                                <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-xs hover:shadow-sm transition-all duration-200 relative overflow-hidden group">
                                                                     <div className="absolute opacity-0 group-hover:opacity-100 top-0 left-0 w-1 h-full bg-emerald-500 transition-opacity"></div>
-                                                                    <div className="flex justify-between items-start mb-4">
-                                                                        <span className="text-[13px] font-bold text-emerald-600 uppercase tracking-wider">{t("dashboard.kpi.collected")}</span>
-                                                                        <div className="bg-emerald-50 text-emerald-600 p-2.5 rounded-xl">
-                                                                            <CreditCard size={22} strokeWidth={2.5} />
+                                                                    <div className="flex justify-between items-start mb-3">
+                                                                        <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">{t("dashboard.kpi.collected")}</span>
+                                                                        <div className="bg-emerald-50 text-emerald-600 p-1.5 rounded-lg">
+                                                                            <CreditCard size={18} strokeWidth={2.2} />
                                                                         </div>
                                                                     </div>
                                                                     <div className="flex flex-col gap-1">
-                                                                        <span className="text-3xl font-black text-emerald-600 truncate" title={formatMoney(paymentsThisMonth)}>{formatMoney(paymentsThisMonth)}</span>
-                                                                        <div className="flex items-center gap-2 mt-1">
-                                                                            <span className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[12px] font-bold ${isPaymentUp ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                                                                        <span className="text-xl sm:text-2xl font-bold text-emerald-600 tracking-tight tabular-nums truncate" title={formatMoney(paymentsThisMonth)}>{formatMoney(paymentsThisMonth)}</span>
+                                                                        <div className="flex items-center gap-1.5 mt-0.5">
+                                                                            <span className={`flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] font-semibold ${isPaymentUp ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' : 'bg-rose-50 text-rose-700 border border-rose-200/60'}`}>
                                                                                 {isPaymentUp ? '↑' : '↓'} {Math.abs(paymentGrowth).toFixed(1)}%
                                                                             </span>
-                                                                            <span className="text-xs font-medium text-gray-400">{t("dashboard.kpi.vsLastMonth")}</span>
+                                                                            <span className="text-[11px] font-medium text-slate-400">{t("dashboard.kpi.vsLastMonth")}</span>
                                                                         </div>
                                                                     </div>
                                                                 </div>
 
-                                                                <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+                                                                <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-xs hover:shadow-sm transition-all duration-200 relative overflow-hidden group">
                                                                     <div className="absolute opacity-0 group-hover:opacity-100 top-0 left-0 w-1 h-full bg-orange-500 transition-opacity"></div>
-                                                                    <div className="flex justify-between items-start mb-4">
-                                                                        <span className="text-[13px] font-bold text-gray-500 uppercase tracking-wider">{t("dashboard.kpi.debt")}</span>
-                                                                        <div className="bg-orange-50 text-orange-600 p-2.5 rounded-xl">
-                                                                            <Briefcase size={22} strokeWidth={2.5} />
+                                                                    <div className="flex justify-between items-start mb-3">
+                                                                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t("dashboard.kpi.debt")}</span>
+                                                                        <div className="bg-orange-50 text-orange-600 p-1.5 rounded-lg">
+                                                                            <Briefcase size={18} strokeWidth={2.2} />
                                                                         </div>
                                                                     </div>
                                                                     <div className="flex flex-col gap-1">
-                                                                        <span className="text-3xl font-black text-gray-900 truncate" title={formatMoney(debtThisMonth)}>{formatMoney(debtThisMonth)}</span>
-                                                                        <div className="flex items-center gap-2 mt-1">
-                                                                            <span className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[12px] font-bold ${isDebtUp ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'}`}>
+                                                                        <span className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight tabular-nums truncate" title={formatMoney(debtThisMonth)}>{formatMoney(debtThisMonth)}</span>
+                                                                        <div className="flex items-center gap-1.5 mt-0.5">
+                                                                            <span className={`flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] font-semibold ${isDebtUp ? 'bg-rose-50 text-rose-700 border border-rose-200/60' : 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'}`}>
                                                                                 {isDebtUp ? '↑' : '↓'} {Math.abs(debtGrowth).toFixed(1)}%
                                                                             </span>
-                                                                            <span className="text-xs font-medium text-gray-400">{t("dashboard.kpi.vsLastMonth")}</span>
+                                                                            <span className="text-[11px] font-medium text-slate-400">{t("dashboard.kpi.vsLastMonth")}</span>
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -787,20 +787,20 @@ export function DashboardClient({
 
                                                         {widgetId === 'my_work_todo' && (
                                                             /* My Work & Todo Row */
-                                                            <div className="flex flex-col xl:flex-row gap-6 w-full mb-6 items-stretch">
+                                                            <div className="flex flex-col xl:flex-row gap-4 w-full mb-4 items-stretch">
                                                                 {/* Vùng 1: Công việc của tôi */}
                                                                 <div className="w-full xl:w-[65%] flex flex-col">
-                                                                    <div className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col h-full">
-                                                                        <div className="flex items-center justify-between mb-4">
-                                                                            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                                                                                <Briefcase size={20} className="text-blue-500" />
+                                                                    <div className="p-4 sm:p-5 bg-white rounded-xl border border-slate-200/80 shadow-xs flex flex-col h-full">
+                                                                        <div className="flex items-center justify-between mb-3">
+                                                                            <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2">
+                                                                                <Briefcase size={18} className="text-blue-500" />
                                                                                 {t("dashboard.myWork.title")}
                                                                             </h3>
-                                                                            <span className="text-sm font-medium bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full">{tasks.length} {t("dashboard.myWork.tasksCount")}</span>
+                                                                            <span className="text-xs font-semibold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">{tasks.length} {t("dashboard.myWork.tasksCount")}</span>
                                                                         </div>
 
                                                                         {tasks.length === 0 ? (
-                                                                            <div className="flex-1 flex flex-col justify-center min-h-[250px]">
+                                                                            <div className="flex-1 flex flex-col justify-center min-h-[220px]">
                                                                                 <EmptyState 
                                                                                     icon={Briefcase}
                                                                                     title={t("dashboard.myWork.empty")}
@@ -808,7 +808,7 @@ export function DashboardClient({
                                                                                 />
                                                                             </div>
                                                                         ) : (
-                                                                            <div className="table-wrapper custom-scrollbar" style={{ flex: 1, maxHeight: '320px', overflowY: 'auto' }}>
+                                                                            <div className="table-wrapper custom-scrollbar" style={{ flex: 1, maxHeight: '280px', overflowY: 'auto' }}>
                                                                                 <table style={{ minWidth: '100%' }}>
                                                                                     <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
                                                                                         <tr>
@@ -825,7 +825,7 @@ export function DashboardClient({
                                                                                             const isDueSoon = task.dueDate && new Date(task.dueDate).getTime() - new Date().getTime() < 86400000 && task.status !== 'DONE';
                                                                                             const overdue = task.dueDate && task.status !== 'DONE' && task.status !== 'CANCELLED' && new Date(task.dueDate).getTime() < new Date().getTime();
 
-                                                                                            let rowClass = 'hover:bg-gray-50/50 transition-colors group';
+                                                                                            let rowClass = 'hover:bg-slate-50/70 transition-colors group';
                                                                                             let rowStyle: React.CSSProperties = {};
 
                                                                                             if (task.status !== 'DONE' && task.status !== 'CANCELLED') {
@@ -839,12 +839,12 @@ export function DashboardClient({
                                                                                             return (
                                                                                                 <tr key={task.id} className={rowClass} style={rowStyle}>
                                                                                                     <td>
-                                                                                                        <div style={{ fontWeight: 500, color: isDueSoon ? 'var(--danger)' : 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                                                            <a href={`/tasks/${task.id}`} className="text-blue-600 hover:underline text-sm truncate max-w-[200px]" title={task.title}>
+                                                                                                        <div style={{ fontWeight: 500, color: isDueSoon ? 'var(--danger)' : 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                                                            <a href={`/tasks/${task.id}`} className="text-blue-600 hover:text-blue-800 text-xs font-medium truncate max-w-[200px]" title={task.title}>
                                                                                                                 {task.title}
                                                                                                             </a>
                                                                                                             {overdue && (
-                                                                                                                <span className="animate-pulse bg-red-600 text-white px-2 py-0.5 rounded text-xs font-bold block" style={{ whiteSpace: 'nowrap' }}>
+                                                                                                                <span className="bg-rose-50 text-rose-700 border border-rose-200/80 px-1.5 py-0.5 rounded text-[10px] font-semibold block" style={{ whiteSpace: 'nowrap' }}>
                                                                                                                     QUÁ HẠN
                                                                                                                 </span>
                                                                                                             )}
@@ -852,19 +852,20 @@ export function DashboardClient({
                                                                                                     </td>
                                                                                                     <td>
                                                                                                         <span style={{
-                                                                                                            padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600,
-                                                                                                            backgroundColor: task.priority === 'URGENT' ? 'var(--danger)' : (task.priority === 'HIGH' ? 'var(--warning)' : '#e2e8f0'),
-                                                                                                            color: task.priority === 'URGENT' || task.priority === 'HIGH' ? '#fff' : '#000'
+                                                                                                            padding: '2px 7px', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: 600,
+                                                                                                            backgroundColor: task.priority === 'URGENT' ? '#fef2f2' : (task.priority === 'HIGH' ? '#fff7ed' : '#f1f5f9'),
+                                                                                                            color: task.priority === 'URGENT' ? '#dc2626' : (task.priority === 'HIGH' ? '#ea580c' : '#475569'),
+                                                                                                            border: `1px solid ${task.priority === 'URGENT' ? '#fecaca' : (task.priority === 'HIGH' ? '#fed7aa' : '#e2e8f0')}`
                                                                                                         }}>
                                                                                                             {task.priority === 'MEDIUM' ? t("dashboard.myWork.priorityMedium") : task.priority === 'HIGH' ? t("dashboard.myWork.priorityHigh") : task.priority === 'URGENT' ? t("dashboard.myWork.priorityUrgent") : t("dashboard.myWork.priorityLow")}
                                                                                                         </span>
                                                                                                     </td>
-                                                                                                    <td style={{ color: isDueSoon ? 'var(--danger)' : 'inherit' }}>
+                                                                                                    <td style={{ color: isDueSoon ? 'var(--danger)' : 'inherit', fontSize: '0.75rem' }}>
                                                                                                         {task.dueDate ? formatDate(new Date(task.dueDate)) : '-'}
                                                                                                     </td>
                                                                                                     <td>
                                                                                                         {relatedEntityName ? (
-                                                                                                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{relatedEntityName}</span>
+                                                                                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{relatedEntityName}</span>
                                                                                                         ) : (
                                                                                                             <span style={{ color: 'var(--text-muted)' }}>-</span>
                                                                                                         )}
@@ -900,8 +901,8 @@ export function DashboardClient({
                                                                                                                 }
                                                                                                             }}
                                                                                                             style={{
-                                                                                                                padding: '4px 8px', borderRadius: 'var(--radius)',
-                                                                                                                border: '1px solid var(--border)', fontSize: '0.85rem',
+                                                                                                                padding: '2px 6px', borderRadius: '6px',
+                                                                                                                border: '1px solid #cbd5e1', fontSize: '0.75rem',
                                                                                                                 backgroundColor: 'transparent', cursor: 'pointer'
                                                                                                             }}
                                                                                                         >
@@ -923,7 +924,7 @@ export function DashboardClient({
 
                                                                 {/* Vùng 2: Công việc cần làm */}
                                                                 <div className="w-full xl:w-[35%] flex flex-col">
-                                                                    <div className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col h-full">
+                                                                    <div className="p-4 sm:p-5 bg-white rounded-xl border border-slate-200/80 shadow-xs flex flex-col h-full">
                                                                         <TodoListWidget />
                                                                     </div>
                                                                 </div>
