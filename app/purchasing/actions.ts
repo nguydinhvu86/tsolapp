@@ -99,30 +99,46 @@ export async function getSupplier(id: string) {
     });
 }
 
+import { lookupBusinessByTaxCode } from '@/lib/vietqr';
+
+export async function lookupSupplierTaxCode(taxCode: string) {
+    return await lookupBusinessByTaxCode(taxCode);
+}
+
 export async function createSupplier(data: any) {
     await verifyActionPermission('SUPPLIERS_CREATE');
 
     // Auto-generate code if empty
-    let code = data.code;
+    let code = data.code?.trim();
     if (!code) {
         const count = await prisma.supplier.count();
         code = `NCC-${(count + 1).toString().padStart(4, '0')}`;
     }
 
+    const creditLimit = typeof data.creditLimit === 'number' ? data.creditLimit : (data.creditLimit ? parseFloat(data.creditLimit) : 0);
+
     const supplier = await prisma.supplier.create({
         data: {
-            name: data.name,
+            name: data.name?.trim(),
             code,
-            contactName: data.contactName,
-            email: data.email,
-            phone: data.phone,
-            address: data.address,
-            taxCode: data.taxCode,
-            website: data.website,
-            businessType: data.businessType,
-            bankAccount: data.bankAccount,
-            bankName: data.bankName,
-            notes: data.notes
+            shortName: data.shortName?.trim() || null,
+            internationalName: data.internationalName?.trim() || null,
+            contactName: data.contactName?.trim() || null,
+            email: data.email?.trim() || null,
+            phone: data.phone?.trim() || null,
+            address: data.address?.trim() || null,
+            billingAddress: data.billingAddress?.trim() || null,
+            shippingAddress: data.shippingAddress?.trim() || null,
+            taxCode: data.taxCode?.trim() || null,
+            taxStatus: data.taxStatus?.trim() || null,
+            website: data.website?.trim() || null,
+            businessType: data.businessType?.trim() || null,
+            bankAccount: data.bankAccount?.trim() || null,
+            bankName: data.bankName?.trim() || null,
+            bankBranch: data.bankBranch?.trim() || null,
+            paymentTerms: data.paymentTerms?.trim() || null,
+            creditLimit: isNaN(creditLimit) ? 0 : creditLimit,
+            notes: data.notes?.trim() || null
         }
     });
 
@@ -133,21 +149,31 @@ export async function createSupplier(data: any) {
 export async function updateSupplier(id: string, data: any) {
     await verifyActionPermission('SUPPLIERS_EDIT_ALL');
 
+    const creditLimit = typeof data.creditLimit === 'number' ? data.creditLimit : (data.creditLimit ? parseFloat(data.creditLimit) : 0);
+
     const supplier = await prisma.supplier.update({
         where: { id },
         data: {
-            name: data.name,
-            code: data.code,
-            contactName: data.contactName,
-            email: data.email,
-            phone: data.phone,
-            address: data.address,
-            taxCode: data.taxCode,
-            website: data.website,
-            businessType: data.businessType,
-            bankAccount: data.bankAccount,
-            bankName: data.bankName,
-            notes: data.notes
+            name: data.name?.trim(),
+            code: data.code?.trim(),
+            shortName: data.shortName?.trim() || null,
+            internationalName: data.internationalName?.trim() || null,
+            contactName: data.contactName?.trim() || null,
+            email: data.email?.trim() || null,
+            phone: data.phone?.trim() || null,
+            address: data.address?.trim() || null,
+            billingAddress: data.billingAddress?.trim() || null,
+            shippingAddress: data.shippingAddress?.trim() || null,
+            taxCode: data.taxCode?.trim() || null,
+            taxStatus: data.taxStatus?.trim() || null,
+            website: data.website?.trim() || null,
+            businessType: data.businessType?.trim() || null,
+            bankAccount: data.bankAccount?.trim() || null,
+            bankName: data.bankName?.trim() || null,
+            bankBranch: data.bankBranch?.trim() || null,
+            paymentTerms: data.paymentTerms?.trim() || null,
+            creditLimit: isNaN(creditLimit) ? 0 : creditLimit,
+            notes: data.notes?.trim() || null
         }
     });
 

@@ -6,11 +6,12 @@ import Link from 'next/link';
 import {
     ArrowLeft, Building, Phone, Mail, FileText,
     ShoppingCart, FileDown, Wallet, DollarSign,
-    CheckSquare, MapPin, Search, Edit2, FileSpreadsheet, Users, AlertCircle, ArrowUpDown, ArrowUp, ArrowDown, CheckCircle, XCircle
+    CheckSquare, MapPin, Search, Edit2, FileSpreadsheet, Users, AlertCircle, ArrowUpDown, ArrowUp, ArrowDown, CheckCircle, XCircle,
+    Sparkles, Loader2, Building2, CreditCard, CheckCircle2, Globe
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
-import { updateSupplier, approvePurchaseBill, cancelPurchaseBill, updatePurchaseBillTags } from '@/app/purchasing/actions';
+import { updateSupplier, approvePurchaseBill, cancelPurchaseBill, updatePurchaseBillTags, lookupSupplierTaxCode } from '@/app/purchasing/actions';
 import { SupplierStatementPanel } from '@/app/components/suppliers/SupplierStatementPanel';
 import { SupplierContactsPanel } from '@/app/components/suppliers/SupplierContactsPanel';
 import { ClickToCallButton } from '@/app/components/ClickToCallButton';
@@ -21,6 +22,9 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
     const [supplier, setSupplier] = useState(initialSupplier);
     const [activeTab, setActiveTab] = useState('orders');
     const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>({ key: 'date', direction: 'desc' });
+    const [activeEditTab, setActiveEditTab] = useState<'general' | 'contact' | 'financial' | 'notes'>('general');
+    const [isLookingUpTax, setIsLookingUpTax] = useState(false);
+    const [taxLookupMessage, setTaxLookupMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
     const handleSort = (key: string) => {
         let direction: 'asc' | 'desc' = 'desc';
@@ -70,31 +74,91 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
     const [formData, setFormData] = useState({
         code: supplier.code || '',
         name: supplier.name || '',
+        shortName: supplier.shortName || '',
+        internationalName: supplier.internationalName || '',
         contactName: supplier.contactName || '',
         email: supplier.email || '',
         phone: supplier.phone || '',
         address: supplier.address || '',
+        billingAddress: supplier.billingAddress || '',
+        shippingAddress: supplier.shippingAddress || '',
         taxCode: supplier.taxCode || '',
+        taxStatus: supplier.taxStatus || '',
         website: supplier.website || '',
         businessType: supplier.businessType || '',
         bankAccount: supplier.bankAccount || '',
         bankName: supplier.bankName || '',
+        bankBranch: supplier.bankBranch || '',
+        paymentTerms: supplier.paymentTerms || '',
+        creditLimit: supplier.creditLimit || 0,
         notes: supplier.notes || ''
     });
 
+    const handleTaxLookup = async () => {
+        if (!formData.taxCode?.trim()) {
+            setTaxLookupMessage({ type: 'error', text: 'Vui lòng nhập Mã số thuế để tra cứu.' });
+            return;
+        }
+
+        setIsLookingUpTax(true);
+        setTaxLookupMessage(null);
+
+        try {
+            const res = await lookupSupplierTaxCode(formData.taxCode.trim());
+            if (res.success && res.data) {
+                const { name, shortName, internationalName, address, status } = res.data;
+                setFormData(prev => ({
+                    ...prev,
+                    name: name || prev.name,
+                    shortName: shortName || prev.shortName,
+                    internationalName: internationalName || prev.internationalName,
+                    address: address || prev.address,
+                    billingAddress: prev.billingAddress || address || '',
+                    taxStatus: status || 'NNT đang hoạt động'
+                }));
+                setTaxLookupMessage({
+                    type: 'success',
+                    text: `Đã tìm thấy: ${name}${status ? ` (${status})` : ''}`
+                });
+            } else {
+                setTaxLookupMessage({
+                    type: 'error',
+                    text: res.message || 'Không tìm thấy thông tin doanh nghiệp với MST này.'
+                });
+            }
+        } catch (error: any) {
+            setTaxLookupMessage({
+                type: 'error',
+                text: error.message || 'Lỗi khi tra cứu mã số thuế.'
+            });
+        } finally {
+            setIsLookingUpTax(false);
+        }
+    };
+
     const handleOpenEdit = () => {
+        setTaxLookupMessage(null);
+        setActiveEditTab('general');
         setFormData({
             code: supplier.code || '',
             name: supplier.name || '',
+            shortName: supplier.shortName || '',
+            internationalName: supplier.internationalName || '',
             contactName: supplier.contactName || '',
             email: supplier.email || '',
             phone: supplier.phone || '',
             address: supplier.address || '',
+            billingAddress: supplier.billingAddress || '',
+            shippingAddress: supplier.shippingAddress || '',
             taxCode: supplier.taxCode || '',
+            taxStatus: supplier.taxStatus || '',
             website: supplier.website || '',
             businessType: supplier.businessType || '',
             bankAccount: supplier.bankAccount || '',
             bankName: supplier.bankName || '',
+            bankBranch: supplier.bankBranch || '',
+            paymentTerms: supplier.paymentTerms || '',
+            creditLimit: supplier.creditLimit || 0,
             notes: supplier.notes || ''
         });
         setIsEditModalOpen(true);
@@ -230,8 +294,25 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
                             <Building size={32} />
                         </div>
                         <div className="flex-1 min-w-0 w-full">
-                            <h2 className="text-lg md:text-xl font-bold mb-4 text-gray-900 truncate" title={supplier.name}>{supplier.name}</h2>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <span className="font-mono text-xs font-bold px-2.5 py-0.5 bg-indigo-100 text-indigo-700 rounded-md border border-indigo-200">
+                                    {supplier.code}
+                                </span>
+                                {supplier.taxStatus && (
+                                    <span className="text-xs font-semibold px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded border border-emerald-200">
+                                        {supplier.taxStatus}
+                                    </span>
+                                )}
+                            </div>
+                            <h2 className="text-lg md:text-xl font-bold text-gray-900 truncate" title={supplier.name}>{supplier.name}</h2>
+                            {supplier.shortName && (
+                                <p className="text-xs text-gray-500 font-medium mb-3 mt-0.5">
+                                    Tên viết tắt: <span className="text-gray-700">{supplier.shortName}</span>
+                                    {supplier.internationalName && ` • Tên quốc tế: ${supplier.internationalName}`}
+                                </p>
+                            )}
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mt-3">
                                 <div className="flex gap-3 items-center min-w-0">
                                     <div className="p-2 bg-gray-100 rounded-full text-gray-500 shrink-0"><Mail size={16} /></div>
                                     <div className="min-w-0">
@@ -253,14 +334,23 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
                                     <div className="p-2 bg-gray-100 rounded-full text-gray-500 shrink-0"><FileText size={16} /></div>
                                     <div className="min-w-0">
                                         <span className="block text-[0.65rem] text-gray-500 uppercase tracking-wider font-semibold">Mã Số Thuế</span>
-                                        <span className="text-sm font-medium text-gray-900 truncate block">{supplier.taxCode || '--'}</span>
+                                        <span className="text-sm font-medium font-mono text-gray-900 truncate block">{supplier.taxCode || '--'}</span>
                                     </div>
                                 </div>
                                 <div className="flex gap-3 items-center min-w-0">
-                                    <div className="p-2 bg-gray-100 rounded-full text-gray-500 shrink-0"><MapPin size={16} /></div>
+                                    <div className="p-2 bg-gray-100 rounded-full text-gray-500 shrink-0"><Users size={16} /></div>
                                     <div className="min-w-0">
-                                        <span className="block text-[0.65rem] text-gray-500 uppercase tracking-wider font-semibold">Địa Chỉ</span>
-                                        <span className="text-sm font-medium text-gray-900 truncate block" title={supplier.address || ''}>{supplier.address || '--'}</span>
+                                        <span className="block text-[0.65rem] text-gray-500 uppercase tracking-wider font-semibold">Người Đại Diện / Liên Hệ</span>
+                                        <span className="text-sm font-medium text-gray-900 truncate block">{supplier.contactName || '--'}</span>
+                                    </div>
+                                </div>
+                                <div className="flex gap-3 items-center min-w-0">
+                                    <div className="p-2 bg-gray-100 rounded-full text-gray-500 shrink-0"><CreditCard size={16} /></div>
+                                    <div className="min-w-0">
+                                        <span className="block text-[0.65rem] text-gray-500 uppercase tracking-wider font-semibold">Tài Khoản Ngân Hàng</span>
+                                        <span className="text-sm font-medium text-gray-900 truncate block">
+                                            {supplier.bankAccount ? `${supplier.bankAccount} (${supplier.bankName || ''})` : '--'}
+                                        </span>
                                     </div>
                                 </div>
                                 <div className="flex gap-3 items-center min-w-0">
@@ -270,12 +360,19 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
                                         <span className="text-sm font-bold text-red-600 truncate block">{formatMoney(computedDebt)}</span>
                                     </div>
                                 </div>
+                                <div className="flex gap-3 items-center min-w-0 sm:col-span-2">
+                                    <div className="p-2 bg-gray-100 rounded-full text-gray-500 shrink-0"><MapPin size={16} /></div>
+                                    <div className="min-w-0">
+                                        <span className="block text-[0.65rem] text-gray-500 uppercase tracking-wider font-semibold">Địa Chỉ Trụ Sở</span>
+                                        <span className="text-sm font-medium text-gray-900 truncate block" title={supplier.address || ''}>{supplier.address || '--'}</span>
+                                    </div>
+                                </div>
                                 {supplier.website && (
-                                    <div className="flex gap-3 items-center min-w-0 sm:col-span-2">
-                                        <div className="p-2 bg-gray-100 rounded-full text-gray-500 shrink-0"><Building size={16} /></div>
+                                    <div className="flex gap-3 items-center min-w-0">
+                                        <div className="p-2 bg-gray-100 rounded-full text-gray-500 shrink-0"><Globe size={16} /></div>
                                         <div className="min-w-0">
                                             <span className="block text-[0.65rem] text-gray-500 uppercase tracking-wider font-semibold">Website</span>
-                                            <span className="text-sm font-medium text-gray-900 truncate block">{supplier.website || '--'}</span>
+                                            <a href={supplier.website.startsWith('http') ? supplier.website : `https://${supplier.website}`} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-indigo-600 hover:underline truncate block">{supplier.website}</a>
                                         </div>
                                     </div>
                                 )}
@@ -616,11 +713,16 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
             {/* Edit Modal */}
             {isEditModalOpen && (
                 <div className="modal-backdrop">
-                    <div className="modal-container" style={{ maxWidth: '800px', maxHeight: '90vh' }}>
+                    <div className="modal-container" style={{ maxWidth: '850px', maxHeight: '92vh' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
-                            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-main)', margin: 0 }}>
-                                Chỉnh sửa Nhà Cung Cấp
-                            </h2>
+                            <div>
+                                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
+                                    Cập Nhật Nhà Cung Cấp
+                                </h2>
+                                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                                    Tra cứu tự động qua MST hoặc chỉnh sửa các trường chi tiết
+                                </p>
+                            </div>
                             <button
                                 onClick={() => setIsEditModalOpen(false)}
                                 style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-muted)' }}
@@ -628,79 +730,328 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
                                 &times;
                             </button>
                         </div>
-                        <div style={{ padding: '1.5rem', overflowY: 'auto' }}>
-                            <form id="supplierEditForm" onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                                {/* Thông tin chung */}
-                                <div>
-                                    <h3 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-main)', textTransform: 'uppercase', marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Thông Tin Chung</h3>
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-main)' }}>Mã NCC</label>
-                                            <input type="text" value={formData.code} onChange={e => setFormData({ ...formData, code: e.target.value })} className="input w-full" />
-                                        </div>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-main)' }}>Tên Nhà Cung Cấp <span style={{ color: 'var(--danger)' }}>*</span></label>
-                                            <input type="text" required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="input w-full" />
-                                        </div>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-main)' }}>Mã Số Thuế</label>
-                                            <input type="text" value={formData.taxCode} onChange={e => setFormData({ ...formData, taxCode: e.target.value })} className="input w-full" />
-                                        </div>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-main)' }}>Loại Hình Kinh Doanh</label>
-                                            <input type="text" value={formData.businessType} onChange={e => setFormData({ ...formData, businessType: e.target.value })} className="input w-full" />
-                                        </div>
-                                    </div>
-                                </div>
 
-                                {/* Thông tin liên hệ */}
-                                <div>
-                                    <h3 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-main)', textTransform: 'uppercase', marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Thông Tin Liên Hệ</h3>
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-main)' }}>Người Liên Hệ</label>
-                                            <input type="text" value={formData.contactName} onChange={e => setFormData({ ...formData, contactName: e.target.value })} className="input w-full" />
-                                        </div>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-main)' }}>Số Điện Thoại</label>
-                                            <input type="text" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} className="input w-full" />
-                                        </div>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-main)' }}>Email</label>
-                                            <input type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className="input w-full" />
-                                        </div>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-main)' }}>Hồ Sơ Năng Lực / Website</label>
-                                            <input type="text" value={formData.website} onChange={e => setFormData({ ...formData, website: e.target.value })} className="input w-full" />
-                                        </div>
-                                        <div style={{ gridColumn: '1 / -1' }}>
-                                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-main)' }}>Địa Chỉ</label>
-                                            <input type="text" value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} className="input w-full" />
-                                        </div>
-                                    </div>
+                        {/* Tax Lookup Quick Bar */}
+                        <div className="bg-indigo-50/70 border-b border-indigo-100 p-4 sm:px-6">
+                            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+                                <div className="flex-1 flex items-center bg-white rounded-lg border border-indigo-200 px-3 py-1.5 shadow-sm focus-within:ring-2 focus-within:ring-indigo-400 focus-within:border-indigo-400">
+                                    <Sparkles className="text-indigo-500 mr-2 shrink-0" size={18} />
+                                    <input
+                                        type="text"
+                                        placeholder="Nhập Mã số thuế để tự động tra cứu..."
+                                        value={formData.taxCode || ''}
+                                        onChange={e => setFormData({ ...formData, taxCode: e.target.value })}
+                                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleTaxLookup(); } }}
+                                        className="w-full bg-transparent border-none outline-none text-sm font-medium text-slate-800 placeholder-slate-400"
+                                    />
                                 </div>
+                                <button
+                                    type="button"
+                                    onClick={handleTaxLookup}
+                                    disabled={isLookingUpTax || !formData.taxCode?.trim()}
+                                    className="btn bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 shadow-sm shrink-0 transition-all disabled:opacity-50 cursor-pointer"
+                                >
+                                    {isLookingUpTax ? (
+                                        <>
+                                            <Loader2 className="animate-spin" size={16} />
+                                            <span>Đang tra cứu...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Search size={16} />
+                                            <span>Tra cứu</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
 
-                                {/* Thông tin thanh toán & Ghi chú */}
-                                <div>
-                                    <h3 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-main)', textTransform: 'uppercase', marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Thông Tin Thanh Toán & Ghi Chú</h3>
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-main)' }}>Ngân Hàng / Chi Nhánh</label>
-                                            <input type="text" value={formData.bankName} onChange={e => setFormData({ ...formData, bankName: e.target.value })} className="input w-full" />
-                                        </div>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-main)' }}>Số Tài Khoản</label>
-                                            <input type="text" value={formData.bankAccount} onChange={e => setFormData({ ...formData, bankAccount: e.target.value })} className="input w-full" />
-                                        </div>
-                                        <div style={{ gridColumn: '1 / -1' }}>
-                                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-main)' }}>Ghi Chú Nội Bộ</label>
-                                            <textarea rows={2} value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} className="input w-full" style={{ resize: 'vertical' }} />
-                                        </div>
-                                    </div>
+                            {taxLookupMessage && (
+                                <div className={`mt-2.5 p-2.5 rounded-lg text-xs font-medium flex items-center gap-2 ${
+                                    taxLookupMessage.type === 'success' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-rose-100 text-rose-800 border border-rose-200'
+                                }`}>
+                                    {taxLookupMessage.type === 'success' ? <CheckCircle2 size={16} className="shrink-0" /> : <AlertCircle size={16} className="shrink-0" />}
+                                    <span>{taxLookupMessage.text}</span>
                                 </div>
-                            </form>
+                            )}
                         </div>
-                        <div style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', background: 'var(--surface)' }}>
+
+                        {/* Tabs Header */}
+                        <div className="flex border-b border-gray-200 px-6 bg-slate-50 gap-2 overflow-x-auto hide-scrollbar">
+                            <button
+                                type="button"
+                                onClick={() => setActiveEditTab('general')}
+                                className={`py-3 px-3 text-xs sm:text-sm font-semibold border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
+                                    activeEditTab === 'general' ? 'border-indigo-600 text-indigo-600 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700'
+                                }`}
+                            >
+                                <Building2 size={16} /> Thông Tin Chung & Thuế
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setActiveEditTab('contact')}
+                                className={`py-3 px-3 text-xs sm:text-sm font-semibold border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
+                                    activeEditTab === 'contact' ? 'border-indigo-600 text-indigo-600 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700'
+                                }`}
+                            >
+                                <Phone size={16} /> Liên Hệ & Địa Chỉ
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setActiveEditTab('financial')}
+                                className={`py-3 px-3 text-xs sm:text-sm font-semibold border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
+                                    activeEditTab === 'financial' ? 'border-indigo-600 text-indigo-600 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700'
+                                }`}
+                            >
+                                <CreditCard size={16} /> Tài Chính & Ngân Hàng
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setActiveEditTab('notes')}
+                                className={`py-3 px-3 text-xs sm:text-sm font-semibold border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
+                                    activeEditTab === 'notes' ? 'border-indigo-600 text-indigo-600 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700'
+                                }`}
+                            >
+                                <FileText size={16} /> Ghi Chú
+                            </button>
+                        </div>
+
+                        {/* Form Body */}
+                        <form id="supplierEditForm" onSubmit={handleEditSubmit} style={{ padding: '1.5rem', overflowY: 'auto', maxHeight: 'calc(92vh - 240px)' }}>
+                            {activeEditTab === 'general' && (
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Mã NCC</label>
+                                            <input
+                                                type="text"
+                                                value={formData.code}
+                                                onChange={e => setFormData({ ...formData, code: e.target.value })}
+                                                className="input w-full font-mono text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Mã Số Thuế</label>
+                                            <input
+                                                type="text"
+                                                value={formData.taxCode}
+                                                onChange={e => setFormData({ ...formData, taxCode: e.target.value })}
+                                                className="input w-full font-mono text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Trạng Thái MST</label>
+                                            <input
+                                                type="text"
+                                                value={formData.taxStatus || ''}
+                                                onChange={e => setFormData({ ...formData, taxStatus: e.target.value })}
+                                                placeholder="NNT đang hoạt động"
+                                                className="input w-full text-sm bg-gray-50"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">
+                                            Tên Nhà Cung Cấp <span style={{ color: 'var(--danger)' }}>*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={formData.name}
+                                            onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                            className="input w-full font-medium"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Tên Viết Tắt</label>
+                                            <input
+                                                type="text"
+                                                value={formData.shortName || ''}
+                                                onChange={e => setFormData({ ...formData, shortName: e.target.value })}
+                                                className="input w-full text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Tên Quốc Tế</label>
+                                            <input
+                                                type="text"
+                                                value={formData.internationalName || ''}
+                                                onChange={e => setFormData({ ...formData, internationalName: e.target.value })}
+                                                className="input w-full text-sm"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Loại Hình Kinh Doanh</label>
+                                        <input
+                                            type="text"
+                                            value={formData.businessType}
+                                            onChange={e => setFormData({ ...formData, businessType: e.target.value })}
+                                            className="input w-full text-sm"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeEditTab === 'contact' && (
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Người Liên Hệ</label>
+                                            <input
+                                                type="text"
+                                                value={formData.contactName}
+                                                onChange={e => setFormData({ ...formData, contactName: e.target.value })}
+                                                className="input w-full text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Số Điện Thoại</label>
+                                            <input
+                                                type="text"
+                                                value={formData.phone}
+                                                onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                                className="input w-full text-sm"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Email</label>
+                                            <input
+                                                type="email"
+                                                value={formData.email}
+                                                onChange={e => setFormData({ ...formData, email: e.target.value })}
+                                                className="input w-full text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Hồ Sơ Năng Lực / Website</label>
+                                            <input
+                                                type="text"
+                                                value={formData.website}
+                                                onChange={e => setFormData({ ...formData, website: e.target.value })}
+                                                className="input w-full text-sm"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Địa Chỉ Trụ Sở</label>
+                                        <input
+                                            type="text"
+                                            value={formData.address}
+                                            onChange={e => setFormData({ ...formData, address: e.target.value })}
+                                            className="input w-full text-sm"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Địa Chỉ Xuất Hóa Đơn</label>
+                                            <input
+                                                type="text"
+                                                value={formData.billingAddress || ''}
+                                                onChange={e => setFormData({ ...formData, billingAddress: e.target.value })}
+                                                placeholder="Địa chỉ xuất hóa đơn..."
+                                                className="input w-full text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Địa Chỉ Kho / Giao Nhận Hàng</label>
+                                            <input
+                                                type="text"
+                                                value={formData.shippingAddress || ''}
+                                                onChange={e => setFormData({ ...formData, shippingAddress: e.target.value })}
+                                                placeholder="Địa chỉ kho xuất hàng..."
+                                                className="input w-full text-sm"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeEditTab === 'financial' && (
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Ngân Hàng</label>
+                                            <input
+                                                type="text"
+                                                value={formData.bankName}
+                                                onChange={e => setFormData({ ...formData, bankName: e.target.value })}
+                                                className="input w-full text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Số Tài Khoản</label>
+                                            <input
+                                                type="text"
+                                                value={formData.bankAccount}
+                                                onChange={e => setFormData({ ...formData, bankAccount: e.target.value })}
+                                                className="input w-full font-mono text-sm"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Chi Nhánh Ngân Hàng</label>
+                                        <input
+                                            type="text"
+                                            value={formData.bankBranch || ''}
+                                            onChange={e => setFormData({ ...formData, bankBranch: e.target.value })}
+                                            placeholder="Ví dụ: Chi nhánh TP.HCM..."
+                                            className="input w-full text-sm"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Điều Khoản Thanh Toán</label>
+                                            <input
+                                                type="text"
+                                                value={formData.paymentTerms || ''}
+                                                onChange={e => setFormData({ ...formData, paymentTerms: e.target.value })}
+                                                placeholder="Thanh toán ngay, gối đầu 30 ngày..."
+                                                className="input w-full text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Hạn Mức Công Nợ (VNĐ)</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                step="1000"
+                                                value={formData.creditLimit || ''}
+                                                onChange={e => setFormData({ ...formData, creditLimit: parseFloat(e.target.value) || 0 })}
+                                                className="input w-full font-mono text-sm"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeEditTab === 'notes' && (
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Ghi Chú Nội Bộ</label>
+                                        <textarea
+                                            rows={5}
+                                            value={formData.notes}
+                                            onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                                            className="input w-full text-sm"
+                                            style={{ resize: 'vertical' }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </form>
+
+                        <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', background: 'var(--surface)' }}>
                             <button type="button" onClick={() => setIsEditModalOpen(false)} className="btn" style={{ border: '1px solid var(--border)', background: '#fff' }}>Hủy</button>
                             <button type="submit" form="supplierEditForm" disabled={isSubmitting} className="btn btn-primary" style={{ background: 'var(--primary)', color: '#fff', opacity: isSubmitting ? 0.7 : 1 }}>
                                 {isSubmitting ? 'Đang lưu...' : 'Cập nhật'}

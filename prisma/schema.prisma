@@ -180,23 +180,38 @@ model Notification {
 }
 
 model Customer {
-  id              String           @id @default(cuid())
-  name            String
-  email           String?          @unique
-  password        String? // To support Customer Portal login
-  resetToken      String?          @unique // To support Password Reset
-  lastLoginAt     DateTime? // To track Portal active times
-  phone           String?
-  address         String?
-  taxCode         String?
-  totalDebt       Float            @default(0) // Positive means they owe us money
-  contracts       Contract[]
-  quotes          Quote[]
-  handovers       Handover[]
-  paymentRequests PaymentRequest[]
-  dispatches      Dispatch[]
-  projects        Project[]
-  tasks           Task[]
+  id                String           @id @default(cuid())
+  code              String?          @unique
+  name              String
+  shortName         String?
+  internationalName String?
+  email             String?          @unique
+  password          String? // To support Customer Portal login
+  resetToken        String?          @unique // To support Password Reset
+  lastLoginAt       DateTime? // To track Portal active times
+  phone             String?
+  address           String?
+  billingAddress    String?
+  shippingAddress   String?
+  taxCode           String?
+  taxStatus         String?
+  contactName       String?
+  website           String?
+  businessType      String?
+  bankAccount       String?
+  bankName          String?
+  bankBranch        String?
+  paymentTerms      String?
+  creditLimit       Float?           @default(0)
+  internalNotes     String?          @db.Text
+  totalDebt         Float            @default(0) // Positive means they owe us money
+  contracts         Contract[]
+  quotes            Quote[]
+  handovers         Handover[]
+  paymentRequests   PaymentRequest[]
+  dispatches        Dispatch[]
+  projects          Project[]
+  tasks             Task[]
 
   // Sales & Expenses Relations
   salesEstimates SalesEstimate[]
@@ -771,19 +786,27 @@ model InventoryTransactionItem {
 // --- PROCUREMENT & SUPPLIER MANAGEMENT MODULE ---
 
 model Supplier {
-  id           String  @id @default(cuid())
-  code         String  @unique
-  name         String
-  contactName  String?
-  email        String?
-  phone        String?
-  address      String?
-  taxCode      String?
-  website      String?
-  businessType String?
-  bankAccount  String?
-  bankName     String?
-  notes        String? @db.Text
+  id                String  @id @default(cuid())
+  code              String  @unique
+  name              String
+  shortName         String?
+  internationalName String?
+  contactName       String?
+  email             String?
+  phone             String?
+  address           String?
+  billingAddress    String?
+  shippingAddress   String?
+  taxCode           String?
+  taxStatus         String?
+  website           String?
+  businessType      String?
+  bankAccount       String?
+  bankName          String?
+  bankBranch        String?
+  paymentTerms      String?
+  creditLimit       Float?  @default(0)
+  notes             String? @db.Text
 
   // Financials
   totalDebt Float @default(0) // Positive means we owe them money

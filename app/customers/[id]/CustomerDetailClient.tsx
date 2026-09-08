@@ -20,11 +20,12 @@ import { useSession } from 'next-auth/react';
 import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
 import { Modal } from '@/app/components/ui/Modal';
 import { Input } from '@/app/components/ui/Input';
-import { sendDebtConfirmationEmail, saveCustomerMenuOrder, updateCustomer } from '../actions';
+import { sendDebtConfirmationEmail, saveCustomerMenuOrder, updateCustomer, lookupCustomerTaxCode } from '../actions';
 import { updateCustomerPassword } from './actions';
 import { EmailLogTable } from '@/app/components/ui/EmailLogTable';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { ClickToCallButton } from '@/app/components/ClickToCallButton';
+import { Sparkles, Loader2, Building, CreditCard, Globe, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export function CustomerDetailClient({ customer, tasks, users, emailTemplates = [], savedMenuOrder = "[]" }: { customer: any, tasks: any[], users: any[], emailTemplates?: any[], savedMenuOrder?: string }) {
     const router = useRouter();
@@ -36,25 +37,90 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [activeEditTab, setActiveEditTab] = useState<'general' | 'contact' | 'financial' | 'notes'>('general');
+    const [isLookingUpTax, setIsLookingUpTax] = useState(false);
+    const [taxLookupMessage, setTaxLookupMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
+
     const [editFormData, setEditFormData] = useState({ 
+        code: customer?.code || '',
         name: customer?.name || '', 
+        shortName: customer?.shortName || '',
+        internationalName: customer?.internationalName || '',
         email: customer?.email || '', 
         phone: customer?.phone || '', 
         address: customer?.address || '', 
-        taxCode: customer?.taxCode || '' 
+        billingAddress: customer?.billingAddress || '',
+        shippingAddress: customer?.shippingAddress || '',
+        taxCode: customer?.taxCode || '',
+        taxStatus: customer?.taxStatus || '',
+        contactName: customer?.contactName || '',
+        website: customer?.website || '',
+        businessType: customer?.businessType || '',
+        bankAccount: customer?.bankAccount || '',
+        bankName: customer?.bankName || '',
+        bankBranch: customer?.bankBranch || '',
+        paymentTerms: customer?.paymentTerms || '',
+        creditLimit: customer?.creditLimit || 0,
+        internalNotes: customer?.internalNotes || ''
     });
     const [newPassword, setNewPassword] = useState('');
     const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
 
+    const handleTaxLookup = async () => {
+        if (!editFormData.taxCode?.trim()) {
+            setTaxLookupMessage({ type: 'error', text: 'Vui lòng nhập Mã số thuế để tra cứu.' });
+            return;
+        }
+
+        setIsLookingUpTax(true);
+        setTaxLookupMessage(null);
+
+        try {
+            const res = await lookupCustomerTaxCode(editFormData.taxCode.trim());
+            if (res.success && res.data) {
+                const { name, shortName, internationalName, address, status } = res.data;
+                setEditFormData(prev => ({
+                    ...prev,
+                    name: name || prev.name,
+                    shortName: shortName || prev.shortName,
+                    internationalName: internationalName || prev.internationalName,
+                    address: address || prev.address,
+                    billingAddress: prev.billingAddress || address || '',
+                    taxStatus: status || 'NNT đang hoạt động'
+                }));
+                setTaxLookupMessage({
+                    type: 'success',
+                    text: `Đã tìm thấy: ${name}${status ? ` (${status})` : ''}`
+                });
+            } else {
+                setTaxLookupMessage({
+                    type: 'error',
+                    text: res.message || 'Không tìm thấy thông tin doanh nghiệp với MST này.'
+                });
+            }
+        } catch (error: any) {
+            setTaxLookupMessage({
+                type: 'error',
+                text: error.message || 'Lỗi khi tra cứu mã số thuế.'
+            });
+        } finally {
+            setIsLookingUpTax(false);
+        }
+    };
+
     const handleEditSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsSubmittingEdit(true);
         try {
             await updateCustomer(customer.id, editFormData);
             setIsEditModalOpen(false);
             router.refresh();
         } catch (error: any) {
             alert(error.message || 'Lỗi hệ thống khi cập nhật thông tin.');
+        } finally {
+            setIsSubmittingEdit(false);
         }
     };
 
@@ -174,23 +240,58 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                     </div>
                     <div className="flex-1 w-full flex flex-col items-center sm:items-start text-center sm:text-left">
                         <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center gap-4 mb-6 w-full">
-                            <h2 className="text-xl sm:text-2xl font-bold m-0 text-slate-800 break-words">{customer.name}</h2>
+                            <div>
+                                <div className="flex items-center gap-2 flex-wrap mb-1">
+                                    <span className="font-mono text-xs font-bold px-2.5 py-0.5 bg-indigo-100 text-indigo-700 rounded-md border border-indigo-200">
+                                        {customer.code || 'KH-CHƯA CÓ'}
+                                    </span>
+                                    {customer.taxStatus && (
+                                        <span className="text-xs font-semibold px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded border border-emerald-200">
+                                            {customer.taxStatus}
+                                        </span>
+                                    )}
+                                </div>
+                                <h2 className="text-xl sm:text-2xl font-bold m-0 text-slate-800 break-words">{customer.name}</h2>
+                                {customer.shortName && (
+                                    <p className="text-sm text-slate-500 font-medium m-0 mt-0.5">
+                                        Tên viết tắt: <span className="text-slate-700">{customer.shortName}</span>
+                                        {customer.internationalName && ` • Tên quốc tế: ${customer.internationalName}`}
+                                    </p>
+                                )}
+                            </div>
                             <div className="flex flex-wrap gap-2 w-full md:w-auto">
                                 <Button
                                     onClick={() => {
+                                        setTaxLookupMessage(null);
+                                        setActiveEditTab('general');
                                         setEditFormData({
+                                            code: customer?.code || '',
                                             name: customer?.name || '',
+                                            shortName: customer?.shortName || '',
+                                            internationalName: customer?.internationalName || '',
                                             email: customer?.email || '',
                                             phone: customer?.phone || '',
                                             address: customer?.address || '',
-                                            taxCode: customer?.taxCode || ''
+                                            billingAddress: customer?.billingAddress || '',
+                                            shippingAddress: customer?.shippingAddress || '',
+                                            taxCode: customer?.taxCode || '',
+                                            taxStatus: customer?.taxStatus || '',
+                                            contactName: customer?.contactName || '',
+                                            website: customer?.website || '',
+                                            businessType: customer?.businessType || '',
+                                            bankAccount: customer?.bankAccount || '',
+                                            bankName: customer?.bankName || '',
+                                            bankBranch: customer?.bankBranch || '',
+                                            paymentTerms: customer?.paymentTerms || '',
+                                            creditLimit: customer?.creditLimit || 0,
+                                            internalNotes: customer?.internalNotes || ''
                                         });
                                         setIsEditModalOpen(true);
                                     }}
                                     className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-slate-100 text-slate-700 border-none px-4 py-2 rounded-lg cursor-pointer hover:bg-slate-200 transition-colors shadow-sm font-medium text-sm h-[36px]"
                                     title="Sửa thông tin khách hàng"
                                 >
-                                    <Edit size={16} /> Edit
+                                    <Edit size={16} /> Sửa Hồ Sơ
                                 </Button>
                                 <Button
                                     onClick={() => setIsPasswordModalOpen(true)}
@@ -242,7 +343,7 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                 <div className="mt-0.5 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 flex-shrink-0"><Building2 size={16} /></div>
                                 <div className="min-w-0 flex-1">
                                     <p className="m-0 text-xs font-semibold text-slate-500 uppercase">Mã Số Thuế</p>
-                                    <p className="m-0 text-[15px] font-medium break-words">{customer.taxCode || 'Chưa cập nhật'}</p>
+                                    <p className="m-0 text-[15px] font-medium font-mono break-words">{customer.taxCode || 'Chưa cập nhật'}</p>
                                 </div>
                             </div>
                             <div className="flex items-start gap-3">
@@ -252,13 +353,38 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                     <p className="m-0 text-[16px] font-bold text-red-600 break-words">{formatMoney(computedDebt)}</p>
                                 </div>
                             </div>
+                            <div className="flex items-start gap-3">
+                                <div className="mt-0.5 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 flex-shrink-0"><User size={16} /></div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="m-0 text-xs font-semibold text-slate-500 uppercase">Người Đại Diện / Liên Hệ</p>
+                                    <p className="m-0 text-[15px] font-medium break-words">{customer.contactName || 'Chưa cập nhật'}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <div className="mt-0.5 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 flex-shrink-0"><CreditCard size={16} /></div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="m-0 text-xs font-semibold text-slate-500 uppercase">Tài Khoản Ngân Hàng</p>
+                                    <p className="m-0 text-[14px] font-medium break-words">
+                                        {customer.bankAccount ? `${customer.bankAccount} (${customer.bankName || ''})` : 'Chưa cập nhật'}
+                                    </p>
+                                </div>
+                            </div>
                             <div className="flex items-start gap-3 lg:col-span-2">
                                 <div className="mt-0.5 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 flex-shrink-0"><MapPin size={16} /></div>
                                 <div className="min-w-0 flex-1">
-                                    <p className="m-0 text-xs font-semibold text-slate-500 uppercase">Địa Chỉ</p>
+                                    <p className="m-0 text-xs font-semibold text-slate-500 uppercase">Địa Chỉ Trụ Sở</p>
                                     <p className="m-0 text-[15px] font-medium break-words">{customer.address || 'Chưa cập nhật'}</p>
                                 </div>
                             </div>
+                            {customer.billingAddress && (
+                                <div className="flex items-start gap-3 lg:col-span-1">
+                                    <div className="mt-0.5 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 flex-shrink-0"><FileText size={16} /></div>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="m-0 text-xs font-semibold text-slate-500 uppercase">Địa Chỉ Hóa Đơn</p>
+                                        <p className="m-0 text-[14px] font-medium break-words">{customer.billingAddress}</p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                     </div>
@@ -666,62 +792,377 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
             )}
 
             {/* Edit Customer Modal */}
-            <Modal
-                isOpen={isEditModalOpen}
-                title="Sửa Thông Tin Khách Hàng"
-                onClose={() => setIsEditModalOpen(false)}
-            >
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Tên khách hàng / Công ty <span className="text-red-500">*</span></label>
-                        <Input
-                            value={editFormData.name || ''}
-                            onChange={e => setEditFormData({ ...editFormData, name: e.target.value })}
-                            placeholder="Tên khách hàng"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                        <Input
-                            value={editFormData.email || ''}
-                            onChange={e => setEditFormData({ ...editFormData, email: e.target.value })}
-                            placeholder="Email"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
-                        <Input
-                            value={editFormData.phone || ''}
-                            onChange={e => setEditFormData({ ...editFormData, phone: e.target.value })}
-                            placeholder="Số điện thoại"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Địa chỉ</label>
-                        <Input
-                            value={editFormData.address || ''}
-                            onChange={e => setEditFormData({ ...editFormData, address: e.target.value })}
-                            placeholder="Địa chỉ"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Mã số thuế</label>
-                        <Input
-                            value={editFormData.taxCode || ''}
-                            onChange={e => setEditFormData({ ...editFormData, taxCode: e.target.value })}
-                            placeholder="Mã số thuế"
-                        />
-                    </div>
-                    <div className="flex justify-end gap-3 mt-6">
-                        <Button variant="secondary" onClick={() => setIsEditModalOpen(false)}>
-                            Hủy
-                        </Button>
-                        <Button onClick={(e: any) => handleEditSubmit(e)}>
-                            Lưu thay đổi
-                        </Button>
+            {isEditModalOpen && (
+                <div className="modal-backdrop">
+                    <div className="modal-container" style={{ maxWidth: '850px', maxHeight: '92vh' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
+                            <div>
+                                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
+                                    Cập Nhật Hồ Sơ Khách Hàng
+                                </h2>
+                                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                                    Tra cứu tự động qua MST hoặc chỉnh sửa các trường chi tiết
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setIsEditModalOpen(false)}
+                                style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-muted)' }}
+                            >
+                                &times;
+                            </button>
+                        </div>
+
+                        {/* Tax Lookup Quick Bar */}
+                        <div className="bg-indigo-50/70 border-b border-indigo-100 p-4 sm:px-6">
+                            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+                                <div className="flex-1 flex items-center bg-white rounded-lg border border-indigo-200 px-3 py-1.5 shadow-sm focus-within:ring-2 focus-within:ring-indigo-400 focus-within:border-indigo-400">
+                                    <Sparkles className="text-indigo-500 mr-2 shrink-0" size={18} />
+                                    <input
+                                        type="text"
+                                        placeholder="Nhập Mã số thuế để tự động tra cứu..."
+                                        value={editFormData.taxCode || ''}
+                                        onChange={e => setEditFormData({ ...editFormData, taxCode: e.target.value })}
+                                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleTaxLookup(); } }}
+                                        className="w-full bg-transparent border-none outline-none text-sm font-medium text-slate-800 placeholder-slate-400"
+                                    />
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleTaxLookup}
+                                    disabled={isLookingUpTax || !editFormData.taxCode?.trim()}
+                                    className="btn bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 shadow-sm shrink-0 transition-all disabled:opacity-50 cursor-pointer"
+                                >
+                                    {isLookingUpTax ? (
+                                        <>
+                                            <Loader2 className="animate-spin" size={16} />
+                                            <span>Đang tra cứu...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Search size={16} />
+                                            <span>Tra cứu</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+
+                            {taxLookupMessage && (
+                                <div className={`mt-2.5 p-2.5 rounded-lg text-xs font-medium flex items-center gap-2 ${
+                                    taxLookupMessage.type === 'success' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-rose-100 text-rose-800 border border-rose-200'
+                                }`}>
+                                    {taxLookupMessage.type === 'success' ? <CheckCircle2 size={16} className="shrink-0" /> : <AlertCircle size={16} className="shrink-0" />}
+                                    <span>{taxLookupMessage.text}</span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Tabs Header */}
+                        <div className="flex border-b border-gray-200 px-6 bg-slate-50 gap-2 overflow-x-auto hide-scrollbar">
+                            <button
+                                type="button"
+                                onClick={() => setActiveEditTab('general')}
+                                className={`py-3 px-3 text-xs sm:text-sm font-semibold border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
+                                    activeEditTab === 'general' ? 'border-indigo-600 text-indigo-600 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700'
+                                }`}
+                            >
+                                <Building2 size={16} /> Thông Tin Chung & Thuế
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setActiveEditTab('contact')}
+                                className={`py-3 px-3 text-xs sm:text-sm font-semibold border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
+                                    activeEditTab === 'contact' ? 'border-indigo-600 text-indigo-600 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700'
+                                }`}
+                            >
+                                <Phone size={16} /> Liên Hệ & Địa Chỉ
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setActiveEditTab('financial')}
+                                className={`py-3 px-3 text-xs sm:text-sm font-semibold border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
+                                    activeEditTab === 'financial' ? 'border-indigo-600 text-indigo-600 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700'
+                                }`}
+                            >
+                                <CreditCard size={16} /> Tài Chính & Ngân Hàng
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setActiveEditTab('notes')}
+                                className={`py-3 px-3 text-xs sm:text-sm font-semibold border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
+                                    activeEditTab === 'notes' ? 'border-indigo-600 text-indigo-600 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700'
+                                }`}
+                            >
+                                <FileText size={16} /> Ghi Chú
+                            </button>
+                        </div>
+
+                        {/* Form Body */}
+                        <form id="customerEditForm" onSubmit={handleEditSubmit} style={{ padding: '1.5rem', overflowY: 'auto', maxHeight: 'calc(92vh - 240px)' }}>
+                            {activeEditTab === 'general' && (
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Mã Khách Hàng</label>
+                                            <input
+                                                type="text"
+                                                value={editFormData.code || ''}
+                                                onChange={e => setEditFormData({ ...editFormData, code: e.target.value })}
+                                                placeholder="KH-xxxx"
+                                                className="input w-full font-mono text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Mã Số Thuế</label>
+                                            <input
+                                                type="text"
+                                                value={editFormData.taxCode || ''}
+                                                onChange={e => setEditFormData({ ...editFormData, taxCode: e.target.value })}
+                                                placeholder="0101248141"
+                                                className="input w-full font-mono text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Trạng Thái MST</label>
+                                            <input
+                                                type="text"
+                                                value={editFormData.taxStatus || ''}
+                                                onChange={e => setEditFormData({ ...editFormData, taxStatus: e.target.value })}
+                                                placeholder="NNT đang hoạt động"
+                                                className="input w-full text-sm bg-gray-50"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">
+                                            Tên Khách Hàng / Công Ty <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={editFormData.name || ''}
+                                            onChange={e => setEditFormData({ ...editFormData, name: e.target.value })}
+                                            placeholder="Tên đầy đủ theo đăng ký..."
+                                            className="input w-full font-medium"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Tên Viết Tắt / Giao Dịch</label>
+                                            <input
+                                                type="text"
+                                                value={editFormData.shortName || ''}
+                                                onChange={e => setEditFormData({ ...editFormData, shortName: e.target.value })}
+                                                placeholder="Tên viết tắt..."
+                                                className="input w-full text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Tên Quốc Tế</label>
+                                            <input
+                                                type="text"
+                                                value={editFormData.internationalName || ''}
+                                                onChange={e => setEditFormData({ ...editFormData, internationalName: e.target.value })}
+                                                placeholder="Tên tiếng Anh..."
+                                                className="input w-full text-sm"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Ngành Nghề / Lĩnh Vực</label>
+                                        <input
+                                            type="text"
+                                            value={editFormData.businessType || ''}
+                                            onChange={e => setEditFormData({ ...editFormData, businessType: e.target.value })}
+                                            placeholder="Lĩnh vực hoạt động..."
+                                            className="input w-full text-sm"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeEditTab === 'contact' && (
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Người Đại Diện / Liên Hệ</label>
+                                            <input
+                                                type="text"
+                                                value={editFormData.contactName || ''}
+                                                onChange={e => setEditFormData({ ...editFormData, contactName: e.target.value })}
+                                                placeholder="Họ tên người liên hệ"
+                                                className="input w-full text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Số Điện Thoại</label>
+                                            <input
+                                                type="text"
+                                                value={editFormData.phone || ''}
+                                                onChange={e => setEditFormData({ ...editFormData, phone: e.target.value })}
+                                                placeholder="0987xxxxxx"
+                                                className="input w-full text-sm"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Email</label>
+                                            <input
+                                                type="email"
+                                                value={editFormData.email || ''}
+                                                onChange={e => setEditFormData({ ...editFormData, email: e.target.value })}
+                                                placeholder="email@company.com"
+                                                className="input w-full text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Website</label>
+                                            <input
+                                                type="text"
+                                                value={editFormData.website || ''}
+                                                onChange={e => setEditFormData({ ...editFormData, website: e.target.value })}
+                                                placeholder="https://..."
+                                                className="input w-full text-sm"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Địa Chỉ Trụ Sở</label>
+                                        <input
+                                            type="text"
+                                            value={editFormData.address || ''}
+                                            onChange={e => setEditFormData({ ...editFormData, address: e.target.value })}
+                                            placeholder="Địa chỉ trụ sở..."
+                                            className="input w-full text-sm"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Địa Chỉ Xuất Hóa Đơn</label>
+                                            <input
+                                                type="text"
+                                                value={editFormData.billingAddress || ''}
+                                                onChange={e => setEditFormData({ ...editFormData, billingAddress: e.target.value })}
+                                                placeholder="Địa chỉ hóa đơn VAT..."
+                                                className="input w-full text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Địa Chỉ Giao Nhận Hàng</label>
+                                            <input
+                                                type="text"
+                                                value={editFormData.shippingAddress || ''}
+                                                onChange={e => setEditFormData({ ...editFormData, shippingAddress: e.target.value })}
+                                                placeholder="Địa chỉ kho / giao hàng..."
+                                                className="input w-full text-sm"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeEditTab === 'financial' && (
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Tên Ngân Hàng</label>
+                                            <input
+                                                type="text"
+                                                value={editFormData.bankName || ''}
+                                                onChange={e => setEditFormData({ ...editFormData, bankName: e.target.value })}
+                                                placeholder="Tên ngân hàng..."
+                                                className="input w-full text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Số Tài Khoản</label>
+                                            <input
+                                                type="text"
+                                                value={editFormData.bankAccount || ''}
+                                                onChange={e => setEditFormData({ ...editFormData, bankAccount: e.target.value })}
+                                                placeholder="Số tài khoản..."
+                                                className="input w-full font-mono text-sm"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Chi Nhánh Ngân Hàng</label>
+                                        <input
+                                            type="text"
+                                            value={editFormData.bankBranch || ''}
+                                            onChange={e => setEditFormData({ ...editFormData, bankBranch: e.target.value })}
+                                            placeholder="Chi nhánh..."
+                                            className="input w-full text-sm"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Điều Khoản Thanh Toán</label>
+                                            <input
+                                                type="text"
+                                                value={editFormData.paymentTerms || ''}
+                                                onChange={e => setEditFormData({ ...editFormData, paymentTerms: e.target.value })}
+                                                placeholder="Thanh toán ngay, gối đầu..."
+                                                className="input w-full text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Hạn Mức Công Nợ (VNĐ)</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                step="1000"
+                                                value={editFormData.creditLimit || ''}
+                                                onChange={e => setEditFormData({ ...editFormData, creditLimit: parseFloat(e.target.value) || 0 })}
+                                                placeholder="0"
+                                                className="input w-full font-mono text-sm"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeEditTab === 'notes' && (
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Ghi Chú Nội Bộ</label>
+                                        <textarea
+                                            rows={5}
+                                            value={editFormData.internalNotes || ''}
+                                            onChange={e => setEditFormData({ ...editFormData, internalNotes: e.target.value })}
+                                            placeholder="Ghi chú nội bộ..."
+                                            className="input w-full text-sm"
+                                            style={{ resize: 'vertical' }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </form>
+
+                        <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', background: 'var(--surface)' }}>
+                            <Button variant="secondary" onClick={() => setIsEditModalOpen(false)} disabled={isSubmittingEdit}>
+                                Hủy
+                            </Button>
+                            <Button
+                                type="submit"
+                                form="customerEditForm"
+                                disabled={isSubmittingEdit}
+                                className="bg-primary text-white hover:bg-primary-hover"
+                            >
+                                {isSubmittingEdit ? 'Đang lưu...' : 'Lưu thay đổi'}
+                            </Button>
+                        </div>
                     </div>
                 </div>
-            </Modal>
+            )}
         </div >
     );
 }

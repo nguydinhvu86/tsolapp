@@ -9,12 +9,33 @@ import { sendEmailWithTracking } from '@/lib/mailer';
 import { buildViewFilter, verifyActionPermission, verifyActionOwnership } from '@/lib/permissions';
 import { z } from 'zod';
 
+import { lookupBusinessByTaxCode } from '@/lib/vietqr';
+
+export async function lookupCustomerTaxCode(taxCode: string) {
+    return await lookupBusinessByTaxCode(taxCode);
+}
+
 const customerSchema = z.object({
+    code: z.string().optional().nullable(),
     name: z.string().min(1, "Tên khách hàng không được để trống"),
+    shortName: z.string().optional().nullable(),
+    internationalName: z.string().optional().nullable(),
     email: z.string().email("Email không hợp lệ").optional().or(z.literal("")).nullable(),
     phone: z.string().optional().or(z.literal("")).nullable(),
     address: z.string().optional().or(z.literal("")).nullable(),
-    taxCode: z.string().optional().or(z.literal("")).nullable()
+    billingAddress: z.string().optional().or(z.literal("")).nullable(),
+    shippingAddress: z.string().optional().or(z.literal("")).nullable(),
+    taxCode: z.string().optional().or(z.literal("")).nullable(),
+    taxStatus: z.string().optional().or(z.literal("")).nullable(),
+    contactName: z.string().optional().or(z.literal("")).nullable(),
+    website: z.string().optional().or(z.literal("")).nullable(),
+    businessType: z.string().optional().or(z.literal("")).nullable(),
+    bankAccount: z.string().optional().or(z.literal("")).nullable(),
+    bankName: z.string().optional().or(z.literal("")).nullable(),
+    bankBranch: z.string().optional().or(z.literal("")).nullable(),
+    paymentTerms: z.string().optional().or(z.literal("")).nullable(),
+    creditLimit: z.union([z.number(), z.string().transform(v => (v ? parseFloat(v) : 0))]).optional().nullable(),
+    internalNotes: z.string().optional().nullable()
 });
 
 const customerContactSchema = z.object({
@@ -26,20 +47,67 @@ const customerContactSchema = z.object({
     birthday: z.union([z.string(), z.date()]).optional().nullable()
 });
 
-export async function createCustomer(data: { name: string, email?: string, phone?: string, address?: string, taxCode?: string }) {
+export type CustomerInputData = {
+    code?: string | null;
+    name: string;
+    shortName?: string | null;
+    internationalName?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    address?: string | null;
+    billingAddress?: string | null;
+    shippingAddress?: string | null;
+    taxCode?: string | null;
+    taxStatus?: string | null;
+    contactName?: string | null;
+    website?: string | null;
+    businessType?: string | null;
+    bankAccount?: string | null;
+    bankName?: string | null;
+    bankBranch?: string | null;
+    paymentTerms?: string | null;
+    creditLimit?: number | string | null;
+    internalNotes?: string | null;
+};
+
+export async function createCustomer(data: CustomerInputData) {
     await verifyActionPermission('CUSTOMERS_CREATE');
     const validatedData = customerSchema.parse(data);
-    data.name = validatedData.name;
-    data.email = validatedData.email ?? undefined;
-    data.phone = validatedData.phone ?? undefined;
-    data.address = validatedData.address ?? undefined;
-    data.taxCode = validatedData.taxCode ?? undefined;
 
-    if (data.email) data.email = data.email.trim();
-    if (!data.email) data.email = undefined; // Prisma expects undefined/null to not insert an empty string
+    let code = validatedData.code?.trim();
+    if (!code) {
+        const count = await prisma.customer.count();
+        code = `KH-${(count + 1).toString().padStart(4, '0')}`;
+    }
+
+    const email = validatedData.email?.trim() || null;
+    const creditLimit = typeof validatedData.creditLimit === 'number' ? validatedData.creditLimit : 0;
 
     try {
-        const customer = await prisma.customer.create({ data: { ...data, email: data.email || null } });
+        const customer = await prisma.customer.create({
+            data: {
+                code,
+                name: validatedData.name.trim(),
+                shortName: validatedData.shortName?.trim() || null,
+                internationalName: validatedData.internationalName?.trim() || null,
+                email,
+                phone: validatedData.phone?.trim() || null,
+                address: validatedData.address?.trim() || null,
+                billingAddress: validatedData.billingAddress?.trim() || null,
+                shippingAddress: validatedData.shippingAddress?.trim() || null,
+                taxCode: validatedData.taxCode?.trim() || null,
+                taxStatus: validatedData.taxStatus?.trim() || null,
+                contactName: validatedData.contactName?.trim() || null,
+                website: validatedData.website?.trim() || null,
+                businessType: validatedData.businessType?.trim() || null,
+                bankAccount: validatedData.bankAccount?.trim() || null,
+                bankName: validatedData.bankName?.trim() || null,
+                bankBranch: validatedData.bankBranch?.trim() || null,
+                paymentTerms: validatedData.paymentTerms?.trim() || null,
+                creditLimit,
+                internalNotes: validatedData.internalNotes?.trim() || null
+            }
+        });
 
         const session = await getServerSession(authOptions);
         if (session?.user?.id) {
@@ -47,38 +115,61 @@ export async function createCustomer(data: { name: string, email?: string, phone
                 customer.id,
                 session.user.id,
                 'TẠO_MỚI',
-                `Tạo mới hồ sơ khách hàng: ${customer.name}`
+                `Tạo mới hồ sơ khách hàng: ${customer.name} (Mã: ${customer.code || customer.id})`
             );
         }
 
         revalidatePath('/customers');
         return customer;
     } catch (error: any) {
-        if (error.code === 'P2002' && error.meta?.target?.includes('email')) {
-            throw new Error(`Cảnh báo: Email "${data.email}" đã tồn tại trong hệ thống. Vui lòng sử dụng email khác.`);
+        if (error.code === 'P2002') {
+            if (error.meta?.target?.includes('email')) {
+                throw new Error(`Cảnh báo: Email "${email}" đã tồn tại trong hệ thống. Vui lòng sử dụng email khác.`);
+            }
+            if (error.meta?.target?.includes('code')) {
+                throw new Error(`Cảnh báo: Mã khách hàng "${code}" đã tồn tại. Vui lòng chọn mã khác.`);
+            }
         }
-        throw new Error("Đã xảy ra lỗi khi tạo khách hàng.");
+        throw new Error(error.message || "Đã xảy ra lỗi khi tạo khách hàng.");
     }
 }
 
-export async function updateCustomer(id: string, data: { name: string, email?: string, phone?: string, address?: string, taxCode?: string }) {
+export async function updateCustomer(id: string, data: CustomerInputData) {
     const cust = await prisma.customer.findUnique({ where: { id }, include: { managers: true } });
-    if (!cust) throw new Error("Not found");
+    if (!cust) throw new Error("Không tìm thấy khách hàng");
     const managers = cust.managers ? cust.managers.map((m: any) => m.id) : [];
     await verifyActionOwnership('CUSTOMERS', 'EDIT', '', managers);
 
     const validatedData = customerSchema.parse(data);
-    data.name = validatedData.name;
-    data.email = validatedData.email ?? undefined;
-    data.phone = validatedData.phone ?? undefined;
-    data.address = validatedData.address ?? undefined;
-    data.taxCode = validatedData.taxCode ?? undefined;
-
-    if (data.email) data.email = data.email.trim();
-    if (!data.email) data.email = undefined;
+    const email = validatedData.email?.trim() || null;
+    const creditLimit = typeof validatedData.creditLimit === 'number' ? validatedData.creditLimit : 0;
 
     try {
-        const customer = await prisma.customer.update({ where: { id }, data: { ...data, email: data.email || null } });
+        const customer = await prisma.customer.update({
+            where: { id },
+            data: {
+                code: validatedData.code?.trim() || cust.code,
+                name: validatedData.name.trim(),
+                shortName: validatedData.shortName?.trim() || null,
+                internationalName: validatedData.internationalName?.trim() || null,
+                email,
+                phone: validatedData.phone?.trim() || null,
+                address: validatedData.address?.trim() || null,
+                billingAddress: validatedData.billingAddress?.trim() || null,
+                shippingAddress: validatedData.shippingAddress?.trim() || null,
+                taxCode: validatedData.taxCode?.trim() || null,
+                taxStatus: validatedData.taxStatus?.trim() || null,
+                contactName: validatedData.contactName?.trim() || null,
+                website: validatedData.website?.trim() || null,
+                businessType: validatedData.businessType?.trim() || null,
+                bankAccount: validatedData.bankAccount?.trim() || null,
+                bankName: validatedData.bankName?.trim() || null,
+                bankBranch: validatedData.bankBranch?.trim() || null,
+                paymentTerms: validatedData.paymentTerms?.trim() || null,
+                creditLimit,
+                internalNotes: validatedData.internalNotes?.trim() || null
+            }
+        });
 
         const session = await getServerSession(authOptions);
         if (session?.user?.id) {
@@ -91,12 +182,18 @@ export async function updateCustomer(id: string, data: { name: string, email?: s
         }
 
         revalidatePath('/customers');
+        revalidatePath(`/customers/${id}`);
         return customer;
     } catch (error: any) {
-        if (error.code === 'P2002' && error.meta?.target?.includes('email')) {
-            throw new Error(`Cảnh báo: Email "${data.email}" đã được sử dụng bởi một khách hàng khác.`);
+        if (error.code === 'P2002') {
+            if (error.meta?.target?.includes('email')) {
+                throw new Error(`Cảnh báo: Email "${email}" đã được sử dụng bởi một khách hàng khác.`);
+            }
+            if (error.meta?.target?.includes('code')) {
+                throw new Error(`Cảnh báo: Mã khách hàng "${data.code}" đã được sử dụng.`);
+            }
         }
-        throw new Error("Đã xảy ra lỗi khi cập nhật khách hàng.");
+        throw new Error(error.message || "Đã xảy ra lỗi khi cập nhật khách hàng.");
     }
 }
 
