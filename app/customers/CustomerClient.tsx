@@ -98,7 +98,7 @@ export function CustomerClient({ initialData, users, isAdminOrManager, initialEm
     const [formData, setFormData] = useState(emptyCustomerForm);
 
     // Sort & Filter state
-    const [sortField, setSortField] = useState<keyof Customer>('createdAt');
+    const [sortField, setSortField] = useState<keyof CustomerWithStats>('createdAt');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
     const [searchTerm, setSearchTerm] = useState('');
     const [activeFilter, setActiveFilter] = useState<'ALL' | 'TOP_REVENUE_5' | 'RECENT_10' | 'RECENT_UPDATED'>('ALL');
@@ -113,12 +113,15 @@ export function CustomerClient({ initialData, users, isAdminOrManager, initialEm
         }
     }, [canCreate]);
 
-    const handleSort = (field: keyof Customer) => {
+    const handleSort = (field: keyof CustomerWithStats) => {
+        if (activeFilter !== 'ALL') {
+            setActiveFilter('ALL');
+        }
         if (sortField === field) {
             setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
         } else {
             setSortField(field);
-            setSortOrder('asc');
+            setSortOrder(field === 'totalDebt' || field === 'revenue' ? 'desc' : 'asc');
         }
     };
 
@@ -161,12 +164,27 @@ export function CustomerClient({ initialData, users, isAdminOrManager, initialEm
         // 3. Manual Column Sort
         if (activeFilter === 'ALL') {
             result.sort((a, b) => {
-                const aVal = a[sortField] || '';
-                const bVal = b[sortField] || '';
-                if (typeof aVal === 'string' && typeof bVal === 'string') {
-                    return sortOrder === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                const aVal = a[sortField];
+                const bVal = b[sortField];
+
+                // Number comparison (totalDebt, creditLimit, revenue)
+                if (typeof aVal === 'number' || typeof bVal === 'number') {
+                    const numA = Number(aVal) || 0;
+                    const numB = Number(bVal) || 0;
+                    return sortOrder === 'asc' ? numA - numB : numB - numA;
                 }
-                return 0;
+
+                // Date comparison
+                if (aVal instanceof Date || bVal instanceof Date) {
+                    const timeA = aVal ? new Date(aVal as any).getTime() : 0;
+                    const timeB = bVal ? new Date(bVal as any).getTime() : 0;
+                    return sortOrder === 'asc' ? timeA - timeB : timeB - timeA;
+                }
+
+                // String comparison
+                const strA = (aVal != null ? String(aVal) : '').trim();
+                const strB = (bVal != null ? String(bVal) : '').trim();
+                return sortOrder === 'asc' ? strA.localeCompare(strB, 'vi') : strB.localeCompare(strA, 'vi');
             });
         }
 
