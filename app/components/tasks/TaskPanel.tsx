@@ -204,35 +204,41 @@ export function TaskPanel({ initialTasks, users, entityType, entityId, initialTi
             borderRadius: '12px'
         }}>
             {/* Header */}
-            <div style={{
-                padding: '1rem',
-                borderBottom: '1px solid var(--border)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                backgroundColor: '#f8fafc',
-                position: 'sticky',
-                top: 0,
-                zIndex: 10
-            }}>
-                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                    <CheckSquare size={16} color="var(--primary)" /> Công việc liên quan
-                </h3>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>
+            <div className="p-3 sm:p-3.5 border-b border-slate-200/90 bg-slate-50/80 sticky top-0 z-10 flex flex-col gap-2">
+                <div className="flex items-center justify-between gap-2">
+                    <h3 className="flex items-center gap-1.5 m-0 text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wide">
+                        <CheckSquare size={16} className="text-emerald-600 shrink-0" />
+                        <span>Công việc liên quan</span>
+                        {activeTasks.length > 0 && (
+                            <span className="px-1.5 py-0.2 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-bold">
+                                {activeTasks.length}
+                            </span>
+                        )}
+                    </h3>
+                    {canCreate && (
+                        <button
+                            type="button"
+                            onClick={handleOpenModal}
+                            className="inline-flex items-center gap-1 h-7 px-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-lg text-xs font-semibold whitespace-nowrap shadow-2xs transition-all cursor-pointer shrink-0"
+                        >
+                            <Plus size={13} strokeWidth={2.5} />
+                            <span>Giao việc</span>
+                        </button>
+                    )}
+                </div>
+                <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 text-[11px] text-slate-500">
+                    <label className="inline-flex items-center gap-1.5 font-medium cursor-pointer select-none hover:text-slate-700">
                         <input
                             type="checkbox"
                             checked={showCompleted}
                             onChange={(e) => setShowCompleted(e.target.checked)}
-                            style={{ cursor: 'pointer', accentColor: 'var(--primary)', width: '14px', height: '14px' }}
+                            className="cursor-pointer accent-emerald-600 w-3.5 h-3.5 rounded"
                         />
-                        <span>Hiện việc đã xong</span>
+                        <span>Hiện việc đã hoàn thành</span>
                     </label>
-                    {canCreate && (
-                        <Button onClick={handleOpenModal} className="gap-2" style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', borderRadius: '6px' }}>
-                            <Plus size={14} /> Giao việc
-                        </Button>
-                    )}
+                    <span className="text-[10px] text-slate-400 font-mono">
+                        {activeTasks.length} việc
+                    </span>
                 </div>
             </div>
 

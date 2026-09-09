@@ -822,8 +822,8 @@ export function GlobalSearch() {
                     width: 100%;
                     background-color: #f1f5f9;
                     border-radius: 9999px;
-                    height: 38px;
-                    padding: 0 0.875rem;
+                    height: 34px;
+                    padding: 0 0.75rem;
                     transition: all 0.2s ease;
                     border: 1px solid #e2e8f0;
                 }
@@ -832,8 +832,8 @@ export function GlobalSearch() {
                 }
                 .gs-input-container:focus-within {
                     background-color: #ffffff;
-                    border-color: #6366f1;
-                    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+                    border-color: #10b981;
+                    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
                 }
                 .gs-input-open {
                     background-color: #ffffff;
@@ -843,7 +843,7 @@ export function GlobalSearch() {
                     border-bottom-color: transparent;
                 }
                 .gs-icon {
-                    margin-right: 0.5rem;
+                    margin-right: 0.45rem;
                     flex-shrink: 0;
                 }
                 .gs-input {
@@ -851,7 +851,7 @@ export function GlobalSearch() {
                     background: transparent;
                     border: none;
                     outline: none;
-                    font-size: 0.875rem;
+                    font-size: 0.8125rem;
                     color: #334155;
                     width: 100%;
                 }

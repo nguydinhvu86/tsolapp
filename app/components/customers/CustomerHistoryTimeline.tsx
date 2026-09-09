@@ -55,10 +55,17 @@ export function CustomerHistoryTimeline({ logs }: CustomerHistoryTimelineProps) 
     };
 
     return (
-        <div style={{ backgroundColor: 'white', borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)', overflow: 'hidden', marginBottom: '1.5rem' }}>
-            <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Clock size={16} color="#64748b" />
-                <h3 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 600, color: '#1e293b' }}>Lịch Sử Khách Hàng</h3>
+        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden mb-6">
+            <div className="p-3 sm:p-3.5 border-b border-slate-200/90 bg-slate-50/80 flex items-center justify-between gap-2">
+                <h3 className="flex items-center gap-1.5 m-0 text-xs sm:text-sm font-bold uppercase tracking-wide text-slate-800">
+                    <Clock size={16} className="text-slate-500 shrink-0" />
+                    <span>Lịch Sử Khách Hàng</span>
+                </h3>
+                {logs && logs.length > 0 && (
+                    <span className="px-1.5 py-0.2 bg-slate-200/80 text-slate-600 rounded-full text-[10px] font-bold">
+                        {logs.length}
+                    </span>
+                )}
             </div>
             <div style={{ padding: '1.25rem' }}>
                 {(!logs || logs.length === 0) ? (

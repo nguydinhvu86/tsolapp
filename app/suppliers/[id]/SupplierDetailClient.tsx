@@ -7,7 +7,7 @@ import {
     ArrowLeft, Building, Phone, Mail, FileText,
     ShoppingCart, FileDown, Wallet, DollarSign,
     CheckSquare, MapPin, Search, Edit2, FileSpreadsheet, Users, AlertCircle, ArrowUpDown, ArrowUp, ArrowDown, CheckCircle, XCircle,
-    Sparkles, Loader2, Building2, CreditCard, CheckCircle2, Globe
+    Sparkles, Loader2, Building2, CreditCard, CheckCircle2, Globe, Plus
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
@@ -385,10 +385,33 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
 
                         {/* Tab Content Header */}
                         <div className="p-4 md:p-5 flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-3 border-b border-slate-100 bg-white">
-                            <h3 className="text-sm font-bold text-slate-800 m-0">Danh sách hồ sơ</h3>
-                            {activeTab === 'orders' && <Link href={`/purchasing/orders?supplierId=${supplier.id}`} className="btn btn-primary px-3.5 py-1.5 rounded-lg text-xs font-semibold w-full sm:w-auto text-center shadow-xs">+ Tạo Đơn Hàng</Link>}
-                            {activeTab === 'bills' && <Link href={`/purchasing/bills?supplierId=${supplier.id}`} className="btn btn-primary px-3.5 py-1.5 rounded-lg text-xs font-semibold w-full sm:w-auto text-center shadow-xs">+ Tạo Hóa Đơn</Link>}
-                            {activeTab === 'payments' && <Link href={`/purchasing/payments?supplierId=${supplier.id}`} className="btn btn-primary px-3.5 py-1.5 rounded-lg text-xs font-semibold w-full sm:w-auto text-center shadow-xs">+ Tạo Phiếu Chi</Link>}
+                            <div>
+                                <h3 className="text-sm font-bold text-slate-800 m-0">Danh sách hồ sơ</h3>
+                                <p className="text-xs text-slate-500 m-0 mt-0.5">Lịch sử đơn hàng, hóa đơn và phiếu chi nhà cung cấp.</p>
+                            </div>
+                            <div className="flex items-center gap-2 w-full sm:w-auto">
+                                {activeTab === 'orders' && (
+                                    <Link href={`/purchasing/orders?supplierId=${supplier.id}`}>
+                                        <button type="button" className="inline-flex items-center justify-center gap-1.5 h-9 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-semibold shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap w-full sm:w-auto">
+                                            <Plus size={14} strokeWidth={2.5} /> <span>Tạo Đơn Hàng</span>
+                                        </button>
+                                    </Link>
+                                )}
+                                {activeTab === 'bills' && (
+                                    <Link href={`/purchasing/bills?supplierId=${supplier.id}`}>
+                                        <button type="button" className="inline-flex items-center justify-center gap-1.5 h-9 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-semibold shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap w-full sm:w-auto">
+                                            <Plus size={14} strokeWidth={2.5} /> <span>Tạo Hóa Đơn</span>
+                                        </button>
+                                    </Link>
+                                )}
+                                {activeTab === 'payments' && (
+                                    <Link href={`/purchasing/payments?supplierId=${supplier.id}`}>
+                                        <button type="button" className="inline-flex items-center justify-center gap-1.5 h-9 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-semibold shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap w-full sm:w-auto">
+                                            <Plus size={14} strokeWidth={2.5} /> <span>Tạo Phiếu Chi</span>
+                                        </button>
+                                    </Link>
+                                )}
+                            </div>
                         </div>
 
                         {/* Tab Content Grid */}

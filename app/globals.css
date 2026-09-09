@@ -14,9 +14,10 @@ If you remove these generic classes (e.g. `stat-card`, `btn-primary`,
 @tailwind utilities;
 
 :root {
-    --primary: #05A613;
-    --primary-hover: #048c10;
-    --secondary: #52525b;
+    --primary: #059669;
+    --primary-hover: #047857;
+    --primary-light: #ecfdf5;
+    --secondary: #64748b;
     --background: #f8fafc;
     --surface: #ffffff;
     --border: #e2e8f0;
@@ -32,11 +33,12 @@ If you remove these generic classes (e.g. `stat-card`, `btn-primary`,
 }
 
 html {
-    font-size: 15px;
+    font-size: 13px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01';
+    letter-spacing: -0.012em;
 }
 
 * {
@@ -46,22 +48,43 @@ html {
 }
 
 body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: var(--font-sans), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     background-color: var(--background);
     color: var(--text-main);
-    line-height: 1.5;
+    line-height: 1.42;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
     display: flex;
     min-height: 100vh;
     width: 100%;
 }
 
-h1,
-h2,
-h3,
+h1 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-main);
+}
+
+h2 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    color: var(--text-main);
+}
+
+h3 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--text-main);
+}
+
 h4,
 h5,
 h6 {
+    font-size: 0.8rem;
     font-weight: 600;
     color: var(--text-main);
 }
@@ -480,12 +503,12 @@ table {
 .btn-primary {
     background: var(--primary);
     color: white;
-    box-shadow: 0 1px 3px 0 rgba(5, 166, 19, 0.25);
+    box-shadow: 0 1px 2px 0 rgba(5, 150, 105, 0.2);
 }
 
 .btn-primary:hover {
     background: var(--primary-hover);
-    box-shadow: 0 2px 6px -1px rgba(5, 166, 19, 0.35);
+    box-shadow: 0 2px 4px -1px rgba(5, 150, 105, 0.3);
 }
 
 .btn-secondary {
@@ -778,21 +801,21 @@ table {
 .table-wrapper table th {
     background: #f8fafc;
     text-align: left;
-    padding: 0.75rem 1rem;
-    font-weight: 700;
-    font-size: 0.735rem;
+    padding: 0.55rem 0.85rem;
+    font-weight: 650;
+    font-size: 0.72rem;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.04em;
     color: #475569;
     border-bottom: 1px solid #e2e8f0;
     white-space: nowrap;
 }
 
 .table-wrapper table td {
-    padding: 0.75rem 1rem;
+    padding: 0.55rem 0.85rem;
     border-bottom: 1px solid #f1f5f9;
-    font-size: 0.82rem;
-    font-weight: 500;
+    font-size: 0.8rem;
+    font-weight: 450;
     color: #1e293b;
     transition: background-color 0.15s ease;
     white-space: nowrap;

@@ -192,28 +192,27 @@ function TodoListWidget() {
 
     return (
         <div className="flex flex-col h-full">
-            <div className="flex items-center justify-between mb-3">
-                <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2">
-                    <CheckCircle2 size={18} className="text-emerald-600" />
-                    {t("dashboard.todo.title")}
+            <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2.5">
+                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 m-0">
+                    <CheckCircle2 size={16} className="text-emerald-600" />
+                    <span>{t("dashboard.todo.title")}</span>
                 </h3>
-            </div>
-
-            <div className="flex items-center gap-2 mb-3">
-                <button
-                    onClick={() => setIsAddTodoModalOpen(true)}
-                    className="flex-1 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-colors shadow-xs bg-emerald-600 hover:bg-emerald-700"
-                >
-                    <Plus size={15} />
-                    <span>{t("dashboard.todo.create")}</span>
-                </button>
-                <button
-                    onClick={() => setShowAll(!showAll)}
-                    disabled={todos.length === 0}
-                    className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-colors border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
-                >
-                    <span>{showAll ? t("dashboard.todo.collapse") : `${t("dashboard.todo.viewAll")} (${todos.length})`}</span>
-                </button>
+                <div className="flex items-center gap-1.5">
+                    <button
+                        onClick={() => setIsAddTodoModalOpen(true)}
+                        className="inline-flex items-center gap-1 h-7 px-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-lg text-xs font-semibold whitespace-nowrap shadow-2xs transition-all cursor-pointer"
+                    >
+                        <Plus size={13} strokeWidth={2.5} />
+                        <span>{t("dashboard.todo.create")}</span>
+                    </button>
+                    <button
+                        onClick={() => setShowAll(!showAll)}
+                        disabled={todos.length === 0}
+                        className="h-7 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-medium whitespace-nowrap border border-slate-200 transition-all cursor-pointer disabled:opacity-50"
+                    >
+                        <span>{showAll ? t("dashboard.todo.collapse") : `${t("dashboard.todo.viewAll")} (${todos.length})`}</span>
+                    </button>
+                </div>
             </div>
 
             <div className="flex-1 overflow-y-auto pr-1" style={{ maxHeight: showAll ? '350px' : 'auto' }}>
@@ -273,13 +272,13 @@ function TodoListWidget() {
                                                         setEditValue(todo.text);
                                                     }
                                                 }}
-                                                className={`text-[15px] font-medium leading-relaxed whitespace-pre-wrap break-words ${todo.completed ? 'text-gray-400 line-through decoration-gray-300' : 'text-gray-800'}`}
+                                                className={`text-[13px] font-normal leading-relaxed whitespace-pre-wrap break-words ${todo.completed ? 'text-gray-400 line-through decoration-gray-300' : 'text-gray-800'}`}
                                             >
                                                 {todo.text}
                                             </span>
-                                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-[11px] text-gray-400">
+                                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-[10.5px] text-gray-400">
                                                 <span className="flex items-center gap-1 leading-none" title={t("dashboard.todo.createdAt")}>
-                                                    <Clock size={11} className={todo.completed ? "text-gray-300" : "text-green-500"} />
+                                                    <Clock size={10.5} className={todo.completed ? "text-gray-300" : "text-green-500"} />
                                                     {new Date(todo.createdAt).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}
                                                 </span>
                                             </div>
@@ -844,16 +843,16 @@ export function DashboardClient({
                                                                 {/* Vùng 1: Công việc của tôi */}
                                                                 <div className="w-full xl:w-[65%] flex flex-col">
                                                                     <div className="p-4 sm:p-5 bg-white rounded-xl border border-slate-200/80 shadow-xs flex flex-col h-full">
-                                                                        <div className="flex items-center justify-between mb-3">
-                                                                            <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2">
-                                                                                <Briefcase size={18} className="text-blue-500" />
-                                                                                {t("dashboard.myWork.title")}
+                                                                        <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-100">
+                                                                            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5 m-0">
+                                                                                <Briefcase size={15} className="text-blue-500" />
+                                                                                <span>{t("dashboard.myWork.title")}</span>
                                                                             </h3>
-                                                                            <span className="text-xs font-semibold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">{tasks.length} {t("dashboard.myWork.tasksCount")}</span>
+                                                                            <span className="text-[11px] font-semibold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">{tasks.length} {t("dashboard.myWork.tasksCount")}</span>
                                                                         </div>
 
                                                                         {tasks.length === 0 ? (
-                                                                            <div className="flex-1 flex flex-col justify-center min-h-[220px]">
+                                                                            <div className="flex-1 flex flex-col justify-center min-h-[200px]">
                                                                                 <EmptyState 
                                                                                     icon={Briefcase}
                                                                                     title={t("dashboard.myWork.empty")}
@@ -907,7 +906,7 @@ export function DashboardClient({
                                                                                                     </td>
                                                                                                     <td>
                                                                                                         <span style={{
-                                                                                                            padding: '2px 7px', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: 600,
+                                                                                                            padding: '2px 7px', borderRadius: '9999px', fontSize: '0.6875rem', fontWeight: 600,
                                                                                                             backgroundColor: task.priority === 'URGENT' ? '#fef2f2' : (task.priority === 'HIGH' ? '#fff7ed' : '#f1f5f9'),
                                                                                                             color: task.priority === 'URGENT' ? '#dc2626' : (task.priority === 'HIGH' ? '#ea580c' : '#475569'),
                                                                                                             border: `1px solid ${task.priority === 'URGENT' ? '#fecaca' : (task.priority === 'HIGH' ? '#fed7aa' : '#e2e8f0')}`
@@ -992,22 +991,22 @@ export function DashboardClient({
 
                                                         {widgetId === 'my_leads_status' && (
                                                             /* My Leads Row */
-                                                            <div className="flex flex-col xl:flex-row gap-6 w-full mb-6 items-stretch">
+                                                            <div className="flex flex-col xl:flex-row gap-4 w-full mb-4 items-stretch">
                                                                 {/* Vùng 1: Thông tin Lead của tôi */}
                                                                 <div className="w-full xl:w-[65%] flex flex-col">
-                                                                    <div className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col h-full">
-                                                                        <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
-                                                                            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                                                                                <Users size={20} className="text-blue-500" />
-                                                                                {t("dashboard.leads.myLeadsTitle")}
+                                                                    <div className="p-4 sm:p-5 bg-white rounded-xl border border-slate-200/80 shadow-xs flex flex-col h-full">
+                                                                        <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2.5">
+                                                                            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5 m-0">
+                                                                                <Users size={15} className="text-emerald-600" />
+                                                                                <span>{t("dashboard.leads.myLeadsTitle")}</span>
                                                                             </h3>
-                                                                            <a href="/sales/leads" className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 transition-colors">
-                                                                                {t("dashboard.leads.viewAll")} <span style={{ fontSize: '10px' }}>▶</span>
+                                                                            <a href="/sales/leads" className="text-xs text-emerald-600 hover:text-emerald-800 font-semibold flex items-center gap-1 transition-colors">
+                                                                                <span>{t("dashboard.leads.viewAll")}</span> <span style={{ fontSize: '9px' }}>▶</span>
                                                                             </a>
                                                                         </div>
 
                                                                         {activeLeads.length === 0 ? (
-                                                                            <div className="flex-1 flex flex-col justify-center min-h-[250px]">
+                                                                            <div className="flex-1 flex flex-col justify-center min-h-[200px]">
                                                                                 <EmptyState 
                                                                                     icon={Users}
                                                                                     title={t("dashboard.leads.empty")}
@@ -1015,14 +1014,14 @@ export function DashboardClient({
                                                                                 />
                                                                             </div>
                                                                         ) : (
-                                                                            <div className="table-wrapper custom-scrollbar" style={{ flex: 1, maxHeight: '350px', overflowY: 'auto' }}>
+                                                                            <div className="table-wrapper custom-scrollbar" style={{ flex: 1, maxHeight: '320px', overflowY: 'auto' }}>
                                                                                 <table style={{ minWidth: '100%' }}>
-                                                                                    <thead style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#f9fafb' }}>
+                                                                                    <thead className="sticky top-0 z-10 bg-slate-50 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                                                                                         <tr>
-                                                                                            <th className="text-left font-semibold text-gray-600 py-3 px-4 border-b border-gray-100">{t("dashboard.leads.code")}</th>
-                                                                                            <th className="text-left font-semibold text-gray-600 py-3 px-4 border-b border-gray-100">{t("dashboard.leads.name")}</th>
-                                                                                            <th className="text-right font-semibold text-gray-600 py-3 px-4 border-b border-gray-100">{t("dashboard.leads.value")}</th>
-                                                                                            <th className="text-center font-semibold text-gray-600 py-3 px-4 border-b border-gray-100">{t("dashboard.leads.status")}</th>
+                                                                                            <th className="text-left py-2 px-3.5 border-b border-slate-100">{t("dashboard.leads.code")}</th>
+                                                                                            <th className="text-left py-2 px-3.5 border-b border-slate-100">{t("dashboard.leads.name")}</th>
+                                                                                            <th className="text-right py-2 px-3.5 border-b border-slate-100">{t("dashboard.leads.value")}</th>
+                                                                                            <th className="text-center py-2 px-3.5 border-b border-slate-100">{t("dashboard.leads.status")}</th>
                                                                                         </tr>
                                                                                     </thead>
                                                                                     <tbody>
@@ -1043,24 +1042,24 @@ export function DashboardClient({
                                                                                             const sc = statusColors[lead.status] || statusColors['NEW'];
                                                                                             const label = statusLabels[lead.status] || lead.status;
                                                                                             return (
-                                                                                                <tr key={lead.id} className="hover:bg-gray-50/50 transition-colors group">
-                                                                                                    <td className="py-3 px-4 border-b border-gray-50">
-                                                                                                        <a href={`/sales/leads/${lead.id}`} className="text-sm font-semibold text-blue-600 group-hover:underline">
+                                                                                                <tr key={lead.id} className="hover:bg-slate-50/60 transition-colors group">
+                                                                                                    <td className="py-2.5 px-3.5 border-b border-slate-100">
+                                                                                                        <a href={`/sales/leads/${lead.id}`} className="text-xs font-semibold text-emerald-600 group-hover:underline">
                                                                                                             {lead.code}
                                                                                                         </a>
                                                                                                     </td>
-                                                                                                    <td className="py-3 px-4 border-b border-gray-50">
-                                                                                                        <div className="text-sm font-medium text-gray-800 line-clamp-1" title={lead.name}>
+                                                                                                    <td className="py-2.5 px-3.5 border-b border-slate-100">
+                                                                                                        <div className="text-xs font-normal text-slate-700 line-clamp-1" title={lead.name}>
                                                                                                             {lead.name}
                                                                                                         </div>
                                                                                                     </td>
-                                                                                                    <td className="py-3 px-4 border-b border-gray-50 text-right">
-                                                                                                        <span className="text-sm font-bold text-gray-700">
+                                                                                                    <td className="py-2.5 px-3.5 border-b border-slate-100 text-right">
+                                                                                                        <span className="text-xs font-semibold text-slate-800 font-mono">
                                                                                                             {formatMoney(lead.estimatedValue || 0)}
                                                                                                         </span>
                                                                                                     </td>
-                                                                                                    <td className="py-3 px-4 border-b border-gray-50 text-center">
-                                                                                                        <span className={`px-2.5 py-1 text-xs font-bold rounded-lg border ${sc.bg} ${sc.text} ${sc.border}`}>
+                                                                                                    <td className="py-2.5 px-3.5 border-b border-slate-100 text-center">
+                                                                                                        <span className={`px-2 py-0.5 text-[11px] font-medium rounded-md border ${sc.bg} ${sc.text} ${sc.border}`}>
                                                                                                             {label}
                                                                                                         </span>
                                                                                                     </td>
@@ -1076,15 +1075,15 @@ export function DashboardClient({
 
                                                                 {/* Vùng 2: Biểu đồ trạng thái Lead */}
                                                                 <div className="w-full xl:w-[35%] flex flex-col">
-                                                                    <div className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col h-full min-h-[300px]">
-                                                                        <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-100 pb-3">{t("dashboard.leads.statsTitle")}</h3>
+                                                                    <div className="p-4 sm:p-5 bg-white rounded-xl border border-slate-200/80 shadow-xs flex flex-col h-full min-h-[280px]">
+                                                                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 mb-2 border-b border-slate-100 pb-2.5">{t("dashboard.leads.statsTitle")}</h3>
 
                                                                         {leads.length === 0 ? (
-                                                                            <div className="flex-1 flex items-center justify-center text-gray-400">
+                                                                            <div className="flex-1 flex items-center justify-center text-xs text-slate-400">
                                                                                 {t("dashboard.leads.emptyStats")}
                                                                             </div>
                                                                         ) : (
-                                                                            <div className="w-full mt-4 relative" style={{ height: '280px' }}>
+                                                                            <div className="w-full mt-2 relative" style={{ height: '240px' }}>
                                                                                 <ResponsiveContainer width="100%" height="100%" minHeight={50} minWidth={50}>
                                                                                     <PieChart>
                                                                                         <Pie
@@ -1110,9 +1109,9 @@ export function DashboardClient({
                                                                                             })()}
                                                                                             cx="50%"
                                                                                             cy="45%"
-                                                                                            innerRadius={65}
-                                                                                            outerRadius={85}
-                                                                                            paddingAngle={5}
+                                                                                            innerRadius={60}
+                                                                                            outerRadius={78}
+                                                                                            paddingAngle={4}
                                                                                             dataKey="value"
                                                                                             stroke="none"
                                                                                         >
@@ -1134,23 +1133,23 @@ export function DashboardClient({
                                                                                         </Pie>
                                                                                         <Tooltip
                                                                                             formatter={(value: any) => [`${value} Leads`, 'Số lượng']}
-                                                                                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)' }}
+                                                                                            contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)', fontSize: '11px' }}
                                                                                         />
                                                                                         <Legend
                                                                                             verticalAlign="bottom"
-                                                                                            height={36}
+                                                                                            height={32}
                                                                                             iconType="circle"
                                                                                             wrapperStyle={{
-                                                                                                paddingTop: '20px',
-                                                                                                fontSize: '12px',
+                                                                                                paddingTop: '12px',
+                                                                                                fontSize: '11px',
                                                                                                 fontWeight: 500
                                                                                             }}
                                                                                         />
                                                                                     </PieChart>
                                                                                 </ResponsiveContainer>
-                                                                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none" style={{ marginTop: '-36px' }}>
-                                                                                    <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-0.5">{t("dashboard.leads.totalLeads")}</span>
-                                                                                    <span className="text-3xl font-black text-gray-800">{leads.length}</span>
+                                                                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none" style={{ marginTop: '-32px' }}>
+                                                                                    <span className="text-slate-400 text-[9.5px] font-semibold uppercase tracking-wider mb-0.5">{t("dashboard.leads.totalLeads")}</span>
+                                                                                    <span className="text-xl font-bold text-slate-800">{leads.length}</span>
                                                                                 </div>
                                                                             </div>
                                                                         )}

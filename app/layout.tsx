@@ -1,5 +1,12 @@
 import type { Metadata, Viewport } from 'next'
+import { Inter } from 'next/font/google'
 import './globals.css'
+
+const inter = Inter({
+    subsets: ['latin', 'vietnamese'],
+    display: 'swap',
+    variable: '--font-sans',
+})
 
 import { NextAuthProvider } from './components/providers/NextAuthProvider'
 import { MainLayout } from './components/layout/MainLayout'
@@ -75,7 +82,7 @@ export default async function RootLayout({
             <head>
                 <meta name="mobile-web-app-capable" content="yes" />
             </head>
-            <body style={{ minHeight: '100vh', backgroundColor: 'var(--background)', margin: 0 }}>
+            <body className={inter.className} style={{ minHeight: '100vh', backgroundColor: 'var(--background)', margin: 0 }}>
                 <NextAuthProvider>
                     <LanguageProvider dictionary={dictionary} locale={locale}>
                         <PushNotificationListener />

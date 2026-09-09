@@ -94,23 +94,20 @@ export function CustomerContactsPanel({ customerId, contacts }: CustomerContacts
     return (
         <Card style={{ padding: '0', overflow: 'hidden' }}>
             {/* Header */}
-            <div style={{
-                padding: '1.25rem 1.5rem',
-                borderBottom: '1px solid var(--border)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                backgroundColor: '#ffffff'
-            }}>
-                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: 0, fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: '#eff6ff', color: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Users size={18} />
+            <div className="p-4 sm:px-6 border-b border-slate-100 flex justify-between items-center bg-white">
+                <h3 className="flex items-center gap-2.5 m-0 text-sm sm:text-base font-bold text-slate-800 tracking-tight">
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                        <Users size={16} />
                     </div>
-                    Danh bạ Người Liên Hệ
+                    <span>Danh bạ Người Liên Hệ</span>
                 </h3>
-                <Button onClick={openCreateModal} className="gap-2" style={{ padding: '0.5rem 1rem' }}>
-                    <Plus size={16} /> Thêm Mới
-                </Button>
+                <button
+                    type="button"
+                    onClick={openCreateModal}
+                    className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-semibold shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap"
+                >
+                    <Plus size={14} strokeWidth={2.5} /> <span>Thêm Mới</span>
+                </button>
             </div>
 
             {/* List */}

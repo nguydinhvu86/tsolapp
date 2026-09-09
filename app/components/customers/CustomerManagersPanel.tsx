@@ -60,9 +60,17 @@ export function CustomerManagersPanel({ customerId, managers = [], users = [], c
                     </div>
                 </div>
                 {canEdit && (
-                    <Button onClick={() => setIsManaging(!isManaging)} variant={isManaging ? 'secondary' : 'primary'} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        {isManaging ? 'Đóng' : <><UserPlus size={16} /> Thêm người</>}
-                    </Button>
+                    <button
+                        type="button"
+                        onClick={() => setIsManaging(!isManaging)}
+                        className={`inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-xs font-semibold shadow-2xs transition-all cursor-pointer whitespace-nowrap ${
+                            isManaging
+                                ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300'
+                                : 'bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white hover:shadow-xs'
+                        }`}
+                    >
+                        {isManaging ? 'Đóng' : <><UserPlus size={14} strokeWidth={2.5} /> <span>Thêm người</span></>}
+                    </button>
                 )}
             </div>
 

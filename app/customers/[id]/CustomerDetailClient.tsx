@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Table } from '@/app/components/ui/Table';
 import { Button } from '@/app/components/ui/Button';
-import { ArrowLeft, User, Users, Mail, Phone, MapPin, Building2, FileSpreadsheet, FileText, FileOutput, FilePlus2, Eye, Edit, FileStack, Plus, ShoppingCart, SearchCode, Ticket, HandCoins, Search, Target, UserCheck, Link as LinkIcon, Copy } from 'lucide-react';
+import { ArrowLeft, User, Users, Mail, Phone, MapPin, Building2, FileSpreadsheet, FileText, FileOutput, FilePlus2, Eye, Edit, FileStack, Plus, ShoppingCart, SearchCode, Ticket, HandCoins, Search, Target, UserCheck, Link as LinkIcon, Copy, Check } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
@@ -43,6 +43,15 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
     const [isLookingUpTax, setIsLookingUpTax] = useState(false);
     const [taxLookupMessage, setTaxLookupMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
+    const [copiedPortalLink, setCopiedPortalLink] = useState(false);
+
+    const handleCopyPortalLink = (e: React.MouseEvent) => {
+        e.preventDefault();
+        const link = window.location.origin + '/portal/login';
+        navigator.clipboard.writeText(link);
+        setCopiedPortalLink(true);
+        setTimeout(() => setCopiedPortalLink(false), 2000);
+    };
 
     const [editFormData, setEditFormData] = useState({ 
         code: customer?.code || '',
@@ -264,8 +273,9 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                     </p>
                                 )}
                             </div>
-                            <div className="flex flex-wrap gap-1.5 w-full md:w-auto">
-                                <Button
+                            <div className="grid grid-cols-2 sm:grid-cols-4 md:flex md:flex-wrap items-center gap-2 w-full md:w-auto mt-2 md:mt-0">
+                                <button
+                                    type="button"
                                     onClick={() => {
                                         setTaxLookupMessage(null);
                                         setActiveEditTab('general');
@@ -293,36 +303,52 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                         });
                                         setIsEditModalOpen(true);
                                     }}
-                                    className="flex-1 md:flex-none inline-flex items-center justify-center gap-1 bg-white text-slate-700 border border-slate-200 px-2.5 py-1 rounded-lg hover:bg-slate-50 transition-colors shadow-2xs font-semibold text-xs h-[30px]"
+                                    className="inline-flex items-center justify-center gap-1.5 h-9 px-3 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200/90 rounded-xl text-xs font-semibold transition-all shadow-2xs hover:shadow-xs hover:border-slate-300 cursor-pointer"
                                     title="Sửa thông tin khách hàng"
                                 >
-                                    <Edit size={13} className="text-slate-500" /> Sửa Hồ Sơ
-                                </Button>
-                                <Button
+                                    <Edit size={14} className="text-amber-600 shrink-0" />
+                                    <span className="truncate">Sửa Hồ Sơ</span>
+                                </button>
+                                <button
+                                    type="button"
                                     onClick={() => setIsPasswordModalOpen(true)}
-                                    className="flex-1 md:flex-none inline-flex items-center justify-center gap-1 bg-slate-50 text-slate-700 border border-slate-200 px-2.5 py-1 rounded-lg hover:bg-slate-100 transition-colors shadow-2xs font-semibold text-xs h-[30px]"
+                                    className="inline-flex items-center justify-center gap-1.5 h-9 px-3 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200/90 rounded-xl text-xs font-semibold transition-all shadow-2xs hover:shadow-xs hover:border-slate-300 cursor-pointer"
                                     title="Cấp quyền đăng nhập Customer Portal"
                                 >
-                                    <UserCheck size={13} className="text-slate-500" /> Tài khoản Portal
-                                </Button>
-                                <Button
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        navigator.clipboard.writeText(window.location.origin + '/portal/login');
-                                        alert('Đã copy link: ' + window.location.origin + '/portal/login');
-                                    }}
-                                    className="flex-1 md:flex-none inline-flex items-center justify-center gap-1 bg-slate-50 text-slate-700 border border-slate-200 px-2.5 py-1 rounded-lg hover:bg-slate-100 transition-colors shadow-2xs font-semibold text-xs h-[30px]"
+                                    <UserCheck size={14} className="text-blue-600 shrink-0" />
+                                    <span className="truncate">Tài khoản Portal</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleCopyPortalLink}
+                                    className={`inline-flex items-center justify-center gap-1.5 h-9 px-3 border rounded-xl text-xs font-semibold transition-all shadow-2xs hover:shadow-xs cursor-pointer ${
+                                        copiedPortalLink
+                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-300 shadow-emerald-100'
+                                            : 'bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 hover:text-slate-900 border-slate-200/90 hover:border-slate-300'
+                                    }`}
                                     title="Copy đường dẫn đăng nhập Portal"
                                 >
-                                    <LinkIcon size={13} className="text-slate-500" /> Link Portal
-                                </Button>
-                                <Button
+                                    {copiedPortalLink ? (
+                                        <>
+                                            <Check size={14} className="text-emerald-600 shrink-0" />
+                                            <span className="truncate font-bold text-emerald-700">Đã chép link!</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <LinkIcon size={14} className="text-indigo-600 shrink-0" />
+                                            <span className="truncate">Link Portal</span>
+                                        </>
+                                    )}
+                                </button>
+                                <button
+                                    type="button"
                                     onClick={() => setIsEmailModalOpen(true)}
-                                    className="flex-1 md:flex-none inline-flex items-center justify-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-lg hover:bg-emerald-100/80 transition-colors shadow-2xs font-semibold text-xs h-[30px]"
+                                    className="inline-flex items-center justify-center gap-1.5 h-9 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-semibold transition-all shadow-2xs hover:shadow-sm cursor-pointer"
                                     title="Gửi Email"
                                 >
-                                    <Mail size={13} className="text-emerald-700" /> Gửi Email
-                                </Button>
+                                    <Mail size={14} className="text-white shrink-0" />
+                                    <span className="truncate">Gửi Email</span>
+                                </button>
                             </div>
                         </div>
 
@@ -431,33 +457,22 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                                                         setActiveTab(tab.id as any);
                                                                     }
                                                                 }}
-                                                                style={{
-                                                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                                    padding: '0.55rem 0.75rem', border: '1px solid', 
-                                                                    borderColor: isActive ? '#05A613' : '#e2e8f0',
-                                                                    borderRadius: '8px',
-                                                                    background: isActive ? '#f0fdf4' : snapshot.isDragging ? '#f8fafc' : '#ffffff',
-                                                                    cursor: snapshot.isDragging ? 'grabbing' : 'pointer',
-                                                                    color: isActive ? '#15803d' : '#475569',
-                                                                    fontWeight: isActive ? 600 : 500, fontSize: '0.8125rem', transition: 'all 0.15s ease',
-                                                                    outline: 'none', textAlign: 'left',
-                                                                    width: '100%',
-                                                                    whiteSpace: 'nowrap',
-                                                                    boxShadow: snapshot.isDragging ? '0 4px 6px -1px rgb(0 0 0 / 0.1)' : 'none',
-                                                                    ...provided.draggableProps.style
-                                                                }}
-                                                                className={`hover:bg-slate-50 hover:border-slate-300 ${snapshot.isDragging ? 'ring-2 ring-emerald-500 ring-inset z-50' : ''}`}
+                                                                className={`flex items-center justify-between gap-2 px-3 py-2 border rounded-xl transition-all outline-none text-left w-full whitespace-nowrap text-xs ${
+                                                                    isActive
+                                                                        ? 'border-emerald-500 bg-emerald-50/70 text-emerald-900 font-bold shadow-2xs'
+                                                                        : 'border-slate-200/90 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 hover:border-slate-300 font-medium'
+                                                                } ${snapshot.isDragging ? 'ring-2 ring-emerald-500 ring-inset z-50 shadow-md' : ''}`}
+                                                                style={provided.draggableProps.style}
                                                             >
-                                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
-                                                                    <Icon size={15} style={{ color: isActive ? '#05A613' : '#94a3b8' }} />
-                                                                    {tab.name}
+                                                                <span className="flex items-center gap-2 min-w-0 flex-1 truncate">
+                                                                    <Icon size={15} className={`shrink-0 ${isActive ? 'text-emerald-600' : 'text-slate-400'}`} />
+                                                                    <span className="truncate">{tab.name}</span>
                                                                 </span>
-                                                                <span style={{
-                                                                    background: isActive ? '#dcfce7' : '#f1f5f9',
-                                                                    color: isActive ? '#166534' : '#64748b',
-                                                                    padding: '0.125rem 0.45rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 700,
-                                                                    minWidth: '22px', textAlign: 'center'
-                                                                }}>
+                                                                <span className={`px-1.5 py-0.5 rounded-full text-[11px] font-bold min-w-[20px] text-center shrink-0 ${
+                                                                    isActive
+                                                                        ? 'bg-emerald-200/80 text-emerald-900'
+                                                                        : 'bg-slate-100 text-slate-500'
+                                                                }`}>
                                                                     {tab.count}
                                                                 </span>
                                                             </button>
@@ -478,32 +493,23 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                     return (
                                         <button
                                             key={tab.id}
+                                            type="button"
                                             onClick={() => setActiveTab(tab.id as any)}
-                                            style={{
-                                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                padding: '0.55rem 0.75rem', border: '1px solid', 
-                                                borderColor: isActive ? '#05A613' : '#e2e8f0',
-                                                borderRadius: '8px',
-                                                background: isActive ? '#f0fdf4' : '#ffffff',
-                                                cursor: 'pointer',
-                                                color: isActive ? '#15803d' : '#475569',
-                                                fontWeight: isActive ? 600 : 500, fontSize: '0.8125rem', transition: 'all 0.15s ease',
-                                                outline: 'none', textAlign: 'left',
-                                                width: '100%',
-                                                whiteSpace: 'nowrap'
-                                            }}
-                                            className="hover:bg-slate-50 hover:border-slate-300"
+                                            className={`flex items-center justify-between gap-2 px-3 py-2 border rounded-xl transition-all outline-none text-left w-full whitespace-nowrap text-xs cursor-pointer ${
+                                                isActive
+                                                    ? 'border-emerald-500 bg-emerald-50/70 text-emerald-900 font-bold shadow-2xs'
+                                                    : 'border-slate-200/90 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 hover:border-slate-300 font-medium'
+                                            }`}
                                         >
-                                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
-                                                <Icon size={15} style={{ color: isActive ? '#05A613' : '#94a3b8' }} />
-                                                {tab.name}
+                                            <span className="flex items-center gap-2 min-w-0 flex-1 truncate">
+                                                <Icon size={15} className={`shrink-0 ${isActive ? 'text-emerald-600' : 'text-slate-400'}`} />
+                                                <span className="truncate">{tab.name}</span>
                                             </span>
-                                            <span style={{
-                                                background: isActive ? '#dcfce7' : '#f1f5f9',
-                                                color: isActive ? '#166534' : '#64748b',
-                                                padding: '0.125rem 0.45rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 700,
-                                                minWidth: '22px', textAlign: 'center'
-                                            }}>
+                                            <span className={`px-1.5 py-0.5 rounded-full text-[11px] font-bold min-w-[20px] text-center shrink-0 ${
+                                                isActive
+                                                    ? 'bg-emerald-200/80 text-emerald-900'
+                                                    : 'bg-slate-100 text-slate-500'
+                                            }`}>
                                                 {tab.count}
                                             </span>
                                         </button>
@@ -519,67 +525,92 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                 {/* Column: Content Area */}
                 <div className="flex flex-col min-w-0 w-full">
                     {/* Header */}
-                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
-                        <h3 style={{ fontSize: '1.125rem', fontWeight: 700, margin: 0, color: '#1e293b' }}>
-                            {tabs.find(t => t.id === activeTab)?.name}
-                        </h3>
+                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-5">
+                        <div>
+                            <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight m-0">
+                                {tabs.find(t => t.id === activeTab)?.name}
+                            </h3>
+                            <p className="text-xs text-slate-500 m-0 mt-0.5">Danh sách dữ liệu và các chứng từ liên quan.</p>
+                        </div>
 
-                        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                        <div className="flex items-center gap-2 flex-wrap">
                             {/* Contextual Quick Actions */}
                             {activeTab === 'quotes' && (
                                 <Link href={`/quotes/new?customerId=${customer.id}`}>
-                                    <Button style={{ background: '#22c55e', color: 'white', padding: '0.5rem 1rem', fontSize: '0.875rem', border: 'none' }}><Plus size={16} /> Tạo Báo Giá</Button>
+                                    <button type="button" className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-semibold shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap">
+                                        <Plus size={14} strokeWidth={2.5} /> <span>Tạo Báo Giá</span>
+                                    </button>
                                 </Link>
                             )}
                             {activeTab === 'contracts' && (
                                 <Link href={`/contracts/new?customerId=${customer.id}`}>
-                                    <Button style={{ background: '#22c55e', color: 'white', padding: '0.5rem 1rem', fontSize: '0.875rem', border: 'none' }}><Plus size={16} /> Soạn Hợp Đồng</Button>
+                                    <button type="button" className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-semibold shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap">
+                                        <Plus size={14} strokeWidth={2.5} /> <span>Soạn Hợp Đồng</span>
+                                    </button>
                                 </Link>
                             )}
                             {activeTab === 'appendices' && (
                                 <Link href="/contract-appendices/new">
-                                    <Button style={{ background: '#22c55e', color: 'white', padding: '0.5rem 1rem', fontSize: '0.875rem', border: 'none' }}><Plus size={16} /> Thêm Phụ Lục</Button>
+                                    <button type="button" className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-semibold shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap">
+                                        <Plus size={14} strokeWidth={2.5} /> <span>Thêm Phụ Lục</span>
+                                    </button>
                                 </Link>
                             )}
                             {activeTab === 'dispatches' && (
                                 <Link href={`/dispatches/new?customerId=${customer.id}`}>
-                                    <Button style={{ background: '#22c55e', color: 'white', padding: '0.5rem 1rem', fontSize: '0.875rem', border: 'none' }}><Plus size={16} /> Soạn Công Văn</Button>
+                                    <button type="button" className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-semibold shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap">
+                                        <Plus size={14} strokeWidth={2.5} /> <span>Soạn Công Văn</span>
+                                    </button>
                                 </Link>
                             )}
                             {activeTab === 'handovers' && (
                                 <Link href={`/handovers/new?customerId=${customer.id}`}>
-                                    <Button style={{ background: '#22c55e', color: 'white', padding: '0.5rem 1rem', fontSize: '0.875rem', border: 'none' }}><Plus size={16} /> Tạo Bàn Giao</Button>
+                                    <button type="button" className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-semibold shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap">
+                                        <Plus size={14} strokeWidth={2.5} /> <span>Tạo Bàn Giao</span>
+                                    </button>
                                 </Link>
                             )}
                             {activeTab === 'payments' && (
                                 <Link href={`/payment-requests/new?customerId=${customer.id}`}>
-                                    <Button style={{ background: '#22c55e', color: 'white', padding: '0.5rem 1rem', fontSize: '0.875rem', border: 'none' }}><Plus size={16} /> Tạo Đề Nghị TT</Button>
+                                    <button type="button" className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-semibold shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap">
+                                        <Plus size={14} strokeWidth={2.5} /> <span>Tạo Đề Nghị TT</span>
+                                    </button>
                                 </Link>
                             )}
                             {/* New action buttons for sales tabs */}
                             {activeTab === 'salesEstimates' && (
                                 <Link href={`/sales/estimates?action=new&customerId=${customer.id}`}>
-                                    <Button style={{ background: '#22c55e', color: 'white', padding: '0.5rem 1rem', fontSize: '0.875rem', border: 'none' }}><Plus size={16} /> Tạo Báo Giá (ERP)</Button>
+                                    <button type="button" className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-semibold shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap">
+                                        <Plus size={14} strokeWidth={2.5} /> <span>Tạo Báo Giá</span>
+                                    </button>
                                 </Link>
                             )}
                             {activeTab === 'leads' && (
                                 <Link href={`/sales/leads/new?customerId=${customer.id}`}>
-                                    <Button style={{ background: '#22c55e', color: 'white', padding: '0.5rem 1rem', fontSize: '0.875rem', border: 'none' }}><Plus size={16} /> Tạo Cơ Hội Mới</Button>
+                                    <button type="button" className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-semibold shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap">
+                                        <Plus size={14} strokeWidth={2.5} /> <span>Tạo Cơ Hội Mới</span>
+                                    </button>
                                 </Link>
                             )}
                             {activeTab === 'salesOrders' && (
                                 <Link href={`/sales/orders?action=new&customerId=${customer.id}`}>
-                                    <Button style={{ background: '#22c55e', color: 'white', padding: '0.5rem 1rem', fontSize: '0.875rem', border: 'none' }}><Plus size={16} /> Tạo Đơn Đặt Hàng</Button>
+                                    <button type="button" className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-semibold shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap">
+                                        <Plus size={14} strokeWidth={2.5} /> <span>Tạo Đơn Đặt Hàng</span>
+                                    </button>
                                 </Link>
                             )}
                             {activeTab === 'salesInvoices' && (
                                 <Link href={`/sales/invoices?action=new&customerId=${customer.id}`}>
-                                    <Button style={{ background: '#22c55e', color: 'white', padding: '0.5rem 1rem', fontSize: '0.875rem', border: 'none' }}><Plus size={16} /> Tạo HĐ Bán & Nợ</Button>
+                                    <button type="button" className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-semibold shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap">
+                                        <Plus size={14} strokeWidth={2.5} /> <span>Tạo HĐ Bán & Nợ</span>
+                                    </button>
                                 </Link>
                             )}
                             {activeTab === 'salesPayments' && (
                                 <Link href={`/sales/payments?action=new&customerId=${customer.id}`}>
-                                    <Button style={{ background: '#22c55e', color: 'white', padding: '0.5rem 1rem', fontSize: '0.875rem', border: 'none' }}><Plus size={16} /> Tạo Thu Tiền</Button>
+                                    <button type="button" className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-semibold shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap">
+                                        <Plus size={14} strokeWidth={2.5} /> <span>Tạo Thu Tiền</span>
+                                    </button>
                                 </Link>
                             )}
                         </div>
@@ -602,7 +633,7 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                         />
                     ) : activeTab === 'contacts' ? (
                         <CustomerContactsPanel
-                            customerId={customer.id}
+                                            customerId={customer.id}
                             contacts={customer.contacts || []}
                         />
                     ) : activeTab === 'statement' ? (
@@ -614,36 +645,29 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                     ) : activeTab === 'callLogs' ? (
                         <CustomerCallLogsPanel logs={customer.callLogs || []} />
                     ) : (
-                        <Card style={{ padding: '0', overflow: 'hidden', background: '#ffffff', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                            <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)' }}>
-                                <div style={{ position: 'relative' }}>
-                                    <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+                            <div className="p-3.5 border-b border-slate-100 bg-slate-50/40">
+                                <div className="relative">
+                                    <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                                     <input
                                         type="text"
                                         placeholder="Tìm kiếm theo mã, tiêu đề, trạng thái hoặc thẻ..."
                                         value={searchQuery}
                                         onChange={e => setSearchQuery(e.target.value)}
-                                        style={{
-                                            width: '100%',
-                                            padding: '0.625rem 1rem 0.625rem 2.5rem',
-                                            borderRadius: '8px',
-                                            border: '1px solid var(--border)',
-                                            outline: 'none',
-                                            fontSize: '0.875rem'
-                                        }}
+                                        className="w-full pl-9 pr-4 py-2 bg-white rounded-xl border border-slate-200/90 outline-none text-xs font-medium text-slate-800 placeholder-slate-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all shadow-2xs"
                                     />
                                 </div>
                             </div>
                             <div className="overflow-x-auto">
                                 <Table>
-                                    <thead className="whitespace-nowrap">
+                                    <thead className="whitespace-nowrap bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                                         <tr>
-                                            <th>Mã HS</th>
-                                            <th>Tiêu đề</th>
-                                            {activeTab === 'salesInvoices' && <th>Thẻ Quản Lý</th>}
-                                            <th>Trạng thái</th>
-                                            <th>Ngày tạo</th>
-                                            <th style={{ width: '100px', textAlign: 'right' }}>Thao tác</th>
+                                            <th className="py-3 px-4 font-bold">Mã HS</th>
+                                            <th className="py-3 px-4 font-bold">Tiêu đề</th>
+                                            {activeTab === 'salesInvoices' && <th className="py-3 px-4 font-bold">Thẻ Quản Lý</th>}
+                                            <th className="py-3 px-4 font-bold">Trạng thái</th>
+                                            <th className="py-3 px-4 font-bold">Ngày tạo</th>
+                                            <th className="py-3 px-4 font-bold text-right" style={{ width: '100px' }}>Thao tác</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -718,7 +742,7 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                     </tbody>
                                 </Table>
                             </div>
-                        </Card>
+                        </div>
                     )}
                 </div>
 
