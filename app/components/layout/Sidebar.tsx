@@ -173,47 +173,48 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
         const isOpen = openSubMenus[item.name] !== undefined ? openSubMenus[item.name] : isChildActive;
 
         return (
-            <div ref={setNodeRef} style={style} className="flex flex-col group/item">
+            <div ref={setNodeRef} style={style} className="flex flex-col group/item mb-0.5">
                 <div className="flex items-center w-full">
                     <div 
                         {...attributes} 
                         {...listeners} 
-                        className="cursor-grab p-1 text-slate-500/40 hover:text-slate-300 opacity-0 group-hover/item:opacity-100 transition-opacity"
+                        className="cursor-grab p-1 text-slate-500/30 hover:text-slate-300 opacity-0 group-hover/item:opacity-100 transition-opacity shrink-0 -ml-1"
                         title="Kéo để sắp xếp vị trí"
                     >
-                        <GripVertical size={13} />
+                        <GripVertical size={12} />
                     </div>
                     <button
                         onClick={() => toggleSubMenu(item.name)}
-                        className={`flex-1 flex items-center justify-between px-2.5 py-1.5 rounded-lg transition-all text-[13px] outline-none ${
+                        className={`flex-1 flex items-center justify-between px-2.5 py-1.5 rounded-lg transition-all text-[12.5px] outline-none ${
                             isChildActive 
-                                ? 'bg-slate-800/80 text-white font-semibold shadow-xs' 
+                                ? 'bg-slate-800 text-white font-semibold shadow-2xs' 
                                 : isOpen 
                                     ? 'bg-slate-800/40 text-slate-200 font-medium' 
-                                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 font-medium'
+                                    : 'text-slate-300 hover:text-white hover:bg-slate-800/50 font-medium'
                         }`}
                     >
                         <div className="flex items-center gap-2.5 min-w-0">
                             {item.icon && (
                                 <item.icon 
                                     size={16} 
+                                    strokeWidth={1.8}
                                     className={`flex-shrink-0 transition-colors ${
                                         isChildActive ? 'text-emerald-400' : 'text-slate-400 group-hover/item:text-slate-200'
                                     }`} 
                                 />
                             )}
-                            <span className="truncate text-left tracking-wide">
+                            <span className="truncate text-left tracking-normal font-inherit">
                                 {t(item.nameKey) !== item.nameKey ? t(item.nameKey) : item.name}
                             </span>
                         </div>
                         <div className="text-slate-400 ml-1 flex-shrink-0">
-                            {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                            {isOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
                         </div>
                     </button>
                 </div>
 
                 {isOpen && (
-                    <div className="flex flex-col gap-0.5 ml-6 pl-2.5 my-1 border-l border-slate-700/60">
+                    <div className="flex flex-col gap-0.5 ml-5 pl-2.5 my-1 border-l border-slate-700/60">
                         {visibleChildren.map((child: any) => {
                             if (child.children) {
                                 const isGrandChildActive = child.children.some((gChild: any) => pathname?.startsWith(gChild.href) || pathname === gChild.href);
@@ -222,17 +223,17 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
                                     <div key={child.name} className="flex flex-col my-0.5">
                                         <button
                                             onClick={() => toggleSubMenu(child.name)}
-                                            className={`w-full flex items-center justify-between px-2 py-1 rounded-md text-xs transition-all ${
+                                            className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-[12px] transition-all ${
                                                 isGrandChildActive 
                                                     ? 'text-white font-semibold bg-slate-800/60' 
-                                                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 font-medium'
+                                                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 font-normal'
                                             }`}
                                         >
                                             <div className="flex items-center gap-2 min-w-0">
-                                                {child.icon ? <child.icon size={13} className="text-slate-400" /> : <FileCode size={13} className="text-slate-400" />}
+                                                {child.icon ? <child.icon size={13} className="text-slate-400 shrink-0" /> : <FileCode size={13} className="text-slate-400 shrink-0" />}
                                                 <span className="truncate">{t(child.nameKey) !== child.nameKey ? t(child.nameKey) : child.name}</span>
                                             </div>
-                                            {isChildOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                                            {isChildOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                                         </button>
                                         {isChildOpen && (
                                             <div className="flex flex-col gap-0.5 ml-3 pl-2 my-0.5 border-l border-slate-700/40">
@@ -245,7 +246,7 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
                                                             onClick={() => { if (onClose && window.innerWidth < 768) onClose(); }}
                                                             className={`px-2 py-1 rounded text-[11.5px] transition-all block truncate ${
                                                                 isActive 
-                                                                    ? 'bg-emerald-500/15 text-emerald-300 font-semibold' 
+                                                                    ? 'bg-emerald-500/15 text-emerald-400 font-medium border border-emerald-500/20' 
                                                                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 font-normal'
                                                             }`}
                                                         >
@@ -265,10 +266,10 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
                                     key={child.name}
                                     href={child.href}
                                     onClick={() => { if (onClose && window.innerWidth < 768) onClose(); }}
-                                    className={`px-2.5 py-1.5 rounded-lg text-xs transition-all block truncate relative ${
+                                    className={`px-2.5 py-1.5 rounded-md text-[12px] transition-all block truncate ${
                                         isChildMenuActive 
-                                            ? 'bg-emerald-500/15 text-emerald-300 font-semibold' 
-                                            : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/50 font-medium'
+                                            ? 'bg-emerald-500/15 text-emerald-400 font-medium border border-emerald-500/25 shadow-2xs' 
+                                            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 font-normal'
                                     }`}
                                 >
                                     <span>{t(child.nameKey) !== child.nameKey ? t(child.nameKey) : child.name}</span>
@@ -283,31 +284,32 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
 
     const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href));
     return (
-        <div ref={setNodeRef} style={style} className="flex items-center w-full group/item">
+        <div ref={setNodeRef} style={style} className="flex items-center w-full group/item mb-0.5">
             <div 
                 {...attributes} 
                 {...listeners} 
-                className="cursor-grab p-1 text-slate-500/40 hover:text-slate-300 opacity-0 group-hover/item:opacity-100 transition-opacity"
+                className="cursor-grab p-1 text-slate-500/30 hover:text-slate-300 opacity-0 group-hover/item:opacity-100 transition-opacity shrink-0 -ml-1"
                 title="Kéo để sắp xếp vị trí"
             >
-                <GripVertical size={13} />
+                <GripVertical size={12} />
             </div>
             <Link
                 href={item.href}
                 onClick={() => { if (onClose && window.innerWidth < 768) onClose(); }}
-                className={`flex-1 flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg transition-all text-[13px] outline-none ${
+                className={`flex-1 flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg transition-all text-[12.5px] outline-none ${
                     isActive 
-                        ? 'bg-slate-800/90 text-white font-semibold shadow-xs' 
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 font-medium'
+                        ? 'bg-slate-800 text-white font-semibold shadow-2xs' 
+                        : 'text-slate-300 hover:text-white hover:bg-slate-800/50 font-medium'
                 }`}
             >
                 <item.icon 
                     size={16} 
+                    strokeWidth={1.8}
                     className={`flex-shrink-0 transition-colors ${
                         isActive ? 'text-emerald-400' : 'text-slate-400 group-hover/item:text-slate-200'
                     }`} 
                 />
-                <span className="truncate tracking-wide">
+                <span className="truncate tracking-normal font-inherit">
                     {t(item.nameKey) !== item.nameKey ? t(item.nameKey) : item.name}
                 </span>
             </Link>
@@ -438,13 +440,12 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
                         color: #ffffff;
                     }
                 `}</style>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.2rem 1rem', borderBottom: '1px solid var(--border)', gap: '10px' }}>
-
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 0.85rem', borderBottom: '1px solid rgba(51, 65, 85, 0.5)', gap: '8px' }}>
                     <div style={{ position: 'relative', flex: 1, minWidth: 0, cursor: 'pointer' }} className="group">
                         <div className="tech-signboard" style={{
-                            display: 'flex', alignItems: 'center', gap: '12px',
-                            padding: '10px 14px 10px 10px',
-                            borderRadius: '14px',
+                            display: 'flex', alignItems: 'center', gap: '10px',
+                            padding: '6px 8px',
+                            borderRadius: '10px',
                             position: 'relative',
                             overflow: 'hidden',
                             width: '100%'
@@ -452,8 +453,8 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
                             {/* Shimmer overlay */}
                             <div style={{
                                 position: 'absolute',
-                                top: 0, bottom: 0, width: '40px',
-                                background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%)',
+                                top: 0, bottom: 0, width: '30px',
+                                background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%)',
                                 transform: 'skewX(-20deg)',
                                 animation: 'sign-shine 4s ease-in-out infinite',
                                 pointerEvents: 'none',
@@ -463,35 +464,35 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
                             {/* Logo */}
                             {logoUrl ? (
                                 <div style={{
-                                    width: '42px', height: '42px', borderRadius: '10px',
+                                    width: '36px', height: '36px', borderRadius: '8px',
                                     overflow: 'hidden', flexShrink: 0, backgroundColor: '#fff',
-                                    padding: '3px',
-                                    boxShadow: '0 2px 8px rgba(0,0,0,0.08), inset 0 1px 3px rgba(0,0,0,0.05)',
-                                    border: '1px solid #f1f5f9',
+                                    padding: '2.5px',
+                                    boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+                                    border: '1px solid rgba(241, 245, 249, 0.8)',
                                     position: 'relative', zIndex: 1
                                 }}>
                                     <img src={logoUrl} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                                 </div>
                             ) : (
                                 <div style={{
-                                    width: '42px', height: '42px', borderRadius: '10px',
+                                    width: '36px', height: '36px', borderRadius: '8px',
                                     background: 'linear-gradient(135deg, #05A613 0%, #048C10 100%)',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     color: 'white', flexShrink: 0,
-                                    boxShadow: '0 4px 12px rgba(5, 166, 19, 0.4)',
+                                    boxShadow: '0 2px 8px rgba(5, 166, 19, 0.3)',
                                     border: '1px solid rgba(255,255,255,0.2)',
                                     position: 'relative', zIndex: 1
                                 }}>
-                                    <FileText size={22} strokeWidth={2.5} />
+                                    <FileText size={18} strokeWidth={2.2} />
                                 </div>
                             )}
 
                             {/* Text Information */}
                             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', zIndex: 1, overflow: 'hidden', flex: 1 }}>
                                 <span className="brand-gradient-text" style={{
-                                    fontSize: '1.25rem',
-                                    fontWeight: 900,
-                                    letterSpacing: '-0.03em',
+                                    fontSize: '0.95rem',
+                                    fontWeight: 700,
+                                    letterSpacing: '-0.02em',
                                     lineHeight: '1.2',
                                     textTransform: 'uppercase',
                                     whiteSpace: 'nowrap',
@@ -502,20 +503,20 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
                                     {brandName}
                                 </span>
                                 <span style={{
-                                    fontSize: '0.65rem',
-                                    color: '#64748b',
-                                    fontWeight: 800,
-                                    letterSpacing: '0.12em',
+                                    fontSize: '0.58rem',
+                                    color: '#94a3b8',
+                                    fontWeight: 600,
+                                    letterSpacing: '0.08em',
                                     textTransform: 'uppercase',
                                     lineHeight: '1',
                                     display: 'flex', alignItems: 'center', gap: '4px',
-                                    marginTop: '2px'
+                                    marginTop: '2.5px'
                                 }}>
                                     <span style={{
-                                        width: '6px', height: '6px', borderRadius: '50%',
-                                        background: '#05A613', display: 'inline-block',
+                                        width: '5px', height: '5px', borderRadius: '50%',
+                                        background: '#10b981', display: 'inline-block',
                                         animation: 'pulse-dot 2s infinite',
-                                        boxShadow: '0 0 8px rgba(5, 166, 19, 0.6)'
+                                        boxShadow: '0 0 6px rgba(16, 185, 129, 0.6)'
                                     }}></span>
                                     ENTERPRISE SYSTEM
                                 </span>
@@ -527,15 +528,15 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
                         <button
                             onClick={onClose}
                             className="show-on-mobile flex-shrink-0"
-                            style={{ padding: '0.5rem', borderRadius: 'var(--radius)', color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex' }}
+                            style={{ padding: '0.4rem', borderRadius: 'var(--radius)', color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex' }}
                             aria-label="Close menu"
                         >
-                            <ChevronRight size={20} className="rotate-180" />
+                            <ChevronRight size={18} className="rotate-180" />
                         </button>
                     )}
                 </div>
             </>
-            <nav className="p-2 sm:p-2.5 flex flex-col gap-0.5 flex-1 overflow-y-auto">
+            <nav className="p-2 flex flex-col gap-0.5 flex-1 overflow-y-auto custom-scrollbar">
                 {isClient && (
                     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                         <SortableContext items={navItems.map(i => i.name)} strategy={verticalListSortingStrategy}>
@@ -560,19 +561,19 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
             {/* Online Users Widget */}
             {
                 isClient && onlineUsers.length > 0 && (
-                    <div className="p-3 border-t border-slate-800 mt-auto bg-slate-900/50">
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                    <div className="p-2.5 px-3 border-t border-slate-800/80 mt-auto bg-slate-900/60">
+                        <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                                 Đang Online ({onlineUsers.length})
                             </span>
-                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
                         </div>
-                        <div className="flex flex-col gap-1.5">
+                        <div className="flex flex-col gap-1">
                             {onlineUsers.slice(0, 5).map(u => (
                                 <div 
                                     key={u.id} 
-                                    className={`flex items-center gap-2 px-2 py-1.5 rounded-lg transition-colors ${
-                                        u.id === session?.user?.id ? 'cursor-default' : 'cursor-pointer hover:bg-slate-800/80'
+                                    className={`flex items-center gap-2 px-2 py-1 rounded-md transition-colors ${
+                                        u.id === session?.user?.id ? 'cursor-default' : 'cursor-pointer hover:bg-slate-800/70'
                                     }`}
                                     title={u.os ? `OS: ${u.os}` : ''}
                                     onClick={() => {
@@ -585,22 +586,22 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
                                         <AvatarImage
                                             src={u.avatar?.startsWith('http') ? u.avatar : u.avatar ? `/${u.avatar.replace(/^\//, '')}` : null}
                                             name={u.name}
-                                            size={26}
+                                            size={22}
                                         />
-                                        <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-slate-900"></div>
+                                        <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 border border-slate-900"></div>
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <div className="text-xs font-semibold text-white truncate">
+                                        <div className="text-[11.5px] font-medium text-slate-200 truncate">
                                             {u.name}
                                         </div>
-                                        <div className="text-[10px] text-slate-400 truncate">
+                                        <div className="text-[9.5px] text-slate-400 truncate">
                                             {u.id === session?.user?.id ? 'Bạn' : (u.os || 'Đang hoạt động')}
                                         </div>
                                     </div>
                                 </div>
                             ))}
                             {onlineUsers.length > 5 && (
-                                <div className="text-[11px] text-slate-400 text-center mt-0.5">
+                                <div className="text-[10px] text-slate-400 text-center mt-0.5">
                                     +{onlineUsers.length - 5} người khác
                                 </div>
                             )}
