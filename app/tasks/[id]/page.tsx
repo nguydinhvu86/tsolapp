@@ -73,7 +73,7 @@ export default async function TaskDetailPage({ params }: { params: { id: string 
     const allTemplates = [...taskTemplates, ...generalTemplates];
 
     return (
-        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <div className="w-full flex flex-col gap-5">
             <TaskDetailClient initialTask={task as any} users={users} emailTemplates={allTemplates} />
         </div>
     );

@@ -4,7 +4,19 @@ import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Input } from '@/app/components/ui/Input';
 import { Button } from '@/app/components/ui/Button';
-import { Save, CheckCircle2, Building2, Fingerprint, Link as LinkIcon, FileText } from 'lucide-react';
+import { 
+    Save, 
+    CheckCircle2, 
+    Building2, 
+    Fingerprint, 
+    Link as LinkIcon, 
+    FileText, 
+    Sliders,
+    Settings,
+    UploadCloud,
+    Radio,
+    Sparkles
+} from 'lucide-react';
 import { updateSystemSettings } from './actions';
 import { useRouter } from 'next/navigation';
 
@@ -13,10 +25,10 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
     const [activeTab, setActiveTab] = useState('brand');
 
     const tabs = [
-        { id: 'brand', label: 'Thương hiệu & Hệ thống', icon: Building2 },
-        { id: 'codes', label: 'Tự động hóa Dữ liệu', icon: Fingerprint },
-        { id: 'integrations', label: 'Tích hợp API & PBX', icon: LinkIcon },
-        { id: 'documents', label: 'In ấn & Dấu chìm', icon: FileText }
+        { id: 'brand', label: 'Thương hiệu & Công ty', icon: Building2, desc: 'Tên, logo, thông tin pháp lý' },
+        { id: 'codes', label: 'Tự động hóa Mã số', icon: Fingerprint, desc: 'Quy tắc sinh mã báo giá, hóa đơn' },
+        { id: 'integrations', label: 'Tích hợp API & PBX', icon: LinkIcon, desc: 'Pusher realtime, tổng đài thoại' },
+        { id: 'documents', label: 'In ấn & Dấu chìm', icon: FileText, desc: 'Thông tin tài khoản, watermark' }
     ];
 
     const [formData, setFormData] = useState({
@@ -87,336 +99,379 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
     };
 
     return (
-        <div className="flex flex-col md:flex-row gap-8 lg:gap-12 w-full pb-10">
-            {/* LEFT MENU - VERTICAL TABS */}
-            <div className="w-full md:w-72 flex-shrink-0">
-                <div className="sticky top-[100px] flex flex-col gap-2">
-                    <h2 className="px-3 text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Danh mục thiết lập</h2>
-                    {tabs.map((tab) => {
-                        const Icon = tab.icon;
-                        const isActive = activeTab === tab.id;
-                        return (
-                            <button
-                                key={tab.id}
-                                type="button"
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`group flex items-center gap-3 px-4 py-3.5 rounded-xl text-left font-medium transition-all ${
-                                    isActive 
-                                    ? 'bg-primary shadow-sm text-white' 
-                                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-transparent'
-                                }`}
-                            >
-                                <Icon size={18} className={isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600'} />
-                                {tab.label}
-                            </button>
-                        );
-                    })}
+        <div className="space-y-6 max-w-7xl mx-auto pb-16">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs">
+                <div className="flex items-center gap-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-xs">
+                        <Settings className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-xl font-bold text-slate-900">Cài Đặt Hệ Thống</h1>
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/60">
+                                <Sparkles className="w-3.5 h-3.5" />
+                                Cấu hình chung
+                            </span>
+                        </div>
+                        <p className="text-sm text-slate-500 mt-0.5">Tùy biến thương hiệu doanh nghiệp, quy tắc sinh mã tự động và tích hợp bên thứ ba</p>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    {saveSuccess && (
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200/60 text-xs font-bold animate-fade-in">
+                            <CheckCircle2 className="w-4 h-4" /> Đã lưu thành công
+                        </div>
+                    )}
+                    <Button 
+                        type="submit" 
+                        form="settings-form" 
+                        disabled={isSaving} 
+                        className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
+                    >
+                        <Save className="w-4 h-4" /> {isSaving ? 'Đang lưu...' : 'Lưu Thay Đổi'}
+                    </Button>
                 </div>
             </div>
 
-            {/* RIGHT CONTENT - DYNAMIC FORM */}
-            <div className="flex-1 max-w-[1200px]">
-                <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-                    
-                    {/* TAB: THƯƠNG HIỆU */}
-                    {activeTab === 'brand' && (
-                        <Card className="p-6 md:p-8 animate-in fade-in zoom-in-95 duration-200">
-                            <h2 className="text-xl font-bold text-slate-800 mb-2">Thương hiệu & Hệ thống</h2>
-                            <p className="text-slate-500 text-sm mb-8">Thông tin dưới đây sẽ hiển thị trên Header của hệ thống và áp dụng vào biểu mẫu hợp đồng PDF.</p>
-                            
-                            <div className="flex flex-col gap-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <Input label="Tên hiển thị (Tên ngắn/Thương hiệu trên Header)" value={formData.COMPANY_DISPLAY_NAME || formData.COMPANY_NAME} onChange={e => setFormData({ ...formData, COMPANY_DISPLAY_NAME: e.target.value })} required placeholder="Vd: TRỊNH GIA" />
-                                    <Input label="Tên đầy đủ (Dùng trên Báo cáo, Văn bản)" value={formData.COMPANY_FULL_NAME || formData.COMPANY_NAME} onChange={e => setFormData({ ...formData, COMPANY_FULL_NAME: e.target.value })} required placeholder="Vd: CÔNG TY TNHH TRỊNH GIA" />
-                                </div>
-
-                                <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 flex flex-col md:flex-row items-start md:items-center justify-between">
-                                    <div className="flex items-center gap-5">
-                                        {formData.COMPANY_LOGO ? (
-                                            <div className="w-[80px] h-[80px] bg-white border border-slate-200 rounded-xl overflow-hidden p-2 shadow-sm">
-                                                <img src={formData.COMPANY_LOGO} alt="Logo" className="w-full h-full object-contain" />
-                                            </div>
-                                        ) : (
-                                            <div className="w-[80px] h-[80px] border-2 border-dashed border-slate-200 rounded-xl flex items-center justify-center text-slate-400 bg-white">Logo</div>
-                                        )}
-                                        <div>
-                                            <label className="block text-sm font-semibold text-slate-700 mb-1">Logo hệ thống</label>
-                                            <p className="text-xs text-slate-500 mb-3">Tỷ lệ 1:1, hỗ trợ định dạng PNG, JPG, SVG.</p>
-                                            <input
-                                                type="file" id="logo-upload" accept="image/*" className="hidden"
-                                                onChange={async (e) => {
-                                                    const file = e.target.files?.[0];
-                                                    if (!file) return;
-                                                    setIsUploadingLogo(true);
-                                                    try {
-                                                        const form = new FormData();
-                                                        form.append('file', file);
-                                                        const res = await fetch('/api/upload', { method: 'POST', body: form });
-                                                        if (!res.ok) throw new Error('Upload failed');
-                                                        const data = await res.json();
-                                                        setFormData(prev => ({ ...prev, COMPANY_LOGO: data.url }));
-                                                    } catch (error) {
-                                                        alert('Lỗi khi tải ảnh lên!');
-                                                    } finally {
-                                                        setIsUploadingLogo(false);
-                                                        if (e.target) e.target.value = '';
-                                                    }
-                                                }}
-                                            />
-                                            <Button type="button" variant="secondary" onClick={() => document.getElementById('logo-upload')?.click()} disabled={isUploadingLogo} className="h-9 text-xs font-medium">
-                                                {isUploadingLogo ? 'Đang tải lên...' : 'Đổi hình đại diện'}
-                                            </Button>
+            {/* Main Tabs Layout */}
+            <div className="flex flex-col md:flex-row gap-6">
+                {/* Left Navigation */}
+                <div className="w-full md:w-80 shrink-0">
+                    <div className="bg-white p-3 rounded-2xl border border-slate-200/90 shadow-xs space-y-1 sticky top-6">
+                        <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                            Danh mục thiết lập
+                        </div>
+                        {tabs.map((tab) => {
+                            const Icon = tab.icon;
+                            const isActive = activeTab === tab.id;
+                            return (
+                                <button
+                                    key={tab.id}
+                                    type="button"
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`w-full flex items-start gap-3 p-3 rounded-xl text-left transition-all ${
+                                        isActive 
+                                            ? 'bg-indigo-600 text-white shadow-xs' 
+                                            : 'text-slate-700 hover:bg-slate-50'
+                                    }`}
+                                >
+                                    <div className={`p-2 rounded-lg shrink-0 ${isActive ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                                        <Icon className="w-4 h-4" />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <div className={`text-sm font-bold ${isActive ? 'text-white' : 'text-slate-900'}`}>
+                                            {tab.label}
+                                        </div>
+                                        <div className={`text-xs truncate ${isActive ? 'text-indigo-100' : 'text-slate-400'}`}>
+                                            {tab.desc}
                                         </div>
                                     </div>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Right Tab Content */}
+                <div className="flex-1 min-w-0">
+                    <form id="settings-form" onSubmit={handleSubmit} className="space-y-6">
+                        
+                        {/* TAB: THƯƠNG HIỆU */}
+                        {activeTab === 'brand' && (
+                            <div className="bg-white p-6 sm:p-7 rounded-2xl border border-slate-200/90 shadow-xs space-y-6 animate-fade-in">
+                                <div>
+                                    <h2 className="text-base font-bold text-slate-900">Thương Hiệu & Nhận Diện Doanh Nghiệp</h2>
+                                    <p className="text-xs text-slate-500 mt-0.5">Thông tin hiển thị trên thanh tiêu đề ứng dụng và văn bản xuất file PDF</p>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <Input label="Số điện thoại" value={formData.COMPANY_PHONE} onChange={e => setFormData({ ...formData, COMPANY_PHONE: e.target.value })} placeholder="Vd: 0909 123 456" />
-                                    <Input label="Email liên hệ" type="email" value={formData.COMPANY_EMAIL} onChange={e => setFormData({ ...formData, COMPANY_EMAIL: e.target.value })} placeholder="Vd: lienhe@truongthinh.com" />
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <Input 
+                                        label="Tên hiển thị (Tên ngắn/Thương hiệu trên Header)" 
+                                        value={formData.COMPANY_DISPLAY_NAME || formData.COMPANY_NAME} 
+                                        onChange={e => setFormData({ ...formData, COMPANY_DISPLAY_NAME: e.target.value })} 
+                                        required 
+                                        placeholder="Vd: T-SOLUTIONS" 
+                                    />
+                                    <Input 
+                                        label="Tên đầy đủ pháp lý (Trên Báo Cáo, Văn Bản)" 
+                                        value={formData.COMPANY_FULL_NAME || formData.COMPANY_NAME} 
+                                        onChange={e => setFormData({ ...formData, COMPANY_FULL_NAME: e.target.value })} 
+                                        required 
+                                        placeholder="Vd: CÔNG TY TNHH GIẢI PHÁP T-SOL" 
+                                    />
                                 </div>
-                                <Input label="Địa chỉ trụ sở" value={formData.COMPANY_ADDRESS} onChange={e => setFormData({ ...formData, COMPANY_ADDRESS: e.target.value })} placeholder="Vd: 123 Nguyễn Văn Linh, Quận 7, TP.HCM" />
-                                <Input label="Mã số thuế" value={formData.COMPANY_TAX} onChange={e => setFormData({ ...formData, COMPANY_TAX: e.target.value })} placeholder="Vd: 0102030405" />
-                            </div>
-                        </Card>
-                    )}
 
-                    {/* TAB: MÃ SỐ TỰ ĐỘNG */}
-                    {activeTab === 'codes' && (
-                        <Card className="p-6 md:p-8 animate-in fade-in zoom-in-95 duration-200">
-                            <h2 className="text-xl font-bold text-slate-800 mb-2">Tự động hóa Dữ liệu (Auto-Code)</h2>
-                            <p className="text-slate-500 text-sm mb-8">Tùy chỉnh bộ sinh mã tự tăng cho các chứng từ nghiệp vụ.</p>
-                            
-                            <div className="grid grid-cols-1 gap-6">
-                                {/* BÁO GIÁ */}
-                                <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-200">
-                                    <div className="flex items-center gap-3 mb-6">
-                                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600"><FileText size={20} /></div>
-                                        <div>
-                                            <h3 className="font-semibold text-slate-800 text-base">Cấu trúc Mã Báo Giá</h3>
+                                {/* Logo Upload */}
+                                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 flex flex-col sm:flex-row items-center gap-5">
+                                    {formData.COMPANY_LOGO ? (
+                                        <div className="w-20 h-20 bg-white border border-slate-200 rounded-xl overflow-hidden p-2 shadow-xs shrink-0 flex items-center justify-center">
+                                            <img src={formData.COMPANY_LOGO} alt="Logo" className="w-full h-full object-contain" />
                                         </div>
-                                    </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                                        <Input label="Tiền tố chữ" value={estPrefix} onChange={e => setEstPrefix(e.target.value.toUpperCase())} placeholder="Vd: BG-" required />
-                                        <Input label="Số đếm khởi đầu" type="number" min={1} value={estStartSeq} onChange={e => setEstStartSeq(parseInt(e.target.value, 10) || 1)} required />
-                                    </div>
-                                    <div className="flex flex-col sm:flex-row items-center justify-between p-4 bg-white rounded-xl border border-slate-100 shadow-sm">
-                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-slate-700 text-sm">
-                                            <input type="checkbox" checked={estHasDate} onChange={(e) => setEstHasDate(e.target.checked)} className="w-4 h-4 accent-primary" />
-                                            Gắn theo tháng/năm [MM]/[YYYY]
+                                    ) : (
+                                        <div className="w-20 h-20 border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center text-xs text-slate-400 bg-white shrink-0">
+                                            Logo
+                                        </div>
+                                    )}
+                                    <div className="flex-1 text-center sm:text-left">
+                                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                                            Logo Hệ Thống
                                         </label>
-                                        <div className="text-sm font-medium text-slate-500 mt-2 sm:mt-0">
-                                            Bản xem trước: <span className="text-blue-600 ml-1 bg-blue-50 px-2 py-1 rounded-md">{estPrefix}{String(estStartSeq).padStart(4, '0')}{estHasDate ? '/06/2026' : ''}</span>
+                                        <p className="text-xs text-slate-500 mb-3">Tỷ lệ 1:1 hoặc hình chữ nhật, định dạng PNG, JPG, SVG.</p>
+                                        <input
+                                            type="file" 
+                                            id="logo-upload" 
+                                            accept="image/*" 
+                                            className="hidden"
+                                            onChange={async (e) => {
+                                                const file = e.target.files?.[0];
+                                                if (!file) return;
+                                                setIsUploadingLogo(true);
+                                                try {
+                                                    const form = new FormData();
+                                                    form.append('file', file);
+                                                    const res = await fetch('/api/upload', { method: 'POST', body: form });
+                                                    if (!res.ok) throw new Error('Upload failed');
+                                                    const data = await res.json();
+                                                    setFormData(prev => ({ ...prev, COMPANY_LOGO: data.url }));
+                                                } catch (error) {
+                                                    alert('Lỗi khi tải ảnh lên!');
+                                                } finally {
+                                                    setIsUploadingLogo(false);
+                                                    if (e.target) e.target.value = '';
+                                                }
+                                            }}
+                                        />
+                                        <Button 
+                                            type="button" 
+                                            variant="secondary" 
+                                            onClick={() => document.getElementById('logo-upload')?.click()} 
+                                            disabled={isUploadingLogo} 
+                                            className="gap-2 text-xs"
+                                        >
+                                            <UploadCloud className="w-3.5 h-3.5" />
+                                            {isUploadingLogo ? 'Đang tải lên...' : 'Tải lên ảnh mới'}
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <Input label="Số điện thoại tổng đài" value={formData.COMPANY_PHONE} onChange={e => setFormData({ ...formData, COMPANY_PHONE: e.target.value })} placeholder="Vd: 0909 123 456" />
+                                    <Input label="Email liên hệ chính" type="email" value={formData.COMPANY_EMAIL} onChange={e => setFormData({ ...formData, COMPANY_EMAIL: e.target.value })} placeholder="Vd: lienhe@company.com" />
+                                </div>
+                                <Input label="Địa chỉ trụ sở chính" value={formData.COMPANY_ADDRESS} onChange={e => setFormData({ ...formData, COMPANY_ADDRESS: e.target.value })} placeholder="Vd: Tầng 5, Tòa nhà Bitexco, Q.1, TP.HCM" />
+                                <Input label="Mã số thuế" value={formData.COMPANY_TAX} onChange={e => setFormData({ ...formData, COMPANY_TAX: e.target.value })} placeholder="Vd: 0312345678" />
+                            </div>
+                        )}
+
+                        {/* TAB: MÃ SỐ TỰ ĐỘNG */}
+                        {activeTab === 'codes' && (
+                            <div className="bg-white p-6 sm:p-7 rounded-2xl border border-slate-200/90 shadow-xs space-y-6 animate-fade-in">
+                                <div>
+                                    <h2 className="text-base font-bold text-slate-900">Tự Động Hóa Mã Số (Auto-Code Generator)</h2>
+                                    <p className="text-xs text-slate-500 mt-0.5">Tùy biến tiền tố và quy tắc đánh số tự tăng cho các chứng từ</p>
+                                </div>
+
+                                {/* BÁO GIÁ */}
+                                <div className="p-5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
+                                            <FileText className="w-4 h-4" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm font-bold text-slate-900">Cấu Trúc Mã Báo Giá (Quote)</h3>
+                                            <p className="text-xs text-slate-500">Quy tắc sinh mã tự động khi nhân viên lập báo giá mới</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <Input label="Tiền tố chữ" value={estPrefix} onChange={e => setEstPrefix(e.target.value.toUpperCase())} placeholder="Vd: BG" required />
+                                        <Input label="Số đếm bắt đầu" type="number" min={1} value={estStartSeq} onChange={e => setEstStartSeq(parseInt(e.target.value, 10) || 1)} required />
+                                    </div>
+
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3.5 bg-white rounded-xl border border-slate-200/80 gap-2">
+                                        <label className="flex items-center gap-2.5 cursor-pointer text-xs font-semibold text-slate-700">
+                                            <input type="checkbox" checked={estHasDate} onChange={(e) => setEstHasDate(e.target.checked)} className="w-4 h-4 rounded text-blue-600 border-slate-300" />
+                                            Kèm Tháng/Năm [MM]/[YYYY]
+                                        </label>
+                                        <div className="text-xs text-slate-500">
+                                            Xem trước: <span className="font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200/60">{estPrefix}{String(estStartSeq).padStart(4, '0')}{estHasDate ? '/06/2026' : ''}</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* HÓA ĐƠN */}
-                                <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-200">
-                                    <div className="flex items-center gap-3 mb-6">
-                                        <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600"><Fingerprint size={20} /></div>
+                                <div className="p-5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600">
+                                            <Fingerprint className="w-4 h-4" />
+                                        </div>
                                         <div>
-                                            <h3 className="font-semibold text-slate-800 text-base">Cấu trúc Mã Hóa Đơn</h3>
+                                            <h3 className="text-sm font-bold text-slate-900">Cấu Trúc Mã Hóa Đơn (Invoice)</h3>
+                                            <p className="text-xs text-slate-500">Quy tắc sinh mã tự động khi xuất hóa đơn bán hàng</p>
                                         </div>
                                     </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <Input label="Tiền tố chữ" value={invPrefix} onChange={e => setInvPrefix(e.target.value.toUpperCase())} placeholder="Vd: INV" required />
-                                        <Input label="Số đếm khởi đầu" type="number" min={1} value={invStartSeq} onChange={e => setInvStartSeq(parseInt(e.target.value, 10) || 1)} required />
+                                        <Input label="Số đếm bắt đầu" type="number" min={1} value={invStartSeq} onChange={e => setInvStartSeq(parseInt(e.target.value, 10) || 1)} required />
                                     </div>
-                                    <div className="flex flex-col sm:flex-row items-center justify-between p-4 bg-white rounded-xl border border-slate-100 shadow-sm">
-                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-slate-700 text-sm">
-                                            <input type="checkbox" checked={invHasDate} onChange={(e) => setInvHasDate(e.target.checked)} className="w-4 h-4 accent-primary" />
-                                            Gắn theo tháng/năm [MM]/[YYYY]
+
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3.5 bg-white rounded-xl border border-slate-200/80 gap-2">
+                                        <label className="flex items-center gap-2.5 cursor-pointer text-xs font-semibold text-slate-700">
+                                            <input type="checkbox" checked={invHasDate} onChange={(e) => setInvHasDate(e.target.checked)} className="w-4 h-4 rounded text-emerald-600 border-slate-300" />
+                                            Kèm Tháng/Năm [MM]/[YYYY]
                                         </label>
-                                        <div className="text-sm font-medium text-slate-500 mt-2 sm:mt-0">
-                                            Bản xem trước: <span className="text-red-500 ml-1 bg-red-50 px-2 py-1 rounded-md">{invPrefix}{String(invStartSeq).padStart(4, '0')}{invHasDate ? '/06/2026' : ''}</span>
+                                        <div className="text-xs text-slate-500">
+                                            Xem trước: <span className="font-mono font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">{invPrefix}{String(invStartSeq).padStart(4, '0')}{invHasDate ? '/06/2026' : ''}</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </Card>
-                    )}
+                        )}
 
-                    {/* TAB: TÍCH HỢP */}
-                    {activeTab === 'integrations' && (
-                        <div className="flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-200">
-                            <Card className="p-6 md:p-8">
-                                <h2 className="text-xl font-bold text-slate-800 mb-2">Cảnh báo Thời gian thực (Pusher)</h2>
-                                <p className="text-slate-500 text-sm mb-6">WebSockets để đẩy thông báo realtime tới toàn hệ thống.</p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <Input label="Pusher App ID" value={formData.PUSHER_APP_ID} onChange={e => setFormData({ ...formData, PUSHER_APP_ID: e.target.value })} placeholder="Vd: 1234567" />
-                                    <Input label="Pusher Cluster" value={formData.PUSHER_CLUSTER} onChange={e => setFormData({ ...formData, PUSHER_CLUSTER: e.target.value })} placeholder="Vd: ap1" />
-                                    <Input label="Pusher Key" value={formData.PUSHER_KEY} onChange={e => setFormData({ ...formData, PUSHER_KEY: e.target.value })} placeholder="Vd: abcdef123456" />
-                                    <Input label="Pusher Secret" type="password" value={formData.PUSHER_SECRET} onChange={e => setFormData({ ...formData, PUSHER_SECRET: e.target.value })} placeholder="Vd: ******" />
-                                </div>
-                            </Card>
-
-                            <Card className="p-6 md:p-8">
-                                <h2 className="text-xl font-bold text-slate-800 mb-2">Tổng đài (PBX / VoiceCloud)</h2>
-                                <p className="text-slate-500 text-sm mb-6">Liên kết Gateway Cloud PBX để thực hiện gọi trực tuyến.</p>
-                                <div className="flex flex-col gap-4">
-                                    <Input label="PBX Endpoint (URL)" value={formData.PBX_URL} onChange={e => setFormData({ ...formData, PBX_URL: e.target.value })} placeholder="Vd: portal.voicecloud.vn" />
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <Input label="API Key" type="password" value={formData.PBX_KEY} onChange={e => setFormData({ ...formData, PBX_KEY: e.target.value })} placeholder="Vd: 2d634db8..." />
-                                        <Input label="Sip Domain" value={formData.PBX_DOMAIN} onChange={e => setFormData({ ...formData, PBX_DOMAIN: e.target.value })} placeholder="Vd: trinhgia.incall.vn" />
-                                    </div>
-                                </div>
-                            </Card>
-                        </div>
-                    )}
-
-                    {/* TAB: TÀI LIỆU */}
-                    {activeTab === 'documents' && (
-                        <div className="flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-200">
-                            
-                            {/* BANK ACCOUNT */}
-                            <Card className="p-6 md:p-8">
-                                <div className="flex justify-between items-start mb-6">
-                                    <div>
-                                        <h2 className="text-xl font-bold text-slate-800 mb-1">Thông tin Ngân hàng</h2>
-                                        <p className="text-slate-500 text-sm">Hiển thị thông tin thanh toán góc dưới chứng từ IN / PDF.</p>
-                                    </div>
-                                    <label className="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" className="sr-only peer" checked={formData.BANK_INFO_ENABLED === 'true'} onChange={(e) => setFormData({ ...formData, BANK_INFO_ENABLED: e.target.checked ? 'true' : 'false' })} />
-                                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                                    </label>
-                                </div>
-                                {formData.BANK_INFO_ENABLED === 'true' && (
-                                    <div className="bg-slate-50/50 p-5 rounded-xl border border-slate-200">
-                                        <textarea value={formData.BANK_INFO_CONTENT} onChange={e => setFormData({ ...formData, BANK_INFO_CONTENT: e.target.value })} className="w-full min-h-[140px] p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm font-medium text-slate-700 leading-relaxed" placeholder="Số tài khoản:..." />
-                                    </div>
-                                )}
-                            </Card>
-
-                            {/* WATERMARK */}
-                            <Card className="p-6 md:p-8">
-                                <div className="flex justify-between items-start mb-6">
-                                    <div>
-                                        <h2 className="text-xl font-bold text-slate-800 mb-1">Dấu Chìm (Watermark)</h2>
-                                        <p className="text-slate-500 text-sm">Bảo vệ bản quyền (in chìm mặt sau) các chứng từ xuất ra.</p>
-                                    </div>
-                                    <label className="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" className="sr-only peer" checked={formData.WATERMARK_ENABLED === 'true'} onChange={(e) => setFormData({ ...formData, WATERMARK_ENABLED: e.target.checked ? 'true' : 'false' })} />
-                                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                                    </label>
-                                </div>
-
-                                {formData.WATERMARK_ENABLED === 'true' && (
-                                    <div className="flex flex-col gap-6">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-5 bg-slate-50/50 rounded-xl border border-slate-200">
-                                            <div>
-                                                <label className="block text-sm font-semibold text-slate-700 mb-2">Loại Dấu Chìm</label>
-                                                <select value={formData.WATERMARK_TYPE} onChange={e => setFormData({ ...formData, WATERMARK_TYPE: e.target.value })} className="w-full h-10 px-3 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-medium">
-                                                    <option value="TEXT">Văn bản (Chữ)</option>
-                                                    <option value="IMAGE">Hình ảnh (Logo)</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-semibold text-slate-700 mb-2">Kích thước (px)</label>
-                                                <input type="number" value={formData.WATERMARK_SIZE} onChange={e => setFormData({ ...formData, WATERMARK_SIZE: e.target.value })} min="10" max="1000" className="w-full h-10 px-3 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-medium" />
-                                            </div>
+                        {/* TAB: TÍCH HỢP */}
+                        {activeTab === 'integrations' && (
+                            <div className="space-y-6 animate-fade-in">
+                                {/* Pusher */}
+                                <div className="bg-white p-6 sm:p-7 rounded-2xl border border-slate-200/90 shadow-xs space-y-4">
+                                    <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+                                        <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+                                            <Radio className="w-4 h-4" />
                                         </div>
+                                        <div>
+                                            <h3 className="text-sm font-bold text-slate-900">Thông Báo Thời Gian Thực (Pusher WebSocket)</h3>
+                                            <p className="text-xs text-slate-500">Đẩy thông báo tức thời tới trình duyệt khi có sự kiện mới</p>
+                                        </div>
+                                    </div>
 
-                                        {formData.WATERMARK_TYPE === 'TEXT' && (
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <Input label="Nội dung hiển thị" value={formData.WATERMARK_TEXT} onChange={e => setFormData({ ...formData, WATERMARK_TEXT: e.target.value })} />
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <Input label="Pusher App ID" value={formData.PUSHER_APP_ID} onChange={e => setFormData({ ...formData, PUSHER_APP_ID: e.target.value })} placeholder="Vd: 1234567" />
+                                        <Input label="Pusher Cluster" value={formData.PUSHER_CLUSTER} onChange={e => setFormData({ ...formData, PUSHER_CLUSTER: e.target.value })} placeholder="Vd: ap1" />
+                                        <Input label="Pusher Key" value={formData.PUSHER_KEY} onChange={e => setFormData({ ...formData, PUSHER_KEY: e.target.value })} placeholder="Vd: abcdef123456" />
+                                        <Input label="Pusher Secret" type="password" value={formData.PUSHER_SECRET} onChange={e => setFormData({ ...formData, PUSHER_SECRET: e.target.value })} placeholder="••••••••••••" />
+                                    </div>
+                                </div>
+
+                                {/* PBX */}
+                                <div className="bg-white p-6 sm:p-7 rounded-2xl border border-slate-200/90 shadow-xs space-y-4">
+                                    <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+                                        <div className="w-9 h-9 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600">
+                                            <LinkIcon className="w-4 h-4" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm font-bold text-slate-900">Tổng Đài Thoại (Cloud PBX / VoiceCloud)</h3>
+                                            <p className="text-xs text-slate-500">Kết nối cổng Gateway VoIP để gọi trực tuyến WebRTC</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <Input label="PBX Endpoint (URL)" value={formData.PBX_URL} onChange={e => setFormData({ ...formData, PBX_URL: e.target.value })} placeholder="Vd: portal.voicecloud.vn" />
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <Input label="API Key" type="password" value={formData.PBX_KEY} onChange={e => setFormData({ ...formData, PBX_KEY: e.target.value })} placeholder="••••••••••••" />
+                                            <Input label="SIP Domain" value={formData.PBX_DOMAIN} onChange={e => setFormData({ ...formData, PBX_DOMAIN: e.target.value })} placeholder="Vd: company.incall.vn" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* TAB: TÀI LIỆU & DẤU CHÌM */}
+                        {activeTab === 'documents' && (
+                            <div className="space-y-6 animate-fade-in">
+                                {/* Thông tin Ngân hàng */}
+                                <div className="bg-white p-6 sm:p-7 rounded-2xl border border-slate-200/90 shadow-xs space-y-4">
+                                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                                        <div>
+                                            <h3 className="text-sm font-bold text-slate-900">Thông Tin Tài Khoản Ngân Hàng</h3>
+                                            <p className="text-xs text-slate-500">In thông tin thanh toán phía dưới các chứng từ PDF</p>
+                                        </div>
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                            <input 
+                                                type="checkbox" 
+                                                className="sr-only peer" 
+                                                checked={formData.BANK_INFO_ENABLED === 'true'} 
+                                                onChange={(e) => setFormData({ ...formData, BANK_INFO_ENABLED: e.target.checked ? 'true' : 'false' })} 
+                                            />
+                                            <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                                        </label>
+                                    </div>
+
+                                    {formData.BANK_INFO_ENABLED === 'true' && (
+                                        <div>
+                                            <textarea 
+                                                value={formData.BANK_INFO_CONTENT} 
+                                                onChange={e => setFormData({ ...formData, BANK_INFO_CONTENT: e.target.value })} 
+                                                rows={4} 
+                                                className="w-full p-3.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors resize-none"
+                                                placeholder="Số tài khoản (Bank account): &#10;Chủ tài khoản: &#10;Ngân hàng: ..."
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Watermark */}
+                                <div className="bg-white p-6 sm:p-7 rounded-2xl border border-slate-200/90 shadow-xs space-y-4">
+                                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                                        <div>
+                                            <h3 className="text-sm font-bold text-slate-900">Dấu Chìm Văn Bản (Watermark)</h3>
+                                            <p className="text-xs text-slate-500">In mờ logo hoặc văn bản bảo vệ bản quyền lên chứng từ</p>
+                                        </div>
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                            <input 
+                                                type="checkbox" 
+                                                className="sr-only peer" 
+                                                checked={formData.WATERMARK_ENABLED === 'true'} 
+                                                onChange={(e) => setFormData({ ...formData, WATERMARK_ENABLED: e.target.checked ? 'true' : 'false' })} 
+                                            />
+                                            <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                                        </label>
+                                    </div>
+
+                                    {formData.WATERMARK_ENABLED === 'true' && (
+                                        <div className="space-y-4">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 <div>
-                                                    <label className="block text-sm font-semibold text-slate-700 mb-2">Màu chữ</label>
-                                                    <input type="color" value={formData.WATERMARK_COLOR} onChange={e => setFormData({ ...formData, WATERMARK_COLOR: e.target.value })} className="h-10 w-full p-1 border border-slate-300 rounded-lg cursor-pointer" />
+                                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Loại Dấu Chìm</label>
+                                                    <select 
+                                                        value={formData.WATERMARK_TYPE} 
+                                                        onChange={e => setFormData({ ...formData, WATERMARK_TYPE: e.target.value })} 
+                                                        className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                                                    >
+                                                        <option value="TEXT">Văn bản (Chữ)</option>
+                                                        <option value="IMAGE">Hình ảnh (Logo)</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Kích Thước (px)</label>
+                                                    <input 
+                                                        type="number" 
+                                                        value={formData.WATERMARK_SIZE} 
+                                                        onChange={e => setFormData({ ...formData, WATERMARK_SIZE: e.target.value })} 
+                                                        min="10" 
+                                                        max="1000" 
+                                                        className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                                                    />
                                                 </div>
                                             </div>
-                                        )}
 
-                                        {formData.WATERMARK_TYPE === 'IMAGE' && (
-                                            <div className="p-5 bg-slate-50/50 rounded-xl border border-slate-200">
-                                                <label className="block text-sm font-semibold text-slate-700 mb-3">Hình ảnh Watermark</label>
-                                                <div className="flex items-center gap-5">
-                                                    {formData.WATERMARK_IMAGE_URL ? (
-                                                        <div className="w-[80px] h-[80px] border border-slate-200 rounded-xl bg-white flex justify-center items-center p-1 shadow-sm"><img src={formData.WATERMARK_IMAGE_URL} alt="Watermark" className="max-w-full max-h-full object-contain" /></div>
-                                                    ) : (
-                                                        <div className="w-[80px] h-[80px] border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center text-slate-400 bg-white">Chưa có</div>
-                                                    )}
+                                            {formData.WATERMARK_TYPE === 'TEXT' && (
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    <Input label="Nội dung hiển thị" value={formData.WATERMARK_TEXT} onChange={e => setFormData({ ...formData, WATERMARK_TEXT: e.target.value })} />
                                                     <div>
-                                                        <input type="file" id="watermark-upload" accept="image/*" className="hidden" onChange={async (e) => {
-                                                            const file = e.target.files?.[0]; if (!file) return;
-                                                            try {
-                                                                const form = new FormData(); form.append('file', file);
-                                                                const res = await fetch('/api/upload', { method: 'POST', body: form });
-                                                                if (!res.ok) throw new Error('Upload failed');
-                                                                const data = await res.json(); setFormData(prev => ({ ...prev, WATERMARK_IMAGE_URL: data.url }));
-                                                            } catch (error) { alert('Lỗi khi tải ảnh lên!'); } finally { if (e.target) e.target.value = ''; }
-                                                        }} />
-                                                        <Button type="button" variant="secondary" onClick={() => document.getElementById('watermark-upload')?.click()} className="h-9 text-xs font-medium">Tải file PNG (Trong suốt)</Button>
+                                                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Màu chữ</label>
+                                                        <input type="color" value={formData.WATERMARK_COLOR} onChange={e => setFormData({ ...formData, WATERMARK_COLOR: e.target.value })} className="h-10 w-full p-1 border border-slate-200 rounded-xl cursor-pointer" />
                                                     </div>
                                                 </div>
-                                            </div>
-                                        )}
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 px-2">
-                                            <div>
-                                                <label className="flex justify-between text-sm font-semibold text-slate-700 mb-2"><span>Độ nét (Opacity)</span><span className="text-primary">{formData.WATERMARK_OPACITY}</span></label>
-                                                <input type="range" min="0.05" max="1" step="0.05" value={formData.WATERMARK_OPACITY} onChange={e => setFormData({ ...formData, WATERMARK_OPACITY: e.target.value })} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary" />
-                                            </div>
-                                            <div>
-                                                <label className="flex justify-between text-sm font-semibold text-slate-700 mb-2"><span>Góc chéo (Rotation)</span><span className="text-primary">{formData.WATERMARK_ROTATION}°</span></label>
-                                                <input type="range" min="-90" max="90" step="1" value={formData.WATERMARK_ROTATION} onChange={e => setFormData({ ...formData, WATERMARK_ROTATION: e.target.value })} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary" />
-                                            </div>
+                                            )}
                                         </div>
-
-                                        <div className="mt-4 pt-6 border-t border-slate-100">
-                                            <label className="block text-sm font-semibold text-slate-800 mb-4">Gắn dấu chìm tự động vào các Chứng từ:</label>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                                {[
-                                                    { id: 'SALES_ESTIMATE', label: 'Báo giá ERP' },
-                                                    { id: 'SALES_INVOICE', label: 'Hóa đơn / Công nợ' },
-                                                    { id: 'SALES_ORDER', label: 'Đơn đặt hàng (SO)' },
-                                                    { id: 'SALES_PAYMENT', label: 'Phiếu thu' },
-                                                    { id: 'PURCHASE_ORDER', label: 'Gọi hàng (PO)' },
-                                                    { id: 'PURCHASE_BILL', label: 'Hóa đơn nhập' },
-                                                    { id: 'PURCHASE_PAYMENT', label: 'Phiếu chi' },
-                                                    { id: 'CONTRACT', label: 'Hợp đồng' },
-                                                    { id: 'CONTRACT_APPENDIX', label: 'Phụ lục HĐ' },
-                                                    { id: 'HANDOVER', label: 'Biên bản Giao hàng' },
-                                                    { id: 'PAYMENT_REQUEST', label: 'Đề nghị Thanh toán' },
-                                                    { id: 'DISPATCH', label: 'Lệnh điều động' },
-                                                    { id: 'QUOTE', label: 'Báo giá CRM' }
-                                                ].map(doc => {
-                                                    const isChecked = formData.WATERMARK_DOCUMENTS.includes(`"${doc.id}"`);
-                                                    return (
-                                                        <label key={doc.id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${isChecked ? 'bg-primary/5 border-primary/30 text-primary font-medium' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
-                                                            <input type="checkbox" checked={isChecked} onChange={e => {
-                                                                let arr = []; try { arr = JSON.parse(formData.WATERMARK_DOCUMENTS || '[]'); } catch { }
-                                                                if (e.target.checked) { if (!arr.includes(doc.id)) arr.push(doc.id); } else { arr = arr.filter((x: string) => x !== doc.id); }
-                                                                setFormData({ ...formData, WATERMARK_DOCUMENTS: JSON.stringify(arr) });
-                                                            }} className="w-4 h-4 accent-primary" />
-                                                            <span className="text-sm">{doc.label}</span>
-                                                        </label>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </Card>
-                        </div>
-                    )}
-
-                    {/* STICKY ACTION BAR */}
-                    <div className="sticky bottom-6 z-10 flex items-center justify-between p-4 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200 shadow-lg mt-4">
-                        <div className="text-sm font-semibold text-slate-800 ml-2 animate-in fade-in">
-                            Đang cấu hình: <span className="text-primary">{tabs.find(t => t.id === activeTab)?.label}</span>
-                        </div>
-                        <div className="flex gap-4 items-center">
-                            {saveSuccess && (
-                                <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg text-sm font-bold animate-in slide-in-from-right-4">
-                                    <CheckCircle2 size={16} /> Đã lưu cài đặt
+                                    )}
                                 </div>
-                            )}
-                            <Button type="submit" disabled={isSaving} className="gap-2 h-11 px-8 rounded-xl font-bold shadow-sm">
-                                <Save size={18} /> {isSaving ? 'Đang lưu...' : 'Lưu Thay Đổi'}
-                            </Button>
-                        </div>
-                    </div>
-                </form>
+                            </div>
+                        )}
+                    </form>
+                </div>
             </div>
         </div>
     );

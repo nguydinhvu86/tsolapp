@@ -256,59 +256,100 @@ export function ProjectListClient({ initialProjects, users, customers = [] }: { 
 
     return (
         <div className="space-y-6">
+            {/* Header */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 ring-4 ring-emerald-50"></span>
+                        Quản Lý Dự Án (Projects)
+                    </h1>
+                    <p className="text-xs text-slate-500 mt-1 font-medium">
+                        Theo dõi tiến độ, phân công thành viên và quản lý toàn diện các dự án ({initialProjects.length} dự án)
+                    </p>
+                </div>
+                {canCreate && (
+                    <Button 
+                        onClick={() => setCreateModalOpen(true)} 
+                        className="px-4 py-2 text-xs font-semibold rounded-xl flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs shadow-emerald-200 transition-all"
+                    >
+                        <Plus size={15} /> Tạo Dự Án Mới
+                    </Button>
+                )}
+            </div>
+
             {/* KPI Cards for Projects */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5">
                 <div
                     onClick={() => setStatusFilter('ALL')}
-                    className={`stat-card stat-card-blue cursor-pointer transition-all ${statusFilter === 'ALL' ? 'ring-2 ring-primary ring-offset-2 scale-[1.02] shadow-md' : 'hover:-translate-y-0.5'}`}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer bg-white ${
+                        statusFilter === 'ALL'
+                            ? 'border-indigo-500 ring-2 ring-indigo-500/20 shadow-xs'
+                            : 'border-slate-200/90 hover:border-slate-300'
+                    }`}
                 >
-                    <div className="stat-title text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Tổng Dự Án</div>
-                    <div className="stat-value text-2xl font-black text-blue-700">{initialProjects.length}</div>
-                    <div className="text-xs text-slate-400 mt-1 font-medium">Tất cả dự án</div>
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Tổng Dự Án</div>
+                    <div className="text-2xl font-bold font-mono text-indigo-600 mt-1">{initialProjects.length}</div>
+                    <div className="text-[11px] text-slate-400 mt-0.5 font-medium">Tất cả dự án</div>
                 </div>
 
                 <div
                     onClick={() => setStatusFilter('IN_PROGRESS')}
-                    className={`stat-card stat-card-emerald cursor-pointer transition-all ${statusFilter === 'IN_PROGRESS' ? 'ring-2 ring-primary ring-offset-2 scale-[1.02] shadow-md' : 'hover:-translate-y-0.5'}`}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer bg-white ${
+                        statusFilter === 'IN_PROGRESS'
+                            ? 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-xs'
+                            : 'border-slate-200/90 hover:border-slate-300'
+                    }`}
                 >
-                    <div className="stat-title text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Đang Triển Khai</div>
-                    <div className="stat-value text-2xl font-black text-emerald-600">
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Đang Triển Khai</div>
+                    <div className="text-2xl font-bold font-mono text-emerald-600 mt-1">
                         {initialProjects.filter(p => p.status === 'IN_PROGRESS' || p.status === 'TODO').length}
                     </div>
-                    <div className="text-xs text-slate-400 mt-1 font-medium">Đang tiến hành</div>
+                    <div className="text-[11px] text-slate-400 mt-0.5 font-medium">Đang tiến hành</div>
                 </div>
 
                 <div
                     onClick={() => setStatusFilter('PAUSED')}
-                    className={`stat-card stat-card-amber cursor-pointer transition-all ${statusFilter === 'PAUSED' ? 'ring-2 ring-primary ring-offset-2 scale-[1.02] shadow-md' : 'hover:-translate-y-0.5'}`}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer bg-white ${
+                        statusFilter === 'PAUSED'
+                            ? 'border-amber-500 ring-2 ring-amber-500/20 shadow-xs'
+                            : 'border-slate-200/90 hover:border-slate-300'
+                    }`}
                 >
-                    <div className="stat-title text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Tạm Ngưng</div>
-                    <div className="stat-value text-2xl font-black text-amber-600">
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Tạm Ngưng</div>
+                    <div className="text-2xl font-bold font-mono text-amber-600 mt-1">
                         {initialProjects.filter(p => p.status === 'PAUSED').length}
                     </div>
-                    <div className="text-xs text-slate-400 mt-1 font-medium">Tạm hoãn</div>
+                    <div className="text-[11px] text-slate-400 mt-0.5 font-medium">Tạm hoãn</div>
                 </div>
 
                 <div
                     onClick={() => setStatusFilter('DONE')}
-                    className={`stat-card stat-card-green cursor-pointer transition-all ${statusFilter === 'DONE' ? 'ring-2 ring-primary ring-offset-2 scale-[1.02] shadow-md' : 'hover:-translate-y-0.5'}`}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer bg-white ${
+                        statusFilter === 'DONE'
+                            ? 'border-emerald-600 ring-2 ring-emerald-600/20 shadow-xs'
+                            : 'border-slate-200/90 hover:border-slate-300'
+                    }`}
                 >
-                    <div className="stat-title text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Hoàn Thành</div>
-                    <div className="stat-value text-2xl font-black text-emerald-700">
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Hoàn Thành</div>
+                    <div className="text-2xl font-bold font-mono text-emerald-700 mt-1">
                         {initialProjects.filter(p => p.status === 'DONE').length}
                     </div>
-                    <div className="text-xs text-slate-400 mt-1 font-medium">Đã kết thúc</div>
+                    <div className="text-[11px] text-slate-400 mt-0.5 font-medium">Đã kết thúc</div>
                 </div>
 
                 <div
                     onClick={() => setStatusFilter('CANCELLED')}
-                    className={`stat-card stat-card-red cursor-pointer transition-all ${statusFilter === 'CANCELLED' ? 'ring-2 ring-primary ring-offset-2 scale-[1.02] shadow-md' : 'hover:-translate-y-0.5'}`}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer bg-white ${
+                        statusFilter === 'CANCELLED'
+                            ? 'border-rose-500 ring-2 ring-rose-500/20 shadow-xs'
+                            : 'border-slate-200/90 hover:border-slate-300'
+                    }`}
                 >
-                    <div className="stat-title text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Đã Hủy</div>
-                    <div className="stat-value text-2xl font-black text-rose-600">
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Đã Hủy</div>
+                    <div className="text-2xl font-bold font-mono text-rose-600 mt-1">
                         {initialProjects.filter(p => p.status === 'CANCELLED').length}
                     </div>
-                    <div className="text-xs text-slate-400 mt-1 font-medium">Đã hủy bỏ</div>
+                    <div className="text-[11px] text-slate-400 mt-0.5 font-medium">Đã hủy bỏ</div>
                 </div>
             </div>
 

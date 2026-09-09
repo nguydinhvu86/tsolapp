@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Card } from '@/app/components/ui/Card';
+import React, { useState, useMemo } from 'react';
 import { toggleUserActiveStatus, getUserLoginLogs } from './actions';
-import { Activity, MonitorSmartphone, Wifi, WifiOff, List, X } from 'lucide-react';
+import { Activity, MonitorSmartphone, Wifi, WifiOff, List, X, Users, ShieldCheck, ShieldAlert, Search, Laptop, Smartphone } from 'lucide-react';
 import { Modal } from '@/app/components/ui/Modal';
 import { AvatarImage } from '@/app/components/ui/AvatarImage';
 
@@ -35,6 +34,8 @@ interface UserData {
 export default function MonitoringClient({ users }: { users: UserData[] }) {
     const [data, setData] = useState(users);
     const [loadingId, setLoadingId] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('ALL');
 
     const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
     const [logs, setLogs] = useState<any[]>([]);
@@ -47,12 +48,35 @@ export default function MonitoringClient({ users }: { users: UserData[] }) {
         return diffInMinutes <= 15;
     };
 
+    // KPI Metrics
+    const totalUsers = data.length;
+    const onlineUsers = data.filter(u => isOnline(u.lastActiveAt)).length;
+    const offlineUsers = totalUsers - onlineUsers;
+    const disabledUsers = data.filter(u => !u.isActive).length;
+
+    // Filtered users
+    const filteredUsers = useMemo(() => {
+        return data.filter(u => {
+            const matchesSearch = 
+                (u.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (u.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (u.role || '').toLowerCase().includes(searchTerm.toLowerCase());
+            
+            const online = isOnline(u.lastActiveAt);
+            let matchesStatus = true;
+            if (statusFilter === 'ONLINE') matchesStatus = online;
+            else if (statusFilter === 'OFFLINE') matchesStatus = !online;
+            else if (statusFilter === 'DISABLED') matchesStatus = !u.isActive;
+
+            return matchesSearch && matchesStatus;
+        });
+    }, [data, searchTerm, statusFilter]);
+
     const handleToggleStatus = async (userId: string, currentStatus: boolean) => {
         setLoadingId(userId);
         try {
             const res = await toggleUserActiveStatus(userId);
             if (res.success) {
-                // Optimistic UI update
                 setData(prev => prev.map(u => u.id === userId ? { ...u, isActive: !currentStatus } : u));
             } else {
                 alert(res.error || 'Lỗi khi cập nhật trạng thái');
@@ -84,230 +108,290 @@ export default function MonitoringClient({ users }: { users: UserData[] }) {
     };
 
     return (
-        <Card>
-            <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold m-0 flex items-center gap-2 text-gray-900">
-                    <Activity size={20} className="text-primary" /> Bảng Giám Sát Người Dùng
-                </h2>
+        <div className="space-y-6 w-full">
+            {/* Header */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 ring-4 ring-emerald-50"></span>
+                        Bảng Giám Sát Người Dùng
+                    </h1>
+                    <p className="text-xs text-slate-500 mt-1 font-medium">
+                        Theo dõi thời gian thực phiên hoạt động, thiết bị đăng nhập và kiểm soát quyền truy cập tài khoản
+                    </p>
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Live Monitor
+                    </span>
+                </div>
             </div>
 
-            {/* Desktop View */}
-            <div className="hidden md:block overflow-x-auto rounded-lg border border-gray-200 bg-white">
-                <table className="w-full border-collapse text-left">
-                    <thead>
-                        <tr className="bg-gray-50 border-b border-gray-200">
-                            <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nhân sự</th>
-                            <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Vai trò</th>
-                            <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Tình trạng</th>
-                            <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Đăng nhập cuối</th>
-                            <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Quyền truy cập</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200 bg-white">
-                        {data.map((user) => {
-                            const online = isOnline(user.lastActiveAt);
-                            return (
-                                <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                                    <td className="p-4 whitespace-nowrap">
-                                        <div className="flex items-center gap-3">
-                                            <div className="relative flex-shrink-0">
-                                                <AvatarImage 
-                                                    src={user.avatar?.startsWith('http') ? user.avatar : user.avatar ? `/${user.avatar.replace(/^\//, '')}` : null} 
-                                                    name={user.name || user.email} 
-                                                    size={40} 
-                                                />
-                                                <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${online ? 'bg-green-500' : 'bg-slate-300'}`}></div>
-                                            </div>
-                                            <div>
-                                                <div className="font-semibold text-gray-900">{user.name || 'Chưa cập nhật tên'}</div>
-                                                <div className="text-xs text-gray-500">{user.email}</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="p-4 whitespace-nowrap">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-semibold inline-block ${user.role === 'ADMIN' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-700'
-                                            }`}>
-                                            {user.role}
-                                        </span>
-                                    </td>
-                                    <td className="p-4 whitespace-nowrap">
-                                        <div className="flex items-center gap-2">
-                                            {online ? <Wifi size={16} className="text-green-500" /> : <WifiOff size={16} className="text-slate-400" />}
-                                            <span className={`text-sm ${online ? 'font-medium text-green-600' : 'italic text-slate-500'}`}>
-                                                {online ? 'Đang Online' : 'Ngoại tuyến'}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td className="p-4 whitespace-nowrap">
-                                        <div className="text-sm">
-                                            {user.lastLoginAt ? (
-                                                <div className="text-gray-900 font-medium">{formatDate(new Date(user.lastLoginAt))}</div>
-                                            ) : (
-                                                <span className="text-gray-500 italic">Chưa đăng nhập</span>
-                                            )}
-                                            {user.currentPlatform && (
-                                                <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                                                    <MonitorSmartphone size={14} /> {user.currentPlatform}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td className="p-4 whitespace-nowrap text-right">
-                                        <div className="flex items-center justify-end gap-4">
-                                            <button
-                                                onClick={() => handleViewLogs(user)}
-                                                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 transition-colors font-medium border border-blue-200 bg-blue-50 px-2 py-1.5 rounded"
-                                            >
-                                                <List size={14} /> Chi tiết
-                                            </button>
-                                            <button
-                                                onClick={() => handleToggleStatus(user.id, user.isActive)}
-                                                disabled={loadingId === user.id}
-                                                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${user.isActive ? 'bg-blue-600' : 'bg-gray-200'
-                                                    } ${loadingId === user.id ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                aria-label="Kích hoạt tài khoản"
-                                            >
-                                                <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${user.isActive ? 'translate-x-5' : 'translate-x-0'
-                                                    }`} />
-                                            </button>
+            {/* KPI Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between hover:border-slate-300 transition-all">
+                    <div>
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Tổng Tài Khoản</div>
+                        <div className="flex items-baseline gap-1.5">
+                            <span className="text-3xl font-bold font-mono text-slate-900">{totalUsers}</span>
+                            <span className="text-xs text-slate-400 font-medium">user</span>
+                        </div>
+                        <div className="text-[11px] text-slate-400 mt-1 font-medium">Nhân sự trong hệ thống</div>
+                    </div>
+                    <div className="w-12 h-12 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600">
+                        <Users size={22} />
+                    </div>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between hover:border-emerald-200 transition-all">
+                    <div>
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Đang Trực Tuyến</div>
+                        <div className="flex items-baseline gap-1.5">
+                            <span className="text-3xl font-bold font-mono text-emerald-600">{onlineUsers}</span>
+                            <span className="text-xs text-slate-400 font-medium">online</span>
+                        </div>
+                        <div className="text-[11px] text-slate-400 mt-1 font-medium">Hoạt động trong 15 phút</div>
+                    </div>
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600">
+                        <Wifi size={22} />
+                    </div>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between hover:border-slate-300 transition-all">
+                    <div>
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Ngoại Tuyến</div>
+                        <div className="flex items-baseline gap-1.5">
+                            <span className="text-3xl font-bold font-mono text-slate-600">{offlineUsers}</span>
+                            <span className="text-xs text-slate-400 font-medium">offline</span>
+                        </div>
+                        <div className="text-[11px] text-slate-400 mt-1 font-medium">Chưa có phiên làm việc</div>
+                    </div>
+                    <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400">
+                        <WifiOff size={22} />
+                    </div>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between hover:border-rose-200 transition-all">
+                    <div>
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Bị Khóa Truy Cập</div>
+                        <div className="flex items-baseline gap-1.5">
+                            <span className="text-3xl font-bold font-mono text-rose-600">{disabledUsers}</span>
+                            <span className="text-xs text-slate-400 font-medium">tài khoản</span>
+                        </div>
+                        <div className="text-[11px] text-slate-400 mt-1 font-medium">Bị chặn đăng nhập</div>
+                    </div>
+                    <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600">
+                        <ShieldAlert size={22} />
+                    </div>
+                </div>
+            </div>
+
+            {/* Table Container */}
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+                {/* Search & Filter Toolbar */}
+                <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-wrap items-center justify-between gap-3">
+                    <div className="relative flex-1 max-w-md">
+                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input 
+                            type="text"
+                            placeholder="Tìm kiếm nhân sự theo tên, email, vai trò..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-9 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-xl outline-none focus:border-emerald-500 transition-all"
+                        />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                            {['ALL', 'ONLINE', 'OFFLINE', 'DISABLED'].map((st) => (
+                                <button
+                                    key={st}
+                                    onClick={() => setStatusFilter(st)}
+                                    className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                                        statusFilter === st 
+                                            ? 'bg-white text-slate-900 shadow-xs' 
+                                            : 'text-slate-500 hover:text-slate-900'
+                                    }`}
+                                >
+                                    {st === 'ALL' ? 'Tất cả' : st === 'ONLINE' ? 'Đang Online' : st === 'OFFLINE' ? 'Ngoại tuyến' : 'Đã khóa'}
+                                </button>
+                            ))}
+                        </div>
+                        <span className="text-[11px] font-bold text-slate-600 bg-slate-200/70 px-2.5 py-1 rounded-full">
+                            {filteredUsers.length} tài khoản
+                        </span>
+                    </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-[11px] font-bold uppercase tracking-wider">
+                            <tr>
+                                <th className="px-4 py-3 text-left">Nhân Sự</th>
+                                <th className="px-4 py-3 text-center">Vai Trò</th>
+                                <th className="px-4 py-3 text-left">Tình Trạng</th>
+                                <th className="px-4 py-3 text-left">Đăng Nhập Cuối</th>
+                                <th className="px-4 py-3 text-right">Quyền Truy Cập</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-xs">
+                            {filteredUsers.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="py-16 text-center text-slate-500 bg-slate-50/30">
+                                        <div className="flex flex-col items-center justify-center">
+                                            <Users className="w-10 h-10 text-slate-300 mb-2.5" strokeWidth={1.5} />
+                                            <h3 className="text-sm font-bold text-slate-700">Không tìm thấy tài khoản phù hợp</h3>
+                                            <p className="text-xs text-slate-400 mt-1">Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc trạng thái.</p>
                                         </div>
                                     </td>
                                 </tr>
-                            );
-                        })}
-                        {data.length === 0 && (
-                            <tr>
-                                <td colSpan={5} className="p-8 text-center text-gray-500 bg-gray-50">
-                                    Không có dữ liệu người dùng.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
+                            ) : filteredUsers.map((user) => {
+                                const online = isOnline(user.lastActiveAt);
+                                return (
+                                    <tr key={user.id} className="hover:bg-slate-50/70 transition-colors">
+                                        {/* User Identity */}
+                                        <td className="px-4 py-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className="relative shrink-0">
+                                                    <AvatarImage 
+                                                        src={user.avatar?.startsWith('http') ? user.avatar : user.avatar ? `/${user.avatar.replace(/^\//, '')}` : null} 
+                                                        name={user.name || user.email} 
+                                                        size={36} 
+                                                        className="border border-slate-200"
+                                                    />
+                                                    <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ring-2 ring-white ${online ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <div className="font-bold text-slate-900 truncate">{user.name || 'Chưa cập nhật tên'}</div>
+                                                    <div className="text-[11px] text-slate-400 truncate">{user.email}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        {/* Role */}
+                                        <td className="px-4 py-3 text-center">
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-bold border ${
+                                                user.role === 'ADMIN' 
+                                                    ? 'bg-indigo-50 text-indigo-700 border-indigo-200' 
+                                                    : 'bg-slate-100 text-slate-700 border-slate-200'
+                                            }`}>
+                                                {user.role}
+                                            </span>
+                                        </td>
+
+                                        {/* Online status */}
+                                        <td className="px-4 py-3">
+                                            <div className="flex items-center gap-2">
+                                                {online ? (
+                                                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                                        Đang Online
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium text-slate-500 bg-slate-100 border border-slate-200">
+                                                        <WifiOff size={11} className="text-slate-400" />
+                                                        Ngoại tuyến
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
+
+                                        {/* Last login & device */}
+                                        <td className="px-4 py-3">
+                                            <div>
+                                                {user.lastLoginAt ? (
+                                                    <div className="font-mono text-xs font-semibold text-slate-800">
+                                                        {formatDate(new Date(user.lastLoginAt))}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-[11px] text-slate-400 italic">Chưa đăng nhập</span>
+                                                )}
+                                                {user.currentPlatform && (
+                                                    <div className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                                                        <MonitorSmartphone size={12} className="text-slate-400 shrink-0" />
+                                                        <span>{user.currentPlatform}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </td>
+
+                                        {/* Actions & Access Toggle */}
+                                        <td className="px-4 py-3 text-right">
+                                            <div className="flex items-center justify-end gap-3">
+                                                <button
+                                                    onClick={() => handleViewLogs(user)}
+                                                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2.5 py-1 rounded-lg transition-all cursor-pointer"
+                                                >
+                                                    <List size={12} /> Chi tiết
+                                                </button>
+                                                
+                                                <button
+                                                    onClick={() => handleToggleStatus(user.id, user.isActive)}
+                                                    disabled={loadingId === user.id}
+                                                    title={user.isActive ? "Bấm để khóa tài khoản" : "Bấm để mở khóa tài khoản"}
+                                                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                                                        user.isActive ? 'bg-emerald-600' : 'bg-slate-300'
+                                                    } ${loadingId === user.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                >
+                                                    <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
+                                                        user.isActive ? 'translate-x-4' : 'translate-x-0'
+                                                    }`} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
-            {/* Mobile View */}
-            <div className="md:hidden flex flex-col gap-4 mt-6">
-                {data.map((user) => {
-                    const online = isOnline(user.lastActiveAt);
-                    return (
-                        <div key={user.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-3">
-                            <div className="flex justify-between items-start gap-2">
-                                <div className="flex-1 min-w-0 flex items-center gap-3">
-                                    <div className="relative flex-shrink-0">
-                                        <AvatarImage 
-                                            src={user.avatar?.startsWith('http') ? user.avatar : user.avatar ? `/${user.avatar.replace(/^\//, '')}` : null} 
-                                            name={user.name || user.email} 
-                                            size={40} 
-                                        />
-                                        <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${online ? 'bg-green-500' : 'bg-slate-300'}`}></div>
-                                    </div>
-                                    <div className="min-w-0">
-                                        <div className="font-semibold text-base text-primary truncate">
-                                            {user.name || '---'}
-                                        </div>
-                                        <div className="text-sm text-gray-500 mt-1 truncate">{user.email}</div>
-                                    </div>
-                                </div>
-                                <span className={`flex-shrink-0 px-2 py-1 rounded-full text-[0.7rem] font-semibold ${user.role === 'ADMIN' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-700'
-                                    }`}>
-                                    {user.role}
-                                </span>
-                            </div>
-
-                            <div className="mt-3 flex flex-col gap-2">
-                                <div className="flex items-center gap-2">
-                                    {online ? <Wifi size={16} className="text-green-500" /> : <WifiOff size={16} className="text-slate-400" />}
-                                    <span className={`text-sm ${online ? 'font-medium text-green-600' : 'italic text-slate-500'}`}>
-                                        {online ? 'Đang Online' : 'Ngoại tuyến'}
-                                    </span>
-                                </div>
-                                <div className="text-sm bg-gray-50 p-2 rounded-lg border border-gray-100">
-                                    {user.lastLoginAt ? (
-                                        <div className="text-gray-900 font-medium">Đăng nhập: {formatDate(new Date(user.lastLoginAt))}</div>
-                                    ) : (
-                                        <span className="text-gray-500 italic">Chưa đăng nhập</span>
-                                    )}
-                                    {user.currentPlatform && (
-                                        <div className="text-xs text-gray-500 flex items-center gap-1 mt-1.5">
-                                            <MonitorSmartphone size={14} /> {user.currentPlatform}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="flex justify-between items-center mt-2 pt-3 border-t border-gray-100">
-                                <button
-                                    onClick={() => handleViewLogs(user)}
-                                    className="flex items-center gap-1.5 text-xs text-blue-600 font-semibold bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100"
-                                >
-                                    <List size={14} /> Lịch sử
-                                </button>
-                                <div className="flex items-center gap-3">
-                                    <span className={`text-sm font-medium ${user.isActive ? 'text-green-600' : 'text-red-500'}`}>
-                                        {user.isActive ? 'Đang Kính hoạt' : 'Đã Khóa'}
-                                    </span>
-                                    <button
-                                        onClick={() => handleToggleStatus(user.id, user.isActive)}
-                                        disabled={loadingId === user.id}
-                                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${user.isActive ? 'bg-blue-600' : 'bg-gray-200'
-                                            } ${loadingId === user.id ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                        aria-label="Kích hoạt tài khoản"
-                                    >
-                                        <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${user.isActive ? 'translate-x-5' : 'translate-x-0'
-                                            }`} />
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })}
-                {data.length === 0 && (
-                    <div className="p-8 text-center text-gray-500 bg-gray-50 rounded-xl border border-gray-200">
-                        Không có dữ liệu người dùng.
-                    </div>
-                )}
-            </div>
-
+            {/* Login History Modal */}
             <Modal
                 isOpen={!!selectedUser}
                 onClose={() => setSelectedUser(null)}
                 title={`Lịch sử truy cập - ${selectedUser?.name || selectedUser?.email}`}
                 maxWidth="max-w-4xl"
             >
-                <div className="p-4" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+                <div className="p-5" style={{ maxHeight: '65vh', overflowY: 'auto' }}>
                     {logsLoading ? (
-                        <div className="flex justify-center p-8 text-gray-500">Đang tải dữ liệu...</div>
+                        <div className="flex justify-center p-12 text-slate-400 text-xs font-medium">Đang tải dữ liệu phiên làm việc...</div>
                     ) : logs.length === 0 ? (
-                        <div className="text-center p-8 text-gray-500 bg-gray-50 rounded-lg">Không có lịch sử đăng nhập nào được ghi nhận.</div>
+                        <div className="text-center p-12 text-slate-400 bg-slate-50 rounded-2xl border border-slate-200 text-xs">
+                            Không có lịch sử đăng nhập nào được ghi nhận.
+                        </div>
                     ) : (
-                        <div className="overflow-x-auto rounded-lg border border-gray-200">
-                            <table className="w-full border-collapse text-left text-sm">
-                                <thead>
-                                    <tr className="bg-gray-50 border-b border-gray-200">
-                                        <th className="py-2 px-3 font-semibold text-gray-600">Đăng nhập</th>
-                                        <th className="py-2 px-3 font-semibold text-gray-600">Thời gian kết thúc</th>
-                                        <th className="py-2 px-3 font-semibold text-gray-600">Thiết bị</th>
-                                        <th className="py-2 px-3 font-semibold text-gray-600">IP</th>
+                        <div className="overflow-x-auto rounded-xl border border-slate-200">
+                            <table className="w-full border-collapse text-left text-xs">
+                                <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase text-slate-600 tracking-wider">
+                                    <tr>
+                                        <th className="py-2.5 px-3.5">Thời Gian Đăng Nhập</th>
+                                        <th className="py-2.5 px-3.5">Kết Thúc Phiên</th>
+                                        <th className="py-2.5 px-3.5">Thiết Bị / OS</th>
+                                        <th className="py-2.5 px-3.5">Địa Chỉ IP</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-200">
+                                <tbody className="divide-y divide-slate-100">
                                     {logs.map((log) => (
-                                        <tr key={log.id} className="hover:bg-slate-50">
-                                            <td className="py-2 px-3 whitespace-nowrap text-gray-900 font-medium">
+                                        <tr key={log.id} className="hover:bg-slate-50/70 transition-colors">
+                                            <td className="py-2.5 px-3.5 font-mono font-bold text-slate-900">
                                                 {formatDate(new Date(log.loginAt))}
                                             </td>
-                                            <td className="py-2 px-3 whitespace-nowrap">
+                                            <td className="py-2.5 px-3.5">
                                                 {log.logoutAt ? (
-                                                    <span className="text-gray-900">{formatDate(new Date(log.logoutAt))}</span>
+                                                    <span className="font-mono text-slate-700">{formatDate(new Date(log.logoutAt))}</span>
                                                 ) : (
-                                                    <span className="text-green-600 font-medium italic text-sm">Đang giữ phiên</span>
+                                                    <span className="text-emerald-600 font-bold italic text-xs bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                                        Đang giữ phiên
+                                                    </span>
                                                 )}
                                             </td>
-                                            <td className="py-2 px-3 whitespace-nowrap text-gray-500">
+                                            <td className="py-2.5 px-3.5 text-slate-600">
                                                 {log.platform || 'Bị ẩn'}
                                             </td>
-                                            <td className="py-2 px-3 whitespace-nowrap text-gray-500">
+                                            <td className="py-2.5 px-3.5 font-mono text-slate-500">
                                                 {log.ipAddress || '---'}
                                             </td>
                                         </tr>
@@ -318,6 +402,6 @@ export default function MonitoringClient({ users }: { users: UserData[] }) {
                     )}
                 </div>
             </Modal>
-        </Card>
+        </div>
     );
 }

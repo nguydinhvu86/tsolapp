@@ -146,176 +146,193 @@ export default function HrApprovalClient({ initialData }: { initialData: any[] }
     };
 
     return (
-        <Card>
-            <div className="flex justify-between items-center" style={{ marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-                <div className="flex items-center gap-3">
-                    <h2 style={{ fontSize: '1.125rem', fontWeight: 600, margin: 0 }}>Quản Lý Đơn Nghỉ Phép</h2>
-                    <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)', background: 'var(--bg-muted)', padding: '0.125rem 0.5rem', borderRadius: '1rem' }}>
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 ring-4 ring-indigo-50"></span>
+                        Duyệt Đơn Nghỉ Phép
+                    </h1>
+                    <p className="text-xs text-slate-500 mt-1 font-medium">
+                        Phê duyệt và quản lý các yêu cầu nghỉ phép, nghỉ ốm của toàn bộ nhân sự ({filteredRequests.length} đơn)
+                    </p>
+                </div>
+                <div className="flex items-center gap-2.5">
+                    <Button onClick={exportExcel} variant="secondary" className="px-3.5 py-2 text-xs font-semibold rounded-xl flex items-center gap-1.5 border-slate-200 text-slate-700 hover:bg-slate-50 shadow-none transition-all">
+                        <FileDown size={15} className="text-emerald-600" /> Xuất Excel
+                    </Button>
+                    <Button onClick={exportPDF} variant="secondary" className="px-3.5 py-2 text-xs font-semibold rounded-xl flex items-center gap-1.5 border-slate-200 text-slate-700 hover:bg-slate-50 shadow-none transition-all">
+                        <FileText size={15} className="text-rose-600" /> Xuất PDF
+                    </Button>
+                </div>
+            </div>
+
+            {/* Table & Filters Card */}
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+                <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-wrap gap-3 items-center justify-between">
+                    <div className="flex flex-wrap gap-2.5 items-center flex-1">
+                        <div className="flex items-center gap-1.5 bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs">
+                            <span className="text-[11px] font-bold text-slate-500">Từ:</span>
+                            <input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="bg-transparent text-xs text-slate-800 font-medium outline-none cursor-pointer" />
+                            <span className="text-[11px] font-bold text-slate-500 ml-1">Đến:</span>
+                            <input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="bg-transparent text-xs text-slate-800 font-medium outline-none cursor-pointer" />
+                        </div>
+
+                        <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-700 font-medium">
+                            <option value="ALL">Tất cả trạng thái</option>
+                            <option value="PENDING">Đang chờ duyệt</option>
+                            <option value="APPROVED">Đã duyệt</option>
+                            <option value="REJECTED">Bị từ chối</option>
+                        </select>
+
+                        <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-700 font-medium">
+                            <option value="ALL">Tất cả loại đơn</option>
+                            <option value="ANNUAL_LEAVE">Nghỉ Phép Năm</option>
+                            <option value="SICK_LEAVE">Nghỉ Ốm</option>
+                            <option value="UNPAID_LEAVE">Nghỉ Không Lương</option>
+                        </select>
+
+                        <input 
+                            placeholder="Tìm nhân viên..." 
+                            value={filterEmp} 
+                            onChange={(e) => setFilterEmp(e.target.value)} 
+                            className="px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-800 placeholder:text-slate-400 font-medium w-40"
+                        />
+
+                        <input 
+                            placeholder="Tìm người duyệt..." 
+                            value={filterApprover} 
+                            onChange={(e) => setFilterApprover(e.target.value)} 
+                            className="px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-800 placeholder:text-slate-400 font-medium w-40"
+                        />
+
+                        <button 
+                            onClick={() => { setFilterEmp(''); setFilterApprover(''); setFilterType('ALL'); setFilterStatus('ALL'); setFilterDateFrom(''); setFilterDateTo(''); }}
+                            className="text-xs text-slate-500 hover:text-slate-800 font-medium underline px-2 py-1 cursor-pointer"
+                        >
+                            Xóa lọc
+                        </button>
+                    </div>
+
+                    <span className="text-[11px] font-bold text-slate-600 bg-slate-200/70 px-2.5 py-0.5 rounded-full">
                         {filteredRequests.length} đơn
                     </span>
                 </div>
-                <div className="flex gap-2">
-                    <Button onClick={exportExcel} variant="secondary" className="gap-2">
-                        <FileDown size={16} /> Xuất Excel
-                    </Button>
-                    <Button onClick={exportPDF} variant="secondary" className="gap-2">
-                        <FileText size={16} /> Xuất PDF
-                    </Button>
+
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-[11px] font-bold uppercase tracking-wider">
+                            <tr>
+                                <th className="px-4 py-3 text-left w-[110px]">Ngày Tạo</th>
+                                <th className="px-4 py-3 text-left min-w-[160px]">Nhân viên</th>
+                                <th className="px-4 py-3 text-left w-[130px]">Loại Đơn</th>
+                                <th className="px-4 py-3 text-left min-w-[140px]">Thời gian</th>
+                                <th className="px-4 py-3 text-left min-w-[160px]">Lý do</th>
+                                <th className="px-4 py-3 text-center w-[110px]">Minh Chứng</th>
+                                <th className="px-4 py-3 text-left w-[160px]">Trạng Thái</th>
+                                <th className="px-4 py-3 text-center w-[180px]">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-xs">
+                            {filteredRequests.length === 0 ? (
+                                <tr>
+                                    <td colSpan={8} className="py-16 text-center text-slate-500 bg-slate-50/30">
+                                        <div className="flex flex-col items-center justify-center">
+                                            <Check size={32} className="text-emerald-500 mb-2" />
+                                            <span className="text-xs font-semibold text-slate-600">Không tìm thấy đơn nào cần xử lý.</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ) : filteredRequests.map((r: any) => (
+                                <tr key={r.id} className="hover:bg-slate-50/70 transition-colors">
+                                    <td className="px-4 py-3 text-slate-500 text-[11px]">
+                                        {new Date(r.createdAt).toLocaleDateString('vi-VN')}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="w-8 h-8 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-700 shrink-0">
+                                                {r.user?.name?.charAt(0) || '?'}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <div className="font-bold text-slate-900 truncate" title={r.user?.name}>{r.user?.name}</div>
+                                                <div className="text-[10px] text-slate-400 truncate" title={r.user?.email}>{r.user?.email}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-3 font-semibold text-slate-800">
+                                        {typeLabels[r.type] || r.type}
+                                    </td>
+                                    <td className="px-4 py-3 text-slate-600">
+                                        <div className="font-medium text-slate-800">{new Date(r.startDate).toLocaleDateString('vi-VN')}</div>
+                                        <div className="text-[10px] text-slate-400 font-medium">đến {new Date(r.endDate).toLocaleDateString('vi-VN')}</div>
+                                    </td>
+                                    <td className="px-4 py-3 max-w-[220px]">
+                                        <div className="line-clamp-2 text-slate-600 text-[11px]" title={r.reason}>{r.reason}</div>
+                                    </td>
+                                    <td className="px-4 py-3 text-center">
+                                        {r.imageUrl ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => setViewImage(r.imageUrl)}
+                                                className="inline-flex items-center px-2 py-1 bg-indigo-50 text-indigo-600 hover:text-indigo-800 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer"
+                                            >
+                                                Xem Ảnh
+                                            </button>
+                                        ) : <span className="text-slate-300 text-xs">-</span>}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <div className="flex flex-col gap-1">
+                                            {r.status === 'PENDING' && <span className="w-fit px-2 py-0.5 rounded-md text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">Đang Chờ</span>}
+                                            {r.status === 'APPROVED' && <span className="w-fit px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">Đã Duyệt</span>}
+                                            {r.status === 'REJECTED' && <span className="w-fit px-2 py-0.5 rounded-md text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">Từ Chối</span>}
+
+                                            {r.approver && r.status !== 'PENDING' && (
+                                                <div className="text-[10px] text-slate-500 mt-0.5">
+                                                    Bởi: <strong title={r.approver.name} className="text-slate-700 truncate max-w-[120px] inline-block align-bottom">{r.approver.name}</strong>
+                                                </div>
+                                            )}
+                                            {r.status === 'REJECTED' && r.approverNote && (
+                                                <div className="text-[10px] text-rose-600 mt-1 italic border-l-2 border-rose-300 pl-1">
+                                                    Lý do: {r.approverNote}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-3 text-center">
+                                        {r.status === 'PENDING' ? (
+                                            <div className="flex items-center justify-center gap-1.5">
+                                                <button
+                                                    onClick={() => handleResolve(r.id, 'APPROVE')}
+                                                    disabled={loadingId === r.id}
+                                                    className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 transition-all cursor-pointer"
+                                                >
+                                                    <Check size={13} /> Duyệt
+                                                </button>
+                                                <button
+                                                    onClick={() => { setRejectingId(r.id); setRejectNote(''); }}
+                                                    disabled={loadingId === r.id}
+                                                    className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 flex items-center gap-1 transition-all cursor-pointer"
+                                                >
+                                                    <X size={13} /> Từ chối
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <span className="text-slate-400 text-xs font-medium">Đã xử lý</span>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             </div>
-
-            <div className="flex gap-4 mb-4 flex-wrap items-end bg-slate-50 p-4 rounded-lg border border-slate-200">
-                <div className="flex-1 min-w-[150px]">
-                    <Input label="Ngày tạo (Từ)" type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} />
-                </div>
-                <div className="flex-1 min-w-[150px]">
-                    <Input label="Ngày tạo (Đến)" type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} />
-                </div>
-                <div className="flex-1 min-w-[150px] flex flex-col gap-1.5">
-                    <label style={{ fontSize: '0.875rem', fontWeight: 500 }}>Trạng Thái</label>
-                    <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} style={{ padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', outline: 'none' }}>
-                        <option value="ALL">Tất cả</option>
-                        <option value="PENDING">Đang chờ duyệt</option>
-                        <option value="APPROVED">Đã duyệt</option>
-                        <option value="REJECTED">Bị từ chối</option>
-                    </select>
-                </div>
-                <div className="flex-1 min-w-[150px] flex flex-col gap-1.5">
-                    <label style={{ fontSize: '0.875rem', fontWeight: 500 }}>Loại Đơn</label>
-                    <select value={filterType} onChange={(e) => setFilterType(e.target.value)} style={{ padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', outline: 'none' }}>
-                        <option value="ALL">Tất cả</option>
-                        <option value="ANNUAL_LEAVE">Nghỉ Phép Năm</option>
-                        <option value="SICK_LEAVE">Nghỉ Ốm</option>
-                        <option value="UNPAID_LEAVE">Nghỉ Không Lương</option>
-                    </select>
-                </div>
-                <div className="flex-1 min-w-[160px]">
-                    <Input label="Tìm Nhân Viên" placeholder="Tên hoặc email..." value={filterEmp} onChange={(e) => setFilterEmp(e.target.value)} />
-                </div>
-                <div className="flex-1 min-w-[160px]">
-                    <Input label="Tìm Người Duyệt" placeholder="Tên người duyệt..." value={filterApprover} onChange={(e) => setFilterApprover(e.target.value)} />
-                </div>
-                <div>
-                    <Button variant="secondary" onClick={() => { setFilterEmp(''); setFilterApprover(''); setFilterType('ALL'); setFilterStatus('ALL'); setFilterDateFrom(''); setFilterDateTo(''); }}>
-                        Xóa Lọc
-                    </Button>
-                </div>
-            </div>
-
-            <Table>
-                <thead>
-                    <tr>
-                        <th style={{ width: '100px' }}>Ngày Tạo</th>
-                        <th style={{ minWidth: '150px' }}>Nhân viên</th>
-                        <th style={{ width: '130px' }}>Loại Đơn</th>
-                        <th style={{ minWidth: '130px' }}>Thời gian</th>
-                        <th style={{ minWidth: '150px' }}>Lý do</th>
-                        <th style={{ width: '100px', textAlign: 'center' }}>Minh Chứng</th>
-                        <th style={{ width: '150px' }}>Trạng Thái</th>
-                        <th style={{ width: '170px', textAlign: 'center' }}>Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {filteredRequests.length === 0 ? (
-                        <tr>
-                            <td colSpan={8} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
-                                <div className="flex flex-col items-center gap-2">
-                                    <Check size={32} style={{ color: 'var(--success)' }} />
-                                    <span>Không tìm thấy đơn nào.</span>
-                                </div>
-                            </td>
-                        </tr>
-                    ) : filteredRequests.map((r: any) => (
-                        <tr key={r.id}>
-                            <td style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                                {new Date(r.createdAt).toLocaleDateString('vi-VN')}
-                            </td>
-                            <td>
-                                <div className="flex items-center gap-2">
-                                    <div style={{ width: '2rem', height: '2rem', borderRadius: '50%', background: 'var(--bg-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: 'var(--text-muted)', flexShrink: 0 }}>
-                                        {r.user?.name?.charAt(0) || '?'}
-                                    </div>
-                                    <div className="min-w-0">
-                                        <div style={{ fontWeight: 500 }} className="truncate" title={r.user?.name}>{r.user?.name}</div>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }} className="truncate" title={r.user?.email}>{r.user?.email}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td style={{ fontWeight: 500 }}>
-                                {typeLabels[r.type] || r.type}
-                            </td>
-                            <td>
-                                <div style={{ fontSize: '0.875rem' }}>
-                                    Từ: {new Date(r.startDate).toLocaleDateString('vi-VN')} <br />
-                                    Đến: {new Date(r.endDate).toLocaleDateString('vi-VN')}
-                                </div>
-                            </td>
-                            <td style={{ maxWidth: '200px' }}>
-                                <div className="line-clamp-2" style={{ fontSize: '0.875rem' }} title={r.reason}>{r.reason}</div>
-                            </td>
-                            <td style={{ textAlign: 'center' }}>
-                                {r.imageUrl ? (
-                                    <button
-                                        type="button"
-                                        onClick={() => setViewImage(r.imageUrl)}
-                                        style={{ display: 'inline-flex', padding: '0.25rem 0.5rem', background: 'var(--primary-light)', color: 'var(--primary)', borderRadius: '0.25rem', fontSize: '0.75rem', fontWeight: 500, border: 'none', cursor: 'pointer' }}
-                                    >
-                                        Xem Ảnh
-                                    </button>
-                                ) : <span className="text-slate-400 text-xs">-</span>}
-                            </td>
-                            <td>
-                                <div className="flex flex-col gap-1">
-                                    {r.status === 'PENDING' && <span className="w-fit p-1 px-2 rounded-full text-xs font-medium bg-amber-100 text-amber-800">ĐANG CHỜ</span>}
-                                    {r.status === 'APPROVED' && <span className="w-fit p-1 px-2 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">ĐÃ DUYỆT</span>}
-                                    {r.status === 'REJECTED' && <span className="w-fit p-1 px-2 rounded-full text-xs font-medium bg-rose-100 text-rose-800">TỪ CHỐI</span>}
-
-                                    {r.approver && r.status !== 'PENDING' && (
-                                        <div className="text-xs text-slate-500 mt-1">
-                                            Bởi: <strong title={r.approver.name} className="truncate max-w-[120px] inline-block align-bottom">{r.approver.name}</strong>
-                                        </div>
-                                    )}
-                                    {r.status === 'REJECTED' && r.approverNote && (
-                                        <div className="text-[11px] text-rose-600 mt-1 italic border-l-2 border-rose-300 pl-1">
-                                            Lý do: {r.approverNote}
-                                        </div>
-                                    )}
-                                </div>
-                            </td>
-                            <td>
-                                {r.status === 'PENDING' ? (
-                                    <div className="flex justify-center gap-2">
-                                        <Button
-                                            onClick={() => handleResolve(r.id, 'APPROVE')}
-                                            disabled={loadingId === r.id}
-                                            style={{ background: 'var(--success)', color: '#fff', borderColor: 'var(--success)' }}
-                                            className="gap-1 px-2 py-1"
-                                        >
-                                            <Check size={16} /> Duyệt
-                                        </Button>
-                                        <Button
-                                            onClick={() => { setRejectingId(r.id); setRejectNote(''); }}
-                                            disabled={loadingId === r.id}
-                                            variant="danger"
-                                            className="gap-1 px-2 py-1"
-                                        >
-                                            <X size={16} /> Từ chối
-                                        </Button>
-                                    </div>
-                                ) : (
-                                    <div className="text-center text-slate-400 text-sm italic">Đã xử lý</div>
-                                )}
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </Table>
 
             <Modal isOpen={!!rejectingId} onClose={() => setRejectingId(null)} title="Lý do Từ Chối">
                 <form onSubmit={confirmReject} className="flex flex-col gap-4">
                     <div className="flex flex-col gap-1.5">
-                        <label style={{ fontSize: '0.875rem', fontWeight: 500 }}>
-                            Vui lòng cho biết lý do từ chối đơn này <span style={{ color: 'var(--danger)' }}>*</span>
+                        <label className="text-xs font-semibold text-slate-700">
+                            Vui lòng cho biết lý do từ chối đơn này <span className="text-rose-500">*</span>
                         </label>
                         <textarea
                             autoFocus
@@ -324,7 +341,7 @@ export default function HrApprovalClient({ initialData }: { initialData: any[] }
                             onChange={(e) => setRejectNote(e.target.value)}
                             rows={3}
                             disabled={loadingId === rejectingId}
-                            style={{ padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', outline: 'none', resize: 'vertical' }}
+                            className="p-3 text-xs rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 text-slate-800 resize-y"
                             placeholder="Nhập lý do chi tiết để nhân viên biết..."
                         ></textarea>
                     </div>
@@ -338,17 +355,17 @@ export default function HrApprovalClient({ initialData }: { initialData: any[] }
             </Modal>
 
             <Modal isOpen={!!viewImage} onClose={() => setViewImage(null)} title="Ảnh Minh Chứng">
-                <div className="flex justify-center p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                <div className="flex justify-center p-4 bg-slate-50 border border-slate-200 rounded-xl">
                     {viewImage && (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                             src={viewImage}
                             alt="Minh Chứng y tế / đơn từ"
-                            style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: '4px' }}
+                            className="max-w-full max-h-[70vh] object-contain rounded-lg"
                         />
                     )}
                 </div>
             </Modal>
-        </Card>
+        </div>
     );
 }

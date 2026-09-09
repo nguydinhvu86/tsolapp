@@ -3,32 +3,104 @@
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Plus, Search, LayoutGrid, List, Calendar, Phone, FileText, CheckCircle, Trash2, ChevronUp, ChevronDown, Edit2, Eye, X, ArrowUpDown } from 'lucide-react';
+import { 
+    Plus, Search, LayoutGrid, List, Calendar, Phone, FileText, CheckCircle2, 
+    Trash2, ChevronUp, ChevronDown, Edit2, Eye, X, ArrowUpDown, Target, 
+    User, DollarSign, Clock, Sparkles, AlertCircle, Filter, ArrowRight,
+    Building2, Mail, Users
+} from 'lucide-react';
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { updateLeadStatus } from './actions';
-import { Card } from '@/app/components/ui/Card';
-import { Table } from '@/app/components/ui/Table';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { useTranslation } from '@/app/i18n/LanguageContext';
+import { ClickToCallButton } from '@/app/components/ClickToCallButton';
 
-export function LeadsClient({ leads, customers, users, isAdminOrManager }: { leads: any[], customers: any[], users: any[], isAdminOrManager?: boolean }) {
+function getInitials(name: string) {
+    if (!name) return 'U';
+    const clean = name.trim();
+    const parts = clean.split(/\s+/).filter(Boolean);
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+export function LeadsClient({ 
+    leads, 
+    customers, 
+    users, 
+    isAdminOrManager 
+}: { 
+    leads: any[], 
+    customers: any[], 
+    users: any[], 
+    isAdminOrManager?: boolean 
+}) {
     const { t } = useTranslation();
     const router = useRouter();
 
     const STATUSES = useMemo(() => [
-        { id: 'NEW', label: t('leads.statusNew'), color: { bg: '#e0e7ff', text: '#3730a3', border: '#c7d2fe', colBg: '#f8fafc' }, badgeClass: 'badge-purple' },
-        { id: 'CONTACTED', label: t('leads.statusContacted'), color: { bg: '#e0f2fe', text: '#075985', border: '#bae6fd', colBg: '#f0f9ff' }, badgeClass: 'badge-info' },
-        { id: 'QUALIFIED', label: t('leads.statusQualified'), color: { bg: '#fef3c7', text: '#92400e', border: '#fde68a', colBg: '#fffbeb' }, badgeClass: 'badge-warning' },
-        { id: 'PROPOSAL', label: t('leads.statusProposal'), color: { bg: '#f3e8ff', text: '#6b21a8', border: '#e9d5ff', colBg: '#faf5ff' }, badgeClass: 'badge-purple' },
-        { id: 'WON', label: t('leads.statusWon'), color: { bg: '#dcfce7', text: '#166534', border: '#bbf7d0', colBg: '#f0fdf4' }, badgeClass: 'badge-success' },
-        { id: 'LOST', label: t('leads.statusLost'), color: { bg: '#fee2e2', text: '#991b1b', border: '#fecaca', colBg: '#fef2f2' }, badgeClass: 'badge-danger' }
+        { 
+            id: 'NEW', 
+            label: t('leads.statusNew'), 
+            badgeClass: 'bg-blue-50 text-blue-700 border-blue-200', 
+            headerBg: 'bg-blue-50/80 border-b-blue-200 text-blue-800',
+            dotColor: 'bg-blue-500',
+            accentColor: '#3b82f6',
+            colBg: 'bg-slate-50/50'
+        },
+        { 
+            id: 'CONTACTED', 
+            label: t('leads.statusContacted'), 
+            badgeClass: 'bg-sky-50 text-sky-700 border-sky-200', 
+            headerBg: 'bg-sky-50/80 border-b-sky-200 text-sky-800',
+            dotColor: 'bg-sky-500',
+            accentColor: '#0ea5e9',
+            colBg: 'bg-slate-50/50'
+        },
+        { 
+            id: 'QUALIFIED', 
+            label: t('leads.statusQualified'), 
+            badgeClass: 'bg-amber-50 text-amber-700 border-amber-200', 
+            headerBg: 'bg-amber-50/80 border-b-amber-200 text-amber-800',
+            dotColor: 'bg-amber-500',
+            accentColor: '#f59e0b',
+            colBg: 'bg-slate-50/50'
+        },
+        { 
+            id: 'PROPOSAL', 
+            label: t('leads.statusProposal'), 
+            badgeClass: 'bg-purple-50 text-purple-700 border-purple-200', 
+            headerBg: 'bg-purple-50/80 border-b-purple-200 text-purple-800',
+            dotColor: 'bg-purple-500',
+            accentColor: '#a855f7',
+            colBg: 'bg-slate-50/50'
+        },
+        { 
+            id: 'WON', 
+            label: t('leads.statusWon'), 
+            badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200', 
+            headerBg: 'bg-emerald-50/80 border-b-emerald-200 text-emerald-800',
+            dotColor: 'bg-emerald-500',
+            accentColor: '#10b981',
+            colBg: 'bg-emerald-50/20'
+        },
+        { 
+            id: 'LOST', 
+            label: t('leads.statusLost'), 
+            badgeClass: 'bg-rose-50 text-rose-700 border-rose-200', 
+            headerBg: 'bg-rose-50/80 border-b-rose-200 text-rose-800',
+            dotColor: 'bg-rose-500',
+            accentColor: '#f43f5e',
+            colBg: 'bg-rose-50/20'
+        }
     ], [t]);
-    const [viewMode, setViewMode] = useState<'kanban' | 'table'>('table');
+
+    const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table');
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('ACTIVE');
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
     const [sortBy, setSortBy] = useState('date_desc');
+    const [selectedEmployee, setSelectedEmployee] = useState<string>('');
 
     const [localLeads, setLocalLeads] = useState(leads);
     const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
@@ -61,15 +133,17 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
                 l.company?.toLowerCase().includes(term) ||
                 l.contactName?.toLowerCase().includes(term) ||
                 l.customer?.name?.toLowerCase().includes(term) ||
-                l.code?.toLowerCase().includes(term)
+                l.code?.toLowerCase().includes(term) ||
+                l.phone?.includes(term) ||
+                l.email?.toLowerCase().includes(term)
             );
         }
 
-        if (dateFrom) filtered = filtered.filter(l => l.createdAt >= new Date(dateFrom));
+        if (dateFrom) filtered = filtered.filter(l => new Date(l.createdAt) >= new Date(dateFrom));
         if (dateTo) {
             const toDate = new Date(dateTo);
             toDate.setHours(23, 59, 59, 999);
-            filtered = filtered.filter(l => l.createdAt <= toDate);
+            filtered = filtered.filter(l => new Date(l.createdAt) <= toDate);
         }
 
         filtered.sort((a, b) => {
@@ -120,45 +194,70 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
     }, [localLeads]);
 
     const statsCards = useMemo(() => [
-        { id: 'ACTIVE', label: t('leads.statusActive'), count: stats.counts.ACTIVE, amount: stats.amounts.ACTIVE, colorClass: 'stat-card-purple', icon: List },
-        { id: 'NEW', label: t('leads.statusNew'), count: stats.counts.NEW, amount: stats.amounts.NEW, colorClass: 'stat-card-emerald', icon: Calendar },
-        { id: 'CONTACTED', label: t('leads.statusContacted'), count: stats.counts.CONTACTED, amount: stats.amounts.CONTACTED, colorClass: 'stat-card-blue', icon: Phone },
-        { id: 'QUALIFIED', label: t('leads.statusQualified'), count: stats.counts.QUALIFIED, amount: stats.amounts.QUALIFIED, colorClass: 'stat-card-amber', icon: Search },
-        { id: 'PROPOSAL', label: t('leads.statusProposal'), count: stats.counts.PROPOSAL, amount: stats.amounts.PROPOSAL, colorClass: 'stat-card-indigo', icon: FileText },
-        { id: 'WON', label: t('leads.statusWon'), count: stats.counts.WON, amount: stats.amounts.WON, colorClass: 'stat-card-green', icon: CheckCircle },
-        { id: 'LOST', label: t('leads.statusLost'), count: stats.counts.LOST, amount: stats.amounts.LOST, colorClass: 'stat-card-red', icon: Trash2 },
+        { 
+            id: 'ACTIVE', 
+            label: t('leads.statusActive'), 
+            count: stats.counts.ACTIVE, 
+            amount: stats.amounts.ACTIVE, 
+            colorClass: 'bg-indigo-50 border-indigo-200 text-indigo-700', 
+            iconBg: 'bg-indigo-600 text-white', 
+            icon: Target 
+        },
+        { 
+            id: 'NEW', 
+            label: t('leads.statusNew'), 
+            count: stats.counts.NEW, 
+            amount: stats.amounts.NEW, 
+            colorClass: 'bg-blue-50 border-blue-200 text-blue-700', 
+            iconBg: 'bg-blue-600 text-white', 
+            icon: Calendar 
+        },
+        { 
+            id: 'CONTACTED', 
+            label: t('leads.statusContacted'), 
+            count: stats.counts.CONTACTED, 
+            amount: stats.amounts.CONTACTED, 
+            colorClass: 'bg-sky-50 border-sky-200 text-sky-700', 
+            iconBg: 'bg-sky-600 text-white', 
+            icon: Phone 
+        },
+        { 
+            id: 'QUALIFIED', 
+            label: t('leads.statusQualified'), 
+            count: stats.counts.QUALIFIED, 
+            amount: stats.amounts.QUALIFIED, 
+            colorClass: 'bg-amber-50 border-amber-200 text-amber-700', 
+            iconBg: 'bg-amber-600 text-white', 
+            icon: Search 
+        },
+        { 
+            id: 'PROPOSAL', 
+            label: t('leads.statusProposal'), 
+            count: stats.counts.PROPOSAL, 
+            amount: stats.amounts.PROPOSAL, 
+            colorClass: 'bg-purple-50 border-purple-200 text-purple-700', 
+            iconBg: 'bg-purple-600 text-white', 
+            icon: FileText 
+        },
+        { 
+            id: 'WON', 
+            label: t('leads.statusWon'), 
+            count: stats.counts.WON, 
+            amount: stats.amounts.WON, 
+            colorClass: 'bg-emerald-50 border-emerald-200 text-emerald-700', 
+            iconBg: 'bg-emerald-600 text-white', 
+            icon: CheckCircle2 
+        },
+        { 
+            id: 'LOST', 
+            label: t('leads.statusLost'), 
+            count: stats.counts.LOST, 
+            amount: stats.amounts.LOST, 
+            colorClass: 'bg-rose-50 border-rose-200 text-rose-700', 
+            iconBg: 'bg-rose-600 text-white', 
+            icon: Trash2 
+        },
     ], [stats, t]);
-
-    const premiumCSS = `
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            letter-spacing: 0.025em;
-        }
-        .badge-success { background: #d1fae5; color: #047857; border: 1px solid #a7f3d0; }
-        .badge-warning { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
-        .badge-neutral { background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
-        .badge-info { background: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; }
-        .badge-danger { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
-        .badge-purple { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
-        
-        .status-select {
-            appearance: none;
-            cursor: pointer;
-            outline: none;
-            text-align: center;
-            padding-right: 28px !important;
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-            background-position: right 4px center;
-            background-repeat: no-slash;
-            background-size: 1.2em 1.2em;
-        }
-        .status-select:hover { filter: brightness(0.95); }
-    `;
 
     const handleDragStart = (e: React.DragEvent, id: string) => {
         setDraggedLeadId(id);
@@ -208,7 +307,6 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
             }
         } catch (error) {
             console.error('Failed to change status:', error);
-            // Revert on error
             setLocalLeads(prev => prev.map(l =>
                 l.id === leadId ? { ...l, status: previousStatus } : l
             ));
@@ -235,345 +333,540 @@ export function LeadsClient({ leads, customers, users, isAdminOrManager }: { lea
         }
     };
 
-    return (
-        <Card className="p-6">
-            <style dangerouslySetInnerHTML={{ __html: premiumCSS }} />
+    const hasActiveFilters = searchTerm !== '' || statusFilter !== 'ACTIVE' || dateFrom !== '' || dateTo !== '' || sortBy !== 'date_desc';
 
-            {/* Header / Actions */}
-            <div className="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-4">
-                <div className="flex-1">
-                    <h2 className="text-xl font-semibold text-slate-800">{t('leads.title')}</h2>
-                    <p className="text-sm text-slate-500 mt-1">
-                        {t('leads.description')}
-                    </p>
+    return (
+        <div className="w-full max-w-full space-y-4 p-4 md:p-6 lg:p-8">
+            {/* Header / Top Ribbon */}
+            <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 bg-white p-4 md:p-5 rounded-2xl border border-slate-200/90 shadow-xs">
+                <div className="flex items-center gap-3.5">
+                    <div 
+                        className="w-10 h-10 rounded-xl text-white flex items-center justify-center shadow-md shadow-emerald-500/20 shrink-0"
+                        style={{ background: 'linear-gradient(135deg, #059669, #0d9488)' }}
+                    >
+                        <Target size={20} className="stroke-[2.5]" />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2.5">
+                            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">{t('leads.title')}</h1>
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs">
+                                {localLeads.length}
+                            </span>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                            {t('leads.description')}
+                        </p>
+                    </div>
                 </div>
 
-                {/* View Toggle and Actions */}
-                <div id="leads-action-container" className="flex items-center gap-2 shrink-0 flex-wrap w-full md:w-auto mt-2 md:mt-0">
-                    <button
-                        onClick={() => setViewMode('table')}
-                        className={`btn flex-1 md:flex-none justify-center ${viewMode === 'table' ? 'btn-primary' : 'btn-secondary'} !py-1 !px-3 font-semibold text-[13px] h-[36px]`}
-                        title={t('leads.viewTable')}
+                {/* View Switcher & Action Buttons */}
+                <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+                    {/* View Switcher Segmented Control */}
+                    <div className="flex items-center bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 shadow-2xs">
+                        <button
+                            onClick={() => setViewMode('table')}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                viewMode === 'table'
+                                    ? 'bg-white text-slate-900 shadow-xs'
+                                    : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                            title={t('leads.viewTable')}
+                        >
+                            <List size={14} className="stroke-[2.2]" />
+                            <span>{t('leads.viewTable')}</span>
+                        </button>
+                        <button
+                            onClick={() => setViewMode('kanban')}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                viewMode === 'kanban'
+                                    ? 'bg-white text-slate-900 shadow-xs'
+                                    : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                            title={t('leads.viewKanban')}
+                        >
+                            <LayoutGrid size={14} className="stroke-[2.2]" />
+                            <span>{t('leads.viewKanban')}</span>
+                        </button>
+                    </div>
+
+                    <Link
+                        href="/sales/leads/new"
+                        className="inline-flex items-center justify-center gap-1.5 h-[34px] px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-emerald-600/20 active:scale-98 cursor-pointer"
                     >
-                        <List size={16} className="mr-2 shrink-0" />
-                        <span>{t('leads.viewTable')}</span>
-                    </button>
-                    <button
-                        onClick={() => setViewMode('kanban')}
-                        className={`btn flex-1 md:flex-none justify-center ${viewMode === 'kanban' ? 'btn-primary' : 'btn-secondary'} !py-1 !px-3 font-semibold text-[13px] h-[36px]`}
-                        title={t('leads.viewKanban')}
-                    >
-                        <LayoutGrid size={16} className="mr-2 shrink-0" />
-                        <span>{t('leads.viewKanban')}</span>
-                    </button>
-                    <div className="w-[1px] h-6 bg-slate-300 mx-1 sm:mx-2 hidden md:block"></div>
-                    <Link href="/sales/leads/new" className="btn btn-primary w-full md:w-auto !py-1 !px-3 font-semibold text-[13px] h-[36px] shadow-sm flex items-center justify-center mt-2 md:mt-0">
-                        <Plus size={16} className="mr-2 shrink-0" />
+                        <Plus size={15} className="stroke-[2.5]" />
                         <span>{t('leads.createNew')}</span>
                     </Link>
                 </div>
             </div>
 
-            {/* Filter Cards */}
-            <div className="flex flex-wrap gap-4 mb-6">
-                {statsCards.map(stat => (
-                    <div
-                        key={stat.id}
-                        onClick={() => setStatusFilter(statusFilter === stat.id ? 'ALL' : stat.id)}
-                        className={`stat-card ${stat.colorClass} cursor-pointer flex-1 min-w-[140px] ${statusFilter === stat.id ? 'ring-2 ring-primary ring-offset-2 scale-105 shadow-md' : 'hover:-translate-y-1'}`}
-                    >
-                        <div className="flex justify-between items-start mb-2">
-                            <span className="stat-title text-[11px] font-bold uppercase tracking-wide">{stat.label}</span>
-                            <div className="stat-icon p-2 rounded-full flex items-center justify-center">
-                                <stat.icon size={16} />
+            {/* Quick KPI Metric Summary Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+                {statsCards.map(stat => {
+                    const isActive = statusFilter === stat.id;
+                    const Icon = stat.icon;
+                    return (
+                        <div
+                            key={stat.id}
+                            onClick={() => setStatusFilter(statusFilter === stat.id ? 'ALL' : stat.id)}
+                            className={`cursor-pointer transition-all duration-200 rounded-xl p-3.5 bg-white border shadow-xs hover:-translate-y-0.5 hover:shadow-sm relative overflow-hidden flex flex-col justify-between ${
+                                isActive
+                                    ? 'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/10'
+                                    : 'border-slate-200/90 hover:border-slate-300'
+                            }`}
+                        >
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 truncate" title={stat.label}>
+                                    {stat.label}
+                                </span>
+                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${stat.iconBg} shadow-2xs shrink-0`}>
+                                    <Icon size={14} className="stroke-[2.2]" />
+                                </div>
+                            </div>
+                            <div className="flex items-baseline justify-between gap-1">
+                                <span className="text-2xl font-black font-mono tracking-tight text-slate-900">
+                                    {stat.count}
+                                </span>
+                            </div>
+                            <div className="mt-1 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
+                                <span className="text-slate-400">Giá trị:</span>
+                                <span className="font-mono font-bold text-slate-800 truncate" title={formatMoney(stat.amount)}>
+                                    {formatMoney(stat.amount)}
+                                </span>
                             </div>
                         </div>
-                        <div className="stat-info">
-                            <span className="stat-value text-2xl font-bold">{stat.count}</span>
+                    );
+                })}
+            </div>
+
+            {/* Main Data Container */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                {/* Filter & Search Toolbar */}
+                <div className="p-3.5 border-b border-slate-200/80 bg-slate-50/50 flex flex-col lg:flex-row justify-between lg:items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-2.5 flex-1">
+                        {/* Search Input */}
+                        <div className="relative w-full sm:w-[260px]">
+                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                            <input
+                                type="text"
+                                placeholder={t('leads.searchPlaceholder')}
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                                className="w-full h-[34px] pl-9 pr-8 text-xs bg-white border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all shadow-2xs"
+                            />
+                            {searchTerm && (
+                                <button
+                                    onClick={() => setSearchTerm('')}
+                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
+                                >
+                                    <X size={13} />
+                                </button>
+                            )}
                         </div>
-                        {stat.amount > 0 && (
-                            <div className="mt-1 text-xs font-semibold opacity-80 break-words whitespace-nowrap overflow-hidden text-ellipsis">
-                                {formatMoney(stat.amount)}
+
+                        {/* Date Range Picker */}
+                        <div className="flex items-center gap-1.5 bg-white border border-slate-300 px-2 py-1 rounded-lg shadow-2xs">
+                            <Calendar size={13} className="text-slate-400 shrink-0" />
+                            <input
+                                type="date"
+                                className="h-[24px] text-xs bg-transparent border-0 text-slate-700 font-medium focus:outline-none cursor-pointer"
+                                value={dateFrom}
+                                onChange={e => setDateFrom(e.target.value)}
+                                title={t('leads.fromDate')}
+                            />
+                            <span className="text-slate-300 text-xs">-</span>
+                            <input
+                                type="date"
+                                className="h-[24px] text-xs bg-transparent border-0 text-slate-700 font-medium focus:outline-none cursor-pointer"
+                                value={dateTo}
+                                onChange={e => setDateTo(e.target.value)}
+                                title={t('leads.toDate')}
+                            />
+                        </div>
+
+                        {/* Employee Filter */}
+                        {isAdminOrManager && users && users.length > 0 && (
+                            <div className="relative min-w-[160px]">
+                                <select
+                                    className="h-[34px] w-full pl-3 pr-7 text-xs bg-white border border-slate-300 rounded-lg text-slate-700 font-medium focus:outline-none focus:border-emerald-500 cursor-pointer shadow-2xs"
+                                    defaultValue={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('employeeId') || '' : ''}
+                                    onChange={(e) => {
+                                        const newEmployeeId = e.target.value;
+                                        const params = new URLSearchParams(window.location.search);
+                                        if (newEmployeeId) {
+                                            params.set('employeeId', newEmployeeId);
+                                        } else {
+                                            params.delete('employeeId');
+                                        }
+                                        window.location.href = `/sales/leads?${params.toString()}`;
+                                    }}
+                                >
+                                    <option value="">{t('leads.filterAllEmployees')}</option>
+                                    {users.map((u: any) => (
+                                        <option key={u.id} value={u.id}>{u.name}</option>
+                                    ))}
+                                </select>
                             </div>
                         )}
-                    </div>
-                ))}
-            </div>
 
-            {/* Filter Ribbon */}
-            <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 mb-6 shadow-sm flex gap-3 items-center flex-wrap">
-                {/* Search */}
-                <div className="flex-1 min-w-[220px] relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                    <input
-                        type="text"
-                        placeholder={t('leads.searchPlaceholder')}
-                        className="w-full h-9 pl-9 pr-8 text-[13px] bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 text-slate-800 placeholder:text-slate-400 transition-all font-medium"
-                        value={searchTerm}
-                        onChange={e => setSearchTerm(e.target.value)}
-                    />
-                    {searchTerm && (
-                        <button
-                            type="button"
-                            onClick={() => setSearchTerm('')}
-                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full hover:bg-slate-200/60"
-                        >
-                            <X size={14} />
-                        </button>
-                    )}
-                </div>
-
-                {/* Date Filter */}
-                <div className="flex items-center gap-1.5 shrink-0">
-                    <input
-                        type="date"
-                        className="h-9 px-2.5 text-[12px] bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:border-emerald-500 text-slate-700 font-medium"
-                        value={dateFrom}
-                        onChange={e => setDateFrom(e.target.value)}
-                        title={t('leads.fromDate')}
-                    />
-                    <span className="text-slate-400 text-xs">-</span>
-                    <input
-                        type="date"
-                        className="h-9 px-2.5 text-[12px] bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:border-emerald-500 text-slate-700 font-medium"
-                        value={dateTo}
-                        onChange={e => setDateTo(e.target.value)}
-                        title={t('leads.toDate')}
-                    />
-                </div>
-
-                {/* Employee Filter */}
-                {isAdminOrManager && users && users.length > 0 && (
-                    <div className="shrink-0 w-full sm:w-auto sm:min-w-[180px]">
-                        <select
-                            className="h-9 w-full px-3 text-[13px] bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:border-emerald-500 text-slate-700 font-medium cursor-pointer"
-                            defaultValue={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('employeeId') || '' : ''}
-                            onChange={(e) => {
-                                const newEmployeeId = e.target.value;
-                                const params = new URLSearchParams(window.location.search);
-                                if (newEmployeeId) {
-                                    params.set('employeeId', newEmployeeId);
-                                } else {
-                                    params.delete('employeeId');
-                                }
-                                window.location.href = `/sales/leads?${params.toString()}`;
-                            }}
-                        >
-                            <option value="">{t('leads.filterAllEmployees')}</option>
-                            {users.map((u: any) => (
-                                <option key={u.id} value={u.id}>{u.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                )}
-
-                {/* Status Filter */}
-                <div className="shrink-0 min-w-[150px]">
-                    <select
-                        className="h-9 w-full px-3 text-[13px] bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:border-emerald-500 text-slate-700 font-medium cursor-pointer"
-                        value={statusFilter}
-                        onChange={e => setStatusFilter(e.target.value)}
-                    >
-                        <option value="ACTIVE">{t('leads.filterActive')}</option>
-                        <option value="ALL">{t('leads.filterAllStatuses')}</option>
-                        <optgroup label={t('leads.filterSpecificGroup')}>
-                            {STATUSES.map(s => (
-                                <option key={s.id} value={s.id}>{s.label}</option>
-                            ))}
-                        </optgroup>
-                    </select>
-                </div>
-
-                {/* Sort By Dropdown */}
-                <div className="shrink-0 min-w-[160px]">
-                    <select
-                        className="h-9 w-full px-3 text-[13px] bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:border-emerald-500 text-slate-700 font-medium cursor-pointer"
-                        value={sortBy}
-                        onChange={e => setSortBy(e.target.value)}
-                    >
-                        <option value="date_desc">{t('leads.sortDateDesc')}</option>
-                        <option value="date_asc">{t('leads.sortDateAsc')}</option>
-                        <option value="amount_desc">{t('leads.sortAmountDesc')}</option>
-                        <option value="amount_asc">{t('leads.sortAmountAsc')}</option>
-                        <option value="code_asc">{t('leads.sortCodeAsc')}</option>
-                        <option value="code_desc">{t('leads.sortCodeDesc')}</option>
-                    </select>
-                </div>
-            </div>
-
-            {/* KANBAN VIEW */}
-            {viewMode === 'kanban' && (
-                <div className="w-full overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm" style={{ minHeight: '600px' }}>
-                    <div className="flex h-full min-h-[600px]" style={{ minWidth: '100%' }}>
-                        {STATUSES.filter(s => {
-                            if (statusFilter === 'ACTIVE') return !['WON', 'LOST'].includes(s.id);
-                            if (statusFilter !== 'ALL') return s.id === statusFilter;
-                            return true;
-                        }).map((status, index, arr) => (
-                            <div
-                                key={status.id}
-                                className={`flex flex-col flex-1 min-w-[250px] shrink-0 transition-colors duration-200 ${index < arr.length - 1 ? 'border-r border-slate-200' : ''}`}
-                                style={{ backgroundColor: status.color.colBg }}
-                                onDragOver={handleDragOver}
-                                onDrop={(e) => handleDrop(e, status.id)}
+                        {/* Status Filter Dropdown */}
+                        <div className="relative min-w-[140px]">
+                            <select
+                                className="h-[34px] w-full pl-3 pr-7 text-xs bg-white border border-slate-300 rounded-lg text-slate-700 font-medium focus:outline-none focus:border-emerald-500 cursor-pointer shadow-2xs"
+                                value={statusFilter}
+                                onChange={e => setStatusFilter(e.target.value)}
                             >
-                                <div className="p-3.5 text-center border-b border-slate-200/60" style={{ backgroundColor: status.color.bg }}>
-                                    <h3
-                                        className="font-bold uppercase tracking-wider"
-                                        style={{
-                                            color: status.color.text,
-                                            fontSize: '12px',
-                                            whiteSpace: 'nowrap',
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis'
-                                        }}
-                                        title={status.label}
-                                    >
-                                        {status.label}
-                                    </h3>
-                                </div>
-                                <div className="p-3 flex-1 overflow-y-auto space-y-3">
-                                    {leadsByStatus[status.id].map(lead => (
-                                        <div
-                                            key={lead.id}
-                                            draggable
-                                            onDragStart={(e) => handleDragStart(e, lead.id)}
-                                            onDragEnd={handleDragEnd}
-                                            onClick={() => router.push(`/sales/leads/${lead.id}`)}
-                                            className={`bg-white p-3.5 rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] border border-slate-200/80 cursor-move transition-all group hover:shadow-md hover:border-emerald-300 relative ${draggedLeadId === lead.id ? 'opacity-40 scale-95 border-dashed border-emerald-400' : ''}`}
-                                        >
-                                            <div className="absolute top-3.5 right-3.5 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <LayoutGrid size={14} />
-                                            </div>
-                                            <div className="flex justify-between items-start mb-2">
-                                                <span className="font-mono text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/80">{lead.code}</span>
-                                            </div>
-                                            <h3 className="font-semibold text-[13px] text-slate-900 mb-1 group-hover:text-emerald-600 transition-colors line-clamp-2">
-                                                {lead.name}
-                                            </h3>
-                                            <p className="text-xs text-slate-500 mb-3 truncate">
-                                                {lead.customer?.name || lead.company || lead.contactName || t('leads.unknownCustomer')}
-                                            </p>
-
-                                            <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
-                                                <div className="font-bold text-slate-900">
-                                                    {formatMoney(lead.estimatedValue || 0)}
-                                                </div>
-                                                <div className="flex items-center gap-1 text-slate-400 text-[11px]">
-                                                    <Calendar size={11} />
-                                                    {formatDate(lead.createdAt || new Date())}
-                                                </div>
-                                            </div>
-                                        </div>
+                                <option value="ACTIVE">{t('leads.filterActive')}</option>
+                                <option value="ALL">{t('leads.filterAllStatuses')}</option>
+                                <optgroup label={t('leads.filterSpecificGroup')}>
+                                    {STATUSES.map(s => (
+                                        <option key={s.id} value={s.id}>{s.label}</option>
                                     ))}
-                                    {leadsByStatus[status.id].length === 0 && (
-                                        <div className="text-center py-8 text-slate-400 text-xs italic border border-dashed border-slate-200 bg-white/50 rounded-lg">
-                                            {t('leads.emptyKanban')}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
+                                </optgroup>
+                            </select>
+                        </div>
+
+                        {/* Sort By Dropdown */}
+                        <div className="relative min-w-[150px]">
+                            <select
+                                className="h-[34px] w-full pl-3 pr-7 text-xs bg-white border border-slate-300 rounded-lg text-slate-700 font-medium focus:outline-none focus:border-emerald-500 cursor-pointer shadow-2xs"
+                                value={sortBy}
+                                onChange={e => setSortBy(e.target.value)}
+                            >
+                                <option value="date_desc">{t('leads.sortDateDesc')}</option>
+                                <option value="date_asc">{t('leads.sortDateAsc')}</option>
+                                <option value="amount_desc">{t('leads.sortAmountDesc')}</option>
+                                <option value="amount_asc">{t('leads.sortAmountAsc')}</option>
+                                <option value="code_asc">{t('leads.sortCodeAsc')}</option>
+                                <option value="code_desc">{t('leads.sortCodeDesc')}</option>
+                            </select>
+                        </div>
+
+                        {/* Reset Filter Button */}
+                        {hasActiveFilters && (
+                            <button
+                                onClick={() => {
+                                    setSearchTerm('');
+                                    setStatusFilter('ACTIVE');
+                                    setDateFrom('');
+                                    setDateTo('');
+                                    setSortBy('date_desc');
+                                }}
+                                className="h-[34px] px-2.5 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-rose-200 rounded-lg font-semibold flex items-center gap-1 transition-all cursor-pointer"
+                                title="Xóa bộ lọc"
+                            >
+                                <X size={13} />
+                                <span>Đặt lại</span>
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="text-xs font-medium text-slate-500 self-end lg:self-center shrink-0">
+                        Hiển thị <span className="font-bold text-slate-900">{filteredLeads.length}</span> cơ hội
                     </div>
                 </div>
-            )}
 
-            {/* TABLE VIEW */}
-            {viewMode === 'table' && (
-                <div className="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th className="text-[11px] font-bold uppercase tracking-wider text-slate-600 cursor-pointer hover:bg-slate-100/80 transition-colors select-none" onClick={() => handleSort('code')}>
-                                    <div className="flex items-center gap-1">
-                                        {t('leads.code')} {sortBy === 'code_asc' ? <ChevronUp size={13} className="text-slate-400" /> : sortBy === 'code_desc' ? <ChevronDown size={13} className="text-slate-400" /> : <ArrowUpDown size={13} className="text-slate-300" />}
-                                    </div>
-                                </th>
-                                <th className="text-[11px] font-bold uppercase tracking-wider text-slate-600 cursor-pointer hover:bg-slate-100/80 transition-colors select-none" onClick={() => handleSort('date')}>
-                                    <div className="flex items-center gap-1">
-                                        {t('leads.createdAt')} {sortBy === 'date_asc' ? <ChevronUp size={13} className="text-slate-400" /> : sortBy === 'date_desc' ? <ChevronDown size={13} className="text-slate-400" /> : <ArrowUpDown size={13} className="text-slate-300" />}
-                                    </div>
-                                </th>
-                                <th className="text-[11px] font-bold uppercase tracking-wider text-slate-600">{t('leads.name')}</th>
-                                <th className="text-[11px] font-bold uppercase tracking-wider text-slate-600">{t('leads.customer')}</th>
-                                <th className="text-right text-[11px] font-bold uppercase tracking-wider text-slate-600 cursor-pointer hover:bg-slate-100/80 transition-colors select-none" onClick={() => handleSort('amount')}>
-                                    <div className="flex items-center justify-end gap-1">
-                                        {t('leads.estimatedValue')} {sortBy === 'amount_asc' ? <ChevronUp size={13} className="text-slate-400" /> : sortBy === 'amount_desc' ? <ChevronDown size={13} className="text-slate-400" /> : <ArrowUpDown size={13} className="text-slate-300" />}
-                                    </div>
-                                </th>
-                                <th className="text-center text-[11px] font-bold uppercase tracking-wider text-slate-600">{t('leads.status')}</th>
-                                <th className="text-center text-[11px] font-bold uppercase tracking-wider text-slate-600">{t('leads.action')}</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                            {tableLeads.map(lead => {
-                                const statusObj = STATUSES.find(s => s.id === lead.status) || STATUSES[0];
-                                return (
-                                    <tr
-                                        key={lead.id}
-                                        className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
-                                    >
-                                        <td className="p-3 text-[13px]">
-                                            <Link href={`/sales/leads/${lead.id}`} className="font-mono font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/80 hover:bg-emerald-100 hover:text-emerald-800 transition-colors inline-block">
-                                                {lead.code}
-                                            </Link>
-                                        </td>
-                                        <td className="p-3 text-xs text-slate-500">
-                                            {formatDate(lead.createdAt || new Date())}
-                                        </td>
-                                        <td className="p-3">
-                                            <Link href={`/sales/leads/${lead.id}`} className="font-semibold text-[13px] text-slate-900 hover:text-emerald-600 transition-colors line-clamp-1 block">
-                                                {lead.name}
-                                            </Link>
-                                        </td>
-                                        <td className="p-3">
-                                            <div className="text-[13px] font-medium text-slate-900">{lead.customer?.name || lead.company || '—'}</div>
-                                            <div className="text-xs text-slate-400 mt-0.5">{lead.customer?.phone || lead.phone || lead.customer?.email || lead.email || '—'}</div>
-                                        </td>
-                                        <td className="p-3 text-right">
-                                            <div className="font-bold text-[13px] text-slate-900">{formatMoney(lead.estimatedValue || 0)}</div>
-                                        </td>
-                                        <td className="p-3 text-center">
-                                            <select
-                                                className={`text-[11px] font-semibold rounded-full px-2.5 py-0.5 border cursor-pointer focus:outline-none transition-colors ${statusObj.badgeClass}`}
-                                                value={lead.status}
-                                                onChange={(e) => handleStatusChange(lead.id, e.target.value)}
-                                                title={t('leads.clickToChange')}
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                <option value="NEW" className="bg-white text-gray-900">{t('leads.statusNew')}</option>
-                                                <option value="CONTACTED" className="bg-white text-gray-900">{t('leads.statusContacted')}</option>
-                                                <option value="QUALIFIED" className="bg-white text-gray-900">{t('leads.statusQualified')}</option>
-                                                <option value="PROPOSAL" className="bg-white text-gray-900">{t('leads.statusProposal')}</option>
-                                                <option value="WON" className="bg-white text-gray-900">{t('leads.statusWon')}</option>
-                                                <option value="LOST" className="bg-white text-gray-900">{t('leads.statusLost')}</option>
-                                            </select>
-                                        </td>
-                                        <td className="p-3">
-                                            <div className="flex items-center justify-center gap-1">
-                                                <Link href={`/sales/leads/${lead.id}`} title={t('leads.viewDetails')} className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                                                    <Eye size={16} />
+                {/* TABLE VIEW */}
+                {viewMode === 'table' && (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="border-b border-slate-200/90 bg-slate-100/70">
+                                    <th onClick={() => handleSort('code')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[120px] hover:bg-slate-200/50 transition-colors">
+                                        <div className="flex items-center gap-1.5">
+                                            {t('leads.code')}
+                                            {sortBy === 'code_asc' ? <ChevronUp size={12} className="text-emerald-600" /> : sortBy === 'code_desc' ? <ChevronDown size={12} className="text-emerald-600" /> : <ArrowUpDown size={11} className="opacity-30" />}
+                                        </div>
+                                    </th>
+                                    <th onClick={() => handleSort('date')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[110px] hover:bg-slate-200/50 transition-colors">
+                                        <div className="flex items-center gap-1.5">
+                                            {t('leads.createdAt')}
+                                            {sortBy === 'date_asc' ? <ChevronUp size={12} className="text-emerald-600" /> : sortBy === 'date_desc' ? <ChevronDown size={12} className="text-emerald-600" /> : <ArrowUpDown size={11} className="opacity-30" />}
+                                        </div>
+                                    </th>
+                                    <th className="py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                                        {t('leads.name')}
+                                    </th>
+                                    <th className="py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[220px]">
+                                        {t('leads.customer')} / LIÊN HỆ
+                                    </th>
+                                    <th className="py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[140px]">
+                                        NGƯỜI PHỤ TRÁCH
+                                    </th>
+                                    <th onClick={() => handleSort('amount')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider text-right w-[140px] hover:bg-slate-200/50 transition-colors">
+                                        <div className="flex items-center justify-end gap-1.5">
+                                            {t('leads.estimatedValue')}
+                                            {sortBy === 'amount_asc' ? <ChevronUp size={12} className="text-emerald-600" /> : sortBy === 'amount_desc' ? <ChevronDown size={12} className="text-emerald-600" /> : <ArrowUpDown size={11} className="opacity-30" />}
+                                        </div>
+                                    </th>
+                                    <th className="py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider text-center w-[140px]">
+                                        {t('leads.status')}
+                                    </th>
+                                    <th className="py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider text-right w-[95px]">
+                                        {t('leads.action')}
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {tableLeads.map(lead => {
+                                    const statusObj = STATUSES.find(s => s.id === lead.status) || STATUSES[0];
+                                    const primaryAssignee = lead.assignees?.[0]?.user || lead.assignedTo;
+
+                                    return (
+                                        <tr
+                                            key={lead.id}
+                                            className="hover:bg-slate-50/80 transition-colors group"
+                                        >
+                                            {/* Code */}
+                                            <td className="py-2.5 px-3.5 align-middle">
+                                                <Link
+                                                    href={`/sales/leads/${lead.id}`}
+                                                    className="font-mono text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/80 hover:bg-emerald-100 hover:text-emerald-800 transition-colors inline-block shadow-2xs"
+                                                >
+                                                    {lead.code}
                                                 </Link>
-                                                <Link href={`/sales/leads/${lead.id}`} title={t('leads.edit')} className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors">
-                                                    <Edit2 size={16} />
+                                            </td>
+
+                                            {/* Date */}
+                                            <td className="py-2.5 px-3.5 align-middle text-xs font-mono text-slate-500">
+                                                {formatDate(lead.createdAt || new Date())}
+                                            </td>
+
+                                            {/* Name */}
+                                            <td className="py-2.5 px-3.5 align-middle">
+                                                <div className="flex flex-col gap-0.5 max-w-[280px] sm:max-w-[340px]">
+                                                    <Link
+                                                        href={`/sales/leads/${lead.id}`}
+                                                        className="font-semibold text-xs text-slate-900 hover:text-emerald-600 transition-colors truncate block"
+                                                        title={lead.name}
+                                                    >
+                                                        {lead.name}
+                                                    </Link>
+                                                    {lead.source && (
+                                                        <span className="text-[10px] text-slate-400 flex items-center gap-1 truncate">
+                                                            Nguồn: <span className="text-slate-600 font-medium">{lead.source}</span>
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </td>
+
+                                            {/* Customer / Contact */}
+                                            <td className="py-2.5 px-3.5 align-middle">
+                                                <div className="flex flex-col gap-0.5 max-w-[200px]">
+                                                    <div className="text-xs font-medium text-slate-900 truncate" title={lead.customer?.name || lead.company || '—'}>
+                                                        {lead.customer?.name || lead.company || '—'}
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5 text-[11px] text-slate-500 truncate">
+                                                        <span>{lead.customer?.phone || lead.phone || lead.customer?.email || lead.email || '—'}</span>
+                                                        {(lead.customer?.phone || lead.phone) && (
+                                                            <ClickToCallButton phoneNumber={lead.customer?.phone || lead.phone} className="scale-75 origin-left" />
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </td>
+
+                                            {/* Assignee */}
+                                            <td className="py-2.5 px-3.5 align-middle">
+                                                {primaryAssignee ? (
+                                                    <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-[11px] font-medium max-w-[130px] truncate shadow-2xs" title={primaryAssignee.name || primaryAssignee.email}>
+                                                        <span className="w-4 h-4 rounded-full bg-emerald-600 text-white text-[9px] font-bold inline-flex items-center justify-center shrink-0">
+                                                            {getInitials(primaryAssignee.name || primaryAssignee.email)}
+                                                        </span>
+                                                        <span className="truncate">{primaryAssignee.name || primaryAssignee.email}</span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-slate-400 text-xs italic">Chưa giao</span>
+                                                )}
+                                            </td>
+
+                                            {/* Estimated Value */}
+                                            <td className="py-2.5 px-3.5 align-middle text-right">
+                                                <span className="font-mono font-bold text-xs text-slate-900">
+                                                    {formatMoney(lead.estimatedValue || 0)}
+                                                </span>
+                                            </td>
+
+                                            {/* Status */}
+                                            <td className="py-2.5 px-3.5 align-middle text-center">
+                                                <select
+                                                    className={`text-[11px] font-bold rounded-full px-2.5 py-0.5 border cursor-pointer focus:outline-none transition-all ${statusObj.badgeClass} shadow-2xs`}
+                                                    value={lead.status}
+                                                    onChange={(e) => handleStatusChange(lead.id, e.target.value)}
+                                                    title={t('leads.clickToChange')}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    <option value="NEW" className="bg-white text-slate-900">{t('leads.statusNew')}</option>
+                                                    <option value="CONTACTED" className="bg-white text-slate-900">{t('leads.statusContacted')}</option>
+                                                    <option value="QUALIFIED" className="bg-white text-slate-900">{t('leads.statusQualified')}</option>
+                                                    <option value="PROPOSAL" className="bg-white text-slate-900">{t('leads.statusProposal')}</option>
+                                                    <option value="WON" className="bg-white text-slate-900">{t('leads.statusWon')}</option>
+                                                    <option value="LOST" className="bg-white text-slate-900">{t('leads.statusLost')}</option>
+                                                </select>
+                                            </td>
+
+                                            {/* Actions */}
+                                            <td className="py-2.5 px-3.5 align-middle text-right">
+                                                <div className="flex items-center justify-end gap-1">
+                                                    <Link
+                                                        href={`/sales/leads/${lead.id}`}
+                                                        title={t('leads.viewDetails')}
+                                                        className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                                    >
+                                                        <Eye size={15} />
+                                                    </Link>
+                                                    <Link
+                                                        href={`/sales/leads/${lead.id}/edit`}
+                                                        title={t('leads.edit')}
+                                                        className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                                                    >
+                                                        <Edit2 size={15} />
+                                                    </Link>
+                                                    <Link
+                                                        href={`/sales/estimates?action=new&leadId=${lead.id}&customerId=${lead.customerId || ''}`}
+                                                        title="Tạo Báo Giá"
+                                                        className="p-1 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors cursor-pointer"
+                                                    >
+                                                        <FileText size={15} />
+                                                    </Link>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+
+                                {filteredLeads.length === 0 && (
+                                    <tr>
+                                        <td colSpan={8} className="py-12 text-center text-slate-400 text-xs">
+                                            <div className="flex flex-col items-center justify-center gap-2">
+                                                <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                                                    <Target size={24} />
+                                                </div>
+                                                <span className="font-semibold text-slate-700">{t('leads.emptyTable')}</span>
+                                                <Link
+                                                    href="/sales/leads/new"
+                                                    className="mt-1 text-xs text-emerald-600 hover:underline font-bold"
+                                                >
+                                                    + Tạo cơ hội bán hàng mới ngay
                                                 </Link>
                                             </div>
                                         </td>
                                     </tr>
-                                )
+                                )}
+                            </tbody>
+                        </table>
+                        <Pagination {...paginationProps} />
+                    </div>
+                )}
+
+                {/* KANBAN VIEW */}
+                {viewMode === 'kanban' && (
+                    <div className="w-full overflow-x-auto p-4 bg-slate-100/60 custom-scrollbar" style={{ minHeight: '680px' }}>
+                        <div className="flex gap-4 min-w-max pb-2">
+                            {STATUSES.filter(s => {
+                                if (statusFilter === 'ACTIVE') return !['WON', 'LOST'].includes(s.id);
+                                if (statusFilter !== 'ALL') return s.id === statusFilter;
+                                return true;
+                            }).map((status) => {
+                                const columnLeads = leadsByStatus[status.id] || [];
+                                const totalColumnAmount = columnLeads.reduce((sum, l) => sum + (l.estimatedValue || 0), 0);
+
+                                return (
+                                    <div
+                                        key={status.id}
+                                        className={`flex flex-col w-[300px] shrink-0 rounded-2xl border border-slate-200/90 bg-slate-50/80 shadow-xs overflow-hidden`}
+                                        onDragOver={handleDragOver}
+                                        onDrop={(e) => handleDrop(e, status.id)}
+                                    >
+                                        {/* Column Header */}
+                                        <div className={`p-3.5 border-b ${status.headerBg} flex items-center justify-between`}>
+                                            <div className="flex items-center gap-2">
+                                                <span className={`w-2.5 h-2.5 rounded-full ${status.dotColor}`} />
+                                                <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 truncate" title={status.label}>
+                                                    {status.label}
+                                                </h3>
+                                            </div>
+                                            <span className="px-2 py-0.5 rounded-full text-[11px] font-mono font-bold bg-white/90 text-slate-700 shadow-2xs border border-slate-200/60">
+                                                {columnLeads.length}
+                                            </span>
+                                        </div>
+
+                                        {/* Total column amount metric */}
+                                        <div className="px-3.5 py-2 bg-white/60 border-b border-slate-200/60 flex items-center justify-between text-[11px] text-slate-500">
+                                            <span>Tổng giá trị:</span>
+                                            <span className="font-mono font-bold text-slate-800">
+                                                {formatMoney(totalColumnAmount)}
+                                            </span>
+                                        </div>
+
+                                        {/* Lead Cards List */}
+                                        <div className="p-3 flex-1 overflow-y-auto space-y-3 custom-scrollbar" style={{ maxHeight: 'calc(100vh - 360px)', minHeight: '300px' }}>
+                                            {columnLeads.map(lead => {
+                                                const primaryAssignee = lead.assignees?.[0]?.user || lead.assignedTo;
+
+                                                return (
+                                                    <div
+                                                        key={lead.id}
+                                                        draggable
+                                                        onDragStart={(e) => handleDragStart(e, lead.id)}
+                                                        onDragEnd={handleDragEnd}
+                                                        onClick={() => router.push(`/sales/leads/${lead.id}`)}
+                                                        className={`bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs cursor-grab active:cursor-grabbing transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-emerald-300 relative group ${
+                                                            draggedLeadId === lead.id ? 'opacity-40 scale-95 border-dashed border-emerald-400' : ''
+                                                        }`}
+                                                    >
+                                                        {/* Top Row: Code & Customer */}
+                                                        <div className="flex items-center justify-between gap-1 mb-2">
+                                                            <span className="font-mono text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/80">
+                                                                {lead.code}
+                                                            </span>
+                                                            <div className="text-[10px] font-mono text-slate-400 flex items-center gap-1">
+                                                                <Clock size={10} />
+                                                                {formatDate(lead.createdAt || new Date())}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Title */}
+                                                        <h4 className="font-bold text-xs text-slate-900 group-hover:text-emerald-600 transition-colors line-clamp-2 mb-1.5 leading-snug">
+                                                            {lead.name}
+                                                        </h4>
+
+                                                        {/* Customer Name */}
+                                                        <div className="text-[11px] text-slate-500 mb-3 flex items-center gap-1 truncate">
+                                                            <Building2 size={11} className="text-slate-400 shrink-0" />
+                                                            <span className="truncate">{lead.customer?.name || lead.company || lead.contactName || t('leads.unknownCustomer')}</span>
+                                                        </div>
+
+                                                        {/* Card Footer: Amount & Assignee */}
+                                                        <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                                                            <div className="font-mono font-bold text-xs text-slate-900">
+                                                                {formatMoney(lead.estimatedValue || 0)}
+                                                            </div>
+
+                                                            {primaryAssignee && (
+                                                                <div 
+                                                                    className="w-5 h-5 rounded-full bg-emerald-600 text-white text-[9px] font-bold flex items-center justify-center shadow-2xs" 
+                                                                    title={primaryAssignee.name || primaryAssignee.email}
+                                                                >
+                                                                    {getInitials(primaryAssignee.name || primaryAssignee.email)}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+
+                                            {columnLeads.length === 0 && (
+                                                <div className="py-12 text-center text-slate-400 text-xs italic border-2 border-dashed border-slate-200 bg-white/40 rounded-xl">
+                                                    {t('leads.emptyKanban')}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
                             })}
-                            {filteredLeads.length === 0 && (
-                                <tr>
-                                    <td colSpan={7} className="p-8 text-center text-slate-500 font-medium text-[13px]">
-                                        {t('leads.emptyTable')}
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                    <Pagination {...paginationProps} />
-                </div>
-            )}
-        </Card>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
     );
 }

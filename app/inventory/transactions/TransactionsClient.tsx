@@ -83,126 +83,146 @@ export default function TransactionsClient({ initialTransactions }: { initialTra
     };
 
     return (
-        <Card style={{ padding: '0', overflow: 'hidden' }}>
-            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fafafa', flexWrap: 'wrap', gap: '1rem' }}>
-                <div style={{ position: 'relative', width: '300px' }}>
-                    <Search size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-                    <input
-                        type="text"
-                        placeholder={t('transactions.searchPlaceholder')}
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        style={{
-                            width: '100%', padding: '0.625rem 1rem 0.625rem 2.5rem',
-                            border: '1px solid var(--border)', borderRadius: 'var(--radius)',
-                            outline: 'none', transition: 'border-color 0.2s', fontSize: '0.875rem'
-                        }}
-                    />
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 ring-4 ring-indigo-50"></span>
+                        Lịch Sử Lệnh Kho
+                    </h1>
+                    <p className="text-xs text-slate-500 mt-1 font-medium">
+                        Theo dõi và quản lý các phiếu nhập, xuất và điều chuyển kho nội bộ ({filtered.length} phiếu)
+                    </p>
                 </div>
-
-                <select
-                    value={typeFilter}
-                    onChange={(e) => setTypeFilter(e.target.value)}
-                    style={{
-                        padding: '0.625rem 1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
-                        outline: 'none', fontSize: '0.875rem', backgroundColor: 'white'
-                    }}
-                >
-                    <option value="">{t('transactions.filterTypeAll')}</option>
-                    <option value="IN">{t('transactions.filterTypeIn')}</option>
-                    <option value="OUT">{t('transactions.filterTypeOut')}</option>
-                    <option value="TRANSFER">{t('transactions.filterTypeTransfer')}</option>
-                </select>
-
-                <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    style={{
-                        padding: '0.625rem 1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
-                        outline: 'none', fontSize: '0.875rem', backgroundColor: 'white'
-                    }}
-                >
-                    <option value="">{t('transactions.filterStatusAll')}</option>
-                    <option value="DRAFT">{t('transactions.filterStatusDraft')}</option>
-                    <option value="COMPLETED">{t('transactions.filterStatusCompleted')}</option>
-                </select>
-
-
-                <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
-                    <Button variant="secondary" onClick={handleExportExcel} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <FileSpreadsheet size={16} /> {t('transactions.btnExport')}
+                <div className="flex items-center gap-2.5">
+                    <Button 
+                        variant="secondary" 
+                        onClick={handleExportExcel} 
+                        className="px-3.5 py-2 text-xs font-semibold rounded-xl flex items-center gap-1.5 border-slate-200 text-slate-700 hover:bg-slate-50 shadow-none transition-all"
+                    >
+                        <FileSpreadsheet size={15} className="text-emerald-600" /> {t('transactions.btnExport')}
                     </Button>
-                    <Button onClick={() => router.push('/inventory/transactions/new')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Plus size={16} /> {t('transactions.btnCreate')}
+                    <Button 
+                        onClick={() => router.push('/inventory/transactions/new')} 
+                        className="px-4 py-2 text-xs font-semibold rounded-xl flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs shadow-indigo-200 transition-all"
+                    >
+                        <Plus size={15} /> {t('transactions.btnCreate')}
                     </Button>
                 </div>
             </div>
 
-            <div style={{ padding: '0' }}>
-                <Table>
-                    <thead>
-                        <tr>
-                            <th>{t('transactions.colCode')}</th>
-                            <th>{t('transactions.colType')}</th>
-                            <th>{t('transactions.colStatus')}</th>
-                            <th>{t('transactions.colFromWarehouse')}</th>
-                            <th>{t('transactions.colToWarehouse')}</th>
-                            <th>{t('transactions.colDate')}</th>
-                            <th>{t('transactions.colCreator')}</th>
-                            <th style={{ width: '100px', textAlign: 'right' }}>{t('transactions.colActions')}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {paginatedItems.length > 0 ? paginatedItems.map((tx) => {
-                            const typeObj = getTypeColor(tx.type);
-                            const statusObj = getStatusColor(tx.status);
+            {/* Table & Filters Card */}
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+                <div className="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50">
+                    <div className="relative flex-1 min-w-[240px] max-w-sm">
+                        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder={t('transactions.searchPlaceholder')}
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-9 pr-3.5 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-800 placeholder:text-slate-400 font-medium"
+                        />
+                    </div>
 
-                            return (
-                                <tr key={tx.id}>
-                                    <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>{tx.code}</td>
-                                    <td>
-                                        <span style={{
-                                            padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600,
-                                            backgroundColor: typeObj.bg, color: typeObj.text
-                                        }}>
-                                            {typeObj.label}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span style={{
-                                            padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600,
-                                            backgroundColor: statusObj.bg, color: statusObj.text
-                                        }}>
-                                            {statusObj.label}
-                                        </span>
-                                    </td>
-                                    <td>{tx.fromWarehouse?.name || '-'}</td>
-                                    <td>{tx.toWarehouse?.name || '-'}</td>
-                                    <td>{formatDate(tx.date)}</td>
-                                    <td>{tx.creator?.name || '-'}</td>
-                                    <td>
-                                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                                            <button onClick={() => router.push(`/inventory/transactions/${tx.id}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)' }} title={t('transactions.tooltipView')}>
-                                                <Eye size={18} />
-                                            </button>
-                                            <button onClick={() => handleDelete(tx.id, tx.code)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', opacity: tx.status === 'COMPLETED' ? 0.3 : 1 }} disabled={tx.status === 'COMPLETED'} title={t('transactions.tooltipDelete')}>
-                                                <Trash2 size={18} />
-                                            </button>
-                                        </div>
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                        <select
+                            value={typeFilter}
+                            onChange={(e) => setTypeFilter(e.target.value)}
+                            className="px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-700 font-medium"
+                        >
+                            <option value="">{t('transactions.filterTypeAll')}</option>
+                            <option value="IN">{t('transactions.filterTypeIn')}</option>
+                            <option value="OUT">{t('transactions.filterTypeOut')}</option>
+                            <option value="TRANSFER">{t('transactions.filterTypeTransfer')}</option>
+                        </select>
+
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-700 font-medium"
+                        >
+                            <option value="">{t('transactions.filterStatusAll')}</option>
+                            <option value="DRAFT">{t('transactions.filterStatusDraft')}</option>
+                            <option value="COMPLETED">{t('transactions.filterStatusCompleted')}</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                    <Table>
+                        <thead className="bg-slate-50 border-b border-slate-200">
+                            <tr>
+                                <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">{t('transactions.colCode')}</th>
+                                <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">{t('transactions.colType')}</th>
+                                <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">{t('transactions.colStatus')}</th>
+                                <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">{t('transactions.colFromWarehouse')}</th>
+                                <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">{t('transactions.colToWarehouse')}</th>
+                                <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">{t('transactions.colDate')}</th>
+                                <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">{t('transactions.colCreator')}</th>
+                                <th className="px-4 py-3 text-right text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[100px]">{t('transactions.colActions')}</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {paginatedItems.length > 0 ? paginatedItems.map((tx) => {
+                                const typeObj = getTypeColor(tx.type);
+                                const statusObj = getStatusColor(tx.status);
+
+                                return (
+                                    <tr key={tx.id} className="hover:bg-slate-50/70 transition-colors">
+                                        <td className="px-4 py-3 text-xs font-bold text-indigo-600 hover:text-indigo-700 cursor-pointer" onClick={() => router.push(`/inventory/transactions/${tx.id}`)}>
+                                            {tx.code}
+                                        </td>
+                                        <td className="px-4 py-3 text-xs">
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold" style={{ backgroundColor: typeObj.bg, color: typeObj.text }}>
+                                                {typeObj.label}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 text-xs">
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold" style={{ backgroundColor: statusObj.bg, color: statusObj.text }}>
+                                                {statusObj.label}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 text-xs font-medium text-slate-700">{tx.fromWarehouse?.name || '-'}</td>
+                                        <td className="px-4 py-3 text-xs font-medium text-slate-700">{tx.toWarehouse?.name || '-'}</td>
+                                        <td className="px-4 py-3 text-xs text-slate-500 font-medium">{formatDate(tx.date)}</td>
+                                        <td className="px-4 py-3 text-xs font-medium text-slate-700">{tx.creator?.name || '-'}</td>
+                                        <td className="px-4 py-3 text-xs text-right">
+                                            <div className="flex items-center justify-end gap-1.5">
+                                                <button 
+                                                    onClick={() => router.push(`/inventory/transactions/${tx.id}`)} 
+                                                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" 
+                                                    title={t('transactions.tooltipView')}
+                                                >
+                                                    <Eye size={16} />
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleDelete(tx.id, tx.code)} 
+                                                    disabled={tx.status === 'COMPLETED'} 
+                                                    className={`p-1.5 rounded-lg transition-colors ${tx.status === 'COMPLETED' ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'}`}
+                                                    title={t('transactions.tooltipDelete')}
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            }) : (
+                                <tr>
+                                    <td colSpan={8} className="text-center py-12 text-xs font-medium text-slate-400">
+                                        {t('transactions.noTransactions')}
                                     </td>
                                 </tr>
-                            )
-                        }) : (
-                            <tr>
-                                <td colSpan={8} style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
-                                    {t('transactions.noTransactions')}
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </Table>
-                <Pagination {...paginationProps} />
+                            )}
+                        </tbody>
+                    </Table>
+                </div>
+                <div className="p-3 border-t border-slate-100 bg-slate-50/50">
+                    <Pagination {...paginationProps} />
+                </div>
             </div>
-        </Card >
+        </div>
     );
 }

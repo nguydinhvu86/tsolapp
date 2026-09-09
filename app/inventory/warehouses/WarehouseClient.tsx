@@ -60,103 +60,129 @@ export default function WarehouseClient({ initialWarehouses }: { initialWarehous
     };
 
     return (
-        <Card style={{ padding: '0', overflow: 'hidden' }}>
-            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fafafa' }}>
-                <h3 style={{ margin: 0, fontWeight: 700, color: 'var(--text-main)' }}>{t('warehouses.totalCount')}: {initialWarehouses.length}</h3>
-                <Button onClick={openCreateModal} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Plus size={16} /> {t('warehouses.addBtn')}
-                </Button>
+        <div className="space-y-5">
+            {/* Header section */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+                        <Home size={20} />
+                    </div>
+                    <div>
+                        <h1 className="text-lg font-bold text-slate-900 tracking-tight">
+                            Danh Sách Kho Hàng
+                        </h1>
+                        <p className="text-xs text-slate-500 font-medium mt-0.5">
+                            Quản lý các kho lưu trữ và vị trí hàng hóa ({initialWarehouses.length} kho)
+                        </p>
+                    </div>
+                </div>
+
+                <div>
+                    <Button onClick={openCreateModal} className="flex items-center gap-2 text-xs font-semibold px-4 py-2.5 shadow-xs">
+                        <Plus size={15} /> {t('warehouses.addBtn')}
+                    </Button>
+                </div>
             </div>
 
-            <div style={{ padding: '0' }}>
-                <Table>
-                    <thead>
-                        <tr>
-                            <th>{t('warehouses.colName')}</th>
-                            <th>{t('warehouses.colLocation')}</th>
-                            <th>{t('warehouses.colType')}</th>
-                            <th style={{ width: '100px', textAlign: 'right' }}>{t('warehouses.colActions')}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {paginatedItems.length > 0 ? paginatedItems.map((w) => (
-                            <tr key={w.id}>
-                                <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>{w.name}</td>
-                                <td style={{ color: 'var(--text-muted)' }}>{w.location || '-'}</td>
-                                <td>
-                                    {w.isDefault ? (
-                                        <span style={{
-                                            padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600,
-                                            backgroundColor: '#dbeafe', color: '#1e40af', display: 'inline-flex', alignItems: 'center', gap: '0.25rem'
-                                        }}>
-                                            <Home size={12} /> {t('warehouses.defaultLabel')}
-                                        </span>
-                                    ) : (
-                                        <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('warehouses.secondaryLabel')}</span>
-                                    )}
-                                </td>
-                                <td>
-                                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                                        <button onClick={() => openEditModal(w)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><Edit size={16} /></button>
-                                    </div>
-                                </td>
+            {/* Table Container */}
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs whitespace-nowrap">
+                        <thead>
+                            <tr className="bg-slate-50 border-b border-slate-200 text-slate-600">
+                                <th className="px-4 py-3.5 font-bold uppercase tracking-wider text-[11px]">{t('warehouses.colName')}</th>
+                                <th className="px-4 py-3.5 font-bold uppercase tracking-wider text-[11px]">{t('warehouses.colLocation')}</th>
+                                <th className="px-4 py-3.5 font-bold uppercase tracking-wider text-[11px] text-center">{t('warehouses.colType')}</th>
+                                <th className="px-4 py-3.5 font-bold uppercase tracking-wider text-[11px] text-right w-[100px]">{t('warehouses.colActions')}</th>
                             </tr>
-                        )) : (
-                            <tr>
-                                <td colSpan={4} style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
-                                    {t('warehouses.noWarehouses')}
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </Table>
-                <Pagination {...paginationProps} />
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {paginatedItems.length > 0 ? paginatedItems.map((w) => (
+                                <tr key={w.id} className="hover:bg-slate-50/70 transition-colors">
+                                    <td className="px-4 py-3.5 font-semibold text-slate-900 text-xs">{w.name}</td>
+                                    <td className="px-4 py-3.5 text-slate-500 text-xs">{w.location || '-'}</td>
+                                    <td className="px-4 py-3.5 text-center">
+                                        {w.isDefault ? (
+                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200 uppercase tracking-wider">
+                                                <Home size={11} /> {t('warehouses.defaultLabel')}
+                                            </span>
+                                        ) : (
+                                            <span className="text-slate-400 text-xs font-medium">{t('warehouses.secondaryLabel')}</span>
+                                        )}
+                                    </td>
+                                    <td className="px-4 py-3.5 text-right">
+                                        <button 
+                                            onClick={() => openEditModal(w)} 
+                                            className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                            title={t('warehouses.modalTitleEdit')}
+                                        >
+                                            <Edit size={15} />
+                                        </button>
+                                    </td>
+                                </tr>
+                            )) : (
+                                <tr>
+                                    <td colSpan={4} className="text-center py-12 text-slate-400 font-medium text-xs">
+                                        {t('warehouses.noWarehouses')}
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+                <div className="p-3.5 border-t border-slate-100 bg-slate-50/40">
+                    <Pagination {...paginationProps} />
+                </div>
             </div>
 
             {/* Modal */}
             {isModalOpen && (
-                <div style={{
-                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
-                }}>
-                    <Card style={{ width: '100%', maxWidth: '500px' }}>
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.5rem', color: 'var(--text-main)' }}>
-                            {editingNode ? t('warehouses.modalTitleEdit') : t('warehouses.modalTitleAdd')}
-                        </h2>
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-[1000] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-200">
+                        <div className="p-4 border-b border-slate-100 bg-slate-50/60 flex justify-between items-center">
+                            <h2 className="text-sm font-bold text-slate-900">
+                                {editingNode ? t('warehouses.modalTitleEdit') : t('warehouses.modalTitleAdd')}
+                            </h2>
+                            <button 
+                                onClick={() => setIsModalOpen(false)}
+                                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                            >
+                                ✕
+                            </button>
+                        </div>
 
-                        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <form onSubmit={handleSubmit} className="p-5 space-y-4">
                             <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.875rem' }}>{t('warehouses.formNameLabel')}</label>
-                                <Input value={name} onChange={(e) => setName(e.target.value)} required placeholder={t('warehouses.formNamePlaceholder')} />
+                                <label className="block mb-1.5 font-bold text-xs text-slate-700 uppercase tracking-wider">{t('warehouses.formNameLabel')}</label>
+                                <Input value={name} onChange={(e) => setName(e.target.value)} required placeholder={t('warehouses.formNamePlaceholder')} className="h-9.5 text-xs" />
                             </div>
 
                             <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.875rem' }}>{t('warehouses.formLocationLabel')}</label>
-                                <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder={t('warehouses.formLocationPlaceholder')} />
+                                <label className="block mb-1.5 font-bold text-xs text-slate-700 uppercase tracking-wider">{t('warehouses.formLocationLabel')}</label>
+                                <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder={t('warehouses.formLocationPlaceholder')} className="h-9.5 text-xs" />
                             </div>
 
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', marginTop: '0.5rem' }}>
+                            <label className="flex items-center gap-2 cursor-pointer mt-2 pt-2 border-t border-slate-100">
                                 <input
                                     type="checkbox"
                                     checked={isDefault}
                                     onChange={(e) => setIsDefault(e.target.checked)}
-                                    style={{ width: '1rem', height: '1rem' }}
+                                    className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500"
                                 />
-                                <span style={{ fontWeight: 500, fontSize: '0.875rem' }}>{t('warehouses.formSetDefaultLabel')}</span>
+                                <span className="font-semibold text-xs text-slate-700">{t('warehouses.formSetDefaultLabel')}</span>
                             </label>
-                            {isDefault && <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>{t('warehouses.formSetDefaultHint')}</p>}
+                            {isDefault && <p className="text-[11px] text-slate-400 ml-6">{t('warehouses.formSetDefaultHint')}</p>}
 
-                            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                                <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>{t('warehouses.btnCancel')}</Button>
-                                <Button type="submit" disabled={isSaving}>
+                            <div className="flex gap-2 justify-end pt-3 border-t border-slate-100">
+                                <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)} className="text-xs">{t('warehouses.btnCancel')}</Button>
+                                <Button type="submit" disabled={isSaving} className="text-xs font-semibold">
                                     {isSaving ? t('warehouses.btnSaving') : t('warehouses.btnSave')}
                                 </Button>
                             </div>
                         </form>
-                    </Card>
+                    </div>
                 </div>
             )}
-        </Card>
+        </div>
     );
 }

@@ -19,10 +19,7 @@ export default async function TransactionsPage(props: { searchParams: Promise<an
     const transactions = await getTransactions({ type, status });
 
     return (
-        <div style={{ maxWidth: '100%', margin: '0 auto', width: '100%' }}>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1.5rem', color: 'var(--text-main)' }}>
-                Lịch Sử Lệnh Kho (Nhập/Xuất/Chuyển)
-            </h1>
+        <div className="space-y-6 w-full">
             <TransactionsClient initialTransactions={transactions} />
         </div>
     );

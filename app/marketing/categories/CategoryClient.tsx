@@ -1,14 +1,23 @@
 'use client';
-import React, { useState } from 'react';
+
+import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { MarketingCategory } from '@prisma/client';
-import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
-import { Table } from '@/app/components/ui/Table';
 import { Modal } from '@/app/components/ui/Modal';
 import { Input } from '@/app/components/ui/Input';
 import { createCategory, updateCategory, deleteCategory } from './actions';
-import { Plus, Edit, Trash2, Search, Target } from 'lucide-react';
+import { 
+    Plus, 
+    Edit, 
+    Trash2, 
+    Search, 
+    Target, 
+    Tag, 
+    Clock, 
+    Layers,
+    FileText
+} from 'lucide-react';
 import { formatDate } from '@/lib/utils/formatters';
 
 export default function CategoryClient({
@@ -35,6 +44,13 @@ export default function CategoryClient({
     const canCreate = isAdmin || permissions.includes('MARKETING_CREATE');
     const canEdit = isAdmin || permissions.includes('MARKETING_EDIT');
     const canDelete = isAdmin || permissions.includes('MARKETING_DELETE');
+
+    const filteredData = useMemo(() => {
+        return categories.filter(c => 
+            c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (c.description && c.description.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+    }, [categories, searchTerm]);
 
     const handleOpenModal = (category?: MarketingCategory) => {
         if (category) {
@@ -99,87 +115,165 @@ export default function CategoryClient({
         }
     };
 
-    const filteredData = categories.filter(c => 
-        c.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
     return (
-        <Card className="p-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0 mb-6">
-                <div className="relative w-full md:w-96">
-                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                        <Search className="w-5 h-5 text-gray-400" />
+        <div className="space-y-6 max-w-7xl mx-auto pb-12">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs">
+                <div className="flex items-center gap-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-xs">
+                        <Target className="w-6 h-6" />
                     </div>
-                    <input
-                        type="text"
-                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5 dark:bg-slate-800 dark:border-slate-700 dark:placeholder-gray-400 dark:text-white"
-                        placeholder="Tìm kiếm phân loại..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-xl font-bold text-slate-900">Phân Loại Sự Kiện & Chiến Dịch</h1>
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/60">
+                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
+                                {categories.length} Phân Loại
+                            </span>
+                        </div>
+                        <p className="text-sm text-slate-500 mt-0.5">Quản lý danh mục phân loại sự kiện (Hội thảo, Triển lãm, Quảng cáo trực tuyến...)</p>
+                    </div>
                 </div>
+
                 {canCreate && (
-                    <Button onClick={() => handleOpenModal()} className="flex items-center gap-2">
-                        <Plus size={16} /> Thêm Phân Loại
+                    <Button onClick={() => handleOpenModal()} className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs">
+                        <Plus className="w-4 h-4" /> Thêm Phân Loại Mới
                     </Button>
                 )}
             </div>
 
-            <div className="overflow-x-auto">
-                <Table>
-                    <thead>
-                        <tr>
-                            <th>Tên Phân Loại</th>
-                            <th>Mô tả</th>
-                            <th>Ngày cập nhật</th>
-                            <th className="text-right">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredData.length > 0 ? filteredData.map((category) => (
-                            <tr key={category.id}>
-                                <td className="font-medium text-slate-900 dark:text-slate-100">
-                                    <div className="flex items-center gap-2">
-                                        <Target size={18} className="text-slate-500" />
-                                        {category.name}
-                                    </div>
-                                </td>
-                                <td className="text-slate-600 dark:text-slate-400 max-w-[300px] truncate">
-                                    {category.description || '-'}
-                                </td>
-                                <td>{formatDate(category.updatedAt)}</td>
-                                <td className="text-right space-x-2">
-                                    {canEdit && (
-                                        <Button size="sm" variant="outline" onClick={() => handleOpenModal(category)}>
-                                            <Edit size={14} className="mr-1" /> Sửa
-                                        </Button>
-                                    )}
-                                    {canDelete && (
-                                        <Button size="sm" variant="danger" onClick={() => handleDelete(category.id)}>
-                                            <Trash2 size={14} className="mr-1" /> Xóa
-                                        </Button>
-                                    )}
-                                </td>
-                            </tr>
-                        )) : (
-                            <tr>
-                                <td colSpan={4} className="text-center py-8 text-slate-500">
-                                    Không tìm thấy dữ liệu.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </Table>
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between">
+                    <div>
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Tổng phân loại</div>
+                        <div className="text-2xl font-mono font-bold text-slate-900 mt-1">{categories.length}</div>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600">
+                        <Layers className="w-5 h-5" />
+                    </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between">
+                    <div>
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Có mô tả chi tiết</div>
+                        <div className="text-2xl font-mono font-bold text-indigo-600 mt-1">
+                            {categories.filter(c => c.description).length}
+                        </div>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                        <FileText className="w-5 h-5" />
+                    </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between">
+                    <div>
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Trạng thái</div>
+                        <div className="text-sm font-semibold text-emerald-600 mt-1">Đang kích hoạt</div>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                        <Tag className="w-5 h-5" />
+                    </div>
+                </div>
             </div>
 
+            {/* Search Ribbon */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex items-center gap-3">
+                <div className="relative flex-1">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                        type="text"
+                        placeholder="Tìm kiếm phân loại theo tên hoặc mô tả..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors"
+                    />
+                </div>
+            </div>
+
+            {/* Table */}
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr className="bg-slate-50/80 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                                <th className="py-3.5 px-4 font-semibold">Tên Phân Loại</th>
+                                <th className="py-3.5 px-4 font-semibold">Mô Tả Danh Mục</th>
+                                <th className="py-3.5 px-4 font-semibold">Ngày Cập Nhật</th>
+                                <th className="py-3.5 px-4 font-semibold text-right">Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {filteredData.length === 0 ? (
+                                <tr>
+                                    <td colSpan={4} className="py-12 text-center">
+                                        <div className="flex flex-col items-center justify-center gap-2">
+                                            <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                                                <Target className="w-6 h-6" />
+                                            </div>
+                                            <p className="text-sm font-medium text-slate-700">Chưa có phân loại nào</p>
+                                            <p className="text-xs text-slate-400">Thêm phân loại mới để gắn cho các chiến dịch</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ) : (
+                                filteredData.map((category) => (
+                                    <tr key={category.id} className="hover:bg-slate-50/60 transition-colors">
+                                        <td className="py-3.5 px-4">
+                                            <div className="flex items-center gap-2.5 font-bold text-slate-900">
+                                                <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+                                                    <Target className="w-4 h-4" />
+                                                </div>
+                                                <span>{category.name}</span>
+                                            </div>
+                                        </td>
+                                        <td className="py-3.5 px-4 text-slate-600 max-w-md truncate">
+                                            {category.description || <span className="text-slate-400 italic">Chưa có mô tả</span>}
+                                        </td>
+                                        <td className="py-3.5 px-4 text-slate-500 text-xs">
+                                            {formatDate(category.updatedAt)}
+                                        </td>
+                                        <td className="py-3.5 px-4 text-right">
+                                            <div className="flex items-center justify-end gap-1.5">
+                                                {canEdit && (
+                                                    <button 
+                                                        onClick={() => handleOpenModal(category)}
+                                                        title="Chỉnh sửa"
+                                                        className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                                                    >
+                                                        <Edit className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                                {canDelete && (
+                                                    <button 
+                                                        onClick={() => handleDelete(category.id)}
+                                                        title="Xóa"
+                                                        className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* Modal */}
             <Modal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                title={editingId ? 'Cập nhật phân loại' : 'Thêm mới phân loại'}
+                title={editingId ? 'Cập Nhật Phân Loại' : 'Thêm Phân Loại Sự Kiện Mới'}
             >
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4 pt-2">
                     <div>
-                        <label className="block text-sm font-medium mb-1">Tên phân loại <span className="text-red-500">*</span></label>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                            Tên Phân Loại <span className="text-rose-500">*</span>
+                        </label>
                         <Input
                             required
                             value={formData.name}
@@ -187,26 +281,30 @@ export default function CategoryClient({
                             placeholder="Nhập tên phân loại..."
                         />
                     </div>
+
                     <div>
-                        <label className="block text-sm font-medium mb-1">Mô tả</label>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                            Mô Tả Chi Tiết
+                        </label>
                         <textarea
-                            className="w-full flex min-h-[80px] rounded-md border border-slate-200 bg-transparent px-3 py-2 text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950/50 dark:focus:ring-slate-800"
+                            className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-none"
                             rows={3}
                             value={formData.description}
                             onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                            placeholder="Mô tả chi tiết phân loại..."
+                            placeholder="Mô tả chi tiết phân loại sự kiện..."
                         />
                     </div>
-                    <div className="flex justify-end gap-2 pt-4">
-                        <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
+
+                    <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                        <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>
                             Hủy bỏ
                         </Button>
-                        <Button type="submit" disabled={isLoading} variant="primary">
-                            {isLoading ? 'Đang lưu...' : 'Lưu'}
+                        <Button type="submit" disabled={isLoading} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs">
+                            {isLoading ? 'Đang lưu...' : 'Lưu Thay Đổi'}
                         </Button>
                     </div>
                 </form>
             </Modal>
-        </Card>
+        </div>
     );
 }

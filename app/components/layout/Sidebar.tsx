@@ -173,54 +173,69 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
         const isOpen = openSubMenus[item.name] !== undefined ? openSubMenus[item.name] : isChildActive;
 
         return (
-            <div ref={setNodeRef} style={{ ...style, display: 'flex', flexDirection: 'column' }}>
-                <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                    <div {...attributes} {...listeners} style={{ cursor: 'grab', padding: '0.35rem 0.2rem', color: '#64748b' }}>
-                        <GripVertical size={14} />
+            <div ref={setNodeRef} style={style} className="flex flex-col group/item">
+                <div className="flex items-center w-full">
+                    <div 
+                        {...attributes} 
+                        {...listeners} 
+                        className="cursor-grab p-1 text-slate-500/40 hover:text-slate-300 opacity-0 group-hover/item:opacity-100 transition-opacity"
+                        title="Kéo để sắp xếp vị trí"
+                    >
+                        <GripVertical size={13} />
                     </div>
                     <button
                         onClick={() => toggleSubMenu(item.name)}
-                        style={{
-                            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            padding: '0.45rem 0.75rem 0.45rem 0.25rem', borderRadius: '8px',
-                            backgroundColor: isChildActive ? 'rgba(255,255,255,0.06)' : 'transparent', border: 'none', cursor: 'pointer',
-                            color: isChildActive ? '#ffffff' : '#94a3b8',
-                            fontSize: '0.8125rem', fontWeight: isChildActive ? 600 : 500, transition: 'all 0.15s ease', outline: 'none'
-                        }}
+                        className={`flex-1 flex items-center justify-between px-2.5 py-1.5 rounded-lg transition-all text-[13px] outline-none ${
+                            isChildActive 
+                                ? 'bg-slate-800/80 text-white font-semibold shadow-xs' 
+                                : isOpen 
+                                    ? 'bg-slate-800/40 text-slate-200 font-medium' 
+                                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 font-medium'
+                        }`}
                     >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-                            {item.icon && <item.icon size={17} />}
-                            <span className="truncate">{t(item.nameKey) !== item.nameKey ? t(item.nameKey) : item.name}</span>
+                        <div className="flex items-center gap-2.5 min-w-0">
+                            {item.icon && (
+                                <item.icon 
+                                    size={16} 
+                                    className={`flex-shrink-0 transition-colors ${
+                                        isChildActive ? 'text-emerald-400' : 'text-slate-400 group-hover/item:text-slate-200'
+                                    }`} 
+                                />
+                            )}
+                            <span className="truncate text-left tracking-wide">
+                                {t(item.nameKey) !== item.nameKey ? t(item.nameKey) : item.name}
+                            </span>
                         </div>
-                        {isOpen ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+                        <div className="text-slate-400 ml-1 flex-shrink-0">
+                            {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                        </div>
                     </button>
                 </div>
+
                 {isOpen && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', marginLeft: '1.75rem', marginTop: '0.15rem', borderLeft: '1px solid rgba(255,255,255,0.12)', paddingLeft: '0.5rem' }}>
+                    <div className="flex flex-col gap-0.5 ml-6 pl-2.5 my-1 border-l border-slate-700/60">
                         {visibleChildren.map((child: any) => {
                             if (child.children) {
                                 const isGrandChildActive = child.children.some((gChild: any) => pathname?.startsWith(gChild.href) || pathname === gChild.href);
                                 const isChildOpen = openSubMenus[child.name] !== undefined ? openSubMenus[child.name] : isGrandChildActive;
                                 return (
-                                    <div key={child.name} style={{ display: 'flex', flexDirection: 'column', marginTop: '0.15rem' }}>
+                                    <div key={child.name} className="flex flex-col my-0.5">
                                         <button
                                             onClick={() => toggleSubMenu(child.name)}
-                                            style={{
-                                                width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                padding: '0.35rem 0.6rem', borderRadius: '6px',
-                                                backgroundColor: 'transparent', border: 'none', cursor: 'pointer',
-                                                color: isGrandChildActive ? '#ffffff' : '#94a3b8',
-                                                fontWeight: 500, transition: 'all 0.15s', outline: 'none', fontSize: '0.8125rem'
-                                            }}
+                                            className={`w-full flex items-center justify-between px-2 py-1 rounded-md text-xs transition-all ${
+                                                isGrandChildActive 
+                                                    ? 'text-white font-semibold bg-slate-800/60' 
+                                                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 font-medium'
+                                            }`}
                                         >
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                                                {child.icon ? <child.icon size={15} /> : <FileCode size={15} />}
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                {child.icon ? <child.icon size={13} className="text-slate-400" /> : <FileCode size={13} className="text-slate-400" />}
                                                 <span className="truncate">{t(child.nameKey) !== child.nameKey ? t(child.nameKey) : child.name}</span>
                                             </div>
-                                            {isChildOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                                            {isChildOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
                                         </button>
                                         {isChildOpen && (
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', marginLeft: '1rem', marginTop: '0.1rem', borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '0.45rem' }}>
+                                            <div className="flex flex-col gap-0.5 ml-3 pl-2 my-0.5 border-l border-slate-700/40">
                                                 {child.children.map((gChild: any) => {
                                                     const isActive = pathname?.startsWith(gChild.href) || pathname === gChild.href;
                                                     return (
@@ -228,22 +243,20 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
                                                             key={gChild.name}
                                                             href={gChild.href}
                                                             onClick={() => { if (onClose && window.innerWidth < 768) onClose(); }}
-                                                            style={{
-                                                                padding: '0.3rem 0.6rem', borderRadius: '6px',
-                                                                backgroundColor: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
-                                                                color: isActive ? '#ffffff' : '#94a3b8',
-                                                                fontSize: '0.8125rem', fontWeight: isActive ? 600 : 400, textDecoration: 'none',
-                                                                transition: 'all 0.15s', display: 'block'
-                                                            }}
+                                                            className={`px-2 py-1 rounded text-[11.5px] transition-all block truncate ${
+                                                                isActive 
+                                                                    ? 'bg-emerald-500/15 text-emerald-300 font-semibold' 
+                                                                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 font-normal'
+                                                            }`}
                                                         >
-                                                            <span className="truncate">{t(gChild.nameKey) !== gChild.nameKey ? t(gChild.nameKey) : gChild.name}</span>
+                                                            <span>{t(gChild.nameKey) !== gChild.nameKey ? t(gChild.nameKey) : gChild.name}</span>
                                                         </Link>
-                                                    )
+                                                    );
                                                 })}
                                             </div>
                                         )}
                                     </div>
-                                )
+                                );
                             }
 
                             const isChildMenuActive = pathname?.startsWith(child.href) || pathname === child.href;
@@ -252,17 +265,15 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
                                     key={child.name}
                                     href={child.href}
                                     onClick={() => { if (onClose && window.innerWidth < 768) onClose(); }}
-                                    style={{
-                                        padding: '0.35rem 0.6rem', borderRadius: '6px',
-                                        backgroundColor: isChildMenuActive ? 'rgba(255,255,255,0.08)' : 'transparent',
-                                        color: isChildMenuActive ? '#ffffff' : '#94a3b8',
-                                        fontSize: '0.8125rem', fontWeight: isChildMenuActive ? 600 : 500, textDecoration: 'none',
-                                        transition: 'all 0.15s', display: 'block'
-                                    }}
+                                    className={`px-2.5 py-1.5 rounded-lg text-xs transition-all block truncate relative ${
+                                        isChildMenuActive 
+                                            ? 'bg-emerald-500/15 text-emerald-300 font-semibold' 
+                                            : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/50 font-medium'
+                                    }`}
                                 >
-                                    <span className="truncate">{t(child.nameKey) !== child.nameKey ? t(child.nameKey) : child.name}</span>
+                                    <span>{t(child.nameKey) !== child.nameKey ? t(child.nameKey) : child.name}</span>
                                 </Link>
-                            )
+                            );
                         })}
                     </div>
                 )}
@@ -272,23 +283,33 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
 
     const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href));
     return (
-        <div ref={setNodeRef} style={{ ...style, display: 'flex', alignItems: 'center', width: '100%' }}>
-            <div {...attributes} {...listeners} style={{ cursor: 'grab', padding: '0.35rem 0.2rem', color: '#64748b' }}>
-                <GripVertical size={14} />
+        <div ref={setNodeRef} style={style} className="flex items-center w-full group/item">
+            <div 
+                {...attributes} 
+                {...listeners} 
+                className="cursor-grab p-1 text-slate-500/40 hover:text-slate-300 opacity-0 group-hover/item:opacity-100 transition-opacity"
+                title="Kéo để sắp xếp vị trí"
+            >
+                <GripVertical size={13} />
             </div>
             <Link
                 href={item.href}
                 onClick={() => { if (onClose && window.innerWidth < 768) onClose(); }}
-                style={{
-                    flex: 1, display: 'flex', alignItems: 'center', gap: '0.625rem',
-                    padding: '0.45rem 0.75rem 0.45rem 0.25rem', borderRadius: '8px',
-                    backgroundColor: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
-                    color: isActive ? '#ffffff' : '#94a3b8',
-                    fontSize: '0.8125rem', fontWeight: isActive ? 600 : 500, transition: 'all 0.15s ease', textDecoration: 'none'
-                }}
+                className={`flex-1 flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg transition-all text-[13px] outline-none ${
+                    isActive 
+                        ? 'bg-slate-800/90 text-white font-semibold shadow-xs' 
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 font-medium'
+                }`}
             >
-                <item.icon size={17} />
-                <span className="truncate">{t(item.nameKey) !== item.nameKey ? t(item.nameKey) : item.name}</span>
+                <item.icon 
+                    size={16} 
+                    className={`flex-shrink-0 transition-colors ${
+                        isActive ? 'text-emerald-400' : 'text-slate-400 group-hover/item:text-slate-200'
+                    }`} 
+                />
+                <span className="truncate tracking-wide">
+                    {t(item.nameKey) !== item.nameKey ? t(item.nameKey) : item.name}
+                </span>
             </Link>
         </div>
     );
@@ -514,7 +535,7 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
                     )}
                 </div>
             </>
-            <nav style={{ padding: '1.25rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1, overflowY: 'auto' }}>
+            <nav className="p-2 sm:p-2.5 flex flex-col gap-0.5 flex-1 overflow-y-auto">
                 {isClient && (
                     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                         <SortableContext items={navItems.map(i => i.name)} strategy={verticalListSortingStrategy}>
@@ -539,48 +560,47 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
             {/* Online Users Widget */}
             {
                 isClient && onlineUsers.length > 0 && (
-                    <div style={{ padding: '1rem', borderTop: '1px solid #334155', marginTop: 'auto' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <div className="p-3 border-t border-slate-800 mt-auto bg-slate-900/50">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                                 Đang Online ({onlineUsers.length})
                             </span>
-                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#22c55e', animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
-                                <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }`}</style>
-                            </div>
+                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        <div className="flex flex-col gap-1.5">
                             {onlineUsers.slice(0, 5).map(u => (
                                 <div 
                                     key={u.id} 
-                                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: u.id === session?.user?.id ? 'default' : 'pointer' }} 
+                                    className={`flex items-center gap-2 px-2 py-1.5 rounded-lg transition-colors ${
+                                        u.id === session?.user?.id ? 'cursor-default' : 'cursor-pointer hover:bg-slate-800/80'
+                                    }`}
                                     title={u.os ? `OS: ${u.os}` : ''}
-                                    className={u.id === session?.user?.id ? "" : "hover:bg-slate-800 transition-colors rounded-lg p-1.5 -mx-1.5"}
                                     onClick={() => {
                                         if (u.id !== session?.user?.id) {
                                             window.dispatchEvent(new CustomEvent('open-chat', { detail: { userId: u.id } }));
                                         }
                                     }}
                                 >
-                                    <div style={{ position: 'relative' }}>
+                                    <div className="relative flex-shrink-0">
                                         <AvatarImage
                                             src={u.avatar?.startsWith('http') ? u.avatar : u.avatar ? `/${u.avatar.replace(/^\//, '')}` : null}
                                             name={u.name}
-                                            size={28}
+                                            size={26}
                                         />
-                                        <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#22c55e', border: '2px solid white' }}></div>
+                                        <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-slate-900"></div>
                                     </div>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ fontSize: '0.875rem', fontWeight: 500, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="text-xs font-semibold text-white truncate">
                                             {u.name}
                                         </div>
-                                        <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>
+                                        <div className="text-[10px] text-slate-400 truncate">
                                             {u.id === session?.user?.id ? 'Bạn' : (u.os || 'Đang hoạt động')}
                                         </div>
                                     </div>
                                 </div>
                             ))}
                             {onlineUsers.length > 5 && (
-                                <div style={{ fontSize: '0.75rem', color: '#94a3b8', textAlign: 'center', marginTop: '0.25rem' }}>
+                                <div className="text-[11px] text-slate-400 text-center mt-0.5">
                                     +{onlineUsers.length - 5} người khác
                                 </div>
                             )}

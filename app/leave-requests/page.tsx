@@ -13,14 +13,7 @@ export default async function LeaveRequestsPage() {
     const requests = await getMyLeaveRequests();
 
     return (
-        <div className="flex flex-col gap-6">
-            <div className="flex justify-between items-center" style={{ flexWrap: 'wrap', gap: '1rem' }}>
-                <h1 style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <CalendarRange size={24} style={{ color: 'var(--primary)' }} />
-                    Đơn Từ & Nghỉ Phép
-                </h1>
-            </div>
-
+        <div className="space-y-6 w-full">
             <LeaveRequestClient initialData={requests} />
         </div>
     );

@@ -91,89 +91,114 @@ export default function LeaveRequestClient({ initialData }: { initialData: any[]
     };
 
     return (
-        <div className="flex flex-col gap-6">
-            <Card>
-                <div className="flex justify-between items-center" style={{ marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-                    <div className="flex items-center gap-3">
-                        <h2 style={{ fontSize: '1.125rem', fontWeight: 600, margin: 0 }}>Lịch Sử Đơn Từ</h2>
-                        <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)', background: 'var(--bg-muted)', padding: '0.125rem 0.5rem', borderRadius: '1rem' }}>
-                            {requests.length} đơn
-                        </span>
-                    </div>
-                    <Button onClick={openNewModal} className="gap-2">
-                        <Plus size={18} /> Tạo Đơn Mới
-                    </Button>
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 ring-4 ring-emerald-50"></span>
+                        Đơn Từ & Nghỉ Phép
+                    </h1>
+                    <p className="text-xs text-slate-500 mt-1 font-medium">
+                        Tạo và theo dõi tiến trình phê duyệt các đơn xin nghỉ phép, nghỉ ốm và giải trình ({requests.length} đơn)
+                    </p>
+                </div>
+                <Button 
+                    onClick={openNewModal} 
+                    className="px-4 py-2 text-xs font-semibold rounded-xl flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs shadow-emerald-200 transition-all"
+                >
+                    <Plus size={15} /> Tạo Đơn Mới
+                </Button>
+            </div>
+
+            {/* Table Card */}
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+                <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                    <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700">Lịch Sử Đơn Từ</h2>
+                    <span className="text-[11px] font-bold text-slate-600 bg-slate-200/70 px-2.5 py-0.5 rounded-full">
+                        {requests.length} đơn
+                    </span>
                 </div>
 
-                <Table>
-                    <thead>
-                        <tr>
-                            <th>Loại Đơn</th>
-                            <th>Từ Ngày</th>
-                            <th>Đến Ngày</th>
-                            <th>Lý do</th>
-                            <th style={{ width: '130px', textAlign: 'center' }}>Minh Chứng</th>
-                            <th style={{ width: '180px' }}>Trạng Thái & Người Duyệt</th>
-                            <th style={{ width: '120px' }}>Ngày Tạo</th>
-                            <th style={{ width: '80px' }}></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {requests.length === 0 ? (
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-[11px] font-bold uppercase tracking-wider">
                             <tr>
-                                <td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
-                                    Chưa có đơn từ nào
-                                </td>
+                                <th className="px-4 py-3 text-left">Loại Đơn</th>
+                                <th className="px-4 py-3 text-left">Từ Ngày</th>
+                                <th className="px-4 py-3 text-left">Đến Ngày</th>
+                                <th className="px-4 py-3 text-left">Lý do</th>
+                                <th className="px-4 py-3 text-center w-[130px]">Minh Chứng</th>
+                                <th className="px-4 py-3 text-left w-[200px]">Trạng Thái & Người Duyệt</th>
+                                <th className="px-4 py-3 text-left w-[120px]">Ngày Tạo</th>
+                                <th className="px-4 py-3 text-right w-[80px]">Thao tác</th>
                             </tr>
-                        ) : requests.map(r => (
-                            <tr key={r.id}>
-                                <td style={{ fontWeight: 500 }}>
-                                    {r.type === 'SICK_LEAVE' ? 'Nghỉ Ốm' : r.type === 'UNPAID_LEAVE' ? 'Nghỉ Không Lương' : 'Nghỉ Phép Năm'}
-                                </td>
-                                <td>{new Date(r.startDate).toLocaleDateString('vi-VN')}</td>
-                                <td>{new Date(r.endDate).toLocaleDateString('vi-VN')}</td>
-                                <td style={{ maxWidth: '300px' }}>
-                                    <div className="truncate" title={r.reason}>{r.reason}</div>
-                                </td>
-                                <td style={{ textAlign: 'center' }}>
-                                    {r.imageUrl ? (
-                                        <button type="button" onClick={() => setViewImage(r.imageUrl)} className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-2 py-1 rounded border-none cursor-pointer">
-                                            <FileImage size={14} /> Xem Ảnh
-                                        </button>
-                                    ) : <span className="text-slate-400 text-xs">-</span>}
-                                </td>
-                                <td>
-                                    <div className="flex flex-col gap-1">
-                                        {r.status === 'PENDING' && <span className="w-fit p-1 px-2 rounded-full text-xs font-medium bg-amber-100 text-amber-800">ĐANG CHỜ</span>}
-                                        {r.status === 'APPROVED' && <span className="w-fit p-1 px-2 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">ĐÃ DUYỆT</span>}
-                                        {r.status === 'REJECTED' && <span className="w-fit p-1 px-2 rounded-full text-xs font-medium bg-rose-100 text-rose-800">TỪ CHỐI</span>}
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-xs">
+                            {requests.length === 0 ? (
+                                <tr>
+                                    <td colSpan={8} className="py-16 text-center text-xs font-medium text-slate-400">
+                                        Chưa có đơn từ nào được tạo.
+                                    </td>
+                                </tr>
+                            ) : requests.map(r => (
+                                <tr key={r.id} className="hover:bg-slate-50/70 transition-colors">
+                                    <td className="px-4 py-3 font-semibold text-slate-900">
+                                        {r.type === 'SICK_LEAVE' ? 'Nghỉ Ốm Đau' : r.type === 'UNPAID_LEAVE' ? 'Nghỉ Không Lương' : 'Nghỉ Phép Năm'}
+                                    </td>
+                                    <td className="px-4 py-3 text-slate-700 font-medium">{new Date(r.startDate).toLocaleDateString('vi-VN')}</td>
+                                    <td className="px-4 py-3 text-slate-700 font-medium">{new Date(r.endDate).toLocaleDateString('vi-VN')}</td>
+                                    <td className="px-4 py-3 max-w-[280px]">
+                                        <div className="truncate font-normal text-slate-600" title={r.reason}>{r.reason}</div>
+                                    </td>
+                                    <td className="px-4 py-3 text-center">
+                                        {r.imageUrl ? (
+                                            <button 
+                                                type="button" 
+                                                onClick={() => setViewImage(r.imageUrl)} 
+                                                className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100/70 px-2 py-1 rounded-lg border-none cursor-pointer transition-colors"
+                                            >
+                                                <FileImage size={13} /> Xem Ảnh
+                                            </button>
+                                        ) : <span className="text-slate-300 text-xs">-</span>}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <div className="flex flex-col gap-1">
+                                            {r.status === 'PENDING' && <span className="w-fit px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">Đang Chờ</span>}
+                                            {r.status === 'APPROVED' && <span className="w-fit px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">Đã Duyệt</span>}
+                                            {r.status === 'REJECTED' && <span className="w-fit px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">Từ Chối</span>}
 
-                                        {r.approver && r.status !== 'PENDING' && (
-                                            <div className="text-xs text-slate-500 mt-1 flex flex-col gap-0.5">
-                                                <span>Duyệt bởi: <strong>{r.approver.name}</strong></span>
-                                                <span>Lúc: {new Date(r.updatedAt).toLocaleString('vi-VN')}</span>
-                                            </div>
-                                        )}
-                                        {r.status === 'REJECTED' && r.approverNote && (
-                                            <div className="text-[11px] text-rose-600 mt-1 italic border-l-2 border-rose-300 pl-1">
-                                                Lý do: {r.approverNote}
-                                            </div>
-                                        )}
-                                    </div>
-                                </td>
-                                <td style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                                    {new Date(r.createdAt).toLocaleDateString('vi-VN')}
-                                </td>
-                                <td>
-                                    <Button variant="secondary" onClick={() => openEditModal(r)} style={{ padding: '0.25rem' }} title={r.status === 'PENDING' ? "Chỉnh sửa" : "Xem chi tiết"}>
-                                        {r.status === 'PENDING' ? <Edit size={16} className="text-slate-500" /> : <Eye size={16} className="text-slate-500" />}
-                                    </Button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </Table>
-            </Card>
+                                            {r.approver && r.status !== 'PENDING' && (
+                                                <div className="text-[11px] text-slate-500 mt-0.5 flex flex-col">
+                                                    <span>Duyệt bởi: <strong className="text-slate-700">{r.approver.name}</strong></span>
+                                                    <span className="text-[10px] text-slate-400">{new Date(r.updatedAt).toLocaleString('vi-VN')}</span>
+                                                </div>
+                                            )}
+                                            {r.status === 'REJECTED' && r.approverNote && (
+                                                <div className="text-[10px] text-rose-600 mt-1 italic border-l-2 border-rose-300 pl-1.5">
+                                                    Lý do: {r.approverNote}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-3 text-slate-500 text-[11px]">
+                                        {new Date(r.createdAt).toLocaleDateString('vi-VN')}
+                                    </td>
+                                    <td className="px-4 py-3 text-right">
+                                        <button 
+                                            onClick={() => openEditModal(r)} 
+                                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer" 
+                                            title={r.status === 'PENDING' ? "Chỉnh sửa" : "Xem chi tiết"}
+                                        >
+                                            {r.status === 'PENDING' ? <Edit size={16} /> : <Eye size={16} />}
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
             <Modal isOpen={isModalOpen} onClose={() => !isLoading && setIsModalOpen(false)} title={editId ? (requestStatus === 'PENDING' ? "Chỉnh Sửa Đơn Xin Nghỉ" : "Chi Tiết Đơn Xin Nghỉ") : "Tạo Đơn Xin Nghỉ Mới"}>
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">

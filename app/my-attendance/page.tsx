@@ -31,142 +31,179 @@ export default async function MyAttendancePage({
     const years = [year - 1, year, year + 1];
 
     return (
-        <div className="flex flex-col gap-6">
-            <div className="flex justify-between items-center" style={{ flexWrap: 'wrap', gap: '1rem' }}>
-                <h1 style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Calendar size={24} style={{ color: 'var(--primary)' }} />
-                    Bảng Công Của Tôi
-                </h1>
+        <div className="space-y-6 w-full">
+            {/* Header */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 ring-4 ring-emerald-50"></span>
+                        Bảng Công Của Tôi
+                    </h1>
+                    <p className="text-xs text-slate-500 mt-1 font-medium">
+                        Theo dõi chi tiết dữ liệu điểm danh, ngày công thực tế và thời gian ra vào tháng {month}/{year}
+                    </p>
+                </div>
 
-                <form className="flex items-center gap-2" style={{ background: '#fff', padding: '0.25rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-                    <div className="flex items-center gap-2 pl-2">
-                        <Filter size={16} color="var(--text-muted)" />
+                <form className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+                    <div className="flex items-center pl-2 text-slate-400">
+                        <Filter size={14} />
                     </div>
-                    <select name="month" defaultValue={month} style={{ border: 'none', background: 'transparent', outline: 'none', cursor: 'pointer', fontSize: '0.9375rem', color: 'var(--text-primary)' }}>
+                    <select 
+                        name="month" 
+                        defaultValue={month} 
+                        className="bg-transparent text-xs font-semibold text-slate-800 outline-none cursor-pointer px-2 py-1"
+                    >
                         {months.map(m => (
                             <option key={m} value={m}>Tháng {m}</option>
                         ))}
                     </select>
-                    <div style={{ width: '1px', height: '1.25rem', backgroundColor: 'var(--border)' }}></div>
-                    <select name="year" defaultValue={year} style={{ border: 'none', background: 'transparent', outline: 'none', cursor: 'pointer', fontSize: '0.9375rem', color: 'var(--text-primary)' }}>
+                    <div className="w-[1px] h-4 bg-slate-300"></div>
+                    <select 
+                        name="year" 
+                        defaultValue={year} 
+                        className="bg-transparent text-xs font-semibold text-slate-800 outline-none cursor-pointer px-2 py-1"
+                    >
                         {years.map(y => (
                             <option key={y} value={y}>{y}</option>
                         ))}
                     </select>
-                    <button type="submit" style={{ background: 'var(--primary)', color: '#fff', border: 'none', padding: '0.375rem 1rem', borderRadius: 'calc(var(--radius) - 2px)', fontWeight: 500, cursor: 'pointer' }}>
+                    <button 
+                        type="submit" 
+                        className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs shadow-emerald-200 transition-all cursor-pointer"
+                    >
                         Tra Cứu
                     </button>
                 </form>
             </div>
 
             {/* Statistics Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-                <Card className="summary-card" style={{ padding: '1.25rem', border: '1px solid var(--border)' }}>
-                    <div className="flex items-center gap-3">
-                        <div style={{ padding: '0.75rem', borderRadius: 'var(--radius)', backgroundColor: '#d1fae5', color: '#059669' }}>
-                            <CheckCircle size={24} />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between hover:border-emerald-200 transition-all">
+                    <div>
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Ngày Công Chuẩn</div>
+                        <div className="flex items-baseline gap-1.5">
+                            <span className="text-3xl font-bold font-mono text-emerald-600">{totalPresent}</span>
+                            <span className="text-xs font-medium text-slate-400">công</span>
                         </div>
-                        <div>
-                            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#064e3b', margin: 0 }}>Ngày Công Chuẩn</h3>
-                            <p style={{ fontSize: '0.875rem', color: '#10b981', margin: 0, marginTop: '4px' }}>{totalPresent} công</p>
-                        </div>
+                        <div className="text-[11px] text-slate-400 mt-1 font-medium">Đã chấm đủ & đúng giờ</div>
                     </div>
-                </Card>
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600">
+                        <CheckCircle size={22} />
+                    </div>
+                </div>
 
-                <Card className="summary-card" style={{ padding: '1.25rem', border: '1px solid var(--border)' }}>
-                    <div className="flex items-center gap-3">
-                        <div style={{ padding: '0.75rem', borderRadius: 'var(--radius)', backgroundColor: '#fee2e2', color: '#dc2626' }}>
-                            <AlertCircle size={24} />
+                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between hover:border-rose-200 transition-all">
+                    <div>
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Số Lần Đi Muộn</div>
+                        <div className="flex items-baseline gap-1.5">
+                            <span className="text-3xl font-bold font-mono text-rose-600">{totalLate}</span>
+                            <span className="text-xs font-medium text-slate-400">lần</span>
                         </div>
-                        <div>
-                            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#7f1d1d', margin: 0 }}>Số Lần Đi Muộn</h3>
-                            <p style={{ fontSize: '0.875rem', color: '#dc2626', margin: 0, marginTop: '4px' }}>{totalLate} lần</p>
-                        </div>
+                        <div className="text-[11px] text-slate-400 mt-1 font-medium">Vào sau giờ quy định</div>
                     </div>
-                </Card>
+                    <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600">
+                        <AlertCircle size={22} />
+                    </div>
+                </div>
 
-                <Card className="summary-card" style={{ padding: '1.25rem', border: '1px solid var(--border)' }}>
-                    <div className="flex items-center gap-3">
-                        <div style={{ padding: '0.75rem', borderRadius: 'var(--radius)', backgroundColor: '#fef3c7', color: '#d97706' }}>
-                            <Clock size={24} />
+                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between hover:border-amber-200 transition-all">
+                    <div>
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Nửa Buổi / Vắng</div>
+                        <div className="flex items-baseline gap-1.5">
+                            <span className="text-3xl font-bold font-mono text-amber-600">{totalHalfDay}</span>
+                            <span className="text-xs font-medium text-slate-400">buổi</span>
                         </div>
-                        <div>
-                            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#78350f', margin: 0 }}>Nửa Buổi</h3>
-                            <p style={{ fontSize: '0.875rem', color: '#d97706', margin: 0, marginTop: '4px' }}>{totalHalfDay} buổi</p>
-                        </div>
+                        <div className="text-[11px] text-slate-400 mt-1 font-medium">Có phép hoặc vắng mặt</div>
                     </div>
-                </Card>
+                    <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600">
+                        <Clock size={22} />
+                    </div>
+                </div>
             </div>
 
             {/* Attendance Table */}
-            <Card>
-                <div className="flex justify-between items-center" style={{ marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-                    <h2 style={{ fontSize: '1.125rem', fontWeight: 600, margin: 0 }}>Chi Tiết Điểm Danh</h2>
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+                <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                    <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700">Chi Tiết Điểm Danh</h2>
+                    <span className="text-[11px] font-bold text-slate-600 bg-slate-200/70 px-2.5 py-0.5 rounded-full">
+                        {records.length} bản ghi
+                    </span>
                 </div>
-                <Table>
-                    <thead>
-                        <tr>
-                            <th>Ngày</th>
-                            <th>Trạng Thái</th>
-                            <th style={{ textAlign: 'center' }}>Giờ Vào (In)</th>
-                            <th style={{ textAlign: 'center' }}>Giờ Ra (Out)</th>
-                            <th>Vị Trí (Location)</th>
-                            <th style={{ textAlign: 'center' }}>Ảnh Xác Minh</th>
-                            <th>Ghi Chú</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {records.length === 0 ? (
+
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-[11px] font-bold uppercase tracking-wider">
                             <tr>
-                                <td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
-                                    Không có dữ liệu điểm danh tháng này.
-                                </td>
+                                <th className="px-4 py-3 text-left">Ngày</th>
+                                <th className="px-4 py-3 text-left">Trạng Thái</th>
+                                <th className="px-4 py-3 text-center">Giờ Vào (In)</th>
+                                <th className="px-4 py-3 text-center">Giờ Ra (Out)</th>
+                                <th className="px-4 py-3 text-left">Vị Trí (Location)</th>
+                                <th className="px-4 py-3 text-center">Ảnh Xác Minh</th>
+                                <th className="px-4 py-3 text-left">Ghi Chú</th>
                             </tr>
-                        ) : records.map(r => (
-                            <tr key={r.id}>
-                                <td>
-                                    <div style={{ fontWeight: 500 }}>{r.date.toLocaleDateString('vi-VN')}</div>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{r.date.toLocaleDateString('vi-VN', { weekday: 'short' })}</div>
-                                </td>
-                                <td>
-                                    {r.status === 'PRESENT' && <span className="p-1 px-2 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">ĐÚNG GIỜ</span>}
-                                    {r.status === 'LATE' && <span className="p-1 px-2 rounded-full text-xs font-medium bg-rose-100 text-rose-800">ĐI MUỘN</span>}
-                                    {r.status === 'HALF_DAY' && <span className="p-1 px-2 rounded-full text-xs font-medium bg-amber-100 text-amber-800">NỬA BUỔI</span>}
-                                    {r.status === 'ABSENT' && <span className="p-1 px-2 rounded-full text-xs font-medium bg-slate-100 text-slate-800">VẮNG MẶT</span>}
-                                </td>
-                                <td style={{ textAlign: 'center', fontFamily: 'monospace' }}>
-                                    {r.checkInTime ? r.checkInTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-                                </td>
-                                <td style={{ textAlign: 'center', fontFamily: 'monospace' }}>
-                                    {r.checkOutTime ? r.checkOutTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-                                </td>
-                                <td style={{ fontSize: '0.875rem' }}>
-                                    {(r.checkInLocation || r.checkOutLocation) ? (
-                                        <div className="flex flex-col gap-1 text-slate-600">
-                                            {r.checkInLocation && <div><MapPin size={12} className="inline mr-1 text-emerald-600" />{r.checkInLocation}</div>}
-                                            {r.checkOutLocation && <div><MapPin size={12} className="inline mr-1 text-rose-600" />{r.checkOutLocation}</div>}
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-xs">
+                            {records.length === 0 ? (
+                                <tr>
+                                    <td colSpan={7} className="py-16 text-center text-slate-500 bg-slate-50/30">
+                                        <div className="flex flex-col items-center justify-center">
+                                            <Calendar className="w-10 h-10 text-slate-300 mb-2.5" strokeWidth={1.5} />
+                                            <h3 className="text-sm font-bold text-slate-700">Không có dữ liệu điểm danh tháng này</h3>
+                                            <p className="text-xs text-slate-400 mt-1">Các lượt chấm công trong tháng {month}/{year} sẽ được tổng hợp tự động tại đây.</p>
                                         </div>
-                                    ) : '-'}
-                                </td>
-                                <td style={{ textAlign: 'center' }}>
-                                    <div className="flex flex-col items-center gap-2">
-                                        {r.checkInPhotoUrl && (
-                                            <VerificationImageLink url={r.checkInPhotoUrl} type="IN" />
-                                        )}
-                                        {r.checkOutPhotoUrl && (
-                                            <VerificationImageLink url={r.checkOutPhotoUrl} type="OUT" />
-                                        )}
-                                        {(!r.checkInPhotoUrl && !r.checkOutPhotoUrl) && <span className="text-slate-300">-</span>}
-                                    </div>
-                                </td>
-                                <td style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                                    {r.notes || '-'}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </Table>
-            </Card>
+                                    </td>
+                                </tr>
+                            ) : records.map(r => (
+                                <tr key={r.id} className="hover:bg-slate-50/70 transition-colors">
+                                    <td className="px-4 py-3">
+                                        <div className="font-bold text-slate-900">{r.date.toLocaleDateString('vi-VN')}</div>
+                                        <div className="text-[11px] text-slate-400 font-medium capitalize mt-0.5">{r.date.toLocaleDateString('vi-VN', { weekday: 'long' })}</div>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        {r.status === 'PRESENT' && <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">Đúng Giờ</span>}
+                                        {r.status === 'LATE' && <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">Đi Muộn</span>}
+                                        {r.status === 'HALF_DAY' && <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">Nửa Buổi</span>}
+                                        {r.status === 'ABSENT' && <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">Vắng Mặt</span>}
+                                    </td>
+                                    <td className="px-4 py-3 text-center">
+                                        <span className="font-mono text-xs font-semibold px-2 py-0.5 bg-slate-100 rounded text-slate-800">
+                                            {r.checkInTime ? r.checkInTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-center">
+                                        <span className="font-mono text-xs font-semibold px-2 py-0.5 bg-slate-100 rounded text-slate-800">
+                                            {r.checkOutTime ? r.checkOutTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-slate-600">
+                                        {(r.checkInLocation || r.checkOutLocation) ? (
+                                            <div className="flex flex-col gap-1 text-[11px]">
+                                                {r.checkInLocation && <div className="flex items-center gap-1 text-slate-700"><MapPin size={12} className="text-emerald-600 shrink-0" /><span className="truncate max-w-[220px]">{r.checkInLocation}</span></div>}
+                                                {r.checkOutLocation && <div className="flex items-center gap-1 text-slate-500"><MapPin size={12} className="text-rose-500 shrink-0" /><span className="truncate max-w-[220px]">{r.checkOutLocation}</span></div>}
+                                            </div>
+                                        ) : <span className="text-slate-400">-</span>}
+                                    </td>
+                                    <td className="px-4 py-3 text-center">
+                                        <div className="flex items-center justify-center gap-2">
+                                            {r.checkInPhotoUrl && (
+                                                <VerificationImageLink url={r.checkInPhotoUrl} type="IN" />
+                                            )}
+                                            {r.checkOutPhotoUrl && (
+                                                <VerificationImageLink url={r.checkOutPhotoUrl} type="OUT" />
+                                            )}
+                                            {(!r.checkInPhotoUrl && !r.checkOutPhotoUrl) && <span className="text-slate-300">-</span>}
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-3 text-slate-500">
+                                        {r.notes || '-'}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     );
 }

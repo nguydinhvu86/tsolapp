@@ -26,14 +26,7 @@ export default async function ProjectsPage({
     });
 
     return (
-        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <div className="flex justify-between items-center" style={{ marginBottom: '1.5rem' }}>
-                <div>
-                    <h1 style={{ marginBottom: '0.25rem' }}>Quản lý Dự án (Projects)</h1>
-                    <p style={{ color: 'var(--text-muted)' }}>Theo dõi tiến độ, nhóm các phần việc và quản lý dự án tổng thể.</p>
-                </div>
-            </div>
-
+        <div className="space-y-6 w-full">
             <ProjectListClient
                 initialProjects={projects as any}
                 users={users}

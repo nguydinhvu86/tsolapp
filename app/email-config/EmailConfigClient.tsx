@@ -2,9 +2,19 @@
 
 import React, { useState } from 'react';
 import { updateEmailSettings, testEmailConnection } from './actions';
-import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
-import { Save, Mail, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { 
+    Save, 
+    Mail, 
+    CheckCircle2, 
+    AlertCircle, 
+    RefreshCw, 
+    Server, 
+    KeyRound, 
+    UserCheck,
+    Send,
+    ShieldCheck
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export function EmailConfigClient({ initialSettings }: { initialSettings: Record<string, string> }) {
@@ -26,7 +36,7 @@ export function EmailConfigClient({ initialSettings }: { initialSettings: Record
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setSettings(prev => ({ ...prev, [e.target.name]: e.target.value }));
-        setTestResult(null); // Clear test result on change
+        setTestResult(null);
     };
 
     const handleSave = async (e: React.FormEvent) => {
@@ -62,186 +72,309 @@ export function EmailConfigClient({ initialSettings }: { initialSettings: Record
         }
     };
 
+    const isConfigured = Boolean(settings.SMTP_HOST && settings.SMTP_USER);
+
     return (
-        <div style={{ padding: '0', maxWidth: '1000px', margin: '0 auto', fontFamily: 'Inter, sans-serif' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
-                <div>
-                    <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#0f172a', margin: '0 0 0.25rem 0', letterSpacing: '-0.025em' }}>Cấu Hình Máy Chủ Email (SMTP)</h1>
-                    <p style={{ color: '#64748b', margin: 0, fontSize: '0.875rem' }}>Các thông số này được sử dụng để hệ thống tự động gửi email báo giá, hóa đơn tới khách hàng.</p>
+        <div className="space-y-6 max-w-5xl mx-auto pb-12">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs">
+                <div className="flex items-center gap-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-xs">
+                        <Mail className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-xl font-bold text-slate-900">Cấu Hình Máy Chủ Email (SMTP)</h1>
+                            {isConfigured ? (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Đã cấu hình
+                                </span>
+                            ) : (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/60">
+                                    Chưa hoàn tất
+                                </span>
+                            )}
+                        </div>
+                        <p className="text-sm text-slate-500 mt-0.5">Thiết lập kết nối máy chủ gửi email tự động cho báo giá, hóa đơn và thông báo</p>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <Button
+                        type="button"
+                        onClick={handleTestConnection}
+                        disabled={isTesting || isSaving}
+                        variant="secondary"
+                        className="gap-2 border-slate-200"
+                    >
+                        {isTesting ? <RefreshCw className="w-4 h-4 animate-spin text-blue-600" /> : <Send className="w-4 h-4 text-blue-600" />}
+                        {isTesting ? 'Đang kiểm tra...' : 'Kiểm tra kết nối'}
+                    </Button>
+                    <Button
+                        type="submit"
+                        form="smtp-form"
+                        disabled={isSaving || isTesting}
+                        className="gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
+                    >
+                        {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        {isSaving ? 'Đang lưu...' : 'Lưu cấu hình'}
+                    </Button>
                 </div>
             </div>
 
-            <Card style={{ padding: '2rem', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)' }}>
-                <form onSubmit={handleSave} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '1.5rem' }}>
-
-                    {/* Máy chủ */}
-                    <div style={{ gridColumn: '1 / -1' }}>
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#1e293b', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem' }}>Cài đặt Máy chủ (SMTP Server)</h3>
-                    </div>
-
+            {/* Quick Stat Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between">
                     <div>
-                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#334155', marginBottom: '0.5rem' }}>SMTP Host <span style={{ color: 'red' }}>*</span></label>
-                        <input
-                            type="text"
-                            name="SMTP_HOST"
-                            value={settings.SMTP_HOST}
-                            onChange={handleChange}
-                            required
-                            placeholder="vd: smtp.gmail.com"
-                            style={{ width: '100%', padding: '0.625rem 0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', outline: 'none', transition: 'border-color 0.15s ease-in-out', fontSize: '0.875rem' }}
-                            onFocus={(e) => e.target.style.borderColor = '#6366f1'}
-                            onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
-                        />
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Máy chủ SMTP</div>
+                        <div className="text-sm font-mono font-bold text-slate-900 mt-1 truncate max-w-[180px]">
+                            {settings.SMTP_HOST || 'Chưa thiết lập'}
+                        </div>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                        <Server className="w-5 h-5" />
+                    </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between">
+                    <div>
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Tài khoản gửi</div>
+                        <div className="text-sm font-mono font-bold text-indigo-600 mt-1 truncate max-w-[180px]">
+                            {settings.SMTP_USER || 'Chưa thiết lập'}
+                        </div>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                        <UserCheck className="w-5 h-5" />
+                    </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between">
+                    <div>
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Cổng & Bảo mật</div>
+                        <div className="text-sm font-mono font-bold text-emerald-600 mt-1">
+                            Port {settings.SMTP_PORT} • {settings.SMTP_SECURE === 'true' ? 'SSL' : 'TLS'}
+                        </div>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                        <ShieldCheck className="w-5 h-5" />
+                    </div>
+                </div>
+            </div>
+
+            {/* Test Result Alert */}
+            {testResult && (
+                <div className={`p-4 rounded-2xl border flex items-start gap-3 shadow-xs animate-fade-in ${
+                    testResult.success 
+                        ? 'bg-emerald-50/90 border-emerald-200 text-emerald-800' 
+                        : 'bg-rose-50/90 border-rose-200 text-rose-800'
+                }`}>
+                    {testResult.success ? (
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                    ) : (
+                        <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                    )}
+                    <div>
+                        <h4 className="text-sm font-bold">
+                            {testResult.success ? 'Kết nối máy chủ SMTP thành công!' : 'Lỗi kết nối / Đăng nhập SMTP thất bại'}
+                        </h4>
+                        <p className="text-xs mt-0.5 opacity-90">{testResult.message}</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Main Config Form */}
+            <form id="smtp-form" onSubmit={handleSave} className="space-y-6">
+                {/* 1. Máy chủ */}
+                <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-xs space-y-4">
+                    <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
+                        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                            <Server className="w-4 h-4" />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-bold text-slate-900">1. Thông Tin Máy Chủ (SMTP Server)</h3>
+                            <p className="text-xs text-slate-500">Địa chỉ máy chủ SMTP và cổng kết nối giao thức</p>
+                        </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                         <div>
-                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#334155', marginBottom: '0.5rem' }}>SMTP Port <span style={{ color: 'red' }}>*</span></label>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                                SMTP Host <span className="text-rose-500">*</span>
+                            </label>
                             <input
                                 type="text"
-                                name="SMTP_PORT"
-                                value={settings.SMTP_PORT}
+                                name="SMTP_HOST"
+                                value={settings.SMTP_HOST}
                                 onChange={handleChange}
                                 required
-                                placeholder="vd: 587 hoặc 465"
-                                style={{ width: '100%', padding: '0.625rem 0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', outline: 'none', transition: 'border-color 0.15s ease-in-out', fontSize: '0.875rem' }}
-                                onFocus={(e) => e.target.style.borderColor = '#6366f1'}
-                                onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+                                placeholder="vd: smtp.gmail.com hoặc mail.company.com"
+                                className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
                             />
                         </div>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#334155', marginBottom: '0.5rem' }}>Secure (SSL/TLS)</label>
-                            <select
-                                name="SMTP_SECURE"
-                                value={settings.SMTP_SECURE}
-                                onChange={handleChange}
-                                style={{ width: '100%', padding: '0.625rem 0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', outline: 'none', backgroundColor: 'white', transition: 'border-color 0.15s ease-in-out', fontSize: '0.875rem' }}
-                                onFocus={(e) => e.target.style.borderColor = '#6366f1'}
-                                onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
-                            >
-                                <option value="false">False (Thường dùng Port 587 / TLS)</option>
-                                <option value="true">True (Thường dùng Port 465 / SSL)</option>
-                            </select>
+
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                                    SMTP Port <span className="text-rose-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    name="SMTP_PORT"
+                                    value={settings.SMTP_PORT}
+                                    onChange={handleChange}
+                                    required
+                                    placeholder="587 hoặc 465"
+                                    className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                                    Bảo Mật (SSL)
+                                </label>
+                                <select
+                                    name="SMTP_SECURE"
+                                    value={settings.SMTP_SECURE}
+                                    onChange={handleChange}
+                                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
+                                >
+                                    <option value="false">False (Port 587 / TLS)</option>
+                                    <option value="true">True (Port 465 / SSL)</option>
+                                </select>
+                            </div>
                         </div>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#334155', marginBottom: '0.5rem' }}>Bỏ qua lỗi Chứng chỉ (Ignore SSL/TLS)</label>
+
+                        <div className="sm:col-span-2">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                                Bỏ Qua Lỗi Chứng Chỉ Tự Cấp (Ignore TLS Errors)
+                            </label>
                             <select
                                 name="SMTP_IGNORE_TLS"
                                 value={settings.SMTP_IGNORE_TLS}
                                 onChange={handleChange}
-                                style={{ width: '100%', padding: '0.625rem 0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', outline: 'none', backgroundColor: 'white', transition: 'border-color 0.15s ease-in-out', fontSize: '0.875rem' }}
-                                onFocus={(e) => e.target.style.borderColor = '#6366f1'}
-                                onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+                                className="w-full sm:w-1/2 px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
                             >
-                                <option value="false">Không (Khuyên dùng)</option>
-                                <option value="true">Có (Bỏ qua lỗi tự cấp chứng chỉ)</option>
+                                <option value="false">Không - Bắt buộc SSL hợp lệ (Khuyên dùng)</option>
+                                <option value="true">Có - Chấp nhận Self-signed Certificate</option>
                             </select>
-                            <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.35rem' }}>Chọn "Có" nếu dùng máy chủ riêng bị lỗi chứng chỉ.</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 2. Xác thực */}
+                <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-xs space-y-4">
+                    <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
+                        <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                            <KeyRound className="w-4 h-4" />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-bold text-slate-900">2. Xác Thực Đăng Nhập (Authentication)</h3>
+                            <p className="text-xs text-slate-500">Tài khoản và mật khẩu ứng dụng để xác thực với máy chủ SMTP</p>
                         </div>
                     </div>
 
-                    {/* Xác thực */}
-                    <div style={{ gridColumn: '1 / -1', marginTop: '1rem' }}>
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#1e293b', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem' }}>Xác thực (Authentication)</h3>
-                    </div>
-
-                    <div>
-                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#334155', marginBottom: '0.5rem' }}>Tên đăng nhập (Username / Email) <span style={{ color: 'red' }}>*</span></label>
-                        <input
-                            type="text"
-                            name="SMTP_USER"
-                            value={settings.SMTP_USER}
-                            onChange={handleChange}
-                            required
-                            placeholder="vd: contact@company.com"
-                            style={{ width: '100%', padding: '0.625rem 0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', outline: 'none', transition: 'border-color 0.15s ease-in-out', fontSize: '0.875rem' }}
-                            onFocus={(e) => e.target.style.borderColor = '#6366f1'}
-                            onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
-                        />
-                    </div>
-
-                    <div>
-                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#334155', marginBottom: '0.5rem' }}>Mật khẩu (App Password) <span style={{ color: 'red' }}>*</span></label>
-                        <input
-                            type="password"
-                            name="SMTP_PASS"
-                            value={settings.SMTP_PASS}
-                            onChange={handleChange}
-                            required
-                            placeholder="Mật khẩu ứng dụng"
-                            style={{ width: '100%', padding: '0.625rem 0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', outline: 'none', transition: 'border-color 0.15s ease-in-out', fontSize: '0.875rem' }}
-                            onFocus={(e) => e.target.style.borderColor = '#6366f1'}
-                            onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
-                        />
-                        <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.35rem' }}>* Đối với Gmail, hãy sử dụng Mật khẩu ứng dụng (App Password) thay vì mật khẩu thông thường.</p>
-                    </div>
-
-                    {/* Định dạng Gửi */}
-                    <div style={{ gridColumn: '1 / -1', marginTop: '1rem' }}>
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#1e293b', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem' }}>Tùy chỉnh Người Gửi (Sender Info)</h3>
-                    </div>
-
-                    <div>
-                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#334155', marginBottom: '0.5rem' }}>Tên người gửi (From Name)</label>
-                        <input
-                            type="text"
-                            name="SMTP_FROM_NAME"
-                            value={settings.SMTP_FROM_NAME}
-                            onChange={handleChange}
-                            placeholder="vd: Công ty TNHH ContractMgr"
-                            style={{ width: '100%', padding: '0.625rem 0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', outline: 'none', transition: 'border-color 0.15s ease-in-out', fontSize: '0.875rem' }}
-                            onFocus={(e) => e.target.style.borderColor = '#6366f1'}
-                            onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
-                        />
-                    </div>
-
-                    <div>
-                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#334155', marginBottom: '0.5rem' }}>Email người gửi (From Email) - Tùy chọn</label>
-                        <input
-                            type="email"
-                            name="SMTP_FROM_EMAIL"
-                            value={settings.SMTP_FROM_EMAIL}
-                            onChange={handleChange}
-                            placeholder="Để trống sẽ mặc định dùng Tên đăng nhập"
-                            style={{ width: '100%', padding: '0.625rem 0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', outline: 'none', transition: 'border-color 0.15s ease-in-out', fontSize: '0.875rem' }}
-                            onFocus={(e) => e.target.style.borderColor = '#6366f1'}
-                            onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
-                        />
-                    </div>
-
-                    {testResult && (
-                        <div style={{ gridColumn: '1 / -1', marginTop: '1rem', padding: '1rem', borderRadius: '0.5rem', display: 'flex', gap: '0.75rem', alignItems: 'flex-start', backgroundColor: testResult.success ? '#f0fdf4' : '#fef2f2', border: `1px solid ${testResult.success ? '#bbf7d0' : '#fecaca'}`, color: testResult.success ? '#166534' : '#991b1b' }}>
-                            {testResult.success ? <CheckCircle size={20} className="flex-shrink-0 mt-0.5" /> : <AlertCircle size={20} className="flex-shrink-0 mt-0.5" />}
-                            <div>
-                                <h4 style={{ margin: '0 0 0.25rem 0', fontWeight: 600, fontSize: '0.875rem' }}>{testResult.success ? 'Kết nối thành công!' : 'Lỗi kết nối / Đăng nhập thất bại'}</h4>
-                                <p style={{ margin: 0, fontSize: '0.875rem' }}>{testResult.message}</p>
-                            </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                        <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                                Tên Đăng Nhập (Email / Username) <span className="text-rose-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                name="SMTP_USER"
+                                value={settings.SMTP_USER}
+                                onChange={handleChange}
+                                required
+                                placeholder="vd: contact@company.com"
+                                className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors"
+                            />
                         </div>
-                    )}
 
-                    <div style={{ gridColumn: '1 / -1', marginTop: '1.5rem', borderTop: '1px solid #e2e8f0', paddingTop: '1.5rem', display: 'flex', justifyContent: 'flex-start', gap: '1rem' }}>
-                        <Button
-                            type="button"
-                            onClick={handleTestConnection}
-                            disabled={isTesting || isSaving}
-                            className="btn-secondary"
-                            style={{ padding: '0.625rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid #cbd5e1', backgroundColor: 'white', color: '#334155' }}
-                        >
-                            {isTesting ? <RefreshCw size={18} className="animate-spin" /> : <Mail size={18} />}
-                            {isTesting ? 'Đang kiểm tra...' : 'Kiểm tra kết nối'}
-                        </Button>
-                        <Button
-                            type="submit"
-                            disabled={isSaving || isTesting}
-                            style={{ padding: '0.625rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                        >
-                            {isSaving ? <RefreshCw size={18} className="animate-spin" /> : <Save size={18} />}
-                            {isSaving ? 'Đang lưu...' : 'Lưu Cấu Hình'}
-                        </Button>
+                        <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                                Mật Khẩu Ứng Dụng (App Password) <span className="text-rose-500">*</span>
+                            </label>
+                            <input
+                                type="password"
+                                name="SMTP_PASS"
+                                value={settings.SMTP_PASS}
+                                onChange={handleChange}
+                                required
+                                placeholder="••••••••••••••••"
+                                className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors"
+                            />
+                            <p className="text-[11px] text-slate-500 mt-1">
+                                Với Gmail/Google Workspace, bạn cần dùng Mật khẩu ứng dụng (App Password) từ Tài khoản Google.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 3. Người gửi */}
+                <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-xs space-y-4">
+                    <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
+                            <Send className="w-4 h-4" />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-bold text-slate-900">3. Thông Tin Người Gửi Hiển Thị (Sender Profile)</h3>
+                            <p className="text-xs text-slate-500">Tên hiển thị và địa chỉ email gửi đi trong hộp thư khách hàng</p>
+                        </div>
                     </div>
 
-                </form>
-            </Card>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                        <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                                Tên Người Gửi (From Name)
+                            </label>
+                            <input
+                                type="text"
+                                name="SMTP_FROM_NAME"
+                                value={settings.SMTP_FROM_NAME}
+                                onChange={handleChange}
+                                placeholder="vd: Công ty TNHH Giải Pháp Công Nghệ T-Sol"
+                                className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-colors"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                                Email Gửi Đi (From Email - Tùy chọn)
+                            </label>
+                            <input
+                                type="email"
+                                name="SMTP_FROM_EMAIL"
+                                value={settings.SMTP_FROM_EMAIL}
+                                onChange={handleChange}
+                                placeholder="Để trống sẽ mặc định dùng Tên đăng nhập"
+                                className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-colors"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Bottom Actions */}
+                <div className="flex items-center justify-end gap-3 pt-2">
+                    <Button
+                        type="button"
+                        onClick={handleTestConnection}
+                        disabled={isTesting || isSaving}
+                        variant="secondary"
+                        className="gap-2 border-slate-200"
+                    >
+                        {isTesting ? <RefreshCw className="w-4 h-4 animate-spin text-blue-600" /> : <Send className="w-4 h-4 text-blue-600" />}
+                        {isTesting ? 'Đang kiểm tra...' : 'Kiểm tra kết nối'}
+                    </Button>
+                    <Button
+                        type="submit"
+                        disabled={isSaving || isTesting}
+                        className="gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
+                    >
+                        {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        {isSaving ? 'Đang lưu...' : 'Lưu Cấu Hình'}
+                    </Button>
+                </div>
+            </form>
         </div>
     );
 }

@@ -874,14 +874,16 @@ export function DashboardClient({
                                                                                     </thead>
                                                                                     <tbody>
                                                                                         {tasks.map((task: any) => {
-                                                                                            const relatedEntityName = task.customer?.name || task.contract?.code || task.salesInvoice?.code || task.salesOrder?.code || '';
                                                                                             const isDueSoon = task.dueDate && new Date(task.dueDate).getTime() - new Date().getTime() < 86400000 && task.status !== 'DONE';
                                                                                             const overdue = task.dueDate && task.status !== 'DONE' && task.status !== 'CANCELLED' && new Date(task.dueDate).getTime() < new Date().getTime();
+                                                                                            const relatedEntityName = task.customer?.name || task.contract?.title || task.quote?.title || task.project?.name || task.lead?.name || '';
 
                                                                                             let rowClass = 'hover:bg-slate-50/70 transition-colors group';
                                                                                             let rowStyle: React.CSSProperties = {};
 
-                                                                                            if (task.status !== 'DONE' && task.status !== 'CANCELLED') {
+                                                                                            if (overdue) {
+                                                                                                rowClass = 'animate-overdue-row border-l-4 border-l-rose-500 transition-all group';
+                                                                                            } else if (task.status !== 'DONE' && task.status !== 'CANCELLED') {
                                                                                                 if (task.priority === 'URGENT') {
                                                                                                     rowStyle = { animation: 'priority-urgent-bg-blink 1.5s linear infinite' };
                                                                                                 } else if (task.priority === 'HIGH') {
@@ -892,12 +894,12 @@ export function DashboardClient({
                                                                                             return (
                                                                                                 <tr key={task.id} className={rowClass} style={rowStyle}>
                                                                                                     <td>
-                                                                                                        <div style={{ fontWeight: 500, color: isDueSoon ? 'var(--danger)' : 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                                                                            <a href={`/tasks/${task.id}`} className="text-blue-600 hover:text-blue-800 text-xs font-medium truncate max-w-[200px]" title={task.title}>
+                                                                                                        <div style={{ fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                                                            <a href={`/tasks/${task.id}`} className={`text-xs font-semibold truncate max-w-[200px] hover:underline ${overdue ? 'text-rose-950 font-bold' : 'text-blue-600'}`} title={task.title}>
                                                                                                                 {task.title}
                                                                                                             </a>
                                                                                                             {overdue && (
-                                                                                                                <span className="bg-rose-50 text-rose-700 border border-rose-200/80 px-1.5 py-0.5 rounded text-[10px] font-semibold block" style={{ whiteSpace: 'nowrap' }}>
+                                                                                                                <span className="animate-overdue-badge inline-flex items-center gap-1 border border-rose-300 px-1.5 py-0.5 rounded text-[10px] font-black" style={{ whiteSpace: 'nowrap' }}>
                                                                                                                     QUÁ HẠN
                                                                                                                 </span>
                                                                                                             )}
@@ -913,8 +915,12 @@ export function DashboardClient({
                                                                                                             {task.priority === 'MEDIUM' ? t("dashboard.myWork.priorityMedium") : task.priority === 'HIGH' ? t("dashboard.myWork.priorityHigh") : task.priority === 'URGENT' ? t("dashboard.myWork.priorityUrgent") : t("dashboard.myWork.priorityLow")}
                                                                                                         </span>
                                                                                                     </td>
-                                                                                                    <td style={{ color: isDueSoon ? 'var(--danger)' : 'inherit', fontSize: '0.75rem' }}>
-                                                                                                        {task.dueDate ? formatDate(new Date(task.dueDate)) : '-'}
+                                                                                                    <td style={{ fontSize: '0.75rem' }}>
+                                                                                                        {task.dueDate ? (
+                                                                                                            <span className={overdue ? 'text-rose-700 font-bold bg-rose-100 px-1.5 py-0.5 rounded border border-rose-300 inline-block' : (isDueSoon ? 'text-rose-600 font-semibold' : '')}>
+                                                                                                                {formatDate(new Date(task.dueDate))}
+                                                                                                            </span>
+                                                                                                        ) : '-'}
                                                                                                     </td>
                                                                                                     <td>
                                                                                                         {relatedEntityName ? (

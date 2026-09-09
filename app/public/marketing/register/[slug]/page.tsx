@@ -2,7 +2,6 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import RegisterClient from "./RegisterClient";
 import Image from "next/link";
-import { BackgroundBeams } from "@/app/components/ui/background-beams";
 
 export const dynamic = 'force-dynamic';
 

@@ -17,11 +17,20 @@ export default async function ProfilePage() {
     ]);
 
     return (
-        <div>
-            <div className="flex justify-between items-center" style={{ marginBottom: '2rem' }}>
-                <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>Hồ sơ Cá nhân</h1>
+        <div className="space-y-6 w-full">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 ring-4 ring-indigo-50"></span>
+                        Hồ Sơ Cá Nhân
+                    </h1>
+                    <p className="text-xs text-slate-500 mt-1 font-medium">
+                        Quản lý thông tin tài khoản, bảo mật 2 lớp (2FA) và tổng quan hiệu suất làm việc
+                    </p>
+                </div>
             </div>
             <ProfileClient initialProfile={profile} initialStats={stats} />
         </div>
     );
 }
+

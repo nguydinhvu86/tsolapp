@@ -213,7 +213,7 @@ export function ProfileClient({ initialProfile, initialStats }: { initialProfile
         <div className="flex flex-col lg:flex-row gap-6">
             {/* Left Column: Settings & Identity */}
             <div className="w-full lg:w-1/3 flex flex-col gap-6">
-                <Card className="p-6">
+                <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-xs">
                     <div className="flex items-center gap-4 mb-6 relative">
                         <div className="relative shrink-0">
                             <AvatarImage
@@ -338,16 +338,20 @@ export function ProfileClient({ initialProfile, initialStats }: { initialProfile
 
                         <div className="flex justify-end gap-3 mt-2 pt-4 border-t border-slate-100 items-center">
                             {saveSuccess && (
-                                <div className="flex items-center gap-1.5 text-emerald-600 text-sm font-medium mr-auto">
-                                    <CheckCircle2 size={16} /> Đã lưu hồ sơ
+                                <div className="flex items-center gap-1.5 text-emerald-600 text-xs font-semibold mr-auto">
+                                    <CheckCircle2 size={15} /> Đã lưu hồ sơ
                                 </div>
                             )}
-                            <Button type="submit" disabled={isSaving} className="gap-2">
-                                <Save size={16} /> {isSaving ? 'Đang lưu...' : 'Lưu Thay Đổi'}
-                            </Button>
+                            <button
+                                type="submit"
+                                disabled={isSaving}
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-xs shadow-indigo-200 transition-all cursor-pointer disabled:opacity-50"
+                            >
+                                <Save size={15} /> {isSaving ? 'Đang lưu...' : 'Lưu Thay Đổi'}
+                            </button>
                         </div>
                     </form>
-                </Card>
+                </div>
             </div>
 
             {/* Right Column: Dashboard & Real-time Stats */}
@@ -355,48 +359,62 @@ export function ProfileClient({ initialProfile, initialStats }: { initialProfile
                 <div className="w-full lg:w-2/3 flex flex-col gap-6">
                     {/* Top KPI row */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <Card className="p-4 flex flex-col relative overflow-hidden group hover:border-emerald-200 transition-colors">
-                            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                                <Wallet size={60} className="text-emerald-500" />
+                        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col justify-between hover:border-emerald-200 transition-all group">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Doanh thu cá nhân</span>
+                                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+                                    <Wallet size={16} />
+                                </div>
                             </div>
-                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Doanh thu (Bạn Thu)</span>
-                            <span className="text-xl font-bold text-slate-800 break-words">{formatMoney(initialStats.revenue)}</span>
-                        </Card>
+                            <span className="text-xl font-bold font-mono text-emerald-700 break-words">{formatMoney(initialStats.revenue)}</span>
+                        </div>
 
-                        <Card className="p-4 flex flex-col relative overflow-hidden group hover:border-rose-200 transition-colors">
-                            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                                <CircleDollarSign size={60} className="text-rose-500" />
+                        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col justify-between hover:border-rose-200 transition-all group">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Công nợ tồn</span>
+                                <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100">
+                                    <CircleDollarSign size={16} />
+                                </div>
                             </div>
-                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Công nợ tồn</span>
-                            <span className="text-xl font-bold text-rose-600 break-words">{formatMoney(initialStats.debt)}</span>
-                        </Card>
+                            <span className="text-xl font-bold font-mono text-rose-600 break-words">{formatMoney(initialStats.debt)}</span>
+                        </div>
 
-                        <Card className="p-4 flex flex-col relative overflow-hidden group hover:border-indigo-200 transition-colors">
-                            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                                <ListTodo size={60} className="text-indigo-500" />
+                        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col justify-between hover:border-indigo-200 transition-all group">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tác vụ đang xử lý</span>
+                                <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
+                                    <ListTodo size={16} />
+                                </div>
                             </div>
-                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Tác vụ đang xử lý</span>
-                            <span className="text-2xl font-bold text-slate-800">{initialStats.tasks?.length || 0}</span>
-                        </Card>
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-3xl font-bold font-mono text-slate-900">{initialStats.tasks?.length || 0}</span>
+                                <span className="text-xs text-slate-400 font-medium">việc</span>
+                            </div>
+                        </div>
 
-                        <Card className="p-4 flex flex-col relative overflow-hidden group hover:border-blue-200 transition-colors">
-                            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                                <Activity size={60} className="text-blue-500" />
+                        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col justify-between hover:border-blue-200 transition-all group">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Hoạt động gần đây</span>
+                                <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+                                    <Activity size={16} />
+                                </div>
                             </div>
-                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Hoạt động gần đây</span>
-                            <span className="text-2xl font-bold text-slate-800">{initialStats.activities?.length || 0}</span>
-                        </Card>
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-3xl font-bold font-mono text-slate-900">{initialStats.activities?.length || 0}</span>
+                                <span className="text-xs text-slate-400 font-medium">sự kiện</span>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-6">
                         {/* Tasks Section */}
-                        <Card className="p-0 overflow-hidden flex flex-col max-h-[500px]">
+                        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden flex flex-col max-h-[500px]">
                             <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                                <h3 className="font-semibold text-slate-800 flex items-center gap-2">
-                                    <CalendarClock size={18} className="text-indigo-500" />
+                                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                                    <CalendarClock size={16} className="text-indigo-600" />
                                     Lịch trình & Nhiệm vụ
                                 </h3>
-                                <Link href="/tasks" className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                                <Link href="/tasks" className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
                                     Xem tất cả <ArrowRight size={14} />
                                 </Link>
                             </div>
@@ -431,13 +449,13 @@ export function ProfileClient({ initialProfile, initialStats }: { initialProfile
                                     ))
                                 )}
                             </div>
-                        </Card>
+                        </div>
 
                         {/* Activity Timeline */}
-                        <Card className="p-0 overflow-hidden flex flex-col max-h-[500px]">
+                        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden flex flex-col max-h-[500px]">
                             <div className="p-4 border-b border-slate-100 bg-slate-50/50">
-                                <h3 className="font-semibold text-slate-800 flex items-center gap-2">
-                                    <Activity size={18} className="text-blue-500" />
+                                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                                    <Activity size={16} className="text-blue-600" />
                                     Hoạt động gần đây
                                 </h3>
                             </div>
@@ -468,10 +486,11 @@ export function ProfileClient({ initialProfile, initialStats }: { initialProfile
                                     </div>
                                 )}
                             </div>
-                        </Card>
+                        </div>
                     </div>
                 </div>
             )}
         </div>
     );
 }
+

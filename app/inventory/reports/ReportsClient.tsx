@@ -243,49 +243,59 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
     };
 
     return (
-        <Card style={{ padding: '0', overflow: 'hidden' }}>
-            <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', backgroundColor: '#fafafa' }}>
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 ring-4 ring-indigo-50"></span>
+                        Báo Cáo & Thống Kê Kho
+                    </h1>
+                    <p className="text-xs text-slate-500 mt-1 font-medium">
+                        Tổng hợp giá trị tồn kho, lưu lượng xuất nhập và biến động chi tiết từng sản phẩm
+                    </p>
+                </div>
+            </div>
+
+            {/* Navigation Tabs */}
+            <div className="bg-white p-1.5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-wrap gap-1.5">
                 <button
                     onClick={() => setActiveTab('VALUATION')}
-                    style={{
-                        flex: 1, padding: '1rem', fontWeight: 600, border: 'none', background: 'none', cursor: 'pointer',
-                        color: activeTab === 'VALUATION' ? 'var(--primary)' : 'var(--text-muted)',
-                        borderBottom: activeTab === 'VALUATION' ? '2px solid var(--primary)' : '2px solid transparent',
-                        transition: 'all 0.2s'
-                    }}
+                    className={`flex-1 min-w-[180px] py-2.5 px-3 rounded-xl text-xs font-bold transition-all text-center ${
+                        activeTab === 'VALUATION'
+                            ? 'bg-indigo-600 text-white shadow-xs shadow-indigo-200'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    }`}
                 >
-                    TỔNG HỢP TỒN KHO & GIÁ TRỊ VẬT TƯ
+                    TỔNG HỢP TỒN KHO & GIÁ TRỊ
                 </button>
                 <button
                     onClick={() => setActiveTab('LEDGER')}
-                    style={{
-                        flex: 1, padding: '1rem', fontWeight: 600, border: 'none', background: 'none', cursor: 'pointer',
-                        color: activeTab === 'LEDGER' ? 'var(--primary)' : 'var(--text-muted)',
-                        borderBottom: activeTab === 'LEDGER' ? '2px solid var(--primary)' : '2px solid transparent',
-                        transition: 'all 0.2s'
-                    }}
+                    className={`flex-1 min-w-[160px] py-2.5 px-3 rounded-xl text-xs font-bold transition-all text-center ${
+                        activeTab === 'LEDGER'
+                            ? 'bg-indigo-600 text-white shadow-xs shadow-indigo-200'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    }`}
                 >
                     SỔ CHI TIẾT (THẺ KHO)
                 </button>
                 <button
                     onClick={() => setActiveTab('TRANSACTIONS')}
-                    style={{
-                        flex: 1, padding: '1rem', fontWeight: 600, border: 'none', background: 'none', cursor: 'pointer',
-                        color: activeTab === 'TRANSACTIONS' ? 'var(--primary)' : 'var(--text-muted)',
-                        borderBottom: activeTab === 'TRANSACTIONS' ? '2px solid var(--primary)' : '2px solid transparent',
-                        transition: 'all 0.2s'
-                    }}
+                    className={`flex-1 min-w-[160px] py-2.5 px-3 rounded-xl text-xs font-bold transition-all text-center ${
+                        activeTab === 'TRANSACTIONS'
+                            ? 'bg-indigo-600 text-white shadow-xs shadow-indigo-200'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    }`}
                 >
                     LỊCH SỬ GIAO DỊCH
                 </button>
                 <button
                     onClick={() => setActiveTab('IN_OUT_BALANCE')}
-                    style={{
-                        flex: 1, padding: '1rem', fontWeight: 600, border: 'none', background: 'none', cursor: 'pointer',
-                        color: activeTab === 'IN_OUT_BALANCE' ? 'var(--primary)' : 'var(--text-muted)',
-                        borderBottom: activeTab === 'IN_OUT_BALANCE' ? '2px solid var(--primary)' : '2px solid transparent',
-                        transition: 'all 0.2s'
-                    }}
+                    className={`flex-1 min-w-[180px] py-2.5 px-3 rounded-xl text-xs font-bold transition-all text-center ${
+                        activeTab === 'IN_OUT_BALANCE'
+                            ? 'bg-indigo-600 text-white shadow-xs shadow-indigo-200'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    }`}
                 >
                     BÁO CÁO XUẤT NHẬP TỒN
                 </button>
@@ -293,49 +303,58 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
 
             {/* Global Date Filter for Reports that need it */}
             {activeTab !== 'VALUATION' && (
-                <div style={{ padding: '1.5rem 1.5rem 0 1.5rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#f1f5f9', padding: '0.5rem 1rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-                        <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-muted)' }}>Thời gian:</span>
+                <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex items-center gap-3 flex-wrap">
+                    <span className="text-xs font-bold text-slate-700">Khoảng thời gian:</span>
+                    <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
                         <input
                             type="date"
                             value={startDate}
                             onChange={e => setStartDate(e.target.value)}
-                            style={{ border: 'none', background: 'transparent', outline: 'none', fontWeight: 600, color: 'var(--text-main)' }}
+                            className="bg-transparent text-xs font-semibold text-slate-800 outline-none cursor-pointer"
                         />
-                        <span style={{ color: 'var(--text-muted)' }}>→</span>
+                        <span className="text-slate-400 text-xs">→</span>
                         <input
                             type="date"
                             value={endDate}
                             onChange={e => setEndDate(e.target.value)}
-                            style={{ border: 'none', background: 'transparent', outline: 'none', fontWeight: 600, color: 'var(--text-main)' }}
+                            className="bg-transparent text-xs font-semibold text-slate-800 outline-none cursor-pointer"
                         />
                     </div>
                 </div>
             )}
 
-            <div style={{ padding: '1.5rem' }}>
-
+            {/* Content Container */}
+            <div>
                 {/* --- TAB 1: TỔNG HỢP TỒN KHO --- */}
                 {activeTab === 'VALUATION' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
-                            <div style={{ padding: '1.5rem', borderRadius: 'var(--radius)', backgroundColor: 'rgba(79, 70, 229, 0.05)', border: '1px solid rgba(79, 70, 229, 0.1)', flex: 1 }}>
-                                <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Tổng Giá Trị Tồn Kho</p>
-                                <p style={{ color: 'var(--primary)', fontSize: '1.75rem', fontWeight: 800 }}>{formatMoney(totalAssetValue)}</p>
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="p-5 rounded-2xl bg-indigo-50/60 border border-indigo-100 flex items-center justify-between">
+                                <div>
+                                    <p className="text-xs font-semibold text-indigo-700">Tổng Giá Trị Tồn Kho</p>
+                                    <p className="text-2xl font-bold text-indigo-900 mt-1 font-mono tracking-tight">{formatMoney(totalAssetValue)}</p>
+                                </div>
+                                <div className="w-12 h-12 rounded-xl bg-indigo-600/10 flex items-center justify-center text-indigo-600">
+                                    <Package size={24} />
+                                </div>
                             </div>
-                            <div style={{ padding: '1.5rem', borderRadius: 'var(--radius)', backgroundColor: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)', flex: 1 }}>
-                                <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Vật Tư Cần Nhập Thêm</p>
-                                <p style={{ color: '#ef4444', fontSize: '1.75rem', fontWeight: 800 }}>
-                                    {filteredValuation.filter(v => v.qty <= (v.minStockLevel || 0)).length} <span style={{ fontSize: '1rem', fontWeight: 600 }}>Mặt hàng</span>
-                                </p>
+                            <div className="p-5 rounded-2xl bg-rose-50/60 border border-rose-100 flex items-center justify-between">
+                                <div>
+                                    <p className="text-xs font-semibold text-rose-700">Vật Tư Dưới Mức Tối Thiểu</p>
+                                    <p className="text-2xl font-bold text-rose-600 mt-1 font-mono tracking-tight">
+                                        {filteredValuation.filter(v => v.qty <= (v.minStockLevel || 0)).length} <span className="text-xs font-medium text-rose-500">Mặt hàng cần nhập</span>
+                                    </p>
+                                </div>
+                                <div className="w-12 h-12 rounded-xl bg-rose-600/10 flex items-center justify-center text-rose-600">
+                                    <History size={24} />
+                                </div>
                             </div>
                         </div>
 
                         {valuationChartData.length > 0 && (
-                            <div style={{ padding: '1.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', backgroundColor: '#fff' }}>
-                                <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--text-main)' }}>Cơ Cấu Giá Trị Theo Nhóm Sản Phẩm</h3>
-                                <div style={{ height: '300px', width: '100%' }}>
+                            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs">
+                                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 mb-4">Cơ Cấu Giá Trị Theo Nhóm Sản Phẩm</h3>
+                                <div className="h-[280px] w-full">
                                     <ResponsiveContainer width="100%" height="100%" minHeight={50} minWidth={50}>
                                         <PieChart>
                                             <Pie
@@ -348,170 +367,167 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
                                                 dataKey="value"
                                             >
                                                 {valuationChartData.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                    <Cell key={`cell-${index}`} fill={['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#14b8a6', '#f97316'][index % 8]} />
                                                 ))}
                                             </Pie>
-                                            <Tooltip formatter={(value: any) => formatMoney(value)} />
-                                            <Legend verticalAlign="middle" align="right" layout="vertical" />
+                                            <Tooltip formatter={(value: any) => formatMoney(Number(value))} />
+                                            <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
                                         </PieChart>
                                     </ResponsiveContainer>
                                 </div>
                             </div>
                         )}
 
-                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                            <div style={{ position: 'relative', width: '300px' }}>
-                                <Search size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-                                <input
-                                    type="text"
-                                    placeholder="Tìm theo tên hoặc mã SKU..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    style={{
-                                        width: '100%', padding: '0.625rem 1rem 0.625rem 2.5rem',
-                                        border: '1px solid var(--border)', borderRadius: 'var(--radius)',
-                                        outline: 'none', transition: 'border-color 0.2s', fontSize: '0.875rem'
-                                    }}
-                                />
+                        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+                            <div className="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50">
+                                <div className="relative flex-1 min-w-[220px] max-w-sm">
+                                    <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                    <input
+                                        type="text"
+                                        placeholder="Tìm theo tên hoặc SKU..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="w-full pl-9 pr-3.5 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-800 placeholder:text-slate-400 font-medium"
+                                    />
+                                </div>
+
+                                <form action="" className="flex items-center gap-2.5 flex-wrap">
+                                    <select
+                                        name="groupId"
+                                        value={groupFilter}
+                                        onChange={(e) => {
+                                            setGroupFilter(e.target.value);
+                                            e.target.form?.submit();
+                                        }}
+                                        className="px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-700 font-medium"
+                                    >
+                                        <option value="">Tất cả Nhóm</option>
+                                        {productGroups.map(g => (
+                                            <option key={g.id} value={g.id}>{g.name}</option>
+                                        ))}
+                                    </select>
+                                    <select
+                                        name="warehouseId"
+                                        value={warehouseFilter}
+                                        onChange={(e) => {
+                                            setWarehouseFilter(e.target.value);
+                                            e.target.form?.submit();
+                                        }}
+                                        className="px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-700 font-medium"
+                                    >
+                                        <option value="">Tất cả kho</option>
+                                        {warehouses.map(w => (
+                                            <option key={w.id} value={w.id}>{w.name}</option>
+                                        ))}
+                                    </select>
+                                </form>
+
+                                <div className="flex items-center gap-2">
+                                    <Button onClick={handleExportValuation} variant="secondary" className="px-3 py-2 text-xs font-semibold rounded-xl flex items-center gap-1.5 border-slate-200 text-slate-700">
+                                        <FileSpreadsheet size={15} className="text-emerald-600" /> Xuất Excel
+                                    </Button>
+                                    <Button onClick={() => window.print()} variant="secondary" className="px-3 py-2 text-xs font-semibold rounded-xl flex items-center gap-1.5 border-slate-200 text-slate-700">
+                                        <Printer size={15} /> In Báo Cáo
+                                    </Button>
+                                </div>
                             </div>
 
-                            <form action="" style={{ display: 'flex', gap: '1rem', flex: 1 }}>
-                                <select
-                                    name="groupId"
-                                    value={groupFilter}
-                                    onChange={(e) => {
-                                        setGroupFilter(e.target.value);
-                                        e.target.form?.submit(); // Auto submit to reload server props
-                                    }}
-                                    style={{
-                                        padding: '0.625rem 1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
-                                        outline: 'none', fontSize: '0.875rem', backgroundColor: 'white', minWidth: '150px'
-                                    }}
-                                >
-                                    <option value="">Tất cả Nhóm</option>
-                                    {productGroups.map(g => (
-                                        <option key={g.id} value={g.id}>{g.name}</option>
-                                    ))}
-                                </select>
-                                <select
-                                    name="warehouseId"
-                                    value={warehouseFilter}
-                                    onChange={(e) => {
-                                        setWarehouseFilter(e.target.value);
-                                        e.target.form?.submit(); // Auto submit to reload server props
-                                    }}
-                                    style={{
-                                        padding: '0.625rem 1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
-                                        outline: 'none', fontSize: '0.875rem', backgroundColor: 'white', minWidth: '150px'
-                                    }}
-                                >
-                                    <option value="">Tất cả kho</option>
-                                    {warehouses.map(w => (
-                                        <option key={w.id} value={w.id}>{w.name}</option>
-                                    ))}
-                                </select>
-                            </form>
-                            <Button onClick={handleExportValuation} variant="secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <FileSpreadsheet size={16} /> Xuất Excel
-                            </Button>
-                            <Button onClick={() => window.print()} variant="secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <Printer size={16} /> Print
-                            </Button>
-                        </div>
-
-                        <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
-                            <Table>
-                                <thead>
-                                    <tr>
-                                        <th>Mã SKU</th>
-                                        <th>Tên Sản Phẩm</th>
-                                        <th>Nhóm</th>
-                                        <th style={{ textAlign: 'center' }}>ĐVT</th>
-                                        <th style={{ textAlign: 'right' }}>Giá Vốn (Nhập)</th>
-                                        <th style={{ textAlign: 'right' }}>Tổng Tồn</th>
-                                        <th style={{ textAlign: 'right' }}>Thành Tiền</th>
-                                        <th style={{ textAlign: 'center' }}>Cảnh Báo</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {paginatedValuation.map(v => {
-                                        const isLow = v.qty <= (v.minStockLevel || 0);
-                                        return (
-                                            <tr key={v.id}>
-                                                <td style={{ fontWeight: 600 }}>{v.sku}</td>
-                                                <td>{v.name}</td>
-                                                <td>{v.groupName || '-'}</td>
-                                                <td style={{ textAlign: 'center' }}>{v.unit}</td>
-                                                <td style={{ textAlign: 'right' }}>{formatMoney(v.price)}</td>
-                                                <td style={{ textAlign: 'right', fontWeight: 700, color: isLow ? '#ef4444' : 'var(--text-main)' }}>{v.qty}</td>
-                                                <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--primary)' }}>{formatMoney(v.totalValue)}</td>
-                                                <td style={{ textAlign: 'center' }}>
-                                                    {isLow && <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#fee2e2', color: '#ef4444', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>CẦN NHẬP</span>}
-                                                </td>
-                                            </tr>
-                                        )
-                                    })}
-                                    {filteredValuation.length === 0 && (
-                                        <tr><td colSpan={8} style={{ textAlign: 'center', padding: '2rem' }}>Không có dữ liệu</td></tr>
-                                    )}
-                                </tbody>
-                                {filteredValuation.length > 0 && (
-                                    <tfoot style={{ position: 'sticky', bottom: 0, backgroundColor: 'var(--surface)', borderTop: '2px solid var(--border)' }}>
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <thead className="bg-slate-50 border-b border-slate-200">
                                         <tr>
-                                            <td colSpan={5} className="text-right font-bold text-gray-700">TỔNG CỘNG:</td>
-                                            <td className="text-right font-bold text-primary">
-                                                {filteredValuation.reduce((sum, v) => sum + (v.qty || 0), 0)}
-                                            </td>
-                                            <td className="text-right font-bold text-success">
-                                                {formatMoney(filteredValuation.reduce((sum, v) => sum + (v.totalValue || 0), 0))}
-                                            </td>
-                                            <td></td>
+                                            <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Mã SKU</th>
+                                            <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Tên Sản Phẩm</th>
+                                            <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Nhóm</th>
+                                            <th className="px-4 py-3 text-center text-[11px] font-bold text-slate-600 uppercase tracking-wider">ĐVT</th>
+                                            <th className="px-4 py-3 text-right text-[11px] font-bold text-slate-600 uppercase tracking-wider">Giá Vốn</th>
+                                            <th className="px-4 py-3 text-right text-[11px] font-bold text-slate-600 uppercase tracking-wider">Tổng Tồn</th>
+                                            <th className="px-4 py-3 text-right text-[11px] font-bold text-slate-600 uppercase tracking-wider">Thành Tiền</th>
+                                            <th className="px-4 py-3 text-center text-[11px] font-bold text-slate-600 uppercase tracking-wider">Cảnh Báo</th>
                                         </tr>
-                                    </tfoot>
-                                )}
-                            </Table>
-                            <Pagination {...valuationProps} />
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {paginatedValuation.map(v => {
+                                            const isLow = v.qty <= (v.minStockLevel || 0);
+                                            return (
+                                                <tr key={v.id} className="hover:bg-slate-50/70 transition-colors">
+                                                    <td className="px-4 py-2.5 text-xs font-semibold text-slate-800">{v.sku}</td>
+                                                    <td className="px-4 py-2.5 text-xs font-medium text-slate-900">{v.name}</td>
+                                                    <td className="px-4 py-2.5 text-xs text-slate-600">{v.groupName || '-'}</td>
+                                                    <td className="px-4 py-2.5 text-xs text-center text-slate-500">{v.unit}</td>
+                                                    <td className="px-4 py-2.5 text-xs text-right font-mono font-medium text-slate-700">{formatMoney(v.price)}</td>
+                                                    <td className={`px-4 py-2.5 text-xs text-right font-mono font-bold ${isLow ? 'text-rose-600' : 'text-slate-900'}`}>{v.qty}</td>
+                                                    <td className="px-4 py-2.5 text-xs text-right font-mono font-bold text-indigo-600">{formatMoney(v.totalValue)}</td>
+                                                    <td className="px-4 py-2.5 text-xs text-center">
+                                                        {isLow && <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700">CẦN NHẬP</span>}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                        {filteredValuation.length === 0 && (
+                                            <tr><td colSpan={8} className="text-center py-12 text-xs font-medium text-slate-400">Không có dữ liệu</td></tr>
+                                        )}
+                                    </tbody>
+                                    {filteredValuation.length > 0 && (
+                                        <tfoot className="bg-slate-50/90 border-t-2 border-slate-200">
+                                            <tr>
+                                                <td colSpan={5} className="px-4 py-3 text-right text-xs font-bold text-slate-700">TỔNG CỘNG:</td>
+                                                <td className="px-4 py-3 text-right font-mono text-xs font-bold text-indigo-600">
+                                                    {filteredValuation.reduce((sum, v) => sum + (v.qty || 0), 0)}
+                                                </td>
+                                                <td className="px-4 py-3 text-right font-mono text-xs font-bold text-emerald-600">
+                                                    {formatMoney(filteredValuation.reduce((sum, v) => sum + (v.totalValue || 0), 0))}
+                                                </td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    )}
+                                </Table>
+                            </div>
+                            <div className="p-3 border-t border-slate-100 bg-slate-50/50">
+                                <Pagination {...valuationProps} />
+                            </div>
                         </div>
                     </div>
                 )}
 
                 {/* --- TAB 2: SỔ CHI TIẾT (THẺ KHO) --- */}
                 {activeTab === 'LEDGER' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', backgroundColor: '#f9fafb', padding: '1rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-                            <div style={{ flex: 1 }}>
-                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-muted)' }}>Mặt Hàng Cần Xem *</label>
+                    <div className="space-y-6">
+                        <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex flex-wrap gap-3 items-end">
+                            <div className="flex-1 min-w-[220px]">
+                                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Mặt Hàng Cần Xem *</label>
                                 <select
                                     value={ledgerProduct}
                                     onChange={(e) => setLedgerProduct(e.target.value)}
-                                    style={{ width: '100%', padding: '0.625rem', border: '1px solid var(--border)', borderRadius: 'var(--radius)', outline: 'none' }}
+                                    className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-800 font-medium"
                                 >
                                     <option value="">-- Chọn Sản Phẩm --</option>
                                     {products.map(p => <option key={p.id} value={p.id}>{p.sku} - {p.name}</option>)}
                                 </select>
                             </div>
-                            <div style={{ flex: 1 }}>
-                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-muted)' }}>Lọc Theo Kho (Tùy chọn)</label>
+                            <div className="flex-1 min-w-[200px]">
+                                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Lọc Theo Kho (Tùy chọn)</label>
                                 <select
                                     value={ledgerWarehouse}
                                     onChange={(e) => setLedgerWarehouse(e.target.value)}
-                                    style={{ width: '100%', padding: '0.625rem', border: '1px solid var(--border)', borderRadius: 'var(--radius)', outline: 'none' }}
+                                    className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-800 font-medium"
                                 >
                                     <option value="">-- Tất cả kho --</option>
                                     {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
                                 </select>
                             </div>
-                            <div style={{ marginTop: '1.25rem', display: 'flex', gap: '0.5rem' }}>
-                                <Button onClick={loadLedger} disabled={isLoadingLedger} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', height: '42px' }}>
-                                    <History size={16} /> Xem Thẻ Kho
+                            <div className="flex items-center gap-2">
+                                <Button onClick={loadLedger} disabled={isLoadingLedger} className="px-4 py-2 text-xs font-semibold rounded-xl flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs shadow-indigo-200">
+                                    <History size={15} /> Xem Thẻ Kho
                                 </Button>
                                 {ledgerData.length > 0 && (
                                     <>
-                                        <Button onClick={handleExportLedger} variant="secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', height: '42px' }}>
-                                            <FileSpreadsheet size={16} /> Xuất Excel
+                                        <Button onClick={handleExportLedger} variant="secondary" className="px-3 py-2 text-xs font-semibold rounded-xl flex items-center gap-1.5 border-slate-200 text-slate-700">
+                                            <FileSpreadsheet size={15} className="text-emerald-600" /> Xuất Excel
                                         </Button>
-                                        <Button onClick={() => window.print()} variant="secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', height: '42px' }}>
-                                            <Printer size={16} /> Print
+                                        <Button onClick={() => window.print()} variant="secondary" className="px-3 py-2 text-xs font-semibold rounded-xl flex items-center gap-1.5 border-slate-200 text-slate-700">
+                                            <Printer size={15} /> In
                                         </Button>
                                     </>
                                 )}
@@ -519,44 +535,48 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
                         </div>
 
                         {ledgerData.length > 0 && (
-                            <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
-                                <Table>
-                                    <thead>
-                                        <tr>
-                                            <th>Ngày/Giờ</th>
-                                            <th>Mã Phiếu</th>
-                                            <th>Diễn Giải Lệnh</th>
-                                            <th>Ghi Chú</th>
-                                            <th style={{ textAlign: 'right' }}>Biến Động</th>
-                                            <th style={{ textAlign: 'right' }}>Tồn Cuối</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {paginatedLedger.map((row, idx) => (
-                                            <tr key={idx} style={{ backgroundColor: row.change === 0 ? '#f9fafb' : 'transparent' }}>
-                                                <td style={{ whiteSpace: 'nowrap' }}>{formatDate(row.date)}</td>
-                                                <td style={{ fontWeight: 600, color: 'var(--primary)' }}>
-                                                    <a href={`/inventory/transactions/${row.documentId}`} target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>
-                                                        {row.code}
-                                                    </a>
-                                                </td>
-                                                <td style={{ fontWeight: 500 }}>{row.type}</td>
-                                                <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{row.notes || '-'}</td>
-                                                <td style={{ textAlign: 'right', fontWeight: 800, color: row.change > 0 ? '#16a34a' : (row.change < 0 ? '#ef4444' : 'var(--text-muted)') }}>
-                                                    {row.change > 0 ? `+${row.change}` : row.change}
-                                                </td>
-                                                <td style={{ textAlign: 'right', fontWeight: 800, fontSize: '1.1em' }}>{row.runningBalance}</td>
+                            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <Table>
+                                        <thead className="bg-slate-50 border-b border-slate-200">
+                                            <tr>
+                                                <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Ngày/Giờ</th>
+                                                <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Mã Phiếu</th>
+                                                <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Diễn Giải Lệnh</th>
+                                                <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Ghi Chú</th>
+                                                <th className="px-4 py-3 text-right text-[11px] font-bold text-slate-600 uppercase tracking-wider">Biến Động</th>
+                                                <th className="px-4 py-3 text-right text-[11px] font-bold text-slate-600 uppercase tracking-wider">Tồn Cuối</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </Table>
-                                <Pagination {...ledgerProps} />
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {paginatedLedger.map((row, idx) => (
+                                                <tr key={idx} className="hover:bg-slate-50/70 transition-colors">
+                                                    <td className="px-4 py-2.5 text-xs text-slate-600 whitespace-nowrap">{formatDate(row.date)}</td>
+                                                    <td className="px-4 py-2.5 text-xs font-bold text-indigo-600">
+                                                        <a href={`/inventory/transactions/${row.documentId}`} target="_blank" rel="noreferrer" className="hover:underline">
+                                                            {row.code}
+                                                        </a>
+                                                    </td>
+                                                    <td className="px-4 py-2.5 text-xs font-semibold text-slate-800">{row.type}</td>
+                                                    <td className="px-4 py-2.5 text-xs text-slate-500">{row.notes || '-'}</td>
+                                                    <td className={`px-4 py-2.5 text-xs text-right font-mono font-bold ${row.change > 0 ? 'text-emerald-600' : (row.change < 0 ? 'text-rose-600' : 'text-slate-400')}`}>
+                                                        {row.change > 0 ? `+${row.change}` : row.change}
+                                                    </td>
+                                                    <td className="px-4 py-2.5 text-xs text-right font-mono font-bold text-slate-900">{row.runningBalance}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </Table>
+                                </div>
+                                <div className="p-3 border-t border-slate-100 bg-slate-50/50">
+                                    <Pagination {...ledgerProps} />
+                                </div>
                             </div>
                         )}
                         {ledgerData.length === 0 && !isLoadingLedger && ledgerProduct && (
-                            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', border: '1px dashed var(--border)', borderRadius: 'var(--radius)' }}>
-                                <Package size={48} style={{ opacity: 0.2, margin: '0 auto 1rem' }} />
-                                <p>Sản phẩm này chưa có phát sinh giao dịch nào.</p>
+                            <div className="text-center py-16 px-4 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/30">
+                                <Package size={40} className="text-slate-300 mx-auto mb-2" />
+                                <p className="text-xs font-medium text-slate-500">Sản phẩm này chưa có phát sinh giao dịch nào trong khoảng thời gian đã chọn.</p>
                             </div>
                         )}
                     </div>
@@ -564,11 +584,11 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
 
                 {/* --- TAB 3: TRANSACTION REPORT --- */}
                 {activeTab === 'TRANSACTIONS' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', backgroundColor: '#f9fafb', padding: '1rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-                            <div style={{ flex: 1 }}>
-                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-muted)' }}>Loại Phiếu</label>
-                                <select value={txnType} onChange={(e) => setTxnType(e.target.value)} style={{ width: '100%', padding: '0.625rem', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
+                    <div className="space-y-6">
+                        <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex flex-wrap gap-3 items-end">
+                            <div className="flex-1 min-w-[150px]">
+                                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Loại Phiếu</label>
+                                <select value={txnType} onChange={(e) => setTxnType(e.target.value)} className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl text-slate-800 font-medium">
                                     <option value="ALL">Tất cả loại giao dịch</option>
                                     <option value="IN">Phiếu Nhập Kho</option>
                                     <option value="OUT">Phiếu Xuất Kho</option>
@@ -576,52 +596,49 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
                                     <option value="ADJUSTMENT">Kiểm Kê / Điều Chỉnh</option>
                                 </select>
                             </div>
-                            <div style={{ flex: 1, minWidth: '150px' }}>
-                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-muted)' }}>Mặt Hàng</label>
-                                <select value={txnProduct} onChange={(e) => setTxnProduct(e.target.value)} style={{ width: '100%', padding: '0.625rem', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
+                            <div className="flex-1 min-w-[150px]">
+                                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Mặt Hàng</label>
+                                <select value={txnProduct} onChange={(e) => setTxnProduct(e.target.value)} className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl text-slate-800 font-medium">
                                     <option value="">Tất cả</option>
                                     {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                 </select>
                             </div>
-                            <div style={{ flex: 1, minWidth: '150px' }}>
-                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-muted)' }}>Nhóm SP</label>
-                                <select value={txnGroup} onChange={(e) => setTxnGroup(e.target.value)} style={{ width: '100%', padding: '0.625rem', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
+                            <div className="flex-1 min-w-[150px]">
+                                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Nhóm SP</label>
+                                <select value={txnGroup} onChange={(e) => setTxnGroup(e.target.value)} className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl text-slate-800 font-medium">
                                     <option value="">Tất cả</option>
                                     {productGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                                 </select>
                             </div>
-                            <div style={{ flex: 1, minWidth: '150px' }}>
-                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-muted)' }}>Lọc Theo Kho</label>
-                                <select value={txnWarehouse} onChange={(e) => setTxnWarehouse(e.target.value)} style={{ width: '100%', padding: '0.625rem', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
+                            <div className="flex-1 min-w-[150px]">
+                                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Lọc Theo Kho</label>
+                                <select value={txnWarehouse} onChange={(e) => setTxnWarehouse(e.target.value)} className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl text-slate-800 font-medium">
                                     <option value="">Tất cả kho</option>
                                     {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
                                 </select>
                             </div>
-                            <Button onClick={loadTransactions} disabled={isLoadingTxn} style={{ height: '42px' }}>Tạo Báo Cáo</Button>
+                            <Button onClick={loadTransactions} disabled={isLoadingTxn} className="px-4 py-2 text-xs font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs shadow-indigo-200">Tạo Báo Cáo</Button>
                             {txnData.length > 0 && (
                                 <>
-                                    <Button onClick={handleExportTxn} variant="secondary" style={{ height: '42px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><FileSpreadsheet size={16} /> Xuất Excel</Button>
-                                    <Button onClick={() => window.print()} variant="secondary" style={{ height: '42px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Printer size={16} /> Print</Button>
+                                    <Button onClick={handleExportTxn} variant="secondary" className="px-3 py-2 text-xs font-semibold rounded-xl flex items-center gap-1.5 border-slate-200 text-slate-700"><FileSpreadsheet size={15} className="text-emerald-600" /> Xuất Excel</Button>
+                                    <Button onClick={() => window.print()} variant="secondary" className="px-3 py-2 text-xs font-semibold rounded-xl flex items-center gap-1.5 border-slate-200 text-slate-700"><Printer size={15} /> In</Button>
                                 </>
                             )}
                         </div>
 
                         {txnChartData.length > 0 && (
-                            <div style={{ padding: '1.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', backgroundColor: '#fff', overflowX: 'auto' }}>
-                                <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--text-main)' }}>Biểu Đồ Lưu Lượng Giao Dịch</h3>
-                                <div style={{ height: '300px', width: '100%', minWidth: '600px' }}>
+                            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs">
+                                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 mb-4">Biểu Đồ Lưu Lượng Giao Dịch</h3>
+                                <div className="h-[280px] w-full min-w-[500px]">
                                     <ResponsiveContainer width="100%" height="100%" minHeight={50} minWidth={50}>
                                         <BarChart data={txnChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                            <XAxis dataKey="date" tick={{ fontSize: 12, fill: 'var(--text-muted)' }} tickLine={false} axisLine={{ stroke: '#cbd5e1' }} />
-                                            <YAxis tick={{ fontSize: 12, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} />
-                                            <Tooltip
-                                                cursor={{ fill: 'rgba(226, 232, 240, 0.4)' }}
-                                                contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                            />
-                                            <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                                            <Bar dataKey="Nhập" stackId="a" fill="#10b981" maxBarSize={40} />
-                                            <Bar dataKey="Xuất" stackId="a" fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                                            <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={{ stroke: '#cbd5e1' }} />
+                                            <YAxis tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={false} />
+                                            <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '11px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                                            <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                                            <Bar dataKey="Nhập" stackId="a" fill="#10b981" maxBarSize={36} />
+                                            <Bar dataKey="Xuất" stackId="a" fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={36} />
                                         </BarChart>
                                     </ResponsiveContainer>
                                 </div>
@@ -629,42 +646,46 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
                         )}
 
                         {txnData.length > 0 && (
-                            <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
-                                <Table>
-                                    <thead>
-                                        <tr>
-                                            <th>Ngày</th>
-                                            <th>Mã Phiếu</th>
-                                            <th>Loại</th>
-                                            <th>Từ Kho</th>
-                                            <th>Đến Kho</th>
-                                            <th>Chi Tiết Sản Phẩm</th>
-                                            <th>Người Lập</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {paginatedTxn.map(t => (
-                                            <tr key={t.id}>
-                                                <td>{formatDate(t.date)}</td>
-                                                <td style={{ fontWeight: 600, color: 'var(--primary)' }}>
-                                                    <a href={`/inventory/transactions/${t.id}`} target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>
-                                                        {t.code}
-                                                    </a>
-                                                </td>
-                                                <td style={{ fontWeight: 600 }}>{t.type === 'IN' ? 'NHẬP' : t.type === 'OUT' ? 'XUẤT' : t.type === 'TRANSFER' ? 'CHUYỂN KHO' : 'ĐIỀU CHỈNH'}</td>
-                                                <td>{t.fromWarehouse?.name || '-'}</td>
-                                                <td>{t.toWarehouse?.name || '-'}</td>
-                                                <td style={{ fontSize: '0.85rem' }}>
-                                                    {t.items.map((i: any) => (
-                                                        <div key={i.id}>{i.product.name} <strong style={{ color: 'var(--primary)' }}>(x{i.quantity})</strong></div>
-                                                    ))}
-                                                </td>
-                                                <td>{t.creator.name}</td>
+                            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <Table>
+                                        <thead className="bg-slate-50 border-b border-slate-200">
+                                            <tr>
+                                                <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Ngày</th>
+                                                <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Mã Phiếu</th>
+                                                <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Loại</th>
+                                                <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Từ Kho</th>
+                                                <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Đến Kho</th>
+                                                <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Chi Tiết Sản Phẩm</th>
+                                                <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Người Lập</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </Table>
-                                <Pagination {...txnProps} />
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {paginatedTxn.map(t => (
+                                                <tr key={t.id} className="hover:bg-slate-50/70 transition-colors">
+                                                    <td className="px-4 py-2.5 text-xs text-slate-600">{formatDate(t.date)}</td>
+                                                    <td className="px-4 py-2.5 text-xs font-bold text-indigo-600">
+                                                        <a href={`/inventory/transactions/${t.id}`} target="_blank" rel="noreferrer" className="hover:underline">
+                                                            {t.code}
+                                                        </a>
+                                                    </td>
+                                                    <td className="px-4 py-2.5 text-xs font-semibold text-slate-800">{t.type === 'IN' ? 'NHẬP' : t.type === 'OUT' ? 'XUẤT' : t.type === 'TRANSFER' ? 'CHUYỂN KHO' : 'ĐIỀU CHỈNH'}</td>
+                                                    <td className="px-4 py-2.5 text-xs text-slate-700">{t.fromWarehouse?.name || '-'}</td>
+                                                    <td className="px-4 py-2.5 text-xs text-slate-700">{t.toWarehouse?.name || '-'}</td>
+                                                    <td className="px-4 py-2.5 text-xs text-slate-700">
+                                                        {t.items.map((i: any) => (
+                                                            <div key={i.id}>{i.product.name} <span className="font-mono font-bold text-indigo-600">(x{i.quantity})</span></div>
+                                                        ))}
+                                                    </td>
+                                                    <td className="px-4 py-2.5 text-xs font-medium text-slate-700">{t.creator?.name || '-'}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </Table>
+                                </div>
+                                <div className="p-3 border-t border-slate-100 bg-slate-50/50">
+                                    <Pagination {...txnProps} />
+                                </div>
                             </div>
                         )}
                     </div>
@@ -672,54 +693,51 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
 
                 {/* --- TAB 4: IN / OUT / BALANCE REPORT --- */}
                 {activeTab === 'IN_OUT_BALANCE' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', backgroundColor: '#f9fafb', padding: '1rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-                            <div style={{ flex: 1, minWidth: '150px' }}>
-                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-muted)' }}>Mặt Hàng</label>
-                                <select value={iobProduct} onChange={(e) => setIobProduct(e.target.value)} style={{ width: '100%', padding: '0.625rem', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
+                    <div className="space-y-6">
+                        <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex flex-wrap gap-3 items-end">
+                            <div className="flex-1 min-w-[150px]">
+                                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Mặt Hàng</label>
+                                <select value={iobProduct} onChange={(e) => setIobProduct(e.target.value)} className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl text-slate-800 font-medium">
                                     <option value="">Tất cả</option>
                                     {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                 </select>
                             </div>
-                            <div style={{ flex: 1, minWidth: '150px' }}>
-                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-muted)' }}>Nhóm SP</label>
-                                <select value={iobGroup} onChange={(e) => setIobGroup(e.target.value)} style={{ width: '100%', padding: '0.625rem', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
+                            <div className="flex-1 min-w-[150px]">
+                                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Nhóm SP</label>
+                                <select value={iobGroup} onChange={(e) => setIobGroup(e.target.value)} className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl text-slate-800 font-medium">
                                     <option value="">Tất cả</option>
                                     {productGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                                 </select>
                             </div>
-                            <div style={{ flex: 1, minWidth: '150px' }}>
-                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-muted)' }}>Lọc Theo Kho</label>
-                                <select value={iobWarehouse} onChange={(e) => setIobWarehouse(e.target.value)} style={{ width: '100%', padding: '0.625rem', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
+                            <div className="flex-1 min-w-[150px]">
+                                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Lọc Theo Kho</label>
+                                <select value={iobWarehouse} onChange={(e) => setIobWarehouse(e.target.value)} className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl text-slate-800 font-medium">
                                     <option value="">Tất cả kho</option>
                                     {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
                                 </select>
                             </div>
-                            <Button onClick={loadInOutBalance} disabled={isLoadingIob} style={{ height: '42px' }}>Tạo Báo Cáo XNT</Button>
+                            <Button onClick={loadInOutBalance} disabled={isLoadingIob} className="px-4 py-2 text-xs font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs shadow-indigo-200">Tạo Báo Cáo XNT</Button>
                             {iobData.length > 0 && (
                                 <>
-                                    <Button onClick={handleExportIob} variant="secondary" style={{ height: '42px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><FileSpreadsheet size={16} /> Xuất Excel</Button>
-                                    <Button onClick={() => window.print()} variant="secondary" style={{ height: '42px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Printer size={16} /> Print</Button>
+                                    <Button onClick={handleExportIob} variant="secondary" className="px-3 py-2 text-xs font-semibold rounded-xl flex items-center gap-1.5 border-slate-200 text-slate-700"><FileSpreadsheet size={15} className="text-emerald-600" /> Xuất Excel</Button>
+                                    <Button onClick={() => window.print()} variant="secondary" className="px-3 py-2 text-xs font-semibold rounded-xl flex items-center gap-1.5 border-slate-200 text-slate-700"><Printer size={15} /> In</Button>
                                 </>
                             )}
                         </div>
 
                         {iobChartData.length > 0 && (
-                            <div style={{ padding: '1.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', backgroundColor: '#fff', overflowX: 'auto' }}>
-                                <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--text-main)' }}>Top Sản Phẩm Biến Động Nhiều Nhất</h3>
-                                <div style={{ height: '350px', width: '100%', minWidth: '600px' }}>
+                            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs">
+                                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 mb-4">Top Sản Phẩm Biến Động Nhiều Nhất</h3>
+                                <div className="h-[300px] w-full min-w-[500px]">
                                     <ResponsiveContainer width="100%" height="100%" minHeight={50} minWidth={50}>
                                         <BarChart data={iobChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                            <XAxis dataKey="name" tick={{ fontSize: 12, fill: 'var(--text-muted)' }} tickLine={false} axisLine={{ stroke: '#cbd5e1' }} />
-                                            <YAxis tick={{ fontSize: 12, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} />
-                                            <Tooltip
-                                                cursor={{ fill: 'rgba(226, 232, 240, 0.4)' }}
-                                                contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                            />
-                                            <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                                            <Bar dataKey="Nhập" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={50} />
-                                            <Bar dataKey="Xuất" fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={50} />
+                                            <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={{ stroke: '#cbd5e1' }} />
+                                            <YAxis tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={false} />
+                                            <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '11px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                                            <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                                            <Bar dataKey="Nhập" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={44} />
+                                            <Bar dataKey="Xuất" fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={44} />
                                         </BarChart>
                                     </ResponsiveContainer>
                                 </div>
@@ -727,60 +745,46 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
                         )}
 
                         {iobData.length > 0 && (
-                            <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
-                                <Table>
-                                    <thead>
-                                        <tr>
-                                            <th>Mã SKU</th>
-                                            <th>Tên Sản Phẩm</th>
-                                            <th>Nhóm</th>
-                                            <th style={{ textAlign: 'center' }}>ĐVT</th>
-                                            <th style={{ textAlign: 'right' }}>Tồn Đầu Kỳ</th>
-                                            <th style={{ textAlign: 'right', color: '#16a34a' }}>Nhập Trong Kỳ</th>
-                                            <th style={{ textAlign: 'right', color: '#ef4444' }}>Xuất Trong Kỳ</th>
-                                            <th style={{ textAlign: 'right', color: 'var(--primary)' }}>Tồn Cuối Kỳ</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {paginatedIob.map((row, idx) => (
-                                            <tr key={idx}>
-                                                <td style={{ fontWeight: 600, color: 'var(--text-muted)' }}>{row.sku}</td>
-                                                <td style={{ fontWeight: 500 }}>{row.name}</td>
-                                                <td>{row.groupName || '-'}</td>
-                                                <td style={{ textAlign: 'center' }}>{row.unit}</td>
-                                                <td style={{ textAlign: 'right', fontWeight: 600 }}>{row.openingBalance}</td>
-                                                <td style={{ textAlign: 'right', fontWeight: 600, color: '#16a34a' }}>{row.totalIn > 0 ? `+${row.totalIn}` : '-'}</td>
-                                                <td style={{ textAlign: 'right', fontWeight: 600, color: '#ef4444' }}>{row.totalOut > 0 ? `-${row.totalOut}` : '-'}</td>
-                                                <td style={{ textAlign: 'right', fontWeight: 800, color: 'var(--primary)', fontSize: '1.1em' }}>{row.closingBalance}</td>
+                            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <Table>
+                                        <thead>
+                                            <tr className="bg-slate-50/80 border-b border-slate-200">
+                                                <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Mã SKU</th>
+                                                <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Tên Sản Phẩm</th>
+                                                <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Nhóm SP</th>
+                                                <th className="px-4 py-3 text-center text-[11px] font-bold text-slate-600 uppercase tracking-wider">ĐVT</th>
+                                                <th className="px-4 py-3 text-right text-[11px] font-bold text-slate-600 uppercase tracking-wider">Tồn Đầu</th>
+                                                <th className="px-4 py-3 text-right text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Nhập Kỳ</th>
+                                                <th className="px-4 py-3 text-right text-[11px] font-bold text-rose-600 uppercase tracking-wider">Xuất Kỳ</th>
+                                                <th className="px-4 py-3 text-right text-[11px] font-bold text-indigo-600 uppercase tracking-wider">Tồn Cuối</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                    {iobData.length > 0 && (
-                                        <tfoot style={{ position: 'sticky', bottom: 0, backgroundColor: 'var(--surface)', borderTop: '2px solid var(--border)' }}>
-                                            <tr>
-                                                <td colSpan={4} className="text-right font-bold text-gray-700">TỔNG CỘNG:</td>
-                                                <td className="text-right font-bold text-gray-700">
-                                                    {iobData.reduce((sum, v) => sum + (v.openingBalance || 0), 0)}
-                                                </td>
-                                                <td className="text-right font-bold text-success">
-                                                    {iobData.reduce((sum, v) => sum + (v.totalIn || 0), 0)}
-                                                </td>
-                                                <td className="text-right font-bold text-danger">
-                                                    {iobData.reduce((sum, v) => sum + (v.totalOut || 0), 0)}
-                                                </td>
-                                                <td className="text-right font-bold text-primary">
-                                                    {iobData.reduce((sum, v) => sum + (v.closingBalance || 0), 0)}
-                                                </td>
-                                            </tr>
-                                        </tfoot>
-                                    )}
-                                </Table>
-                                <Pagination {...iobProps} />
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {paginatedIob.map((row: any, idx: number) => (
+                                                <tr key={idx} className="hover:bg-slate-50/70 transition-colors">
+                                                    <td className="px-4 py-2.5 text-xs font-mono font-bold text-slate-900">{row.sku}</td>
+                                                    <td className="px-4 py-2.5 text-xs font-semibold text-slate-800">{row.name}</td>
+                                                    <td className="px-4 py-2.5 text-xs text-slate-500">{row.groupName || '-'}</td>
+                                                    <td className="px-4 py-2.5 text-xs text-center text-slate-600">{row.unit}</td>
+                                                    <td className="px-4 py-2.5 text-xs text-right font-mono font-bold text-slate-700">{row.openingBalance}</td>
+                                                    <td className="px-4 py-2.5 text-xs text-right font-mono font-bold text-emerald-600">+{row.totalIn}</td>
+                                                    <td className="px-4 py-2.5 text-xs text-right font-mono font-bold text-rose-600">-{row.totalOut}</td>
+                                                    <td className="px-4 py-2.5 text-xs text-right font-mono font-black text-indigo-700">{row.closingBalance}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </Table>
+                                </div>
+                                <div className="p-3 border-t border-slate-100 bg-slate-50/50">
+                                    <Pagination {...iobProps} />
+                                </div>
                             </div>
                         )}
                     </div>
                 )}
             </div>
-        </Card>
+        </div>
     );
 }
+

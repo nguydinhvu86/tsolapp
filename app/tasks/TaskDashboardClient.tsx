@@ -121,14 +121,26 @@ function TimerCell({ task, session }: { task: any, session: any }) {
     }
 }
 
-export function TaskDashboardClient({ initialTasks, users, parentProjectId, parentProject }: { initialTasks: any[], users: any[], parentProjectId?: string, parentProject?: any }) {
+export function TaskDashboardClient({ 
+    initialTasks, 
+    users, 
+    parentProjectId, 
+    parentProject,
+    canCreateTask = true
+}: { 
+    initialTasks: any[], 
+    users: any[], 
+    parentProjectId?: string, 
+    parentProject?: any,
+    canCreateTask?: boolean 
+}) {
     const router = useRouter();
     const { data: session } = useSession();
     const permissions = session?.user?.permissions || [];
     const isAdmin = session?.user?.role === 'ADMIN';
 
-    // Mọi người đều có thể tạo/sửa/xoá công việc (thực tế server action sẽ kiểm tra quyền sở hữu)
-    const canCreate = true;
+    // Quyền tạo/sửa/xóa công việc
+    const canCreate = canCreateTask ?? true;
     const canEdit = true;
     const canDelete = true;
 
@@ -691,24 +703,29 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                 {filterOptions.map((f) => {
                     const isActive = filterStatus === f.id;
                     const Icon = f.icon;
+                    const isOverdueAlert = f.id === 'OVERDUE' && f.count > 0;
                     return (
                         <div
                             key={f.id}
                             onClick={() => setFilterStatus(f.id)}
-                            className={`cursor-pointer transition-all duration-200 rounded-xl p-3.5 bg-white border shadow-xs hover:-translate-y-0.5 hover:shadow-sm ${
+                            className={`cursor-pointer transition-all duration-200 rounded-xl p-3.5 bg-white border shadow-xs hover:-translate-y-0.5 hover:shadow-sm relative overflow-hidden ${
+                                isOverdueAlert && !isActive ? 'border-rose-300 ring-2 ring-rose-300/40 animate-pulse' : ''
+                            } ${
                                 isActive
                                     ? 'border-primary ring-2 ring-primary/20 bg-primary/5'
                                     : 'border-slate-200/90 hover:border-slate-300'
                             }`}
                         >
                             <div className="flex items-center justify-between mb-2">
-                                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{f.label}</span>
+                                <span className={`text-[11px] font-bold uppercase tracking-wider ${isOverdueAlert ? 'text-rose-600 font-extrabold' : 'text-slate-500'}`}>
+                                    {f.label}
+                                </span>
                                 <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${f.colorClass} border shadow-2xs`}>
                                     <Icon size={14} className="stroke-[2.2]" />
                                 </div>
                             </div>
                             <div className="flex items-baseline justify-between">
-                                <span className="text-2xl font-black font-mono text-slate-900 tracking-tight">
+                                <span className={`text-2xl font-black font-mono tracking-tight ${isOverdueAlert ? 'text-rose-600' : 'text-slate-900'}`}>
                                     {f.count}
                                 </span>
                                 <span className="text-[10px] text-slate-400 font-medium">
@@ -910,20 +927,30 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                                     const isDueSoon = task.dueDate && new Date(task.dueDate).getTime() - new Date().getTime() < 86400000 && task.status !== 'DONE';
 
                                     return (
-                                        <tr key={task.id} className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 last:border-0 group">
+                                        <tr 
+                                            key={task.id} 
+                                            className={`transition-all border-b border-slate-100 last:border-0 group ${
+                                                overdue 
+                                                    ? 'animate-overdue-row border-l-4 border-l-rose-500 shadow-2xs' 
+                                                    : 'hover:bg-slate-50/80'
+                                            }`}
+                                        >
                                             {/* Title */}
                                             <td className="py-2.5 px-3.5 align-middle">
                                                 <div className="flex items-start gap-2">
                                                     <div className="min-w-0">
                                                         <Link
                                                             href={`/tasks/${task.id}`}
-                                                            className="text-slate-900 font-semibold text-xs hover:text-primary transition-colors block truncate max-w-[280px] sm:max-w-[340px]"
+                                                            className={`font-semibold text-xs hover:text-primary transition-colors block truncate max-w-[280px] sm:max-w-[340px] ${
+                                                                overdue ? 'text-rose-950 font-bold' : 'text-slate-900'
+                                                            }`}
                                                         >
                                                             {task.title}
                                                         </Link>
                                                         <div className="flex items-center gap-2 mt-0.5">
                                                             {overdue && (
-                                                                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80 uppercase tracking-wide">
+                                                                <span className="animate-overdue-badge inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider border border-rose-300">
+                                                                    <AlertTriangle size={10} className="text-rose-600 animate-pulse" />
                                                                     QUÁ HẠN
                                                                 </span>
                                                             )}
@@ -1002,7 +1029,12 @@ export function TaskDashboardClient({ initialTasks, users, parentProjectId, pare
                                             {/* Due Date */}
                                             <td className="py-2.5 px-3.5 align-middle font-mono text-xs">
                                                 {task.dueDate ? (
-                                                    <span className={overdue ? 'text-rose-600 font-bold' : (isDueSoon ? 'text-amber-600 font-semibold' : 'text-slate-700')}>
+                                                    <span className={
+                                                        overdue 
+                                                            ? 'inline-flex items-center gap-1 text-rose-700 font-extrabold bg-rose-100/90 px-2 py-0.5 rounded border border-rose-300 shadow-2xs' 
+                                                            : (isDueSoon ? 'text-amber-600 font-semibold' : 'text-slate-700')
+                                                    }>
+                                                        {overdue && <Clock size={11} className="text-rose-600 animate-pulse shrink-0" />}
                                                         {formatDate(new Date(task.dueDate))}
                                                     </span>
                                                 ) : (

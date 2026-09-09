@@ -38,7 +38,7 @@ export default function EcatalogClient({
             items: [] // Blank catalog
         });
 
-        if (res.success) {
+        if (res.success && res.data) {
             alert("Tạo Catalog thành công!");
             router.push(`/ecatalogs/${res.data.id}`);
         } else {

@@ -1,15 +1,27 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Card } from '@/app/components/ui/Card';
+import React, { useState, useMemo } from 'react';
 import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
-import { Plus, Edit3, Trash2, Link as LinkIcon, CheckCircle2, XCircle, Code } from 'lucide-react';
+import { 
+    Plus, 
+    Edit3, 
+    Trash2, 
+    Link as LinkIcon, 
+    CheckCircle2, 
+    XCircle, 
+    Code, 
+    FormInput,
+    Search,
+    Globe,
+    UserCheck,
+    Copy
+} from 'lucide-react';
 import { createLeadForm, updateLeadForm, deleteLeadForm } from './actions';
-import { formatDate } from '@/lib/utils/formatters';
 
 export function LeadFormsClient({ initialForms, users }: { initialForms: any[], users: any[] }) {
     const [forms, setForms] = useState(initialForms);
+    const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [editingFormId, setEditingFormId] = useState<string | null>(null);
@@ -20,6 +32,20 @@ export function LeadFormsClient({ initialForms, users }: { initialForms: any[], 
     const [assigneeId, setAssigneeId] = useState('');
     const [successMessage, setSuccessMessage] = useState('Cảm ơn bạn đã để lại thông tin. Chúng tôi sẽ liên hệ lại trong thời gian sớm nhất.');
     const [isActive, setIsActive] = useState(true);
+
+    const stats = useMemo(() => {
+        const total = forms.length;
+        const active = forms.filter(f => f.isActive).length;
+        const inactive = forms.filter(f => !f.isActive).length;
+        return { total, active, inactive };
+    }, [forms]);
+
+    const filteredForms = useMemo(() => {
+        return forms.filter(f => 
+            f.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (f.source && f.source.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+    }, [forms, searchTerm]);
 
     const openCreateModal = () => {
         setEditingFormId(null);
@@ -94,104 +120,226 @@ export function LeadFormsClient({ initialForms, users }: { initialForms: any[], 
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
-        alert('Đã copy đường dẫn iframe!');
+        alert('Đã copy đường dẫn / mã nhúng iframe!');
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '1.5rem', maxWidth: '1200px', margin: '0 auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: '0 0 0.5rem', color: '#0f172a' }}>Cấu Hình Lead Form</h1>
-                    <p style={{ margin: 0, color: '#64748b', fontSize: '0.875rem' }}>Quản lý các biểu mẫu thu thập dữ liệu Cơ hội bán hàng (Lead) từ Website/Landing Page.</p>
+        <div className="space-y-6 max-w-7xl mx-auto pb-12">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs">
+                <div className="flex items-center gap-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shadow-xs">
+                        <FormInput className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-xl font-bold text-slate-900">Cấu Hình Lead Form</h1>
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                {forms.length} Biểu Mẫu
+                            </span>
+                        </div>
+                        <p className="text-sm text-slate-500 mt-0.5">Tạo và quản lý các biểu mẫu thu thập dữ liệu Lead tự động từ Website & Landing Page</p>
+                    </div>
                 </div>
-                <Button onClick={openCreateModal} className="gap-2">
-                    <Plus size={16} /> Tạo Form Mới
+
+                <Button onClick={openCreateModal} className="gap-2 bg-amber-600 hover:bg-amber-700 text-white shadow-xs">
+                    <Plus className="w-4 h-4" /> Tạo Form Mới
                 </Button>
             </div>
 
-            <Card style={{ padding: '0', overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                    <thead>
-                        <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                            <th style={{ padding: '1rem', fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>Tên Form</th>
-                            <th style={{ padding: '1rem', fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>Nguồn (Source)</th>
-                            <th style={{ padding: '1rem', fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>Người Nhận (Assignee)</th>
-                            <th style={{ padding: '1rem', fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>Trạng thái</th>
-                            <th style={{ padding: '1rem', fontSize: '0.875rem', fontWeight: 600, color: '#475569', textAlign: 'right' }}>Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {forms.length === 0 ? (
-                            <tr>
-                                <td colSpan={5} style={{ padding: '3rem 1rem', textAlign: 'center', color: '#94a3b8' }}>Chưa có cấu hình form nào.</td>
-                            </tr>
-                        ) : (
-                            forms.map((form) => {
-                                const origin = typeof window !== 'undefined' ? window.location.origin : '';
-                                const publicUrl = `${origin}/f/${form.id}`;
-                                const iframeCode = `<iframe src="${publicUrl}" width="100%" height="600px" frameborder="0"></iframe>`;
-
-                                return (
-                                    <tr key={form.id} style={{ borderBottom: '1px solid #f1f5f9' }} className="hover:bg-slate-50">
-                                        <td style={{ padding: '1rem', fontSize: '0.9375rem', fontWeight: 500, color: '#0f172a' }}>
-                                            {form.title}
-                                            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>ID: {form.id}</div>
-                                        </td>
-                                        <td style={{ padding: '1rem', fontSize: '0.875rem', color: '#475569' }}>{form.source}</td>
-                                        <td style={{ padding: '1rem', fontSize: '0.875rem', color: '#475569' }}>
-                                            {form.assignee ? form.assignee.name : <em style={{ color: '#94a3b8' }}>Chưa gán</em>}
-                                        </td>
-                                        <td style={{ padding: '1rem' }}>
-                                            {form.isActive ? (
-                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', backgroundColor: '#dcfce7', color: '#16a34a', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600 }}>
-                                                    <CheckCircle2 size={12} /> Đang Bật
-                                                </span>
-                                            ) : (
-                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', backgroundColor: '#fee2e2', color: '#dc2626', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600 }}>
-                                                    <XCircle size={12} /> Đã Tắt
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td style={{ padding: '1rem', textAlign: 'right' }}>
-                                            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                                                <button onClick={() => copyToClipboard(iframeCode)} style={{ padding: '0.4rem', border: '1px solid #e2e8f0', background: 'white', cursor: 'pointer', color: '#64748b', borderRadius: '4px' }} title="Copy mã nhúng Iframe" className="hover:bg-slate-100 hover:text-blue-600">
-                                                    <Code size={15} />
-                                                </button>
-                                                <button onClick={() => window.open(publicUrl, '_blank')} style={{ padding: '0.4rem', border: '1px solid #e2e8f0', background: 'white', cursor: 'pointer', color: '#64748b', borderRadius: '4px' }} title="Xem trang Public Form" className="hover:bg-slate-100 hover:text-blue-600">
-                                                    <LinkIcon size={15} />
-                                                </button>
-                                                <button onClick={() => openEditModal(form)} style={{ padding: '0.4rem', border: 'none', background: 'transparent', cursor: 'pointer', color: '#64748b', borderRadius: '4px' }} className="hover:bg-slate-100 hover:text-blue-600">
-                                                    <Edit3 size={15} />
-                                                </button>
-                                                <button onClick={() => handleDelete(form.id)} style={{ padding: '0.4rem', border: 'none', background: 'transparent', cursor: 'pointer', color: '#64748b', borderRadius: '4px' }} className="hover:bg-red-50 hover:text-red-600">
-                                                    <Trash2 size={15} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )
-                            })
-                        )}
-                    </tbody>
-                </table>
-            </Card>
-
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingFormId ? "Sửa Cấu hình Form" : "Tạo Cấu hình Form Mới"}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', paddingTop: '1rem' }}>
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between">
                     <div>
-                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem', color: '#334155' }}>Tên Form Cấu hình <span style={{ color: 'var(--danger)' }}>*</span></label>
-                        <input type="text" value={title} onChange={e => setTitle(e.target.value)} autoFocus style={{ width: '100%', padding: '0.625rem 0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', outline: 'none' }} className="focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="VD: Form Landing Page Tháng 10..." />
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Tổng số form</div>
+                        <div className="text-2xl font-mono font-bold text-slate-900 mt-1">{stats.total}</div>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600">
+                        <FormInput className="w-5 h-5" />
+                    </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between">
+                    <div>
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Đang hoạt động</div>
+                        <div className="text-2xl font-mono font-bold text-emerald-600 mt-1">{stats.active}</div>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                        <CheckCircle2 className="w-5 h-5" />
+                    </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between">
+                    <div>
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Đã tạm dừng</div>
+                        <div className="text-2xl font-mono font-bold text-slate-400 mt-1">{stats.inactive}</div>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400">
+                        <XCircle className="w-5 h-5" />
+                    </div>
+                </div>
+            </div>
+
+            {/* Search Toolbar */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex items-center gap-3">
+                <div className="relative flex-1">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                        type="text"
+                        placeholder="Tìm kiếm biểu mẫu theo tên hoặc nguồn..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-colors"
+                    />
+                </div>
+            </div>
+
+            {/* Table */}
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr className="bg-slate-50/80 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                                <th className="py-3.5 px-4 font-semibold">Tên Biểu Mẫu</th>
+                                <th className="py-3.5 px-4 font-semibold">Nguồn Dữ Liệu</th>
+                                <th className="py-3.5 px-4 font-semibold">Người Nhận Mặc Định</th>
+                                <th className="py-3.5 px-4 font-semibold text-center">Trạng Thái</th>
+                                <th className="py-3.5 px-4 font-semibold text-right">Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {filteredForms.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="py-12 text-center">
+                                        <div className="flex flex-col items-center justify-center gap-2">
+                                            <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600">
+                                                <FormInput className="w-6 h-6" />
+                                            </div>
+                                            <p className="text-sm font-medium text-slate-700">Chưa có biểu mẫu nào</p>
+                                            <p className="text-xs text-slate-400">Tạo form mới để nhúng vào trang web hoặc landing page của bạn</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ) : (
+                                filteredForms.map((form) => {
+                                    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+                                    const publicUrl = `${origin}/f/${form.id}`;
+                                    const iframeCode = `<iframe src="${publicUrl}" width="100%" height="600px" frameborder="0"></iframe>`;
+
+                                    return (
+                                        <tr key={form.id} className="hover:bg-slate-50/60 transition-colors">
+                                            <td className="py-3.5 px-4">
+                                                <div className="font-bold text-slate-900">{form.title}</div>
+                                                <div className="text-[11px] font-mono text-slate-400 mt-0.5">ID: {form.id}</div>
+                                            </td>
+                                            <td className="py-3.5 px-4 text-slate-600">
+                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                                                    <Globe className="w-3 h-3 text-slate-500" />
+                                                    {form.source || 'Website'}
+                                                </span>
+                                            </td>
+                                            <td className="py-3.5 px-4 text-slate-600">
+                                                {form.assignee ? (
+                                                    <span className="inline-flex items-center gap-1.5 text-xs text-slate-700 font-medium">
+                                                        <UserCheck className="w-3.5 h-3.5 text-indigo-600" />
+                                                        {form.assignee.name}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-xs text-slate-400 italic">Chưa gán</span>
+                                                )}
+                                            </td>
+                                            <td className="py-3.5 px-4 text-center">
+                                                {form.isActive ? (
+                                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                                                        <CheckCircle2 className="w-3 h-3" /> Đang Bật
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                                                        <XCircle className="w-3 h-3" /> Đã Tắt
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td className="py-3.5 px-4 text-right">
+                                                <div className="flex items-center justify-end gap-1.5">
+                                                    <button 
+                                                        onClick={() => copyToClipboard(iframeCode)} 
+                                                        title="Copy mã nhúng Iframe"
+                                                        className="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition-colors"
+                                                    >
+                                                        <Code className="w-4 h-4" />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => window.open(publicUrl, '_blank')} 
+                                                        title="Mở liên kết Form Public"
+                                                        className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                                                    >
+                                                        <LinkIcon className="w-4 h-4" />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => openEditModal(form)} 
+                                                        title="Chỉnh sửa form"
+                                                        className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                                                    >
+                                                        <Edit3 className="w-4 h-4" />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleDelete(form.id)} 
+                                                        title="Xóa form"
+                                                        className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* Modal */}
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingFormId ? "Sửa Cấu Hình Form" : "Tạo Biểu Mẫu Thu Thập Lead Mới"}>
+                <div className="space-y-4 pt-2">
+                    <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                            Tên Biểu Mẫu <span className="text-rose-500">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            value={title} 
+                            onChange={e => setTitle(e.target.value)} 
+                            autoFocus 
+                            placeholder="VD: Form Đăng Ký Tư Vấn Landing Page Tháng 10..."
+                            className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-colors"
+                        />
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem', color: '#334155' }}>Nguồn Lead (Source)</label>
-                            <input type="text" value={source} onChange={e => setSource(e.target.value)} style={{ width: '100%', padding: '0.625rem 0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', outline: 'none' }} className="focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="Website, Facebook, Zalo, LandingPage..." />
-                            <p style={{ margin: '0.25rem 0 0', fontSize: '0.7rem', color: '#64748b' }}>Sẽ lưu vào trường Nguồn của Cơ hội bán hàng.</p>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                                Nguồn Lead (Source)
+                            </label>
+                            <input 
+                                type="text" 
+                                value={source} 
+                                onChange={e => setSource(e.target.value)} 
+                                placeholder="Website, Facebook, Zalo, LandingPage..." 
+                                className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-colors"
+                            />
                         </div>
                         <div>
-                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem', color: '#334155' }}>Người Nhận (Tự động gán)</label>
-                            <select value={assigneeId} onChange={e => setAssigneeId(e.target.value)} style={{ width: '100%', padding: '0.625rem 0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', outline: 'none', backgroundColor: '#fff' }} className="focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                                Người Phụ Trách Tiếp Nhận
+                            </label>
+                            <select 
+                                value={assigneeId} 
+                                onChange={e => setAssigneeId(e.target.value)} 
+                                className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-colors"
+                            >
                                 <option value="">-- Không tự động gán --</option>
                                 {users.map(u => (
                                     <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
@@ -201,18 +349,40 @@ export function LeadFormsClient({ initialForms, users }: { initialForms: any[], 
                     </div>
 
                     <div>
-                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem', color: '#334155' }}>Thông báo thành công</label>
-                        <textarea value={successMessage} onChange={e => setSuccessMessage(e.target.value)} rows={3} style={{ width: '100%', padding: '0.625rem 0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', outline: 'none', resize: 'vertical' }} className="focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="Cảm ơn bạn..." />
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                            Thông Báo Sau Khi Gửi Thành Công
+                        </label>
+                        <textarea 
+                            value={successMessage} 
+                            onChange={e => setSuccessMessage(e.target.value)} 
+                            rows={3} 
+                            placeholder="Cảm ơn bạn đã để lại thông tin..."
+                            className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-colors resize-none"
+                        />
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <input type="checkbox" id="isActive" checked={isActive} onChange={e => setIsActive(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: 'var(--primary)', cursor: 'pointer' }} />
-                        <label htmlFor="isActive" style={{ fontSize: '0.875rem', fontWeight: 500, color: '#334155', cursor: 'pointer' }}>Kích hoạt Form (Cho phép nhận dữ liệu)</label>
+                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+                        <label className="flex items-center gap-2.5 cursor-pointer text-sm text-slate-700 font-medium">
+                            <input 
+                                type="checkbox" 
+                                id="isActive" 
+                                checked={isActive} 
+                                onChange={e => setIsActive(e.target.checked)} 
+                                className="w-4 h-4 rounded text-amber-600 border-slate-300 focus:ring-amber-500 cursor-pointer"
+                            />
+                            <span>Kích hoạt nhận dữ liệu từ biểu mẫu này</span>
+                        </label>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem', borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
-                        <Button variant="secondary" onClick={() => setIsModalOpen(false)}>Hủy</Button>
-                        <Button onClick={handleSave} disabled={isSaving || !title.trim()}>
+                    <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                        <Button variant="secondary" onClick={() => setIsModalOpen(false)}>
+                            Hủy
+                        </Button>
+                        <Button 
+                            onClick={handleSave} 
+                            disabled={isSaving || !title.trim()}
+                            className="bg-amber-600 hover:bg-amber-700 text-white shadow-xs"
+                        >
                             {isSaving ? 'Đang lưu...' : (editingFormId ? 'Cập nhật' : 'Hoàn tất')}
                         </Button>
                     </div>

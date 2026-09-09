@@ -634,152 +634,331 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
         URL.revokeObjectURL(url);
     };
 
+    const isTaskOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'DONE' && task.status !== 'CANCELLED';
+    const daysOverdue = task.dueDate && isTaskOverdue ? Math.max(1, Math.floor((new Date().getTime() - new Date(task.dueDate).getTime()) / (1000 * 60 * 60 * 24))) : 0;
+    const completedChecklistCount = task.checklists?.filter((c: any) => c.isCompleted).length || 0;
+    const totalChecklistCount = task.checklists?.length || 0;
+    const checklistPercent = totalChecklistCount > 0 ? Math.round((completedChecklistCount / totalChecklistCount) * 100) : 0;
+
     return (
-        <div className="w-full max-w-full mx-auto grid grid-cols-1 lg:grid-cols-3 lg:gap-6 gap-4 items-start">
+        <div className="w-full space-y-5 pb-10">
 
-            {/* LEFT COLUMN: Main Content */}
-            <div className="lg:col-span-2 flex flex-col gap-6">
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', backgroundColor: 'white', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 2px 10px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9' }}>
-                    <button onClick={() => router.back()} style={{ padding: '0.5rem', borderRadius: '12px', border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', color: '#64748b', cursor: 'pointer', transition: 'all 0.2s' }} className="hover:bg-slate-200 hover:text-slate-900">
-                        <ChevronLeft size={20} />
-                    </button>
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                        <div>
-                            <h1 style={{ margin: '0 0 0.5rem 0', fontSize: '1.75rem', fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                                {task.title}
-                                {canEdit && (
-                                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                        <button onClick={() => setIsEditModalOpen(true)} style={{ background: '#f1f5f9', border: 'none', borderRadius: '8px', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '6px', transition: 'all 0.2s' }} className="hover:bg-slate-200 hover:text-slate-900" title="Sửa chi tiết chung">
-                                            <Edit2 size={16} />
-                                        </button>
-                                        <button onClick={() => setIsEmailModalOpen(true)} style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', color: '#2563eb', cursor: 'pointer', display: 'flex', alignItems: 'center', fontSize: '0.85rem', fontWeight: 500, gap: '6px', padding: '6px 12px', transition: 'all 0.2s' }} className="hover:bg-blue-100 hover:shadow-sm" title="Gửi Email Thông Báo">
-                                            <Mail size={16} /> Gửi Email
-                                        </button>
-                                    </div>
-                                )}
-                            </h1>
-                            <span style={{ color: '#64748b', fontSize: '0.9rem', fontWeight: 500 }}>
-                                Tạo bởi: {task.creator?.name || task.creator?.email} • {new Date(task.createdAt).toLocaleString('vi-VN')}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                {task.parentTask && (
-                    <div style={{ backgroundColor: '#e0f2fe', border: '1px solid #7dd3fc', borderRadius: 'var(--radius)', padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#0369a1' }}>
-                        <Info size={18} />
-                        <span style={{ fontSize: '0.9rem' }}>
-                            Công việc này được tạo theo chu kỳ tự động lặp lại từ gốc:{' '}
-                            <Link href={`/tasks/${task.parentTask.id}`} style={{ fontWeight: 600, textDecoration: 'underline' }}>{task.parentTask.title}</Link>
-                        </span>
-                    </div>
-                )}
-
-                {task.priority === 'URGENT' && task.status !== 'DONE' && task.status !== 'CANCELLED' && (
-                    <div style={{ animation: 'priority-urgent-bg-blink 1.5s linear infinite', border: '2px solid #ef4444', borderRadius: 'var(--radius)', padding: '1rem', display: 'flex', alignItems: 'center', gap: '1rem', color: '#991b1b', boxShadow: '0 0 15px rgba(239, 68, 68, 0.5)' }}>
-                        <AlertOctagon size={28} />
-                        <div>
-                            <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800 }}>KHẨN CẤP QUAN TRỌNG</h3>
-                            <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600 }}>Đây là công việc cực kỳ quan trọng. Hãy luôn lưu ý để thực hiện đúng và đủ.</p>
-                        </div>
-                    </div>
-                )}
-
-                {task.priority === 'HIGH' && task.status !== 'DONE' && task.status !== 'CANCELLED' && (
-                    <div style={{ animation: 'priority-high-bg-blink 2s ease-in-out infinite', border: '1px solid #4ade80', borderRadius: 'var(--radius)', padding: '1rem', display: 'flex', alignItems: 'center', gap: '1rem', color: '#166534' }}>
-                        <AlertTriangle size={24} />
-                        <div>
-                            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>Ưu Tiên Cao</h3>
-                            <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600 }}>Đây là công việc được ưu tiên cao, vui lòng thực hiện.</p>
-                        </div>
-                    </div>
-                )}
-
-                {task.status === 'PAUSED' && !pausedPopupDismissed && (
-                    <div className="animate-pulse" style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: 'var(--radius)', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#dc2626' }}>
-                            <AlertTriangle size={24} />
-                            <div>
-                                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>Công Việc Ngưng Thực Hiện</h3>
-                                <p style={{ margin: 0, fontSize: '0.9rem', color: '#b91c1c' }}>Công việc này đang bị tạm ngưng. Vui lòng liên hệ với BQL (Ban Quản Lý) để biết thêm giải pháp và lý do.</p>
-                            </div>
-                        </div>
-                        <Button variant="secondary" onClick={() => setPausedPopupDismissed(true)} style={{ color: '#dc2626', borderColor: '#fecaca', backgroundColor: 'white' }}>
-                            Đã Hiểu và Đóng
-                        </Button>
-                    </div>
-                )}
-
-                <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', overflow: 'hidden' }}>
-                    <div style={{ padding: '2rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid #f1f5f9' }}>
-                            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                                <span style={{
-                                    padding: '6px 16px', borderRadius: '99px', fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.5px',
-                                    backgroundColor: task.priority === 'URGENT' ? '#fee2e2' : (task.priority === 'HIGH' ? '#fef3c7' : '#f1f5f9'),
-                                    color: task.priority === 'URGENT' ? '#b91c1c' : (task.priority === 'HIGH' ? '#b45309' : '#475569'),
-                                    border: `1px solid ${task.priority === 'URGENT' ? '#fca5a5' : (task.priority === 'HIGH' ? '#fde68a' : '#e2e8f0')}`
-                                }}>
-                                    {task.priority}
+            {/* TOP HEADER CARD */}
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-4 sm:p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-start gap-3.5 min-w-0">
+                        <button
+                            onClick={() => router.back()}
+                            className="p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all shrink-0 cursor-pointer shadow-2xs"
+                            title="Quay lại"
+                        >
+                            <ChevronLeft size={20} />
+                        </button>
+                        <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase border shadow-2xs ${
+                                    task.priority === 'URGENT' 
+                                        ? 'bg-rose-50 text-rose-700 border-rose-200' 
+                                        : task.priority === 'HIGH' 
+                                            ? 'bg-amber-50 text-amber-700 border-amber-200' 
+                                            : task.priority === 'MEDIUM' 
+                                                ? 'bg-blue-50 text-blue-700 border-blue-200' 
+                                                : 'bg-slate-100 text-slate-600 border-slate-200'
+                                }`}>
+                                    Ưu tiên: {task.priority}
                                 </span>
-                                {task.dueDate && (
-                                    <span style={{ fontSize: '0.9rem', fontWeight: 500, color: new Date(task.dueDate) < new Date() ? '#ef4444' : '#64748b', display: 'flex', alignItems: 'center', gap: '0.4rem', backgroundColor: new Date(task.dueDate) < new Date() ? '#fef2f2' : '#f8fafc', padding: '6px 12px', borderRadius: '8px', border: `1px solid ${new Date(task.dueDate) < new Date() ? '#fecaca' : '#e2e8f0'}` }}>
-                                        <Clock size={16} /> Hạn chót: {new Date(task.dueDate).toLocaleDateString('vi-VN')}
+                                {isTaskOverdue && (
+                                    <span className="animate-overdue-badge inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border border-rose-300">
+                                        <AlertTriangle size={11} className="text-rose-600 animate-pulse" />
+                                        QUÁ HẠN {daysOverdue} NGÀY
                                     </span>
                                 )}
                             </div>
+                            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2 flex-wrap break-words">
+                                {task.title}
+                                {canEdit && (
+                                    <button
+                                        onClick={() => setIsEditModalOpen(true)}
+                                        className="p-1.5 rounded-lg text-slate-400 hover:text-primary hover:bg-emerald-50 transition-colors cursor-pointer"
+                                        title="Chỉnh sửa thông tin công việc"
+                                    >
+                                        <Edit2 size={16} />
+                                    </button>
+                                )}
+                            </h1>
+                            <div className="flex items-center gap-2 text-xs text-slate-500 font-medium mt-1">
+                                <span>Tạo bởi: <strong className="text-slate-700">{task.creator?.name || task.creator?.email}</strong></span>
+                                <span>•</span>
+                                <span>{new Date(task.createdAt).toLocaleString('vi-VN')}</span>
+                            </div>
+                        </div>
+                    </div>
 
+                    {/* Right Header Controls */}
+                    <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-center">
+                        <select
+                            value={task.status}
+                            onChange={handleStatusChange}
+                            disabled={!canEdit}
+                            className={`text-xs font-bold px-3 py-2 rounded-xl border shadow-2xs transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20 ${
+                                task.status === 'DONE' 
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                                    : task.status === 'IN_PROGRESS'
+                                        ? 'bg-blue-50 text-blue-700 border-blue-300'
+                                        : task.status === 'REVIEW'
+                                            ? 'bg-sky-50 text-sky-700 border-sky-300'
+                                            : task.status === 'PAUSED'
+                                                ? 'bg-rose-50 text-rose-700 border-rose-300'
+                                                : 'bg-amber-50 text-amber-700 border-amber-300'
+                            }`}
+                        >
+                            <option value="TODO">Cần Làm</option>
+                            <option value="IN_PROGRESS">Đang Xử Lý</option>
+                            <option value="REVIEW">Chờ Duyệt</option>
+                            <option value="DONE">Hoàn Thành</option>
+                            <option value="PAUSED">Tạm Ngưng</option>
+                            <option value="CANCELLED">Đã Hủy</option>
+                        </select>
+
+                        {canEdit && (
+                            <button
+                                onClick={() => setIsEmailModalOpen(true)}
+                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 font-semibold text-xs transition-all shadow-2xs cursor-pointer"
+                                title="Gửi Email Thông Báo"
+                            >
+                                <Mail size={14} className="text-blue-600" />
+                                <span>Gửi Email</span>
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* PROMINENT OVERDUE BANNER */}
+            {isTaskOverdue && (
+                <div 
+                    className="animate-overdue-banner relative overflow-hidden rounded-2xl p-4 sm:p-5 shadow-xl transition-all"
+                    style={{
+                        background: 'linear-gradient(135deg, #e11d48 0%, #be123c 50%, #9f1239 100%)',
+                        border: '2px solid #fecdd3',
+                        color: '#ffffff'
+                    }}
+                >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-start gap-3.5">
+                            <div 
+                                className="p-3 rounded-xl flex items-center justify-center shrink-0 mt-0.5 sm:mt-0 shadow-md"
+                                style={{ backgroundColor: 'rgba(255, 255, 255, 0.25)', border: '1px solid rgba(255, 255, 255, 0.4)' }}
+                            >
+                                <AlertOctagon size={28} className="animate-pulse stroke-[2.5]" style={{ color: '#ffffff' }} />
+                            </div>
                             <div>
-                                <select
-                                    value={task.status}
-                                    onChange={handleStatusChange}
-                                    disabled={!canEdit}
-                                    style={{
-                                        padding: '8px 16px', borderRadius: '8px',
-                                        border: '1px solid #cbd5e1', fontSize: '0.95rem',
-                                        backgroundColor: '#f8fafc', color: '#0f172a', fontWeight: 600,
-                                        outline: 'none', cursor: 'pointer', transition: 'border-color 0.2s',
-                                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-                                    }}
-                                    className="focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                                <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                                    <span 
+                                        className="animate-pulse px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase shadow-md inline-flex items-center gap-1"
+                                        style={{ backgroundColor: '#ffffff', color: '#be123c' }}
+                                    >
+                                        <AlertTriangle size={13} style={{ color: '#be123c' }} />
+                                        CẢNH BÁO QUÁ HẠN XỬ LÝ
+                                    </span>
+                                    <span 
+                                        className="text-xs font-bold px-2.5 py-1 rounded-md shadow-inner"
+                                        style={{ backgroundColor: 'rgba(0, 0, 0, 0.35)', color: '#ffffff' }}
+                                    >
+                                        Hạn chót: {new Date(task.dueDate).toLocaleDateString('vi-VN')} (Trễ {daysOverdue} ngày)
+                                    </span>
+                                </div>
+                                <h3 
+                                    className="text-base sm:text-lg font-black tracking-tight uppercase"
+                                    style={{ color: '#ffffff', textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
                                 >
-                                    <option value="TODO">Cần Làm</option>
-                                    <option value="IN_PROGRESS">Đang Xử Lý</option>
-                                    <option value="REVIEW">Chờ Duyệt</option>
-                                    <option value="DONE">Hoàn Thành</option>
-                                    <option value="PAUSED">Tạm Ngưng</option>
-                                    <option value="CANCELLED">Đã Hủy</option>
-                                </select>
+                                    CÔNG VIỆC NÀY ĐÃ QUÁ HẠN — VUI LÒNG ƯU TIÊN XỬ LÝ NGAY!
+                                </h3>
+                                <p 
+                                    className="text-xs sm:text-sm font-semibold mt-1"
+                                    style={{ color: '#ffe4e6', textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}
+                                >
+                                    Công việc đã vượt quá thời hạn cam kết. Nhân sự được phân công vui lòng khẩn trương hoàn thành checklist và cập nhật kết quả xử lý.
+                                </p>
                             </div>
                         </div>
 
-                        {task.description && (
-                            <div style={{ marginBottom: '2.5rem', lineHeight: 1.7, color: '#334155', whiteSpace: 'pre-wrap', fontSize: '1rem' }}>
-                                {task.description}
-                            </div>
+                        {canEdit && task.status !== 'IN_PROGRESS' && (
+                            <button
+                                onClick={async () => {
+                                    if (!session?.user?.id) return;
+                                    setTask({ ...task, status: 'IN_PROGRESS' });
+                                    await updateTaskStatus(task.id, 'IN_PROGRESS', session.user.id);
+                                    router.refresh();
+                                }}
+                                className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl font-extrabold text-xs shadow-lg transition-transform active:scale-95 shrink-0 cursor-pointer hover:brightness-105"
+                                style={{ backgroundColor: '#ffffff', color: '#be123c', border: '1px solid #ffffff' }}
+                            >
+                                <Clock size={14} style={{ color: '#be123c' }} />
+                                <span>Chuyển Đang Xử Lý</span>
+                            </button>
                         )}
+                    </div>
+                </div>
+            )}
 
-                        {/* CHECKLIST */}
-                        <div style={{ marginBottom: '1rem' }}>
-                            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1e293b', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <CheckCircle2 size={20} color="#4f46e5" /> Danh sách công việc con (Checklist)
-                            </h3>
+            {/* Informational Banners */}
+            {task.parentTask && (
+                <div className="bg-sky-50 border border-sky-200 rounded-xl p-3.5 flex items-center gap-3 text-sky-800 text-xs shadow-2xs">
+                    <Info size={18} className="text-sky-600 shrink-0" />
+                    <span>
+                        Công việc này được tạo tự động theo chu kỳ lặp lại từ gốc:{' '}
+                        <Link href={`/tasks/${task.parentTask.id}`} className="font-bold underline hover:text-sky-950">
+                            {task.parentTask.title}
+                        </Link>
+                    </span>
+                </div>
+            )}
 
-                            {task.checklists.length > 0 && (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
+            {task.priority === 'URGENT' && !isTaskOverdue && task.status !== 'DONE' && task.status !== 'CANCELLED' && (
+                <div className="animate-priority-urgent-bg border-2 border-rose-400 rounded-xl p-3.5 flex items-center gap-3 text-rose-900 shadow-sm">
+                    <AlertOctagon size={24} className="text-rose-600 shrink-0" />
+                    <div>
+                        <h4 className="font-black text-xs uppercase">Công Việc Khẩn Cấp Quan Trọng</h4>
+                        <p className="text-xs text-rose-800 font-medium">Đây là công việc ưu tiên hàng đầu, hãy luôn chú ý hoàn thành đúng thời hạn.</p>
+                    </div>
+                </div>
+            )}
+
+            {task.priority === 'HIGH' && !isTaskOverdue && task.status !== 'DONE' && task.status !== 'CANCELLED' && (
+                <div className="animate-priority-high-bg border border-emerald-400 rounded-xl p-3.5 flex items-center gap-3 text-emerald-900 shadow-sm">
+                    <AlertTriangle size={22} className="text-emerald-700 shrink-0" />
+                    <div>
+                        <h4 className="font-bold text-xs uppercase">Công Việc Ưu Tiên Cao</h4>
+                        <p className="text-xs text-emerald-800 font-medium">Công việc có mức độ quan trọng cao, vui lòng chú ý xử lý đúng tiến độ.</p>
+                    </div>
+                </div>
+            )}
+
+            {task.status === 'PAUSED' && !pausedPopupDismissed && (
+                <div className="animate-pulse bg-rose-50 border border-rose-200 rounded-xl p-3.5 flex items-center justify-between gap-3 text-rose-800 shadow-sm">
+                    <div className="flex items-center gap-3">
+                        <AlertTriangle size={22} className="text-rose-600 shrink-0" />
+                        <div>
+                            <h4 className="font-bold text-xs uppercase text-rose-900">Công Việc Đang Tạm Ngưng</h4>
+                            <p className="text-xs text-rose-700">Công việc này hiện đang bị tạm dừng. Vui lòng liên hệ Ban Quản Lý để nắm thông tin chi tiết.</p>
+                        </div>
+                    </div>
+                    <Button variant="secondary" onClick={() => setPausedPopupDismissed(true)} className="text-xs h-8 text-rose-700 border-rose-300 bg-white hover:bg-rose-100">
+                        Đã Hiểu
+                    </Button>
+                </div>
+            )}
+
+            {/* MAIN 2-COLUMN BALANCED GRID */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+
+                {/* LEFT COLUMN: Core Task Content & Comments */}
+                <div className="lg:col-span-8 flex flex-col gap-5">
+
+                    {/* Task Details Card */}
+                    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 sm:p-6 space-y-6">
+                        
+                        {/* Meta Info Bar */}
+                        <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                            <div className="flex flex-wrap items-center gap-2.5">
+                                {/* Deadline Pill */}
+                                {task.dueDate ? (
+                                    <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border ${
+                                        isTaskOverdue 
+                                            ? 'bg-rose-50 text-rose-700 border-rose-200 font-bold animate-pulse' 
+                                            : 'bg-slate-50 text-slate-700 border-slate-200'
+                                    }`}>
+                                        <Clock size={14} className={isTaskOverdue ? 'text-rose-600' : 'text-slate-400'} />
+                                        <span>Hạn chót: <strong>{new Date(task.dueDate).toLocaleDateString('vi-VN')}</strong></span>
+                                    </div>
+                                ) : (
+                                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-slate-400 bg-slate-50 border border-slate-200">
+                                        <Clock size={14} />
+                                        <span>Không có hạn chót</span>
+                                    </div>
+                                )}
+
+                                {/* Start Date Pill */}
+                                {task.startDate && (
+                                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-slate-600 bg-slate-50 border border-slate-200">
+                                        <span>Bắt đầu: <strong>{new Date(task.startDate).toLocaleDateString('vi-VN')}</strong></span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Checklist Progress Summary */}
+                            {totalChecklistCount > 0 && (
+                                <div className="flex items-center gap-2.5">
+                                    <span className="text-xs font-bold text-slate-600">
+                                        Tiến độ: {completedChecklistCount}/{totalChecklistCount}
+                                    </span>
+                                    <div className="w-24 bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200">
+                                        <div
+                                            className={`h-full rounded-full transition-all duration-300 ${
+                                                completedChecklistCount === totalChecklistCount ? 'bg-emerald-500' : 'bg-primary'
+                                            }`}
+                                            style={{ width: `${checklistPercent}%` }}
+                                        />
+                                    </div>
+                                    <span className="text-xs font-mono font-bold text-slate-500">{checklistPercent}%</span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Task Description */}
+                        <div>
+                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Mô tả công việc</h3>
+                            {task.description ? (
+                                <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-100 text-slate-800 text-sm leading-relaxed whitespace-pre-wrap">
+                                    {task.description}
+                                </div>
+                            ) : (
+                                <div className="bg-slate-50/50 rounded-xl p-4 border border-dashed border-slate-200 text-slate-400 text-xs italic text-center">
+                                    Chưa có mô tả chi tiết cho công việc này.
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Checklist Section */}
+                        <div className="pt-2">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                                    <CheckCircle2 size={18} className="text-primary" />
+                                    <span>Danh sách công việc con (Checklist)</span>
+                                    {totalChecklistCount > 0 && (
+                                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600">
+                                            {completedChecklistCount}/{totalChecklistCount}
+                                        </span>
+                                    )}
+                                </h3>
+                            </div>
+
+                            {/* Checklist items list */}
+                            {task.checklists && task.checklists.length > 0 && (
+                                <div className="space-y-2 mb-3">
                                     {task.checklists.map((item: any) => (
-                                        <div key={item.id} className="group" style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', padding: '0.75rem 1rem', borderRadius: '12px', backgroundColor: item.isCompleted ? '#f8fafc' : '#ffffff', border: `1px solid ${item.isCompleted ? '#e2e8f0' : '#e2e8f0'}`, transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.01)' }}>
+                                        <div
+                                            key={item.id}
+                                            className={`group flex items-start gap-3 p-3 rounded-xl border transition-all ${
+                                                item.isCompleted 
+                                                    ? 'bg-slate-50/80 border-slate-200 text-slate-400' 
+                                                    : 'bg-white border-slate-200/90 text-slate-800 shadow-2xs hover:border-slate-300'
+                                            }`}
+                                        >
                                             <button
                                                 onClick={() => handleToggleChecklist(item.id, item.isCompleted)}
                                                 disabled={!canEdit}
-                                                style={{ marginTop: '0.1rem', color: item.isCompleted ? '#10b981' : '#cbd5e1', cursor: canEdit ? 'pointer' : 'default', transition: 'color 0.2s' }}
-                                                className={canEdit && !item.isCompleted ? "hover:text-indigo-400" : ""}
+                                                className={`mt-0.5 shrink-0 transition-colors cursor-pointer ${
+                                                    item.isCompleted ? 'text-emerald-500' : 'text-slate-300 hover:text-primary'
+                                                }`}
                                             >
-                                                {item.isCompleted ? <CheckCircle2 size={22} /> : <Circle size={22} />}
+                                                {item.isCompleted ? <CheckCircle2 size={20} className="fill-emerald-50 text-emerald-600" /> : <Circle size={20} />}
                                             </button>
-                                            <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+
+                                            <div className="flex-1 min-w-0">
                                                 {editingChecklistId === item.id ? (
-                                                    <div style={{ flex: 1, display: 'flex', gap: '0.5rem', marginRight: '1rem' }}>
+                                                    <div className="flex items-center gap-2">
                                                         <input
                                                             autoFocus
                                                             type="text"
@@ -789,154 +968,176 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                                                                 if (e.key === 'Enter') handleSaveEditChecklist(item.id);
                                                                 if (e.key === 'Escape') setEditingChecklistId(null);
                                                             }}
-                                                            style={{ flex: 1, padding: '0.5rem 0.75rem', borderRadius: '8px', border: '2px solid #6366f1', outline: 'none', fontSize: '0.95rem', backgroundColor: '#fff' }}
+                                                            className="flex-1 px-2.5 py-1.5 text-xs bg-white border border-primary rounded-lg focus:outline-none"
                                                         />
-                                                        <Button onClick={() => handleSaveEditChecklist(item.id)} style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', borderRadius: '8px', backgroundColor: '#4f46e5', color: 'white' }}>Lưu</Button>
-                                                        <Button onClick={() => setEditingChecklistId(null)} variant="secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', borderRadius: '8px' }}>Hủy</Button>
+                                                        <button onClick={() => handleSaveEditChecklist(item.id)} className="px-2.5 py-1.5 bg-primary text-white rounded-lg text-xs font-bold">Lưu</button>
+                                                        <button onClick={() => setEditingChecklistId(null)} className="px-2.5 py-1.5 bg-slate-200 text-slate-700 rounded-lg text-xs">Hủy</button>
                                                     </div>
                                                 ) : (
-                                                    <div style={{ flex: 1 }}>
-                                                        <div style={{
-                                                            textDecoration: item.isCompleted ? 'line-through' : 'none',
-                                                            color: item.isCompleted ? '#94a3b8' : '#334155',
-                                                            fontWeight: item.isCompleted ? 400 : 500,
-                                                            fontSize: '0.95rem',
-                                                            lineHeight: 1.5
-                                                        }}>
+                                                    <div>
+                                                        <p className={`text-xs sm:text-sm font-medium leading-normal break-words ${item.isCompleted ? 'line-through text-slate-400' : 'text-slate-800'}`}>
                                                             {item.title}
-                                                        </div>
+                                                        </p>
                                                         {item.isCompleted && item.completedBy && (
-                                                            <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.25rem' }}>
-                                                                Hoàn thành bởi: <strong>{item.completedBy.name}</strong> lúc {new Date(item.completedAt).toLocaleString('vi-VN')}
-                                                            </div>
+                                                            <span className="text-[11px] text-slate-400 block mt-0.5">
+                                                                Hoàn thành bởi <strong>{item.completedBy.name}</strong> • {new Date(item.completedAt).toLocaleString('vi-VN')}
+                                                            </span>
                                                         )}
                                                     </div>
                                                 )}
+                                            </div>
 
-                                                {/* Actions */}
-                                                {!item.isCompleted && canEdit && editingChecklistId !== item.id && (
-                                                    <div style={{ display: 'flex', gap: '0.25rem', opacity: 0, transition: 'opacity 0.2s' }} className="group-hover:opacity-100">
+                                            {/* Action Buttons */}
+                                            {canEdit && editingChecklistId !== item.id && (
+                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    {!item.isCompleted && (
                                                         <button
                                                             onClick={() => {
                                                                 setEditingChecklistId(item.id);
                                                                 setEditChecklistTitle(item.title);
                                                             }}
-                                                            style={{ background: '#f1f5f9', border: 'none', cursor: 'pointer', color: '#64748b', padding: '0.4rem', borderRadius: '6px' }}
-                                                            className="hover:bg-indigo-100 hover:text-indigo-600 transition-colors"
+                                                            className="p-1 rounded text-slate-400 hover:text-primary hover:bg-slate-100 transition-colors cursor-pointer"
                                                             title="Sửa"
                                                         >
-                                                            <Edit2 size={16} />
+                                                            <Edit2 size={13} />
                                                         </button>
-                                                        <button
-                                                            onClick={() => handleDeleteChecklist(item.id)}
-                                                            style={{ background: '#fef2f2', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '0.4rem', borderRadius: '6px' }}
-                                                            className="hover:bg-red-100 hover:text-red-700 transition-colors"
-                                                            title="Xóa"
-                                                        >
-                                                            <Trash2 size={16} />
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
+                                                    )}
+                                                    <button
+                                                        onClick={() => handleDeleteChecklist(item.id)}
+                                                        className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                                                        title="Xóa"
+                                                    >
+                                                        <Trash2 size={13} />
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
                             )}
 
+                            {/* Add Checklist Input */}
                             {canEdit && (
-                                <form onSubmit={handleAddChecklist} style={{ display: 'flex', gap: '0.75rem' }}>
+                                <form onSubmit={handleAddChecklist} className="flex items-center gap-2">
                                     <input
                                         type="text"
                                         value={newChecklist}
                                         onChange={e => setNewChecklist(e.target.value)}
-                                        placeholder="Thêm mục checklist mới..."
-                                        style={{ flex: 1, padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.95rem', outline: 'none', transition: 'border-color 0.2s' }}
-                                        className="focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                                        placeholder="Thêm mục checklist mới (nhấn Enter để thêm)..."
+                                        className="flex-1 h-9 px-3.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all shadow-2xs"
                                     />
-                                    <Button type="submit" disabled={isSaving || !newChecklist.trim()} variant="secondary" style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', fontWeight: 600 }}>
-                                        Thêm
+                                    <Button
+                                        type="submit"
+                                        disabled={isSaving || !newChecklist.trim()}
+                                        className="h-9 px-4 text-xs font-bold rounded-xl shadow-2xs"
+                                    >
+                                        <Plus size={14} /> Thêm
                                     </Button>
                                 </form>
                             )}
                         </div>
                     </div>
-                </div>
 
-                {/* COMMENTS SECTION */}
-                <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', overflow: 'hidden' }}>
-                    <div style={{ padding: '2rem' }}>
-                        <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                            <MessageSquare size={22} color="#4f46e5" /> Bình luận & Thảo luận
-                        </h3>
+                    {/* Comments & Discussion Card */}
+                    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 sm:p-6 space-y-5">
+                        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                                <MessageSquare size={18} className="text-primary" />
+                                <span>Bình luận &amp; Thảo luận</span>
+                                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600">
+                                    {task.comments?.length || 0}
+                                </span>
+                            </h3>
+                        </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem', marginBottom: '2.5rem' }}>
+                        {/* Comments Stream */}
+                        <div className="space-y-4">
                             {rootComments.length === 0 ? (
-                                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', textAlign: 'center' }}>Chưa có bình luận nào.</p>
+                                <div className="py-8 text-center text-slate-400 text-xs">
+                                    <MessageSquare size={28} className="mx-auto mb-2 opacity-30 text-slate-400" />
+                                    Chưa có bình luận nào. Hãy bắt đầu cuộc thảo luận bên dưới!
+                                </div>
                             ) : (
                                 rootComments.map((comment: any) => {
                                     const replies = getReplies(comment.id);
 
                                     const renderComment = (c: any, isReply = false) => {
-                                        // Group reactions by emoji
                                         const reactionCounts = c.reactions?.reduce((acc: any, r: any) => {
                                             acc[r.emoji] = (acc[r.emoji] || 0) + 1;
                                             return acc;
                                         }, {}) || {};
-
-                                        // Check if current user reacted
                                         const userReactions = c.reactions?.filter((r: any) => r.user?.id === session?.user?.id).map((r: any) => r.emoji) || [];
 
                                         return (
-                                            <div key={c.id} style={{ display: 'flex', gap: '1rem', marginTop: isReply ? '1rem' : '0' }}>
-                                                <div style={{ width: isReply ? '32px' : '40px', height: isReply ? '32px' : '40px', borderRadius: '50%', backgroundColor: '#4f46e5', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', flexShrink: 0, fontSize: isReply ? '0.85rem' : '1.1rem', boxShadow: '0 2px 4px rgba(79, 70, 229, 0.2)' }}>
-                                                    {c.user.name?.[0]?.toUpperCase() || 'U'}
+                                            <div key={c.id} className={`flex gap-3 ${isReply ? 'mt-3' : ''}`}>
+                                                <div className={`rounded-full bg-gradient-to-br from-primary to-emerald-700 text-white font-bold flex items-center justify-center shrink-0 shadow-xs ${
+                                                    isReply ? 'w-7 h-7 text-[10px]' : 'w-8 h-8 text-xs'
+                                                }`}>
+                                                    {c.user?.name?.[0]?.toUpperCase() || 'U'}
                                                 </div>
-                                                <div style={{ flex: 1 }}>
-                                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', marginBottom: '0.4rem' }}>
-                                                        <span style={{ fontWeight: 600, color: '#1e293b', fontSize: '0.95rem' }}>{c.user.name || c.user.email}</span>
-                                                        <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-baseline gap-2 mb-1">
+                                                        <span className="text-xs font-bold text-slate-900">{c.user?.name || c.user?.email}</span>
+                                                        <span className="text-[10px] text-slate-400">
                                                             {c.createdAt ? formatDistanceToNow(new Date(c.createdAt), { addSuffix: true, locale: vi }) : 'Vừa xong'}
                                                         </span>
                                                     </div>
 
                                                     <div
-                                                        style={{ padding: '1rem', backgroundColor: isReply ? '#f8fafc' : '#f1f5f9', borderRadius: '12px', lineHeight: 1.6, fontSize: '0.95rem', overflowWrap: 'anywhere', color: '#334155', border: isReply ? '1px solid #f1f5f9' : 'none' }}
+                                                        className={`p-3.5 rounded-xl text-xs sm:text-sm text-slate-800 leading-relaxed break-words sun-editor-output custom-comment-content ${
+                                                            isReply ? 'bg-slate-50 border border-slate-100' : 'bg-slate-100/70 border border-slate-200/50'
+                                                        }`}
                                                         dangerouslySetInnerHTML={{ __html: autoLinkHtml(c.content) }}
-                                                        className="sun-editor-output custom-comment-content"
                                                         onClick={handleCommentClick}
                                                     />
 
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.75rem' }}>
+                                                    <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                                                         {/* Reaction Summary */}
                                                         {Object.keys(reactionCounts).length > 0 && (
-                                                            <div style={{ display: 'flex', gap: '0.25rem' }}>
+                                                            <div className="flex gap-1">
                                                                 {Object.entries(reactionCounts).map(([emoji, count]) => (
-                                                                    <div key={emoji} style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', padding: '2px 6px', backgroundColor: userReactions.includes(emoji) ? '#e0e7ff' : '#f1f5f9', borderRadius: '12px', fontSize: '0.8rem', cursor: 'pointer', border: userReactions.includes(emoji) ? '1px solid #c7d2fe' : '1px solid transparent' }} onClick={() => handleToggleReaction(c.id, emoji)}>
+                                                                    <button
+                                                                        key={emoji}
+                                                                        onClick={() => handleToggleReaction(c.id, emoji)}
+                                                                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs cursor-pointer border transition-all ${
+                                                                            userReactions.includes(emoji)
+                                                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-300 font-bold'
+                                                                                : 'bg-slate-100 text-slate-600 border-slate-200'
+                                                                        }`}
+                                                                    >
                                                                         <span>{emoji}</span>
-                                                                        <span style={{ color: userReactions.includes(emoji) ? 'var(--primary)' : 'var(--text-muted)', fontWeight: 600 }}>{count as number}</span>
-                                                                    </div>
+                                                                        <span className="text-[10px]">{count as number}</span>
+                                                                    </button>
                                                                 ))}
                                                             </div>
                                                         )}
 
-                                                        {/* Quick Emojis & Reply Actions */}
-                                                        <div style={{ display: 'flex', gap: '0.5rem', opacity: 0.7 }}>
+                                                        {/* Emojis Quick Picker */}
+                                                        <div className="flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity">
                                                             {EMOJIS.slice(0, 3).map(emoji => (
-                                                                <button key={emoji} onClick={() => handleToggleReaction(c.id, emoji)} style={{ fontSize: '0.85rem', cursor: 'pointer', transition: 'transform 0.1s', border: 'none', background: 'none' }} title="Thả cảm xúc" className="hover:scale-110">
+                                                                <button
+                                                                    key={emoji}
+                                                                    onClick={() => handleToggleReaction(c.id, emoji)}
+                                                                    className="text-xs hover:scale-125 transition-transform p-0.5 cursor-pointer"
+                                                                    title="Thả biểu cảm"
+                                                                >
                                                                     {emoji}
                                                                 </button>
                                                             ))}
                                                             {!isReply && (
-                                                                <button onClick={() => setReplyTo(c.id)} style={{ fontSize: '0.8rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px', textDecoration: 'underline' }}>
+                                                                <button
+                                                                    onClick={() => setReplyTo(c.id)}
+                                                                    className="text-[11px] font-semibold text-slate-500 hover:text-primary ml-1 cursor-pointer"
+                                                                >
                                                                     Trả lời
                                                                 </button>
                                                             )}
                                                         </div>
                                                     </div>
 
-                                                    {/* Render Replies (Nested 1 level only for simplicity) */}
+                                                    {/* Replies Nested */}
                                                     {!isReply && replies.length > 0 && (
-                                                        <div style={{ display: 'flex', flexDirection: 'column', marginTop: '0.5rem', paddingLeft: '1rem', borderLeft: '2px solid #e2e8f0' }}>
+                                                        <div className="mt-2 pl-3 border-l-2 border-slate-200 space-y-2">
                                                             {replies.map((r: any) => renderComment(r, true))}
                                                         </div>
                                                     )}
@@ -950,16 +1151,21 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                             )}
                         </div>
 
-                        {/* Comment Form */}
-                        <div style={{ backgroundColor: '#ffffff', padding: '1.25rem', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
+                        {/* Comment Composer */}
+                        <div className="bg-slate-50/70 p-3.5 rounded-xl border border-slate-200/90 relative">
                             {replyTo && (
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', padding: '0.75rem 1rem', backgroundColor: '#f1f5f9', borderRadius: '8px', fontSize: '0.9rem', color: '#334155' }}>
-                                    <span style={{ fontWeight: 500 }}>Đang trả lời bình luận...</span>
-                                    <button onClick={() => setReplyTo(null)} style={{ color: '#ef4444', cursor: 'pointer', background: '#fee2e2', border: 'none', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 600 }} className="hover:bg-red-200">Hủy</button>
+                                <div className="flex items-center justify-between mb-2 p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800">
+                                    <span className="font-semibold">Đang trả lời bình luận...</span>
+                                    <button
+                                        onClick={() => setReplyTo(null)}
+                                        className="text-rose-600 hover:text-rose-800 font-bold cursor-pointer"
+                                    >
+                                        Hủy
+                                    </button>
                                 </div>
                             )}
 
-                            <div style={{ position: 'relative' }}>
+                            <div className="relative">
                                 <textarea
                                     value={newComment}
                                     onChange={handleEditorChange}
@@ -983,449 +1189,421 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                                             }
                                         }
                                     }}
-                                    style={{
-                                        width: '100%',
-                                        minHeight: '120px',
-                                        padding: '1rem',
-                                        paddingRight: '3rem',
-                                        borderRadius: '8px',
-                                        border: '1px solid #cbd5e1',
-                                        resize: 'vertical',
-                                        fontSize: '0.95rem',
-                                        lineHeight: 1.6,
-                                        backgroundColor: '#f8fafc',
-                                        outline: 'none',
-                                        transition: 'all 0.2s',
-                                        color: '#0f172a'
-                                    }}
-                                    className="focus:border-indigo-500 focus:bg-white focus:ring-1 focus:ring-indigo-500"
-                                    placeholder="Gõ phím @ để nhắc tên ai đó, hoặc chia sẻ hình ảnh (ctrl+V)..."
+                                    className="w-full min-h-[95px] p-3 pr-20 text-xs sm:text-sm bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all shadow-2xs resize-y"
+                                    placeholder="Gõ phím @ để nhắc tên ai đó, hoặc chia sẻ hình ảnh (Ctrl+V)..."
                                 />
-                                <div style={{ position: 'absolute', bottom: '1rem', right: '0.75rem', display: 'flex', gap: '0.5rem' }}>
-                                    <label style={{ cursor: 'pointer', color: '#64748b', padding: '0.4rem', borderRadius: '6px' }} className="hover:bg-slate-200 hover:text-indigo-600 transition-colors" title="Đính kèm tài liệu">
-                                        <Paperclip size={18} />
+
+                                <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1 bg-white/80 backdrop-blur-xs p-1 rounded-lg border border-slate-200/60 shadow-2xs">
+                                    <label className="p-1 text-slate-500 hover:text-primary hover:bg-slate-100 rounded-md cursor-pointer transition-colors" title="Đính kèm tài liệu">
+                                        <Paperclip size={16} />
                                         <input type="file" hidden multiple onChange={handleCommentFileSelect} disabled={isSaving} />
                                     </label>
-                                    <label style={{ cursor: 'pointer', color: '#64748b', padding: '0.4rem', borderRadius: '6px' }} className="hover:bg-slate-200 hover:text-indigo-600 transition-colors" title="Đính kèm ảnh">
-                                        <ImageIcon size={18} />
+                                    <label className="p-1 text-slate-500 hover:text-primary hover:bg-slate-100 rounded-md cursor-pointer transition-colors" title="Đính kèm hình ảnh">
+                                        <ImageIcon size={16} />
                                         <input type="file" hidden multiple accept="image/*" onChange={handleCommentImageSelect} disabled={isSaving} />
                                     </label>
                                 </div>
                             </div>
 
                             {/* Mentions Dropdown */}
-                            {
-                                mentionQuery !== null && (
-                                    <div style={{
-                                        position: 'absolute', bottom: '100%', left: 0,
-                                        width: '250px', maxHeight: '150px', overflowY: 'auto',
-                                        backgroundColor: 'var(--surface)', border: '1px solid var(--border)',
-                                        borderRadius: '8px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-                                        zIndex: 100, marginBottom: '0.5rem'
-                                    }}>
-                                        {users.filter(u => u.name && u.name.toLowerCase().includes(mentionQuery.toLowerCase())).length === 0 ? (
-                                            <div style={{ padding: '0.75rem 1rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Không tìm thấy người dùng</div>
-                                        ) : (
-                                            users.filter(u => u.name && u.name.toLowerCase().includes(mentionQuery.toLowerCase())).map(u => (
-                                                <div
-                                                    key={u.id}
-                                                    onClick={() => handleInsertMention(u.name)}
-                                                    style={{ padding: '0.75rem 1rem', cursor: 'pointer', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                                                    className="hover:bg-slate-50"
-                                                >
-                                                    <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                                                        {u.name[0].toUpperCase()}
-                                                    </div>
-                                                    <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>{u.name}</span>
+                            {mentionQuery !== null && (
+                                <div className="absolute bottom-full left-3 w-64 max-h-40 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-lg z-50 mb-2 py-1">
+                                    {users.filter(u => u.name && u.name.toLowerCase().includes(mentionQuery.toLowerCase())).length === 0 ? (
+                                        <div className="p-2.5 text-xs text-slate-400 text-center">Không tìm thấy người dùng</div>
+                                    ) : (
+                                        users.filter(u => u.name && u.name.toLowerCase().includes(mentionQuery.toLowerCase())).map(u => (
+                                            <div
+                                                key={u.id}
+                                                onClick={() => handleInsertMention(u.name)}
+                                                className="px-3 py-2 text-xs hover:bg-emerald-50 hover:text-primary cursor-pointer flex items-center gap-2 transition-colors"
+                                            >
+                                                <div className="w-5 h-5 rounded-full bg-emerald-100 text-primary flex items-center justify-center font-bold text-[10px]">
+                                                    {u.name[0].toUpperCase()}
                                                 </div>
-                                            ))
-                                        )}
-                                    </div>
-                                )}
-                        </div>
-
-                        {/* Image Preview List */}
-                        {commentImages.length > 0 && (
-                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-                                {commentImages.map((img, i) => (
-                                    <div key={i} style={{ position: 'relative', width: '60px', height: '60px', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border)' }}>
-                                        <img src={img.url} alt={`preview-${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                        <button
-                                            onClick={() => removeCommentImage(i)}
-                                            style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '0.7rem' }}
-                                        >
-                                            &times;
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* File Preview List */}
-                        {commentFiles.length > 0 && (
-                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-                                {commentFiles.map((file, i) => (
-                                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '4px 8px', backgroundColor: '#f1f5f9', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '0.85rem' }}>
-                                        <Paperclip size={14} color="var(--text-muted)" />
-                                        <span style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={file.name}>{file.name}</span>
-                                        <button
-                                            onClick={() => removeCommentFile(i)}
-                                            style={{ background: 'none', color: 'var(--danger)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '2px' }}
-                                        >
-                                            <X size={14} />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                            <Button
-                                onClick={() => handleAddComment()}
-                                disabled={isSaving || (!newComment.trim() && commentImages.length === 0 && commentFiles.length === 0)}
-                                style={{ padding: '0.6rem 1.5rem', borderRadius: '8px', backgroundColor: '#4f46e5', color: '#ffffff', fontWeight: 600, fontSize: '0.95rem', border: 'none', transition: 'all 0.2s' }}
-                                className="hover:bg-indigo-600 hover:shadow-md disabled:bg-slate-300 disabled:cursor-not-allowed"
-                            >
-                                {isSaving ? 'Đang gửi...' : 'Gửi bình luận'}
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* RIGHT COLUMN: Sidebar Info */}
-            <div className="lg:col-span-1 flex flex-col gap-6">
-
-                {/* Related Links */}
-                <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', overflow: 'hidden' }}>
-                    <div style={{ backgroundColor: '#f8fafc', padding: '1rem 1.25rem', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#1e293b' }}>Liên kết hệ thống</h4>
-                        {canEdit && (
-                            <button onClick={() => setIsLinkModalOpen(true)} style={{ background: '#e0e7ff', border: 'none', color: '#4f46e5', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 600, padding: '6px 12px', borderRadius: '6px', transition: 'all 0.2s' }} className="hover:bg-indigo-200 hover:text-indigo-900">
-                                <Plus size={14} /> Thêm / Cập nhật
-                            </button>
-                        )}
-                    </div>
-                    <div style={{ padding: '1.25rem' }}>
-                        {relatedLinks.length === 0 ? (
-                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Chưa có liên kết</div>
-                        ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                {relatedLinks.map((link, i) => (
-                                    <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem', backgroundColor: '#f8fafc', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{link.label}</span>
-                                            <Link href={link.href} style={{ color: 'var(--primary)', fontWeight: 500, fontSize: '0.9rem', textDecoration: 'none' }} className="hover:underline">
-                                                {link.value}
-                                            </Link>
-                                        </div>
-                                        {canDelete && (
-                                            <button onClick={() => handleRemoveLink(link.label)} disabled={isSaving} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: '0.5rem', opacity: isSaving ? 0.5 : 1 }} title="Gỡ liên kết">
-                                                <Trash2 size={16} />
-                                            </button>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Documents & Notes */}
-                <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', overflow: 'hidden' }}>
-                    <div style={{ backgroundColor: '#f8fafc', padding: '1rem 1.25rem', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Paperclip size={18} color="#64748b" /> Tài liệu & Ghi chú
-                        </h4>
-                        {canEdit && (
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                <button onClick={() => setIsAddingNote(!isAddingNote)} style={{ background: 'none', border: '1px solid #cbd5e1', cursor: 'pointer', color: '#475569', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', fontWeight: 600, padding: '4px 8px', borderRadius: '6px', transition: 'all 0.2s' }} className="hover:bg-slate-100">
-                                    <Plus size={14} /> Ghi chú
-                                </button>
-                                <label style={{ cursor: 'pointer', color: '#4f46e5', background: '#e0e7ff', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', fontWeight: 600, padding: '4px 8px', borderRadius: '6px', transition: 'all 0.2s', margin: 0 }} className="hover:bg-indigo-200">
-                                    <Plus size={14} /> Tài liệu
-                                    <input type="file" multiple hidden onChange={handleDocUpload} disabled={isSaving} />
-                                </label>
-                            </div>
-                        )}
-                    </div>
-                    <div style={{ padding: '1.25rem' }}>
-
-                        {isAddingNote && (
-                            <div style={{ marginBottom: '1rem', padding: '0.75rem', backgroundColor: '#f8fafc', borderRadius: '6px', border: '1px solid var(--border)' }}>
-                                <textarea
-                                    value={newNoteContent}
-                                    onChange={(e) => setNewNoteContent(e.target.value)}
-                                    placeholder="Nhập nội dung ghi chú..."
-                                    style={{ width: '100%', minHeight: '80px', padding: '0.5rem', borderRadius: '4px', border: '1px solid #e2e8f0', resize: 'vertical', fontSize: '0.9rem', marginBottom: '0.5rem' }}
-                                />
-                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                                    <Button variant="secondary" onClick={() => { setIsAddingNote(false); setNewNoteContent(''); }}>Hủy</Button>
-                                    <Button onClick={handleNoteSave} disabled={isSaving || !newNoteContent.trim()}>Lưu ghi chú</Button>
+                                                <span className="font-medium">{u.name}</span>
+                                            </div>
+                                        ))
+                                    )}
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {(!task.attachments || task.attachments.length === 0) && Object.keys(uploadProgress).length === 0 ? (
-                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', padding: '1rem 0' }}>
-                                <FileIcon size={32} opacity={0.2} style={{ margin: '0 auto 0.5rem' }} />
-                                Chưa có tài liệu nào tải lên.
+                            {/* Attached Images Preview */}
+                            {commentImages.length > 0 && (
+                                <div className="flex items-center gap-2 flex-wrap mt-2">
+                                    {commentImages.map((img, i) => (
+                                        <div key={i} className="relative w-14 h-14 rounded-lg overflow-hidden border border-slate-200 shadow-2xs group">
+                                            <img src={img.url} alt={`preview-${i}`} className="w-full h-full object-cover" />
+                                            <button
+                                                onClick={() => removeCommentImage(i)}
+                                                className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] cursor-pointer hover:bg-rose-600"
+                                            >
+                                                &times;
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Attached Files Preview */}
+                            {commentFiles.length > 0 && (
+                                <div className="flex items-center gap-2 flex-wrap mt-2">
+                                    {commentFiles.map((file, i) => (
+                                        <div key={i} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 shadow-2xs">
+                                            <Paperclip size={12} className="text-slate-400" />
+                                            <span className="max-w-[120px] truncate">{file.name}</span>
+                                            <button onClick={() => removeCommentFile(i)} className="text-slate-400 hover:text-rose-600 cursor-pointer">
+                                                <X size={12} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div className="flex justify-end mt-2.5">
+                                <Button
+                                    onClick={() => handleAddComment()}
+                                    disabled={isSaving || (!newComment.trim() && commentImages.length === 0 && commentFiles.length === 0)}
+                                    className="h-8 px-4 text-xs font-bold rounded-xl shadow-2xs"
+                                >
+                                    {isSaving ? 'Đang gửi...' : 'Gửi bình luận'}
+                                </Button>
                             </div>
-                        ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                {Object.entries(uploadProgress).map(([fileName, progress]) => (
-                                    <div key={fileName} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '0.75rem', backgroundColor: '#f8f9fa', borderRadius: '6px', border: '1px dashed var(--primary)' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                                            <span style={{ color: 'var(--primary)' }}>Đang tải lên: <strong>{fileName}</strong></span>
-                                            <span style={{ color: 'var(--primary)', fontWeight: 500 }}>{progress}%</span>
-                                        </div>
-                                        <div style={{ width: '100%', height: '6px', backgroundColor: '#e2e8f0', borderRadius: '3px', overflow: 'hidden' }}>
-                                            <div style={{ width: `${progress}%`, height: '100%', backgroundColor: 'var(--primary)', transition: 'width 0.2s ease-out' }} />
-                                        </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* RIGHT COLUMN: Sidebar Info Cards */}
+                <div className="lg:col-span-4 flex flex-col gap-5">
+
+                    {/* Card 1: Participants */}
+                    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+                        <div className="bg-slate-50/80 px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                                <UserIcon size={14} className="text-slate-500" />
+                                <span>Người tham gia</span>
+                            </h4>
+                            {canEdit && (
+                                <button
+                                    onClick={() => {
+                                        setEditAssignees(task.assignees?.map((a: any) => a.userId) || []);
+                                        setEditObservers(task.observers?.map((o: any) => o.userId) || []);
+                                        setIsParticipantModalOpen(true);
+                                    }}
+                                    className="text-xs font-bold text-primary hover:text-emerald-700 flex items-center gap-1 cursor-pointer"
+                                >
+                                    <Edit2 size={12} /> Chỉnh sửa
+                                </button>
+                            )}
+                        </div>
+                        <div className="p-4 space-y-4">
+                            {/* Assignees */}
+                            <div>
+                                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Người phụ trách</span>
+                                {task.assignees && task.assignees.length > 0 ? (
+                                    <div className="space-y-1.5">
+                                        {task.assignees.map((a: any) => (
+                                            <div key={a.userId} className="flex items-center gap-2.5 p-1.5 rounded-lg bg-slate-50 border border-slate-100">
+                                                <div className="w-6 h-6 rounded-full bg-emerald-600 text-white font-bold text-[10px] flex items-center justify-center shrink-0">
+                                                    {a.user?.name?.[0]?.toUpperCase() || 'U'}
+                                                </div>
+                                                <span className="text-xs font-semibold text-slate-800 truncate">{a.user?.name || a.user?.email}</span>
+                                            </div>
+                                        ))}
                                     </div>
-                                ))}
-                                {task.attachments?.map((doc: any) => {
-                                    const isImage = doc.fileType?.startsWith('image/');
-                                    const isNote = doc.fileType === 'TEXT_NOTE';
+                                ) : (
+                                    <span className="text-xs text-slate-400 italic">Chưa phân công</span>
+                                )}
+                            </div>
 
-                                    if (isNote) {
-                                        return (
-                                            <div key={doc.id} style={{ display: 'flex', flexDirection: 'column', padding: '0.75rem', backgroundColor: '#fcf8e3', borderRadius: '6px', border: '1px solid #faebcc' }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#8a6d3b' }}>
-                                                        <Type size={14} />
-                                                        <strong>Ghi chú từ {doc.uploadedBy?.name || 'Hệ thống'}</strong>
-                                                        <span style={{ opacity: 0.7 }}>• {formatDistanceToNow(new Date(doc.createdAt), { addSuffix: true, locale: vi })}</span>
+                            {/* Observers */}
+                            <div>
+                                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Người theo dõi</span>
+                                {task.observers && task.observers.length > 0 ? (
+                                    <div className="space-y-1.5">
+                                        {task.observers.map((o: any) => (
+                                            <div key={o.userId} className="flex items-center gap-2.5 p-1.5 rounded-lg bg-slate-50 border border-slate-100">
+                                                <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-600 font-bold text-[10px] flex items-center justify-center shrink-0">
+                                                    {o.user?.name?.[0]?.toUpperCase() || 'U'}
+                                                </div>
+                                                <span className="text-xs font-medium text-slate-700 truncate">{o.user?.name || o.user?.email}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <span className="text-xs text-slate-400 italic">Chưa có người theo dõi</span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Card 2: System Links */}
+                    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+                        <div className="bg-slate-50/80 px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                                <Info size={14} className="text-slate-500" />
+                                <span>Liên kết hệ thống</span>
+                            </h4>
+                            {canEdit && (
+                                <button
+                                    onClick={() => setIsLinkModalOpen(true)}
+                                    className="text-xs font-bold text-primary hover:text-emerald-700 flex items-center gap-1 cursor-pointer"
+                                >
+                                    <Plus size={12} /> Thêm / Cập nhật
+                                </button>
+                            )}
+                        </div>
+                        <div className="p-4">
+                            {relatedLinks.length === 0 ? (
+                                <div className="text-xs text-slate-400 text-center py-2 italic">Chưa có liên kết với dữ liệu nào</div>
+                            ) : (
+                                <div className="space-y-2">
+                                    {relatedLinks.map((link, i) => (
+                                        <div key={i} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition-colors">
+                                            <div className="min-w-0">
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">{link.label}</span>
+                                                <Link href={link.href} className="text-xs font-bold text-primary hover:underline truncate block">
+                                                    {link.value}
+                                                </Link>
+                                            </div>
+                                            {canDelete && (
+                                                <button
+                                                    onClick={() => handleRemoveLink(link.label)}
+                                                    disabled={isSaving}
+                                                    className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors cursor-pointer"
+                                                    title="Gỡ liên kết"
+                                                >
+                                                    <Trash2 size={13} />
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Card 3: Attachments & Notes */}
+                    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+                        <div className="bg-slate-50/80 px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                                <Paperclip size={14} className="text-slate-500" />
+                                <span>Tài liệu &amp; Ghi chú</span>
+                            </h4>
+                            {canEdit && (
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => setIsAddingNote(!isAddingNote)}
+                                        className="text-xs font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1 cursor-pointer bg-white px-2 py-0.5 rounded-md border border-slate-200 shadow-2xs"
+                                    >
+                                        <Plus size={11} /> Ghi chú
+                                    </button>
+                                    <label className="text-xs font-semibold text-primary hover:text-emerald-700 flex items-center gap-1 cursor-pointer bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 shadow-2xs">
+                                        <Plus size={11} /> Tài liệu
+                                        <input type="file" multiple hidden onChange={handleDocUpload} disabled={isSaving} />
+                                    </label>
+                                </div>
+                            )}
+                        </div>
+                        <div className="p-4 space-y-3">
+                            {isAddingNote && (
+                                <div className="p-3 bg-amber-50/70 rounded-xl border border-amber-200/80 space-y-2">
+                                    <textarea
+                                        value={newNoteContent}
+                                        onChange={(e) => setNewNoteContent(e.target.value)}
+                                        placeholder="Nhập nội dung ghi chú..."
+                                        className="w-full min-h-[70px] p-2 text-xs bg-white border border-amber-200 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none"
+                                    />
+                                    <div className="flex justify-end gap-2">
+                                        <button onClick={() => { setIsAddingNote(false); setNewNoteContent(''); }} className="px-2.5 py-1 text-xs text-slate-600 bg-white border border-slate-200 rounded-lg">Hủy</button>
+                                        <button onClick={handleNoteSave} disabled={isSaving || !newNoteContent.trim()} className="px-2.5 py-1 text-xs font-bold text-white bg-amber-600 rounded-lg">Lưu</button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {(!task.attachments || task.attachments.length === 0) && Object.keys(uploadProgress).length === 0 ? (
+                                <div className="text-center py-4 text-xs text-slate-400 italic">
+                                    <FileIcon size={24} className="mx-auto mb-1 opacity-30" />
+                                    Chưa có tài liệu nào
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    {/* Upload Progress */}
+                                    {Object.entries(uploadProgress).map(([fileName, progress]) => (
+                                        <div key={fileName} className="p-2 bg-emerald-50 rounded-lg border border-emerald-200 text-xs">
+                                            <div className="flex justify-between font-semibold text-emerald-800 mb-1">
+                                                <span className="truncate max-w-[180px]">{fileName}</span>
+                                                <span>{progress}%</span>
+                                            </div>
+                                            <div className="w-full bg-emerald-200 rounded-full h-1.5 overflow-hidden">
+                                                <div className="bg-primary h-full transition-all" style={{ width: `${progress}%` }} />
+                                            </div>
+                                        </div>
+                                    ))}
+
+                                    {/* Attachments List */}
+                                    {task.attachments?.map((doc: any) => {
+                                        const isImage = doc.fileType?.startsWith('image/');
+                                        const isNote = doc.fileType === 'TEXT_NOTE';
+
+                                        if (isNote) {
+                                            return (
+                                                <div key={doc.id} className="p-3 bg-amber-50/80 rounded-xl border border-amber-200/70 text-xs space-y-1">
+                                                    <div className="flex items-center justify-between text-amber-900 font-bold">
+                                                        <span className="flex items-center gap-1">
+                                                            <Type size={12} /> {doc.uploadedBy?.name || 'Ghi chú'}
+                                                        </span>
+                                                        {canDelete && (
+                                                            <button onClick={() => handleDocDelete(doc.id)} className="text-amber-600 hover:text-rose-600 cursor-pointer">
+                                                                <Trash2 size={12} />
+                                                            </button>
+                                                        )}
                                                     </div>
+                                                    <div className="text-slate-800 whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: autoLinkText(doc.fileUrl) }} />
+                                                    <span className="text-[10px] text-amber-700/70 block">
+                                                        {formatDistanceToNow(new Date(doc.createdAt), { addSuffix: true, locale: vi })}
+                                                    </span>
+                                                </div>
+                                            );
+                                        }
+
+                                        return (
+                                            <div key={doc.id} className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition-colors">
+                                                <div className="flex items-center gap-2.5 min-w-0">
+                                                    {isImage ? (
+                                                        <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-slate-200 cursor-pointer" onClick={() => setLightboxImage(doc.fileUrl)}>
+                                                            <img src={doc.fileUrl} alt={doc.fileName} className="w-full h-full object-cover" />
+                                                        </div>
+                                                    ) : (
+                                                        <div className="w-8 h-8 rounded-lg bg-slate-200/80 text-slate-600 flex items-center justify-center shrink-0">
+                                                            <FileIcon size={14} />
+                                                        </div>
+                                                    )}
+                                                    <div className="min-w-0">
+                                                        <button
+                                                            onClick={() => setPreviewDoc({ url: doc.fileUrl, name: doc.fileName })}
+                                                            className="text-xs font-semibold text-slate-800 hover:text-primary truncate block text-left cursor-pointer max-w-[170px]"
+                                                        >
+                                                            {doc.fileName}
+                                                        </button>
+                                                        <span className="text-[10px] text-slate-400 block truncate">
+                                                            {doc.uploadedBy?.name || 'Hệ thống'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-1 shrink-0">
+                                                    <a href={doc.fileUrl} download={doc.fileName} target="_blank" rel="noopener noreferrer" className="p-1 text-slate-400 hover:text-primary rounded">
+                                                        <Download size={13} />
+                                                    </a>
                                                     {canDelete && (
-                                                        <button onClick={() => handleDocDelete(doc.id)} disabled={isSaving} style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }} className="hover:opacity-70">
-                                                            <Trash2 size={12} />
+                                                        <button onClick={() => handleDocDelete(doc.id)} className="p-1 text-slate-400 hover:text-rose-600 rounded cursor-pointer">
+                                                            <Trash2 size={13} />
                                                         </button>
                                                     )}
                                                 </div>
-                                                <div
-                                                    style={{ fontSize: '0.9rem', color: 'var(--text)', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}
-                                                    dangerouslySetInnerHTML={{ __html: autoLinkText(doc.fileUrl) }}
-                                                />
                                             </div>
                                         );
-                                    }
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    </div>
 
-                                    return (
-                                        <div key={doc.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', backgroundColor: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', overflow: 'hidden' }}>
-                                                {isImage ? (
-                                                    <div style={{ width: '32px', height: '32px', borderRadius: '4px', overflow: 'hidden', flexShrink: 0, cursor: 'pointer' }} onClick={() => setLightboxImage(doc.fileUrl)}>
-                                                        <img src={doc.fileUrl} alt={doc.fileName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                    </div>
-                                                ) : (
-                                                    <div style={{ width: '32px', height: '32px', borderRadius: '4px', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#64748b' }}>
-                                                        <FileIcon size={16} />
-                                                    </div>
-                                                )}
-                                                <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                                                    <button
-                                                        onClick={() => setPreviewDoc({ url: doc.fileUrl, name: doc.fileName })}
-                                                        style={{
-                                                            fontSize: '0.85rem', fontWeight: 500, color: 'var(--text)',
-                                                            textAlign: 'left', background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                                                            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
-                                                        }}
-                                                        className="hover:text-primary transition-colors"
-                                                    >
-                                                        {doc.fileName}
-                                                    </button>
-                                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                                                        Bởi {doc.uploadedBy?.name || 'Hệ thống'} • {formatDistanceToNow(new Date(doc.createdAt), { addSuffix: true, locale: vi })}
+                    {/* Card 4: Activity Log (KPI) */}
+                    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+                        <div className="bg-slate-50/80 px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                                <Clock size={14} className="text-slate-500" />
+                                <span>Nhật ký hoạt động</span>
+                            </h4>
+                            <button
+                                onClick={handleExportActivityLog}
+                                className="text-[11px] font-semibold text-slate-600 hover:text-slate-900 bg-white px-2 py-0.5 rounded-md border border-slate-200 shadow-2xs cursor-pointer"
+                            >
+                                Xuất CSV
+                            </button>
+                        </div>
+                        <div className="p-4">
+                            {task.activityLogs.length === 0 ? (
+                                <div className="text-xs text-slate-400 text-center py-2 italic">Không có lịch sử hoạt động</div>
+                            ) : (
+                                <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+                                    {task.activityLogs.map((log: any) => {
+                                        let actionText = 'Đã cập nhật';
+                                        if (log.action === 'CREATED_TASK') actionText = 'Tạo công việc';
+                                        else if (log.action === 'STATUS_CHANGED') actionText = 'Đổi trạng thái';
+                                        else if (log.action === 'CHECKLIST_COMPLETED') actionText = 'Đánh dấu xong mục';
+                                        else if (log.action === 'CHECKLIST_UNCHECKED') actionText = 'Bỏ xong mục';
+                                        else if (log.action === 'CHECKLIST_ADDED') actionText = 'Thêm mục con';
+                                        else if (log.action === 'CHECKLIST_EDITED') actionText = 'Sửa mục con';
+                                        else if (log.action === 'CHECKLIST_DELETED') actionText = 'Xóa mục con';
+                                        else if (log.action === 'COMMENT_ADDED') actionText = 'Bình luận';
+                                        else if (log.action === 'UPDATED_TASK') actionText = 'Cập nhật';
+
+                                        let detailsText = '';
+                                        if (log.details) {
+                                            try {
+                                                const d = JSON.parse(log.details);
+                                                if (d.to) detailsText = `-> ${d.to}`;
+                                                else if (d.item) detailsText = `"${d.item}"`;
+                                                else if (d.summary) detailsText = `${d.summary}`;
+                                                else if (d.old && d.new) detailsText = `"${d.old}" -> "${d.new}"`;
+                                            } catch (e) {
+                                                detailsText = log.details;
+                                            }
+                                        }
+
+                                        return (
+                                            <div key={log.id} className="flex gap-2.5 text-xs">
+                                                <div className="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0" />
+                                                <div className="min-w-0">
+                                                    <p className="text-slate-800 leading-snug">
+                                                        <strong className="font-semibold text-slate-900">{log.user?.name || log.user?.email}</strong> {actionText}
+                                                        {detailsText && <span className="text-slate-500 font-mono text-[11px]"> {detailsText}</span>}
+                                                    </p>
+                                                    <span className="text-[10px] text-slate-400 block mt-0.5">
+                                                        {new Date(log.createdAt).toLocaleString('vi-VN')}
                                                     </span>
                                                 </div>
                                             </div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                <a href={doc.fileUrl} download={doc.fileName} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-muted)', display: 'flex', padding: '4px' }} className="hover:text-primary">
-                                                    <Download size={14} />
-                                                </a>
-                                                {canDelete && (
-                                                    <button onClick={() => handleDocDelete(doc.id)} disabled={isSaving} style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }} className="hover:opacity-70">
-                                                        <Trash2 size={14} />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Card 5: Email Logs (if any) */}
+                    {task.emailLogs && task.emailLogs.length > 0 && (
+                        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+                            <div className="bg-slate-50/80 px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                                    <Mail size={14} className="text-slate-500" />
+                                    <span>Nhật ký gửi Email ({task.emailLogs.length})</span>
+                                </h4>
                             </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* People */}
-                <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', overflow: 'hidden' }}>
-                    <div style={{ backgroundColor: '#f8fafc', padding: '1rem 1.25rem', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <UserIcon size={18} color="#64748b" /> Người tham gia
-                        </h4>
-                        {canEdit && (
-                            <button
-                                onClick={() => {
-                                    setEditAssignees(task.assignees?.map((a: any) => a.userId) || []);
-                                    setEditObservers(task.observers?.map((o: any) => o.userId) || []);
-                                    setIsParticipantModalOpen(true);
-                                }}
-                                style={{ background: '#e0e7ff', border: 'none', color: '#4f46e5', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 600, padding: '4px 8px', borderRadius: '6px', transition: 'all 0.2s' }} className="hover:bg-indigo-200"
-                            >
-                                <Edit2 size={14} /> Chỉnh sửa
-                            </button>
-                        )}
-                    </div>
-                    <div style={{ padding: '1.25rem' }}>
-
-                        <div style={{ marginBottom: '1rem' }}>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Người phụ trách</div>
-                            {task.assignees.length === 0 ? (
-                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Chưa phân công</div>
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                    {task.assignees.map((a: any) => (
-                                        <div key={a.userId} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 'bold' }}>
-                                                {a.user.name?.[0]?.toUpperCase() || 'U'}
+                            <div className="p-3">
+                                <div className="space-y-2 max-h-56 overflow-y-auto">
+                                    {task.emailLogs.map((log: any) => (
+                                        <div key={log.id} className="p-2 rounded-lg bg-slate-50 border border-slate-100 text-xs">
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className="font-semibold text-slate-800 truncate max-w-[150px]">{log.toEmail}</span>
+                                                <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
+                                                    log.status === 'OPENED' ? 'bg-emerald-50 text-emerald-700' : (log.status === 'SENT' ? 'bg-sky-50 text-sky-700' : 'bg-rose-50 text-rose-700')
+                                                }`}>
+                                                    {log.status === 'OPENED' ? 'Đã mở' : (log.status === 'SENT' ? 'Đã gửi' : 'Thất bại')}
+                                                </span>
                                             </div>
-                                            <span style={{ fontSize: '0.9rem' }}>{a.user.name || a.user.email}</span>
+                                            <p className="text-[11px] text-slate-500 truncate" title={log.subject}>{log.subject}</p>
+                                            <span className="text-[10px] text-slate-400 block mt-1">{new Date(log.createdAt).toLocaleString('vi-VN')}</span>
                                         </div>
                                     ))}
                                 </div>
-                            )}
+                            </div>
                         </div>
+                    )}
 
-                        <div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Người theo dõi</div>
-                            {task.observers.length === 0 ? (
-                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Chưa có</div>
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                    {task.observers.map((o: any) => (
-                                        <div key={o.userId} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: 'transparent', border: '1px dashed var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                                                {o.user.name?.[0]?.toUpperCase() || 'U'}
-                                            </div>
-                                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{o.user.name || o.user.email}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
                 </div>
-
-                {/* Activity Log KPI */}
-                <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', overflow: 'hidden' }}>
-                    <div style={{ backgroundColor: '#f8fafc', padding: '1rem 1.25rem', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Clock size={18} color="#64748b" /> Nhật ký hoạt động (KPI)
-                        </h4>
-                        <Button variant="secondary" onClick={handleExportActivityLog} style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem', height: 'auto', borderRadius: '6px', fontWeight: 600 }}>
-                            Xuất CSV
-                        </Button>
-                    </div>
-                    <div style={{ padding: '1.25rem' }}>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '300px', overflowY: 'auto', paddingRight: '0.5rem' }}>
-                            {task.activityLogs.length === 0 ? (
-                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center' }}>Không có lịch sử</div>
-                            ) : (
-                                task.activityLogs.map((log: any) => {
-                                    let actionText = 'Đã cập nhật';
-                                    if (log.action === 'CREATED_TASK') actionText = 'Tạo công việc';
-                                    else if (log.action === 'STATUS_CHANGED') actionText = 'Đổi trạng thái';
-                                    else if (log.action === 'CHECKLIST_COMPLETED') actionText = 'Đánh dấu hoàn thành mục';
-                                    else if (log.action === 'CHECKLIST_UNCHECKED') actionText = 'Bỏ đánh dấu hoàn thành mục';
-                                    else if (log.action === 'CHECKLIST_ADDED') actionText = 'Thêm mục con';
-                                    else if (log.action === 'CHECKLIST_EDITED') actionText = 'Sửa mục con';
-                                    else if (log.action === 'CHECKLIST_DELETED') actionText = 'Xóa mục con';
-                                    else if (log.action === 'CLONED_TASK') actionText = 'Nhân bản công việc';
-                                    else if (log.action === 'UPDATED_TASK') actionText = 'Cập nhật công việc';
-                                    else if (log.action === 'COMMENT_ADDED') actionText = 'Bình luận';
-                                    else if (log.action === 'REACTION_ADDED') actionText = 'Thêm biểu cảm';
-                                    else if (log.action === 'REACTION_REMOVED') actionText = 'Gỡ biểu cảm';
-
-                                    let detailsText = '';
-                                    if (log.details) {
-                                        try {
-                                            const d = JSON.parse(log.details);
-                                            if (d.to) detailsText = `-> ${d.to}`;
-                                            else if (d.item) detailsText = `"${d.item}"`;
-                                            else if (d.summary) detailsText = `${d.summary}`;
-                                            else if (d.old && d.new) detailsText = `"${d.old}" -> "${d.new}"`;
-                                        } catch (e) {
-                                            detailsText = log.details;
-                                        }
-                                    }
-
-                                    return (
-                                        <div key={log.id} style={{ display: 'flex', gap: '0.75rem', position: 'relative' }}>
-                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--primary)', marginTop: '6px' }} />
-                                            <div style={{ flex: 1 }}>
-                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-main)', lineHeight: 1.4 }}>
-                                                    <strong>{log.user.name || log.user.email}</strong> {actionText}
-                                                    {detailsText && <span style={{ color: 'var(--text-muted)' }}> {detailsText}</span>}
-                                                </div>
-                                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                                                    {new Date(log.createdAt).toLocaleString('vi-VN')}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Email Logs */}
-                <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', overflow: 'hidden', marginTop: '1.5rem' }}>
-                    <div style={{ backgroundColor: '#f8fafc', padding: '1rem 1.25rem', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Mail size={18} color="#64748b" /> Nhật ký Gửi Email
-                        </h4>
-                    </div>
-                    <div style={{ padding: '1.25rem' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '300px', overflowY: 'auto', paddingRight: '0.5rem' }}>
-                            {!task.emailLogs || task.emailLogs.length === 0 ? (
-                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center' }}>Chưa có email nào được gửi</div>
-                            ) : (
-                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-                                    <thead style={{ backgroundColor: '#f8fafc', color: '#64748b' }}>
-                                        <tr>
-                                            <th style={{ padding: '0.5rem', textAlign: 'left', borderBottom: '1px solid #e2e8f0' }}>Email nhận</th>
-                                            <th style={{ padding: '0.5rem', textAlign: 'left', borderBottom: '1px solid #e2e8f0' }}>Tiêu đề</th>
-                                            <th style={{ padding: '0.5rem', textAlign: 'left', borderBottom: '1px solid #e2e8f0' }}>Tình trạng</th>
-                                            <th style={{ padding: '0.5rem', textAlign: 'right', borderBottom: '1px solid #e2e8f0' }}>Thời gian</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {task.emailLogs.map((log: any) => (
-                                            <tr key={log.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                                <td style={{ padding: '0.75rem 0.5rem', fontWeight: 500 }}>{log.toEmail}</td>
-                                                <td style={{ padding: '0.75rem 0.5rem', color: 'var(--text-muted)', maxWidth: '120px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={log.subject}>{log.subject}</td>
-                                                <td style={{ padding: '0.75rem 0.5rem' }}>
-                                                    {log.status === 'SENT' && <span style={{ backgroundColor: '#e0f2fe', color: '#0369a1', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem' }}>Đã gửi</span>}
-                                                    {log.status === 'OPENED' && <span style={{ backgroundColor: '#dcfce7', color: '#15803d', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem' }}>Đã mở</span>}
-                                                    {log.status === 'FAILED' && <span style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem' }}>Thất bại</span>}
-                                                </td>
-                                                <td style={{ padding: '0.75rem 0.5rem', textAlign: 'right', color: 'var(--text-muted)' }}>
-                                                    {new Date(log.createdAt).toLocaleString('vi-VN')}
-                                                    {log.openedAt && <div style={{ fontSize: '0.7rem', color: '#15803d', marginTop: '2px' }}>Mở: {new Date(log.openedAt).toLocaleString('vi-VN')}</div>}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-            </div >
+            </div>
 
             {/* Link Modal */}
             {

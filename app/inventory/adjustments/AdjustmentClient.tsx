@@ -139,130 +139,156 @@ export default function AdjustmentClient({ warehouses }: { warehouses: any[] }) 
     );
 
     return (
-        <Card style={{ padding: '0', overflow: 'hidden' }}>
-            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)', backgroundColor: '#fafafa', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                    <div style={{ flex: 1, minWidth: '250px' }}>
-                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-muted)' }}>{t('adjustments.labelSelectWarehouse')}</label>
-                        <select
-                            value={selectedWarehouse}
-                            onChange={(e) => setSelectedWarehouse(e.target.value)}
-                            style={{
-                                width: '100%', padding: '0.625rem 1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
-                                outline: 'none', fontSize: '0.875rem', backgroundColor: 'white'
-                            }}
-                        >
-                            <option value="">{t('adjustments.placeholderSelectWarehouse')}</option>
-                            {warehouses.map(w => (
-                                <option key={w.id} value={w.id}>{w.name}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div style={{ flex: 1, minWidth: '350px' }}>
-                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-muted)' }}>{t('adjustments.labelNotes')}</label>
-                        <Input
-                            value={notes}
-                            onChange={(e) => setNotes(e.target.value)}
-                            placeholder={t('adjustments.placeholderNotes')}
-                        />
-                    </div>
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 ring-4 ring-emerald-50"></span>
+                        Kiểm Kê Kho & Điều Chỉnh
+                    </h1>
+                    <p className="text-xs text-slate-500 mt-1 font-medium">
+                        Đối chiếu số lượng thực tế với tồn kho hệ thống và tạo phiếu điều chỉnh tự động
+                    </p>
                 </div>
             </div>
 
-            <div style={{ padding: '1.5rem' }}>
-                {!selectedWarehouse ? (
-                    <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', border: '1px dashed var(--border)', borderRadius: 'var(--radius)' }}>
-                        {t('adjustments.msgSelectWarehouseFirst')}
-                    </div>
-                ) : (
-                    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                        <div style={{ position: 'relative', width: '300px' }}>
-                            <Search size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+            {/* Main Content Card */}
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+                <div className="p-5 border-b border-slate-100 bg-slate-50/50">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                {t('adjustments.labelSelectWarehouse')} <span className="text-rose-500">*</span>
+                            </label>
+                            <select
+                                value={selectedWarehouse}
+                                onChange={(e) => setSelectedWarehouse(e.target.value)}
+                                className="w-full px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-slate-800 font-medium"
+                            >
+                                <option value="">{t('adjustments.placeholderSelectWarehouse')}</option>
+                                {warehouses.map(w => (
+                                    <option key={w.id} value={w.id}>{w.name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                {t('adjustments.labelNotes')}
+                            </label>
                             <input
-                                type="text"
-                                placeholder={t('adjustments.searchPlaceholder')}
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                style={{
-                                    width: '100%', padding: '0.625rem 1rem 0.625rem 2.5rem',
-                                    border: '1px solid var(--border)', borderRadius: 'var(--radius)',
-                                    outline: 'none', transition: 'border-color 0.2s', fontSize: '0.875rem'
-                                }}
+                                value={notes}
+                                onChange={(e) => setNotes(e.target.value)}
+                                placeholder={t('adjustments.placeholderNotes')}
+                                className="w-full px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-slate-800 font-medium"
                             />
                         </div>
+                    </div>
+                </div>
 
-                        {isLoading ? (
-                            <p>{t('adjustments.loadingStock')}</p>
-                        ) : (
-                            <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
-                                <Table>
-                                    <thead>
-                                        <tr>
-                                            <th>{t('transactions.colSku')}</th>
-                                            <th>{t('transactions.colProductName')}</th>
-                                            <th style={{ textAlign: 'center' }}>{t('transactions.colUnit')}</th>
-                                            <th style={{ textAlign: 'right', width: '150px' }}>{t('adjustments.colSystemQty')}</th>
-                                            <th style={{ textAlign: 'right', width: '200px' }}>{t('adjustments.colActualQty')}</th>
-                                            <th style={{ textAlign: 'right', width: '150px' }}>{t('adjustments.colDiff')}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {displayItems.length > 0 ? displayItems.map(item => {
-                                            const actual = parseInt(item.actualQty);
-                                            const diff = isNaN(actual) ? 0 : actual - item.systemQty;
+                <div className="p-5">
+                    {!selectedWarehouse ? (
+                        <div className="text-center py-16 px-4 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/30">
+                            <p className="text-xs font-medium text-slate-500">{t('adjustments.msgSelectWarehouseFirst')}</p>
+                        </div>
+                    ) : (
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="flex items-center justify-between gap-4 flex-wrap">
+                                <div className="relative w-full max-w-sm">
+                                    <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                    <input
+                                        type="text"
+                                        placeholder={t('adjustments.searchPlaceholder')}
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="w-full pl-9 pr-3.5 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-slate-800 placeholder:text-slate-400 font-medium"
+                                    />
+                                </div>
+                                <div className="text-xs text-slate-500 font-medium">
+                                    Tổng sản phẩm: <span className="font-bold text-slate-800">{displayItems.length}</span>
+                                </div>
+                            </div>
 
-                                            // highlight diffs
-                                            let diffColor = 'var(--text-muted)';
-                                            let bgRow = 'transparent';
-                                            if (diff > 0) {
-                                                diffColor = '#16a34a'; // green
-                                                bgRow = 'rgba(22, 163, 74, 0.05)';
-                                            } else if (diff < 0) {
-                                                diffColor = '#ef4444'; // red
-                                                bgRow = 'rgba(239, 68, 68, 0.05)';
-                                            }
+                            {isLoading ? (
+                                <div className="text-center py-12 text-xs font-medium text-slate-500">
+                                    {t('adjustments.loadingStock')}
+                                </div>
+                            ) : (
+                                <div className="border border-slate-200 rounded-xl overflow-hidden">
+                                    <Table>
+                                        <thead className="bg-slate-50 border-b border-slate-200">
+                                            <tr>
+                                                <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">{t('transactions.colSku')}</th>
+                                                <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">{t('transactions.colProductName')}</th>
+                                                <th className="px-4 py-3 text-center text-[11px] font-bold text-slate-600 uppercase tracking-wider">{t('transactions.colUnit')}</th>
+                                                <th className="px-4 py-3 text-right text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[140px]">{t('adjustments.colSystemQty')}</th>
+                                                <th className="px-4 py-3 text-right text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[160px]">{t('adjustments.colActualQty')}</th>
+                                                <th className="px-4 py-3 text-right text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[140px]">{t('adjustments.colDiff')}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {displayItems.length > 0 ? displayItems.map(item => {
+                                                const actual = parseInt(item.actualQty);
+                                                const diff = isNaN(actual) ? 0 : actual - item.systemQty;
 
-                                            return (
-                                                <tr key={item.product.id} style={{ backgroundColor: bgRow, transition: 'background-color 0.2s' }}>
-                                                    <td style={{ fontWeight: 600 }}>{item.product.sku}</td>
-                                                    <td>{item.product.name}</td>
-                                                    <td style={{ textAlign: 'center' }}>{item.product.unit}</td>
-                                                    <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)', fontSize: '1.05em' }}>{item.systemQty}</td>
-                                                    <td style={{ textAlign: 'right' }}>
-                                                        <Input
-                                                            type="number"
-                                                            min="0"
-                                                            value={item.actualQty}
-                                                            onChange={(e) => handleActualChange(item.product.id, e.target.value)}
-                                                            style={{ textAlign: 'right', fontWeight: 800, borderColor: diff !== 0 ? 'var(--primary)' : 'var(--border)' }}
-                                                        />
-                                                    </td>
-                                                    <td style={{ textAlign: 'right', fontWeight: 800, color: diffColor }}>
-                                                        {diff > 0 ? `+${diff}` : diff}
+                                                let diffClass = 'text-slate-400';
+                                                let bgClass = '';
+                                                if (diff > 0) {
+                                                    diffClass = 'text-emerald-600 font-bold';
+                                                    bgClass = 'bg-emerald-50/40';
+                                                } else if (diff < 0) {
+                                                    diffClass = 'text-rose-600 font-bold';
+                                                    bgClass = 'bg-rose-50/40';
+                                                }
+
+                                                return (
+                                                    <tr key={item.product.id} className={`${bgClass} hover:bg-slate-50/80 transition-colors`}>
+                                                        <td className="px-4 py-2.5 text-xs font-semibold text-slate-700">{item.product.sku}</td>
+                                                        <td className="px-4 py-2.5 text-xs font-medium text-slate-800">{item.product.name}</td>
+                                                        <td className="px-4 py-2.5 text-xs text-center text-slate-500">{item.product.unit || '-'}</td>
+                                                        <td className="px-4 py-2.5 text-xs text-right font-mono font-semibold text-slate-600">{item.systemQty}</td>
+                                                        <td className="px-4 py-2.5 text-xs text-right">
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                value={item.actualQty}
+                                                                onChange={(e) => handleActualChange(item.product.id, e.target.value)}
+                                                                className={`w-24 px-2.5 py-1 text-xs text-right font-mono font-bold rounded-lg border focus:outline-none transition-all ${
+                                                                    diff !== 0 ? 'border-emerald-500 ring-2 ring-emerald-500/20 bg-white' : 'border-slate-200 bg-slate-50/50'
+                                                                }`}
+                                                            />
+                                                        </td>
+                                                        <td className={`px-4 py-2.5 text-xs text-right font-mono ${diffClass}`}>
+                                                            {diff > 0 ? `+${diff}` : diff}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            }) : (
+                                                <tr>
+                                                    <td colSpan={6} className="text-center py-10 text-xs font-medium text-slate-400">
+                                                        {t('adjustments.noItems')}
                                                     </td>
                                                 </tr>
-                                            );
-                                        }) : (
-                                            <tr>
-                                                <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-                                                    {t('adjustments.noItems')}
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </Table>
-                            </div>
-                        )}
+                                            )}
+                                        </tbody>
+                                    </Table>
+                                </div>
+                            )}
 
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                            <Button type="submit" disabled={isSaving || isLoading} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#16a34a', color: 'white' }}>
-                                <Save size={16} /> {isSaving ? t('adjustments.btnProcessing') : t('adjustments.btnComplete')}
-                            </Button>
-                        </div>
-                    </form>
-                )}
+                            <div className="flex justify-end pt-2">
+                                <Button 
+                                    type="submit" 
+                                    disabled={isSaving || isLoading} 
+                                    className="px-4 py-2 text-xs font-semibold rounded-xl flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs shadow-emerald-200 transition-all"
+                                >
+                                    <Save size={15} /> {isSaving ? t('adjustments.btnProcessing') : t('adjustments.btnComplete')}
+                                </Button>
+                            </div>
+                        </form>
+                    )}
+                </div>
             </div>
-        </Card>
+        </div>
     );
 }

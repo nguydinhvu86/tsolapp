@@ -26,19 +26,7 @@ export default async function EmployeesPage() {
     });
 
     return (
-        <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto pb-10">
-            <div className="flex justify-between items-center bg-white p-4 sm:p-6 rounded-lg border border-slate-200">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-indigo-100 text-indigo-700 rounded-lg">
-                        <Users size={24} />
-                    </div>
-                    <div>
-                        <h1 className="text-xl sm:text-2xl font-bold text-slate-800">Hồ Sơ Nhân Sự</h1>
-                        <p className="text-sm text-slate-500">Quản lý căn cước, lương biên chế và hợp đồng của nhân sự</p>
-                    </div>
-                </div>
-            </div>
-
+        <div className="space-y-6 w-full">
             <EmployeesClient initialData={employees} />
         </div>
     );

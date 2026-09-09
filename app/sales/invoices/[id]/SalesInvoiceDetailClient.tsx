@@ -2,26 +2,48 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ExternalLink, Copy, CheckCircle2, User, FileText, ShoppingCart, Info, CheckSquare, XCircle, Undo2, History, ArrowRight, Clock, AlertTriangle, PackageCheck, Activity, Edit2, Edit, Building } from 'lucide-react';
+import { 
+    ArrowLeft, ExternalLink, Copy, CheckCircle2, User, FileText, ShoppingCart, 
+    Info, CheckSquare, XCircle, Undo2, History, ArrowRight, Clock, AlertTriangle, 
+    PackageCheck, Activity, Edit2, Edit, Building, Building2, Mail, UserCheck, Calendar,
+    CreditCard, DollarSign, Sparkles, Check, Phone, MapPin, Receipt, ShieldAlert,
+    ChevronRight, CornerDownRight, Percent, Eye
+} from 'lucide-react';
 import Link from 'next/link';
-import { approveSalesInvoice, updateSalesInvoiceStatus, cancelSalesInvoice, restoreSalesInvoice, paySalesInvoice } from '../actions';
-import { formatMoney, formatDate } from '@/lib/utils/formatters';
+import { 
+    approveSalesInvoice, updateSalesInvoiceStatus, cancelSalesInvoice, 
+    restoreSalesInvoice, paySalesInvoice, sendInvoiceEmail, 
+    assignSalesInvoiceManagers, removeSalesInvoiceManager 
+} from '../actions';
+import { formatMoney, formatDate, formatDateTime } from '@/lib/utils/formatters';
 import { TaxBadge } from '@/app/components/ui/TaxRateSelect';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import { Modal } from '@/app/components/ui/Modal';
-import { Input } from '@/app/components/ui/Input';
 import { SalesInvoiceNotes } from '@/app/components/sales/SalesInvoiceNotes';
 import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
-import { sendInvoiceEmail, assignSalesInvoiceManagers, removeSalesInvoiceManager } from '../actions';
 import { useSession } from 'next-auth/react';
-import { Mail, UserCheck } from 'lucide-react';
 import { DocumentManagersPanel } from '@/app/components/shared/DocumentManagersPanel';
 import { EmailLogTable } from '@/app/components/ui/EmailLogTable';
 import { DocumentSignatureBlock } from '@/app/components/ui/DocumentSignatureBlock';
-
 import { StatusBadge } from '@/app/components/ui/StatusBadge';
+import { ClickToCallButton } from '@/app/components/ClickToCallButton';
 
-export default function SalesInvoiceDetailClient({ initialData, customers, products, users, emailTemplates, settings }: any) {
+function getInitials(name: string) {
+    if (!name) return 'U';
+    const clean = name.trim();
+    const parts = clean.split(/\s+/).filter(Boolean);
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+export default function SalesInvoiceDetailClient({ 
+    initialData, 
+    customers, 
+    products, 
+    users, 
+    emailTemplates, 
+    settings 
+}: any) {
     const router = useRouter();
     const { data: session } = useSession();
     const [invoice, setInvoice] = useState(initialData);
@@ -48,7 +70,10 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
     const [isActioning, setIsActioning] = useState(false);
 
     // Calculate remaining amount
-    const remainingAmount = invoice.totalAmount - (invoice.paidAmount || 0);
+    const remainingAmount = Math.max(0, invoice.totalAmount - (invoice.paidAmount || 0));
+    const paidPercentage = invoice.totalAmount > 0 
+        ? Math.min(100, Math.round(((invoice.paidAmount || 0) / invoice.totalAmount) * 100))
+        : 0;
 
     // Calculate if overdue
     const isOverdue = invoice.dueDate && new Date(invoice.dueDate).getTime() < new Date().getTime() && invoice.status !== 'PAID' && invoice.status !== 'CANCELLED' && remainingAmount > 0;
@@ -68,24 +93,24 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
         setActionModal({
             isOpen: true,
             title: 'Khởi Tạo & Duyệt Hóa Đơn',
-            icon: <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#d1fae5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CheckCircle2 size={24} /></div>,
+            icon: <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center"><CheckCircle2 size={24} /></div>,
             message: (
-                <div>
-                    <h4 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#111827', marginBottom: '0.5rem' }}>Bạn đã kiểm tra kỹ hóa đơn?</h4>
-                    <p style={{ color: '#4b5563', marginBottom: '1rem' }}>Sau khi tiến hành duyệt, hệ thống sẽ thực thi ngay các tác vụ sau đây:</p>
-                    <ul style={{ listStyle: 'none', padding: '1rem', background: '#f9fafb', borderRadius: '0.75rem', border: '1px solid #f3f4f6', display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                        <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', fontSize: '0.875rem', color: '#374151' }}>
-                            <span style={{ color: '#10b981', background: '#d1fae5', padding: '0.25rem', borderRadius: '50%', marginTop: '0.125rem', display: 'flex' }}><CheckCircle2 size={16} /></span>
-                            <span><strong>Ghi nhận công nợ</strong> đối với khách hàng này vào hệ thống kế toán.</span>
+                <div className="space-y-3 text-xs text-slate-600">
+                    <h4 className="text-sm font-bold text-slate-900">Bạn đã kiểm tra kỹ thông tin hóa đơn?</h4>
+                    <p>Sau khi tiến hành duyệt, hệ thống sẽ tự động thực thi các nghiệp vụ sau:</p>
+                    <ul className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+                        <li className="flex items-start gap-2">
+                            <CheckCircle2 size={15} className="text-emerald-600 shrink-0 mt-0.5" />
+                            <span><strong>Ghi nhận công nợ</strong> khách hàng vào sổ kế toán.</span>
                         </li>
-                        <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', fontSize: '0.875rem', color: '#374151' }}>
-                            <span style={{ color: '#10b981', background: '#d1fae5', padding: '0.25rem', borderRadius: '50%', marginTop: '0.125rem', display: 'flex' }}><PackageCheck size={16} /></span>
-                            <span><strong>Tự động xuất kho</strong> trừ tồn các sản phẩm có trong hóa đơn.</span>
+                        <li className="flex items-start gap-2">
+                            <PackageCheck size={15} className="text-emerald-600 shrink-0 mt-0.5" />
+                            <span><strong>Tự động xuất kho</strong> trừ số lượng tồn kho các sản phẩm trên hóa đơn.</span>
                         </li>
                     </ul>
                 </div>
             ),
-            confirmLabel: 'Đồng Ý Duyệt',
+            confirmLabel: 'Đồng Ý Duyệt & Xuất Kho',
             confirmVariant: 'success',
             action: async () => {
                 const res = await approveSalesInvoice(invoice.id, 'system');
@@ -100,9 +125,13 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
     const handleStatusChange = async (newStatus: string) => {
         setActionModal({
             isOpen: true,
-            title: 'Chuyển trạng thái',
-            icon: <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Info size={24} /></div>,
-            message: <p style={{ color: '#374151', fontSize: '0.9375rem' }}>Xác nhận đổi trạng thái Hóa đơn thành <strong>{newStatus === 'PAID' ? 'Hoàn Tất Thu' : newStatus}</strong>?</p>,
+            title: 'Chuyển trạng thái hóa đơn',
+            icon: <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center"><Info size={24} /></div>,
+            message: (
+                <p className="text-xs text-slate-600">
+                    Xác nhận đổi trạng thái Hóa đơn thành <strong>{newStatus === 'PAID' ? 'Hoàn Tất Thu' : newStatus}</strong>?
+                </p>
+            ),
             confirmLabel: 'Chuyển Đổi',
             confirmVariant: 'primary',
             action: async () => {
@@ -116,7 +145,11 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
     };
 
     const openPartialPaymentModal = () => {
-        setPaymentData({ amount: remainingAmount, method: 'BANK_TRANSFER', notes: `Thu tiền một phần hóa đơn ${invoice.code}` });
+        setPaymentData({ 
+            amount: remainingAmount, 
+            method: 'BANK_TRANSFER', 
+            notes: `Thu tiền hóa đơn ${invoice.code}` 
+        });
         setIsPaymentModalOpen(true);
     };
 
@@ -137,11 +170,13 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
         setActionModal({
             isOpen: true,
             title: 'Thu Toàn Bộ Phần Còn Lại',
-            icon: <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#d1fae5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CheckCircle2 size={24} /></div>,
+            icon: <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center"><CheckCircle2 size={24} /></div>,
             message: (
-                <div>
-                    <h4 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#111827', marginBottom: '0.5rem' }}>Thanh toán toàn bộ phần còn lại?</h4>
-                    <p style={{ color: '#4b5563', padding: '1rem', background: '#f9fafb', borderRadius: '0.75rem', border: '1px solid #f3f4f6', marginBottom: '1rem', lineHeight: 1.6 }}>Hệ thống sẽ tự động tạo Phiếu Thu cho phần nợ còn lại <strong>({formatMoney(remainingAmount)})</strong> và tự động trừ công nợ khách hàng đối với hóa đơn này.</p>
+                <div className="space-y-3 text-xs text-slate-600">
+                    <h4 className="text-sm font-bold text-slate-900">Xác nhận thu đủ tiền cho hóa đơn này?</h4>
+                    <p className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 leading-relaxed">
+                        Hệ thống sẽ tự động tạo Phiếu Thu cho phần nợ còn lại <strong>({formatMoney(remainingAmount)})</strong> và hoàn tất trạng thái thanh toán.
+                    </p>
                 </div>
             ),
             confirmLabel: 'Xác Nhận & Tạo Phiếu Thu',
@@ -159,12 +194,14 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
     const handleCancel = async () => {
         setActionModal({
             isOpen: true,
-            title: 'Hủy Hóa Đơn',
-            icon: <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#fef2f2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><AlertTriangle size={24} /></div>,
+            title: 'Hủy Hóa Đơn Bán Hàng',
+            icon: <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center"><AlertTriangle size={24} /></div>,
             message: (
-                <div>
-                    <h4 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#111827', marginBottom: '0.5rem' }}>Hủy Hóa Đơn Này?</h4>
-                    <p style={{ color: '#4b5563', padding: '1rem', background: '#f9fafb', borderRadius: '0.75rem', border: '1px solid #f3f4f6', marginBottom: '1rem', lineHeight: 1.6 }}>Các chứng từ báo cáo xuất kho và công nợ liên quan sẽ được hệ thống <strong>tự động hoàn tác</strong>. Mọi tác vụ về sau sẽ không thể phục hồi. Bạn đã chắc chắn?</p>
+                <div className="space-y-3 text-xs text-slate-600">
+                    <h4 className="text-sm font-bold text-slate-900">Bạn có chắc chắn muốn hủy hóa đơn này?</h4>
+                    <p className="p-3 bg-rose-50 text-rose-800 rounded-xl border border-rose-200 leading-relaxed">
+                        Các chứng từ xuất kho và công nợ liên quan sẽ được hệ thống <strong>tự động hoàn tác</strong>. Bạn có chắc chắn?
+                    </p>
                 </div>
             ),
             confirmLabel: 'Xác Nhận Hủy',
@@ -184,11 +221,13 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
         setActionModal({
             isOpen: true,
             title: 'Khôi phục Hóa Đơn',
-            icon: <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#d1fae5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Undo2 size={24} /></div>,
+            icon: <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center"><Undo2 size={24} /></div>,
             message: (
-                <div>
-                    <h4 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#111827', marginBottom: '0.5rem' }}>Tiến hành khôi phục chứng từ?</h4>
-                    <p style={{ color: '#4b5563', padding: '1rem', background: '#f9fafb', borderRadius: '0.75rem', border: '1px solid #f3f4f6', marginBottom: '1rem', lineHeight: 1.6 }}>Việc khôi phục sẽ kích hoạt việc <strong>ghi nhận lại công nợ</strong> và <strong>xuất lại kho tự động</strong> đối với các vật tư có trên hóa đơn này.</p>
+                <div className="space-y-3 text-xs text-slate-600">
+                    <h4 className="text-sm font-bold text-slate-900">Tiến hành khôi phục chứng từ?</h4>
+                    <p className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 leading-relaxed">
+                        Hệ thống sẽ tự động <strong>ghi nhận lại công nợ</strong> và <strong>xuất lại kho tự động</strong> đối với các vật tư có trên hóa đơn này.
+                    </p>
                 </div>
             ),
             confirmLabel: 'Đồng Ý Khôi Phục',
@@ -204,106 +243,113 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
         });
     };
 
-    const tabs = [
-        { id: 'items', label: 'Chi tiết sản phẩm xuất bán', icon: <ShoppingCart size={16} />, count: invoice.items?.length || 0 }
-    ] as const;
-
     return (
-        <div className="space-y-6">
-            {/* Header & Action Toolbar */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-slate-200">
-                <div className="flex items-center gap-3">
+        <div className="w-full max-w-full space-y-6 p-4 md:p-6 lg:p-8">
+            {/* Top Navigation & Action Header */}
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-4 md:p-5 flex flex-col md:flex-row justify-between md:items-center gap-4">
+                <div className="flex items-start sm:items-center gap-3.5">
                     <button
                         onClick={() => router.push('/sales/invoices')}
-                        className="w-9 h-9 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-center text-slate-500 hover:text-slate-900 transition-colors shadow-xs"
+                        className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors shrink-0 cursor-pointer shadow-2xs"
+                        title="Quay lại danh sách"
                     >
                         <ArrowLeft size={18} />
                     </button>
                     <div>
-                        <div className="flex items-center gap-3">
-                            <h1 className="text-lg font-bold text-slate-900 tracking-tight">
-                                Hóa Đơn <span className="font-mono text-slate-700">{invoice.code}</span>
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                            <span className="font-mono text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 shadow-2xs">
+                                {invoice.code}
+                            </span>
+                            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900">
+                                Hóa Đơn Bán Hàng
                             </h1>
                             <StatusBadge status={invoice.status} />
-                            {invoice.orderId && (
-                                <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/60 text-[11px] font-semibold">
-                                    Kế thừa: {invoice.order?.code || 'Order'}
-                                </span>
+                            {invoice.order && (
+                                <Link
+                                    href={`/sales/orders/${invoice.order.id}`}
+                                    className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 transition-colors shadow-2xs font-mono"
+                                >
+                                    <ShoppingCart size={11} />
+                                    <span>Đơn: {invoice.order.code}</span>
+                                </Link>
                             )}
                         </div>
-                        <p className="text-xs text-slate-500 mt-0.5">Chi tiết Hóa đơn bán hàng, Công nợ và Lịch sử thanh toán.</p>
+
+                        <div className="flex items-center gap-3 text-xs text-slate-500 mt-1 flex-wrap font-medium">
+                            <span>Ngày lập: <strong className="text-slate-700 font-mono">{formatDate(invoice.date)}</strong></span>
+                            <span>•</span>
+                            <span>Hạn TT: <strong className={`font-mono ${isOverdue ? 'text-rose-600 font-bold' : 'text-slate-700'}`}>{formatDate(invoice.dueDate)}</strong></span>
+                            {invoice.creator && (
+                                <>
+                                    <span>•</span>
+                                    <span>Lập bởi: <strong className="text-slate-700">{invoice.creator.name}</strong></span>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
+                {/* Header Action Buttons */}
+                <div className="flex items-center gap-2 shrink-0 flex-wrap">
                     <button
                         onClick={handleCopyPublicLink}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-xs transition-colors"
+                        className="inline-flex items-center gap-1.5 h-[34px] px-3 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
                     >
                         <Copy size={14} className="text-slate-500" />
-                        {copied ? 'Đã sao chép' : 'Copy Link Gửi KH'}
+                        <span>{copied ? 'Đã sao chép' : 'Copy Link Gửi KH'}</span>
                     </button>
+
                     <Link
                         href={`/print/sales/invoice/${invoice.id}`}
                         target="_blank"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-sky-200 bg-sky-50/50 text-xs font-semibold text-sky-700 hover:bg-sky-100/60 shadow-xs transition-colors"
+                        className="inline-flex items-center gap-1.5 h-[34px] px-3 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
                     >
                         <ExternalLink size={14} />
-                        Xem Bản In
+                        <span>Xem Bản In</span>
                     </Link>
-                    <button
-                        onClick={() => router.push(`/sales/invoices?edit=${invoice.id}`)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-xs transition-colors"
-                    >
-                        <Edit2 size={14} className="text-slate-500" />
-                        Chỉnh Sửa
-                    </button>
+
                     <button
                         onClick={() => setIsEmailModalOpen(true)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-xs font-semibold text-emerald-800 hover:bg-emerald-100/80 shadow-xs transition-colors"
+                        className="inline-flex items-center gap-1.5 h-[34px] px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
                     >
-                        <Mail size={14} className="text-emerald-700" />
-                        Gửi Email
+                        <Mail size={14} />
+                        <span>Gửi Email</span>
                     </button>
 
+                    <button
+                        onClick={() => router.push(`/sales/invoices?edit=${invoice.id}`)}
+                        className="inline-flex items-center gap-1.5 h-[34px] px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                    >
+                        <Edit2 size={14} />
+                        <span>Sửa</span>
+                    </button>
+
+                    {/* Stage Approval & Payment Buttons */}
                     {invoice.status === 'DRAFT' && (
                         <button
                             onClick={handleApprove}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[var(--primary)] text-xs font-semibold text-white hover:opacity-90 shadow-xs transition-all"
+                            className="inline-flex items-center gap-1.5 h-[34px] px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-emerald-600/20 active:scale-98 cursor-pointer"
                         >
-                            <CheckCircle2 size={14} />
-                            Ghi Nhận & Xuất Kho
+                            <CheckCircle2 size={15} />
+                            <span>Ghi Nhận & Xuất Kho</span>
                         </button>
                     )}
-                    {invoice.status === 'ISSUED' && (
+
+                    {(invoice.status === 'ISSUED' || invoice.status === 'PARTIAL_PAID') && (
                         <>
                             <button
                                 onClick={openPartialPaymentModal}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-200 bg-amber-50 text-xs font-semibold text-amber-800 hover:bg-amber-100/80 shadow-xs transition-colors"
+                                className="inline-flex items-center gap-1.5 h-[34px] px-3 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
                             >
-                                Thu Một Phần
+                                <DollarSign size={14} />
+                                <span>{invoice.status === 'PARTIAL_PAID' ? 'Tiếp Tục Thu' : 'Thu Một Phần'}</span>
                             </button>
                             <button
                                 onClick={handleFullPayment}
-                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[var(--primary)] text-xs font-semibold text-white hover:opacity-90 shadow-xs transition-all"
+                                className="inline-flex items-center gap-1.5 h-[34px] px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-emerald-600/20 active:scale-98 cursor-pointer"
                             >
-                                Đã Thu Đủ Tiền
-                            </button>
-                        </>
-                    )}
-                    {invoice.status === 'PARTIAL_PAID' && (
-                        <>
-                            <button
-                                onClick={openPartialPaymentModal}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-200 bg-amber-50 text-xs font-semibold text-amber-800 hover:bg-amber-100/80 shadow-xs transition-colors"
-                            >
-                                Tiếp Tục Thu
-                            </button>
-                            <button
-                                onClick={handleFullPayment}
-                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[var(--primary)] text-xs font-semibold text-white hover:opacity-90 shadow-xs transition-all"
-                            >
-                                Đã Thu Đủ Tiền
+                                <CheckCircle2 size={15} />
+                                <span>Đã Thu Đủ Tiền</span>
                             </button>
                         </>
                     )}
@@ -311,147 +357,219 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                     {invoice.status !== 'CANCELLED' && (
                         <button
                             onClick={handleCancel}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-200 bg-rose-50 text-xs font-semibold text-rose-700 hover:bg-rose-100 shadow-xs transition-colors"
+                            className="inline-flex items-center justify-center h-[34px] w-[34px] bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl transition-all shadow-2xs cursor-pointer"
+                            title="Hủy Hóa Đơn"
                         >
-                            <XCircle size={14} />
-                            Hủy Hóa Đơn
+                            <XCircle size={15} />
                         </button>
                     )}
+
                     {invoice.status === 'CANCELLED' && (
                         <button
                             onClick={handleRestore}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-sky-600 text-xs font-semibold text-white hover:bg-sky-700 shadow-xs transition-all"
+                            className="inline-flex items-center gap-1.5 h-[34px] px-3.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
                         >
                             <Undo2 size={14} />
-                            Khôi Phục
+                            <span>Khôi Phục</span>
                         </button>
                     )}
                 </div>
             </div>
 
+            {/* Overdue Warning Alert */}
             {isOverdue && (
-                <div className="rounded-xl p-4 flex items-center gap-3 bg-rose-50 border border-rose-200 text-rose-900 shadow-xs">
-                    <AlertTriangle size={20} className="text-rose-600 shrink-0" />
-                    <div>
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-rose-800">Hóa đơn đã quá hạn thanh toán</h3>
-                        <p className="text-xs text-rose-700 mt-0.5 font-medium">Hạn thanh toán là {formatDate(invoice.dueDate)}. Vui lòng ưu tiên xử lý và thu hồi công nợ.</p>
+                <div className="bg-rose-50 border border-rose-300 rounded-2xl p-4 shadow-xs flex items-center justify-between gap-3 text-rose-900">
+                    <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                            <AlertTriangle size={18} className="animate-pulse" />
+                        </div>
+                        <div>
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-rose-800">
+                                Hóa Đơn Quá Hạn Thanh Toán
+                            </h3>
+                            <p className="text-xs text-rose-700 mt-0.5 font-medium">
+                                Hạn thanh toán là <strong className="font-mono">{formatDate(invoice.dueDate)}</strong>. Số tiền còn nợ: <strong className="font-mono">{formatMoney(remainingAmount)}</strong>.
+                            </p>
+                        </div>
                     </div>
+
+                    <button
+                        onClick={openPartialPaymentModal}
+                        className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer shrink-0"
+                    >
+                        Thu tiền ngay
+                    </button>
                 </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left Column: Details & Tabs */}
-                <div className="lg:col-span-2 space-y-6">
-
-                    {/* Summary Info Card */}
-                    <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
-                        <div className="p-4 sm:p-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                            <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-[var(--primary)] flex items-center justify-center border border-emerald-200/60">
-                                    <FileText size={16} />
-                                </div>
-                                <div>
-                                    <h3 className="text-sm font-semibold text-slate-900">Thông tin chung</h3>
-                                    <div className="flex items-center gap-3 mt-0.5">
-                                        {invoice.creator && (
-                                            <p className="text-[11px] text-slate-500 flex items-center gap-1">
-                                                <User size={12} className="text-slate-400" /> Lập bởi: {invoice.creator.name}
-                                            </p>
-                                        )}
-                                        <p className="text-[11px] text-[var(--primary)] font-medium flex items-center gap-1">
-                                            <User size={12} /> Người bán: {invoice.salesperson?.name || invoice.creator?.name || '---'}
-                                        </p>
-                                    </div>
-                                </div>
+            {/* Main 12-Column Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                {/* ================= LEFT 8-COLUMNS: INVOICE INFO & ITEMS ================= */}
+                <div className="lg:col-span-8 space-y-6">
+                    {/* Customer & General Info Card */}
+                    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 md:p-6 space-y-5">
+                        <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
+                            <div className="flex items-center gap-2">
+                                <Building2 size={18} className="text-emerald-600" />
+                                <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                                    Thông Tin Khách Hàng & Giao Dịch
+                                </h2>
                             </div>
-                            <div className="text-right">
-                                <div className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Tổng thanh toán</div>
-                                <div className="text-base font-bold text-slate-900 font-mono">{formatMoney(invoice.totalAmount)}</div>
-                            </div>
+                            {invoice.customer && (
+                                <Link
+                                    href={`/customers/${invoice.customerId}`}
+                                    className="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+                                >
+                                    <span>Hồ sơ khách hàng</span>
+                                    <ChevronRight size={14} />
+                                </Link>
+                            )}
                         </div>
 
-                        <div className="p-5">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="p-3 bg-slate-50/60 rounded-lg border border-slate-100">
-                                    <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Khách Hàng</div>
-                                    <div className="text-xs font-semibold text-slate-800">{invoice.customer?.name}</div>
-                                    <Link href={`/customers/${invoice.customerId}`} className="text-[11px] text-[var(--primary)] hover:underline font-medium inline-block mt-1">
-                                        Xem hồ sơ khách hàng →
-                                    </Link>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                            {/* Customer Name */}
+                            <div className="space-y-1">
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                                    Khách Hàng / Đơn Vị
+                                </span>
+                                <div className="text-xs font-bold text-slate-900">
+                                    {invoice.customer?.name || '—'}
                                 </div>
-
-                                <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50/60 rounded-lg border border-slate-100">
-                                    <div>
-                                        <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Ngày Lập</div>
-                                        <div className="text-xs font-medium text-slate-700">{formatDate(invoice.date)}</div>
-                                    </div>
-                                    <div>
-                                        <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Hạn Thanh Toán</div>
-                                        <div className="text-xs font-medium text-slate-700">{formatDate(invoice.dueDate)}</div>
-                                    </div>
-                                </div>
-
-                                {invoice.notes && (
-                                    <div className="col-span-full p-3 bg-slate-50/50 rounded-lg border border-slate-100">
-                                        <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Ghi chú Hóa Đơn</div>
-                                        <div className="text-xs text-slate-600 leading-relaxed whitespace-pre-wrap">{invoice.notes}</div>
-                                    </div>
+                                {invoice.customer?.code && (
+                                    <span className="text-[10px] font-mono text-slate-400 block">
+                                        Mã: {invoice.customer.code}
+                                    </span>
                                 )}
                             </div>
+
+                            {/* Contact & Phone */}
+                            <div className="space-y-1">
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                                    Người liên hệ & SĐT
+                                </span>
+                                <div className="text-xs font-semibold text-slate-800 flex items-center gap-1">
+                                    <User size={13} className="text-slate-400" />
+                                    <span>{invoice.customer?.contactName || '—'}</span>
+                                </div>
+                                <div className="text-xs font-mono text-slate-600 flex items-center gap-1 mt-0.5">
+                                    <Phone size={12} className="text-slate-400" />
+                                    <span>{invoice.customer?.phone || '—'}</span>
+                                    {invoice.customer?.phone && (
+                                        <ClickToCallButton phoneNumber={invoice.customer.phone} className="ml-1 scale-75 origin-left" />
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Email */}
+                            <div className="space-y-1">
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                                    Email nhận hóa đơn
+                                </span>
+                                <div className="text-xs font-semibold text-slate-800 flex items-center gap-1 truncate">
+                                    <Mail size={13} className="text-slate-400 shrink-0" />
+                                    <span className="truncate">{invoice.customer?.email || '—'}</span>
+                                </div>
+                            </div>
+
+                            {/* Dates */}
+                            <div className="space-y-1">
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                                    Ngày lập hóa đơn
+                                </span>
+                                <div className="text-xs font-mono font-semibold text-slate-800 flex items-center gap-1.5">
+                                    <Calendar size={13} className="text-slate-400" />
+                                    <span>{formatDate(invoice.date)}</span>
+                                </div>
+                            </div>
+
+                            {/* Due Date */}
+                            <div className="space-y-1">
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                                    Hạn thanh toán
+                                </span>
+                                <div className={`text-xs font-mono font-semibold flex items-center gap-1.5 ${isOverdue ? 'text-rose-600 font-bold' : 'text-slate-800'}`}>
+                                    <Clock size={13} className={isOverdue ? 'text-rose-600' : 'text-slate-400'} />
+                                    <span>{formatDate(invoice.dueDate)}</span>
+                                </div>
+                            </div>
+
+                            {/* Tax Code */}
+                            <div className="space-y-1">
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                                    Mã số thuế
+                                </span>
+                                <div className="text-xs font-mono font-semibold text-slate-800">
+                                    {invoice.customer?.taxCode || '—'}
+                                </div>
+                            </div>
                         </div>
+
+                        {/* Customer Address */}
+                        {invoice.customer?.address && (
+                            <div className="pt-3 border-t border-slate-100 flex items-start gap-2 text-xs text-slate-600">
+                                <MapPin size={14} className="text-slate-400 shrink-0 mt-0.5" />
+                                <span>Địa chỉ: <strong className="text-slate-800">{invoice.customer.address}</strong></span>
+                            </div>
+                        )}
+
+                        {/* Invoice Notes */}
+                        {invoice.notes && (
+                            <div className="pt-3 border-t border-slate-100 space-y-1">
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                                    Ghi chú hóa đơn
+                                </span>
+                                <div className="p-3 bg-amber-50/60 rounded-xl border border-amber-200/80 text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
+                                    {invoice.notes}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
-                    {/* Tabs Area */}
-                    <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
-                        <div className="flex border-b border-slate-100 bg-slate-50/50 px-4 pt-2">
-                            {tabs.map(tab => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id as any)}
-                                    className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-all ${
-                                        activeTab === tab.id
-                                            ? 'border-[var(--primary)] text-[var(--primary)] bg-white rounded-t-lg shadow-2xs'
-                                            : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100/50'
-                                    }`}
-                                >
-                                    {tab.icon}
-                                    {tab.label}
-                                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                                        activeTab === tab.id ? 'bg-emerald-50 text-[var(--primary)]' : 'bg-slate-200/60 text-slate-600'
-                                    }`}>
-                                        {tab.count}
-                                    </span>
-                                </button>
-                            ))}
+                    {/* Products Table & Tabs Area */}
+                    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+                        {/* Tab Switcher */}
+                        <div className="flex border-b border-slate-200/80 bg-slate-50/60 px-4 pt-2 gap-2">
                             <button
-                                onClick={() => setActiveTab('emailLogs')}
-                                className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-all ${
-                                    activeTab === 'emailLogs'
-                                        ? 'border-[var(--primary)] text-[var(--primary)] bg-white rounded-t-lg shadow-2xs'
+                                onClick={() => setActiveTab('items')}
+                                className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer ${
+                                    activeTab === 'items'
+                                        ? 'border-emerald-600 text-emerald-800 bg-white rounded-t-xl shadow-2xs'
                                         : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100/50'
                                 }`}
                             >
-                                <Mail size={16} />
-                                Lịch Sử Email
-                                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                                    activeTab === 'emailLogs' ? 'bg-emerald-50 text-[var(--primary)]' : 'bg-slate-200/60 text-slate-600'
-                                }`}>
+                                <ShoppingCart size={15} />
+                                <span>Chi tiết sản phẩm xuất bán</span>
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                    {invoice.items?.length || 0}
+                                </span>
+                            </button>
+
+                            <button
+                                onClick={() => setActiveTab('emailLogs')}
+                                className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer ${
+                                    activeTab === 'emailLogs'
+                                        ? 'border-emerald-600 text-emerald-800 bg-white rounded-t-xl shadow-2xs'
+                                        : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100/50'
+                                }`}
+                            >
+                                <Mail size={15} />
+                                <span>Lịch Sử Gửi Email</span>
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-700">
                                     {invoice.emailLogs?.length || 0}
                                 </span>
                             </button>
+
                             <button
                                 onClick={() => setActiveTab('managers')}
-                                className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-all ${
+                                className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer ${
                                     activeTab === 'managers'
-                                        ? 'border-[var(--primary)] text-[var(--primary)] bg-white rounded-t-lg shadow-2xs'
+                                        ? 'border-emerald-600 text-emerald-800 bg-white rounded-t-xl shadow-2xs'
                                         : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100/50'
                                 }`}
                             >
-                                <UserCheck size={16} />
-                                Người Phụ Trách
-                                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                                    activeTab === 'managers' ? 'bg-emerald-50 text-[var(--primary)]' : 'bg-slate-200/60 text-slate-600'
-                                }`}>
+                                <UserCheck size={15} />
+                                <span>Người Phụ Trách</span>
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-700">
                                     {invoice.managers?.length || 0}
                                 </span>
                             </button>
@@ -459,64 +577,82 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
 
                         <div className="p-5">
                             {activeTab === 'items' && (
-                                <div className="overflow-x-auto w-full rounded-lg border border-slate-100">
-                                    <table className="w-full text-left text-xs border-collapse">
-                                        <thead>
-                                            <tr className="bg-slate-50/80 text-slate-600 border-b border-slate-200">
-                                                <th className="py-2.5 px-3.5 font-semibold">Tên Sản phẩm / Dịch vụ</th>
-                                                <th className="py-2.5 px-3.5 font-semibold text-center">Số Lượng</th>
-                                                <th className="py-2.5 px-3.5 font-semibold text-right">Đơn Giá</th>
-                                                <th className="py-2.5 px-3.5 font-semibold text-center">Thuế suất</th>
-                                                <th className="py-2.5 px-3.5 font-semibold text-right">Thành Tiền</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100">
-                                            {invoice.items?.map((item: any) => (
-                                                <tr key={item.id} className={`hover:bg-slate-50/50 transition-colors ${item.isSubItem ? 'bg-slate-50/30' : ''}`}>
-                                                    <td className={`py-3 px-3.5 font-medium ${item.isSubItem ? 'pl-8 text-slate-600' : 'text-slate-800'}`}>
-                                                        <div className="flex items-center gap-1.5">
-                                                            {item.isSubItem && <span className="text-slate-400 text-xs">↳</span>}
-                                                            <span className="font-semibold">{item.customName || item.product?.name || `Sản phẩm tự do`}</span>
-                                                        </div>
-                                                        {item.product?.sku && <div className="text-[11px] font-mono text-slate-400 mt-0.5">SKU: {item.product.sku}</div>}
-                                                        {item.description && <div className="text-xs text-slate-500 mt-1 whitespace-pre-wrap font-normal leading-relaxed">{item.description}</div>}
-                                                    </td>
-                                                    <td className="py-3 px-3.5 text-center text-slate-600 font-medium">
-                                                        {item.quantity} <span className="text-[11px] text-slate-400">{item.unit || item.product?.unit || ''}</span>
-                                                    </td>
-                                                    <td className="py-3 px-3.5 text-right font-mono text-slate-700">{formatMoney(item.unitPrice)}</td>
-                                                    <td className="py-3 px-3.5 text-center">
-                                                        <TaxBadge rate={item.taxRate} />
-                                                    </td>
-                                                    <td className="py-3 px-3.5 text-right font-mono font-semibold text-slate-900">{formatMoney(item.totalPrice)}</td>
+                                <div className="space-y-6">
+                                    <div className="overflow-x-auto w-full rounded-xl border border-slate-200">
+                                        <table className="w-full text-left text-xs border-collapse">
+                                            <thead>
+                                                <tr className="bg-slate-100/70 text-slate-600 border-b border-slate-200/90 font-bold uppercase tracking-wider text-[11px]">
+                                                    <th className="py-2.5 px-3.5">Tên Sản Phẩm / Dịch Vụ</th>
+                                                    <th className="py-2.5 px-3.5 text-center w-[90px]">Số Lượng</th>
+                                                    <th className="py-2.5 px-3.5 text-right w-[130px]">Đơn Giá</th>
+                                                    <th className="py-2.5 px-3.5 text-center w-[95px]">Thuế GTGT</th>
+                                                    <th className="py-2.5 px-3.5 text-right w-[140px]">Thành Tiền</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {invoice.items?.map((item: any) => (
+                                                    <tr key={item.id} className={`hover:bg-slate-50/60 transition-colors ${item.isSubItem ? 'bg-slate-50/40' : ''}`}>
+                                                        <td className={`py-3 px-3.5 align-middle ${item.isSubItem ? 'pl-8' : ''}`}>
+                                                            <div className="flex items-start gap-1.5">
+                                                                {item.isSubItem && <CornerDownRight size={13} className="text-slate-400 shrink-0 mt-0.5" />}
+                                                                <div>
+                                                                    <div className="font-bold text-xs text-slate-900">
+                                                                        {item.customName || item.product?.name || 'Sản phẩm tự do'}
+                                                                    </div>
+                                                                    {item.product?.sku && (
+                                                                        <div className="text-[11px] font-mono text-slate-400 mt-0.5">
+                                                                            SKU: {item.product.sku}
+                                                                        </div>
+                                                                    )}
+                                                                    {item.description && (
+                                                                        <div className="text-xs text-slate-500 mt-1 whitespace-pre-wrap leading-relaxed">
+                                                                            {item.description}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-3 px-3.5 text-center align-middle font-mono font-bold text-slate-800">
+                                                            {item.quantity} <span className="text-[10px] font-normal text-slate-400">{item.unit || item.product?.unit || ''}</span>
+                                                        </td>
+                                                        <td className="py-3 px-3.5 text-right align-middle font-mono text-slate-700">
+                                                            {formatMoney(item.unitPrice)}
+                                                        </td>
+                                                        <td className="py-3 px-3.5 text-center align-middle">
+                                                            <TaxBadge rate={item.taxRate} />
+                                                        </td>
+                                                        <td className="py-3 px-3.5 text-right align-middle font-mono font-bold text-slate-900">
+                                                            {formatMoney(item.totalPrice)}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
 
-                                    {/* Totals Box */}
-                                    <div className="mt-6 flex justify-end">
-                                        <div className="w-full sm:w-80 bg-slate-50/70 rounded-xl p-4 border border-slate-200/80 space-y-2.5">
+                                    {/* Financial Calculation Summary Box */}
+                                    <div className="flex justify-end">
+                                        <div className="w-full sm:w-88 bg-slate-50/80 rounded-2xl p-4 md:p-5 border border-slate-200/90 shadow-2xs space-y-2.5">
                                             <div className="flex justify-between text-xs text-slate-600">
-                                                <span>Tổng tiền hàng:</span>
-                                                <span className="font-mono font-medium text-slate-800">{formatMoney(invoice.subTotal)}</span>
+                                                <span>Tổng tiền hàng (Chưa thuế):</span>
+                                                <span className="font-mono font-bold text-slate-800">{formatMoney(invoice.subTotal)}</span>
                                             </div>
                                             <div className="flex justify-between text-xs text-slate-600">
                                                 <span>Tổng thuế GTGT:</span>
-                                                <span className="font-mono font-medium text-slate-800">{formatMoney(invoice.taxAmount)}</span>
+                                                <span className="font-mono font-bold text-slate-800">{formatMoney(invoice.taxAmount)}</span>
                                             </div>
-                                            <div className="h-px bg-slate-200 my-2"></div>
-                                            <div className="flex justify-between items-center text-xs font-semibold text-slate-900">
+                                            <div className="h-px bg-slate-200 my-2" />
+                                            <div className="flex justify-between items-center text-xs font-bold text-slate-900">
                                                 <span>Tổng Hóa Đơn:</span>
-                                                <span className="font-mono text-sm font-bold text-slate-900">{formatMoney(invoice.totalAmount)}</span>
+                                                <span className="font-mono text-base font-black text-slate-900">{formatMoney(invoice.totalAmount)}</span>
                                             </div>
                                             <div className="flex justify-between items-center text-xs text-slate-600">
-                                                <span>Đã Thu Trước Đó:</span>
-                                                <span className="font-mono font-semibold text-emerald-700">{formatMoney(invoice.paidAmount || 0)}</span>
+                                                <span>Đã thanh toán trước đó:</span>
+                                                <span className="font-mono font-bold text-emerald-700">{formatMoney(invoice.paidAmount || 0)}</span>
                                             </div>
-                                            <div className="border-t border-dashed border-slate-200 pt-2.5 flex justify-between items-center">
-                                                <span className="text-xs font-bold text-slate-900">Còn Phải Thu:</span>
-                                                <span className={`font-mono text-sm font-bold ${remainingAmount > 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
+                                            <div className="pt-2 border-t border-dashed border-slate-300 flex justify-between items-center">
+                                                <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">Còn Phải Thu:</span>
+                                                <span className={`font-mono text-base font-black ${remainingAmount > 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
                                                     {formatMoney(remainingAmount)}
                                                 </span>
                                             </div>
@@ -541,50 +677,57 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                             )}
                         </div>
                     </div>
-                    {/* Bank Info Card */}
+
+                    {/* Bank Info Card (If Enabled) */}
                     {settings?.BANK_INFO_ENABLED === 'true' && settings?.BANK_INFO_CONTENT && (
-                        <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '1.5rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                                <h2 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Building size={20} color="#3b82f6" /> Thông tin thanh toán (Chuyển khoản)
-                                </h2>
+                        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 space-y-3">
+                            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                                <div className="flex items-center gap-2">
+                                    <Building size={18} className="text-sky-600" />
+                                    <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                                        Thông Tin Thanh Toán Chuyển Khoản
+                                    </h2>
+                                </div>
                                 <button
                                     onClick={() => {
                                         navigator.clipboard.writeText(settings.BANK_INFO_CONTENT || '');
                                         alert('Đã copy thông tin thanh toán');
                                     }}
-                                    className="btn btn-secondary hover:bg-slate-200"
-                                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.375rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: 500, backgroundColor: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', cursor: 'pointer', transition: 'all 0.2s' }}
+                                    className="px-2.5 py-1 text-xs font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
                                 >
-                                    <Copy size={14} /> Copy thông tin
+                                    <Copy size={13} />
+                                    <span>Copy thông tin</span>
                                 </button>
                             </div>
-                            <div style={{ whiteSpace: 'pre-wrap', color: '#334155', fontSize: '0.9rem', lineHeight: 1.6, padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '0.5rem', borderLeft: '4px solid #3b82f6' }}>
+                            <div className="p-3.5 bg-slate-50 rounded-xl border-l-4 border-l-sky-500 border border-slate-200/70 text-xs text-slate-800 whitespace-pre-wrap leading-relaxed font-mono">
                                 {settings.BANK_INFO_CONTENT}
                             </div>
                         </div>
                     )}
 
                     {/* Signatures Card */}
-                    <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '1.5rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}>
-                        <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#1e293b', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <FileText size={20} color="#10b981" /> Chữ ký xác nhận
-                        </h2>
-                        <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'nowrap', gap: '2rem' }}>
+                    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 space-y-4">
+                        <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+                            <FileText size={18} className="text-emerald-600" />
+                            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                                Chữ Ký Xác Nhận Chứng Từ
+                            </h2>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <DocumentSignatureBlock 
                                 entityType="SALES_INVOICE" 
                                 entityId={invoice.id} 
                                 role="CUSTOMER" 
                                 title="ĐẠI DIỆN KHÁCH HÀNG" 
-                                subtitle="(Khách hàng ký qua link public)" 
+                                subtitle="(Ký xác nhận qua link online)" 
                                 canSign={false} 
                                 initialSignature={invoice.customerSignature} 
                                 initialSignedAt={invoice.customerSignedAt}
-                            metadata={{
-                                ip: invoice.customerSignIP,
-                                device: invoice.customerSignDevice,
-                                location: invoice.customerSignLocation
-                            }} 
+                                metadata={{
+                                    ip: invoice.customerSignIP,
+                                    device: invoice.customerSignDevice,
+                                    location: invoice.customerSignLocation
+                                }} 
                             />
                             <DocumentSignatureBlock 
                                 entityType="SALES_INVOICE" 
@@ -602,8 +745,70 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                     </div>
                 </div>
 
-                {/* Column 2: TaskPanel and Timeline */}
-                <div className="lg:col-span-1 flex flex-col gap-6">
+                {/* ================= RIGHT 4-COLUMNS: PAYMENT KPI, NOTES, TASKS, TIMELINE ================= */}
+                <div className="lg:col-span-4 space-y-6">
+                    {/* Financial Status KPI Card */}
+                    <div 
+                        className="rounded-2xl p-5 shadow-sm space-y-4 relative overflow-hidden border border-emerald-900 text-white"
+                        style={{ background: 'linear-gradient(135deg, #064e3b 0%, #047857 50%, #0f172a 100%)' }}
+                    >
+                        <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-emerald-200">
+                            <span>Trạng Thái Công Nợ</span>
+                            <CreditCard size={16} className="text-emerald-300" />
+                        </div>
+
+                        {/* Big Remaining Amount */}
+                        <div>
+                            <span className="text-[11px] text-emerald-200 block uppercase font-medium">Còn phải thanh toán</span>
+                            <div className="font-mono text-2xl sm:text-3xl font-black tracking-tight text-white mt-0.5">
+                                {formatMoney(remainingAmount)}
+                            </div>
+                        </div>
+
+                        {/* Payment Progress Bar */}
+                        <div className="space-y-1.5 pt-1">
+                            <div className="flex justify-between text-xs text-emerald-100 font-medium">
+                                <span>Tiến độ thanh toán:</span>
+                                <span className="font-mono font-bold text-white">{paidPercentage}%</span>
+                            </div>
+                            <div className="w-full h-2.5 bg-black/30 rounded-full overflow-hidden p-0.5">
+                                <div 
+                                    className="h-full bg-gradient-to-r from-emerald-400 to-teal-300 rounded-full transition-all duration-500"
+                                    style={{ width: `${paidPercentage}%` }}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Breakdown Metrics */}
+                        <div className="pt-3 border-t border-white/15 grid grid-cols-2 gap-3 text-xs">
+                            <div>
+                                <span className="text-emerald-200 text-[11px] block">Tổng hóa đơn:</span>
+                                <span className="font-mono font-bold text-white">{formatMoney(invoice.totalAmount)}</span>
+                            </div>
+                            <div>
+                                <span className="text-emerald-200 text-[11px] block">Đã thanh toán:</span>
+                                <span className="font-mono font-bold text-emerald-300">{formatMoney(invoice.paidAmount || 0)}</span>
+                            </div>
+                        </div>
+
+                        {/* Action Shortcuts inside card */}
+                        {remainingAmount > 0 && (invoice.status === 'ISSUED' || invoice.status === 'PARTIAL_PAID') && (
+                            <div className="pt-2 flex gap-2">
+                                <button
+                                    onClick={openPartialPaymentModal}
+                                    className="flex-1 py-2 px-3 bg-white/15 hover:bg-white/25 text-white rounded-xl text-xs font-bold transition-all border border-white/20 cursor-pointer shadow-2xs text-center"
+                                >
+                                    Thu một phần
+                                </button>
+                                <button
+                                    onClick={handleFullPayment}
+                                    className="flex-1 py-2 px-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs transition-all cursor-pointer shadow-md text-center"
+                                >
+                                    Đã thu đủ
+                                </button>
+                            </div>
+                        )}
+                    </div>
 
                     {/* Invoice Notes Panel */}
                     <SalesInvoiceNotes
@@ -613,11 +818,8 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                         currentUserRole={session?.user?.role || ''}
                     />
 
-                    {/* Task Panel */}
-                    <div>
-                        <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#0f172a', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <CheckSquare size={18} /> Công việc & Phối hợp
-                        </h2>
+                    {/* Tasks Panel */}
+                    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
                         <TaskPanel
                             initialTasks={invoice.tasks || []}
                             users={users || []}
@@ -626,317 +828,286 @@ export default function SalesInvoiceDetailClient({ initialData, customers, produ
                         />
                     </div>
 
-                    {/* Invoice History Panel */}
-                    <div>
-                        <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#0f172a', margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <History size={18} /> Lịch Sử Hóa Đơn
-                        </h2>
-                        <div style={{ backgroundColor: 'white', borderRadius: '0.75rem', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+                    {/* Invoice History & Payment Log */}
+                    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 space-y-4">
+                        <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+                            <History size={18} className="text-emerald-600" />
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                                Lịch Sử Chứng Từ & Thanh Toán
+                            </h3>
+                        </div>
 
-                            {/* 1. Related Order / Quote */}
-                            {invoice.order && (
-                                <div style={{ padding: '1.25rem', borderBottom: '1px solid #e2e8f0' }}>
-                                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>Từ Đơn Hàng / Báo Giá</div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                        <div style={{ width: '2rem', height: '2rem', borderRadius: '50%', backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <ShoppingCart size={14} color="#475569" />
-                                        </div>
-                                        <div>
-                                            <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#0f172a' }}>{invoice.order.code}</div>
-                                            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Ngày tạo: {formatDate(invoice.order.date)}</div>
-                                        </div>
-                                        <Link href={`/sales/orders/${invoice.order.id}`} style={{ marginLeft: 'auto', color: '#3b82f6' }}>
-                                            <ArrowRight size={16} />
-                                        </Link>
+                        {/* Related Order / Estimate */}
+                        {invoice.order && (
+                            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                                    Từ Đơn Hàng Gốc
+                                </span>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <ShoppingCart size={15} className="text-slate-600" />
+                                        <span className="font-mono text-xs font-bold text-slate-900">{invoice.order.code}</span>
                                     </div>
+                                    <Link href={`/sales/orders/${invoice.order.id}`} className="text-xs font-bold text-emerald-600 hover:underline">
+                                        Xem đơn →
+                                    </Link>
                                 </div>
-                            )}
+                            </div>
+                        )}
 
-                            {/* 2. Payment History */}
-                            {invoice.allocations && invoice.allocations.length > 0 && (
-                                <div style={{ padding: '1.25rem', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
-                                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>Lịch Sử Thanh Toán</div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                        {invoice.allocations.map((alloc: any, index: number) => (
-                                            <div key={index} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                                                <div style={{ width: '2rem', height: '2rem', borderRadius: '50%', backgroundColor: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                                    <span style={{ color: '#16a34a', fontSize: '1rem', fontWeight: 'bold' }}>$</span>
-                                                </div>
-                                                <div style={{ flex: 1 }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                                        <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#0f172a' }}>{alloc.payment?.code || 'Phiếu Thu'}</span>
-                                                        <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#16a34a' }}>+ {formatMoney(alloc.amount)}</span>
-                                                    </div>
-                                                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.125rem' }}>
-                                                        {formatDate(alloc.payment?.date)} • {alloc.payment?.paymentMethod === 'BANK_TRANSFER' ? 'Chuyển khoản' : alloc.payment?.paymentMethod === 'CREDIT_CARD' ? 'Thẻ' : 'Tiền mặt'}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* 3. Activity Log (Tasks context) */}
-                            <div style={{ padding: '1.25rem' }}>
-                                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>Nhật Ký Hoạt Động</div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                    {invoice.activityLogs && invoice.activityLogs.length > 0 ? (
-                                        invoice.activityLogs.map((log: any, index: number) => (
-                                            <div key={index} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                                                <div style={{ marginTop: '0.125rem' }}>
-                                                    {log.action === 'CREATED' || log.action === 'TẠO_HÓA_ĐƠN' ? <Clock size={16} color="#94a3b8" /> :
-                                                        log.action === 'UPDATED' || log.action === 'CẬP_NHẬT' ? <Edit size={16} color="#f59e0b" /> :
-                                                            log.action === 'STATUS_CHANGED' || log.action === 'CẬP_NHẬT_TRẠNG_THÁI' || log.action === 'APPROVED' ? <CheckCircle2 size={16} color="#10b981" /> :
-                                                                <Activity size={16} color="#64748b" />}
-                                                </div>
-                                                <div>
-                                                    <div style={{ fontSize: '0.875rem', color: '#334155' }}>
-                                                        {log.action === 'CREATED' ? `Hóa đơn được tạo bởi ` :
-                                                            log.action === 'TẠO_HÓA_ĐƠN' ? `Hóa đơn được tạo bởi ` :
-                                                                log.action === 'UPDATED' ? `Hóa đơn được cập nhật bởi ` :
-                                                                    log.action === 'CẬP_NHẬT' ? `Hóa đơn được cập nhật bởi ` :
-                                                                        log.action === 'STATUS_CHANGED' ? `Trạng thái thay đổi bởi ` :
-                                                                            log.action === 'CẬP_NHẬT_TRẠNG_THÁI' ? `Trạng thái thay đổi bởi ` :
-                                                                                log.action === 'APPROVED' ? `Hóa đơn được duyệt bởi ` :
-                                                                                    `Thao tác bởi `}
-                                                        <span style={{ fontWeight: 600 }}>{log.user?.name || log.userId || 'Hệ thống'}</span>
-                                                    </div>
-                                                    {log.details && (
-                                                        <div style={{ fontSize: '0.875rem', color: '#475569', marginTop: '0.125rem' }}>
-                                                            {(() => {
-                                                                try {
-                                                                    const parsed = JSON.parse(log.details);
-                                                                    if (parsed.type === 'UPDATE_DIFF') {
-                                                                        return (
-                                                                            <div>
-                                                                                <div>{parsed.summary}</div>
-                                                                                <button
-                                                                                    onClick={() => setDiffModal({ isOpen: true, changes: parsed.changes })}
-                                                                                    style={{ fontSize: '0.75rem', color: '#3b82f6', background: 'none', border: 'none', padding: 0, cursor: 'pointer', marginTop: '0.25rem', textDecoration: 'underline' }}
-                                                                                >
-                                                                                    Xem chi tiết thay đổi
-                                                                                </button>
-                                                                            </div>
-                                                                        );
-                                                                    }
-                                                                } catch (e) {
-                                                                    return log.details;
-                                                                }
-                                                                return log.details;
-                                                            })()}
-                                                        </div>
-                                                    )}
-                                                    <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.25rem' }}>{formatDate(log.createdAt)}</div>
-                                                </div>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                                            <div style={{ marginTop: '0.125rem' }}>
-                                                <Clock size={16} color="#94a3b8" />
-                                            </div>
+                        {/* Payment Allocations (Phiếu thu) */}
+                        {invoice.allocations && invoice.allocations.length > 0 && (
+                            <div className="space-y-2">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                                    Phiếu Thu Đã Ghi Nhận ({invoice.allocations.length})
+                                </span>
+                                <div className="space-y-2 max-h-[220px] overflow-y-auto custom-scrollbar">
+                                    {invoice.allocations.map((alloc: any, idx: number) => (
+                                        <div key={idx} className="p-3 rounded-xl border border-emerald-200 bg-emerald-50/50 flex items-center justify-between">
                                             <div>
-                                                <div style={{ fontSize: '0.875rem', color: '#334155' }}>Hóa đơn được tạo bởi <span style={{ fontWeight: 600 }}>{invoice.creator?.name || 'Hệ thống'}</span></div>
-                                                <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{formatDate(invoice.createdAt)}</div>
+                                                <div className="font-mono text-xs font-bold text-slate-900">
+                                                    {alloc.payment?.code || 'Phiếu Thu'}
+                                                </div>
+                                                <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+                                                    {formatDate(alloc.payment?.date)} • {alloc.payment?.paymentMethod === 'BANK_TRANSFER' ? 'Chuyển khoản' : 'Tiền mặt'}
+                                                </div>
+                                            </div>
+                                            <span className="font-mono font-bold text-xs text-emerald-700">
+                                                +{formatMoney(alloc.amount)}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Activity Log */}
+                        <div className="space-y-2 pt-2 border-t border-slate-100">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                                Nhật Ký Thao Tác
+                            </span>
+                            <div className="space-y-3 max-h-[260px] overflow-y-auto pr-1 custom-scrollbar">
+                                {invoice.activityLogs && invoice.activityLogs.length > 0 ? (
+                                    invoice.activityLogs.map((log: any, idx: number) => (
+                                        <div key={idx} className="flex items-start gap-2.5 text-xs">
+                                            <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 font-bold text-[9px] flex items-center justify-center shrink-0 mt-0.5 shadow-2xs border border-slate-200">
+                                                {log.user?.name ? getInitials(log.user.name) : '?'}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-slate-900 font-semibold">
+                                                    {log.action === 'CREATED' || log.action === 'TẠO_HÓA_ĐƠN' ? 'Hóa đơn được khởi tạo bởi ' :
+                                                     log.action === 'UPDATED' || log.action === 'CẬP_NHẬT' ? 'Cập nhật bởi ' :
+                                                     log.action === 'STATUS_CHANGED' || log.action === 'CẬP_NHẬT_TRẠNG_THÁI' || log.action === 'APPROVED' ? 'Duyệt / đổi trạng thái bởi ' : 'Thao tác bởi '}
+                                                    <strong className="text-slate-900">{log.user?.name || 'Hệ thống'}</strong>
+                                                </div>
+                                                {log.details && (
+                                                    <div className="text-slate-500 text-[11px] mt-0.5 bg-slate-50 p-1.5 rounded-lg border border-slate-200/60 leading-relaxed">
+                                                        {(() => {
+                                                            try {
+                                                                const parsed = JSON.parse(log.details);
+                                                                if (parsed.type === 'UPDATE_DIFF') {
+                                                                    return (
+                                                                        <div>
+                                                                            <div>{parsed.summary}</div>
+                                                                            <button
+                                                                                onClick={() => setDiffModal({ isOpen: true, changes: parsed.changes })}
+                                                                                className="text-emerald-600 hover:underline font-bold mt-1 block cursor-pointer"
+                                                                            >
+                                                                                Xem chi tiết thay đổi
+                                                                            </button>
+                                                                        </div>
+                                                                    );
+                                                                }
+                                                            } catch (e) {
+                                                                return log.details;
+                                                            }
+                                                            return log.details;
+                                                        })()}
+                                                    </div>
+                                                )}
+                                                <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                                    {formatDateTime(log.createdAt)}
+                                                </div>
                                             </div>
                                         </div>
-                                    )}
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-
-
-                </div>
-
-                <Modal isOpen={diffModal.isOpen} onClose={() => setDiffModal({ ...diffModal, isOpen: false })} title="Chi Tiết Điều Chỉnh / Cập Nhật">
-                    <div style={{ padding: '0.5rem', maxHeight: '50vh', overflowY: 'auto' }}>
-                        <ul style={{ paddingLeft: '1.25rem', color: '#334155', fontSize: '0.9375rem', lineHeight: '1.6', margin: 0 }}>
-                            {diffModal.changes.map((change, i) => (
-                                <li key={i} style={{ marginBottom: '0.5rem' }} dangerouslySetInnerHTML={{
-                                    __html: change.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #0f172a; font-weight: 600;">$1</strong>')
-                                }} />
-                            ))}
-                        </ul>
-                    </div>
-                </Modal>
-
-                <Modal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} title="Thu Tiền Hóa Đơn">
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', padding: '0.5rem' }}>
-                        {/* Summary Card */}
-                        <div style={{ backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                                <span style={{ color: '#475569', fontSize: '0.875rem', fontWeight: 500 }}>Tổng Hóa Đơn:</span>
-                                <span style={{ fontWeight: 600, color: '#1e293b' }}>{formatMoney(invoice.totalAmount)}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                <span style={{ color: '#475569', fontSize: '0.875rem', fontWeight: 500 }}>Đã Thu Trước Đó:</span>
-                                <span style={{ fontWeight: 600, color: '#059669' }}>{formatMoney(invoice.paidAmount)}</span>
-                            </div>
-                            <div style={{ height: '1px', backgroundColor: '#e2e8f0', width: '100%', marginBottom: '1rem' }}></div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ color: '#334155', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.025em', fontSize: '0.875rem' }}>Còn Phải Thu:</span>
-                                <span style={{ fontWeight: 700, color: '#e11d48', fontSize: '1.25rem' }}>{formatMoney(remainingAmount)}</span>
-                            </div>
-                        </div>
-
-                        {/* Inputs */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                            <div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
-                                    <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155' }}>Số tiền thực thu (VND)</label>
-                                    <button
-                                        type="button"
-                                        onClick={() => setPaymentData({ ...paymentData, amount: remainingAmount })}
-                                        style={{ fontSize: '0.75rem', fontWeight: 600, color: '#2563eb', background: '#eff6ff', border: '1px solid #dbeafe', padding: '0.2rem 0.5rem', borderRadius: '0.375rem', cursor: 'pointer' }}
-                                    >
-                                        Điền hết nợ ({formatMoney(remainingAmount)})
-                                    </button>
-                                </div>
-                                <input
-                                    type="number"
-                                    step="any"
-                                    min="0"
-                                    max={remainingAmount}
-                                    style={{ width: '100%', padding: '0.625rem 0.75rem', fontSize: '1.125rem', fontWeight: 500, color: '#1e293b', border: '1px solid #cbd5e1', borderRadius: '0.5rem', outline: 'none', transition: 'border-color 0.2s', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
-                                    onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                                    onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
-                                    value={paymentData.amount}
-                                    onChange={(e) => setPaymentData({ ...paymentData, amount: parseFloat(e.target.value) || 0 })}
-                                />
-                                <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.375rem', marginBottom: 0 }}>
-                                    Định dạng hiển thị: <strong>{formatMoney(paymentData.amount)}</strong>
-                                </p>
-                            </div>
-
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#334155', marginBottom: '0.375rem' }}>Phương thức thanh toán</label>
-                                <div style={{ position: 'relative' }}>
-                                    <select
-                                        style={{ width: '100%', padding: '0.625rem 2.5rem 0.625rem 0.75rem', color: '#1e293b', border: '1px solid #cbd5e1', borderRadius: '0.5rem', appearance: 'none', backgroundColor: 'white', outline: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
-                                        value={paymentData.method}
-                                        onChange={(e) => setPaymentData({ ...paymentData, method: e.target.value })}
-                                    >
-                                        <option value="CASH">Tiền mặt</option>
-                                        <option value="BANK_TRANSFER">Chuyển khoản</option>
-                                        <option value="CREDIT_CARD">Thẻ Tín Dụng / Ghi Nợ</option>
-                                    </select>
-                                    <div style={{ pointerEvents: 'none', position: 'absolute', inset: '0 0 0 auto', display: 'flex', alignItems: 'center', padding: '0 0.75rem', color: '#64748b' }}>
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{ width: '1rem', height: '1rem' }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                                    ))
+                                ) : (
+                                    <div className="text-xs text-slate-400 italic py-2 text-center">
+                                        Chưa có nhật ký ghi nhận
                                     </div>
-                                </div>
+                                )}
                             </div>
-
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#334155', marginBottom: '0.375rem' }}>Diễn giải / Ghi chú</label>
-                                <input
-                                    type="text"
-                                    style={{ width: '100%', padding: '0.625rem 0.75rem', color: '#1e293b', border: '1px solid #cbd5e1', borderRadius: '0.5rem', outline: 'none', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
-                                    onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                                    onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
-                                    value={paymentData.notes}
-                                    onChange={(e) => setPaymentData({ ...paymentData, notes: e.target.value })}
-                                    placeholder="Ghi chú thêm về giao dịch này..."
-                                />
-                            </div>
-                        </div>
-
-                        {/* Actions */}
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid #f1f5f9' }}>
-                            <button
-                                type="button"
-                                onClick={() => setIsPaymentModalOpen(false)}
-                                style={{ padding: '0.625rem 1.25rem', border: '1px solid #cbd5e1', color: '#334155', borderRadius: '0.5rem', backgroundColor: 'white', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
-                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
-                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
-                            >
-                                Hủy bỏ
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleSubmitPayment}
-                                style={{ padding: '0.625rem 1.25rem', border: 'none', color: 'white', borderRadius: '0.5rem', backgroundColor: '#2563eb', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
-                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
-                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
-                            >
-                                Xác nhận Thu & Tạo Phiếu
-                            </button>
                         </div>
                     </div>
-                </Modal>
-
-                {/* Action Confirm Modal */}
-                <Modal isOpen={!!actionModal?.isOpen} onClose={() => !isActioning && setActionModal(null)} title={actionModal?.title || 'Xác nhận'}>
-                    <div style={{ padding: '1.5rem' }}>
-                        <div style={{ display: 'flex', gap: '1rem' }}>
-                            {actionModal?.icon && (
-                                <div style={{ flexShrink: 0, marginTop: '0.25rem' }}>
-                                    {actionModal.icon}
-                                </div>
-                            )}
-                            <div style={{ flex: 1, color: 'var(--text-main)', fontSize: '0.9375rem', lineHeight: '1.6' }}>
-                                {actionModal?.message}
-                            </div>
-                        </div>
-
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '2rem', borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
-                            <button onClick={() => setActionModal(null)} className="btn btn-secondary" disabled={isActioning}>
-                                {actionModal?.cancelLabel || 'Hủy Bỏ'}
-                            </button>
-                            <button onClick={async () => {
-                                if (!actionModal) return;
-                                setIsActioning(true);
-                                try {
-                                    await actionModal.action();
-                                } finally {
-                                    setIsActioning(false);
-                                    setActionModal(null);
-                                }
-                            }} className={`btn ${actionModal?.confirmVariant === 'danger' ? 'btn-danger' : 'btn-primary'}`}
-                                style={actionModal?.confirmVariant === 'success' ? { backgroundColor: 'var(--success)' } :
-                                    actionModal?.confirmVariant === 'warning' ? { backgroundColor: '#f59e0b' } : {}}
-                                disabled={isActioning}>
-                                {isActioning ? (
-                                    <span style={{ display: 'flex', alignItems: 'center' }}>
-                                        <span style={{ display: 'inline-block', width: '16px', height: '16px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite', marginRight: '8px' }}></span>
-                                        Đang xử lý...
-                                    </span>
-                                ) : (actionModal?.confirmLabel || 'Xác Nhận')}
-                            </button>
-                        </div>
-                    </div>
-                </Modal>
-
-                <SendEmailModal
-                    isOpen={isEmailModalOpen}
-                    onClose={() => setIsEmailModalOpen(false)}
-                    moduleType="INVOICE"
-                    defaultToEmail={invoice.customer?.email || ''}
-                    variablesData={{
-                        customerName: invoice.customer?.name || '',
-                        customerEmail: invoice.customer?.email || '',
-                        senderName: invoice.salesperson?.name || invoice.creator?.name || '',
-                        today: new Date().toLocaleDateString('vi-VN'),
-                        code: invoice.code,
-                        totalAmount: formatMoney(invoice.totalAmount),
-                        link: typeof window !== 'undefined' ? `${window.location.origin}/public/sales/invoice/${invoice.id}` : '',
-                    }}
-                    templates={emailTemplates || []}
-                    printUrl={typeof window !== 'undefined' ? `${window.location.origin}/public/sales/invoice/${invoice.id}` : ''}
-                    documentName={`HoaDon_${invoice.code}.pdf`}
-                    onSend={async (data) => {
-                        const res = await sendInvoiceEmail(invoice.id, data.to, data.subject, data.htmlBody, data.attachmentName, data.attachmentBase64);
-                        if (res.success) {
-                            alert('Đã gửi email thành công!');
-                            router.refresh();
-                        } else {
-                            throw new Error(res.error);
-                        }
-                    }}
-                />
+                </div>
             </div>
+
+            {/* Diff Modal */}
+            <Modal isOpen={diffModal.isOpen} onClose={() => setDiffModal({ ...diffModal, isOpen: false })} title="Chi Tiết Điều Chỉnh / Cập Nhật">
+                <div className="p-2 max-h-[60vh] overflow-y-auto space-y-2">
+                    <ul className="space-y-2 text-xs text-slate-700 leading-relaxed">
+                        {diffModal.changes.map((change, i) => (
+                            <li key={i} className="p-2.5 bg-slate-50 rounded-xl border border-slate-200" dangerouslySetInnerHTML={{
+                                __html: change.replace(/\*\*(.*?)\*\*/g, '<strong class="text-slate-900 font-bold">$1</strong>')
+                            }} />
+                        ))}
+                    </ul>
+                </div>
+            </Modal>
+
+            {/* Payment Modal */}
+            <Modal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} title="Ghi Nhận Thu Tiền Hóa Đơn">
+                <div className="space-y-4 p-1">
+                    {/* Summary box */}
+                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs">
+                        <div className="flex justify-between text-slate-600">
+                            <span>Tổng Hóa Đơn:</span>
+                            <span className="font-mono font-bold text-slate-900">{formatMoney(invoice.totalAmount)}</span>
+                        </div>
+                        <div className="flex justify-between text-slate-600">
+                            <span>Đã thu trước đó:</span>
+                            <span className="font-mono font-bold text-emerald-700">{formatMoney(invoice.paidAmount || 0)}</span>
+                        </div>
+                        <div className="h-px bg-slate-200 my-1" />
+                        <div className="flex justify-between text-slate-900 font-bold">
+                            <span className="uppercase tracking-wider">Còn Phải Thu:</span>
+                            <span className="font-mono text-base font-black text-rose-600">{formatMoney(remainingAmount)}</span>
+                        </div>
+                    </div>
+
+                    {/* Amount Input */}
+                    <div className="space-y-1.5">
+                        <div className="flex justify-between items-center">
+                            <label className="block text-xs font-bold text-slate-700">Số tiền thực thu (VNĐ) <span className="text-rose-500">*</span></label>
+                            <button
+                                type="button"
+                                onClick={() => setPaymentData({ ...paymentData, amount: remainingAmount })}
+                                className="text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-md cursor-pointer transition-colors"
+                            >
+                                Điền hết nợ ({formatMoney(remainingAmount)})
+                            </button>
+                        </div>
+                        <input
+                            type="number"
+                            step="any"
+                            value={paymentData.amount || ''}
+                            onChange={(e) => setPaymentData({ ...paymentData, amount: Number(e.target.value) })}
+                            className="w-full h-10 px-3 text-xs bg-white border border-slate-300 rounded-xl text-slate-900 font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-2xs"
+                            placeholder="Nhập số tiền..."
+                        />
+                    </div>
+
+                    {/* Method */}
+                    <div className="space-y-1.5">
+                        <label className="block text-xs font-bold text-slate-700">Hình thức thanh toán</label>
+                        <select
+                            value={paymentData.method}
+                            onChange={(e) => setPaymentData({ ...paymentData, method: e.target.value })}
+                            className="w-full h-10 px-3 text-xs bg-white border border-slate-300 rounded-xl text-slate-900 font-medium focus:outline-none focus:border-emerald-500 cursor-pointer shadow-2xs"
+                        >
+                            <option value="BANK_TRANSFER">Chuyển khoản Ngân hàng</option>
+                            <option value="CASH">Tiền mặt</option>
+                            <option value="CREDIT_CARD">Thẻ tín dụng / POS</option>
+                        </select>
+                    </div>
+
+                    {/* Notes */}
+                    <div className="space-y-1.5">
+                        <label className="block text-xs font-bold text-slate-700">Ghi chú phiếu thu</label>
+                        <textarea
+                            rows={2}
+                            value={paymentData.notes}
+                            onChange={(e) => setPaymentData({ ...paymentData, notes: e.target.value })}
+                            placeholder="Nhập ghi chú thanh toán..."
+                            className="w-full p-2.5 text-xs bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
+                        />
+                    </div>
+
+                    <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-100">
+                        <button
+                            type="button"
+                            onClick={() => setIsPaymentModalOpen(false)}
+                            className="px-4 py-2 text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 cursor-pointer"
+                        >
+                            Hủy bỏ
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleSubmitPayment}
+                            className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
+                        >
+                            <CheckCircle2 size={14} />
+                            <span>Xác Nhận & Lưu Phiếu Thu</span>
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Action Confirmation Modal */}
+            {actionModal && (
+                <Modal isOpen={actionModal.isOpen} onClose={() => setActionModal(null)} title={actionModal.title}>
+                    <div className="space-y-4 p-1">
+                        <div className="flex items-center gap-3">
+                            {actionModal.icon}
+                            <div className="flex-1 min-w-0">
+                                {actionModal.message}
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-100">
+                            <button
+                                onClick={() => setActionModal(null)}
+                                className="px-4 py-2 text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 cursor-pointer"
+                                disabled={isActioning}
+                            >
+                                {actionModal.cancelLabel || 'Hủy bỏ'}
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    setIsActioning(true);
+                                    try {
+                                        await actionModal.action();
+                                        setActionModal(null);
+                                    } finally {
+                                        setIsActioning(false);
+                                    }
+                                }}
+                                className={`px-5 py-2 text-xs font-bold text-white rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5 ${
+                                    actionModal.confirmVariant === 'danger'
+                                        ? 'bg-rose-600 hover:bg-rose-700'
+                                        : actionModal.confirmVariant === 'success'
+                                            ? 'bg-emerald-600 hover:bg-emerald-700'
+                                            : 'bg-blue-600 hover:bg-blue-700'
+                                }`}
+                                disabled={isActioning}
+                            >
+                                {isActioning ? 'Đang xử lý...' : (actionModal.confirmLabel || 'Xác nhận')}
+                            </button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+
+            {/* Send Email Modal */}
+            <SendEmailModal
+                isOpen={isEmailModalOpen}
+                onClose={() => setIsEmailModalOpen(false)}
+                templates={emailTemplates || []}
+                moduleType="INVOICE"
+                variablesData={{
+                    invoiceCode: invoice.code,
+                    customerName: invoice.customer?.name || '---',
+                    totalAmount: formatMoney(invoice.totalAmount),
+                    remainingAmount: formatMoney(remainingAmount),
+                    dueDate: formatDate(invoice.dueDate),
+                    link: typeof window !== 'undefined' ? `${window.location.origin}/public/sales/invoice/${invoice.id}` : ''
+                }}
+                onSend={async (emailData) => {
+                    const res = await sendInvoiceEmail(invoice.id, emailData.to, emailData.subject, emailData.htmlBody);
+                    if (res?.success) alert("Đã gửi email thông báo thành công!");
+                    else alert("Lỗi khi gửi email: " + res?.error);
+                }}
+            />
         </div>
     );
 }

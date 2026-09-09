@@ -29,19 +29,7 @@ export default async function PayrollPage({
     });
 
     return (
-        <div className="flex flex-col gap-6 w-full pb-10">
-            <div className="flex justify-between items-center bg-white p-4 sm:p-6 rounded-lg border border-slate-200">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-emerald-100 text-emerald-700 rounded-lg">
-                        <Calculator size={24} />
-                    </div>
-                    <div>
-                        <h1 className="text-xl sm:text-2xl font-bold text-slate-800">Quản lý Lương (Payroll)</h1>
-                        <p className="text-sm text-slate-500">Kỳ tính lương: Tháng {month} / {year}</p>
-                    </div>
-                </div>
-            </div>
-
+        <div className="space-y-6 w-full">
             <PayrollClient initialData={payrolls} currentMonth={month} currentYear={year} />
         </div>
     );
