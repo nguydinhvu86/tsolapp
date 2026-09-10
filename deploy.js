@@ -7,9 +7,9 @@ conn.on('ready', () => {
     console.log('Connected to server. Executing remote update, build, and restart...');
 
     const cmd = `cd /www/wwwroot/inside.tsol.vn/tsolapp && ` +
-        `git pull origin main && ` +
-        `echo 'P@ssw0rdVu' | sudo -S chown -R incall:incall /www/wwwroot/inside.tsol.vn/tsolapp && ` +
-        `rm -rf .next && ` +
+        `git fetch --all && ` +
+        `git reset --hard origin/main && ` +
+        `echo 'P@ssw0rdVu' | sudo -S rm -rf .next && ` +
         `export PATH=/www/server/nvm/versions/node/v24.14.0/bin:/www/server/nodejs/v14.17.6/bin:$PATH && ` +
         `npm run build && ` +
         `/www/server/nodejs/v14.17.6/bin/pm2 restart contract-app`;

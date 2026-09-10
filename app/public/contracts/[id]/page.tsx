@@ -4,11 +4,40 @@ import { formatCurrencyInHtml } from '@/lib/utils';
 import { Watermark } from '@/app/components/ui/Watermark';
 import { PrintButton } from '@/app/components/ui/PrintButton';
 
-export async function generateMetadata({ params }: { params: { id: string } }) {
+import { Metadata } from 'next';
+
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
     const contract = await prisma.contract.findUnique({
-        where: { id: params.id }
+        where: { id: params.id },
+        include: { customer: true }
     });
-    return { title: contract?.title || "Hợp Đồng" };
+    const title = contract?.title ? `${contract.title} | T-SOLUTION` : 'Hợp Đồng | T-SOLUTION';
+    const description = contract?.customer?.name 
+        ? `Hợp đồng dịch vụ / cung cấp dành cho khách hàng ${contract.customer.name} - T-SOLUTION`
+        : 'Chi tiết hợp đồng trực tuyến - T-SOLUTION';
+
+    return {
+        title,
+        description,
+        openGraph: {
+            title,
+            description,
+            images: [
+                {
+                    url: 'https://inside.tsol.vn/og-image.png',
+                    width: 1200,
+                    height: 630,
+                    alt: 'T-SOLUTION Business Software',
+                },
+            ],
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title,
+            description,
+            images: ['https://inside.tsol.vn/og-image.png'],
+        },
+    };
 }
 
 export default async function PublicContractPage({ params }: { params: { id: string } }) {

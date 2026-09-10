@@ -6,6 +6,43 @@ import { PrintButton } from '@/app/components/ui/PrintButton';
 import { Watermark } from '@/app/components/ui/Watermark';
 import { DocumentSignatureBlock } from '@/app/components/ui/DocumentSignatureBlock';
 
+import { Metadata } from 'next';
+
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+    const estimate = await prisma.salesEstimate.findUnique({
+        where: { id: params.id },
+        include: { customer: true }
+    });
+
+    const docTitle = estimate ? `Báo Giá #${estimate.code || ''} - ${estimate.title || 'T-SOLUTION'}` : 'Báo Giá | T-SOLUTION';
+    const desc = estimate?.customer?.name 
+        ? `Báo giá trực tuyến dành cho khách hàng ${estimate.customer.name} - T-SOLUTION`
+        : 'Chi tiết báo giá trực tuyến - T-SOLUTION';
+
+    return {
+        title: docTitle,
+        description: desc,
+        openGraph: {
+            title: docTitle,
+            description: desc,
+            images: [
+                {
+                    url: 'https://inside.tsol.vn/og-image.png',
+                    width: 1200,
+                    height: 630,
+                    alt: 'T-SOLUTION Business Software',
+                },
+            ],
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title: docTitle,
+            description: desc,
+            images: ['https://inside.tsol.vn/og-image.png'],
+        },
+    };
+}
+
 export default async function PublicSalesEstimatePage({ params }: { params: { id: string } }) {
     const estimate = await prisma.salesEstimate.findUnique({
         where: { id: params.id },

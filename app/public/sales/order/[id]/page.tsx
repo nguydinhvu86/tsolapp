@@ -6,6 +6,43 @@ import { PrintButton } from '@/app/components/ui/PrintButton';
 import { Watermark } from '@/app/components/ui/Watermark';
 import { DocumentSignatureBlock } from '@/app/components/ui/DocumentSignatureBlock';
 
+import { Metadata } from 'next';
+
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+    const order = await prisma.salesOrder.findUnique({
+        where: { id: params.id },
+        include: { customer: true }
+    });
+
+    const docTitle = order ? `Đơn Hàng #${order.code || ''} | T-SOLUTION` : 'Đơn Hàng | T-SOLUTION';
+    const desc = order?.customer?.name 
+        ? `Đơn hàng bán trực tuyến dành cho khách hàng ${order.customer.name} - T-SOLUTION`
+        : 'Chi tiết đơn hàng trực tuyến - T-SOLUTION';
+
+    return {
+        title: docTitle,
+        description: desc,
+        openGraph: {
+            title: docTitle,
+            description: desc,
+            images: [
+                {
+                    url: 'https://inside.tsol.vn/og-image.png',
+                    width: 1200,
+                    height: 630,
+                    alt: 'T-SOLUTION Business Software',
+                },
+            ],
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title: docTitle,
+            description: desc,
+            images: ['https://inside.tsol.vn/og-image.png'],
+        },
+    };
+}
+
 export default async function PublicSalesOrderPage({ params }: { params: { id: string } }) {
     const order = await prisma.salesOrder.findUnique({
         where: { id: params.id },

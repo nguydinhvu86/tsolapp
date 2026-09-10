@@ -5,6 +5,43 @@ import { notFound } from 'next/navigation';
 import { PrintButton } from '@/app/components/ui/PrintButton';
 import { Watermark } from '@/app/components/ui/Watermark';
 
+import { Metadata } from 'next';
+
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+    const order = await prisma.purchaseOrder.findUnique({
+        where: { id: params.id },
+        include: { supplier: true }
+    });
+
+    const docTitle = order ? `Đơn Đặt Hàng #${order.code || ''} | T-SOLUTION` : 'Đơn Đặt Hàng | T-SOLUTION';
+    const desc = order?.supplier?.name 
+        ? `Đơn đặt hàng mua trực tuyến gửi nhà cung cấp ${order.supplier.name} - T-SOLUTION`
+        : 'Chi tiết đơn đặt hàng mua trực tuyến - T-SOLUTION';
+
+    return {
+        title: docTitle,
+        description: desc,
+        openGraph: {
+            title: docTitle,
+            description: desc,
+            images: [
+                {
+                    url: 'https://inside.tsol.vn/og-image.png',
+                    width: 1200,
+                    height: 630,
+                    alt: 'T-SOLUTION Business Software',
+                },
+            ],
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title: docTitle,
+            description: desc,
+            images: ['https://inside.tsol.vn/og-image.png'],
+        },
+    };
+}
+
 export default async function PublicPurchaseOrderPage({ params }: { params: { id: string } }) {
     const order = await prisma.purchaseOrder.findUnique({
         where: { id: params.id },
