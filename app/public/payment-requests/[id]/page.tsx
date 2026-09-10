@@ -24,9 +24,11 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
             description,
             images: [
                 {
-                    url: 'https://inside.tsol.vn/og-image.png',
+                    url: 'https://inside.tsol.vn/og-image.jpg',
+                    secureUrl: 'https://inside.tsol.vn/og-image.jpg',
                     width: 1200,
                     height: 630,
+                    type: 'image/jpeg',
                     alt: 'T-SOLUTION Business Software',
                 },
             ],
@@ -35,7 +37,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
             card: 'summary_large_image',
             title,
             description,
-            images: ['https://inside.tsol.vn/og-image.png'],
+            images: ['https://inside.tsol.vn/og-image.jpg'],
         },
     };
 }

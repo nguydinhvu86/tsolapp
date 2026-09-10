@@ -42,9 +42,11 @@ export async function generateMetadata(): Promise<Metadata> {
             siteName: siteTitle,
             images: [
                 {
-                    url: 'https://inside.tsol.vn/og-image.png',
+                    url: 'https://inside.tsol.vn/og-image.jpg',
+                    secureUrl: 'https://inside.tsol.vn/og-image.jpg',
                     width: 1200,
                     height: 630,
+                    type: 'image/jpeg',
                     alt: `${siteTitle} - Powering Growth & Collaboration`,
                 },
             ],
@@ -55,7 +57,7 @@ export async function generateMetadata(): Promise<Metadata> {
             card: 'summary_large_image',
             title: siteTitle,
             description,
-            images: ['https://inside.tsol.vn/og-image.png'],
+            images: ['https://inside.tsol.vn/og-image.jpg'],
         },
         appleWebApp: {
             statusBarStyle: 'default',

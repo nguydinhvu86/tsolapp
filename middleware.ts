@@ -17,9 +17,8 @@ export default withAuth(
     }
 );
 
-// Chặn toàn bộ các route ngoại trừ auth, _next (static files), api, login, forgot-password, reset-password và public (in ấn), mảng portal/login
 export const config = {
     matcher: [
-        "/((?!api/auth|api/callcenter|api/og-image|og-image.png|_next/static|_next/image|favicon.ico|login|forgot-password|reset-password|public|uploads|portal/login).*)"
+        "/((?!api/auth|api/callcenter|api/og-image|og-image\\.(?:png|jpg|jpeg|webp)|_next/static|_next/image|favicon\\.ico|manifest\\.json|sw\\.js|icons/|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp)$|login|forgot-password|reset-password|public|uploads|portal/login).*)"
     ]
 };
