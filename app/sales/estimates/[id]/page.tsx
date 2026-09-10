@@ -21,8 +21,13 @@ export default async function SalesEstimateDetailPage({ params }: { params: { id
     const estimate = await prisma.salesEstimate.findFirst({
         where: { id, ...viewFilter },
         include: {
-            customer: true,
+            customer: {
+                include: {
+                    contacts: true
+                }
+            },
             creator: { select: { id: true, name: true, email: true } },
+            salesperson: { select: { id: true, name: true, email: true } },
             items: {
                 include: {
                     product: true
@@ -85,9 +90,7 @@ export default async function SalesEstimateDetailPage({ params }: { params: { id
         emailLogs: estimate.EmailLog || []
     };
 
-    const settingsRaw = await prisma.systemSetting.findMany({
-        where: { key: { in: ['BANK_INFO_ENABLED', 'BANK_INFO_CONTENT', 'COMPANY_NAME', 'COMPANY_FULL_NAME', 'COMPANY_PHONE', 'COMPANY_EMAIL', 'COMPANY_ADDRESS', 'COMPANY_TAX'] } }
-    });
+    const settingsRaw = await prisma.systemSetting.findMany();
     const settingsMap: Record<string, string> = {};
     settingsRaw.forEach(s => settingsMap[s.key] = s.value);
 
