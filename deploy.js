@@ -8,9 +8,11 @@ conn.on('ready', () => {
 
     const cmd = `cd /www/wwwroot/inside.tsol.vn/tsolapp && ` +
         `git pull origin main && ` +
-        `export PATH=/www/server/nvm/versions/node/v24.14.0/bin:$PATH && ` +
+        `echo 'P@ssw0rdVu' | sudo -S chown -R incall:incall /www/wwwroot/inside.tsol.vn/tsolapp && ` +
+        `rm -rf .next && ` +
+        `export PATH=/www/server/nvm/versions/node/v24.14.0/bin:/www/server/nodejs/v14.17.6/bin:$PATH && ` +
         `npm run build && ` +
-        `pm2 reload inside.tsol.vn`;
+        `/www/server/nodejs/v14.17.6/bin/pm2 restart contract-app`;
 
     conn.exec(cmd, (err, stream) => {
         if (err) throw err;
