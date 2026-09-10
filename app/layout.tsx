@@ -19,12 +19,15 @@ import { getDictionary, getCurrentLocale } from './i18n/getDictionary'
 
 export async function generateMetadata(): Promise<Metadata> {
     const { name: brandName, logo: logoUrl } = await getLayoutSettings();
-    const title = 'ERP - Run Your Business';
-    const description = 'Manage Your Business Easily And Efficiently';
+    const siteTitle = brandName || 'T-SOLUTION';
+    const description = 'Manage Your Business Easily And Efficiently - Nền tảng quản trị và cộng tác doanh nghiệp toàn diện';
     const finalLogo = logoUrl || '/icons/icon-192x192.png';
 
     return {
-        title,
+        title: {
+            default: siteTitle,
+            template: `%s | ${siteTitle}`,
+        },
         description,
         manifest: '/manifest.json',
         metadataBase: new URL('https://inside.tsol.vn'),
@@ -33,15 +36,16 @@ export async function generateMetadata(): Promise<Metadata> {
             apple: finalLogo,
         },
         openGraph: {
-            title: brandName || title,
+            title: siteTitle,
             description,
             url: 'https://inside.tsol.vn',
-            siteName: brandName || title,
+            siteName: siteTitle,
             images: [
                 {
                     url: 'https://inside.tsol.vn/og-image.png',
                     width: 1200,
                     height: 630,
+                    alt: `${siteTitle} - Powering Growth & Collaboration`,
                 },
             ],
             locale: 'vi_VN',
@@ -49,13 +53,13 @@ export async function generateMetadata(): Promise<Metadata> {
         },
         twitter: {
             card: 'summary_large_image',
-            title: brandName || title,
+            title: siteTitle,
             description,
             images: ['https://inside.tsol.vn/og-image.png'],
         },
         appleWebApp: {
             statusBarStyle: 'default',
-            title: brandName || title,
+            title: siteTitle,
         },
     };
 }

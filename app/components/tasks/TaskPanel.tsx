@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
+import { UserMultiSelect } from '@/app/components/ui/UserMultiSelect';
 import { Plus, CheckSquare, MessageSquare, Trash2, Clock, User } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -458,114 +459,212 @@ export function TaskPanel({ initialTasks, users, entityType, entityId, initialTi
                 </div>
             </Modal>
 
-            <Modal isOpen={isCreateModalOpen} onClose={() => setCreateModalOpen(false)} title="Giao Việc Liên Quan" maxWidth="575px">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', paddingTop: '1rem' }}>
+            <Modal isOpen={isCreateModalOpen} onClose={() => setCreateModalOpen(false)} title="Giao Việc Liên Quan" maxWidth="600px">
+                <div className="flex flex-col gap-3.5 pt-1 text-slate-800">
+                    {/* Task Title */}
                     <div>
-                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Tên công việc <span style={{ color: 'var(--danger)' }}>*</span></label>
-                        <input type="text" value={title} onChange={e => setTitle(e.target.value)} autoFocus style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }} placeholder="Nhập tên việc..." />
-                    </div>
-                    <div>
-                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Mô tả</label>
-                        <textarea value={description} onChange={e => setDescription(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }} placeholder="Ghi chú thêm..." />
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Người phụ trách</label>
-                            <select multiple value={selectedAssignees} onChange={e => {
-                                const options = Array.from(e.target.selectedOptions);
-                                setSelectedAssignees(options.map(o => o.value));
-                            }} style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', minHeight: '100px' }}>
-                                {users.map(u => <option key={u.id} value={u.id}>{u.name || u.email}</option>)}
-                            </select>
-                            <small style={{ color: 'var(--text-muted)' }}>Bấm Ctrl hoặc kéo thả để chọn nhiều người.</small>
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Người theo dõi</label>
-                            <select multiple value={selectedObservers} onChange={e => {
-                                const options = Array.from(e.target.selectedOptions);
-                                setSelectedObservers(options.map(o => o.value));
-                            }} style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', minHeight: '100px' }}>
-                                {users.map(u => <option key={u.id} value={u.id}>{u.name || u.email}</option>)}
-                            </select>
-                        </div>
+                        <label className="flex items-center justify-between text-xs font-semibold text-slate-700 mb-1.5">
+                            <span>Tên công việc <span className="text-rose-500 font-bold">*</span></span>
+                        </label>
+                        <input
+                            type="text"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            autoFocus
+                            className="w-full px-3 py-2 text-xs font-medium bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition-all placeholder:text-slate-400 shadow-2xs"
+                            placeholder="Nhập tên công việc cần giao..."
+                        />
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)', gap: '1rem' }}>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Mức độ ưu tiên</label>
-                            <select value={priority} onChange={e => setPriority(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-                                <option value="LOW">Thấp (Low)</option>
-                                <option value="MEDIUM">Trung Bình (Medium)</option>
-                                <option value="HIGH">Cao (High)</option>
-                                <option value="URGENT">Khẩn Cấp (Urgent)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Ngày bắt đầu</label>
-                            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }} />
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Deadline</label>
-                            <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }} />
-                        </div>
+                    {/* Task Description */}
+                    <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                            Mô tả chi tiết
+                        </label>
+                        <textarea
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            rows={3}
+                            className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition-all placeholder:text-slate-400 resize-y shadow-2xs leading-relaxed"
+                            placeholder="Ghi chú thêm thông tin, hướng dẫn thực hiện..."
+                        />
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', background: 'rgba(0,0,0,0.02)', padding: '1rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+                    {/* Assignees & Observers */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                         <div>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem', color: 'var(--primary)', cursor: 'pointer' }}>
-                                <input type="checkbox" checked={isRecurring} onChange={e => setIsRecurring(e.target.checked)} />
-                                Lặp lại định kỳ
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                Người phụ trách
                             </label>
+                            <UserMultiSelect
+                                users={users}
+                                selectedUserIds={selectedAssignees}
+                                onChange={setSelectedAssignees}
+                                placeholder="Chọn người phụ trách..."
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                Người theo dõi
+                            </label>
+                            <UserMultiSelect
+                                users={users}
+                                selectedUserIds={selectedObservers}
+                                onChange={setSelectedObservers}
+                                placeholder="Chọn người theo dõi..."
+                            />
+                        </div>
+                    </div>
 
-                            {isRecurring && (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Tần suất lặp</label>
-                                            <select value={recurrenceFreq} onChange={e => setRecurrenceFreq(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-                                                <option value="DAILY">Hàng ngày</option>
-                                                <option value="MONTHLY">Hàng tháng</option>
-                                                <option value="QUARTERLY">Mỗi 3 tháng</option>
-                                                <option value="BIANNUALLY">Mỗi 6 tháng</option>
-                                                <option value="YEARLY">Hàng năm</option>
-                                            </select>
-                                        </div>
+                    {/* Priority, Start Date, Deadline */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                Mức độ ưu tiên
+                            </label>
+                            <select
+                                value={priority}
+                                onChange={(e) => setPriority(e.target.value)}
+                                className="w-full h-[38px] px-3 py-1.5 text-xs font-medium bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition-all shadow-2xs cursor-pointer text-slate-700"
+                            >
+                                <option value="LOW">🟢 Thấp (Low)</option>
+                                <option value="MEDIUM">🔵 Trung Bình (Medium)</option>
+                                <option value="HIGH">🟠 Cao (High)</option>
+                                <option value="URGENT">🔴 Khẩn Cấp (Urgent)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                Ngày bắt đầu
+                            </label>
+                            <input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                className="w-full h-[38px] px-3 py-1.5 text-xs font-medium bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition-all shadow-2xs text-slate-700"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                Deadline
+                            </label>
+                            <input
+                                type="date"
+                                value={dueDate}
+                                onChange={(e) => setDueDate(e.target.value)}
+                                className="w-full h-[38px] px-3 py-1.5 text-xs font-medium bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition-all shadow-2xs text-slate-700"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Recurrence Section */}
+                    <div className="bg-slate-50/80 border border-slate-200/90 rounded-xl p-3 transition-all">
+                        <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                            <input
+                                type="checkbox"
+                                checked={isRecurring}
+                                onChange={(e) => setIsRecurring(e.target.checked)}
+                                className="w-4 h-4 rounded text-emerald-600 accent-emerald-600 cursor-pointer"
+                            />
+                            <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                                <span>Lặp lại định kỳ</span>
+                                {isRecurring && (
+                                    <span className="px-1.5 py-0.2 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-full">
+                                        Đang bật
+                                    </span>
+                                )}
+                            </span>
+                        </label>
+
+                        {isRecurring && (
+                            <div className="mt-3 pt-3 border-t border-slate-200/70 flex flex-col gap-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                                            Tần suất lặp
+                                        </label>
+                                        <select
+                                            value={recurrenceFreq}
+                                            onChange={(e) => setRecurrenceFreq(e.target.value)}
+                                            className="w-full h-[34px] px-2.5 py-1 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none"
+                                        >
+                                            <option value="DAILY">Hàng ngày</option>
+                                            <option value="MONTHLY">Hàng tháng</option>
+                                            <option value="QUARTERLY">Mỗi 3 tháng (Quý)</option>
+                                            <option value="BIANNUALLY">Mỗi 6 tháng (Nửa năm)</option>
+                                            <option value="YEARLY">Hàng năm</option>
+                                        </select>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <span style={{ fontSize: '0.85rem', color: 'var(--text-main)' }}>Số lần lặp thêm:</span>
+                                    <div>
+                                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                                            Số lần lặp thêm
+                                        </label>
                                         <input
                                             type="number"
-                                            min="1" max="100"
+                                            min="1"
+                                            max="100"
                                             value={recurrenceCount}
-                                            onChange={e => setRecurrenceCount(parseInt(e.target.value))}
-                                            style={{ width: '80px', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}
+                                            onChange={(e) => setRecurrenceCount(parseInt(e.target.value) || 1)}
+                                            className="w-full h-[34px] px-2.5 py-1 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none"
                                         />
                                     </div>
-                                    <small style={{ color: 'var(--text-muted)' }}>Hệ thống sẽ tạo gốc và {recurrenceCount || 0} công việc tự động.</small>
                                 </div>
-                            )}
+                                <p className="text-[11px] text-slate-500 italic">
+                                    * Hệ thống sẽ tự động tạo 1 công việc gốc và <strong>{recurrenceCount || 0}</strong> công việc định kỳ tiếp theo.
+                                </p>
 
-                            {isRecurring && previewDates.length > 0 && (
-                                <div style={{ marginTop: '0.75rem', padding: '0.75rem', backgroundColor: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: 'var(--radius)' }}>
-                                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>Lịch trình dự kiến:</div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', maxHeight: '120px', overflowY: 'auto', paddingRight: '0.5rem' }}>
-                                        {previewDates.map((d, index) => (
-                                            <div key={index} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: index === 0 ? 'var(--primary)' : 'var(--text-muted)' }}>
-                                                <span>{index === 0 ? 'Lần 1 (Gốc):' : `Lần ${index + 1}:`}</span>
-                                                <span style={{ fontWeight: 500 }}>{formatDate(d)}</span>
-                                            </div>
-                                        ))}
+                                {previewDates.length > 0 && (
+                                    <div className="p-2.5 bg-white border border-slate-200 rounded-lg">
+                                        <div className="text-[11px] font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                                            <span>Lịch trình dự kiến:</span>
+                                            <span className="text-[10px] text-emerald-600 font-mono font-semibold">{previewDates.length} mốc thời gian</span>
+                                        </div>
+                                        <div className="flex flex-col gap-1 max-h-[100px] overflow-y-auto pr-1 custom-scrollbar">
+                                            {previewDates.map((d, index) => (
+                                                <div
+                                                    key={index}
+                                                    className="flex items-center justify-between text-[11px] px-2 py-0.5 rounded bg-slate-50 border border-slate-100 text-slate-600"
+                                                >
+                                                    <span className={index === 0 ? 'font-bold text-emerald-700' : 'text-slate-600'}>
+                                                        {index === 0 ? 'Lần 1 (Gốc):' : `Lần ${index + 1}:`}
+                                                    </span>
+                                                    <span className="font-mono font-medium">{formatDate(d)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
-                            )}
-                        </div>
+                                )}
+                            </div>
+                        )}
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
-                        <Button variant="secondary" onClick={() => setCreateModalOpen(false)}>Hủy</Button>
-                        <Button onClick={handleCreate} disabled={isSaving || !title.trim()}>
-                            {isSaving ? 'Đang tạo...' : 'Tạo Việc'}
-                        </Button>
+                    {/* Footer Actions */}
+                    <div className="flex items-center justify-end gap-2.5 pt-2.5 border-t border-slate-200/80 mt-1">
+                        <button
+                            type="button"
+                            onClick={() => setCreateModalOpen(false)}
+                            className="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-lg transition-colors cursor-pointer"
+                        >
+                            Hủy
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleCreate}
+                            disabled={isSaving || !title.trim()}
+                            className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                        >
+                            {isSaving ? (
+                                <>
+                                    <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
+                                    <span>Đang tạo...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Plus size={14} strokeWidth={2.5} />
+                                    <span>Tạo Việc</span>
+                                </>
+                            )}
+                        </button>
                     </div>
                 </div>
             </Modal>

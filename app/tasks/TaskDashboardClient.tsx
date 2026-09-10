@@ -6,6 +6,7 @@ import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Table } from '@/app/components/ui/Table';
 import { Modal } from '@/app/components/ui/Modal';
+import { UserMultiSelect } from '@/app/components/ui/UserMultiSelect';
 import { Plus, Trash2, MessageSquare, Edit2, ChevronUp, ChevronDown, Download, List, Clock, Loader2, Search, CheckCircle2, AlertTriangle, Filter, X, Check, ArrowUpDown, Eye, Building2, FileText, UserCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -1221,78 +1222,117 @@ export function TaskDashboardClient({
                 )}
             </div>
 
-            <Modal isOpen={isCreateModalOpen} onClose={() => setCreateModalOpen(false)} title="Giao Việc Mới">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', paddingTop: '1rem' }}>
+            {/* Create Task Modal */}
+            <Modal isOpen={isCreateModalOpen} onClose={() => setCreateModalOpen(false)} title="Giao Việc Mới" maxWidth="640px">
+                <div className="flex flex-col gap-3.5 pt-1 text-slate-800">
                     <div>
-                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Tên công việc <span style={{ color: 'var(--danger)' }}>*</span></label>
-                        <input type="text" value={title} onChange={e => setTitle(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }} placeholder="Nhập tên công việc" />
+                        <label className="flex items-center justify-between text-xs font-semibold text-slate-700 mb-1.5">
+                            <span>Tên công việc <span className="text-rose-500 font-bold">*</span></span>
+                        </label>
+                        <input
+                            type="text"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            autoFocus
+                            className="w-full px-3 py-2 text-xs font-medium bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition-all placeholder:text-slate-400 shadow-2xs"
+                            placeholder="Nhập tên công việc cần giao..."
+                        />
                     </div>
+
                     <div>
-                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Mô tả chi tiết</label>
-                        <textarea value={description} onChange={e => setDescription(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', minHeight: '100px' }} placeholder="Nhập mô tả chi tiết..." />
+                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                            Mô tả chi tiết
+                        </label>
+                        <textarea
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            rows={3}
+                            className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition-all placeholder:text-slate-400 resize-y shadow-2xs leading-relaxed"
+                            placeholder="Nhập mô tả chi tiết công việc..."
+                        />
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                         <div>
-                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Người phụ trách</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                Người phụ trách
+                            </label>
+                            <UserMultiSelect
+                                users={users}
+                                selectedUserIds={selectedAssignees}
+                                onChange={setSelectedAssignees}
+                                placeholder="Chọn người phụ trách..."
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                Người theo dõi
+                            </label>
+                            <UserMultiSelect
+                                users={availableUsersForAssign}
+                                selectedUserIds={selectedObservers}
+                                onChange={setSelectedObservers}
+                                placeholder="Chọn người theo dõi..."
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                Mức độ ưu tiên
+                            </label>
                             <select
-                                multiple
-                                value={selectedAssignees}
-                                onChange={e => {
-                                    const options = Array.from(e.target.selectedOptions);
-                                    setSelectedAssignees(options.map(o => o.value));
-                                }}
-                                style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', minHeight: '120px' }}>
-                                {users.map(u => (
-                                    <option key={u.id} value={u.id}>{u.name || u.email}</option>
-                                ))}
+                                value={priority}
+                                onChange={(e) => setPriority(e.target.value)}
+                                className="w-full h-[38px] px-3 py-1.5 text-xs font-medium bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition-all shadow-2xs cursor-pointer text-slate-700"
+                            >
+                                <option value="LOW">🟢 Thấp (Low)</option>
+                                <option value="MEDIUM">🔵 Trung Bình (Medium)</option>
+                                <option value="HIGH">🟠 Cao (High)</option>
+                                <option value="URGENT">🔴 Khẩn Cấp (Urgent)</option>
                             </select>
-                            <small style={{ color: 'var(--text-muted)' }}>Bấm <kbd>Ctrl</kbd> hoặc kéo thả để chọn nhiều người.</small>
                         </div>
                         <div>
-                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Người theo dõi</label>
-                            <select
-                                multiple
-                                value={selectedObservers}
-                                onChange={e => {
-                                    const options = Array.from(e.target.selectedOptions);
-                                    setSelectedObservers(options.map(o => o.value));
-                                }}
-                                style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', minHeight: '120px' }}>
-                                {availableUsersForAssign.map(u => (
-                                    <option key={u.id} value={u.id}>{u.name || u.email}</option>
-                                ))}
-                            </select>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                Ngày bắt đầu
+                            </label>
+                            <input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                className="w-full h-[38px] px-3 py-1.5 text-xs font-medium bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition-all shadow-2xs text-slate-700"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                Deadline
+                            </label>
+                            <input
+                                type="date"
+                                value={dueDate}
+                                onChange={(e) => setDueDate(e.target.value)}
+                                className="w-full h-[38px] px-3 py-1.5 text-xs font-medium bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition-all shadow-2xs text-slate-700"
+                            />
                         </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)', gap: '1rem' }}>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Mức độ ưu tiên</label>
-                            <select value={priority} onChange={e => setPriority(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-                                <option value="LOW">Thấp (Low)</option>
-                                <option value="MEDIUM">Trung Bình (Medium)</option>
-                                <option value="HIGH">Cao (High)</option>
-                                <option value="URGENT">Khẩn cấp (Urgent)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Ngày bắt đầu</label>
-                            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }} />
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Deadline</label>
-                            <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }} />
-                        </div>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', background: 'rgba(0,0,0,0.02)', padding: '1rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem', color: 'var(--primary)' }}>Liên kết thẻ liên quan</label>
+                    {/* Linked Entity Selector */}
+                    <div className="bg-slate-50/80 border border-slate-200/90 rounded-xl p-3">
+                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                            Liên kết đối tượng liên quan (Hợp đồng, Báo giá, Dự án...)
+                        </label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                             <select
                                 value={linkType}
-                                onChange={e => { setLinkType(e.target.value); setSelectedLink(null); setSearchQuery(''); setSearchResults([]); }}
-                                style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', marginBottom: '0.5rem' }}>
+                                onChange={(e) => {
+                                    setLinkType(e.target.value);
+                                    setSelectedLink(null);
+                                    setSearchQuery('');
+                                    setSearchResults([]);
+                                }}
+                                className="w-full h-[36px] px-2.5 py-1 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none text-slate-700"
+                            >
                                 <option value="">-- Không liên kết --</option>
                                 <option value="PROJECT">Dự Án</option>
                                 <option value="LEAD">Cơ hội bán hàng</option>
@@ -1315,21 +1355,25 @@ export function TaskDashboardClient({
                             </select>
 
                             {linkType && !selectedLink && (
-                                <div style={{ position: 'relative' }}>
+                                <div className="relative">
                                     <input
                                         type="text"
                                         placeholder="Gõ để tìm kiếm..."
                                         value={searchQuery}
-                                        onChange={e => setSearchQuery(e.target.value)}
-                                        style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="w-full h-[36px] px-3 py-1 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none"
                                     />
                                     {searchResults.length > 0 && (
-                                        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', border: '1px solid var(--border)', borderRadius: 'var(--radius)', zIndex: 10, maxHeight: '150px', overflowY: 'auto', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-                                            {searchResults.map(res => (
+                                        <div className="absolute top-[calc(100%+4px)] left-0 right-0 bg-white border border-slate-200 rounded-lg shadow-lg z-50 max-h-[160px] overflow-y-auto">
+                                            {searchResults.map((res) => (
                                                 <div
                                                     key={res.id}
-                                                    style={{ padding: '0.5rem', cursor: 'pointer', borderBottom: '1px solid #eee' }}
-                                                    onClick={() => { setSelectedLink(res); setSearchResults([]); setSearchQuery(''); }}
+                                                    className="p-2 text-xs hover:bg-slate-100 cursor-pointer border-b border-slate-100 last:border-none"
+                                                    onClick={() => {
+                                                        setSelectedLink(res);
+                                                        setSearchResults([]);
+                                                        setSearchQuery('');
+                                                    }}
                                                 >
                                                     {res.name || res.title}
                                                 </div>
@@ -1340,177 +1384,259 @@ export function TaskDashboardClient({
                             )}
 
                             {selectedLink && (
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem', background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', borderRadius: 'var(--radius)' }}>
-                                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{selectedLink.name || selectedLink.title}</span>
-                                    <button onClick={() => setSelectedLink(null)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}><Trash2 size={16} /></button>
-                                </div>
-                            )}
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem', color: 'var(--primary)', cursor: 'pointer' }}>
-                                <input type="checkbox" checked={isRecurring} onChange={e => setIsRecurring(e.target.checked)} />
-                                Lặp lại định kỳ
-                            </label>
-
-                            {isRecurring && (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Tần suất lặp</label>
-                                            <select value={recurrenceFreq} onChange={e => setRecurrenceFreq(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-                                                <option value="DAILY">Hàng ngày</option>
-                                                <option value="MONTHLY">Hàng tháng</option>
-                                                <option value="QUARTERLY">Mỗi 3 tháng</option>
-                                                <option value="BIANNUALLY">Mỗi 6 tháng</option>
-                                                <option value="YEARLY">Hàng năm</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <span style={{ fontSize: '0.85rem', color: 'var(--text-main)' }}>Số lần tạo:</span>
-                                        <input
-                                            type="number"
-                                            min="2" max="100"
-                                            value={recurrenceCount}
-                                            onChange={e => setRecurrenceCount(parseInt(e.target.value))}
-                                            style={{ width: '80px', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}
-                                        />
-                                    </div>
-                                    <small style={{ color: 'var(--text-muted)' }}>Hệ thống sẽ tạo {recurrenceCount || 0} công việc tự cộng ngày hạn chót.</small>
-                                </div>
-                            )}
-
-                            {isRecurring && previewDates.length > 0 && (
-                                <div style={{ marginTop: '0.75rem', padding: '0.75rem', backgroundColor: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: 'var(--radius)' }}>
-                                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>Lịch trình dự kiến:</div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', maxHeight: '120px', overflowY: 'auto', paddingRight: '0.5rem' }}>
-                                        {previewDates.map((d, index) => (
-                                            <div key={index} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: index === 0 ? 'var(--primary)' : 'var(--text-muted)' }}>
-                                                <span>{index === 0 ? 'Lần 1 (Gốc):' : `Lần ${index + 1}:`}</span>
-                                                <span style={{ fontWeight: 500 }}>{formatDate(d)}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem', fontStyle: 'italic' }}>* Các công việc sẽ được tự động tạo và kế thừa thông tin.</div>
+                                <div className="flex items-center justify-between px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-lg text-xs font-semibold">
+                                    <span className="truncate">{selectedLink.name || selectedLink.title}</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedLink(null)}
+                                        className="text-rose-500 hover:text-rose-700 p-0.5"
+                                    >
+                                        <X size={14} />
+                                    </button>
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', justifySelf: 'flex-end', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
-                        <Button variant="secondary" onClick={() => setCreateModalOpen(false)}>Hủy</Button>
-                        <Button onClick={handleCreate} disabled={isSaving || !title.trim()}>
-                            {isSaving ? 'Đang tạo...' : 'Tạo Công Việc'}
-                        </Button>
+                    {/* Recurrence Section */}
+                    <div className="bg-slate-50/80 border border-slate-200/90 rounded-xl p-3 transition-all">
+                        <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                            <input
+                                type="checkbox"
+                                checked={isRecurring}
+                                onChange={(e) => setIsRecurring(e.target.checked)}
+                                className="w-4 h-4 rounded text-emerald-600 accent-emerald-600 cursor-pointer"
+                            />
+                            <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                                <span>Lặp lại định kỳ</span>
+                                {isRecurring && (
+                                    <span className="px-1.5 py-0.2 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-full">
+                                        Đang bật
+                                    </span>
+                                )}
+                            </span>
+                        </label>
+
+                        {isRecurring && (
+                            <div className="mt-3 pt-3 border-t border-slate-200/70 flex flex-col gap-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                                            Tần suất lặp
+                                        </label>
+                                        <select
+                                            value={recurrenceFreq}
+                                            onChange={(e) => setRecurrenceFreq(e.target.value)}
+                                            className="w-full h-[34px] px-2.5 py-1 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none"
+                                        >
+                                            <option value="DAILY">Hàng ngày</option>
+                                            <option value="MONTHLY">Hàng tháng</option>
+                                            <option value="QUARTERLY">Mỗi 3 tháng (Quý)</option>
+                                            <option value="BIANNUALLY">Mỗi 6 tháng (Nửa năm)</option>
+                                            <option value="YEARLY">Hàng năm</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                                            Số lần lặp thêm
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max="100"
+                                            value={recurrenceCount}
+                                            onChange={(e) => setRecurrenceCount(parseInt(e.target.value) || 1)}
+                                            className="w-full h-[34px] px-2.5 py-1 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none"
+                                        />
+                                    </div>
+                                </div>
+
+                                {previewDates.length > 0 && (
+                                    <div className="p-2.5 bg-white border border-slate-200 rounded-lg">
+                                        <div className="text-[11px] font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                                            <span>Lịch trình dự kiến:</span>
+                                            <span className="text-[10px] text-emerald-600 font-mono font-semibold">{previewDates.length} mốc thời gian</span>
+                                        </div>
+                                        <div className="flex flex-col gap-1 max-h-[100px] overflow-y-auto pr-1 custom-scrollbar">
+                                            {previewDates.map((d, index) => (
+                                                <div
+                                                    key={index}
+                                                    className="flex items-center justify-between text-[11px] px-2 py-0.5 rounded bg-slate-50 border border-slate-100 text-slate-600"
+                                                >
+                                                    <span className={index === 0 ? 'font-bold text-emerald-700' : 'text-slate-600'}>
+                                                        {index === 0 ? 'Lần 1 (Gốc):' : `Lần ${index + 1}:`}
+                                                    </span>
+                                                    <span className="font-mono font-medium">{formatDate(d)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Footer Actions */}
+                    <div className="flex items-center justify-end gap-2.5 pt-2.5 border-t border-slate-200/80 mt-1">
+                        <button
+                            type="button"
+                            onClick={() => setCreateModalOpen(false)}
+                            className="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-lg transition-colors cursor-pointer"
+                        >
+                            Hủy
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleCreate}
+                            disabled={isSaving || !title.trim()}
+                            className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                        >
+                            {isSaving ? (
+                                <>
+                                    <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
+                                    <span>Đang tạo...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Plus size={14} strokeWidth={2.5} />
+                                    <span>Tạo Công Việc</span>
+                                </>
+                            )}
+                        </button>
                     </div>
                 </div>
             </Modal>
 
-            <Modal isOpen={isEditModalOpen} onClose={() => setEditModalOpen(false)} title="Chỉnh Sửa Công Việc">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', paddingTop: '1rem' }}>
+            {/* Edit Task Modal */}
+            <Modal isOpen={isEditModalOpen} onClose={() => setEditModalOpen(false)} title="Chỉnh Sửa Công Việc" maxWidth="640px">
+                <div className="flex flex-col gap-3.5 pt-1 text-slate-800">
                     <div>
-                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Tên công việc <span style={{ color: 'var(--danger)' }}>*</span></label>
-                        <input type="text" value={editTitle} onChange={e => setEditTitle(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }} placeholder="Nhập tên công việc" />
-                    </div>
-                    <div>
-                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Mô tả chi tiết</label>
-                        <textarea value={editDescription} onChange={e => setEditDescription(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', minHeight: '100px' }} placeholder="Nhập mô tả chi tiết..." />
+                        <label className="flex items-center justify-between text-xs font-semibold text-slate-700 mb-1.5">
+                            <span>Tên công việc <span className="text-rose-500 font-bold">*</span></span>
+                        </label>
+                        <input
+                            type="text"
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            className="w-full px-3 py-2 text-xs font-medium bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition-all placeholder:text-slate-400 shadow-2xs"
+                            placeholder="Nhập tên công việc"
+                        />
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                            Mô tả chi tiết
+                        </label>
+                        <textarea
+                            value={editDescription}
+                            onChange={(e) => setEditDescription(e.target.value)}
+                            rows={3}
+                            className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition-all placeholder:text-slate-400 resize-y shadow-2xs leading-relaxed"
+                            placeholder="Nhập mô tả chi tiết..."
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                         <div>
-                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Người phụ trách</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                Người phụ trách
+                            </label>
+                            <UserMultiSelect
+                                users={availableUsersForAssign}
+                                selectedUserIds={editSelectedAssignees}
+                                onChange={setEditSelectedAssignees}
+                                placeholder="Chọn người phụ trách..."
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                Người theo dõi
+                            </label>
+                            <UserMultiSelect
+                                users={users}
+                                selectedUserIds={editSelectedObservers}
+                                onChange={setEditSelectedObservers}
+                                placeholder="Chọn người theo dõi..."
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                Mức độ ưu tiên
+                            </label>
                             <select
-                                multiple
-                                value={editSelectedAssignees}
-                                onChange={e => {
-                                    const options = Array.from(e.target.selectedOptions);
-                                    setEditSelectedAssignees(options.map(o => o.value));
-                                }}
-                                style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', minHeight: '120px' }}>
-                                {availableUsersForAssign.map(u => (
-                                    <option key={u.id} value={u.id}>{u.name || u.email}</option>
-                                ))}
-                            </select>
-                            <small style={{ color: 'var(--text-muted)' }}>Bấm <kbd>Ctrl</kbd> hoặc kéo thả để chọn nhiều người.</small>
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Người theo dõi</label>
-                            <select
-                                multiple
-                                value={editSelectedObservers}
-                                onChange={e => {
-                                    const options = Array.from(e.target.selectedOptions);
-                                    setEditSelectedObservers(options.map(o => o.value));
-                                }}
-                                style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', minHeight: '120px' }}>
-                                {users.map(u => (
-                                    <option key={u.id} value={u.id}>{u.name || u.email}</option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Công việc phụ thuộc (Phải hoàn thành trước)</label>
-                        <select
-                            multiple
-                            value={editDependencies}
-                            onChange={e => {
-                                const options = Array.from(e.target.selectedOptions);
-                                setEditDependencies(options.map(o => o.value));
-                            }}
-                            style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', minHeight: '80px' }}>
-                            {initialTasks.filter(t => t.id !== editingTaskId).map(t => (
-                                <option key={t.id} value={t.id}>{t.title}</option>
-                            ))}
-                        </select>
-                        <small style={{ color: 'var(--text-muted)' }}>Bấm <kbd>Ctrl</kbd> hoặc kéo thả để chọn nhiều.</small>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)', gap: '1rem' }}>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Mức độ ưu tiên</label>
-                            <select value={editPriority} onChange={e => setEditPriority(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-                                <option value="LOW">Thấp (Low)</option>
-                                <option value="MEDIUM">Trung Bình (Medium)</option>
-                                <option value="HIGH">Cao (High)</option>
-                                <option value="URGENT">Khẩn cấp (Urgent)</option>
+                                value={editPriority}
+                                onChange={(e) => setEditPriority(e.target.value)}
+                                className="w-full h-[38px] px-3 py-1.5 text-xs font-medium bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition-all shadow-2xs cursor-pointer text-slate-700"
+                            >
+                                <option value="LOW">🟢 Thấp (Low)</option>
+                                <option value="MEDIUM">🔵 Trung Bình (Medium)</option>
+                                <option value="HIGH">🟠 Cao (High)</option>
+                                <option value="URGENT">🔴 Khẩn Cấp (Urgent)</option>
                             </select>
                         </div>
                         <div>
-                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Ngày bắt đầu</label>
-                            <input type="date" value={editStartDate} onChange={e => setEditStartDate(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }} />
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                Ngày bắt đầu
+                            </label>
+                            <input
+                                type="date"
+                                value={editStartDate}
+                                onChange={(e) => setEditStartDate(e.target.value)}
+                                className="w-full h-[38px] px-3 py-1.5 text-xs font-medium bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition-all shadow-2xs text-slate-700"
+                            />
                         </div>
                         <div>
-                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.5rem' }}>Deadline</label>
-                            <input type="date" value={editDueDate} onChange={e => setEditDueDate(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }} />
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                Deadline
+                            </label>
+                            <input
+                                type="date"
+                                value={editDueDate}
+                                onChange={(e) => setEditDueDate(e.target.value)}
+                                className="w-full h-[38px] px-3 py-1.5 text-xs font-medium bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition-all shadow-2xs text-slate-700"
+                            />
                         </div>
                     </div>
 
                     {/* Recurrence Settings for Edit */}
-                    <div style={{ marginTop: '0.5rem', padding: '1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius)', backgroundColor: editIsRecurring ? '#f8fafc' : 'white' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 500, userSelect: 'none' }}>
-                            <input type="checkbox" checked={editIsRecurring} onChange={(e) => setEditIsRecurring(e.target.checked)} style={{ width: '16px', height: '16px' }} />
-                            Lặp lại định kỳ (Tự động sinh việc)
+                    <div className="bg-slate-50/80 border border-slate-200/90 rounded-xl p-3 transition-all">
+                        <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                            <input
+                                type="checkbox"
+                                checked={editIsRecurring}
+                                onChange={(e) => setEditIsRecurring(e.target.checked)}
+                                className="w-4 h-4 rounded text-emerald-600 accent-emerald-600 cursor-pointer"
+                            />
+                            <span className="text-xs font-semibold text-slate-800">
+                                Lặp lại định kỳ (Tự động sinh việc)
+                            </span>
                         </label>
 
-                        <div style={{
-                            marginTop: editIsRecurring ? '1rem' : '0',
-                            height: editIsRecurring ? 'auto' : '0',
-                            overflow: 'hidden',
-                            opacity: editIsRecurring ? 1 : 0,
-                            transition: 'all 0.3s'
-                        }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1.5fr) minmax(0, 1fr)', gap: '1rem' }}>
+                        {editIsRecurring && (
+                            <div className="mt-3 pt-3 border-t border-slate-200/70 grid grid-cols-1 sm:grid-cols-3 gap-3">
                                 <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Ngày bắt đầu chu kỳ</label>
-                                    <input type="date" value={editStartDate} onChange={e => setEditStartDate(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }} />
+                                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                                        Ngày bắt đầu chu kỳ
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={editStartDate}
+                                        onChange={(e) => setEditStartDate(e.target.value)}
+                                        className="w-full h-[34px] px-2.5 py-1 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none"
+                                    />
                                 </div>
                                 <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Tần suất lặp</label>
-                                    <select value={editRecurrenceFreq} onChange={e => setEditRecurrenceFreq(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+                                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                                        Tần suất lặp
+                                    </label>
+                                    <select
+                                        value={editRecurrenceFreq}
+                                        onChange={(e) => setEditRecurrenceFreq(e.target.value)}
+                                        className="w-full h-[34px] px-2.5 py-1 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none"
+                                    >
                                         <option value="DAILY">Hàng ngày</option>
                                         <option value="WEEKLY">Hàng tuần</option>
                                         <option value="MONTHLY">Hàng tháng</option>
@@ -1520,26 +1646,52 @@ export function TaskDashboardClient({
                                     </select>
                                 </div>
                                 <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Số việc tạo thêm</label>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <input type="number" min="1" max="60" value={editRecurrenceCount} onChange={e => setEditRecurrenceCount(e.target.value)} style={{ width: '100px', padding: '0.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', textAlign: 'center' }} />
-                                    </div>
-                                </div>
-                                <div style={{ gridColumn: 'span 3' }}>
-                                    <small style={{ color: 'var(--text-muted)' }}>Mặc định sẽ lưu dưới dạng 1 task mẹ gốc và tạo thêm N task mới theo hạn chót tịnh tiến bắt đầu từ Ngày bắt đầu chu kỳ.</small>
+                                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                                        Số việc tạo thêm
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max="60"
+                                        value={editRecurrenceCount}
+                                        onChange={(e) => setEditRecurrenceCount(e.target.value)}
+                                        className="w-full h-[34px] px-2.5 py-1 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none"
+                                    />
                                 </div>
                             </div>
-                        </div>
+                        )}
                     </div>
 
-                    <div style={{ display: 'flex', justifySelf: 'flex-end', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
-                        <Button variant="secondary" onClick={() => setEditModalOpen(false)}>Hủy</Button>
-                        <Button onClick={handleSaveEdit} disabled={isSaving || !editTitle.trim()}>
-                            {isSaving ? 'Đang lưu...' : 'Cập Nhật Công Việc'}
-                        </Button>
+                    {/* Footer Actions */}
+                    <div className="flex items-center justify-end gap-2.5 pt-2.5 border-t border-slate-200/80 mt-1">
+                        <button
+                            type="button"
+                            onClick={() => setEditModalOpen(false)}
+                            className="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-lg transition-colors cursor-pointer"
+                        >
+                            Hủy
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleSaveEdit}
+                            disabled={isSaving || !editTitle.trim()}
+                            className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                        >
+                            {isSaving ? (
+                                <>
+                                    <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
+                                    <span>Đang lưu...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Check size={14} strokeWidth={2.5} />
+                                    <span>Cập Nhật Công Việc</span>
+                                </>
+                            )}
+                        </button>
                     </div>
                 </div>
             </Modal>
-        </div >
+        </div>
     );
 }
