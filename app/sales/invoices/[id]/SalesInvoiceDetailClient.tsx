@@ -7,15 +7,17 @@ import {
     Info, CheckSquare, XCircle, Undo2, History, ArrowRight, Clock, AlertTriangle, 
     PackageCheck, Activity, Edit2, Edit, Building, Building2, Mail, UserCheck, Calendar,
     CreditCard, DollarSign, Sparkles, Check, Phone, MapPin, Receipt, ShieldAlert,
-    ChevronRight, CornerDownRight, Percent, Eye
+    ChevronRight, CornerDownRight, Percent, Eye, FileDown
 } from 'lucide-react';
 import Link from 'next/link';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import { 
     approveSalesInvoice, updateSalesInvoiceStatus, cancelSalesInvoice, 
     restoreSalesInvoice, paySalesInvoice, sendInvoiceEmail, 
     assignSalesInvoiceManagers, removeSalesInvoiceManager 
 } from '../actions';
-import { formatMoney, formatDate, formatDateTime } from '@/lib/utils/formatters';
+import { formatMoney, formatDate, formatDateTime, formatTaxRate } from '@/lib/utils/formatters';
 import { TaxBadge } from '@/app/components/ui/TaxRateSelect';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import { Modal } from '@/app/components/ui/Modal';
@@ -87,6 +89,342 @@ export default function SalesInvoiceDetailClient({
         navigator.clipboard.writeText(publicUrl);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
+    };
+
+    const handleExportExcel = async () => {
+        const wb = new ExcelJS.Workbook();
+        wb.creator = 'TSOL ERP';
+        wb.lastModifiedBy = 'TSOL ERP';
+        wb.created = new Date();
+        wb.modified = new Date();
+
+        const ws = wb.addWorksheet('HoaDonBanHang', {
+            views: [{ showGridLines: true }],
+            pageSetup: {
+                paperSize: 9, // A4
+                orientation: 'portrait',
+                fitToPage: true,
+                fitToWidth: 1,
+                fitToHeight: 0
+            }
+        });
+
+        const headers = ['STT', 'Sản Phẩm / Dịch Vụ', 'SL', 'ĐVT', 'Đơn Giá (VNĐ)', 'Thuế', 'Thành Tiền (VNĐ)'];
+        const colCount = 7;
+        const columnsConfig = [
+            { key: 'col1', width: 6 },
+            { key: 'col2', width: 42 },
+            { key: 'col3', width: 10 },
+            { key: 'col4', width: 10 },
+            { key: 'col5', width: 16 },
+            { key: 'col6', width: 12 },
+            { key: 'col7', width: 18 }
+        ];
+
+        ws.columns = columnsConfig;
+
+        const thinBorder = {
+            top: { style: 'thin' as const, color: { argb: 'FFCBD5E1' } },
+            left: { style: 'thin' as const, color: { argb: 'FFCBD5E1' } },
+            bottom: { style: 'thin' as const, color: { argb: 'FFCBD5E1' } },
+            right: { style: 'thin' as const, color: { argb: 'FFCBD5E1' } }
+        };
+
+        // 1. Company Information Header
+        const companyName = (settings?.COMPANY_FULL_NAME || settings?.COMPANY_NAME || settings?.COMPANY_DISPLAY_NAME || 'CÔNG TY TNHH GIẢI PHÁP ĐÀO TẠO TRỊNH GIA').toUpperCase();
+        const companyAddress = settings?.COMPANY_ADDRESS || '';
+        const companyPhone = settings?.COMPANY_PHONE || '';
+        const companyEmail = settings?.COMPANY_EMAIL || '';
+        const companyTax = settings?.COMPANY_TAX || settings?.COMPANY_TAX_CODE || '';
+        const companyWebsite = settings?.COMPANY_WEBSITE || '';
+
+        // Row 1: Company Name
+        ws.mergeCells(1, 1, 1, colCount);
+        const cellA1 = ws.getCell('A1');
+        cellA1.value = companyName;
+        cellA1.font = { bold: true, size: 12, color: { argb: 'FF0F172A' }, name: 'Arial' };
+        cellA1.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+        ws.getRow(1).height = 24;
+
+        // Row 2: Company Address
+        ws.mergeCells(2, 1, 2, colCount);
+        const cellA2 = ws.getCell('A2');
+        cellA2.value = companyAddress ? `Địa chỉ: ${companyAddress}` : '';
+        cellA2.font = { size: 10, color: { argb: 'FF334155' }, name: 'Arial' };
+        cellA2.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+        ws.getRow(2).height = 20;
+
+        // Row 3: Phone / Email / Website
+        ws.mergeCells(3, 1, 3, colCount);
+        const cellA3 = ws.getCell('A3');
+        const contactLine = [
+            companyPhone ? `Điện thoại: ${companyPhone}` : '',
+            companyEmail ? `Email: ${companyEmail}` : '',
+            companyWebsite ? `Website: ${companyWebsite}` : ''
+        ].filter(Boolean).join('    |    ');
+        cellA3.value = contactLine;
+        cellA3.font = { size: 10, color: { argb: 'FF334155' }, name: 'Arial' };
+        cellA3.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+        ws.getRow(3).height = 18;
+
+        // Row 4: Tax Code
+        ws.mergeCells(4, 1, 4, colCount);
+        const cellA4 = ws.getCell('A4');
+        cellA4.value = companyTax ? `Mã số thuế: ${companyTax}` : '';
+        cellA4.font = { size: 10, color: { argb: 'FF334155' }, name: 'Arial' };
+        cellA4.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+        ws.getRow(4).height = 18;
+
+        // Row 5: Empty space
+        ws.addRow([]);
+        ws.getRow(5).height = 12;
+
+        // Row 6: Title
+        const titleRowNumber = 6;
+        ws.mergeCells(titleRowNumber, 1, titleRowNumber, colCount);
+        const titleCell = ws.getCell(`A${titleRowNumber}`);
+        titleCell.value = 'HÓA ĐƠN BÁN HÀNG';
+        titleCell.font = { bold: true, size: 16, color: { argb: 'FF0F172A' }, name: 'Arial' };
+        titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        ws.getRow(titleRowNumber).height = 28;
+
+        // Row 7: Subtitle
+        const subTitleRowNumber = 7;
+        ws.mergeCells(subTitleRowNumber, 1, subTitleRowNumber, colCount);
+        const subTitleCell = ws.getCell(`A${subTitleRowNumber}`);
+        subTitleCell.value = `Số hóa đơn: ${invoice.code}    |    Ngày lập: ${formatDate(invoice.issueDate || invoice.createdAt)}${invoice.dueDate ? `    |    Hạn thanh toán: ${formatDate(invoice.dueDate)}` : ''}`;
+        subTitleCell.font = { italic: true, size: 10, color: { argb: 'FF64748B' }, name: 'Arial' };
+        subTitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        ws.getRow(subTitleRowNumber).height = 20;
+
+        // Row 8: Empty space
+        ws.addRow([]);
+        ws.getRow(8).height = 12;
+
+        // Helper to add customer / invoice info rows
+        const addInfoRow = (label: string, value: string, isBold: boolean = false) => {
+            const row = ws.addRow([]);
+            const rowNum = row.number;
+            row.height = 22;
+
+            // Merge cols 1..2 for label
+            ws.mergeCells(rowNum, 1, rowNum, 2);
+            const labelCell = row.getCell(1);
+            labelCell.value = label;
+            labelCell.font = { bold: true, size: 10, color: { argb: 'FF334155' }, name: 'Arial' };
+            labelCell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+
+            // Merge cols 3..colCount for value
+            ws.mergeCells(rowNum, 3, rowNum, colCount);
+            const valCell = row.getCell(3);
+            valCell.value = value;
+            valCell.font = { bold: isBold, size: 10, color: { argb: 'FF0F172A' }, name: 'Arial' };
+            valCell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+
+            return row;
+        };
+
+        // Customer Info
+        addInfoRow('Khách hàng / Đơn vị:', invoice.customer?.name || '', true);
+
+        const customerAddress = invoice.customer?.address || invoice.customer?.billingAddress;
+        if (customerAddress) {
+            addInfoRow('Địa chỉ:', customerAddress);
+        }
+
+        if (invoice.customer?.taxCode) {
+            addInfoRow('Mã số thuế:', invoice.customer.taxCode);
+        }
+
+        const contactName = invoice.customer?.contactName || invoice.customer?.contacts?.[0]?.name;
+        const contactPhone = invoice.customer?.phone || invoice.customer?.contacts?.[0]?.phone;
+        const contactEmail = invoice.customer?.email || invoice.customer?.contacts?.[0]?.email;
+        const contactDetails = [
+            contactName ? `Họ tên: ${contactName}` : '',
+            contactPhone ? `Điện thoại: ${contactPhone}` : '',
+            contactEmail ? `Email: ${contactEmail}` : ''
+        ].filter(Boolean).join('    |    ');
+        
+        if (contactDetails) {
+            addInfoRow('Người liên hệ (KH):', contactDetails);
+        }
+
+        if (invoice.order?.code) {
+            addInfoRow('Đơn hàng tham chiếu:', invoice.order.code);
+        }
+
+        const creatorName = invoice.creator?.name || invoice.creator?.email;
+        if (creatorName) {
+            addInfoRow('Người lập hóa đơn:', creatorName);
+        }
+
+        if (invoice.notes) {
+            addInfoRow('Ghi chú hóa đơn:', invoice.notes);
+        }
+
+        // Empty row before Table
+        const emptyBeforeTable = ws.addRow([]);
+        emptyBeforeTable.height = 10;
+
+        // Table Header
+        const headerRow = ws.addRow(headers);
+        headerRow.height = 26;
+        headerRow.font = { bold: true, size: 10, color: { argb: 'FFFFFFFF' }, name: 'Arial' };
+        headerRow.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+
+        for (let i = 1; i <= colCount; i++) {
+            const cell = headerRow.getCell(i);
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FF0F766E' } // Deep teal / Professional brand header
+            };
+            cell.border = thinBorder;
+        }
+
+        // Table Body
+        invoice.items?.forEach((item: any, index: number) => {
+            const itemName = item.customName || item.product?.name || 'Sản phẩm / Dịch vụ';
+            const desc = item.description ? `\n${item.description}` : '';
+            const fullTitle = item.isSubItem ? `   ↳ ${itemName}${desc}` : `${itemName}${desc}`;
+            const taxDisplay = formatTaxRate(item.taxRate);
+
+            const rowData = [
+                item.isSubItem ? '-' : index + 1,
+                fullTitle,
+                item.quantity || 0,
+                item.unit || item.product?.unit || '',
+                item.unitPrice || 0,
+                taxDisplay,
+                item.totalPrice || 0
+            ];
+
+            const row = ws.addRow(rowData);
+            row.font = { size: 10, name: 'Arial', color: item.isSubItem ? { argb: 'FF475569' } : { argb: 'FF0F172A' } };
+            row.alignment = { vertical: 'middle', wrapText: true };
+            
+            for (let i = 1; i <= colCount; i++) {
+                const cell = row.getCell(i);
+                cell.border = thinBorder;
+            }
+
+            row.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+            row.getCell(2).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+            row.getCell(3).alignment = { horizontal: 'center', vertical: 'middle' };
+            row.getCell(4).alignment = { horizontal: 'center', vertical: 'middle' };
+            row.getCell(5).alignment = { horizontal: 'right', vertical: 'middle' };
+            row.getCell(6).alignment = { horizontal: 'center', vertical: 'middle' };
+            row.getCell(7).alignment = { horizontal: 'right', vertical: 'middle' };
+            row.getCell(3).numFmt = '#,##0.##';
+            row.getCell(5).numFmt = '#,##0';
+            row.getCell(7).numFmt = '#,##0';
+        });
+
+        // Summary Rows
+        const addSummary = (label: string, value: number, bold: boolean = false) => {
+            const r = ws.addRow([]);
+            r.height = 24;
+            ws.mergeCells(r.number, 1, r.number, colCount - 1);
+            r.getCell(1).value = label;
+            r.getCell(colCount).value = value;
+            
+            const labelCell = r.getCell(1);
+            labelCell.alignment = { horizontal: 'right', vertical: 'middle' };
+            labelCell.font = { bold: bold, size: bold ? 11 : 10, name: 'Arial', color: bold ? { argb: 'FF0F172A' } : { argb: 'FF334155' } };
+            
+            const valCell = r.getCell(colCount);
+            valCell.numFmt = '#,##0';
+            valCell.alignment = { horizontal: 'right', vertical: 'middle' };
+            valCell.font = { bold: bold, size: bold ? 11 : 10, name: 'Arial', color: bold ? { argb: 'FF0F172A' } : { argb: 'FF334155' } };
+            
+            if (bold) {
+                for (let i = 1; i <= colCount; i++) {
+                    r.getCell(i).fill = {
+                        type: 'pattern',
+                        pattern: 'solid',
+                        fgColor: { argb: 'FFF1F5F9' }
+                    };
+                }
+            }
+            
+            for (let i = 1; i <= colCount; i++) {
+                r.getCell(i).border = thinBorder;
+            }
+            return r;
+        };
+
+        addSummary('Tổng Tiền Trước Thuế:', invoice.subTotal || 0);
+        addSummary('Tiền Thuế (VAT):', invoice.taxAmount || 0);
+        addSummary('TỔNG CỘNG HÓA ĐƠN:', invoice.totalAmount || 0, true);
+        if ((invoice.paidAmount || 0) > 0) {
+            addSummary('Đã Thanh Toán:', invoice.paidAmount || 0);
+            addSummary('CÒN PHẢI THANH TOÁN:', Math.max(0, (invoice.totalAmount || 0) - (invoice.paidAmount || 0)), true);
+        }
+
+        ws.addRow([]);
+        ws.addRow([]);
+
+        // Payment Info Block
+        const payHeaderRow = ws.addRow(['THÔNG TIN THANH TOÁN / CHUYỂN KHOẢN:']);
+        ws.mergeCells(payHeaderRow.number, 1, payHeaderRow.number, colCount);
+        payHeaderRow.getCell(1).font = { bold: true, size: 10, color: { argb: 'FF0F172A' }, name: 'Arial' };
+        payHeaderRow.height = 20;
+        
+        if (settings?.BANK_INFO_CONTENT) {
+            settings.BANK_INFO_CONTENT.split('\n').forEach((line: string) => { 
+                if (line.trim()) {
+                    const r = ws.addRow([line.trim()]);
+                    ws.mergeCells(r.number, 1, r.number, colCount);
+                    r.getCell(1).font = { size: 10, color: { argb: 'FF334155' }, name: 'Arial' };
+                    r.getCell(1).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+                }
+            });
+        } else {
+            const r = ws.addRow(['Vui lòng chuyển khoản theo thông tin tài khoản công ty hoặc liên hệ bộ phận kế toán để được hỗ trợ.']);
+            ws.mergeCells(r.number, 1, r.number, colCount);
+            r.getCell(1).font = { size: 10, color: { argb: 'FF334155' }, name: 'Arial', italic: true };
+        }
+
+        ws.addRow([]);
+        ws.addRow([]);
+
+        // Signatures Block
+        const sigRow = ws.addRow([]);
+        sigRow.height = 22;
+        const mid = Math.floor(colCount / 2);
+        
+        ws.mergeCells(sigRow.number, 1, sigRow.number, mid);
+        const khCell = sigRow.getCell(1);
+        khCell.value = 'NGƯỜI MUA HÀNG';
+        khCell.font = { bold: true, size: 10, name: 'Arial', color: { argb: 'FF0F172A' } };
+        khCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        
+        ws.mergeCells(sigRow.number, mid + 1, sigRow.number, colCount);
+        const ctCell = sigRow.getCell(mid + 1);
+        ctCell.value = 'NGƯỜI LẬP / ĐẠI DIỆN CÔNG TY';
+        ctCell.font = { bold: true, size: 10, name: 'Arial', color: { argb: 'FF0F172A' } };
+        ctCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        
+        const subSigRow = ws.addRow([]);
+        subSigRow.height = 18;
+        ws.mergeCells(subSigRow.number, 1, subSigRow.number, mid);
+        const subKh = subSigRow.getCell(1);
+        subKh.value = '(Ký, ghi rõ họ tên)';
+        subKh.font = { italic: true, size: 9, name: 'Arial', color: { argb: 'FF64748B' } };
+        subKh.alignment = { horizontal: 'center', vertical: 'middle' };
+        
+        ws.mergeCells(subSigRow.number, mid + 1, subSigRow.number, colCount);
+        const subCt = subSigRow.getCell(mid + 1);
+        subCt.value = '(Ký, đóng dấu, ghi rõ họ tên)';
+        subCt.font = { italic: true, size: 9, name: 'Arial', color: { argb: 'FF64748B' } };
+        subCt.alignment = { horizontal: 'center', vertical: 'middle' };
+        
+        // Empty space for signatures
+        const spaceRow = ws.addRow([]);
+        spaceRow.height = 40;
+
+        const buffer = await wb.xlsx.writeBuffer();
+        saveAs(new Blob([buffer]), `Hoa_Don_${invoice.code}.xlsx`);
     };
 
     const handleApprove = async () => {
@@ -307,6 +645,14 @@ export default function SalesInvoiceDetailClient({
                         <ExternalLink size={14} />
                         <span>Xem Bản In</span>
                     </Link>
+
+                    <button
+                        onClick={handleExportExcel}
+                        className="inline-flex items-center gap-1.5 h-[34px] px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                    >
+                        <FileDown size={14} />
+                        <span>Xuất Excel</span>
+                    </button>
 
                     <button
                         onClick={() => setIsEmailModalOpen(true)}
