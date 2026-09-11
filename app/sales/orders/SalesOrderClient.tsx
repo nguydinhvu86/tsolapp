@@ -141,6 +141,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
     const [qty, setQty] = useState(1);
     const [price, setPrice] = useState(0);
     const [isCustomProduct, setIsCustomProduct] = useState(false);
+    const [saveToInventory, setSaveToInventory] = useState(true);
     const [customName, setCustomName] = useState('');
     const [customUnit, setCustomUnit] = useState('Cái');
     const [customTaxRate, setCustomTaxRate] = useState(0);
@@ -207,7 +208,8 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                 taxRate,
                 taxAmount: taxItemAmount,
                 totalPrice: total,
-                isSubItem: isSubItem
+                isSubItem: isSubItem,
+                saveToInventory: isCustomProduct ? saveToInventory : true
             }];
 
             const calcSubTotal = newItems.reduce((acc: number, curr: any) => acc + (curr.quantity * curr.unitPrice), 0);
@@ -230,6 +232,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
         setQty(1);
         setPrice(0);
         setIsSubItem(false);
+        setSaveToInventory(true);
         setIsPriceInclusiveVat(false);
     };
 
@@ -274,6 +277,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
             setCustomName(item.customName || item.productName || '');
             setCustomUnit(item.unit || '');
             setCustomTaxRate(item.taxRate || 0);
+            setSaveToInventory(item.saveToInventory !== false);
             setUseInventoryDescription(false);
             setCustomDescription(item.description || '');
         }
@@ -732,9 +736,15 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                                     <span>Nhập tự do ngoài hệ thống</span>
                                 </label>
                                 {isCustomProduct && (
-                                    <span className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md font-medium flex items-center gap-1">
-                                        ✨ Tự động lưu vào kho
-                                    </span>
+                                    <label className={`flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold px-2 py-0.5 rounded-md border select-none transition-all ${saveToInventory ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100/70' : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100/70'}`}>
+                                        <input
+                                            type="checkbox"
+                                            checked={saveToInventory}
+                                            onChange={(e) => setSaveToInventory(e.target.checked)}
+                                            className="w-3.5 h-3.5 rounded text-emerald-600 focus:ring-emerald-500 accent-emerald-600 cursor-pointer"
+                                        />
+                                        <span>{saveToInventory ? '✨ Tự động lưu vào kho' : '⚡ Không lưu kho (Dùng 1 lần)'}</span>
+                                    </label>
                                 )}
                                 <div className="ml-auto">
                                     <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold text-emerald-900 bg-emerald-50/80 border border-emerald-200 px-2.5 py-1 rounded-lg select-none hover:bg-emerald-100/80 transition-colors">
@@ -837,9 +847,14 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                                             {formData.items.map((item: any, i: number) => (
                                                 <tr key={i} className={`hover:bg-slate-50/80 transition-colors ${item.isSubItem ? 'bg-slate-50/50' : ''}`}>
                                                     <td className="p-2.5 text-slate-800" style={item.isSubItem ? { paddingLeft: '1.5rem' } : {}}>
-                                                        <div className="font-semibold flex items-center gap-1.5">
+                                                        <div className="font-semibold flex items-center gap-1.5 flex-wrap">
                                                             {item.isSubItem && <span className="text-slate-400">↳</span>}
                                                             <span className={item.isSubItem ? 'text-slate-600 font-medium' : ''}>{item.productName || item.customName}</span>
+                                                            {item.saveToInventory === false && (
+                                                                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 border border-amber-200" title="Sản phẩm dùng 1 lần cho đơn hàng này, không lưu vào kho">
+                                                                    ⚡ Dùng 1 lần
+                                                                </span>
+                                                            )}
                                                         </div>
                                                         {item.description && <div className="text-[11px] text-slate-500 mt-0.5 max-w-sm whitespace-pre-wrap">{item.description}</div>}
                                                     </td>

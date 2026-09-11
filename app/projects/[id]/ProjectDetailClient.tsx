@@ -1,96 +1,170 @@
-'use client'
-import { formatDate } from '@/lib/utils/formatters';
-import React, { useState } from 'react';
-import { Card } from '@/app/components/ui/Card';
-import { Button } from '@/app/components/ui/Button';
-import { Table } from '@/app/components/ui/Table';
-import { TaskDashboardClient } from '@/app/tasks/TaskDashboardClient';
+'use client';
+
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
-import {
-    ArrowLeft, Target, Calendar, Users, LayoutDashboard, Flag,
-    MessageSquare, FileText, BarChart2, Link as LinkIcon, Milestone,
-    Paperclip, Trash2, Clock, Tag, DollarSign, ArrowUpRight, ArrowDownRight, Briefcase
-} from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { uploadTaskAttachment, deleteTaskAttachment, toggleReaction } from '@/app/tasks/actions';
-import { addProjectComment, toggleProjectReaction, createProjectTopic, updateProjectIssueStatus, updateProjectRiskStatus } from '@/app/projects/actions';
-import { FileSignature, Receipt, FileText as FileTextIcon, Calculator, Plus, ShoppingCart, CreditCard, Send, AlertTriangle, Edit2 } from 'lucide-react';
+import {
+    ArrowLeft,
+    Target,
+    Calendar,
+    Users,
+    LayoutDashboard,
+    MessageSquare,
+    FileText,
+    BarChart2,
+    Link as LinkIcon,
+    Milestone,
+    Paperclip,
+    Trash2,
+    Clock,
+    DollarSign,
+    ArrowUpRight,
+    ArrowDownRight,
+    Briefcase,
+    FileSignature,
+    Receipt,
+    Calculator,
+    Plus,
+    ShoppingCart,
+    CreditCard,
+    Send,
+    AlertTriangle,
+    Edit2,
+    Building2,
+    CheckCircle2,
+    TrendingUp,
+    AlertCircle,
+    ExternalLink,
+    ShieldAlert,
+    Timer,
+    Flame,
+    PauseCircle,
+    Eye
+} from 'lucide-react';
+
+import { Button } from '@/app/components/ui/Button';
+import { TaskDashboardClient } from '@/app/tasks/TaskDashboardClient';
+import { formatDate } from '@/lib/utils/formatters';
+import { uploadTaskAttachment, deleteTaskAttachment } from '@/app/tasks/actions';
+import {
+    addProjectComment,
+    toggleProjectReaction,
+    createProjectTopic,
+    updateProjectIssueStatus,
+    updateProjectRiskStatus
+} from '@/app/projects/actions';
 import { CreateIssueModal } from './CreateIssueModal';
 import { CreateRiskModal } from './CreateRiskModal';
 
 const EMOJIS = ['👍', '❤️', '😂', '🎉', '👀'];
 
-export function ProjectDetailClient({ project, users }: { project: any, users: any[] }) {
+interface ProjectDetailClientProps {
+    project: any;
+    users: any[];
+}
+
+export function ProjectDetailClient({ project, users = [] }: ProjectDetailClientProps) {
     const router = useRouter();
     const { data: session } = useSession();
 
-    const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'TASKS' | 'ISSUES' | 'FINANCIALS' | 'TIMESHEETS' | 'DISCUSSIONS' | 'FILES' | 'REPORTS' | 'QUOTE' | 'CONTRACT' | 'INVOICE' | 'SALES_ESTIMATE' | 'PURCHASE_BILL' | 'EXPENSE'>('OVERVIEW');
-    
-    // Modal State
+    // Active Tab
+    const [activeTab, setActiveTab] = useState<
+        'OVERVIEW' | 'FINANCIALS' | 'SALES' | 'PROCUREMENT' | 'TASKS' | 'ISSUES_RISKS' | 'TIMESHEETS' | 'FILES' | 'DISCUSSIONS'
+    >('OVERVIEW');
+
+    // Modals
     const [isIssueModalOpen, setIsIssueModalOpen] = useState(false);
     const [editingIssueData, setEditingIssueData] = useState<any>(null);
     const [isRiskModalOpen, setIsRiskModalOpen] = useState(false);
     const [editingRiskData, setEditingRiskData] = useState<any>(null);
 
-    // Discussion State (Forum)
-    const generalTopic = { id: 'GENERAL', title: 'Thảo Luận Chung', comments: project.comments?.filter((c:any) => !c.topicId) || [] };
+    // Discussions Forum
+    const generalTopic = {
+        id: 'GENERAL',
+        title: 'Thảo Luận Chung',
+        comments: project.comments?.filter((c: any) => !c.topicId) || []
+    };
     const allTopics = [generalTopic, ...(project.topics || [])];
 
     const [selectedTopic, setSelectedTopic] = useState<any>(generalTopic);
     const [isCreatingTopic, setIsCreatingTopic] = useState(false);
     const [newTopicTitle, setNewTopicTitle] = useState('');
     const [newTopicContent, setNewTopicContent] = useState('');
-
     const [newComment, setNewComment] = useState('');
     const [isSaving, setIsSaving] = useState(false);
-    
-    // Upload Progress State
+
+    // Upload Progress
     const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
 
-    // Calculate Project Progress
+    // Task Progress calculation
     const totalTasks = project.tasks?.length || 0;
     const completedTasks = project.tasks?.filter((t: any) => t.status === 'DONE').length || 0;
     const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-    // Derived Milestones (Child tasks with High/Urgent priority or a specific convention)
+    // Derived Milestones
     const milestones = project.tasks?.filter((t: any) => t.priority === 'URGENT' || t.priority === 'HIGH') || [];
 
-    // Contextual references
-    const relatedLinks = [];
-    if (project.contract) relatedLinks.push({ label: 'Hợp đồng', value: project.contract.title, href: `/contracts/${project.contract.id}` });
-    if (project.quote) relatedLinks.push({ label: 'Báo giá (Văn bản)', value: project.quote.title, href: `/quotes/${project.quote.id}` });
-    if (project.customer) relatedLinks.push({ label: 'Khách hàng', value: project.customer.name, href: `/customers/${project.customer.id}` });
-    if (project.salesEstimate) relatedLinks.push({ label: 'Báo giá ERP', value: project.salesEstimate.code, href: `/sales/estimates/${project.salesEstimate.id}` });
-    if (project.invoice) relatedLinks.push({ label: 'Hóa đơn', value: project.invoice.code, href: `/sales/invoices/${project.invoice.id}` });
+    // Financial calculations
+    const expectedRevenue = project.salesEstimate?.totalAmount || project.estimatedValue || 0;
+    
+    // Total invoiced sales revenue
+    const allInvoices = project.invoices || (project.invoice ? [project.invoice] : []);
+    const actualRevenue = allInvoices.reduce((sum: number, inv: any) => sum + (inv.totalAmount || 0), 0);
+    const actualCollected = allInvoices.reduce((sum: number, inv: any) => sum + (inv.paidAmount || 0), 0);
 
-    function getEmptyState(title: string, desc: string, icon: any, createHref: string) {
-        const IconNode = icon;
-        return (
-            <div style={{ padding: '4rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
-                <div style={{ padding: '1.5rem', backgroundColor: '#e2e8f0', borderRadius: '50%', marginBottom: '1.5rem', color: 'var(--text-muted)' }}>
-                    <IconNode size={48} />
-                </div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>{title}</h3>
-                <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', maxWidth: '400px' }}>{desc}</p>
-                {createHref && createHref !== '#' && (
-                    <Link href={createHref}>
-                        <Button variant="primary">
-                            <Plus size={16} /> Tạo {title.replace('Chưa có ', '')}
-                        </Button>
-                    </Link>
-                )}
-            </div>
-        );
-    }
+    // Procurement and Expenses
+    const allPurchaseBills = project.purchaseBills || [];
+    const totalPurchaseCost = allPurchaseBills.reduce((sum: number, bill: any) => sum + (bill.totalAmount || 0), 0);
 
+    const allExpenses = project.expenses || [];
+    const totalExpenseCost = allExpenses.reduce((sum: number, exp: any) => sum + (exp.amount || 0), 0);
+
+    // Labor Cost from tracking timesheets
+    let totalLaborCost = 0;
+    let totalLaborSeconds = 0;
+    const timesheetEntries: any[] = [];
+
+    project.tasks?.forEach((task: any) => {
+        task.timeLogs?.forEach((log: any) => {
+            const hourlyRate = log.user?.employeeProfile?.hourlyRate || 0;
+            const durationSec = log.durationSec || 0;
+            totalLaborSeconds += durationSec;
+            const hours = durationSec / 3600;
+            const cost = hours * hourlyRate;
+            totalLaborCost += cost;
+
+            timesheetEntries.push({
+                ...log,
+                taskTitle: task.title,
+                taskId: task.id,
+                hourlyRate,
+                calculatedCost: cost
+            });
+        });
+    });
+
+    const totalCost = totalPurchaseCost + totalExpenseCost + totalLaborCost;
+    const grossProfit = actualRevenue - totalCost;
+    const profitMargin = actualRevenue > 0 ? (grossProfit / actualRevenue) * 100 : 0;
+    const budget = project.budget || project.estimatedValue || 0;
+    const budgetUsedPct = budget > 0 ? (totalCost / budget) * 100 : 0;
+
+    // Sales Arrays
+    const allSalesEstimates = project.salesEstimates || (project.salesEstimate ? [project.salesEstimate] : []);
+    const allSalesOrders = project.salesOrders || (project.salesOrder ? [project.salesOrder] : []);
+    const allQuotes = project.quotes || (project.quote ? [project.quote] : []);
+    const allContracts = project.contracts || (project.contract ? [project.contract] : []);
+    const allPurchaseOrders = project.purchaseOrders || [];
+
+    // Comments & Discussions
     const handleAddComment = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newComment.trim() || !session?.user?.id || !selectedTopic) return;
 
-        let finalHtml = newComment.replace(/\n/g, '<br/>');
+        const finalHtml = newComment.replace(/\n/g, '<br/>');
         setIsSaving(true);
         try {
             await addProjectComment(project.id, finalHtml, selectedTopic.id === 'GENERAL' ? undefined : selectedTopic.id);
@@ -116,13 +190,20 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
         }
     };
 
+    const handleToggleReaction = async (commentId: string, emoji: string) => {
+        if (!session?.user?.id) return;
+        await toggleProjectReaction(commentId, emoji, project.id);
+        router.refresh();
+    };
+
+    // File Upload
     const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files?.length || !session?.user?.id) return;
         setIsSaving(true);
         try {
             for (const file of Array.from(e.target.files)) {
                 if (file.size > 50 * 1024 * 1024) continue;
-                
+
                 setUploadProgress(prev => ({ ...prev, [file.name]: 0 }));
                 const formData = new FormData();
                 formData.append('file', file);
@@ -131,38 +212,40 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
                     const url = await new Promise<string>((resolve, reject) => {
                         const xhr = new XMLHttpRequest();
                         xhr.open('POST', '/api/upload', true);
-                        
+
                         xhr.upload.onprogress = (event) => {
                             if (event.lengthComputable) {
                                 const percentComplete = Math.round((event.loaded / event.total) * 100);
                                 setUploadProgress(prev => ({ ...prev, [file.name]: percentComplete }));
                             }
                         };
-                        
+
                         xhr.onload = () => {
                             if (xhr.status === 200) {
                                 try {
                                     const response = JSON.parse(xhr.responseText);
                                     if (response.url) resolve(response.url);
                                     else reject(new Error('Upload failed'));
-                                } catch (e) {
+                                } catch (err) {
                                     reject(new Error('Invalid response'));
                                 }
                             } else {
                                 reject(new Error('Upload failed'));
                             }
                         };
-                        
+
                         xhr.onerror = () => reject(new Error('Network error'));
                         xhr.send(formData);
                     });
-                    
+
                     await uploadTaskAttachment(project.id, file.name, url, file.type, session.user.id);
                 } catch (err: any) {
-                    console.error("Upload failed for", file.name, err);
+                    console.error('Upload failed for', file.name, err);
                 } finally {
-                    setUploadProgress(prev => { 
-                        const next = { ...prev }; delete next[file.name]; return next; 
+                    setUploadProgress(prev => {
+                        const next = { ...prev };
+                        delete next[file.name];
+                        return next;
                     });
                 }
             }
@@ -187,1427 +270,1669 @@ export function ProjectDetailClient({ project, users }: { project: any, users: a
         }
     };
 
-    const handleToggleReaction = async (commentId: string, emoji: string) => {
-        if (!session?.user?.id) return;
-        await toggleProjectReaction(commentId, emoji, project.id);
-        router.refresh();
+    // Helper functions for badges
+    const renderStatusBadge = (st: string) => {
+        switch (st) {
+            case 'PLANNING':
+            case 'TODO':
+                return (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                        <Clock className="w-3.5 h-3.5 text-amber-500" /> Chuẩn Bị
+                    </span>
+                );
+            case 'IN_PROGRESS':
+            case 'RUNNING':
+                return (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                        <TrendingUp className="w-3.5 h-3.5 text-blue-500" /> Đang Chạy
+                    </span>
+                );
+            case 'ON_HOLD':
+                return (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                        <PauseCircle className="w-3.5 h-3.5 text-purple-500" /> Tạm Dừng
+                    </span>
+                );
+            case 'COMPLETED':
+            case 'DONE':
+                return (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Hoàn Thành
+                    </span>
+                );
+            case 'CANCELLED':
+                return (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                        <AlertCircle className="w-3.5 h-3.5 text-slate-400" /> Đã Hủy
+                    </span>
+                );
+            default:
+                return (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700">
+                        {st}
+                    </span>
+                );
+        }
     };
 
+    const renderPriorityBadge = (pr: string) => {
+        switch (pr) {
+            case 'URGENT':
+                return (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-200">
+                        <Flame className="w-3.5 h-3.5 text-red-500" /> Khẩn cấp
+                    </span>
+                );
+            case 'HIGH':
+                return (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 border border-orange-200">
+                        Ưu tiên cao
+                    </span>
+                );
+            case 'MEDIUM':
+                return (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                        Bình thường
+                    </span>
+                );
+            case 'LOW':
+                return (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                        Thấp
+                    </span>
+                );
+            default:
+                return <span className="text-xs text-gray-500">{pr}</span>;
+        }
+    };
+
+    // Navigation Tabs Definition
     const tabs = [
-        { id: 'OVERVIEW', label: 'Tổng Quan', icon: Target },
-        { id: 'FINANCIALS', label: 'Tài Chính (P&L)', icon: DollarSign },
-        { id: 'TASKS', label: 'Bảng Công Việc', icon: LayoutDashboard },
-        { id: 'ISSUES', label: 'Vấn Đề & Rủi Ro', icon: Flag },
-        { id: 'TIMESHEETS', label: 'Chấm Công (Timesheets)', icon: Clock },
-        { id: 'SALES_ESTIMATE', label: 'Báo Giá ERP', icon: Calculator },
-        { id: 'QUOTE', label: 'Báo Giá (VB)', icon: FileTextIcon },
-        { id: 'CONTRACT', label: 'Hợp Đồng', icon: FileSignature },
-        { id: 'INVOICE', label: 'Hóa Đơn Bán', icon: Receipt },
-        { id: 'PURCHASE_BILL', label: 'Hóa Đơn Mua', icon: ShoppingCart },
-        { id: 'EXPENSE', label: 'Chi Phí', icon: CreditCard },
-        { id: 'DISCUSSIONS', label: 'Thảo Luận', icon: MessageSquare },
-        { id: 'FILES', label: 'Tủ Hồ Sơ', icon: FileTextIcon },
-        { id: 'REPORTS', label: 'Báo Cáo', icon: BarChart2 },
+        { id: 'OVERVIEW', label: 'Tổng Quan', icon: Target, badge: null },
+        { id: 'FINANCIALS', label: 'Tài Chính & P&L', icon: DollarSign, badge: `${profitMargin.toFixed(0)}%` },
+        { id: 'SALES', label: 'Bán Hàng', icon: Calculator, badge: allSalesEstimates.length + allInvoices.length + allContracts.length || null },
+        { id: 'PROCUREMENT', label: 'Mua Hàng & Chi Phí', icon: ShoppingCart, badge: allPurchaseBills.length + allExpenses.length || null },
+        { id: 'TASKS', label: 'Bảng Công Việc', icon: LayoutDashboard, badge: totalTasks || null },
+        { id: 'ISSUES_RISKS', label: 'Vấn Đề & Rủi Ro', icon: ShieldAlert, badge: (project.issues?.length || 0) + (project.risks?.length || 0) || null },
+        { id: 'TIMESHEETS', label: 'Chấm Công', icon: Clock, badge: timesheetEntries.length || null },
+        { id: 'FILES', label: 'Tủ Hồ Sơ', icon: FileText, badge: project.attachments?.length || null },
+        { id: 'DISCUSSIONS', label: 'Thảo Luận', icon: MessageSquare, badge: (project.comments?.length || 0) + (project.topics?.length || 0) || null },
     ];
 
     return (
-        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                    <Link href="/projects" style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', textDecoration: 'none', fontSize: '0.875rem' }} className="hover:text-primary">
-                        <ArrowLeft size={16} /> Quay lại danh sách
-                    </Link>
+        <div className="space-y-6">
+            {/* Top Navigation & Hero Section */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
+                {/* Top Bar: Back Link & Quick Actions */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                    <div className="flex items-center gap-2">
+                        <Link
+                            href="/projects"
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-indigo-600 transition-colors bg-slate-50 hover:bg-indigo-50 px-3 py-1.5 rounded-lg border border-slate-200"
+                        >
+                            <ArrowLeft className="w-4 h-4" /> Danh sách dự án
+                        </Link>
+                        <span className="text-slate-300">/</span>
+                        <span className="font-mono text-xs font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded">
+                            {project.code || 'PRJ'}
+                        </span>
+                    </div>
+
+                    {/* Quick Document Actions */}
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Link
+                            href={`/sales/estimates?action=new&projectId=${project.id}${project.customerId ? `&customerId=${project.customerId}` : ''}`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 border border-slate-200 transition-all"
+                        >
+                            <Plus className="w-3.5 h-3.5 text-indigo-500" /> Báo Giá ERP
+                        </Link>
+
+                        <Link
+                            href={`/sales/orders?action=new&projectId=${project.id}${project.customerId ? `&customerId=${project.customerId}` : ''}`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 border border-slate-200 transition-all"
+                        >
+                            <Plus className="w-3.5 h-3.5 text-blue-500" /> Đơn Bán Hàng
+                        </Link>
+
+                        <Link
+                            href={`/sales/invoices?action=new&projectId=${project.id}${project.customerId ? `&customerId=${project.customerId}` : ''}`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 border border-slate-200 transition-all"
+                        >
+                            <Plus className="w-3.5 h-3.5 text-emerald-500" /> Hóa Đơn Bán
+                        </Link>
+
+                        <Link
+                            href={`/purchasing/orders?action=new&projectId=${project.id}`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 border border-slate-200 transition-all"
+                        >
+                            <Plus className="w-3.5 h-3.5 text-amber-500" /> Mua Hàng NCC
+                        </Link>
+
+                        <Link
+                            href={`/sales/expenses?action=new&projectId=${project.id}`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 border border-slate-200 transition-all"
+                        >
+                            <Plus className="w-3.5 h-3.5 text-rose-500" /> Chi Phí Khác
+                        </Link>
+                    </div>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-                    <div style={{ flex: 1, minWidth: '300px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                            <div style={{ padding: '8px', backgroundColor: '#e0e7ff', color: 'var(--primary)', borderRadius: '8px' }}>
-                                <Target size={20} />
+                {/* Hero Title & Main Stats */}
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div className="space-y-3 flex-1">
+                        <div className="flex flex-wrap items-center gap-2.5">
+                            {renderStatusBadge(project.status || 'PLANNING')}
+                            {renderPriorityBadge(project.priority || 'MEDIUM')}
+                            {project.customer && (
+                                <Link
+                                    href={`/customers/${project.customer.id}`}
+                                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 px-2.5 py-1 rounded-full border border-slate-200 transition-colors"
+                                >
+                                    <Building2 className="w-3.5 h-3.5 text-slate-500" />
+                                    {project.customer.name}
+                                </Link>
+                            )}
+                        </div>
+
+                        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                            {project.title || project.name}
+                        </h1>
+
+                        {/* Dates & Members info */}
+                        <div className="flex flex-wrap items-center gap-y-2 gap-x-6 text-xs text-slate-500 font-medium">
+                            <div className="flex items-center gap-1.5">
+                                <Calendar className="w-4 h-4 text-slate-400" />
+                                <span>Bắt đầu: <strong className="text-slate-700">{project.startDate ? formatDate(new Date(project.startDate)) : formatDate(new Date(project.createdAt))}</strong></span>
                             </div>
-                            <h1 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                {project.title}
-                                <span style={{
-                                    padding: '4px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600,
-                                    backgroundColor: project.status === 'DONE' ? '#dcfce7' : (project.status === 'IN_PROGRESS' ? '#dbeafe' : '#f1f5f9'),
-                                    color: project.status === 'DONE' ? '#16a34a' : (project.status === 'IN_PROGRESS' ? '#2563eb' : '#475569')
-                                }}>
-                                    {project.status === 'TODO' ? 'Chuẩn Bị' : project.status === 'IN_PROGRESS' ? 'Đang Thực Hiện' : project.status === 'DONE' ? 'Hoàn Thành' : project.status}
-                                </span>
-                            </h1>
+
+                            <div className="flex items-center gap-1.5">
+                                <Clock className="w-4 h-4 text-slate-400" />
+                                <span>Hạn chót: <strong className={project.dueDate && new Date(project.dueDate).getTime() < Date.now() ? 'text-rose-600 font-bold' : 'text-slate-700'}>
+                                    {project.dueDate ? formatDate(new Date(project.dueDate)) : 'Chưa thiết lập'}
+                                </strong></span>
+                            </div>
+
+                            {project.estimatedDuration && (
+                                <div className="flex items-center gap-1.5">
+                                    <Timer className="w-4 h-4 text-slate-400" />
+                                    <span>Thời gian: <strong className="text-slate-700">{project.estimatedDuration}</strong></span>
+                                </div>
+                            )}
+
+                            {/* Team Members */}
+                            <div className="flex items-center gap-2">
+                                <span className="text-slate-400">Đội ngũ:</span>
+                                <div className="flex items-center -space-x-1.5">
+                                    {(project.members || []).map((m: any, idx: number) => {
+                                        const u = m.user || m;
+                                        return (
+                                            <div
+                                                key={idx}
+                                                title={u.name || u.email}
+                                                className="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 text-white flex items-center justify-center text-[10px] font-bold border-2 border-white shadow-sm"
+                                            >
+                                                {(u.name || u.email || 'U').charAt(0).toUpperCase()}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Quick Metric Pills */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+                        <div>
+                            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tiến độ</div>
+                            <div className="text-xl font-black text-indigo-600 mt-0.5">{progress}%</div>
+                            <div className="text-[11px] text-slate-500">{completedTasks}/{totalTasks} việc</div>
+                        </div>
+
+                        <div>
+                            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Doanh thu</div>
+                            <div className="text-lg font-black text-emerald-600 mt-0.5 truncate" title={actualRevenue.toLocaleString('vi-VN') + ' ₫'}>
+                                {actualRevenue.toLocaleString('vi-VN')} ₫
+                            </div>
+                            <div className="text-[11px] text-slate-500">Đã thu: {actualCollected.toLocaleString('vi-VN')} ₫</div>
+                        </div>
+
+                        <div>
+                            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tổng chi phí</div>
+                            <div className="text-lg font-black text-rose-600 mt-0.5 truncate" title={totalCost.toLocaleString('vi-VN') + ' ₫'}>
+                                {totalCost.toLocaleString('vi-VN')} ₫
+                            </div>
+                            <div className="text-[11px] text-slate-500">Ngân sách: {budget.toLocaleString('vi-VN')} ₫</div>
+                        </div>
+
+                        <div>
+                            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Lợi nhuận P&L</div>
+                            <div className={`text-lg font-black mt-0.5 truncate ${grossProfit >= 0 ? 'text-blue-600' : 'text-rose-600'}`} title={grossProfit.toLocaleString('vi-VN') + ' ₫'}>
+                                {grossProfit.toLocaleString('vi-VN')} ₫
+                            </div>
+                            <div className="text-[11px] text-slate-500">Biên LN: {profitMargin.toFixed(1)}%</div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {/* TAB NAVIGATION */}
-            <div style={{ borderBottom: '1px solid var(--border)', marginBottom: '1.5rem', display: 'flex', gap: '1rem', overflowX: 'auto' }}>
-                {tabs.map(tab => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id as any)}
-                        style={{
-                            display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1rem',
-                            background: 'none', border: 'none', cursor: 'pointer',
-                            borderBottom: activeTab === tab.id ? '2px solid var(--primary)' : '2px solid transparent',
-                            color: activeTab === tab.id ? 'var(--primary)' : 'var(--text-muted)',
-                            fontWeight: activeTab === tab.id ? 600 : 500,
-                            whiteSpace: 'nowrap',
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        <tab.icon size={16} /> {tab.label}
-                    </button>
-                ))}
+                {/* Sub-Tabs Bar */}
+                <div className="flex items-center gap-1 overflow-x-auto border-t border-slate-100 pt-4 -mx-2 px-2 scrollbar-none">
+                    {tabs.map((tab) => {
+                        const Icon = tab.icon;
+                        const isActive = activeTab === tab.id;
+                        return (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id as any)}
+                                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                                    isActive
+                                        ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100'
+                                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                                }`}
+                            >
+                                <Icon className="w-4 h-4" />
+                                {tab.label}
+                                {tab.badge !== null && (
+                                    <span
+                                        className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                                            isActive
+                                                ? 'bg-white/20 text-white'
+                                                : 'bg-slate-200 text-slate-700'
+                                        }`}
+                                    >
+                                        {tab.badge}
+                                    </span>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
 
             {/* TAB CONTENTS */}
-            <div style={{ flex: 1, overflowY: 'auto' }}>
-                {activeTab === 'FINANCIALS' && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: '1.5rem', alignItems: 'start' }}>
-                        {(() => {
-                            const expectedRevenue = project.salesEstimate?.totalAmount || project.estimatedValue || 0;
-                            const actualRevenue = project.invoice?.totalAmount || 0;
-                            
-                            const totalPurchaseCost = project.purchaseBills?.reduce((sum: number, bill: any) => sum + (bill.totalAmount || 0), 0) || 0;
-                            const totalExpenseCost = project.expenses?.reduce((sum: number, exp: any) => sum + (exp.amount || 0), 0) || 0;
-                            
-                            // Calculate Labor Cost from tracking timesheets
-                            let totalLaborCost = 0;
-                            project.tasks?.forEach((task: any) => {
-                                task.timeLogs?.forEach((log: any) => {
-                                    const hourlyRate = log.user?.employeeProfile?.hourlyRate || 0;
-                                    const hours = (log.durationSec || 0) / 3600;
-                                    totalLaborCost += hours * hourlyRate;
-                                });
-                            });
 
-                            const totalCost = totalPurchaseCost + totalExpenseCost + totalLaborCost;
-                            
-                            const grossProfit = actualRevenue - totalCost;
-                            const profitMargin = actualRevenue > 0 ? (grossProfit / actualRevenue) * 100 : 0;
-                            
-                            const budget = project.budget || 0;
-                            const budgetUsedPct = budget > 0 ? (totalCost / budget) * 100 : 0;
-                            
-                            return (
-                                <>
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
-                                        {/* REVENUE CARD */}
-                                        <Card style={{ padding: '1.5rem', borderLeft: '4px solid #10b981' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                                <div>
-                                                    <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: 600 }}>DOANH THU THỰC TẾ</p>
-                                                    <h3 style={{ margin: '0.5rem 0 0', fontSize: '1.5rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(actualRevenue)}
-                                                    </h3>
-                                                    <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                                        Dự kiến: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(expectedRevenue)}
-                                                    </p>
-                                                </div>
-                                                <div style={{ padding: '8px', backgroundColor: '#dcfce7', borderRadius: '8px', color: '#10b981' }}>
-                                                    <ArrowUpRight size={24} />
-                                                </div>
-                                            </div>
-                                        </Card>
-
-                                        {/* COSTS CARD */}
-                                        <Card style={{ padding: '1.5rem', borderLeft: '4px solid #ef4444' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                                <div>
-                                                    <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: 600 }}>TỔNG CHI PHÍ THỰC TẾ</p>
-                                                    <h3 style={{ margin: '0.5rem 0 0', fontSize: '1.5rem', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalCost)}
-                                                    </h3>
-                                                    <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                                        Nhân sự: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalLaborCost)} | Vật tư: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalPurchaseCost)} | Khác: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalExpenseCost)}
-                                                    </p>
-                                                </div>
-                                                <div style={{ padding: '8px', backgroundColor: '#fee2e2', borderRadius: '8px', color: '#ef4444' }}>
-                                                    <ArrowDownRight size={24} />
-                                                </div>
-                                            </div>
-                                        </Card>
-
-                                        {/* PROFIT CARD */}
-                                        <Card style={{ padding: '1.5rem', borderLeft: '4px solid #3b82f6' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                                <div>
-                                                    <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: 600 }}>LỢI NHUẬN GỘP (P&L)</p>
-                                                    <h3 style={{ margin: '0.5rem 0 0', fontSize: '1.5rem', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(grossProfit)}
-                                                    </h3>
-                                                    <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                                        Biên lợi nhuận: {profitMargin.toFixed(1)}%
-                                                    </p>
-                                                </div>
-                                                <div style={{ padding: '8px', backgroundColor: '#dbeafe', borderRadius: '8px', color: '#3b82f6' }}>
-                                                    <Briefcase size={24} />
-                                                </div>
-                                            </div>
-                                        </Card>
-                                    </div>
-
-                                    {/* BUDGET BAR */}
-                                    <Card style={{ padding: '1.5rem' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                                            <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                <Target size={18} color="var(--primary)" /> Ngân sách chi cho phép
-                                            </h3>
-                                            <div style={{ fontSize: '0.875rem', fontWeight: 600, color: budgetUsedPct > 90 ? '#ef4444' : 'var(--text-muted)' }}>
-                                                Đã dùng: {budgetUsedPct.toFixed(1)}%
-                                            </div>
-                                        </div>
-                                        <div style={{ width: '100%', height: '16px', backgroundColor: '#e2e8f0', borderRadius: '8px', overflow: 'hidden', margin: '1rem 0' }}>
-                                            <div style={{
-                                                height: '100%', backgroundColor: budgetUsedPct > 90 ? '#ef4444' : (budgetUsedPct > 75 ? '#f59e0b' : '#3b82f6'),
-                                                width: `${Math.min(budgetUsedPct, 100)}%`, transition: 'width 0.5s ease-in-out'
-                                            }} />
-                                        </div>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                            <span>0 ₫</span>
-                                            <span>Ngân sách: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(budget)}</span>
-                                        </div>
-                                    </Card>
-                                </>
-                            );
-                        })()}
-                    </div>
-                )}
-
-                {activeTab === 'OVERVIEW' && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: '1.5rem', alignItems: 'start' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                            <Card style={{ padding: '1.5rem' }}>
-                                <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Target size={18} color="var(--primary)" /> Mô tả dự án
+            {/* 1. OVERVIEW TAB */}
+            {activeTab === 'OVERVIEW' && (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                    {/* Left Column (2 Cols) */}
+                    <div className="lg:col-span-2 space-y-6">
+                        {/* Project Description Card */}
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                                    <Target className="w-4 h-4 text-indigo-600" /> Mô Tả Mục Tiêu Dự Án
                                 </h3>
-                                {project.description ? (
-                                    <p style={{ color: 'var(--text-main)', fontSize: '0.95rem', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-                                        {project.description}
-                                    </p>
-                                ) : (
-                                    <p style={{ color: 'var(--text-muted)' }}>Chưa có mô tả chi tiết.</p>
-                                )}
-                            </Card>
-
-                            <Card style={{ padding: '1.5rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                    <h3 style={{ fontSize: '1.1rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <BarChart2 size={18} color="var(--primary)" /> Tiến độ dự án
-                                    </h3>
-                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: progress === 100 ? '#10b981' : 'var(--primary)' }}>{progress}%</div>
-                                </div>
-                                <div style={{ width: '100%', height: '12px', backgroundColor: '#e2e8f0', borderRadius: '6px', overflow: 'hidden', margin: '1rem 0' }}>
-                                    <div style={{
-                                        width: `${progress}%`,
-                                        backgroundColor: progress === 100 ? '#10b981' : 'var(--primary)',
-                                        height: '100%',
-                                        transition: 'width 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
-                                    }} />
-                                </div>
-                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                                    Đã hoàn thành <strong>{completedTasks}</strong> / {totalTasks} công việc con
-                                </div>
-                            </Card>
-
-                            <Card style={{ padding: '1.5rem' }}>
-                                <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Milestone size={18} color="var(--primary)" /> Cột Mốc Quan Trọng (Milestones)
-                                </h3>
-                                {milestones.length === 0 ? (
-                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Chưa có công việc nào đánh dấu Ưu tiên Cao / Khẩn cấp để làm mốc.</p>
-                                ) : (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                        {milestones.map((m: any) => (
-                                            <div key={m.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', backgroundColor: 'var(--background)', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
-                                                <div>
-                                                    <Link href={`/tasks/${m.id}`} style={{ fontWeight: 600, color: 'var(--text-main)', textDecoration: 'none' }} className="hover:text-primary">
-                                                        {m.title}
-                                                    </Link>
-                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                                                        Hạn chót: {m.dueDate ? formatDate(new Date(m.dueDate)) : 'Chưa định'}
-                                                    </div>
-                                                </div>
-                                                <span style={{
-                                                    padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600,
-                                                    backgroundColor: m.status === 'DONE' ? '#dcfce7' : '#f1f5f9',
-                                                    color: m.status === 'DONE' ? '#16a34a' : 'var(--text-muted)'
-                                                }}>
-                                                    {m.status === 'DONE' ? 'Hoàn thành' : 'Chưa xong'}
-                                                </span>
-                                            </div>
+                                {project.tags && (
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {project.tags.split(',').map((t: string, idx: number) => (
+                                            <span key={idx} className="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-medium">
+                                                #{t.trim()}
+                                            </span>
                                         ))}
                                     </div>
                                 )}
-                            </Card>
+                            </div>
+                            <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+                                {project.description || 'Chưa có mô tả chi tiết về dự án này.'}
+                            </div>
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                            <Card style={{ padding: '1.5rem' }}>
-                                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '1rem' }}>
-                                    Thông tin nhanh
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Calendar size={12} /> Bắt đầu</div>
-                                        <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{project.startDate ? formatDate(new Date(project.startDate)) : formatDate(new Date(project.createdAt))}</div>
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Calendar size={12} /> Hạn chót</div>
-                                        <div style={{ fontSize: '0.9rem', fontWeight: 600, color: project.dueDate && new Date(project.dueDate).getTime() < Date.now() ? 'var(--danger)' : 'var(--text-main)' }}>
-                                            {project.dueDate ? formatDate(new Date(project.dueDate)) : 'Chưa thiết lập'}
-                                        </div>
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Clock size={12} /> Thời gian hoàn thành</div>
-                                        <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{project.estimatedDuration || 'Chưa thiết lập'}</div>
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Target size={12} /> Tổng tiền dự kiến</div>
-                                        <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#16a34a' }}>{project.estimatedValue ? `${project.estimatedValue.toLocaleString('vi-VN')} VNĐ` : '0 VNĐ'}</div>
-                                    </div>
-                                    {project.tags && (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', gridColumn: '1 / -1' }}>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Tag size={12} /> Thẻ quản lý (Tags)</div>
-                                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
-                                                {project.tags.split(',').map((tag: string, idx: number) => (
-                                                    <span key={idx} style={{ padding: '2px 8px', borderRadius: '4px', backgroundColor: '#e2e8f0', fontSize: '0.75rem', fontWeight: 500, color: '#475569' }}>
-                                                        {tag.trim()}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', gridColumn: '1 / -1' }}>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Users size={12} /> Thành viên ({project.members?.length || 0})</div>
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.25rem' }}>
-                                            {project.members?.map((a: any) => (
-                                                <div key={a.userId} style={{ padding: '2px 8px', borderRadius: '12px', backgroundColor: '#f1f5f9', fontSize: '0.75rem', border: '1px solid #e2e8f0' }}>
-                                                    {a.user.name || a.user.email}
-                                                </div>
-                                            ))}
-                                            {(!project.members || project.members.length === 0) && <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Chưa có thành viên</span>}
-                                        </div>
-                                    </div>
-                                </div>
-                            </Card>
-
-                            <Card style={{ padding: '1.5rem' }}>
-                                <h3 style={{ fontSize: '1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <LinkIcon size={16} color="var(--primary)" /> Liên Kết Hệ Thống
+                        {/* Milestones / Key Tasks */}
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                                    <Milestone className="w-4 h-4 text-indigo-600" /> Cột Mốc & Công Việc Trọng Điểm
                                 </h3>
-                                {relatedLinks.length === 0 ? (
-                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Không có đối tượng liên kết.</p>
-                                ) : (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                        {relatedLinks.map((link, idx) => (
-                                            <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem', borderBottom: '1px solid var(--border)' }}>
-                                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{link.label}</span>
-                                                <Link href={link.href} style={{ fontSize: '0.85rem', fontWeight: 500, color: '#3b82f6', textDecoration: 'none' }} className="hover:underline">
-                                                    {link.value}
-                                                </Link>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </Card>
-                        </div>
-                    </div>
-                )}
-                {activeTab === 'SALES_ESTIMATE' && (
-                    <div style={{ height: '100%' }}>
-                        {!project.salesEstimate ? (
-                            getEmptyState(
-                                'Chưa có Báo Giá ERP', 
-                                'Dự án này chưa được liên kết với một Báo Giá số liệu trên hệ thống. Hãy tạo Báo Giá ERP mới.', 
-                                Calculator, 
-                                `/sales/estimates?action=new&projectId=${project.id}${project.customer ? `&customerId=${project.customerId}` : ''}`
-                            )
-                        ) : (
-                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '1rem' }}>
-                                <Card style={{ width: '100%', maxWidth: '100%', display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '2rem', boxShadow: '0 4px 20px -2px rgb(0 0 0 / 0.1)', border: '1px solid #e2e8f0', borderRadius: '16px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                                            <div style={{ width: '56px', height: '56px', borderRadius: '16px', backgroundColor: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', boxShadow: '0 2px 10px -2px rgba(99, 102, 241, 0.3)' }}>
-                                                <Calculator size={28} strokeWidth={2.5} />
-                                            </div>
-                                            <div>
-                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Báo Giá Phân Tích (ERP)</div>
-                                                <h2 style={{ fontSize: '1.5rem', margin: 0, fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.5px' }}>{project.salesEstimate.code}</h2>
-                                            </div>
-                                        </div>
-                                        <span style={{ padding: '6px 16px', borderRadius: '24px', fontSize: '0.85rem', fontWeight: 700, backgroundColor: project.salesEstimate.status === 'ACCEPTED' ? '#dcfce7' : '#f1f5f9', color: project.salesEstimate.status === 'ACCEPTED' ? '#16a34a' : 'var(--text-main)', border: project.salesEstimate.status === 'ACCEPTED' ? '1px solid #bbf7d0' : '1px solid #e2e8f0' }}>
-                                            {project.salesEstimate.status}
-                                        </span>
-                                    </div>
-
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', backgroundColor: '#f8fafc', padding: '1.5rem', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', borderRight: '1px solid #e2e8f0', paddingRight: '1rem' }}>
-                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Ngày báo giá</div>
-                                            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                                                {project.salesEstimate.date ? formatDate(new Date(project.salesEstimate.date)) : '-'}
-                                            </div>
-                                        </div>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingLeft: '0.5rem' }}>
-                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Tổng tiền</div>
-                                            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)' }}>
-                                                {project.salesEstimate.totalAmount ? `${project.salesEstimate.totalAmount.toLocaleString('vi-VN')} VNĐ` : '0 VNĐ'}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '1.5rem', borderTop: '1px dashed #e2e8f0' }}>
-                                        <Link href={`/sales/estimates/${project.salesEstimate.id}`} style={{ textDecoration: 'none' }}>
-                                            <Button variant="primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', fontWeight: 600, borderRadius: '8px' }}>
-                                                Mở Chi Tiết Báo Giá ERP
-                                            </Button>
-                                        </Link>
-                                    </div>
-                                </Card>
+                                <span className="text-xs text-slate-500 font-medium">
+                                    {milestones.length} công việc ưu tiên cao/khẩn cấp
+                                </span>
                             </div>
-                        )}
-                    </div>
-                )}
-                {activeTab === 'QUOTE' && (
-                    <div style={{ height: '100%' }}>
-                        {!project.quote ? (
-                            getEmptyState(
-                                'Chưa có Báo Giá', 
-                                'Dự án này chưa được liên kết với một Báo Giá nào. Hãy tạo Báo Giá mới để theo dõi tài chính dự toán.', 
-                                Calculator, 
-                                `/quotes/new?projectId=${project.id}${project.customer ? `&customerId=${project.customerId}` : ''}`
-                            )
-                        ) : (
-                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '1rem' }}>
-                                <Card style={{ width: '100%', maxWidth: '100%', display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '2rem', boxShadow: '0 4px 20px -2px rgb(0 0 0 / 0.1)', border: '1px solid #e2e8f0', borderRadius: '16px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                                            <div style={{ width: '56px', height: '56px', borderRadius: '16px', backgroundColor: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d97706', boxShadow: '0 2px 10px -2px rgba(245, 158, 11, 0.3)' }}>
-                                                <FileTextIcon size={28} strokeWidth={2.5} />
-                                            </div>
-                                            <div>
-                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Tài liệu Báo Giá (Văn Bản)</div>
-                                                <h2 style={{ fontSize: '1.5rem', margin: 0, fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.5px' }}>{project.quote.title}</h2>
-                                            </div>
-                                        </div>
-                                        <span style={{ padding: '6px 16px', borderRadius: '24px', fontSize: '0.85rem', fontWeight: 700, backgroundColor: project.quote.status === 'ACCEPTED' ? '#dcfce7' : '#f1f5f9', color: project.quote.status === 'ACCEPTED' ? '#16a34a' : 'var(--text-main)', border: project.quote.status === 'ACCEPTED' ? '1px solid #bbf7d0' : '1px solid #e2e8f0' }}>
-                                            {project.quote.status}
-                                        </span>
-                                    </div>
 
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', backgroundColor: '#f8fafc', padding: '1.5rem', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Ngày sinh chứng từ</div>
-                                            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                                                {project.quote.createdAt ? formatDate(new Date(project.quote.createdAt)) : '-'}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '1.5rem', borderTop: '1px dashed #e2e8f0' }}>
-                                        <Link href={`/quotes/${project.quote.id}`} style={{ textDecoration: 'none' }}>
-                                            <Button variant="primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', fontWeight: 600, borderRadius: '8px' }}>
-                                                Mở Chi Tiết Báo Giá 
-                                            </Button>
-                                        </Link>
-                                    </div>
-                                </Card>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {activeTab === 'CONTRACT' && (
-                    <div style={{ height: '100%' }}>
-                        {!project.contract ? (
-                            getEmptyState(
-                                'Chưa có Hợp Đồng', 
-                                'Dự án này chưa được liên kết với một Hợp Đồng (văn bản) nào.', 
-                                FileSignature, 
-                                `/contracts/new?projectId=${project.id}${project.customer ? `&customerId=${project.customerId}` : ''}${project.quote ? `&quoteId=${project.quoteId}` : ''}`
-                            )
-                        ) : (
-                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '1rem' }}>
-                                <Card style={{ width: '100%', maxWidth: '100%', display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '2rem', boxShadow: '0 4px 20px -2px rgb(0 0 0 / 0.1)', border: '1px solid #e2e8f0', borderRadius: '16px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                                            <div style={{ width: '56px', height: '56px', borderRadius: '16px', backgroundColor: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb', boxShadow: '0 2px 10px -2px rgba(37, 99, 235, 0.3)' }}>
-                                                <FileSignature size={28} strokeWidth={2.5} />
-                                            </div>
-                                            <div>
-                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Hợp đồng Khách hàng (Văn Bản)</div>
-                                                <h2 style={{ fontSize: '1.5rem', margin: 0, fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.5px' }}>{project.contract.title}</h2>
-                                            </div>
-                                        </div>
-                                        <span style={{ padding: '6px 16px', borderRadius: '24px', fontSize: '0.85rem', fontWeight: 700, backgroundColor: project.contract.status === 'ACTIVE' ? '#dcfce7' : '#f1f5f9', color: project.contract.status === 'ACTIVE' ? '#16a34a' : 'var(--text-main)', border: project.contract.status === 'ACTIVE' ? '1px solid #bbf7d0' : '1px solid #e2e8f0' }}>
-                                            {project.contract.status}
-                                        </span>
-                                    </div>
-
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', backgroundColor: '#f8fafc', padding: '1.5rem', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Theo dõi Ngày ký kết</div>
-                                            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                                                {project.contract.createdAt ? formatDate(new Date(project.contract.createdAt)) : '-'}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '1.5rem', borderTop: '1px dashed #e2e8f0' }}>
-                                        <Link href={`/contracts/${project.contract.id}`} style={{ textDecoration: 'none' }}>
-                                            <Button variant="primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', fontWeight: 600, borderRadius: '8px' }}>
-                                                Xem & In Hợp Đồng
-                                            </Button>
-                                        </Link>
-                                    </div>
-                                </Card>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {activeTab === 'INVOICE' && (
-                    <div style={{ height: '100%' }}>
-                        {!project.invoice ? (
-                            getEmptyState(
-                                'Chưa có Hóa Đơn', 
-                                'Dự án này chưa được liên kết với một Hóa Đơn nào. Hãy tạo Hóa đơn để đối soát và thu tiền.', 
-                                Receipt, 
-                                `/sales/invoices?action=new&projectId=${project.id}${project.customer ? `&customerId=${project.customerId}` : ''}${project.contract ? `&contractId=${project.contractId}` : ''}`
-                            )
-                        ) : (
-                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '1rem' }}>
-                                <Card style={{ width: '100%', maxWidth: '100%', display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '2rem', boxShadow: '0 4px 20px -2px rgb(0 0 0 / 0.1)', border: '1px solid #e2e8f0', borderRadius: '16px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                                            <div style={{ width: '56px', height: '56px', borderRadius: '16px', backgroundColor: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4f46e5', boxShadow: '0 2px 10px -2px rgba(79, 70, 229, 0.3)' }}>
-                                                <Receipt size={28} strokeWidth={2.5} />
-                                            </div>
-                                            <div>
-                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Hóa Đơn Thu Tiền (Sales Invoice)</div>
-                                                <h2 style={{ fontSize: '1.5rem', margin: 0, fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.5px' }}>{project.invoice.code}</h2>
-                                            </div>
-                                        </div>
-                                        <span style={{ padding: '6px 16px', borderRadius: '24px', fontSize: '0.85rem', fontWeight: 700, backgroundColor: project.invoice.status === 'PAID' ? '#dcfce7' : '#f1f5f9', color: project.invoice.status === 'PAID' ? '#16a34a' : 'var(--text-main)', border: project.invoice.status === 'PAID' ? '1px solid #bbf7d0' : '1px solid #e2e8f0' }}>
-                                            {project.invoice.status}
-                                        </span>
-                                    </div>
-
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', backgroundColor: '#f8fafc', padding: '1.5rem', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', borderRight: '1px solid #e2e8f0', paddingRight: '1rem' }}>
-                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Tổng tiền Hóa đơn</div>
-                                            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                                                {project.invoice.totalAmount ? `${project.invoice.totalAmount.toLocaleString('vi-VN')} VNĐ` : '0 VNĐ'}
-                                            </div>
-                                        </div>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingLeft: '0.5rem' }}>
-                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Đã thu (Thanh toán)</div>
-                                            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#16a34a' }}>
-                                                {project.invoice.paidAmount ? `${project.invoice.paidAmount.toLocaleString('vi-VN')} VNĐ` : '0 VNĐ'}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '1.5rem', borderTop: '1px dashed #e2e8f0' }}>
-                                        <Link href={`/sales/invoices/${project.invoice.id}`} style={{ textDecoration: 'none' }}>
-                                            <Button variant="primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', fontWeight: 600, borderRadius: '8px' }}>
-                                                Mở Chi Tiết Hóa Đơn Khách
-                                            </Button>
-                                        </Link>
-                                    </div>
-                                </Card>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {activeTab === 'PURCHASE_BILL' && (
-                    <div style={{ height: '100%' }}>
-                        <Card style={{ padding: '1.5rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                                <h3 style={{ fontSize: '1.25rem', margin: 0 }}>Hóa Đơn Mua Vật Tư / Dịch Vụ</h3>
-                                <Link href={`/purchasing/bills?action=new&projectId=${project.id}`}>
-                                    <Button variant="primary" className="gap-2"><Plus size={16}/> Thêm Hóa Đơn Mua Mới</Button>
-                                </Link>
-                            </div>
-                            <div style={{ overflowX: 'auto' }}>
-                                <Table>
-                                    <thead>
-                                        <tr>
-                                            <th>Mã Hóa Đơn</th>
-                                            <th>Ngày lập</th>
-                                            <th>Nhà Cung Cấp</th>
-                                            <th>Tổng Tiền</th>
-                                            <th>Đã Thanh Toán</th>
-                                            <th>Trạng Thái</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {project.purchaseBills?.map((bill: any) => (
-                                            <tr key={bill.id}>
-                                                <td><Link href={`/purchasing/bills/${bill.id}`} className="text-blue-600 hover:underline font-medium">{bill.code}</Link></td>
-                                                <td>{bill.date ? formatDate(new Date(bill.date)) : '-'}</td>
-                                                <td><span style={{ fontWeight: 500, color: '#475569' }}>{bill.supplier?.name || '-'}</span></td>
-                                                <td style={{ fontWeight: 600 }}>{bill.totalAmount ? bill.totalAmount.toLocaleString('vi-VN') + ' ₫' : '0 ₫'}</td>
-                                                <td style={{ color: '#16a34a', fontWeight: 600 }}>{bill.paidAmount ? bill.paidAmount.toLocaleString('vi-VN') + ' ₫' : '0 ₫'}</td>
-                                                <td>
-                                                    <span style={{ padding: '4px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600, backgroundColor: bill.status === 'PAID' ? '#dcfce7' : '#f1f5f9', color: bill.status === 'PAID' ? '#16a34a' : 'var(--text-muted)' }}>
-                                                        {bill.status}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        {(!project.purchaseBills || project.purchaseBills.length === 0) && (
-                                            <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2.5rem' }}>Chưa có hóa đơn mua hàng nào.</td></tr>
-                                        )}
-                                    </tbody>
-                                </Table>
-                            </div>
-                        </Card>
-                    </div>
-                )}
-
-                {activeTab === 'EXPENSE' && (
-                    <div style={{ height: '100%' }}>
-                        <Card style={{ padding: '1.5rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                                <h3 style={{ fontSize: '1.25rem', margin: 0 }}>Chi Phí Khác (Tiếp khách, Phụ cấp...)</h3>
-                                <Link href={`/sales/expenses?action=new&projectId=${project.id}`}>
-                                    <Button variant="primary" className="gap-2"><Plus size={16}/> Thêm Phiếu Chi Mới</Button>
-                                </Link>
-                            </div>
-                            <div style={{ overflowX: 'auto' }}>
-                                <Table>
-                                    <thead>
-                                        <tr>
-                                            <th>Mã Phiếu Chi</th>
-                                            <th>Ngày chi</th>
-                                            <th>Lý do / Mô tả</th>
-                                            <th>Số Tiền Chi</th>
-                                            <th>Trạng Thái</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {project.expenses?.map((exp: any) => (
-                                            <tr key={exp.id}>
-                                                <td><Link href={`/sales/expenses/${exp.id}`} className="text-blue-600 hover:underline font-medium">{exp.code}</Link></td>
-                                                <td>{exp.date ? formatDate(new Date(exp.date)) : '-'}</td>
-                                                <td><span style={{ fontWeight: 500, color: '#475569' }}>{exp.description || '-'}</span></td>
-                                                <td style={{ fontWeight: 600, color: '#ef4444' }}>{exp.amount ? exp.amount.toLocaleString('vi-VN') + ' ₫' : '0 ₫'}</td>
-                                                <td>
-                                                    <span style={{ padding: '4px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600, backgroundColor: exp.status === 'APPROVED' || exp.status === 'PAID' ? '#dcfce7' : '#f1f5f9', color: exp.status === 'APPROVED' || exp.status === 'PAID' ? '#16a34a' : 'var(--text-muted)' }}>
-                                                        {exp.status}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        {(!project.expenses || project.expenses.length === 0) && (
-                                            <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2.5rem' }}>Chưa có khoản chi phí nào liên kết với dự án này.</td></tr>
-                                        )}
-                                    </tbody>
-                                </Table>
-                            </div>
-                        </Card>
-                    </div>
-                )}
-
-
-                {activeTab === 'TASKS' && (
-                    <div style={{ height: '100%' }}>
-                        <TaskDashboardClient
-                            initialTasks={project.tasks || []}
-                            users={users}
-                            parentProjectId={project.id}
-                            parentProject={project}
-                        />
-                    </div>
-                )}
-
-                {activeTab === 'DISCUSSIONS' && (
-                    <div style={{ display: 'flex', gap: '1.5rem', height: 'calc(100vh - 200px)' }}>
-                        {/* Sidebar: Topics List */}
-                        <Card style={{ width: '320px', display: 'flex', flexDirection: 'column', flexShrink: 0, overflow: 'hidden', boxShadow: '0 10px 40px -10px rgba(0,0,0,0.08)', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)' }}>
-                            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fcfcfd' }}>
-                                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)', letterSpacing: '-0.3px' }}>Chủ Đề</h3>
-                                <Button onClick={() => setIsCreatingTopic(true)} title="Tạo Chủ Đề Mới" style={{ padding: '0.35rem 0.5rem', height: 'auto', borderRadius: '8px' }}><Plus size={16} /></Button>
-                            </div>
-                            <div style={{ flex: 1, overflowY: 'auto', padding: '1rem 0' }}>
-                                {allTopics.map((topic: any) => {
-                                    const isActive = selectedTopic?.id === topic.id && !isCreatingTopic;
-                                    return (
-                                        <div 
-                                            key={topic.id}
-                                            onClick={() => { setSelectedTopic(topic); setIsCreatingTopic(false); }}
-                                            style={{ 
-                                                padding: '1rem 1.5rem', 
-                                                cursor: 'pointer',
-                                                background: isActive ? 'linear-gradient(to right, rgba(59, 130, 246, 0.05), transparent)' : 'transparent',
-                                                borderLeft: isActive ? '4px solid var(--primary)' : '4px solid transparent',
-                                                transition: 'all 0.2s',
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                gap: '0.25rem'
-                                            }}
-                                            className="hover:bg-slate-50 transition-colors"
+                            {milestones.length === 0 ? (
+                                <p className="text-sm text-slate-400 text-center py-6">
+                                    Chưa có công việc nào được đánh dấu ưu tiên Cao hoặc Khẩn cấp.
+                                </p>
+                            ) : (
+                                <div className="space-y-2.5">
+                                    {milestones.map((m: any) => (
+                                        <div
+                                            key={m.id}
+                                            className="flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-200/80 transition-colors"
                                         >
-                                            <h4 style={{ margin: 0, fontSize: '0.90rem', fontWeight: isActive ? 700 : 500, color: isActive ? 'var(--primary)' : 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                {topic.id === 'GENERAL' ? <MessageSquare size={14} /> : <Tag size={14} />} {topic.title}
-                                            </h4>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                {topic.id === 'GENERAL' ? 'Kênh trao đổi chung' : `Bởi ${topic.creator?.name || 'Vô danh'}`}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </Card>
-
-                        {/* Main Content */}
-                        <Card style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 10px 40px -10px rgba(0,0,0,0.08)', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)', backgroundColor: '#fafafb' }}>
-                            {isCreatingTopic ? (
-                                <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', height: '100%', overflowY: 'auto', backgroundColor: '#f8fafc' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #cbd5e1', paddingBottom: '1rem' }}>
-                                        <h3 style={{ fontSize: '1.25rem', margin: 0, fontWeight: 600 }}>Tạo Chủ Đề Thảo Luận</h3>
-                                        <Button variant="secondary" onClick={() => setIsCreatingTopic(false)}>Hủy</Button>
-                                    </div>
-                                    <form onSubmit={handleCreateTopic} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                        <div>
-                                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600, color: '#475569' }}>Tiêu đề chủ đề</label>
-                                            <input 
-                                                autoFocus
-                                                value={newTopicTitle} 
-                                                onChange={e => setNewTopicTitle(e.target.value)} 
-                                                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '1rem' }}
-                                                placeholder="VD: Cập nhật thiết kế báo giá đợt 2"
-                                                required
-                                            />
-                                        </div>
-                                        <div>
-                                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600, color: '#475569' }}>Nội dung chi tiết</label>
-                                            <textarea 
-                                                value={newTopicContent} 
-                                                onChange={e => setNewTopicContent(e.target.value)} 
-                                                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', minHeight: '200px', fontSize: '0.95rem' }}
-                                                placeholder="Mô tả cụ thể nội dung cần trao đổi..."
-                                                required
-                                            />
-                                        </div>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <Button type="submit" variant="primary" disabled={isSaving || !newTopicTitle || !newTopicContent}>
-                                                {isSaving ? 'Đang tạo...' : 'Đăng Chủ Đề'}
-                                            </Button>
-                                        </div>
-                                    </form>
-                                </div>
-                            ) : selectedTopic ? (
-                                <>
-                                    <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid rgba(0,0,0,0.05)', backgroundColor: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(16px)', zIndex: 10, position: 'sticky', top: 0 }}>
-                                        <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', letterSpacing: '-0.3px', color: '#1e293b' }}>
-                                            # {selectedTopic.title}
-                                        </h3>
-                                        {selectedTopic.id !== 'GENERAL' && selectedTopic.content && (
-                                            <div style={{ padding: '1rem', backgroundColor: 'rgba(241,245,249,0.5)', borderRadius: '12px', fontSize: '0.95rem', color: '#475569', marginTop: '1rem', borderLeft: '3px solid var(--primary)' }}>
-                                                {selectedTopic.content}
-                                            </div>
-                                        )}
-                                    </div>
-                                    
-                                    <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', backgroundColor: 'transparent', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                        {selectedTopic.comments?.length === 0 ? (
-                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)', opacity: 0.5 }}>
-                                                <MessageSquare size={48} style={{ marginBottom: '1rem', opacity: 0.5 }} />
-                                                <p style={{ fontSize: '1rem', fontWeight: 500 }}>Chưa có bình luận nào. Hãy gửi một lời nhắn!</p>
-                                            </div>
-                                        ) : (
-                                            selectedTopic.comments?.map((comment: any) => {
-                                                const reactionCounts = comment.reactions?.reduce((acc: any, r: any) => {
-                                                    acc[r.emoji] = (acc[r.emoji] || 0) + 1;
-                                                    return acc;
-                                                }, {}) || {};
-
-                                                const userReactions = comment.reactions?.filter((r: any) => r.user?.id === session?.user?.id).map((r: any) => r.emoji) || [];
-                                                const isMe = comment.user?.id === session?.user?.id;
-
-                                                return (
-                                                    <div key={comment.id} style={{ display: 'flex', gap: '1rem', alignSelf: isMe ? 'flex-end' : 'flex-start', flexDirection: isMe ? 'row-reverse' : 'row', maxWidth: '85%' }}>
-                                                        <div style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: isMe ? 'transparent' : 'white', background: isMe ? 'linear-gradient(135deg, var(--primary) 0%, #3b82f6 100%)' : 'white', border: isMe ? 'none' : '1px solid #cbd5e1', color: isMe ? 'white' : 'var(--text-main)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', flexShrink: 0, boxShadow: isMe ? '0 4px 12px rgba(59, 130, 246, 0.4)' : '0 2px 8px rgba(0,0,0,0.05)' }}>
-                                                            {comment.user?.name?.[0]?.toUpperCase() || comment.user?.email?.[0]?.toUpperCase() || 'U'}
-                                                        </div>
-                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0 0.25rem' }}>
-                                                                <span style={{ fontWeight: 600, fontSize: '0.85rem', color: isMe ? '#475569' : '#1e293b' }}>{isMe ? 'Bạn' : (comment.user?.name || comment.user?.email)}</span>
-                                                                <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 500 }}>
-                                                                    {comment.createdAt ? formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: vi }) : 'Vừa xong'}
-                                                                </span>
-                                                            </div>
-
-                                                            <div
-                                                                style={{ 
-                                                                    padding: '0.85rem 1.25rem', 
-                                                                    background: isMe ? 'linear-gradient(135deg, var(--primary) 0%, #1d4ed8 100%)' : 'white', 
-                                                                    color: isMe ? 'white' : '#334155',
-                                                                    borderRadius: isMe ? '20px 4px 20px 20px' : '4px 20px 20px 20px', 
-                                                                    lineHeight: 1.5, 
-                                                                    fontSize: '0.95rem',
-                                                                    boxShadow: isMe ? '0 8px 20px -5px rgba(59, 130, 246, 0.4)' : '0 4px 15px -3px rgba(0,0,0,0.05)',
-                                                                    border: isMe ? 'none' : '1px solid rgba(0,0,0,0.02)',
-                                                                    wordBreak: 'break-word',
-                                                                }}
-                                                                dangerouslySetInnerHTML={{ __html: (comment.content || '')
-                                                                    .replace(/\[WARNING\]/g, '<span style="background: #fee2e2; color: #ef4444; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; border: 1px solid #fca5a5;">⚠ CẢNH BÁO</span>')
-                                                                    .replace(/\[INFO\]/g, '<span style="background: #e0e7ff; color: #3b82f6; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; border: 1px solid #93c5fd;">ℹ THÔNG BÁO</span>')
-                                                                    .replace(/\[URGENT\]/g, '<span style="background: #fef2f2; color: #dc2626; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; border: 1px solid #ef4444;">🚨 KHẨN CẤP</span>')
-                                                                }}
-                                                            />
-
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
-                                                                {Object.keys(reactionCounts).length > 0 && (
-                                                                    <div style={{ display: 'flex', gap: '0.25rem', background: 'white', padding: '2px', borderRadius: '12px', boxShadow: '0 1px 2px rgb(0 0 0 / 0.05)' }}>
-                                                                        {Object.entries(reactionCounts).map(([emoji, count]) => (
-                                                                            <div key={emoji} style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', padding: '2px 6px', backgroundColor: userReactions.includes(emoji) ? '#e0e7ff' : '#f1f5f9', borderRadius: '10px', fontSize: '0.75rem', cursor: 'pointer' }} onClick={() => handleToggleReaction(comment.id, emoji)}>
-                                                                                <span>{emoji}</span>
-                                                                                <span style={{ color: userReactions.includes(emoji) ? 'var(--primary)' : 'var(--text-muted)', fontWeight: 600 }}>{count as number}</span>
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
-                                                                )}
-                                                                <div style={{ display: 'flex', gap: '0.25rem', padding: '2px 6px', background: 'white', borderRadius: '12px', opacity: 0.7, boxShadow: '0 1px 2px rgb(0 0 0 / 0.05)' }}>
-                                                                    {EMOJIS.slice(0, 4).map(emoji => (
-                                                                        <button key={emoji} onClick={() => handleToggleReaction(comment.id, emoji)} style={{ fontSize: '0.85rem', cursor: 'pointer', border: 'none', background: 'none' }} className="hover:scale-125 transition-transform">{emoji}</button>
-                                                                    ))}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })
-                                        )}
-                                    </div>
-
-                                    <div style={{ backgroundColor: 'transparent', padding: '0 1.5rem 1.5rem 1.5rem' }}>
-                                        <form onSubmit={handleAddComment}>
-                                            <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'white', borderRadius: '32px', padding: '0.35rem 0.35rem 0.35rem 1rem', boxShadow: '0 15px 35px -5px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.03)' }}>
-                                                <Button type="button" variant="secondary" style={{ padding: '0.5rem', borderRadius: '50%', color: '#64748b', background: 'transparent' }} onClick={() => document.getElementById('discuss-attach')?.click()}>
-                                                    <Paperclip size={20} />
-                                                </Button>
-                                                <input 
-                                                    type="file" 
-                                                    id="discuss-attach" 
-                                                    style={{ display: 'none' }} 
-                                                    multiple
-                                                    onChange={async (e) => {
-                                                        const files = e.target.files;
-                                                        if (!files || files.length === 0) return;
-                                                        setIsSaving(true);
-                                                        try {
-                                                            let newTxt = '';
-                                                            for (let i=0; i<files.length; i++) {
-                                                                const file = files[i];
-                                                                if (file.size > 52428800) { alert('File quá lớn'); continue; }
-                                                                const fd = new FormData(); fd.append('file', file);
-                                                                const res = await fetch('/api/upload', { method: 'POST', body: fd });
-                                                                if (!res.ok) continue;
-                                                                const data = await res.json();
-                                                                if (file.type.startsWith('image/')) {
-                                                                    newTxt += `\n<img src="${data.url}" alt="${file.name}" style="max-width:100%; border-radius:12px; margin-top:8px; display:block;" />`;
-                                                                } else {
-                                                                    newTxt += `\n<a href="${data.url}" target="_blank" style="display:inline-flex; align-items:center; gap:8px; padding:10px 14px; background:rgba(255,255,255,0.2); color:inherit; border-radius:12px; text-decoration:none; margin-top:8px; border:1px solid rgba(255,255,255,0.4); font-weight:500;">📎 ${file.name}</a>`;
-                                                                }
-                                                            }
-                                                            setNewComment(prev => prev + newTxt);
-                                                        } finally { setIsSaving(false); }
-                                                    }} 
-                                                />
-                                                <textarea
-                                                    value={newComment}
-                                                    onChange={e => setNewComment(e.target.value)}
-                                                    onKeyDown={e => {
-                                                        if (e.key === 'Enter' && !e.shiftKey) {
-                                                            e.preventDefault();
-                                                            if(newComment.trim() && !isSaving) {
-                                                              handleAddComment(e as unknown as React.FormEvent);
-                                                            }
-                                                        }
-                                                    }}
-                                                    onPaste={async (e) => {
-                                                        const items = e.clipboardData.items;
-                                                        for (let i = 0; i < items.length; i++) {
-                                                            if (items[i].type.indexOf('image') !== -1) {
-                                                                const file = items[i].getAsFile();
-                                                                if (file) {
-                                                                    if (file.size > 52428800) {
-                                                                        alert(`File ảnh dán vào quá lớn (Tối đa 50MB)`);
-                                                                        return;
-                                                                    }
-                                                                    setIsSaving(true);
-                                                                    try {
-                                                                        const formData = new FormData();
-                                                                        formData.append('file', file);
-                                                                        const res = await fetch('/api/upload', { method: 'POST', body: formData });
-                                                                        if (!res.ok) throw new Error('Upload failed');
-                                                                        const data = await res.json();
-                                                                        setNewComment(prev => prev + `\n<img src="${data.url}" alt="Pasted Image" style="max-width:100%; border-radius:12px; margin-top:8px; display:block; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);" />`);
-                                                                    } catch (err) {
-                                                                        alert('Lỗi tải hình ảnh từ clipboard');
-                                                                    } finally {
-                                                                        setIsSaving(false);
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }}
-                                                    placeholder="Gõ tin nhắn... (Enter để gửi, Shift+Enter xuống dòng, Hỗ trợ dán ảnh)"
-                                                    style={{ 
-                                                        flex: 1, 
-                                                        minHeight: '24px', 
-                                                        maxHeight: '120px',
-                                                        padding: '0.65rem 0.5rem', 
-                                                        borderRadius: '0', 
-                                                        border: 'none', 
-                                                        backgroundColor: 'transparent',
-                                                        resize: 'none', 
-                                                        fontSize: '0.95rem',
-                                                        outline: 'none',
-                                                        color: '#1e293b'
-                                                    }}
-                                                    rows={1}
-                                                />
-                                                <Button 
-                                                    type="submit" 
-                                                    disabled={isSaving || !newComment.trim()} 
-                                                    style={{ 
-                                                        borderRadius: '50%', 
-                                                        width: '44px', 
-                                                        height: '44px', 
-                                                        padding: 0, 
-                                                        display: 'flex', 
-                                                        alignItems: 'center', 
-                                                        justifyContent: 'center',
-                                                        flexShrink: 0,
-                                                        background: (!isSaving && newComment.trim()) ? 'linear-gradient(135deg, var(--primary) 0%, #3b82f6 100%)' : '#e2e8f0',
-                                                        border: 'none',
-                                                        color: (!isSaving && newComment.trim()) ? 'white' : '#94a3b8',
-                                                        boxShadow: (!isSaving && newComment.trim()) ? '0 4px 15px rgba(59, 130, 246, 0.4)' : 'none',
-                                                        transition: 'all 0.3s'
-                                                    }}
+                                            <div className="space-y-1">
+                                                <Link
+                                                    href={`/tasks/${m.id}`}
+                                                    className="font-semibold text-sm text-slate-900 hover:text-indigo-600 transition-colors line-clamp-1"
                                                 >
-                                                    <Send size={18} style={{ marginLeft: '3px' }} />
-                                                </Button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </>
-                            ) : null}
-                        </Card>
-                    </div>
-                )}
-
-                {activeTab === 'ISSUES' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
-                        {/* SECTION 1: ISSUES */}
-                        <div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                                <h2 style={{ margin: 0, fontSize: '1.35rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Flag size={20} color="#ef4444" /> Sự Cố (Issues)
-                                </h2>
-                                <Button variant="primary" onClick={() => { setEditingIssueData(null); setIsIssueModalOpen(true); }}>
-                                    <Plus size={16} style={{ marginRight: '8px' }} /> Ghi Nhận Sự Cố & Vấn Đề
-                                </Button>
-                            </div>
-                            
-                            {!project.issues || project.issues.length === 0 ? (
-                                getEmptyState('Sự Cố (Issue)', 'Không có sự cố nào cản trở dự án ở hiện tại.', Flag, '#')
-                            ) : (
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
-                                    {project.issues.map((issue: any) => {
-                                        const ragColors: Record<string, { bg: string, text: string, border: string, label: string }> = {
-                                            'RED': { bg: '#fee2e2', text: '#ef4444', border: '#fca5a5', label: 'Nghiêm trọng (Blocker)' },
-                                            'AMBER': { bg: '#fef3c7', text: '#f59e0b', border: '#fcd34d', label: 'Cảnh báo (Warning)' },
-                                            'GREEN': { bg: '#dcfce7', text: '#10b981', border: '#86efac', label: 'Chấp nhận được' },
-                                        };
-                                        const c = ragColors[issue.severity || 'AMBER'];
-                                        
-                                        return (
-                                            <Card key={issue.id} style={{ borderLeft: `6px solid ${c.text}`, overflow: 'hidden' }}>
-                                                <div style={{ padding: '1.25rem', backgroundColor: c.bg + '30', display: 'flex', flexDirection: 'column', height: '100%' }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                                                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                                            <button 
-                                                                onClick={() => { setEditingIssueData(issue); setIsIssueModalOpen(true); }}
-                                                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', display: 'flex', alignItems: 'center', padding: '2px' }}
-                                                            >
-                                                                <Edit2 size={14} />
-                                                            </button>
-                                                            <span style={{ padding: '4px 10px', backgroundColor: c.bg, color: c.text, borderRadius: '16px', fontSize: '0.75rem', fontWeight: 700, border: `1px solid ${c.border}` }}>
-                                                                {c.label}
-                                                            </span>
-                                                        </div>
-                                                        <select
-                                                            value={issue.status}
-                                                            onChange={async (e) => {
-                                                                setIsSaving(true);
-                                                                try {
-                                                                    await updateProjectIssueStatus(issue.id, e.target.value, project.id);
-                                                                    router.refresh();
-                                                                } finally { setIsSaving(false); }
-                                                            }}
-                                                            disabled={isSaving}
-                                                            style={{
-                                                                padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600,
-                                                                backgroundColor: issue.status === 'RESOLVED' || issue.status === 'CLOSED' ? '#dcfce7' : 'white',
-                                                                color: issue.status === 'RESOLVED' || issue.status === 'CLOSED' ? '#16a34a' : 'var(--text-main)',
-                                                                border: '1px solid var(--border)', cursor: 'pointer', outline: 'none'
-                                                            }}
-                                                        >
-                                                            <option value="OPEN">Mở (Open)</option>
-                                                            <option value="IN_PROGRESS">Đang xử lý</option>
-                                                            <option value="RESOLVED">Đã giải quyết</option>
-                                                            <option value="CLOSED">Đã đóng</option>
-                                                        </select>
-                                                    </div>
-                                                    
-                                                    <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.1rem', color: 'var(--text-main)' }}>{issue.title}</h3>
-                                                    <p style={{ margin: '0 0 1rem', fontSize: '0.9rem', color: 'var(--text-muted)', flex: 1 }}>{issue.description || 'Không có mô tả chi tiết'}</p>
-                                                    
-                                                    {issue.mitigationPlan && (
-                                                        <div style={{ padding: '0.75rem', backgroundColor: 'rgba(255,255,255,0.6)', borderRadius: '8px', border: '1px dashed rgba(0,0,0,0.1)', marginBottom: '1rem' }}>
-                                                            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem', textTransform: 'uppercase' }}>PA khắc phục (Mitigation)</div>
-                                                            <div style={{ fontSize: '0.85rem' }}>{issue.mitigationPlan}</div>
-                                                        </div>
-                                                    )}
-                                                    
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Người xử lý:</div>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                                                {issue.assignedTo ? (
-                                                                    <>
-                                                                        <img src={issue.assignedTo.avatar || '/default-avatar.png'} alt="user" style={{ width: '20px', height: '20px', borderRadius: '50%' }} />
-                                                                        <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>{issue.assignedTo.name}</span>
-                                                                    </>
-                                                                ) : (
-                                                                    <span style={{ fontSize: '0.8rem', fontStyle: 'italic', color: 'var(--danger)' }}>Chưa chỉ định</span>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                            {formatDate(new Date(issue.createdAt))}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </Card>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* SECTION 2: RISKS */}
-                        <div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderTop: '1px dashed #cbd5e1', paddingTop: '2.5rem' }}>
-                                <h2 style={{ margin: 0, fontSize: '1.35rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <AlertTriangle size={20} color="#f59e0b" /> Quản Trị Rủi Ro (Risks)
-                                </h2>
-                                <Button variant="secondary" onClick={() => { setEditingRiskData(null); setIsRiskModalOpen(true); }}>
-                                    <AlertTriangle size={16} style={{ marginRight: '8px' }} /> Đánh Giá Rủi Ro
-                                </Button>
-                            </div>
-
-                            {!project.risks || project.risks.length === 0 ? (
-                                getEmptyState('Rủi ro (Risk)', 'Dự án hiện tại không có rủi ro tiềm ẩn nào được cấu hình.', AlertTriangle, '#')
-                            ) : (
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
-                                    {project.risks.map((risk: any) => {
-                                        const impactColors: Record<string, { bg: string, text: string }> = {
-                                            'LOW': { bg: '#e0f2fe', text: '#0284c7' },       // Blue
-                                            'MEDIUM': { bg: '#fef3c7', text: '#d97706' },    // Amber
-                                            'HIGH': { bg: '#ffedd5', text: '#ea580c' },      // Orange
-                                            'CRITICAL': { bg: '#fee2e2', text: '#dc2626' },  // Red
-                                        };
-                                        const c = impactColors[risk.impact || 'MEDIUM'];
-                                        
-                                        return (
-                                            <Card key={risk.id} style={{ display: 'flex', flexDirection: 'column' }}>
-                                                <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', height: '100%' }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                                                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                                            <button 
-                                                                onClick={() => { setEditingRiskData(risk); setIsRiskModalOpen(true); }}
-                                                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', display: 'flex', alignItems: 'center', padding: '2px' }}
-                                                            >
-                                                                <Edit2 size={14} />
-                                                            </button>
-                                                            <span style={{ padding: '4px 10px', backgroundColor: c.bg, color: c.text, borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600 }}>
-                                                                Tác động: {risk.impact}
-                                                            </span>
-                                                        </div>
-                                                        <select
-                                                            value={risk.status}
-                                                            onChange={async (e) => {
-                                                                setIsSaving(true);
-                                                                try {
-                                                                    await updateProjectRiskStatus(risk.id, e.target.value, project.id);
-                                                                    router.refresh();
-                                                                } finally { setIsSaving(false); }
-                                                            }}
-                                                            disabled={isSaving}
-                                                            style={{
-                                                                padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600,
-                                                                backgroundColor: risk.status === 'MITIGATED' || risk.status === 'RESOLVED' ? '#dcfce7' : '#f1f5f9',
-                                                                color: risk.status === 'MITIGATED' || risk.status === 'RESOLVED' ? '#16a34a' : 'var(--text-main)',
-                                                                border: '1px solid var(--border)', cursor: 'pointer', outline: 'none'
-                                                            }}
-                                                        >
-                                                            <option value="OPEN">Đang theo dõi (Open)</option>
-                                                            <option value="MITIGATED">Đã phòng ngừa (Mitigated)</option>
-                                                            <option value="OCCURRED">Đã xảy ra sự cố</option>
-                                                            <option value="RESOLVED">Đã giải quyết</option>
-                                                        </select>
-                                                    </div>
-                                                    
-                                                    <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.1rem', color: 'var(--text-main)' }}>{risk.title}</h3>
-                                                    <p style={{ margin: '0 0 1.5rem', fontSize: '0.9rem', color: 'var(--text-muted)', flex: 1 }}>{risk.description || 'Không có mô tả chi tiết'}</p>
-                                                    
-                                                    {/* Probability Bar */}
-                                                    <div style={{ marginBottom: '1.5rem' }}>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem', fontWeight: 600 }}>
-                                                            <span>Xác suất xảy ra</span>
-                                                            <span style={{ color: risk.probability > 70 ? '#ef4444' : risk.probability > 40 ? '#f59e0b' : '#10b981' }}>
-                                                                {risk.probability}%
-                                                            </span>
-                                                        </div>
-                                                        <div style={{ width: '100%', height: '6px', backgroundColor: '#e2e8f0', borderRadius: '3px', overflow: 'hidden' }}>
-                                                            <div style={{ width: `${risk.probability}%`, backgroundColor: risk.probability > 70 ? '#ef4444' : risk.probability > 40 ? '#f59e0b' : '#10b981', height: '100%' }} />
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                            <img src={risk.creator?.avatar || '/default-avatar.png'} alt="user" style={{ width: '20px', height: '20px', borderRadius: '50%' }} />
-                                                            <span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-muted)' }}>{risk.creator?.name} ghi nhận</span>
-                                                        </div>
-                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                            {formatDate(new Date(risk.createdAt))}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </Card>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-
-                {activeTab === 'TIMESHEETS' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                        <Card style={{ padding: '1.5rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                                <h3 style={{ fontSize: '1.2rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
-                                    <Clock size={20} color="var(--primary)" /> Phân Bổ Nguồn Lực & Chấm Công
-                                </h3>
-                            </div>
-                            
-                            {(() => {
-                                const workloadByUser = new Map();
-                                project.tasks?.forEach((task: any) => {
-                                    task.timeLogs?.forEach((log: any) => {
-                                        if (!log.user) return;
-                                        const uid = log.user.id;
-                                        if (!workloadByUser.has(uid)) {
-                                            workloadByUser.set(uid, {
-                                                user: log.user,
-                                                totalHours: 0,
-                                                laborCost: 0,
-                                                tasksCount: new Set(),
-                                                logs: []
-                                            });
-                                        }
-                                        const w = workloadByUser.get(uid);
-                                        const hours = (log.durationSec || 0) / 3600;
-                                        w.totalHours += hours;
-                                        w.laborCost += hours * (log.user.employeeProfile?.hourlyRate || 0);
-                                        w.tasksCount.add(task.id);
-                                        w.logs.push({ taskTitle: task.title, hours, date: log.createdAt || log.startTime });
-                                    });
-                                });
-                                const workloadArray = Array.from(workloadByUser.values()).sort((a: any, b: any) => b.totalHours - a.totalHours);
-                                
-                                if (workloadArray.length === 0) {
-                                    return getEmptyState('Ghi nhận thời gian', 'Chưa có nhân sự nào chấm công Play/Stop thời gian trong các công việc của dự án này.', Clock, '#');
-                                }
-                                
-                                return (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                        {workloadArray.map((w: any) => (
-                                            <div key={w.user.id} style={{ padding: '1.25rem', border: '1px solid var(--border)', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '1rem', backgroundColor: 'var(--surface)' }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                                        <img src={w.user.avatar || '/default-avatar.png'} alt="avatar" style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }} />
-                                                        <div>
-                                                            <div style={{ fontWeight: 600, fontSize: '1.05rem', color: 'var(--text-main)' }}>{w.user.name}</div>
-                                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Tham gia {w.tasksCount.size} công việc khác nhau</div>
-                                                        </div>
-                                                    </div>
-                                                    <div style={{ textAlign: 'right' }}>
-                                                        <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--primary)' }}>{w.totalHours.toFixed(1)} <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Giờ</span></div>
-                                                        <div style={{ fontSize: '0.85rem', color: '#ef4444', fontWeight: 600 }}>Chi phí: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(w.laborCost)}</div>
-                                                    </div>
-                                                </div>
-                                                
-                                                <div style={{ width: '100%', height: '8px', backgroundColor: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
-                                                    {/* Warning red if working more than 40 hours logged strictly on this project alone */}
-                                                    <div style={{ width: `${Math.min((w.totalHours / 40) * 100, 100)}%`, backgroundColor: w.totalHours > 40 ? '#ef4444' : (w.totalHours > 20 ? '#f59e0b' : '#10b981'), height: '100%', transition: 'width 0.5s' }} />
-                                                </div>
-                                                
-                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.5rem', marginTop: '0.5rem', padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '8px' }}>
-                                                    {w.logs.slice(0, 6).map((log: any, idx: number) => (
-                                                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '0.5rem', borderBottom: '1px dashed #e2e8f0' }}>
-                                                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px', fontWeight: 500 }} title={log.taskTitle}>{log.taskTitle}</span>
-                                                            <span style={{ fontWeight: 600, color: 'var(--text-main)', backgroundColor: '#e2e8f0', padding: '2px 6px', borderRadius: '4px' }}>{log.hours.toFixed(1)}h</span>
-                                                        </div>
-                                                    ))}
-                                                    {w.logs.length > 6 && <div style={{ display: 'flex', alignItems: 'center', color: 'var(--primary)', fontWeight: 500 }}>+ {w.logs.length - 6} bản ghi khác...</div>}
+                                                    {m.title}
+                                                </Link>
+                                                <div className="flex items-center gap-3 text-xs text-slate-500">
+                                                    <span>Hạn: <strong className="text-slate-700">{m.dueDate ? formatDate(new Date(m.dueDate)) : 'Chưa định'}</strong></span>
+                                                    <span>•</span>
+                                                    <span>Giao cho: {m.assignees?.map((a: any) => a.user?.name || a.user?.email).join(', ') || 'Chưa gán'}</span>
                                                 </div>
                                             </div>
-                                        ))}
-                                    </div>
-                                );
-                            })()}
-                        </Card>
-                    </div>
-                )}
 
-                {activeTab === 'FILES' && (
-                    <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                            <h3 style={{ fontSize: '1.2rem', fontWeight: 600 }}>Tủ Hồ Sơ Dự Án</h3>
-                            <Button onClick={() => document.getElementById('fileUpload')?.click()}>
-                                <Paperclip size={16} style={{ marginRight: '8px' }} />
-                                Tải tài liệu lên
-                            </Button>
-                            <input
-                                id="fileUpload"
-                                type="file"
-                                multiple
-                                style={{ display: 'none' }}
-                                onChange={handleDocUpload}
-                                disabled={isSaving}
-                            />
-                        </div>
-
-                        {(!project.attachments || project.attachments.length === 0) && Object.keys(uploadProgress).length === 0 ? (
-                            <Card style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                                <FileText size={48} style={{ margin: '0 auto 1rem', opacity: 0.5 }} />
-                                <p>Chưa có tài liệu nào trong tủ hồ sơ của dự án.</p>
-                            </Card>
-                        ) : (
-                            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                                {Object.entries(uploadProgress).map(([fileName, progress]) => (
-                                    <Card key={fileName} style={{ padding: '1rem', width: '250px', display: 'flex', flexDirection: 'column', gap: '0.5rem', border: '1px dashed var(--primary)' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                                            <span style={{ color: 'var(--primary)' }}>Đang tải lên: <strong>{fileName}</strong></span>
-                                            <span style={{ color: 'var(--primary)', fontWeight: 500 }}>{progress}%</span>
-                                        </div>
-                                        <div style={{ width: '100%', height: '6px', backgroundColor: '#e2e8f0', borderRadius: '3px', overflow: 'hidden', marginTop: 'auto' }}>
-                                            <div style={{ width: `${progress}%`, height: '100%', backgroundColor: 'var(--primary)', transition: 'width 0.2s ease-out' }} />
-                                        </div>
-                                    </Card>
-                                ))}
-                                {project.attachments?.map((doc: any) => (
-                                    <Card key={doc.id} style={{ padding: '1rem', width: '250px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                                        <div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                                                <FileText size={20} color="var(--primary)" />
-                                                <div style={{ fontWeight: 600, fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={doc.fileName}>
-                                                    {doc.fileName}
-                                                </div>
-                                            </div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-                                                Bởi {doc.uploadedBy?.name || doc.uploadedBy?.email} - {new Date(doc.createdAt).toLocaleDateString('vi-VN')}
-                                            </div>
-                                        </div>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.8rem', color: '#3b82f6', textDecoration: 'none' }}>
-                                                Mở tài liệu
-                                            </a>
-                                            <button onClick={() => handleDocDelete(doc.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}>
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
-                                    </Card>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {activeTab === 'REPORTS' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                        {/* KPI Summary Row */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem' }}>
-                            <Card style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', borderBottom: '4px solid var(--primary)' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)' }}>
-                                    <span style={{ fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase' }}>Tiến độ tổng thể</span>
-                                    <Target size={18} color="var(--primary)" />
-                                </div>
-                                <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-main)', display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                                    {progress}%
-                                </div>
-                                <div style={{ width: '100%', height: '6px', backgroundColor: '#e2e8f0', borderRadius: '4px', overflow: 'hidden', marginTop: '0.5rem' }}>
-                                    <div style={{ width: `${progress}%`, backgroundColor: 'var(--primary)', height: '100%', borderRadius: '4px' }} />
-                                </div>
-                            </Card>
-
-                            <Card style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', borderBottom: '4px solid #10b981' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)' }}>
-                                    <span style={{ fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase' }}>Tài chính (Lãi/Lỗ)</span>
-                                    <DollarSign size={18} color="#10b981" />
-                                </div>
-                                <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#10b981', display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(
-                                        (project.quotes?.reduce((acc: number, q: any) => acc + (q.status === 'ACCEPTED' ? q.totalAmount : 0), 0) || 0) - 
-                                        (project.expenses?.reduce((acc: number, e: any) => acc + (e.status === 'APPROVED' ? e.amount : 0), 0) || 0)
-                                    )}
-                                </div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                    <ArrowUpRight size={14} color="#10b981" /> Tạm tính từ Báo Giá & Chi Phí
-                                </div>
-                            </Card>
-
-                            <Card style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', borderBottom: '4px solid #f59e0b' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)' }}>
-                                    <span style={{ fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase' }}>Vấn đề & Rủi ro</span>
-                                    <Flag size={18} color="#f59e0b" />
-                                </div>
-                                <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-main)', display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                                    {project.issues?.length || 0}
-                                </div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                    {project.issues?.filter((i:any) => i.status !== 'CLOSED').length || 0} vấn đề đang mở
-                                </div>
-                            </Card>
-
-                            <Card style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', borderBottom: '4px solid #8b5cf6' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)' }}>
-                                    <span style={{ fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase' }}>Team & Nguồn lực</span>
-                                    <Users size={18} color="#8b5cf6" />
-                                </div>
-                                <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-main)', display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                                    {project.members?.length || 0} <span style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--text-muted)' }}>người</span>
-                                </div>
-                                <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.5rem' }}>
-                                    {project.members?.slice(0, 5).map((m: any) => (
-                                        <div key={m.id} style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: 600, color: 'var(--primary)', border: '1px solid white', marginLeft: '-8px' }}>
-                                            {m.user?.name?.charAt(0).toUpperCase() || 'U'}
+                                            <span
+                                                className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                                                    m.status === 'DONE'
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {m.status === 'DONE' ? 'Hoàn thành' : 'Đang xử lý'}
+                                            </span>
                                         </div>
                                     ))}
                                 </div>
-                            </Card>
+                            )}
                         </div>
 
-                        {/* Detailed Charts Row */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: '1.5rem' }}>
-                            {/* Breakdown of Tasks */}
-                            <Card style={{ padding: '1.5rem' }}>
-                                <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <LayoutDashboard size={18} color="var(--primary)" /> Phân bổ khối lượng công việc (Workload)
+                        {/* Budget & Cost Progress */}
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                                    <BarChart2 className="w-4 h-4 text-indigo-600" /> Ngân Sách & Chi Phí Dự Án
                                 </h3>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                    {['TODO', 'IN_PROGRESS', 'REVIEW', 'CANCELLED'].map(status => {
-                                        const count = project.tasks?.filter((t: any) => t.status === status).length || 0;
-                                        const pct = totalTasks > 0 ? Math.round((count / totalTasks) * 100) : 0;
-                                        const config: Record<string, { color: string, label: string }> = {
-                                            'TODO': { color: '#f59e0b', label: 'Chuẩn bị' },
-                                            'IN_PROGRESS': { color: '#3b82f6', label: 'Đang làm' },
-                                            'REVIEW': { color: '#8b5cf6', label: 'Chờ duyệt' },
-                                            'CANCELLED': { color: '#ef4444', label: 'Hủy/Tạm dừng' }
-                                        };
+                                <span className={`text-xs font-bold ${budgetUsedPct > 100 ? 'text-rose-600' : 'text-slate-600'}`}>
+                                    Đã dùng {budgetUsedPct.toFixed(1)}% ngân sách
+                                </span>
+                            </div>
+
+                            <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden mb-3">
+                                <div
+                                    className={`h-full rounded-full transition-all duration-500 ${
+                                        budgetUsedPct > 100
+                                            ? 'bg-rose-500'
+                                            : budgetUsedPct > 80
+                                            ? 'bg-amber-500'
+                                            : 'bg-indigo-500'
+                                    }`}
+                                    style={{ width: `${Math.min(budgetUsedPct, 100)}%` }}
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-2 text-xs text-slate-600">
+                                <div>
+                                    <span className="text-slate-400 block">Đã chi thực tế:</span>
+                                    <strong className="text-rose-600 font-bold text-sm">{totalCost.toLocaleString('vi-VN')} ₫</strong>
+                                </div>
+                                <div>
+                                    <span className="text-slate-400 block">Ngân sách trần:</span>
+                                    <strong className="text-slate-800 font-bold text-sm">{budget.toLocaleString('vi-VN')} ₫</strong>
+                                </div>
+                                <div className="text-right">
+                                    <span className="text-slate-400 block">Còn lại:</span>
+                                    <strong className={`font-bold text-sm ${budget - totalCost < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                                        {(budget - totalCost).toLocaleString('vi-VN')} ₫
+                                    </strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Right Column (1 Col) */}
+                    <div className="space-y-6">
+                        {/* Customer Information Card */}
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                            <h3 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
+                                <Building2 className="w-4 h-4 text-indigo-600" /> Khách Hàng / Đối Tác
+                            </h3>
+                            {project.customer ? (
+                                <div className="space-y-3 text-sm">
+                                    <div>
+                                        <span className="text-xs text-slate-400 uppercase font-bold tracking-wider block">Tên công ty / KH</span>
+                                        <Link
+                                            href={`/customers/${project.customer.id}`}
+                                            className="font-bold text-slate-900 hover:text-indigo-600 transition-colors inline-flex items-center gap-1 mt-0.5"
+                                        >
+                                            {project.customer.name}
+                                            <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+                                        </Link>
+                                    </div>
+                                    {project.customer.phone && (
+                                        <div>
+                                            <span className="text-xs text-slate-400 uppercase font-bold tracking-wider block">Điện thoại</span>
+                                            <span className="text-slate-700 font-medium">{project.customer.phone}</span>
+                                        </div>
+                                    )}
+                                    {project.customer.email && (
+                                        <div>
+                                            <span className="text-xs text-slate-400 uppercase font-bold tracking-wider block">Email</span>
+                                            <span className="text-slate-700 font-medium">{project.customer.email}</span>
+                                        </div>
+                                    )}
+                                    {project.customer.address && (
+                                        <div>
+                                            <span className="text-xs text-slate-400 uppercase font-bold tracking-wider block">Địa chỉ</span>
+                                            <span className="text-slate-700 font-medium">{project.customer.address}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-slate-400">Dự án này chưa được liên kết với hồ sơ khách hàng.</p>
+                            )}
+                        </div>
+
+                        {/* Project Creator & Members Card */}
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                            <h3 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
+                                <Users className="w-4 h-4 text-indigo-600" /> Ban Quản Trị & Đội Ngũ
+                            </h3>
+                            <div className="space-y-3">
+                                {project.creator && (
+                                    <div className="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                                        <div className="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs">
+                                            {(project.creator.name || 'C').charAt(0).toUpperCase()}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-xs font-bold text-slate-900 truncate">{project.creator.name || project.creator.email}</div>
+                                            <div className="text-[11px] text-indigo-600 font-semibold">Người tạo / Project Manager</div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="space-y-2 pt-2">
+                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                                        Thành viên ({project.members?.length || 0})
+                                    </span>
+                                    {(project.members || []).map((m: any, idx: number) => {
+                                        const u = m.user || m;
                                         return (
-                                            <div key={status}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.4rem' }}>
-                                                    <span style={{ fontWeight: 500 }}>{config[status].label}</span>
-                                                    <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>{count} task(s) - {pct}%</span>
+                                            <div key={idx} className="flex items-center gap-2.5 text-xs text-slate-700 font-medium">
+                                                <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-[10px]">
+                                                    {(u.name || u.email || 'U').charAt(0).toUpperCase()}
                                                 </div>
-                                                <div style={{ width: '100%', height: '10px', backgroundColor: '#f1f5f9', borderRadius: '5px', overflow: 'hidden' }}>
-                                                    <div style={{ width: `${pct}%`, backgroundColor: config[status].color, height: '100%', transition: 'width 1s ease-in-out' }} />
-                                                </div>
+                                                <span className="truncate">{u.name || u.email}</span>
                                             </div>
                                         );
                                     })}
+                                    {(!project.members || project.members.length === 0) && (
+                                        <p className="text-xs text-slate-400">Chưa có thành viên nào tham gia.</p>
+                                    )}
                                 </div>
-                            </Card>
+                            </div>
+                        </div>
 
-                            {/* Timeline Health */}
-                            <Card style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
-                                <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Milestone size={18} color="#10b981" /> Sức khỏe Tiến độ
-                                </h3>
-                                
-                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '1.5rem' }}>
-                                    {(() => {
-                                        const endDate = project.endDate ? new Date(project.endDate) : null;
-                                        const today = new Date();
-                                        const totalDays = (endDate && project.startDate) ? Math.ceil((endDate.getTime() - new Date(project.startDate).getTime()) / (1000 * 3600 * 24)) : 0;
-                                        const daysPassed = project.startDate ? Math.ceil((today.getTime() - new Date(project.startDate).getTime()) / (1000 * 3600 * 24)) : 0;
-                                        
-                                        const isOverdue = endDate && today > endDate;
-                                        const timePct = totalDays > 0 ? Math.min(100, Math.max(0, (daysPassed / totalDays) * 100)) : 0;
-                                        const timeProgressDiff = progress - timePct;
-                                        
-                                        let statusColor = '#10b981';
-                                        let statusText = 'Đúng tiến độ';
-                                        let statusIcon = '✓';
-                                        
-                                        if (isOverdue && progress < 100) {
-                                            statusColor = '#ef4444'; statusText = 'Trễ hạn'; statusIcon = '⚠';
-                                        } else if (timeProgressDiff < -15) {
-                                            statusColor = '#f59e0b'; statusText = 'Nguy cơ chậm trễ'; statusIcon = '!';
-                                        } else if (timeProgressDiff > 20) {
-                                            statusColor = '#3b82f6'; statusText = 'Vượt tiến độ'; statusIcon = '🚀';
-                                        }
-
-                                        if (!endDate) {
-                                            return <div style={{ color: 'var(--text-muted)' }}>Chưa cấu hình ngày kết thúc</div>;
-                                        }
-
-                                        return (
-                                            <>
-                                                <div style={{ width: '120px', height: '120px', borderRadius: '50%', backgroundColor: `${statusColor}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `4px solid ${statusColor}` }}>
-                                                    <span style={{ fontSize: '3rem' }}>{statusIcon}</span>
-                                                </div>
-                                                <div style={{ textAlign: 'center' }}>
-                                                    <h4 style={{ margin: '0 0 0.5rem', fontSize: '1.25rem', color: statusColor }}>{statusText}</h4>
-                                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                                                        Đã tiêu hao <b>{Math.round(timePct)}%</b> thời gian quỹ đạo<br/>
-                                                        để hoàn thành <b>{progress}%</b> khối lượng công việc.
-                                                    </div>
-                                                </div>
-                                            </>
-                                        );
-                                    })()}
-                                </div>
-                            </Card>
+                        {/* Quick Navigation Links */}
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                            <h3 className="text-base font-bold text-slate-900 mb-3 flex items-center gap-2">
+                                <LinkIcon className="w-4 h-4 text-indigo-600" /> Chứng Từ Liên Quan
+                            </h3>
+                            <div className="space-y-2 text-xs">
+                                {project.salesEstimate && (
+                                    <Link
+                                        href={`/sales/estimates/${project.salesEstimate.id}`}
+                                        className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 transition-colors border border-slate-100"
+                                    >
+                                        <span className="font-semibold">Báo Giá ERP: {project.salesEstimate.code}</span>
+                                        <ExternalLink className="w-3.5 h-3.5" />
+                                    </Link>
+                                )}
+                                {project.quote && (
+                                    <Link
+                                        href={`/quotes/${project.quote.id}`}
+                                        className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 transition-colors border border-slate-100"
+                                    >
+                                        <span className="font-semibold">Báo Giá VB: {project.quote.title}</span>
+                                        <ExternalLink className="w-3.5 h-3.5" />
+                                    </Link>
+                                )}
+                                {project.contract && (
+                                    <Link
+                                        href={`/contracts/${project.contract.id}`}
+                                        className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 transition-colors border border-slate-100"
+                                    >
+                                        <span className="font-semibold">Hợp Đồng: {project.contract.title}</span>
+                                        <ExternalLink className="w-3.5 h-3.5" />
+                                    </Link>
+                                )}
+                                {project.invoice && (
+                                    <Link
+                                        href={`/sales/invoices/${project.invoice.id}`}
+                                        className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 transition-colors border border-slate-100"
+                                    >
+                                        <span className="font-semibold">Hóa Đơn Bán: {project.invoice.code}</span>
+                                        <ExternalLink className="w-3.5 h-3.5" />
+                                    </Link>
+                                )}
+                                {!project.salesEstimate && !project.quote && !project.contract && !project.invoice && (
+                                    <p className="text-slate-400 py-2">Chưa có chứng từ nào được liên kết trực tiếp.</p>
+                                )}
+                            </div>
                         </div>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
 
-            <CreateIssueModal 
-                isOpen={isIssueModalOpen}
-                onClose={() => { setIsIssueModalOpen(false); setEditingIssueData(null); }}
+            {/* 2. FINANCIALS (P&L) TAB */}
+            {activeTab === 'FINANCIALS' && (
+                <div className="space-y-6">
+                    {/* P&L Metric Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="bg-white p-5 rounded-2xl border border-emerald-100 shadow-sm bg-gradient-to-br from-emerald-50/40 to-white">
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">Doanh thu thực tế</span>
+                                <div className="p-2 rounded-xl bg-emerald-100 text-emerald-600">
+                                    <ArrowUpRight className="w-5 h-5" />
+                                </div>
+                            </div>
+                            <div className="mt-3">
+                                <span className="text-2xl font-black text-emerald-700">{actualRevenue.toLocaleString('vi-VN')} ₫</span>
+                                <span className="text-xs text-emerald-600 block mt-1">Dự kiến: {expectedRevenue.toLocaleString('vi-VN')} ₫</span>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-5 rounded-2xl border border-rose-100 shadow-sm bg-gradient-to-br from-rose-50/40 to-white">
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-rose-700 uppercase tracking-wider">Tổng chi phí thực tế</span>
+                                <div className="p-2 rounded-xl bg-rose-100 text-rose-600">
+                                    <ArrowDownRight className="w-5 h-5" />
+                                </div>
+                            </div>
+                            <div className="mt-3">
+                                <span className="text-2xl font-black text-rose-700">{totalCost.toLocaleString('vi-VN')} ₫</span>
+                                <span className="text-xs text-rose-500 block mt-1">
+                                    Vật tư: {totalPurchaseCost.toLocaleString('vi-VN')} ₫ | Nhân công: {totalLaborCost.toLocaleString('vi-VN')} ₫
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-5 rounded-2xl border border-blue-100 shadow-sm bg-gradient-to-br from-blue-50/40 to-white">
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-blue-700 uppercase tracking-wider">Lợi nhuận gộp (P&L)</span>
+                                <div className="p-2 rounded-xl bg-blue-100 text-blue-600">
+                                    <Briefcase className="w-5 h-5" />
+                                </div>
+                            </div>
+                            <div className="mt-3">
+                                <span className={`text-2xl font-black ${grossProfit >= 0 ? 'text-blue-700' : 'text-rose-600'}`}>
+                                    {grossProfit.toLocaleString('vi-VN')} ₫
+                                </span>
+                                <span className="text-xs text-blue-600 block mt-1">Biên LN: {profitMargin.toFixed(1)}%</span>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-5 rounded-2xl border border-indigo-100 shadow-sm bg-gradient-to-br from-indigo-50/40 to-white">
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-indigo-700 uppercase tracking-wider">Ngân sách dự án</span>
+                                <div className="p-2 rounded-xl bg-indigo-100 text-indigo-600">
+                                    <Target className="w-5 h-5" />
+                                </div>
+                            </div>
+                            <div className="mt-3">
+                                <span className="text-2xl font-black text-indigo-700">{budget.toLocaleString('vi-VN')} ₫</span>
+                                <span className="text-xs text-indigo-600 block mt-1">Đã dùng {budgetUsedPct.toFixed(1)}%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Cost Breakdown Details */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Revenue Breakdown */}
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                                    <Receipt className="w-4 h-4 text-emerald-600" /> Doanh Thu Bán Hàng & Hóa Đơn ({allInvoices.length})
+                                </h3>
+                                <Link
+                                    href={`/sales/invoices?action=new&projectId=${project.id}${project.customerId ? `&customerId=${project.customerId}` : ''}`}
+                                    className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+                                >
+                                    <Plus className="w-3.5 h-3.5" /> Tạo HĐ Bán
+                                </Link>
+                            </div>
+
+                            <div className="space-y-2.5">
+                                {allInvoices.map((inv: any) => (
+                                    <div key={inv.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                        <div>
+                                            <Link href={`/sales/invoices/${inv.id}`} className="font-bold text-xs text-slate-900 hover:text-indigo-600">
+                                                {inv.code}
+                                            </Link>
+                                            <div className="text-[11px] text-slate-500">
+                                                Ngày: {inv.date ? formatDate(new Date(inv.date)) : '-'} | Đã thu: <strong className="text-emerald-600">{(inv.paidAmount || 0).toLocaleString('vi-VN')} ₫</strong>
+                                            </div>
+                                        </div>
+                                        <span className="font-extrabold text-sm text-slate-800">
+                                            {(inv.totalAmount || 0).toLocaleString('vi-VN')} ₫
+                                        </span>
+                                    </div>
+                                ))}
+                                {allInvoices.length === 0 && (
+                                    <p className="text-xs text-slate-400 text-center py-4">Chưa có hóa đơn bán hàng nào được xuất.</p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Purchase & Subcontractor Costs */}
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                                    <ShoppingCart className="w-4 h-4 text-rose-600" /> Chi Phí Mua Vật Tư & Dịch Vụ ({allPurchaseBills.length})
+                                </h3>
+                                <Link
+                                    href={`/purchasing/bills?action=new&projectId=${project.id}`}
+                                    className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+                                >
+                                    <Plus className="w-3.5 h-3.5" /> Thêm HĐ Mua
+                                </Link>
+                            </div>
+
+                            <div className="space-y-2.5">
+                                {allPurchaseBills.map((bill: any) => (
+                                    <div key={bill.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                        <div>
+                                            <Link href={`/purchasing/bills/${bill.id}`} className="font-bold text-xs text-slate-900 hover:text-indigo-600">
+                                                {bill.code}
+                                            </Link>
+                                            <div className="text-[11px] text-slate-500">
+                                                NCC: <strong>{bill.supplier?.name || '-'}</strong> | Đã trả: {(bill.paidAmount || 0).toLocaleString('vi-VN')} ₫
+                                            </div>
+                                        </div>
+                                        <span className="font-extrabold text-sm text-rose-600">
+                                            {(bill.totalAmount || 0).toLocaleString('vi-VN')} ₫
+                                        </span>
+                                    </div>
+                                ))}
+                                {allPurchaseBills.length === 0 && (
+                                    <p className="text-xs text-slate-400 text-center py-4">Chưa có hóa đơn mua hàng nào.</p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Labor Costs from Timesheets */}
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                                    <Clock className="w-4 h-4 text-blue-600" /> Chi Phí Nhân Công Từ Chấm Công
+                                </h3>
+                                <span className="text-xs font-bold text-blue-700">
+                                    {(totalLaborSeconds / 3600).toFixed(1)} giờ làm
+                                </span>
+                            </div>
+
+                            <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-2 text-xs">
+                                <div className="flex justify-between text-slate-600">
+                                    <span>Tổng số nhật ký giờ làm:</span>
+                                    <strong className="text-slate-900">{timesheetEntries.length} lượt</strong>
+                                </div>
+                                <div className="flex justify-between text-slate-600">
+                                    <span>Tổng số giờ làm việc:</span>
+                                    <strong className="text-slate-900">{(totalLaborSeconds / 3600).toFixed(1)} giờ</strong>
+                                </div>
+                                <div className="flex justify-between text-slate-600 pt-2 border-t border-slate-200">
+                                    <span className="font-bold">Tổng chi phí nhân sự ước tính:</span>
+                                    <strong className="text-rose-600 font-extrabold text-sm">{totalLaborCost.toLocaleString('vi-VN')} ₫</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Other Expenses */}
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                                    <CreditCard className="w-4 h-4 text-amber-600" /> Chi Phí Khác (Tiếp khách, đi lại...) ({allExpenses.length})
+                                </h3>
+                                <Link
+                                    href={`/sales/expenses?action=new&projectId=${project.id}`}
+                                    className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+                                >
+                                    <Plus className="w-3.5 h-3.5" /> Tạo Phiếu Chi
+                                </Link>
+                            </div>
+
+                            <div className="space-y-2.5">
+                                {allExpenses.map((exp: any) => (
+                                    <div key={exp.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                        <div>
+                                            <Link href={`/sales/expenses/${exp.id}`} className="font-bold text-xs text-slate-900 hover:text-indigo-600">
+                                                {exp.code}
+                                            </Link>
+                                            <div className="text-[11px] text-slate-500 line-clamp-1">{exp.description || 'Chi phí hoạt động'}</div>
+                                        </div>
+                                        <span className="font-extrabold text-sm text-rose-600">
+                                            {(exp.amount || 0).toLocaleString('vi-VN')} ₫
+                                        </span>
+                                    </div>
+                                ))}
+                                {allExpenses.length === 0 && (
+                                    <p className="text-xs text-slate-400 text-center py-4">Chưa có khoản chi phí khác.</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 3. SALES TAB */}
+            {activeTab === 'SALES' && (
+                <div className="space-y-6">
+                    {/* Sales Estimates */}
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                                    <Calculator className="w-4 h-4 text-indigo-600" /> Báo Giá ERP ({allSalesEstimates.length})
+                                </h3>
+                                <p className="text-xs text-slate-500">Báo giá chi tiết theo danh mục sản phẩm/dịch vụ trên hệ thống</p>
+                            </div>
+                            <Link
+                                href={`/sales/estimates?action=new&projectId=${project.id}${project.customerId ? `&customerId=${project.customerId}` : ''}`}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-sm"
+                            >
+                                <Plus className="w-3.5 h-3.5" /> Tạo Báo Giá ERP
+                            </Link>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase">
+                                        <th className="py-2.5 px-3">Mã Báo Giá</th>
+                                        <th className="py-2.5 px-3">Ngày Lập</th>
+                                        <th className="py-2.5 px-3">Tổng Tiền</th>
+                                        <th className="py-2.5 px-3">Trạng Thái</th>
+                                        <th className="py-2.5 px-3 text-right">Thao Tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {allSalesEstimates.map((est: any) => (
+                                        <tr key={est.id} className="hover:bg-slate-50">
+                                            <td className="py-3 px-3 font-semibold text-slate-900">
+                                                <Link href={`/sales/estimates/${est.id}`} className="text-indigo-600 hover:underline">
+                                                    {est.code}
+                                                </Link>
+                                            </td>
+                                            <td className="py-3 px-3 text-slate-600">{est.date ? formatDate(new Date(est.date)) : '-'}</td>
+                                            <td className="py-3 px-3 font-bold text-slate-900">{(est.totalAmount || 0).toLocaleString('vi-VN')} ₫</td>
+                                            <td className="py-3 px-3">
+                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${est.status === 'ACCEPTED' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}>
+                                                    {est.status}
+                                                </span>
+                                            </td>
+                                            <td className="py-3 px-3 text-right">
+                                                <Link href={`/sales/estimates/${est.id}`} className="text-indigo-600 hover:underline font-semibold">
+                                                    Xem chi tiết
+                                                </Link>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {allSalesEstimates.length === 0 && (
+                                        <tr><td colSpan={5} className="py-6 text-center text-slate-400">Chưa có Báo Giá ERP nào liên kết với dự án này.</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* Sales Orders */}
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                                    <ShoppingCart className="w-4 h-4 text-blue-600" /> Đơn Bán Hàng ({allSalesOrders.length})
+                                </h3>
+                                <p className="text-xs text-slate-500">Đơn hàng bán xác nhận với khách hàng</p>
+                            </div>
+                            <Link
+                                href={`/sales/orders?action=new&projectId=${project.id}${project.customerId ? `&customerId=${project.customerId}` : ''}`}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
+                            >
+                                <Plus className="w-3.5 h-3.5" /> Tạo Đơn Hàng Mới
+                            </Link>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase">
+                                        <th className="py-2.5 px-3">Mã Đơn Hàng</th>
+                                        <th className="py-2.5 px-3">Ngày Lập</th>
+                                        <th className="py-2.5 px-3">Tổng Tiền</th>
+                                        <th className="py-2.5 px-3">Trạng Thái</th>
+                                        <th className="py-2.5 px-3 text-right">Thao Tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {allSalesOrders.map((so: any) => (
+                                        <tr key={so.id} className="hover:bg-slate-50">
+                                            <td className="py-3 px-3 font-semibold text-slate-900">
+                                                <Link href={`/sales/orders/${so.id}`} className="text-blue-600 hover:underline">
+                                                    {so.code}
+                                                </Link>
+                                            </td>
+                                            <td className="py-3 px-3 text-slate-600">{so.date ? formatDate(new Date(so.date)) : '-'}</td>
+                                            <td className="py-3 px-3 font-bold text-slate-900">{(so.totalAmount || 0).toLocaleString('vi-VN')} ₫</td>
+                                            <td className="py-3 px-3">
+                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${so.status === 'CONFIRMED' || so.status === 'DONE' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}>
+                                                    {so.status}
+                                                </span>
+                                            </td>
+                                            <td className="py-3 px-3 text-right">
+                                                <Link href={`/sales/orders/${so.id}`} className="text-blue-600 hover:underline font-semibold">
+                                                    Xem chi tiết
+                                                </Link>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {allSalesOrders.length === 0 && (
+                                        <tr><td colSpan={5} className="py-6 text-center text-slate-400">Chưa có Đơn Bán Hàng nào.</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* Sales Invoices */}
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                                    <Receipt className="w-4 h-4 text-emerald-600" /> Hóa Đơn Bán Hàng ({allInvoices.length})
+                                </h3>
+                                <p className="text-xs text-slate-500">Quản lý các đợt xuất hóa đơn và thu tiền dự án</p>
+                            </div>
+                            <Link
+                                href={`/sales/invoices?action=new&projectId=${project.id}${project.customerId ? `&customerId=${project.customerId}` : ''}`}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-sm"
+                            >
+                                <Plus className="w-3.5 h-3.5" /> Tạo Hóa Đơn Bán
+                            </Link>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase">
+                                        <th className="py-2.5 px-3">Mã Hóa Đơn</th>
+                                        <th className="py-2.5 px-3">Ngày Lập</th>
+                                        <th className="py-2.5 px-3">Tổng Tiền</th>
+                                        <th className="py-2.5 px-3">Đã Thu</th>
+                                        <th className="py-2.5 px-3">Còn Lại</th>
+                                        <th className="py-2.5 px-3">Trạng Thái</th>
+                                        <th className="py-2.5 px-3 text-right">Thao Tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {allInvoices.map((inv: any) => {
+                                        const remaining = (inv.totalAmount || 0) - (inv.paidAmount || 0);
+                                        return (
+                                            <tr key={inv.id} className="hover:bg-slate-50">
+                                                <td className="py-3 px-3 font-semibold text-slate-900">
+                                                    <Link href={`/sales/invoices/${inv.id}`} className="text-emerald-600 hover:underline">
+                                                        {inv.code}
+                                                    </Link>
+                                                </td>
+                                                <td className="py-3 px-3 text-slate-600">{inv.date ? formatDate(new Date(inv.date)) : '-'}</td>
+                                                <td className="py-3 px-3 font-bold text-slate-900">{(inv.totalAmount || 0).toLocaleString('vi-VN')} ₫</td>
+                                                <td className="py-3 px-3 font-bold text-emerald-600">{(inv.paidAmount || 0).toLocaleString('vi-VN')} ₫</td>
+                                                <td className="py-3 px-3 font-bold text-rose-600">{remaining > 0 ? remaining.toLocaleString('vi-VN') + ' ₫' : '0 ₫'}</td>
+                                                <td className="py-3 px-3">
+                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${inv.status === 'PAID' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                                                        {inv.status}
+                                                    </span>
+                                                </td>
+                                                <td className="py-3 px-3 text-right">
+                                                    <Link href={`/sales/invoices/${inv.id}`} className="text-emerald-600 hover:underline font-semibold">
+                                                        Xem chi tiết
+                                                    </Link>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                    {allInvoices.length === 0 && (
+                                        <tr><td colSpan={7} className="py-6 text-center text-slate-400">Chưa có hóa đơn bán hàng nào.</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* Contracts & Quotes */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Contracts */}
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                                    <FileSignature className="w-4 h-4 text-purple-600" /> Hợp Đồng ({allContracts.length})
+                                </h3>
+                                <Link
+                                    href={`/contracts/new?projectId=${project.id}${project.customerId ? `&customerId=${project.customerId}` : ''}`}
+                                    className="text-xs font-semibold text-indigo-600 hover:underline flex items-center gap-1"
+                                >
+                                    <Plus className="w-3.5 h-3.5" /> Tạo Hợp Đồng
+                                </Link>
+                            </div>
+                            <div className="space-y-2">
+                                {allContracts.map((c: any) => (
+                                    <div key={c.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                        <div>
+                                            <Link href={`/contracts/${c.id}`} className="font-bold text-xs text-slate-900 hover:text-indigo-600 line-clamp-1">
+                                                {c.title}
+                                            </Link>
+                                            <div className="text-[11px] text-slate-500">Ký ngày: {c.createdAt ? formatDate(new Date(c.createdAt)) : '-'}</div>
+                                        </div>
+                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-200 text-slate-700">{c.status}</span>
+                                    </div>
+                                ))}
+                                {allContracts.length === 0 && (
+                                    <p className="text-xs text-slate-400 text-center py-4">Chưa có hợp đồng nào.</p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Quotes */}
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                                    <FileText className="w-4 h-4 text-amber-600" /> Báo Giá Văn Bản ({allQuotes.length})
+                                </h3>
+                                <Link
+                                    href={`/quotes/new?projectId=${project.id}${project.customerId ? `&customerId=${project.customerId}` : ''}`}
+                                    className="text-xs font-semibold text-indigo-600 hover:underline flex items-center gap-1"
+                                >
+                                    <Plus className="w-3.5 h-3.5" /> Tạo Báo Giá VB
+                                </Link>
+                            </div>
+                            <div className="space-y-2">
+                                {allQuotes.map((q: any) => (
+                                    <div key={q.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                        <div>
+                                            <Link href={`/quotes/${q.id}`} className="font-bold text-xs text-slate-900 hover:text-indigo-600 line-clamp-1">
+                                                {q.title}
+                                            </Link>
+                                            <div className="text-[11px] text-slate-500">Ngày lập: {q.createdAt ? formatDate(new Date(q.createdAt)) : '-'}</div>
+                                        </div>
+                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-200 text-slate-700">{q.status}</span>
+                                    </div>
+                                ))}
+                                {allQuotes.length === 0 && (
+                                    <p className="text-xs text-slate-400 text-center py-4">Chưa có báo giá văn bản nào.</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 4. PROCUREMENT & EXPENSES TAB */}
+            {activeTab === 'PROCUREMENT' && (
+                <div className="space-y-6">
+                    {/* Purchase Orders */}
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                                    <ShoppingCart className="w-4 h-4 text-indigo-600" /> Đơn Mua Hàng Nhà Cung Cấp ({allPurchaseOrders.length})
+                                </h3>
+                                <p className="text-xs text-slate-500">Quản lý PO đặt hàng vật tư, thiết bị cho dự án</p>
+                            </div>
+                            <Link
+                                href={`/purchasing/orders?action=new&projectId=${project.id}`}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-sm"
+                            >
+                                <Plus className="w-3.5 h-3.5" /> Tạo Đơn Mua Mới
+                            </Link>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase">
+                                        <th className="py-2.5 px-3">Mã Đơn Mua</th>
+                                        <th className="py-2.5 px-3">Ngày Lập</th>
+                                        <th className="py-2.5 px-3">Nhà Cung Cấp</th>
+                                        <th className="py-2.5 px-3">Tổng Tiền</th>
+                                        <th className="py-2.5 px-3">Trạng Thái</th>
+                                        <th className="py-2.5 px-3 text-right">Thao Tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {allPurchaseOrders.map((po: any) => (
+                                        <tr key={po.id} className="hover:bg-slate-50">
+                                            <td className="py-3 px-3 font-semibold text-slate-900">
+                                                <Link href={`/purchasing/orders/${po.id}`} className="text-indigo-600 hover:underline">
+                                                    {po.code}
+                                                </Link>
+                                            </td>
+                                            <td className="py-3 px-3 text-slate-600">{po.date ? formatDate(new Date(po.date)) : '-'}</td>
+                                            <td className="py-3 px-3 font-medium text-slate-800">{po.supplier?.name || '-'}</td>
+                                            <td className="py-3 px-3 font-bold text-slate-900">{(po.totalAmount || 0).toLocaleString('vi-VN')} ₫</td>
+                                            <td className="py-3 px-3">
+                                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">
+                                                    {po.status}
+                                                </span>
+                                            </td>
+                                            <td className="py-3 px-3 text-right">
+                                                <Link href={`/purchasing/orders/${po.id}`} className="text-indigo-600 hover:underline font-semibold">
+                                                    Xem chi tiết
+                                                </Link>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {allPurchaseOrders.length === 0 && (
+                                        <tr><td colSpan={6} className="py-6 text-center text-slate-400">Chưa có đơn mua hàng NCC nào.</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* Purchase Bills */}
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                                    <Receipt className="w-4 h-4 text-rose-600" /> Hóa Đơn Mua Hàng NCC ({allPurchaseBills.length})
+                                </h3>
+                                <p className="text-xs text-slate-500">Hóa đơn đầu vào và công nợ với các nhà cung cấp</p>
+                            </div>
+                            <Link
+                                href={`/purchasing/bills?action=new&projectId=${project.id}`}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-600 text-white hover:bg-rose-700 transition-colors shadow-sm"
+                            >
+                                <Plus className="w-3.5 h-3.5" /> Tạo HĐ Mua Mới
+                            </Link>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase">
+                                        <th className="py-2.5 px-3">Mã Hóa Đơn</th>
+                                        <th className="py-2.5 px-3">Ngày Lập</th>
+                                        <th className="py-2.5 px-3">Nhà Cung Cấp</th>
+                                        <th className="py-2.5 px-3">Tổng Tiền</th>
+                                        <th className="py-2.5 px-3">Đã Thanh Toán</th>
+                                        <th className="py-2.5 px-3">Trạng Thái</th>
+                                        <th className="py-2.5 px-3 text-right">Thao Tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {allPurchaseBills.map((bill: any) => (
+                                        <tr key={bill.id} className="hover:bg-slate-50">
+                                            <td className="py-3 px-3 font-semibold text-slate-900">
+                                                <Link href={`/purchasing/bills/${bill.id}`} className="text-rose-600 hover:underline">
+                                                    {bill.code}
+                                                </Link>
+                                            </td>
+                                            <td className="py-3 px-3 text-slate-600">{bill.date ? formatDate(new Date(bill.date)) : '-'}</td>
+                                            <td className="py-3 px-3 font-medium text-slate-800">{bill.supplier?.name || '-'}</td>
+                                            <td className="py-3 px-3 font-bold text-rose-600">{(bill.totalAmount || 0).toLocaleString('vi-VN')} ₫</td>
+                                            <td className="py-3 px-3 font-bold text-emerald-600">{(bill.paidAmount || 0).toLocaleString('vi-VN')} ₫</td>
+                                            <td className="py-3 px-3">
+                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${bill.status === 'PAID' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}>
+                                                    {bill.status}
+                                                </span>
+                                            </td>
+                                            <td className="py-3 px-3 text-right">
+                                                <Link href={`/purchasing/bills/${bill.id}`} className="text-rose-600 hover:underline font-semibold">
+                                                    Xem chi tiết
+                                                </Link>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {allPurchaseBills.length === 0 && (
+                                        <tr><td colSpan={7} className="py-6 text-center text-slate-400">Chưa có hóa đơn mua hàng nào.</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* Expenses */}
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                                    <CreditCard className="w-4 h-4 text-amber-600" /> Chi Phí Khác ({allExpenses.length})
+                                </h3>
+                                <p className="text-xs text-slate-500">Các khoản chi tiêu tiếp khách, đi lại, phụ cấp phát sinh cho dự án</p>
+                            </div>
+                            <Link
+                                href={`/sales/expenses?action=new&projectId=${project.id}`}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-600 text-white hover:bg-amber-700 transition-colors shadow-sm"
+                            >
+                                <Plus className="w-3.5 h-3.5" /> Tạo Phiếu Chi Mới
+                            </Link>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase">
+                                        <th className="py-2.5 px-3">Mã Phiếu Chi</th>
+                                        <th className="py-2.5 px-3">Ngày Chi</th>
+                                        <th className="py-2.5 px-3">Mô Tả / Lý Do</th>
+                                        <th className="py-2.5 px-3">Số Tiền</th>
+                                        <th className="py-2.5 px-3">Trạng Thái</th>
+                                        <th className="py-2.5 px-3 text-right">Thao Tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {allExpenses.map((exp: any) => (
+                                        <tr key={exp.id} className="hover:bg-slate-50">
+                                            <td className="py-3 px-3 font-semibold text-slate-900">
+                                                <Link href={`/sales/expenses/${exp.id}`} className="text-amber-600 hover:underline">
+                                                    {exp.code}
+                                                </Link>
+                                            </td>
+                                            <td className="py-3 px-3 text-slate-600">{exp.date ? formatDate(new Date(exp.date)) : '-'}</td>
+                                            <td className="py-3 px-3 text-slate-800">{exp.description || '-'}</td>
+                                            <td className="py-3 px-3 font-bold text-rose-600">{(exp.amount || 0).toLocaleString('vi-VN')} ₫</td>
+                                            <td className="py-3 px-3">
+                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${exp.status === 'APPROVED' || exp.status === 'PAID' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}>
+                                                    {exp.status}
+                                                </span>
+                                            </td>
+                                            <td className="py-3 px-3 text-right">
+                                                <Link href={`/sales/expenses/${exp.id}`} className="text-amber-600 hover:underline font-semibold">
+                                                    Xem chi tiết
+                                                </Link>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {allExpenses.length === 0 && (
+                                        <tr><td colSpan={6} className="py-6 text-center text-slate-400">Chưa có khoản chi phí nào.</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 5. TASKS TAB */}
+            {activeTab === 'TASKS' && (
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                    <TaskDashboardClient
+                        initialTasks={project.tasks || []}
+                        users={users}
+                        parentProjectId={project.id}
+                        parentProject={project}
+                        canCreateTask={true}
+                    />
+                </div>
+            )}
+
+            {/* 6. ISSUES & RISKS TAB */}
+            {activeTab === 'ISSUES_RISKS' && (
+                <div className="space-y-6">
+                    {/* Issues Section */}
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                                    <AlertTriangle className="w-4 h-4 text-rose-600" /> Sự Cố & Vấn Đề (Issues) ({project.issues?.length || 0})
+                                </h3>
+                                <p className="text-xs text-slate-500">Ghi nhận các trở ngại, rào cản và phương án giải quyết theo RAG</p>
+                            </div>
+                            <Button
+                                variant="primary"
+                                onClick={() => {
+                                    setEditingIssueData(null);
+                                    setIsIssueModalOpen(true);
+                                }}
+                                className="flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg"
+                            >
+                                <Plus className="w-3.5 h-3.5" /> Ghi Nhận Sự Cố
+                            </Button>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase">
+                                        <th className="py-2.5 px-3">Mức Độ (RAG)</th>
+                                        <th className="py-2.5 px-3">Vấn Đề</th>
+                                        <th className="py-2.5 px-3">Phương Án Xử Lý</th>
+                                        <th className="py-2.5 px-3">Người Báo</th>
+                                        <th className="py-2.5 px-3">Trạng Thái</th>
+                                        <th className="py-2.5 px-3 text-right">Thao Tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {(project.issues || []).map((issue: any) => (
+                                        <tr key={issue.id} className="hover:bg-slate-50">
+                                            <td className="py-3 px-3">
+                                                <span
+                                                    className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                                        issue.severity === 'RED'
+                                                            ? 'bg-red-100 text-red-800'
+                                                            : issue.severity === 'AMBER'
+                                                            ? 'bg-amber-100 text-amber-800'
+                                                            : 'bg-emerald-100 text-emerald-800'
+                                                    }`}
+                                                >
+                                                    {issue.severity === 'RED' ? 'ĐỎ - Nghiêm trọng' : issue.severity === 'AMBER' ? 'VÀNG - Cảnh báo' : 'XANH - Bình thường'}
+                                                </span>
+                                            </td>
+                                            <td className="py-3 px-3">
+                                                <div className="font-bold text-slate-900">{issue.title}</div>
+                                                {issue.description && <div className="text-slate-500 line-clamp-1 mt-0.5">{issue.description}</div>}
+                                            </td>
+                                            <td className="py-3 px-3 text-slate-700">{issue.mitigationPlan || '-'}</td>
+                                            <td className="py-3 px-3 text-slate-600">{issue.reportedBy?.name || '-'}</td>
+                                            <td className="py-3 px-3">
+                                                <select
+                                                    value={issue.status}
+                                                    onChange={async (e) => {
+                                                        await updateProjectIssueStatus(issue.id, e.target.value, project.id);
+                                                        router.refresh();
+                                                    }}
+                                                    className="py-1 px-2 text-xs font-semibold rounded-lg bg-slate-50 border border-slate-200"
+                                                >
+                                                    <option value="OPEN">Mở (Open)</option>
+                                                    <option value="IN_PROGRESS">Đang Xử Lý</option>
+                                                    <option value="RESOLVED">Đã Khắc Phục</option>
+                                                    <option value="CLOSED">Đóng (Closed)</option>
+                                                </select>
+                                            </td>
+                                            <td className="py-3 px-3 text-right">
+                                                <button
+                                                    onClick={() => {
+                                                        setEditingIssueData(issue);
+                                                        setIsIssueModalOpen(true);
+                                                    }}
+                                                    className="text-indigo-600 hover:text-indigo-800 font-semibold p-1"
+                                                >
+                                                    <Edit2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {(!project.issues || project.issues.length === 0) && (
+                                        <tr><td colSpan={6} className="py-6 text-center text-slate-400">Không có sự cố nào được ghi nhận. Dự án đang vận hành an toàn!</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* Risks Section */}
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                                    <ShieldAlert className="w-4 h-4 text-amber-600" /> Quản Lý Rủi Ro (Risk Matrix) ({project.risks?.length || 0})
+                                </h3>
+                                <p className="text-xs text-slate-500">Đánh giá xác suất và mức độ tác động của các nguy cơ tiềm ẩn</p>
+                            </div>
+                            <Button
+                                variant="primary"
+                                onClick={() => {
+                                    setEditingRiskData(null);
+                                    setIsRiskModalOpen(true);
+                                }}
+                                className="flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg"
+                            >
+                                <Plus className="w-3.5 h-3.5" /> Nhận Diện Rủi Ro Mới
+                            </Button>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase">
+                                        <th className="py-2.5 px-3">Tên Rủi Ro</th>
+                                        <th className="py-2.5 px-3">Xác Suất (%)</th>
+                                        <th className="py-2.5 px-3">Mức Độ Tác Động</th>
+                                        <th className="py-2.5 px-3">Người Nhận Diện</th>
+                                        <th className="py-2.5 px-3">Trạng Thái</th>
+                                        <th className="py-2.5 px-3 text-right">Thao Tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {(project.risks || []).map((risk: any) => (
+                                        <tr key={risk.id} className="hover:bg-slate-50">
+                                            <td className="py-3 px-3">
+                                                <div className="font-bold text-slate-900">{risk.title}</div>
+                                                {risk.description && <div className="text-slate-500 line-clamp-1 mt-0.5">{risk.description}</div>}
+                                            </td>
+                                            <td className="py-3 px-3">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-bold text-indigo-600">{risk.probability || 50}%</span>
+                                                    <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                                        <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${risk.probability || 50}%` }} />
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="py-3 px-3">
+                                                <span
+                                                    className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                                        risk.impact === 'CRITICAL'
+                                                            ? 'bg-red-100 text-red-800'
+                                                            : risk.impact === 'HIGH'
+                                                            ? 'bg-orange-100 text-orange-800'
+                                                            : 'bg-blue-100 text-blue-800'
+                                                    }`}
+                                                >
+                                                    {risk.impact}
+                                                </span>
+                                            </td>
+                                            <td className="py-3 px-3 text-slate-600">{risk.creator?.name || '-'}</td>
+                                            <td className="py-3 px-3">
+                                                <select
+                                                    value={risk.status}
+                                                    onChange={async (e) => {
+                                                        await updateProjectRiskStatus(risk.id, e.target.value, project.id);
+                                                        router.refresh();
+                                                    }}
+                                                    className="py-1 px-2 text-xs font-semibold rounded-lg bg-slate-50 border border-slate-200"
+                                                >
+                                                    <option value="OPEN">Chưa Xử Lý (Open)</option>
+                                                    <option value="MITIGATED">Đã Giảm Thiểu</option>
+                                                    <option value="CLOSED">Đã Đóng</option>
+                                                </select>
+                                            </td>
+                                            <td className="py-3 px-3 text-right">
+                                                <button
+                                                    onClick={() => {
+                                                        setEditingRiskData(risk);
+                                                        setIsRiskModalOpen(true);
+                                                    }}
+                                                    className="text-indigo-600 hover:text-indigo-800 font-semibold p-1"
+                                                >
+                                                    <Edit2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {(!project.risks || project.risks.length === 0) && (
+                                        <tr><td colSpan={6} className="py-6 text-center text-slate-400">Chưa có rủi ro nào được nhận diện.</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 7. TIMESHEETS TAB */}
+            {activeTab === 'TIMESHEETS' && (
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                        <div>
+                            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                                <Clock className="w-4 h-4 text-indigo-600" /> Nhật Ký Chấm Công & Giờ Làm Việc ({timesheetEntries.length})
+                            </h3>
+                            <p className="text-xs text-slate-500">Tổng hợp thời gian thực tế nhân sự làm việc trên các công việc của dự án</p>
+                        </div>
+                        <div className="flex items-center gap-4 bg-slate-50 px-4 py-2 rounded-xl border border-slate-200">
+                            <div className="text-xs">
+                                <span className="text-slate-400 block">Tổng thời gian:</span>
+                                <strong className="text-indigo-600 font-black text-sm">{(totalLaborSeconds / 3600).toFixed(1)} giờ</strong>
+                            </div>
+                            <div className="text-xs border-l border-slate-200 pl-4">
+                                <span className="text-slate-400 block">Chi phí nhân sự:</span>
+                                <strong className="text-rose-600 font-black text-sm">{totalLaborCost.toLocaleString('vi-VN')} ₫</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase">
+                                    <th className="py-2.5 px-3">Nhân Viên</th>
+                                    <th className="py-2.5 px-3">Công Việc Liên Quan</th>
+                                    <th className="py-2.5 px-3">Bắt Đầu</th>
+                                    <th className="py-2.5 px-3">Kết Thúc</th>
+                                    <th className="py-2.5 px-3">Thời Lượng</th>
+                                    <th className="py-2.5 px-3">Đơn Giá / Giờ</th>
+                                    <th className="py-2.5 px-3 text-right">Chi Phí Tạm Tính</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {timesheetEntries.map((log: any, idx: number) => {
+                                    const durationHours = (log.durationSec || 0) / 3600;
+                                    const mins = Math.floor(((log.durationSec || 0) % 3600) / 60);
+                                    const hrs = Math.floor(durationHours);
+
+                                    return (
+                                        <tr key={idx} className="hover:bg-slate-50">
+                                            <td className="py-3 px-3 font-semibold text-slate-900">
+                                                {log.user?.name || log.user?.email || 'Thành viên'}
+                                            </td>
+                                            <td className="py-3 px-3">
+                                                <Link href={`/tasks/${log.taskId}`} className="text-indigo-600 hover:underline font-medium">
+                                                    {log.taskTitle}
+                                                </Link>
+                                            </td>
+                                            <td className="py-3 px-3 text-slate-600">{log.startTime ? formatDate(new Date(log.startTime)) : '-'}</td>
+                                            <td className="py-3 px-3 text-slate-600">{log.endTime ? formatDate(new Date(log.endTime)) : 'Đang bấm giờ...'}</td>
+                                            <td className="py-3 px-3 font-mono font-bold text-indigo-600">{hrs}h {mins}m</td>
+                                            <td className="py-3 px-3 text-slate-600 font-medium">{log.hourlyRate ? log.hourlyRate.toLocaleString('vi-VN') + ' ₫' : '0 ₫'}</td>
+                                            <td className="py-3 px-3 text-right font-bold text-rose-600">{(log.calculatedCost || 0).toLocaleString('vi-VN')} ₫</td>
+                                        </tr>
+                                    );
+                                })}
+                                {timesheetEntries.length === 0 && (
+                                    <tr><td colSpan={7} className="py-8 text-center text-slate-400">Chưa có bản ghi chấm công thời gian nào.</td></tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+
+            {/* 8. FILES TAB */}
+            {activeTab === 'FILES' && (
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                        <div>
+                            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                                <Paperclip className="w-4 h-4 text-indigo-600" /> Tủ Hồ Sơ & Tài Liệu Dự Án ({project.attachments?.length || 0})
+                            </h3>
+                            <p className="text-xs text-slate-500">Tải lên tài liệu kỹ thuật, bản vẽ, hợp đồng scan, biên bản nghiệm thu</p>
+                        </div>
+
+                        <div>
+                            <label className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold cursor-pointer transition-colors shadow-sm">
+                                <Plus className="w-4 h-4" /> Tải Lên Tài Liệu Mới
+                                <input type="file" multiple onChange={handleDocUpload} className="hidden" />
+                            </label>
+                        </div>
+                    </div>
+
+                    {/* Upload progress bars */}
+                    {Object.keys(uploadProgress).length > 0 && (
+                        <div className="space-y-2 p-3 bg-indigo-50/50 rounded-xl border border-indigo-100">
+                            {Object.entries(uploadProgress).map(([fileName, progress]) => (
+                                <div key={fileName} className="space-y-1">
+                                    <div className="flex justify-between text-xs font-semibold text-slate-700">
+                                        <span className="truncate">{fileName}</span>
+                                        <span>{progress}%</span>
+                                    </div>
+                                    <div className="w-full h-1.5 bg-indigo-100 rounded-full overflow-hidden">
+                                        <div className="h-full bg-indigo-600 transition-all" style={{ width: `${progress}%` }} />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Files Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {(project.attachments || []).map((file: any) => (
+                            <div key={file.id} className="p-4 rounded-xl border border-slate-200 bg-slate-50 hover:bg-white hover:shadow-md transition-all flex flex-col justify-between group">
+                                <div className="flex items-start gap-3">
+                                    <div className="p-2 rounded-lg bg-indigo-100 text-indigo-600 flex-shrink-0">
+                                        <FileText className="w-5 h-5" />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <div className="font-bold text-xs text-slate-900 truncate" title={file.name}>
+                                            {file.name}
+                                        </div>
+                                        <div className="text-[10px] text-slate-400 mt-0.5">
+                                            {file.createdAt ? formatDate(new Date(file.createdAt)) : '-'}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between mt-4 pt-2 border-t border-slate-100">
+                                    <a
+                                        href={file.url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:underline"
+                                    >
+                                        <Eye className="w-3.5 h-3.5" /> Xem / Tải
+                                    </a>
+                                    <button
+                                        onClick={() => handleDocDelete(file.id)}
+                                        className="text-slate-400 hover:text-rose-600 transition-colors p-1"
+                                        title="Xóa tài liệu"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {(!project.attachments || project.attachments.length === 0) && (
+                        <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-2xl">
+                            <Paperclip className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+                            <p className="text-sm font-semibold text-slate-600">Chưa có tệp đính kèm nào</p>
+                            <p className="text-xs text-slate-400 mt-1">Bấm nút "Tải Lên Tài Liệu Mới" để lưu trữ hồ sơ dự án</p>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* 9. DISCUSSIONS TAB */}
+            {activeTab === 'DISCUSSIONS' && (
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+                    {/* Topic Sidebar */}
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3">
+                        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                            <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Chủ Đề</h4>
+                            <button
+                                onClick={() => setIsCreatingTopic(true)}
+                                className="text-xs text-indigo-600 hover:text-indigo-700 font-bold flex items-center gap-1"
+                            >
+                                <Plus className="w-3.5 h-3.5" /> Thêm
+                            </button>
+                        </div>
+
+                        <div className="space-y-1">
+                            {allTopics.map((top: any) => (
+                                <button
+                                    key={top.id}
+                                    onClick={() => setSelectedTopic(top)}
+                                    className={`w-full text-left p-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-between ${
+                                        selectedTopic?.id === top.id
+                                            ? 'bg-indigo-600 text-white shadow-sm'
+                                            : 'text-slate-700 hover:bg-slate-100'
+                                    }`}
+                                >
+                                    <span className="truncate">{top.title}</span>
+                                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${selectedTopic?.id === top.id ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                                        {top.comments?.length || 0}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Discussions Feed */}
+                    <div className="lg:col-span-3 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
+                        <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+                            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                                <MessageSquare className="w-4 h-4 text-indigo-600" />
+                                {selectedTopic?.title || 'Thảo Luận Chung'}
+                            </h3>
+                            <span className="text-xs text-slate-400">
+                                {selectedTopic?.comments?.length || 0} bình luận
+                            </span>
+                        </div>
+
+                        {/* Comments List */}
+                        <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+                            {(selectedTopic?.comments || []).map((comment: any) => (
+                                <div key={comment.id} className="flex items-start gap-3 group">
+                                    <div className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
+                                        {(comment.user?.name || 'U').charAt(0).toUpperCase()}
+                                    </div>
+                                    <div className="flex-1 bg-slate-50 p-3.5 rounded-2xl border border-slate-100 space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <span className="font-bold text-xs text-slate-900">
+                                                {comment.user?.name || comment.user?.email || 'Thành viên'}
+                                            </span>
+                                            <span className="text-[10px] text-slate-400">
+                                                {comment.createdAt ? formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: vi }) : ''}
+                                            </span>
+                                        </div>
+                                        <div
+                                            className="text-xs text-slate-700 leading-relaxed"
+                                            dangerouslySetInnerHTML={{ __html: comment.content }}
+                                        />
+                                        {/* Reactions */}
+                                        <div className="flex items-center gap-1 pt-1">
+                                            {EMOJIS.map((emoji) => {
+                                                const hasReacted = comment.reactions?.some((r: any) => r.emoji === emoji && r.userId === session?.user?.id);
+                                                const count = comment.reactions?.filter((r: any) => r.emoji === emoji).length || 0;
+                                                return (
+                                                    <button
+                                                        key={emoji}
+                                                        onClick={() => handleToggleReaction(comment.id, emoji)}
+                                                        className={`text-xs px-2 py-0.5 rounded-full border transition-all ${
+                                                            hasReacted
+                                                                ? 'bg-indigo-50 border-indigo-300 scale-105'
+                                                                : 'bg-white border-slate-200 hover:bg-slate-100'
+                                                        }`}
+                                                    >
+                                                        {emoji} {count > 0 && <span className="font-bold text-[10px] text-slate-600">{count}</span>}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+
+                            {(!selectedTopic?.comments || selectedTopic.comments.length === 0) && (
+                                <p className="text-center text-xs text-slate-400 py-8">Chưa có phản hồi nào trong chủ đề này. Hãy gửi bình luận đầu tiên!</p>
+                            )}
+                        </div>
+
+                        {/* Comment Input */}
+                        <form onSubmit={handleAddComment} className="flex items-center gap-2 pt-4 border-t border-slate-100">
+                            <input
+                                type="text"
+                                value={newComment}
+                                onChange={(e) => setNewComment(e.target.value)}
+                                placeholder="Nhập ý kiến thảo luận, trao đổi..."
+                                className="flex-1 px-4 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                            />
+                            <Button
+                                type="submit"
+                                variant="primary"
+                                disabled={isSaving || !newComment.trim()}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5"
+                            >
+                                <Send className="w-3.5 h-3.5" /> Gửi
+                            </Button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* MODALS */}
+            <CreateIssueModal
                 projectId={project.id}
+                isOpen={isIssueModalOpen}
+                onClose={() => setIsIssueModalOpen(false)}
                 initialData={editingIssueData}
             />
-            <CreateRiskModal 
-                isOpen={isRiskModalOpen}
-                onClose={() => { setIsRiskModalOpen(false); setEditingRiskData(null); }}
+
+            <CreateRiskModal
                 projectId={project.id}
+                isOpen={isRiskModalOpen}
+                onClose={() => setIsRiskModalOpen(false)}
                 initialData={editingRiskData}
             />
         </div>
     );
 }
-

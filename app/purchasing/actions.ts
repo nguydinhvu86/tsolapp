@@ -287,6 +287,8 @@ export async function createPurchaseOrder(data: any) {
         poStep++;
     }
 
+    await ensureCustomProductsExist(prisma, data.items, 'PURCHASE');
+
     const order = await prisma.purchaseOrder.create({
         data: {
             code,
@@ -302,7 +304,7 @@ export async function createPurchaseOrder(data: any) {
                 create: data.items.map((item: any) => {
                     const lineSubTotal = item.quantity * item.unitPrice;
                     const lineTaxAmount = calcTaxAmount(lineSubTotal, item.taxRate);
-                    const isExternal = item.productId === 'EXTERNAL';
+                    const isExternal = item.productId === 'EXTERNAL' || !item.productId;
                     return {
                         productId: isExternal ? null : item.productId,
                         productName: isExternal ? item.productName || item.customName : null,
@@ -328,6 +330,8 @@ export async function updatePurchaseOrder(id: string, data: any) {
     if (!existing) throw new Error("Đơn đặt hàng không tồn tại");
 
     await verifyActionOwnership('PURCHASE_ORDERS', 'EDIT', existing.creatorId);
+
+    await ensureCustomProductsExist(prisma, data.items, 'PURCHASE');
 
     const order = await prisma.purchaseOrder.update({
         where: { id },
@@ -521,6 +525,12 @@ async function ensureCustomProductsExist(tx: any, items: any[], context: 'PURCHA
     if (!items || items.length === 0) return;
 
     for (const item of items) {
+        // Nếu người dùng chọn KHÔNG lưu vào kho (sản phẩm dùng 1 lần)
+        if (item.saveToInventory === false || item.isOneTime === true) {
+            item.productId = null;
+            continue;
+        }
+
         const customName = (item.customName || item.productName || '').trim();
         const isExternalOrCustom = (!item.productId || item.productId === 'EXTERNAL') && customName.length > 0;
 
@@ -694,8 +704,13 @@ export async function approvePurchaseBill(billId: string, toWarehouseId: string)
         if (bill.status !== 'DRAFT') throw new Error("Hóa đơn đã được duyệt hoặc đang ở trạng thái khác DRAFT");
         if (!toWarehouseId) throw new Error("Vui lòng chọn Kho nhập hàng");
 
-        // 2. Setup internal inventory items (exclude EXTERNAL products)
-        const inventoryItems = bill.items.filter((item: any) => item.productId !== null);
+        // 2. Setup internal inventory items (chỉ nhập kho các sản phẩm vật lý PRODUCT)
+        const billProductIds = bill.items.map((i: any) => i.productId).filter(Boolean) as string[];
+        const physicalProds = billProductIds.length > 0
+            ? await tx.product.findMany({ where: { id: { in: billProductIds }, type: 'PRODUCT' }, select: { id: true } })
+            : [];
+        const physicalProdIdSet = new Set(physicalProds.map((p: any) => p.id));
+        const inventoryItems = bill.items.filter((item: any) => item.productId && physicalProdIdSet.has(item.productId));
 
         if (inventoryItems.length > 0) {
             // 2. Create Inventory Transaction IN
@@ -909,8 +924,13 @@ export async function updatePurchaseBill(id: string, data: any) {
             }
         }
 
-        // 2. Apply new internal products into inventory
-        const newInventoryItems = formattedNewItems.filter((i: any) => i.productId !== null);
+        // 2. Apply new internal products into inventory (chỉ nhập kho các sản phẩm vật lý PRODUCT)
+        const newProductIds = formattedNewItems.map((i: any) => i.productId).filter(Boolean) as string[];
+        const physicalProds = newProductIds.length > 0
+            ? await tx.product.findMany({ where: { id: { in: newProductIds }, type: 'PRODUCT' }, select: { id: true } })
+            : [];
+        const physicalProdIdSet = new Set(physicalProds.map((p: any) => p.id));
+        const newInventoryItems = formattedNewItems.filter((i: any) => i.productId && physicalProdIdSet.has(i.productId));
 
         if (targetWarehouseId && newInventoryItems.length > 0) {
             for (const item of newInventoryItems) {

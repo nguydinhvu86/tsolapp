@@ -1,12 +1,22 @@
-'use client'
-import React, { useState } from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import { Modal } from '@/app/components/ui/Modal';
 import { Button } from '@/app/components/ui/Button';
 import { createProjectIssue, updateProjectIssue } from '@/app/projects/actions';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 
-export function CreateIssueModal({ projectId, isOpen, onClose, initialData }: { projectId: string; isOpen: boolean; onClose: () => void, initialData?: any }) {
+export function CreateIssueModal({
+    projectId,
+    isOpen,
+    onClose,
+    initialData
+}: {
+    projectId: string;
+    isOpen: boolean;
+    onClose: () => void;
+    initialData?: any;
+}) {
     const router = useRouter();
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -30,13 +40,14 @@ export function CreateIssueModal({ projectId, isOpen, onClose, initialData }: { 
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if(!title.trim()) return;
+        if (!title.trim()) return;
+
         setIsSaving(true);
         try {
             if (initialData) {
-                await updateProjectIssue(initialData.id, projectId, title, description, severity, mitigationPlan);
+                await updateProjectIssue(initialData.id, projectId, title.trim(), description.trim(), severity, mitigationPlan.trim());
             } else {
-                await createProjectIssue(projectId, title, description, severity, mitigationPlan);
+                await createProjectIssue(projectId, title.trim(), description.trim(), severity, mitigationPlan.trim());
             }
             router.refresh();
             onClose();
@@ -48,54 +59,85 @@ export function CreateIssueModal({ projectId, isOpen, onClose, initialData }: { 
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={initialData ? "Chỉnh sửa Sự Cố & Vấn Đề" : "Ghi Nhận Sự Cố & Vấn Đề"}>
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem' }}>
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title={initialData ? "Chỉnh Sửa Sự Cố & Vấn Đề" : "Ghi Nhận Sự Cố & Vấn Đề"}
+            maxWidth="620px"
+        >
+            <form onSubmit={handleSubmit} className="space-y-4 p-2">
                 <div>
-                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>Tiêu đề vấn đề *</label>
-                    <input 
-                        type="text" 
-                        required 
-                        value={title} 
-                        onChange={e => setTitle(e.target.value)}
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Tiêu đề sự cố / vấn đề <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        required
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
                         placeholder="VD: Thiếu môi trường server deploy test"
-                        style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '0.95rem' }}
+                        className="w-full px-3.5 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                     />
                 </div>
+
                 <div>
-                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>Mô tả chi tiết</label>
-                    <textarea 
-                        value={description} 
-                        onChange={e => setDescription(e.target.value)}
-                        rows={3}
-                        placeholder="Mô tả cụ thể sự cố đang gặp phải..."
-                        style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '0.95rem', resize: 'vertical' }}
-                    />
-                </div>
-                <div>
-                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>Mức độ nghiêm trọng RAG</label>
-                    <select 
-                        value={severity} 
-                        onChange={e => setSeverity(e.target.value)}
-                        style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '0.95rem' }}
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Mức độ nghiêm trọng (RAG)
+                    </label>
+                    <select
+                        value={severity}
+                        onChange={(e) => setSeverity(e.target.value)}
+                        className="w-full px-3.5 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                     >
                         <option value="GREEN">Xanh - Chấp nhận được (Ít ảnh hưởng)</option>
                         <option value="AMBER">Vàng - Cảnh báo (Cần lưu ý xử lý)</option>
                         <option value="RED">Đỏ - Nghiêm trọng (Blocker lớn)</option>
                     </select>
                 </div>
+
                 <div>
-                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>Phương án khắc phục dự kiến</label>
-                    <textarea 
-                        value={mitigationPlan} 
-                        onChange={e => setMitigationPlan(e.target.value)}
-                        rows={2}
-                        placeholder="Cách thức hoặc yêu cầu hỗ trợ để giải quyết..."
-                        style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '0.95rem', resize: 'vertical' }}
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Mô tả chi tiết sự cố
+                    </label>
+                    <textarea
+                        rows={3}
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Mô tả cụ thể sự cố đang gặp phải..."
+                        className="w-full px-3.5 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                     />
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
-                    <Button type="button" variant="secondary" onClick={onClose} disabled={isSaving}>Hủy</Button>
-                    <Button type="submit" variant="primary" disabled={isSaving || !title.trim()}>{isSaving ? 'Đang lưu...' : (initialData ? 'Lưu Thay Đổi' : 'Ghi Nhận Vấn Đề')}</Button>
+
+                <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Phương án giải quyết dự kiến
+                    </label>
+                    <textarea
+                        rows={2}
+                        value={mitigationPlan}
+                        onChange={(e) => setMitigationPlan(e.target.value)}
+                        placeholder="Cách thức hoặc yêu cầu hỗ trợ để giải quyết sự cố..."
+                        className="w-full px-3.5 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    />
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={onClose}
+                        disabled={isSaving}
+                    >
+                        Hủy
+                    </Button>
+                    <Button
+                        type="submit"
+                        variant="primary"
+                        disabled={isSaving || !title.trim()}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
+                    >
+                        {isSaving ? 'Đang lưu...' : (initialData ? 'Lưu Thay Đổi' : 'Ghi Nhận Vấn Đề')}
+                    </Button>
                 </div>
             </form>
         </Modal>

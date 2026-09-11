@@ -191,7 +191,7 @@ model Customer {
   lastLoginAt       DateTime? // To track Portal active times
   phone             String?
   address           String?
-  billingAddress    String?
+  billingAddress    String?          @db.VarChar(500)
   shippingAddress   String?
   taxCode           String?
   taxStatus         String?
@@ -795,7 +795,7 @@ model Supplier {
   email             String?
   phone             String?
   address           String?
-  billingAddress    String?
+  billingAddress    String?  @db.VarChar(500)
   shippingAddress   String?
   taxCode           String?
   taxStatus         String?

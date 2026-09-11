@@ -49,7 +49,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
         tags: '',
         attachments: [] as { url: string, name: string, uploadedAt: string }[]
     });
-    const [billItems, setBillItems] = useState<Array<{ productId: string, productName?: string, quantity: number, unitPrice: number, taxRate: number, description?: string, unit?: string, customName?: string }>>([]);
+    const [billItems, setBillItems] = useState<Array<{ productId: string, productName?: string, quantity: number, unitPrice: number, taxRate: number, description?: string, unit?: string, customName?: string, saveToInventory?: boolean }>>([]);
     const [approveWarehouseId, setApproveWarehouseId] = useState('');
     const [isUploading, setIsUploading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,6 +59,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
     const [qty, setQty] = useState(1);
     const [price, setPrice] = useState(0);
     const [isCustomProduct, setIsCustomProduct] = useState(false);
+    const [saveToInventory, setSaveToInventory] = useState(true);
     const [customName, setCustomName] = useState('');
     const [customUnit, setCustomUnit] = useState('Cái');
     const [customTaxRate, setCustomTaxRate] = useState(0);
@@ -228,6 +229,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
         setPrice(0);
         setSelectedProduct('');
         setIsCustomProduct(false);
+        setSaveToInventory(true);
         setCustomName('');
         setCustomDescription('');
         setCustomUnit('Cái');
@@ -275,6 +277,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
         setPrice(0);
         setSelectedProduct('');
         setIsCustomProduct(false);
+        setSaveToInventory(true);
         setCustomName('');
         setCustomDescription('');
         setCustomUnit('Cái');
@@ -363,7 +366,8 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
             productName: pName,
             customName: pName,
             productId: pId,
-            unit: pUnit
+            unit: pUnit,
+            saveToInventory: isCustomProduct ? saveToInventory : true
         };
 
         setBillItems(prev => [...prev, newItem]);
@@ -375,6 +379,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
         setCustomUnit('Cái');
         setQty(1);
         setPrice(0);
+        setSaveToInventory(true);
         setIsPriceInclusiveVat(false);
     };
 
@@ -404,6 +409,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
             setCustomName(item.customName || item.productName || '');
             setCustomUnit(item.unit || '');
             setCustomTaxRate(item.taxRate || 0);
+            setSaveToInventory(item.saveToInventory !== false);
             setUseInventoryDescription(false);
             setCustomDescription(item.description || '');
         }
@@ -1061,9 +1067,15 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                                 <span>{t('purchaseBills.customEntry')}</span>
                                             </label>
                                             {isCustomProduct && (
-                                                <span className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md font-medium flex items-center gap-1">
-                                                    ✨ Tự động lưu vào kho cho các lần sau
-                                                </span>
+                                                <label className={`flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold px-2 py-0.5 rounded-md border select-none transition-all ${saveToInventory ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100/70' : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100/70'}`}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={saveToInventory}
+                                                        onChange={(e) => setSaveToInventory(e.target.checked)}
+                                                        className="w-3.5 h-3.5 rounded text-emerald-600 focus:ring-emerald-500 accent-emerald-600 cursor-pointer"
+                                                    />
+                                                    <span>{saveToInventory ? '✨ Tự động lưu vào kho' : '⚡ Không lưu kho (Dùng 1 lần)'}</span>
+                                                </label>
                                             )}
                                             <div className="ml-auto">
                                                 <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold text-emerald-900 bg-emerald-50/80 border border-emerald-200 px-2.5 py-1 rounded-lg select-none hover:bg-emerald-100/80 transition-colors">
@@ -1166,7 +1178,14 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                                         return (
                                                             <tr key={i} className="hover:bg-slate-50 transition-colors">
                                                                 <td className="p-2.5 text-slate-800">
-                                                                    <div className="font-semibold">{item.productName || item.customName}</div>
+                                                                    <div className="font-semibold flex items-center gap-1.5 flex-wrap">
+                                                                        <span>{item.productName || item.customName}</span>
+                                                                        {item.saveToInventory === false && (
+                                                                            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 border border-amber-200" title="Sản phẩm dùng 1 lần cho hóa đơn mua này, không lưu vào kho">
+                                                                                ⚡ Dùng 1 lần
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
                                                                     {item.description && <div className="text-[11px] text-slate-500 mt-0.5 max-w-sm whitespace-pre-wrap">{item.description}</div>}
                                                                 </td>
                                                                 <td className="p-2.5 text-center text-slate-800">

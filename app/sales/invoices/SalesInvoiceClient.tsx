@@ -9,7 +9,7 @@ import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
-import { Plus, Edit2, Trash2, Save, X, Printer, Search, Calendar, PackageCheck, Eye, Download, LinkIcon, CheckCircle2, FileSearch, LayoutList, FileText, ChevronUp, ChevronDown, Undo2, XCircle, AlertTriangle, Info, ShieldAlert, Copy, Clock, ArrowUpDown } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Printer, Search, Calendar, PackageCheck, Eye, Download, LinkIcon, CheckCircle2, FileSearch, LayoutList, FileText, ChevronUp, ChevronDown, Undo2, XCircle, AlertTriangle, Info, ShieldAlert, Copy, Clock, ArrowUpDown, Repeat, CalendarClock } from 'lucide-react';
 import { submitSalesInvoice, approveSalesInvoice, deleteSalesInvoice, updateSalesInvoice, cancelSalesInvoice, updateSalesInvoiceStatus, restoreSalesInvoice, updateSalesInvoiceTags } from './actions';
 import { formatMoney, formatDate, formatTaxRate, calcPreTaxPrice, calcTaxAmount } from '@/lib/utils/formatters';
 import { TaxRateSelect, TaxBadge } from '@/app/components/ui/TaxRateSelect';
@@ -83,6 +83,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
     const [qty, setQty] = useState(1);
     const [price, setPrice] = useState(0);
     const [isCustomProduct, setIsCustomProduct] = useState(false);
+    const [saveToInventory, setSaveToInventory] = useState(true);
     const [customName, setCustomName] = useState('');
     const [customUnit, setCustomUnit] = useState('Cái');
     const [customTaxRate, setCustomTaxRate] = useState(0);
@@ -90,6 +91,99 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
     const [useInventoryDescription, setUseInventoryDescription] = useState(true);
     const [isSubItem, setIsSubItem] = useState(false);
     const [isPriceInclusiveVat, setIsPriceInclusiveVat] = useState(false);
+
+    // Due Date Suggestion State
+    const [dueTermDays, setDueTermDays] = useState<number | 'custom'>(7);
+    const [customDueDays, setCustomDueDays] = useState<number>(7);
+
+    // Recurrence State
+    const [isRecurring, setIsRecurring] = useState<boolean>(false);
+    const [recurrencePeriod, setRecurrencePeriod] = useState<number>(1); // Default 1 month
+    const [customRecurrenceMonths, setCustomRecurrenceMonths] = useState<number>(1);
+    const [recurrenceCount, setRecurrenceCount] = useState<number>(2);
+
+    const handleSelectDueTerm = (days: number | 'custom') => {
+        setDueTermDays(days);
+        if (days !== 'custom') {
+            const base = new Date(formData.date || new Date());
+            base.setDate(base.getDate() + days);
+            setFormData((prev: any) => ({ ...prev, dueDate: getLocalDateStr(base) }));
+        } else {
+            const base = new Date(formData.date || new Date());
+            base.setDate(base.getDate() + (customDueDays || 7));
+            setFormData((prev: any) => ({ ...prev, dueDate: getLocalDateStr(base) }));
+        }
+    };
+
+    const handleCustomDueDaysChange = (val: number) => {
+        setCustomDueDays(val);
+        setDueTermDays('custom');
+        const base = new Date(formData.date || new Date());
+        base.setDate(base.getDate() + val);
+        setFormData((prev: any) => ({ ...prev, dueDate: getLocalDateStr(base) }));
+    };
+
+    const handleDateChange = (newDateStr: string) => {
+        const base = new Date(newDateStr);
+        let updatedDueDate = formData.dueDate;
+        if (typeof dueTermDays === 'number') {
+            const dueBase = new Date(base);
+            dueBase.setDate(dueBase.getDate() + dueTermDays);
+            updatedDueDate = getLocalDateStr(dueBase);
+        } else if (dueTermDays === 'custom' && customDueDays) {
+            const dueBase = new Date(base);
+            dueBase.setDate(dueBase.getDate() + customDueDays);
+            updatedDueDate = getLocalDateStr(dueBase);
+        }
+        setFormData((prev: any) => ({ ...prev, date: newDateStr, dueDate: updatedDueDate }));
+    };
+
+    const handleDueDateChange = (newDueDateStr: string) => {
+        setFormData((prev: any) => ({ ...prev, dueDate: newDueDateStr }));
+        if (formData.date && newDueDateStr) {
+            const diff = Math.round((new Date(newDueDateStr).getTime() - new Date(formData.date).getTime()) / (1000 * 3600 * 24));
+            if ([7, 15, 30, 45].includes(diff)) {
+                setDueTermDays(diff);
+            } else if (diff >= 0) {
+                setDueTermDays('custom');
+                setCustomDueDays(diff);
+            }
+        }
+    };
+
+    // Preview Recurring Dates
+    const previewRecurringDates = useMemo(() => {
+        if (!isRecurring || !formData.date) return [];
+        const count = Math.max(2, Math.min(24, parseInt(recurrenceCount as any) || 2));
+        const freqMonths = recurrencePeriod === -1 ? (parseInt(customRecurrenceMonths as any) || 1) : recurrencePeriod;
+        
+        const baseDate = new Date(formData.date);
+        const baseDueDate = formData.dueDate ? new Date(formData.dueDate) : null;
+        let dueDiffDays = 7;
+        if (baseDueDate) {
+            dueDiffDays = Math.round((baseDueDate.getTime() - baseDate.getTime()) / (1000 * 3600 * 24));
+        }
+
+        const list = [];
+        for (let i = 0; i < count; i++) {
+            const d = new Date(baseDate);
+            d.setMonth(d.getMonth() + i * freqMonths);
+            
+            let dueD = null;
+            if (baseDueDate) {
+                dueD = new Date(d);
+                dueD.setDate(dueD.getDate() + dueDiffDays);
+            }
+
+            list.push({
+                index: i + 1,
+                date: d.toISOString().split('T')[0],
+                dueDate: dueD ? dueD.toISOString().split('T')[0] : null,
+                isFirst: i === 0
+            });
+        }
+        return list;
+    }, [isRecurring, formData.date, formData.dueDate, recurrencePeriod, customRecurrenceMonths, recurrenceCount]);
 
     const handleOpenCreate = () => {
         setFormData({
@@ -117,6 +211,12 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         setCustomTaxRate(0);
         setIsSubItem(false);
         setIsPriceInclusiveVat(false);
+        setDueTermDays(7);
+        setCustomDueDays(7);
+        setIsRecurring(false);
+        setRecurrencePeriod(1);
+        setCustomRecurrenceMonths(1);
+        setRecurrenceCount(2);
         setIsFormOpen(true);
     };
 
@@ -164,6 +264,16 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         setCustomUnit('Cái');
         setCustomTaxRate(0);
         setIsSubItem(false);
+        setIsRecurring(false);
+        if (inv.date && inv.dueDate) {
+            const diff = Math.round((new Date(inv.dueDate).getTime() - new Date(inv.date).getTime()) / (1000 * 3600 * 24));
+            if ([7, 15, 30, 45].includes(diff)) {
+                setDueTermDays(diff);
+            } else if (diff >= 0) {
+                setDueTermDays('custom');
+                setCustomDueDays(diff);
+            }
+        }
         setIsFormOpen(true);
     };
 
@@ -319,7 +429,8 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                 taxRate,
                 taxAmount: taxItemAmount,
                 totalPrice: total,
-                isSubItem: isSubItem
+                isSubItem: isSubItem,
+                saveToInventory: isCustomProduct ? saveToInventory : true
             }];
 
             const calcSubTotal = newItems.reduce((acc: number, curr: any) => acc + (curr.quantity * curr.unitPrice), 0);
@@ -342,6 +453,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         setQty(1);
         setPrice(0);
         setIsSubItem(false);
+        setSaveToInventory(true);
         setIsPriceInclusiveVat(false);
     };
 
@@ -386,6 +498,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
             setCustomName(item.customName || item.productName || '');
             setCustomUnit(item.unit || '');
             setCustomTaxRate(item.taxRate || 0);
+            setSaveToInventory(item.saveToInventory !== false);
             setUseInventoryDescription(false);
             setCustomDescription(item.description || '');
         }
@@ -402,18 +515,31 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
             return;
         }
 
+        const payload = {
+            ...formData,
+            recurrence: !formData.id && isRecurring ? {
+                isRecurring: true,
+                frequencyMonths: recurrencePeriod === -1 ? (customRecurrenceMonths || 1) : recurrencePeriod,
+                count: Math.max(2, parseInt(recurrenceCount as any) || 2)
+            } : undefined
+        };
+
         let res;
         if (formData.id) {
-            res = await updateSalesInvoice(formData.id, formData);
+            res = await updateSalesInvoice(formData.id, payload);
         } else {
-            res = await submitSalesInvoice('system', formData);
+            res = await submitSalesInvoice('system', payload);
         }
 
         if (res.success) {
             if (formData.id) {
                 setInvoices(invoices.map((inv: any) => inv.id === formData.id ? res.data : inv));
             } else {
-                setInvoices([res.data, ...invoices]);
+                const recInvs = (res as any).recurringInvoices;
+                const newInvoices = recInvs && recInvs.length > 0 
+                    ? [res.data, ...recInvs, ...invoices]
+                    : [res.data, ...invoices];
+                setInvoices(newInvoices);
             }
             setIsFormOpen(false);
             router.refresh();
@@ -441,11 +567,20 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
             confirmLabel: t('invoices.alertSaveDuyetConfirm'),
             confirmVariant: 'primary',
             action: async () => {
+                const payload = {
+                    ...formData,
+                    recurrence: !formData.id && isRecurring ? {
+                        isRecurring: true,
+                        frequencyMonths: recurrencePeriod === -1 ? (customRecurrenceMonths || 1) : recurrencePeriod,
+                        count: Math.max(2, parseInt(recurrenceCount as any) || 2)
+                    } : undefined
+                };
+
                 let res;
                 if (formData.id) {
-                    res = await updateSalesInvoice(formData.id, formData);
+                    res = await updateSalesInvoice(formData.id, payload);
                 } else {
-                    res = await submitSalesInvoice('system', formData);
+                    res = await submitSalesInvoice('system', payload);
                 }
 
                 if (res.success) {
@@ -457,7 +592,11 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                         if (formData.id) {
                             setInvoices(invoices.map((inv: any) => inv.id === formData.id ? approveRes.data : inv));
                         } else {
-                            setInvoices([approveRes.data, ...invoices]);
+                            const recInvs = (res as any).recurringInvoices;
+                            const newInvoices = recInvs && recInvs.length > 0 
+                                ? [approveRes.data, ...recInvs, ...invoices]
+                                : [approveRes.data, ...invoices];
+                            setInvoices(newInvoices);
                         }
                         setIsFormOpen(false);
                         router.refresh();
@@ -936,14 +1075,82 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-semibold text-slate-600 mb-1">{t('invoices.dueDateString')}</label>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">Ngày Lập Hóa Đơn</label>
                                 <input
-                                    type="date" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
-                                    value={formData.dueDate}
-                                    onChange={e => setFormData({ ...formData, dueDate: e.target.value })}
+                                    type="date"
+                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white font-mono"
+                                    value={formData.date || ''}
+                                    onChange={e => handleDateChange(e.target.value)}
                                 />
                             </div>
-                            <div className="md:col-span-4 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+
+                            {/* Due Date & Suggestions */}
+                            <div className="md:col-span-2">
+                                <div className="flex items-center justify-between mb-1">
+                                    <label className="block text-xs font-semibold text-slate-600">
+                                        {t('invoices.dueDateString')}
+                                    </label>
+                                    <span className="text-[11px] text-slate-400 font-medium">Gợi ý thời hạn:</span>
+                                </div>
+                                <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                                    <input
+                                        type="date"
+                                        className="w-full sm:w-40 h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white font-mono shadow-2xs"
+                                        value={formData.dueDate || ''}
+                                        onChange={e => handleDueDateChange(e.target.value)}
+                                    />
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                        {[
+                                            { label: '7 ngày', days: 7 },
+                                            { label: '15 ngày', days: 15 },
+                                            { label: '30 ngày', days: 30 },
+                                            { label: '45 ngày', days: 45 },
+                                        ].map(item => {
+                                            const isSelected = dueTermDays === item.days;
+                                            return (
+                                                <button
+                                                    type="button"
+                                                    key={item.days}
+                                                    onClick={() => handleSelectDueTerm(item.days)}
+                                                    className={`h-[30px] px-2.5 rounded-lg text-xs font-semibold transition-all border cursor-pointer select-none ${
+                                                        isSelected 
+                                                            ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs' 
+                                                            : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                                                    }`}
+                                                >
+                                                    {item.label}
+                                                </button>
+                                            );
+                                        })}
+                                        <button
+                                            type="button"
+                                            onClick={() => handleSelectDueTerm('custom')}
+                                            className={`h-[30px] px-2.5 rounded-lg text-xs font-semibold transition-all border cursor-pointer select-none ${
+                                                dueTermDays === 'custom' 
+                                                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs' 
+                                                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                                            }`}
+                                        >
+                                            Tùy chỉnh
+                                        </button>
+                                        {dueTermDays === 'custom' && (
+                                            <div className="flex items-center gap-1">
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="365"
+                                                    value={customDueDays}
+                                                    onChange={(e) => handleCustomDueDaysChange(parseInt(e.target.value) || 0)}
+                                                    className="w-14 h-[30px] border border-slate-200 rounded-lg px-1.5 text-xs text-center font-bold text-emerald-700 bg-white outline-none focus:border-emerald-600"
+                                                />
+                                                <span className="text-[11px] text-slate-500 font-medium">ngày</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
                                 <div>
                                     <label className="block text-xs font-semibold text-slate-600 mb-1">{t('invoices.salespersonString')}</label>
                                     <SearchableSelect
@@ -953,27 +1160,147 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                         placeholder={t('invoices.salespersonSelect')}
                                     />
                                 </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
-                                    <div>
-                                        <label className="block text-xs font-semibold text-slate-600 mb-1">{t('invoices.generalNotes')}</label>
-                                        <input
-                                            type="text" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white placeholder:text-slate-400"
-                                            value={formData.notes || ''}
-                                            onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                                            placeholder={t('invoices.generalNotesPlaceholder')}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-semibold text-slate-600 mb-1">{t('invoices.tags')}</label>
-                                        <input
-                                            type="text" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white placeholder:text-slate-400"
-                                            value={formData.tags || ''}
-                                            onChange={e => setFormData({ ...formData, tags: e.target.value })}
-                                            placeholder={t('invoices.tagsPlaceholder')}
-                                        />
-                                    </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1">{t('invoices.tags')}</label>
+                                    <input
+                                        type="text" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white placeholder:text-slate-400"
+                                        value={formData.tags || ''}
+                                        onChange={e => setFormData({ ...formData, tags: e.target.value })}
+                                        placeholder={t('invoices.tagsPlaceholder')}
+                                    />
                                 </div>
                             </div>
+
+                            <div className="md:col-span-4">
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">{t('invoices.generalNotes')}</label>
+                                <input
+                                    type="text" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white placeholder:text-slate-400"
+                                    value={formData.notes || ''}
+                                    onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                                    placeholder={t('invoices.generalNotesPlaceholder')}
+                                />
+                            </div>
+
+                            {/* Recurring Invoice Feature */}
+                            {!formData.id && (
+                                <div className="md:col-span-4 p-3.5 bg-gradient-to-r from-purple-50/70 via-indigo-50/40 to-slate-50/80 rounded-xl border border-purple-200/80 space-y-3 shadow-2xs">
+                                    <div className="flex items-center justify-between flex-wrap gap-2">
+                                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                                            <input
+                                                type="checkbox"
+                                                checked={isRecurring}
+                                                onChange={(e) => setIsRecurring(e.target.checked)}
+                                                className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 accent-purple-600 cursor-pointer"
+                                            />
+                                            <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                                                <Repeat size={14} className="text-purple-600" />
+                                                <span>Lặp lại hóa đơn định kỳ (Dành cho gói dịch vụ theo tháng, năm...)</span>
+                                            </span>
+                                        </label>
+                                        {isRecurring && (
+                                            <span className="text-[11px] font-semibold text-purple-700 bg-purple-100/70 px-2 py-0.5 rounded-md border border-purple-200">
+                                                Tự động tạo {recurrenceCount} kỳ hóa đơn
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {isRecurring && (
+                                        <div className="pt-2 border-t border-purple-200/60 space-y-3">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+                                                <div className="lg:col-span-3">
+                                                    <label className="block text-[11px] font-bold text-slate-700 mb-1.5 flex items-center gap-1">
+                                                        <Clock size={13} className="text-purple-600" />
+                                                        <span>Chu kỳ lặp lại tính từ ngày lập hóa đơn:</span>
+                                                    </label>
+                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                        {[
+                                                            { label: '1 Tháng', val: 1 },
+                                                            { label: '3 Tháng (Quý)', val: 3 },
+                                                            { label: '6 Tháng (Nửa năm)', val: 6 },
+                                                            { label: '12 Tháng (1 Năm)', val: 12 },
+                                                            { label: 'Tùy chọn', val: -1 },
+                                                        ].map(item => {
+                                                            const isSel = recurrencePeriod === item.val;
+                                                            return (
+                                                                <button
+                                                                    type="button"
+                                                                    key={item.val}
+                                                                    onClick={() => setRecurrencePeriod(item.val)}
+                                                                    className={`h-8 px-3 rounded-lg text-xs font-bold transition-all border cursor-pointer select-none ${
+                                                                        isSel 
+                                                                            ? 'bg-purple-600 text-white border-purple-600 shadow-2xs' 
+                                                                            : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
+                                                                    }`}
+                                                                >
+                                                                    {item.label}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                        {recurrencePeriod === -1 && (
+                                                            <div className="flex items-center gap-1">
+                                                                <input
+                                                                    type="number"
+                                                                    min="1"
+                                                                    max="60"
+                                                                    value={customRecurrenceMonths}
+                                                                    onChange={(e) => setCustomRecurrenceMonths(parseInt(e.target.value) || 1)}
+                                                                    className="w-16 h-8 border border-slate-200 rounded-lg px-2 text-xs text-center font-bold text-purple-700 bg-white outline-none focus:border-purple-600"
+                                                                />
+                                                                <span className="text-[11px] text-slate-600 font-medium">tháng/kỳ</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-[11px] font-bold text-slate-700 mb-1.5">
+                                                        Số kỳ phát hành dự kiến:
+                                                    </label>
+                                                    <div className="flex items-center gap-2">
+                                                        <input
+                                                            type="number"
+                                                            min="2"
+                                                            max="24"
+                                                            value={recurrenceCount}
+                                                            onChange={(e) => setRecurrenceCount(Math.min(24, Math.max(2, parseInt(e.target.value) || 2)))}
+                                                            className="w-full h-8 border border-slate-200 rounded-lg px-2 text-xs font-bold text-center text-slate-900 bg-white outline-none focus:border-purple-600"
+                                                        />
+                                                        <span className="text-xs text-slate-500 font-medium shrink-0">kỳ</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Timeline preview */}
+                                            {previewRecurringDates.length > 0 && (
+                                                <div className="bg-white/90 p-2.5 rounded-xl border border-purple-100 text-xs">
+                                                    <div className="text-[11px] font-bold text-purple-900 mb-1.5 flex items-center gap-1">
+                                                        <span>📅 Lịch phát hành các kỳ hóa đơn:</span>
+                                                    </div>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                                                        {previewRecurringDates.map((item) => (
+                                                            <div 
+                                                                key={item.index}
+                                                                className={`p-2 rounded-lg border text-[11px] flex flex-col gap-0.5 ${
+                                                                    item.isFirst 
+                                                                        ? 'bg-purple-50/80 border-purple-200 text-purple-900 font-semibold' 
+                                                                        : 'bg-slate-50/70 border-slate-200/80 text-slate-700'
+                                                                }`}
+                                                            >
+                                                                <div className="flex items-center justify-between font-bold">
+                                                                    <span>Kỳ {item.index}{item.isFirst ? ' (Hiện tại)' : ' (Nháp)'}</span>
+                                                                    {item.isFirst && <span className="text-[10px] px-1.5 rounded bg-purple-200 text-purple-800">Kỳ 1</span>}
+                                                                </div>
+                                                                <div>Ngày lập: <strong className="font-mono">{formatDate(item.date)}</strong></div>
+                                                                {item.dueDate && <div>Hạn TT: <span className="font-mono text-slate-500">{formatDate(item.dueDate)}</span></div>}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -990,9 +1317,15 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                     <span>{t('invoices.enterCustomProduct')}</span>
                                 </label>
                                 {isCustomProduct && (
-                                    <span className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md font-medium flex items-center gap-1">
-                                        ✨ Tự động lưu vào kho
-                                    </span>
+                                    <label className={`flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold px-2 py-0.5 rounded-md border select-none transition-all ${saveToInventory ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100/70' : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100/70'}`}>
+                                        <input
+                                            type="checkbox"
+                                            checked={saveToInventory}
+                                            onChange={(e) => setSaveToInventory(e.target.checked)}
+                                            className="w-3.5 h-3.5 rounded text-emerald-600 focus:ring-emerald-500 accent-emerald-600 cursor-pointer"
+                                        />
+                                        <span>{saveToInventory ? '✨ Tự động lưu vào kho' : '⚡ Không lưu kho (Dùng 1 lần)'}</span>
+                                    </label>
                                 )}
                                 <div className="ml-auto">
                                     <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold text-emerald-900 bg-emerald-50/80 border border-emerald-200 px-2.5 py-1 rounded-lg select-none hover:bg-emerald-100/80 transition-colors">
@@ -1097,9 +1430,14 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                     {formData.items.map((item: any, i: number) => (
                                         <tr key={i} className={`hover:bg-slate-50/80 transition-colors ${item.isSubItem ? 'bg-slate-50/50' : ''}`}>
                                             <td className="p-2.5 text-slate-800" style={item.isSubItem ? { paddingLeft: '1.5rem' } : {}}>
-                                                <div className="font-semibold flex items-center gap-1.5">
+                                                <div className="font-semibold flex items-center gap-1.5 flex-wrap">
                                                     {item.isSubItem && <span className="text-slate-400">↳</span>}
                                                     <span className={item.isSubItem ? 'text-slate-600 font-medium' : ''}>{item.productName || item.customName}</span>
+                                                    {item.saveToInventory === false && (
+                                                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 border border-amber-200" title="Sản phẩm dùng 1 lần cho hóa đơn này, không lưu vào kho">
+                                                            ⚡ Dùng 1 lần
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 {item.description && <div className="text-[11px] text-slate-500 mt-0.5 max-w-sm whitespace-pre-wrap">{item.description}</div>}
                                             </td>

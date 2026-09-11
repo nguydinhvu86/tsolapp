@@ -19,6 +19,8 @@ const projectSchema = z.object({
     customerId: z.string().nullable().optional(),
     assignees: z.array(z.string()).optional(),
     estimatedValue: z.number().nullable().optional(),
+    budget: z.number().nullable().optional(),
+    tags: z.string().nullable().optional(),
     estimatedDuration: z.string().nullable().optional(),
 }).passthrough();
 
@@ -84,7 +86,7 @@ export async function createProject(data: any, creatorId: string) {
     const uId = user ? (user as any).id : creatorId;
     
     const validatedData = projectSchema.parse(data);
-    const { assignees, title, ...restDataRaw } = validatedData;
+    const { assignees, title, customerId, ...restDataRaw } = validatedData;
     const restData: any = restDataRaw;
     for (const key of Object.keys(restData)) {
         if (restData[key] === "") restData[key] = null;
@@ -94,11 +96,20 @@ export async function createProject(data: any, creatorId: string) {
 
     const newProject = await prisma.project.create({
         data: {
-            ...restData,
             name: title,
             code,
-            creatorId: uId,
-            status: restData.status || 'PLANNING'
+            description: restData.description || null,
+            type: restData.type || 'IMPLEMENTATION',
+            status: restData.status || 'PLANNING',
+            priority: restData.priority || 'MEDIUM',
+            startDate: restData.startDate ? new Date(restData.startDate) : null,
+            dueDate: restData.dueDate ? new Date(restData.dueDate) : null,
+            estimatedValue: restData.estimatedValue ? Number(restData.estimatedValue) : 0,
+            budget: restData.budget ? Number(restData.budget) : 0,
+            tags: restData.tags || null,
+            estimatedDuration: restData.estimatedDuration || null,
+            creator: { connect: { id: uId } },
+            ...(customerId ? { customer: { connect: { id: customerId } } } : {})
         }
     });
 
@@ -159,7 +170,7 @@ export async function createProject(data: any, creatorId: string) {
 
 export async function updateProject(id: string, data: any, userId: string) {
     const validatedData = projectSchema.parse(data);
-    const { assignees, title, ...restDataRaw } = validatedData;
+    const { assignees, title, customerId, ...restDataRaw } = validatedData;
     const restData: any = restDataRaw;
     for (const key of Object.keys(restData)) {
         if (restData[key] === "") restData[key] = null;
@@ -175,8 +186,29 @@ export async function updateProject(id: string, data: any, userId: string) {
     const assigneesList = oldProject.members ? oldProject.members.map((a: any) => a.userId) : [];
     await verifyActionOwnership('PROJECTS', 'EDIT', oldProject.creatorId, assigneesList);
 
-    const updatePayload: any = { ...restData };
-    if (title) updatePayload.name = title;
+    const updatePayload: any = {
+        name: title || undefined,
+        description: restData.description !== undefined ? restData.description : undefined,
+        type: restData.type || undefined,
+        status: restData.status || undefined,
+        priority: restData.priority || undefined,
+        startDate: restData.startDate !== undefined ? (restData.startDate ? new Date(restData.startDate) : null) : undefined,
+        dueDate: restData.dueDate !== undefined ? (restData.dueDate ? new Date(restData.dueDate) : null) : undefined,
+        estimatedValue: restData.estimatedValue !== undefined ? Number(restData.estimatedValue) : undefined,
+        budget: restData.budget !== undefined ? Number(restData.budget) : undefined,
+        tags: restData.tags !== undefined ? restData.tags : undefined,
+        estimatedDuration: restData.estimatedDuration !== undefined ? restData.estimatedDuration : undefined,
+    };
+
+    if (customerId !== undefined) {
+        if (customerId) {
+            updatePayload.customer = { connect: { id: customerId } };
+        } else {
+            updatePayload.customer = { disconnect: true };
+        }
+    }
+
+    Object.keys(updatePayload).forEach(key => updatePayload[key] === undefined && delete updatePayload[key]);
 
     const updated = await prisma.project.update({
         where: { id },

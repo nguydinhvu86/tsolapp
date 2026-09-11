@@ -96,11 +96,11 @@ function TimerCell({ task, session }: { task: any, session: any }) {
 
     if (activeLog) {
         return (
-            <div className="flex flex-col items-center gap-1">
+            <div className="flex flex-col items-center justify-center gap-1 min-w-[90px] whitespace-nowrap">
                 <button 
                     onClick={handleStop} 
                     disabled={isLoading}
-                    className="inline-flex items-center justify-center gap-1 h-[24px] px-2 bg-rose-600 hover:bg-rose-700 text-white rounded text-[10px] font-bold shadow-2xs animate-pulse cursor-pointer transition-all"
+                    className="inline-flex items-center justify-center gap-1 h-[24px] px-2 bg-rose-600 hover:bg-rose-700 text-white rounded text-[10px] font-bold shadow-2xs animate-pulse cursor-pointer transition-all whitespace-nowrap shrink-0"
                 >
                     {isLoading ? '...' : `⏹ Dừng (${formatTimer(elapsed)})`}
                 </button>
@@ -108,15 +108,15 @@ function TimerCell({ task, session }: { task: any, session: any }) {
         );
     } else {
         return (
-            <div className="flex flex-col items-center gap-0.5">
+            <div className="flex flex-col items-center justify-center gap-0.5 min-w-[90px] whitespace-nowrap">
                 <button 
                     onClick={handleStart} 
                     disabled={isLoading}
-                    className="inline-flex items-center justify-center gap-1 h-[22px] px-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300/80 rounded text-[10px] font-semibold transition-all cursor-pointer shadow-2xs"
+                    className="inline-flex items-center justify-center gap-1 h-[22px] px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300/80 rounded text-[10px] font-semibold transition-all cursor-pointer shadow-2xs whitespace-nowrap shrink-0"
                 >
                     {isLoading ? '...' : `▶ Bắt Đầu`}
                 </button>
-                <span className="text-[10px] font-mono text-slate-400">{timeDisplay}</span>
+                <span className="text-[10px] font-mono text-slate-400 whitespace-nowrap leading-tight mt-0.5">{timeDisplay}</span>
             </div>
         );
     }
@@ -882,7 +882,7 @@ export function TaskDashboardClient({
 
                 {viewMode === 'LIST' && (
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                        <table className="w-full min-w-[1050px] text-left border-collapse">
                             <thead>
                                 <tr className="border-b border-slate-200/90 bg-slate-100/70">
                                     <th onClick={() => handleSort('title')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider hover:bg-slate-200/50 transition-colors">
@@ -891,35 +891,35 @@ export function TaskDashboardClient({
                                             {sortField === 'title' ? (sortDirection === 'asc' ? <ChevronUp size={12} className="text-primary" /> : <ChevronDown size={12} className="text-primary" />) : <ArrowUpDown size={11} className="opacity-30" />}
                                         </div>
                                     </th>
-                                    <th onClick={() => handleSort('assignees')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[180px] hover:bg-slate-200/50 transition-colors">
+                                    <th onClick={() => handleSort('assignees')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[180px] min-w-[160px] whitespace-nowrap hover:bg-slate-200/50 transition-colors">
                                         <div className="flex items-center gap-1.5">
                                             NGƯỜI PHỤ TRÁCH
                                             {sortField === 'assignees' ? (sortDirection === 'asc' ? <ChevronUp size={12} className="text-primary" /> : <ChevronDown size={12} className="text-primary" />) : <ArrowUpDown size={11} className="opacity-30" />}
                                         </div>
                                     </th>
-                                    <th onClick={() => handleSort('priority')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[110px] hover:bg-slate-200/50 transition-colors">
+                                    <th onClick={() => handleSort('priority')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[110px] min-w-[95px] whitespace-nowrap hover:bg-slate-200/50 transition-colors">
                                         <div className="flex items-center gap-1.5">
                                             MỨC ĐỘ
                                             {sortField === 'priority' ? (sortDirection === 'asc' ? <ChevronUp size={12} className="text-primary" /> : <ChevronDown size={12} className="text-primary" />) : <ArrowUpDown size={11} className="opacity-30" />}
                                         </div>
                                     </th>
-                                    <th onClick={() => handleSort('startDate')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[105px] hover:bg-slate-200/50 transition-colors">
+                                    <th onClick={() => handleSort('startDate')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[105px] min-w-[95px] whitespace-nowrap hover:bg-slate-200/50 transition-colors">
                                         <div className="flex items-center gap-1.5">
                                             BẮT ĐẦU
                                             {sortField === 'startDate' ? (sortDirection === 'asc' ? <ChevronUp size={12} className="text-primary" /> : <ChevronDown size={12} className="text-primary" />) : <ArrowUpDown size={11} className="opacity-30" />}
                                         </div>
                                     </th>
-                                    <th onClick={() => handleSort('dueDate')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[105px] hover:bg-slate-200/50 transition-colors">
+                                    <th onClick={() => handleSort('dueDate')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[105px] min-w-[95px] whitespace-nowrap hover:bg-slate-200/50 transition-colors">
                                         <div className="flex items-center gap-1.5">
                                             DEADLINE
                                             {sortField === 'dueDate' ? (sortDirection === 'asc' ? <ChevronUp size={12} className="text-primary" /> : <ChevronDown size={12} className="text-primary" />) : <ArrowUpDown size={11} className="opacity-30" />}
                                         </div>
                                     </th>
-                                    <th className="py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[170px]">LIÊN QUAN</th>
-                                    <th className="py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[130px]">TÌNH TRẠNG</th>
-                                    <th className="py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider text-center w-[95px]">THỜI GIAN</th>
-                                    <th className="py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[110px]">TIẾN ĐỘ</th>
-                                    <th className="py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider text-right w-[90px]">THAO TÁC</th>
+                                    <th className="py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[170px] min-w-[150px] whitespace-nowrap">LIÊN QUAN</th>
+                                    <th className="py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[130px] min-w-[115px] whitespace-nowrap">TÌNH TRẠNG</th>
+                                    <th className="py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider text-center w-[110px] min-w-[100px] whitespace-nowrap">THỜI GIAN</th>
+                                    <th className="py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[110px] min-w-[100px] whitespace-nowrap">TIẾN ĐỘ</th>
+                                    <th className="py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider text-right w-[90px] min-w-[80px] whitespace-nowrap">THAO TÁC</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1110,7 +1110,7 @@ export function TaskDashboardClient({
                                             </td>
 
                                             {/* Time Tracking */}
-                                            <td className="py-2.5 px-3.5 align-middle text-center">
+                                            <td className="py-2.5 px-3.5 align-middle text-center whitespace-nowrap">
                                                 <TimerCell task={task} session={session} />
                                             </td>
 

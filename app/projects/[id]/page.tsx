@@ -18,8 +18,8 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
     const project = await prisma.project.findUnique({
         where: { id: params.id },
         include: {
-            creator: { select: { id: true, name: true, avatar: true } },
-            members: { include: { user: { select: { id: true, name: true, avatar: true } } } },
+            creator: { select: { id: true, name: true, avatar: true, email: true } },
+            members: { include: { user: { select: { id: true, name: true, avatar: true, email: true } } } },
             topics: {
                 orderBy: { createdAt: 'desc' },
                 include: { creator: { select: { id: true, name: true, avatar: true } }, comments: { include: { user: { select: { id: true, name: true, avatar: true } }, reactions: true } } }
@@ -28,17 +28,32 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
                 orderBy: { createdAt: 'desc' },
                 include: { user: { select: { id: true, name: true, avatar: true } }, reactions: true }
             },
-            attachments: { include: { uploadedBy: { select: { id: true, name: true } } } },
-            customer: { select: { id: true, name: true, phone: true, email: true } },
+            attachments: { 
+                orderBy: { createdAt: 'desc' },
+                include: { uploadedBy: { select: { id: true, name: true } } } 
+            },
+            customer: { select: { id: true, name: true, phone: true, email: true, code: true, address: true } },
             contract: { select: { id: true, title: true, status: true, createdAt: true } },
             quote: { select: { id: true, title: true, status: true, createdAt: true } },
             salesEstimate: { select: { id: true, code: true, status: true, totalAmount: true, date: true } },
             salesOrder: { select: { id: true, code: true, status: true, totalAmount: true, date: true } },
             invoice: { select: { id: true, code: true, status: true, totalAmount: true, paidAmount: true, date: true } },
-            purchaseOrders: { select: { id: true, code: true, status: true, totalAmount: true, date: true, supplier: { select: { name: true } } } },
-            purchaseBills: { select: { id: true, code: true, status: true, totalAmount: true, paidAmount: true, date: true, supplier: { select: { name: true } } } },
-            purchasePayments: { select: { id: true, code: true, amount: true, date: true, supplier: { select: { name: true } } } },
-            expenses: { select: { id: true, code: true, status: true, amount: true, date: true, description: true } },
+            purchaseOrders: { 
+                orderBy: { createdAt: 'desc' },
+                include: { supplier: { select: { id: true, name: true, code: true } } } 
+            },
+            purchaseBills: { 
+                orderBy: { createdAt: 'desc' },
+                include: { supplier: { select: { id: true, name: true, code: true } } } 
+            },
+            purchasePayments: { 
+                orderBy: { createdAt: 'desc' },
+                include: { supplier: { select: { id: true, name: true, code: true } } } 
+            },
+            expenses: { 
+                orderBy: { createdAt: 'desc' },
+                include: { category: true } 
+            },
             issues: {
                 orderBy: { createdAt: 'desc' },
                 include: {
@@ -54,8 +69,8 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
             },
             tasks: {
                 include: {
-                    assignees: { include: { user: { select: { id: true, name: true, avatar: true } } } },
-                    creator: { select: { id: true, name: true } },
+                    assignees: { include: { user: { select: { id: true, name: true, avatar: true, email: true } } } },
+                    creator: { select: { id: true, name: true, avatar: true } },
                     observers: { include: { user: { select: { id: true, name: true, avatar: true } } } },
                     checklists: {
                         orderBy: { createdAt: 'asc' },
@@ -98,10 +113,69 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
         if (!isRelated) notFound();
     }
 
+    // Fetch all related sales documents linked to this project
+    const [extraEstimates, extraOrders, extraInvoices, extraQuotes, extraContracts] = await Promise.all([
+        prisma.salesEstimate.findMany({
+            where: {
+                OR: [
+                    { id: project.salesEstimateId || 'NONE' },
+                    { projects: { some: { id: params.id } } }
+                ]
+            },
+            orderBy: { createdAt: 'desc' }
+        }),
+        prisma.salesOrder.findMany({
+            where: {
+                OR: [
+                    { id: project.salesOrderId || 'NONE' },
+                    { projects: { some: { id: params.id } } }
+                ]
+            },
+            orderBy: { createdAt: 'desc' }
+        }),
+        prisma.salesInvoice.findMany({
+            where: {
+                OR: [
+                    { id: project.invoiceId || 'NONE' },
+                    { projects: { some: { id: params.id } } }
+                ]
+            },
+            orderBy: { createdAt: 'desc' }
+        }),
+        prisma.quote.findMany({
+            where: {
+                OR: [
+                    { id: project.quoteId || 'NONE' },
+                    { projects: { some: { id: params.id } } }
+                ]
+            },
+            orderBy: { createdAt: 'desc' }
+        }),
+        prisma.contract.findMany({
+            where: {
+                OR: [
+                    { id: project.contractId || 'NONE' },
+                    { projects: { some: { id: params.id } } }
+                ]
+            },
+            orderBy: { createdAt: 'desc' }
+        })
+    ]);
+
     const users = await prisma.user.findMany({
         select: { id: true, name: true, email: true, avatar: true },
         orderBy: { name: 'asc' }
     });
 
-    return <ProjectDetailClient project={project as any} users={users} />;
+    // Merge transactions into project
+    const mergedProject = {
+        ...project,
+        salesEstimates: extraEstimates,
+        salesOrders: extraOrders,
+        invoices: extraInvoices,
+        quotes: extraQuotes,
+        contracts: extraContracts
+    };
+
+    return <ProjectDetailClient project={mergedProject as any} users={users} />;
 }

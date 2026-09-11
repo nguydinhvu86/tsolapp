@@ -86,6 +86,12 @@ async function ensureCustomProductsExist(tx: any, items: any[], context: 'PURCHA
     if (!items || items.length === 0) return;
 
     for (const item of items) {
+        // Nếu người dùng chọn KHÔNG lưu vào kho (sản phẩm dùng 1 lần)
+        if (item.saveToInventory === false || item.isOneTime === true) {
+            item.productId = null;
+            continue;
+        }
+
         const customName = (item.customName || item.productName || '').trim();
         const isExternalOrCustom = (!item.productId || item.productId === 'EXTERNAL') && customName.length > 0;
 

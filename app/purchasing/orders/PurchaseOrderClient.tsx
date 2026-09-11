@@ -39,7 +39,7 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
     });
 
     // Order Items Form State
-    const [orderItems, setOrderItems] = useState<Array<{ productId: string, productName?: string, quantity: number, unitPrice: number, taxRate: number, description?: string, unit?: string, customName?: string }>>([]);
+    const [orderItems, setOrderItems] = useState<Array<{ productId: string, productName?: string, quantity: number, unitPrice: number, taxRate: number, description?: string, unit?: string, customName?: string, saveToInventory?: boolean }>>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Item Sub-Form Buffer States
@@ -47,6 +47,7 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
     const [qty, setQty] = useState(1);
     const [price, setPrice] = useState(0);
     const [isCustomProduct, setIsCustomProduct] = useState(false);
+    const [saveToInventory, setSaveToInventory] = useState(true);
     const [customName, setCustomName] = useState('');
     const [customUnit, setCustomUnit] = useState('Cái');
     const [customTaxRate, setCustomTaxRate] = useState(0);
@@ -145,6 +146,7 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
         setPrice(0);
         setSelectedProduct('');
         setIsCustomProduct(false);
+        setSaveToInventory(true);
         setCustomName('');
         setCustomDescription('');
         setCustomUnit('Cái');
@@ -170,7 +172,8 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
             unitPrice: i.unitPrice,
             taxRate: i.taxRate || 0,
             unit: i.unit || i.product?.unit || 'Cái',
-            description: i.description || i.notes || ''
+            description: i.description || i.notes || '',
+            saveToInventory: i.saveToInventory !== false
         })) || []);
 
         // Reset sub-form
@@ -178,6 +181,7 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
         setPrice(0);
         setSelectedProduct('');
         setIsCustomProduct(false);
+        setSaveToInventory(true);
         setCustomName('');
         setCustomDescription('');
         setCustomUnit('Cái');
@@ -246,7 +250,8 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
             productName: pName,
             customName: pName,
             productId: pId,
-            unit: pUnit
+            unit: pUnit,
+            saveToInventory: isCustomProduct ? saveToInventory : true
         };
 
         setOrderItems(prev => [...prev, newItem]);
@@ -256,6 +261,7 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
         setCustomName('');
         setCustomDescription('');
         setCustomUnit('Cái');
+        setSaveToInventory(true);
         setQty(1);
         setPrice(0);
         setIsPriceInclusiveVat(false);
@@ -273,6 +279,7 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
             setCustomName('');
             setCustomUnit('Cái');
             setCustomTaxRate(item.taxRate || 0);
+            setSaveToInventory(true);
 
             const prod = products.find((p: any) => p.id === item.productId);
             if (prod && item.description === (prod.description || '')) {
@@ -287,6 +294,7 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
             setCustomName(item.customName || item.productName || '');
             setCustomUnit(item.unit || '');
             setCustomTaxRate(item.taxRate || 0);
+            setSaveToInventory(item.saveToInventory !== false);
             setUseInventoryDescription(false);
             setCustomDescription(item.description || '');
         }
@@ -653,7 +661,7 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
 
                                     {/* Sub-Form for Add Item */}
                                     <div className="flex flex-col bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-2xs mb-3">
-                                        <div className="mb-3 flex items-center gap-4 border-b border-slate-100 pb-2.5">
+                                        <div className="mb-3 flex flex-wrap items-center gap-4 border-b border-slate-100 pb-2.5">
                                             <label className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-slate-700">
                                                 <input type="radio" className="accent-emerald-600 w-3.5 h-3.5 cursor-pointer" checked={!isCustomProduct} onChange={() => setIsCustomProduct(false)} />
                                                 <span>{t('purchaseOrders.selectFromInventory')}</span>
@@ -662,6 +670,17 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                                                 <input type="radio" className="accent-emerald-600 w-3.5 h-3.5 cursor-pointer" checked={isCustomProduct} onChange={() => setIsCustomProduct(true)} />
                                                 <span>{t('purchaseOrders.customInput')}</span>
                                             </label>
+                                            {isCustomProduct && (
+                                                <label className={`flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-colors select-none ${saveToInventory ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200'}`}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={saveToInventory}
+                                                        onChange={(e) => setSaveToInventory(e.target.checked)}
+                                                        className="w-3.5 h-3.5 rounded text-emerald-600 focus:ring-emerald-500 accent-emerald-600 cursor-pointer"
+                                                    />
+                                                    <span>{saveToInventory ? '✨ Tự động lưu vào kho' : '⚡ Không lưu kho (Dùng 1 lần)'}</span>
+                                                </label>
+                                            )}
                                             <div className="ml-auto">
                                                 <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold text-emerald-900 bg-emerald-50/80 border border-emerald-200 px-2.5 py-1 rounded-lg select-none hover:bg-emerald-100/80 transition-colors">
                                                     <input
@@ -763,7 +782,12 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                                                         return (
                                                             <tr key={i} className="hover:bg-slate-50 transition-colors">
                                                                 <td className="p-2.5 text-slate-800">
-                                                                    <div className="font-semibold">{item.productName || item.customName}</div>
+                                                                    <div className="font-semibold flex items-center gap-1.5">
+                                                                        <span>{item.productName || item.customName}</span>
+                                                                        {item.saveToInventory === false && (
+                                                                            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 border border-amber-200" title="Sản phẩm chỉ dùng 1 lần cho đơn hàng này, không lưu vào danh mục kho">⚡ Dùng 1 lần</span>
+                                                                        )}
+                                                                    </div>
                                                                     {item.description && <div className="text-[11px] text-slate-500 mt-0.5 max-w-sm whitespace-pre-wrap">{item.description}</div>}
                                                                 </td>
                                                                 <td className="p-2.5 text-center text-slate-800">

@@ -67,6 +67,12 @@ async function ensureCustomProductsExist(tx: any, items: any[], context: 'PURCHA
     if (!items || items.length === 0) return;
 
     for (const item of items) {
+        // Nếu người dùng chọn KHÔNG lưu vào kho (sản phẩm dùng 1 lần)
+        if (item.saveToInventory === false || item.isOneTime === true) {
+            item.productId = null;
+            continue;
+        }
+
         const customName = (item.customName || item.productName || '').trim();
         const isExternalOrCustom = (!item.productId || item.productId === 'EXTERNAL') && customName.length > 0;
 
@@ -177,14 +183,25 @@ export async function submitSalesInvoice(creatorId: string, formData: any) {
         // Tự động tạo sản phẩm vào kho/danh mục nếu là nhập tự do
         await ensureCustomProductsExist(prisma, formData.items, 'SALES');
 
+        const isRecurring = formData.recurrence?.isRecurring && (formData.recurrence?.count || 1) > 1;
+        const recurrenceCount = isRecurring ? Math.min(60, Math.max(2, parseInt(formData.recurrence.count, 10) || 2)) : 1;
+        const frequencyMonths = isRecurring ? Math.max(1, parseInt(formData.recurrence.frequencyMonths, 10) || 1) : 1;
+
+        const baseTags = formData.tags 
+            ? (isRecurring ? `${formData.tags}, Định kỳ (Kỳ 1/${recurrenceCount})` : formData.tags) 
+            : (isRecurring ? `Định kỳ (Kỳ 1/${recurrenceCount})` : null);
+        const baseNotes = isRecurring 
+            ? (formData.notes ? `${formData.notes}\n[Hóa đơn định kỳ: Kỳ 1/${recurrenceCount} - Chu kỳ mỗi ${frequencyMonths} tháng]` : `[Hóa đơn định kỳ: Kỳ 1/${recurrenceCount} - Chu kỳ mỗi ${frequencyMonths} tháng]`) 
+            : formData.notes;
+
         const invoice = await prisma.salesInvoice.create({
             data: {
                 code: finalCode,
                 date: new Date(formData.date),
                 dueDate: formData.dueDate ? new Date(formData.dueDate) : null,
                 status: formData.status || "DRAFT",
-                notes: formData.notes,
-                tags: formData.tags || null,
+                notes: baseNotes,
+                tags: baseTags,
                 customerId: formData.customerId,
                 orderId: formData.orderId || null,
                 subTotal: formData.subTotal,
@@ -218,20 +235,106 @@ export async function submitSalesInvoice(creatorId: string, formData: any) {
             }
         });
 
-        await logCustomerActivity(formData.customerId, actualCreatorId, 'TẠO_HÓA_ĐƠN', `Tạo hóa đơn: ${formData.code}`);
+        await logCustomerActivity(formData.customerId, actualCreatorId, 'TẠO_HÓA_ĐƠN', `Tạo hóa đơn: ${formData.code}${isRecurring ? ` (Kỳ 1/${recurrenceCount})` : ''}`);
 
         await prisma.salesInvoiceActivityLog.create({
             data: {
                 invoiceId: invoice.id,
                 userId: actualCreatorId,
                 action: 'TẠO_HÓA_ĐƠN',
-                details: `Khởi tạo hóa đơn: ${invoice.code}`
+                details: `Khởi tạo hóa đơn: ${invoice.code}${isRecurring ? ` (Kỳ 1/${recurrenceCount})` : ''}`
             }
         });
 
+        // Tạo các hóa đơn định kỳ cho các kỳ tiếp theo (nếu có chọn Lặp lại)
+        const recurringInvoices: any[] = [];
+        if (isRecurring) {
+            const baseDate = new Date(formData.date);
+            const baseDueDate = formData.dueDate ? new Date(formData.dueDate) : null;
+            let dueDiffDays = 0;
+            if (baseDueDate) {
+                dueDiffDays = Math.round((baseDueDate.getTime() - baseDate.getTime()) / (1000 * 3600 * 24));
+            }
+
+            for (let i = 1; i < recurrenceCount; i++) {
+                const nextDate = new Date(baseDate);
+                nextDate.setMonth(nextDate.getMonth() + i * frequencyMonths);
+
+                let nextDueDate: Date | null = null;
+                if (baseDueDate) {
+                    nextDueDate = new Date(nextDate);
+                    nextDueDate.setDate(nextDueDate.getDate() + dueDiffDays);
+                }
+
+                let subCode = await getNextInvoiceCode();
+                let checkSubExist = await prisma.salesInvoice.findUnique({ where: { code: subCode } });
+                let subStep = 1;
+                const origSubCode = subCode;
+                while (checkSubExist) {
+                    subCode = `${origSubCode}-${subStep}`;
+                    checkSubExist = await prisma.salesInvoice.findUnique({ where: { code: subCode } });
+                    subStep++;
+                }
+
+                const subInvoice = await prisma.salesInvoice.create({
+                    data: {
+                        code: subCode,
+                        date: nextDate,
+                        dueDate: nextDueDate,
+                        status: "DRAFT",
+                        notes: formData.notes 
+                            ? `${formData.notes}\n[Hóa đơn định kỳ: Kỳ ${i + 1}/${recurrenceCount} - Tự động tạo từ ${finalCode}]` 
+                            : `[Hóa đơn định kỳ: Kỳ ${i + 1}/${recurrenceCount} - Tự động tạo từ ${finalCode}]`,
+                        tags: formData.tags ? `${formData.tags}, Định kỳ (Kỳ ${i + 1}/${recurrenceCount})` : `Định kỳ (Kỳ ${i + 1}/${recurrenceCount})`,
+                        customerId: formData.customerId,
+                        orderId: formData.orderId || null,
+                        subTotal: formData.subTotal,
+                        taxAmount: formData.taxAmount,
+                        totalAmount: formData.totalAmount,
+                        creatorId: actualCreatorId,
+                        salespersonId: formData.salespersonId || actualCreatorId,
+                        items: {
+                            create: formData.items.map((item: any) => ({
+                                productId: item.productId || null,
+                                customName: item.customName || null,
+                                description: item.description || null,
+                                unit: item.unit || null,
+                                quantity: item.quantity,
+                                unitPrice: item.unitPrice,
+                                taxRate: item.taxRate || 0,
+                                taxAmount: item.taxAmount || 0,
+                                totalPrice: item.totalPrice,
+                                isSubItem: item.isSubItem || false
+                            }))
+                        }
+                    },
+                    include: {
+                        customer: true,
+                        order: true,
+                        creator: true,
+                        salesperson: true,
+                        items: {
+                            include: { product: true }
+                        }
+                    }
+                });
+
+                await prisma.salesInvoiceActivityLog.create({
+                    data: {
+                        invoiceId: subInvoice.id,
+                        userId: actualCreatorId,
+                        action: 'TẠO_HÓA_ĐƠN',
+                        details: `Khởi tạo hóa đơn định kỳ (Kỳ ${i + 1}/${recurrenceCount}) theo chu kỳ ${frequencyMonths} tháng từ hóa đơn gốc ${finalCode}`
+                    }
+                });
+
+                recurringInvoices.push(subInvoice);
+            }
+        }
+
         revalidatePath('/sales/invoices');
         revalidatePath('/inventory');
-        return { success: true, data: invoice };
+        return { success: true, data: invoice, recurringInvoices };
     } catch (error: any) {
         console.error("Lỗi khi tạo Hóa Đơn:", error);
         return { success: false, error: error.message };
@@ -460,8 +563,13 @@ export async function updateSalesInvoice(id: string, formData: any) {
                 }
             }
 
-            // 2. Deduct new inventory quantities
-            const newInventoryItems = formattedItems.filter((i: any) => i.productId != null);
+            // 2. Deduct new inventory quantities (chỉ xuất kho các sản phẩm vật lý PRODUCT)
+            const productIdsToExport = formattedItems.map((i: any) => i.productId).filter(Boolean);
+            const physicalProds = productIdsToExport.length > 0 
+                ? await tx.product.findMany({ where: { id: { in: productIdsToExport }, type: 'PRODUCT' }, select: { id: true } })
+                : [];
+            const physicalProdIdSet = new Set(physicalProds.map((p: any) => p.id));
+            const newInventoryItems = formattedItems.filter((i: any) => i.productId && physicalProdIdSet.has(i.productId));
 
             if (warehouseId && newInventoryItems.length > 0) {
                 for (const item of newInventoryItems) {
@@ -799,8 +907,13 @@ export async function approveSalesInvoice(invoiceId: string, userId: string) {
                 data: { totalDebt: { increment: invoice.totalAmount } }
             });
 
-            // 3. Create OUT Inventory Transaction (Only if there are internal products)
-            const inventoryItems = invoice.items.filter(i => i.productId != null);
+            // 3. Create OUT Inventory Transaction (Chỉ xuất kho cho sản phẩm vật lý PRODUCT)
+            const invoiceProductIds = invoice.items.map(i => i.productId).filter(Boolean) as string[];
+            const physicalProdsForIssue = invoiceProductIds.length > 0
+                ? await tx.product.findMany({ where: { id: { in: invoiceProductIds }, type: 'PRODUCT' }, select: { id: true } })
+                : [];
+            const physicalProdIdSetForIssue = new Set(physicalProdsForIssue.map((p: any) => p.id));
+            const inventoryItems = invoice.items.filter(i => i.productId && physicalProdIdSetForIssue.has(i.productId));
 
             if (inventoryItems.length > 0) {
                 // Tìm warehouse mặc định
@@ -1094,8 +1207,13 @@ export async function restoreSalesInvoice(invoiceId: string) {
                 data: { totalDebt: { increment: invoice.totalAmount } }
             });
 
-            // 3. Create OUT Inventory Transaction (Only if there are internal products)
-            const inventoryItems = invoice.items.filter(i => i.productId != null);
+            // 3. Create OUT Inventory Transaction (Chỉ xuất kho cho sản phẩm vật lý PRODUCT)
+            const restoreProductIds = invoice.items.map(i => i.productId).filter(Boolean) as string[];
+            const physicalProdsForRestore = restoreProductIds.length > 0
+                ? await tx.product.findMany({ where: { id: { in: restoreProductIds }, type: 'PRODUCT' }, select: { id: true } })
+                : [];
+            const physicalProdIdSetForRestore = new Set(physicalProdsForRestore.map((p: any) => p.id));
+            const inventoryItems = invoice.items.filter(i => i.productId && physicalProdIdSetForRestore.has(i.productId));
 
             if (inventoryItems.length > 0) {
                 // Tìm warehouse mặc định

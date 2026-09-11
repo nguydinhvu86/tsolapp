@@ -7,7 +7,7 @@ import {
     Info, CheckSquare, XCircle, Undo2, History, ArrowRight, Clock, AlertTriangle, 
     PackageCheck, Activity, Edit2, Edit, Building, Building2, Mail, UserCheck, Calendar,
     CreditCard, DollarSign, Sparkles, Check, Phone, MapPin, Receipt, ShieldAlert,
-    ChevronRight, CornerDownRight, Percent, Eye, FileDown
+    ChevronRight, CornerDownRight, Percent, Eye, FileDown, CalendarClock, BellRing
 } from 'lucide-react';
 import Link from 'next/link';
 import ExcelJS from 'exceljs';
@@ -23,6 +23,7 @@ import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import { Modal } from '@/app/components/ui/Modal';
 import { SalesInvoiceNotes } from '@/app/components/sales/SalesInvoiceNotes';
 import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
+import { InvoiceRenewalReminderModal } from '@/app/components/sales/InvoiceRenewalReminderModal';
 import { useSession } from 'next-auth/react';
 import { DocumentManagersPanel } from '@/app/components/shared/DocumentManagersPanel';
 import { EmailLogTable } from '@/app/components/ui/EmailLogTable';
@@ -57,6 +58,9 @@ export default function SalesInvoiceDetailClient({
 
     // Email Modal State
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+
+    // Renewal Reminder Modal State
+    const [isRenewalModalOpen, setIsRenewalModalOpen] = useState(false);
 
     // Action Modal State
     const [actionModal, setActionModal] = useState<{
@@ -660,6 +664,15 @@ export default function SalesInvoiceDetailClient({
                     >
                         <Mail size={14} />
                         <span>Gửi Email</span>
+                    </button>
+
+                    <button
+                        onClick={() => setIsRenewalModalOpen(true)}
+                        className="inline-flex items-center gap-1.5 h-[34px] px-3 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-98"
+                        title="Tạo công việc nhắc gia hạn dịch vụ định kỳ cho khách hàng"
+                    >
+                        <CalendarClock size={14} className="text-purple-600" />
+                        <span>Nhắc Gia Hạn</span>
                     </button>
 
                     <button
@@ -1452,6 +1465,19 @@ export default function SalesInvoiceDetailClient({
                     const res = await sendInvoiceEmail(invoice.id, emailData.to, emailData.subject, emailData.htmlBody);
                     if (res?.success) alert("Đã gửi email thông báo thành công!");
                     else alert("Lỗi khi gửi email: " + res?.error);
+                }}
+            />
+
+            {/* Renewal Reminder Modal */}
+            <InvoiceRenewalReminderModal
+                isOpen={isRenewalModalOpen}
+                onClose={() => setIsRenewalModalOpen(false)}
+                invoice={invoice}
+                users={users}
+                currentUserId={session?.user?.id}
+                onSuccess={() => {
+                    alert('Đã tạo công việc nhắc gia hạn thành công!');
+                    router.refresh();
                 }}
             />
         </div>

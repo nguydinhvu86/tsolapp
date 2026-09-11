@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
         include: { customer: true }
     });
 
-    const docTitle = estimate ? `Báo Giá #${estimate.code || ''} - ${estimate.title || 'T-SOLUTION'}` : 'Báo Giá | T-SOLUTION';
+    const docTitle = estimate ? `Báo Giá #${estimate.code || ''} - ${(estimate as any).title || estimate.customer?.name || 'T-SOLUTION'}` : 'Báo Giá | T-SOLUTION';
     const desc = estimate?.customer?.name 
         ? `Báo giá trực tuyến dành cho khách hàng ${estimate.customer.name} - T-SOLUTION`
         : 'Chi tiết báo giá trực tuyến - T-SOLUTION';
