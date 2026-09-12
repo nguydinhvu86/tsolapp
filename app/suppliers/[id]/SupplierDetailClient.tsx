@@ -29,6 +29,36 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
     const [taxLookupMessage, setTaxLookupMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [duplicateWarnings, setDuplicateWarnings] = useState<{ field: string; message: string; duplicateEntity?: any }[]>([]);
 
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
+    const [selectedBill, setSelectedBill] = useState<any | null>(null);
+    const [approveWarehouseId, setApproveWarehouseId] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [editingTagsBillId, setEditingTagsBillId] = useState<string | null>(null);
+    const [editingTagsValue, setEditingTagsValue] = useState<string>('');
+    const [formData, setFormData] = useState({
+        code: supplier?.code || '',
+        name: supplier?.name || '',
+        shortName: supplier?.shortName || '',
+        internationalName: supplier?.internationalName || '',
+        contactName: supplier?.contactName || '',
+        email: supplier?.email || '',
+        phone: supplier?.phone || '',
+        address: supplier?.address || '',
+        billingAddress: supplier?.billingAddress || '',
+        shippingAddress: supplier?.shippingAddress || '',
+        taxCode: supplier?.taxCode || '',
+        taxStatus: supplier?.taxStatus || '',
+        website: supplier?.website || '',
+        businessType: supplier?.businessType || '',
+        bankAccount: supplier?.bankAccount || '',
+        bankName: supplier?.bankName || '',
+        bankBranch: supplier?.bankBranch || '',
+        paymentTerms: supplier?.paymentTerms || '',
+        creditLimit: supplier?.creditLimit || 0,
+        notes: supplier?.notes || ''
+    });
+
     React.useEffect(() => {
         if (!isEditModalOpen) {
             setDuplicateWarnings([]);
@@ -45,7 +75,7 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
                     taxCode: formData.taxCode,
                     email: formData.email,
                     phone: formData.phone
-                }, supplier.id);
+                }, supplier?.id);
                 if (res.hasDuplicate) {
                     setDuplicateWarnings(res.duplicates);
                 } else {
@@ -57,7 +87,7 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
         }, 350);
 
         return () => clearTimeout(timer);
-    }, [formData.taxCode, formData.email, formData.phone, formData.code, isEditModalOpen, supplier.id]);
+    }, [formData.taxCode, formData.email, formData.phone, formData.code, isEditModalOpen, supplier?.id]);
 
     const handleSort = (key: string) => {
         let direction: 'asc' | 'desc' = 'desc';
@@ -67,10 +97,10 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
         setSortConfig({ key, direction });
     };
 
-    const validBills = React.useMemo(() => supplier.bills ? supplier.bills.filter((b: any) => !['DRAFT', 'CANCELLED'].includes(b.status)) : [], [supplier.bills]);
+    const validBills = React.useMemo(() => supplier?.bills ? supplier.bills.filter((b: any) => !['DRAFT', 'CANCELLED'].includes(b.status)) : [], [supplier?.bills]);
     
     const sortedBills = React.useMemo(() => {
-        let sortableBills = [...(supplier.bills || [])];
+        let sortableBills = [...(supplier?.bills || [])];
         if (sortConfig !== null) {
             sortableBills.sort((a: any, b: any) => {
                 if (sortConfig.key === 'status') {
@@ -90,42 +120,12 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
             });
         }
         return sortableBills;
-    }, [supplier.bills, sortConfig]);
+    }, [supplier?.bills, sortConfig]);
     const computedDebt = React.useMemo(() => {
         const exactPurchases = validBills.reduce((acc: number, bill: any) => acc + (bill.totalAmount || 0), 0);
-        const exactPayments = (supplier.payments || []).reduce((acc: number, pay: any) => acc + (pay.amount || 0), 0);
+        const exactPayments = (supplier?.payments || []).reduce((acc: number, pay: any) => acc + (pay.amount || 0), 0);
         return exactPurchases - exactPayments;
-    }, [validBills, supplier.payments]);
-
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
-    const [selectedBill, setSelectedBill] = useState<any | null>(null);
-    const [approveWarehouseId, setApproveWarehouseId] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [editingTagsBillId, setEditingTagsBillId] = useState<string | null>(null);
-    const [editingTagsValue, setEditingTagsValue] = useState<string>('');
-    const [formData, setFormData] = useState({
-        code: supplier.code || '',
-        name: supplier.name || '',
-        shortName: supplier.shortName || '',
-        internationalName: supplier.internationalName || '',
-        contactName: supplier.contactName || '',
-        email: supplier.email || '',
-        phone: supplier.phone || '',
-        address: supplier.address || '',
-        billingAddress: supplier.billingAddress || '',
-        shippingAddress: supplier.shippingAddress || '',
-        taxCode: supplier.taxCode || '',
-        taxStatus: supplier.taxStatus || '',
-        website: supplier.website || '',
-        businessType: supplier.businessType || '',
-        bankAccount: supplier.bankAccount || '',
-        bankName: supplier.bankName || '',
-        bankBranch: supplier.bankBranch || '',
-        paymentTerms: supplier.paymentTerms || '',
-        creditLimit: supplier.creditLimit || 0,
-        notes: supplier.notes || ''
-    });
+    }, [validBills, supplier?.payments]);
 
     const handleTaxLookup = async () => {
         if (!formData.taxCode?.trim()) {

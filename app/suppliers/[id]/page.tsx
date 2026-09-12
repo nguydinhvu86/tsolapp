@@ -16,9 +16,13 @@ export default async function SupplierDetailPage({ params }: { params: { id: str
         redirect('/login');
     }
 
+    const role = (session.user as any)?.role;
     const perms = (session.user.permissions as string[]) || [];
-    const viewFilter = buildViewFilter(session.user.id, perms, 'SUPPLIERS', 'creatorId');
-    if (viewFilter.id === 'UNAUTHORIZED_NO_ACCESS') return notFound();
+    let viewFilter: any = {};
+    if (role !== 'ADMIN' && role !== 'MANAGER') {
+        viewFilter = buildViewFilter(session.user.id, perms, 'SUPPLIERS', 'creatorId');
+        if (viewFilter.id === 'UNAUTHORIZED_NO_ACCESS') return notFound();
+    }
 
     // Fetch supplier with related data
     const supplier = await prisma.supplier.findFirst({

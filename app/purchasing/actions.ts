@@ -22,10 +22,12 @@ async function getUser() {
 
 export async function getSuppliers() {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) throw new Error("Unauthorized");
+    if (!session?.user?.id) return [];
 
-    const permissions = session.user.permissions as string[] || [];
-    const viewAll = permissions.includes('SUPPLIERS_VIEW_ALL');
+    const role = (session.user as any).role;
+    const permissions = (session.user as any).permissions as string[] || [];
+    const isAdminOrManager = role === 'ADMIN' || role === 'MANAGER';
+    const viewAll = isAdminOrManager || permissions.includes('SUPPLIERS_VIEW_ALL');
     const viewOwn = permissions.includes('SUPPLIERS_VIEW_OWN');
 
     if (!viewAll && !viewOwn) return [];
@@ -34,6 +36,7 @@ export async function getSuppliers() {
     if (!viewAll && viewOwn) {
         filter = {
             OR: [
+                { creatorId: session.user.id },
                 { orders: { some: { creatorId: session.user.id } } },
                 { bills: { some: { creatorId: session.user.id } } },
                 { payments: { some: { creatorId: session.user.id } } }
@@ -41,26 +44,33 @@ export async function getSuppliers() {
         };
     }
 
-    return prisma.supplier.findMany({
-        where: filter,
-        orderBy: { updatedAt: 'desc' },
-        include: {
-            bills: {
-                where: {
-                    status: { notIn: ['DRAFT', 'CANCELLED'] } // Need this for dynamic debt
-                }
-            },
-            payments: true
-        }
-    });
+    try {
+        return await prisma.supplier.findMany({
+            where: filter,
+            orderBy: { updatedAt: 'desc' },
+            include: {
+                bills: {
+                    where: {
+                        status: { notIn: ['DRAFT', 'CANCELLED'] } // Need this for dynamic debt
+                    }
+                },
+                payments: true
+            }
+        });
+    } catch (error) {
+        console.error('getSuppliers error:', error);
+        return [];
+    }
 }
 
 export async function getSupplier(id: string) {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) throw new Error("Unauthorized");
+    if (!session?.user?.id) return null;
 
-    const permissions = session.user.permissions as string[] || [];
-    const viewAll = permissions.includes('SUPPLIERS_VIEW_ALL');
+    const role = (session.user as any).role;
+    const permissions = (session.user as any).permissions as string[] || [];
+    const isAdminOrManager = role === 'ADMIN' || role === 'MANAGER';
+    const viewAll = isAdminOrManager || permissions.includes('SUPPLIERS_VIEW_ALL');
     const viewOwn = permissions.includes('SUPPLIERS_VIEW_OWN');
 
     if (!viewAll && !viewOwn) return null;
@@ -69,6 +79,7 @@ export async function getSupplier(id: string) {
     if (!viewAll && viewOwn) {
         filter = {
             OR: [
+                { creatorId: session.user.id },
                 { orders: { some: { creatorId: session.user.id } } },
                 { bills: { some: { creatorId: session.user.id } } },
                 { payments: { some: { creatorId: session.user.id } } }
@@ -76,27 +87,32 @@ export async function getSupplier(id: string) {
         };
     }
 
-    return prisma.supplier.findFirst({
-        where: { id, ...filter },
-        include: {
-            products: {
-                include: { product: true }
-            },
-            orders: {
-                include: { creator: true },
-                orderBy: { date: 'desc' },
-                take: 10
-            },
-            bills: {
-                include: { creator: true },
-                orderBy: { date: 'desc' }
-            },
-            payments: {
-                include: { creator: true },
-                orderBy: { date: 'desc' }
+    try {
+        return await prisma.supplier.findFirst({
+            where: { id, ...filter },
+            include: {
+                products: {
+                    include: { product: true }
+                },
+                orders: {
+                    include: { creator: true },
+                    orderBy: { date: 'desc' },
+                    take: 10
+                },
+                bills: {
+                    include: { creator: true },
+                    orderBy: { date: 'desc' }
+                },
+                payments: {
+                    include: { creator: true },
+                    orderBy: { date: 'desc' }
+                }
             }
-        }
-    });
+        });
+    } catch (error) {
+        console.error('getSupplier error:', error);
+        return null;
+    }
 }
 
 import { lookupBusinessByTaxCode } from '@/lib/vietqr';

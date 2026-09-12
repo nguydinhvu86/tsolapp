@@ -64,7 +64,7 @@ function getAvatarGradient(id: string) {
 
 export function SupplierClient({ initialSuppliers }: { initialSuppliers: any[] }) {
     const { t } = useTranslation();
-    const [suppliers, setSuppliers] = useState(initialSuppliers);
+    const [suppliers, setSuppliers] = useState<any[]>(Array.isArray(initialSuppliers) ? initialSuppliers : []);
     const [searchQuery, setSearchQuery] = useState('');
 
     // Sort logic
@@ -130,10 +130,12 @@ export function SupplierClient({ initialSuppliers }: { initialSuppliers: any[] }
     }, []);
 
     const computedSuppliers = React.useMemo(() => {
+        if (!Array.isArray(suppliers)) return [];
         return suppliers.map(s => {
-            const validBills = s.bills ? s.bills.filter((b: any) => !['DRAFT', 'CANCELLED'].includes(b.status)) : [];
-            const exactPurchases = validBills.reduce((acc: number, b: any) => acc + (b.totalAmount || 0), 0);
-            const exactPayments = (s.payments || []).reduce((acc: number, p: any) => acc + (p.amount || 0), 0);
+            if (!s) return s;
+            const validBills = s.bills && Array.isArray(s.bills) ? s.bills.filter((b: any) => !['DRAFT', 'CANCELLED'].includes(b?.status)) : [];
+            const exactPurchases = validBills.reduce((acc: number, b: any) => acc + (b?.totalAmount || 0), 0);
+            const exactPayments = (s.payments && Array.isArray(s.payments) ? s.payments : []).reduce((acc: number, p: any) => acc + (p?.amount || 0), 0);
             return {
                 ...s,
                 computedDebt: exactPurchases - exactPayments
