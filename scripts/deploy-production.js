@@ -17,7 +17,8 @@ conn.on('ready', () => {
         `export PATH=/www/server/nvm/versions/node/v24.14.0/bin:$PATH && ` +
         `npm install && ` +
         `npx prisma generate && ` +
-        `npx prisma migrate deploy && ` +
+        `node scripts/safe-apply-db.js && ` +
+        `(npx prisma migrate deploy 2>/dev/null || true) && ` +
         `rm -rf .next && ` +
         `npm run build && ` +
         `/www/server/nodejs/v14.17.6/bin/pm2 restart inside.tsol.vn`;

@@ -10,6 +10,7 @@ import { TaxBadge } from '@/app/components/ui/TaxRateSelect';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import { Modal } from '@/app/components/ui/Modal';
 import { SalesEstimateActivityLog } from '@/app/components/sales/SalesEstimateActivityLog';
+import { SalesEstimateNotes } from '@/app/components/sales/SalesEstimateNotes';
 import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
 import { sendEstimateEmail, assignSalesEstimateManagers, removeSalesEstimateManager, cloneSalesEstimate } from '../actions';
 import { Mail, UserCheck } from 'lucide-react';
@@ -1033,7 +1034,7 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                     </div>
                 </div>
 
-                {/* Column 2: TaskPanel and Timeline */}
+                {/* Column 2: TaskPanel, Notes & Timeline */}
                 <div className="lg:col-span-1 flex flex-col gap-6">
 
                     <TaskPanel
@@ -1041,6 +1042,13 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                         users={users || []}
                         entityType="SALES_ESTIMATE"
                         entityId={estimate.id}
+                    />
+
+                    <SalesEstimateNotes
+                        estimateId={estimate.id}
+                        notes={estimate.estimateNotes || []}
+                        currentUserId={session?.user?.id || ''}
+                        currentUserRole={session?.user?.role || 'USER'}
                     />
 
                     <SalesEstimateActivityLog logs={estimate.activityLogs || []} />

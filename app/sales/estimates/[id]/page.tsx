@@ -37,6 +37,10 @@ export default async function SalesEstimateDetailPage({ params }: { params: { id
                 include: { user: { select: { name: true, email: true } } },
                 orderBy: { createdAt: 'desc' }
             },
+            estimateNotes: {
+                include: { user: { select: { id: true, name: true, avatar: true, email: true } } },
+                orderBy: { createdAt: 'desc' }
+            },
             EmailLog: {
                 include: { sender: { select: { name: true } } },
                 orderBy: { createdAt: 'desc' }

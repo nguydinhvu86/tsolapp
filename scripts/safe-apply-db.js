@@ -65,6 +65,22 @@ async function main() {
         ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
     `);
 
+    // 1b. Create SalesEstimateNote table if not exists
+    await prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS \`SalesEstimateNote\` (
+            \`id\` VARCHAR(191) NOT NULL,
+            \`estimateId\` VARCHAR(191) NOT NULL,
+            \`userId\` VARCHAR(191) NOT NULL,
+            \`content\` TEXT NOT NULL,
+            \`attachment\` TEXT NULL,
+            \`createdAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+            \`updatedAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+            PRIMARY KEY (\`id\`),
+            INDEX \`SalesEstimateNote_estimateId_idx\` (\`estimateId\`),
+            INDEX \`SalesEstimateNote_userId_idx\` (\`userId\`)
+        ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    `);
+
     // 2. Create Project tables if not exist
     await prisma.$executeRawUnsafe(`
         CREATE TABLE IF NOT EXISTS \`Project\` (

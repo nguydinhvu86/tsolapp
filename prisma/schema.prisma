@@ -76,6 +76,7 @@ model User {
   salesInvoices            SalesInvoice[]             @relation("SalesInvoiceCreator")
   salesPayments            SalesPayment[]             @relation("SalesPaymentCreator")
   SalesEstimateActivityLog SalesEstimateActivityLog[]
+  SalesEstimateNote        SalesEstimateNote[]
   SalesInvoiceNote         SalesInvoiceNote[]
   SalesInvoiceActivityLog  SalesInvoiceActivityLog[]
   CustomerNote             CustomerNote[]
@@ -1065,6 +1066,7 @@ model SalesEstimate {
 
   items        SalesEstimateItem[]
   activityLogs SalesEstimateActivityLog[]
+  estimateNotes SalesEstimateNote[]
   tasks        Task[]
   projects     Project[]
   managers     User[]                     @relation("SalesEstimateManagers")
@@ -1087,6 +1089,22 @@ model SalesEstimate {
   @@index([status])
   @@index([customerId])
   @@index([creatorId])
+}
+
+model SalesEstimateNote {
+  id         String   @id @default(cuid())
+  estimateId String
+  userId     String
+  content    String   @db.Text
+  attachment String?  @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  estimate SalesEstimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+  user     User          @relation(fields: [userId], references: [id])
+
+  @@index([estimateId])
+  @@index([userId])
 }
 
 model SalesEstimateActivityLog {

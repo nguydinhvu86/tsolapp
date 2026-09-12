@@ -905,3 +905,58 @@ export async function cloneSalesEstimate(estimateId: string) {
         return { success: false, error: error.message };
     }
 }
+
+export async function createSalesEstimateNote(estimateId: string, content: string, attachment?: string) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) return { success: false, error: "Unauthorized" };
+        const userId = session.user.id;
+
+        const note = await prisma.salesEstimateNote.create({
+            data: {
+                estimateId,
+                userId,
+                content,
+                attachment
+            },
+            include: {
+                user: { select: { id: true, name: true, avatar: true } }
+            }
+        });
+
+        await logSalesEstimateActivity(estimateId, userId, 'NOTE_ADDED', `Thêm ghi chú/tài liệu mới`);
+        revalidatePath(`/sales/estimates/${estimateId}`);
+        return { success: true, data: note };
+    } catch (error: any) {
+        console.error("Lỗi khi thêm ghi chú báo giá:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function deleteSalesEstimateNote(noteId: string) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) return { success: false, error: "Unauthorized" };
+        const userId = session.user.id;
+
+        const note = await prisma.salesEstimateNote.findUnique({ where: { id: noteId } });
+        if (!note) return { success: false, error: "Không tìm thấy ghi chú" };
+
+        if (note.userId !== userId) {
+            const user = await prisma.user.findUnique({ where: { id: userId } });
+            if (user?.role !== 'ADMIN') {
+                return { success: false, error: "Bạn không có quyền xóa ghi chú này" };
+            }
+        }
+
+        await prisma.salesEstimateNote.delete({ where: { id: noteId } });
+        await logSalesEstimateActivity(note.estimateId, userId, 'NOTE_DELETED', `Đã xóa một ghi chú`);
+
+        revalidatePath(`/sales/estimates/${note.estimateId}`);
+        return { success: true };
+    } catch (error: any) {
+        console.error("Lỗi khi xóa ghi chú báo giá:", error);
+        return { success: false, error: error.message };
+    }
+}
+
