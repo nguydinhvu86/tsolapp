@@ -116,6 +116,30 @@ export async function createSalesPayment(data: any) {
             data: { totalDebt: customer.totalDebt - data.amount } // totalDebt should go DOWN when we receive payment
         });
 
+        // 3. Auto-create Accounting CashTransaction (Phiếu Thu Kế Toán)
+        try {
+            const invoiceCodes: string[] = [];
+            for (const alloc of allocationsData) {
+                const inv = await tx.salesInvoice.findUnique({ where: { id: alloc.invoiceId }, select: { code: true } });
+                if (inv?.code) invoiceCodes.push(inv.code);
+            }
+
+            const { createAutoReceiptFromSalesPayment } = await import('@/app/accounting/actions');
+            await createAutoReceiptFromSalesPayment(tx, {
+                paymentCode: code,
+                customerId: data.customerId,
+                amount: data.amount,
+                date: data.date ? new Date(data.date) : new Date(),
+                paymentMethod: data.paymentMethod || 'BANK_TRANSFER',
+                reference: data.reference,
+                notes: data.notes,
+                userId: uId,
+                invoiceCodes
+            });
+        } catch (accErr) {
+            console.error('Error auto-creating accounting receipt:', accErr);
+        }
+
         await logCustomerActivity(data.customerId, uId, 'NHẬN_THANH_TOÁN', `Thu tiền ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 6 }).format(data.amount)} (Mã PT: ${code})`, tx);
 
         return payment;

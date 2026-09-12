@@ -315,6 +315,74 @@ export async function getCashTransactions(params?: {
     return { transactions, accounts, customers, suppliers, projects };
 }
 
+export async function getCustomerUnpaidInvoices(customerId: string) {
+    await getCurrentUser();
+    if (!customerId) return [];
+
+    const invoices = await prisma.salesInvoice.findMany({
+        where: {
+            customerId,
+            status: { notIn: ['CANCELLED', 'PAID'] }
+        },
+        orderBy: { date: 'asc' },
+        select: {
+            id: true,
+            code: true,
+            date: true,
+            dueDate: true,
+            totalAmount: true,
+            paidAmount: true,
+            status: true
+        }
+    });
+
+    return invoices.map(inv => ({
+        id: inv.id,
+        code: inv.code,
+        date: inv.date,
+        dueDate: inv.dueDate,
+        totalAmount: inv.totalAmount,
+        paidAmount: inv.paidAmount || 0,
+        remainingAmount: Math.max(0, inv.totalAmount - (inv.paidAmount || 0)),
+        status: inv.status
+    })).filter(inv => inv.remainingAmount > 0.001);
+}
+
+export async function getSupplierUnpaidBills(supplierId: string) {
+    await getCurrentUser();
+    if (!supplierId) return [];
+
+    const bills = await prisma.purchaseBill.findMany({
+        where: {
+            supplierId,
+            status: { notIn: ['CANCELLED', 'PAID', 'DRAFT'] }
+        },
+        orderBy: { date: 'asc' },
+        select: {
+            id: true,
+            code: true,
+            supplierInvoice: true,
+            date: true,
+            dueDate: true,
+            totalAmount: true,
+            paidAmount: true,
+            status: true
+        }
+    });
+
+    return bills.map(bill => ({
+        id: bill.id,
+        code: bill.code,
+        supplierInvoice: bill.supplierInvoice,
+        date: bill.date,
+        dueDate: bill.dueDate,
+        totalAmount: bill.totalAmount,
+        paidAmount: bill.paidAmount || 0,
+        remainingAmount: Math.max(0, bill.totalAmount - (bill.paidAmount || 0)),
+        status: bill.status
+    })).filter(bill => bill.remainingAmount > 0.001);
+}
+
 export async function createCashTransaction(data: {
     type: 'RECEIPT' | 'PAYMENT';
     category?: string;
@@ -331,6 +399,7 @@ export async function createCashTransaction(data: {
     projectId?: string;
     notes?: string;
     attachments?: string;
+    allocations?: { invoiceId?: string; billId?: string; amount: number }[];
 }) {
     const user = await getCurrentUser();
 
@@ -356,41 +425,137 @@ export async function createCashTransaction(data: {
     }
     const code = `${ymPrefix}${String(seq).padStart(4, '0')}`;
 
-    const tx = await prisma.cashTransaction.create({
-        data: {
-            code,
-            type: data.type,
-            category: data.category || 'OTHER',
-            transactionDate: new Date(data.transactionDate),
-            amount: data.amount,
-            payerReceiver: data.payerReceiver,
-            phone: data.phone || null,
-            address: data.address || null,
-            reason: data.reason || null,
-            paymentMethod: data.paymentMethod || 'CASH',
-            financeAccountId: data.financeAccountId || null,
-            customerId: data.customerId || null,
-            supplierId: data.supplierId || null,
-            projectId: data.projectId || null,
-            createdById: user.id,
-            status: 'COMPLETED',
-            notes: data.notes || null,
-            attachments: data.attachments || null
-        }
-    });
-
-    // Update Finance Account balance
-    if (data.financeAccountId) {
-        const change = data.type === 'RECEIPT' ? data.amount : -data.amount;
-        await prisma.financeAccount.update({
-            where: { id: data.financeAccountId },
-            data: { currentBalance: { increment: change } }
+    const tx = await prisma.$transaction(async (prismaTx) => {
+        // 1. Create CashTransaction
+        const createdTx = await prismaTx.cashTransaction.create({
+            data: {
+                code,
+                type: data.type,
+                category: data.category || (data.type === 'RECEIPT' && data.customerId ? 'SALES' : (data.type === 'PAYMENT' && data.supplierId ? 'PURCHASE' : 'OTHER')),
+                transactionDate: date,
+                amount: data.amount,
+                payerReceiver: data.payerReceiver,
+                phone: data.phone || null,
+                address: data.address || null,
+                reason: data.reason || null,
+                paymentMethod: data.paymentMethod || 'CASH',
+                financeAccountId: data.financeAccountId || null,
+                customerId: data.customerId || null,
+                supplierId: data.supplierId || null,
+                projectId: data.projectId || null,
+                createdById: user.id,
+                status: 'COMPLETED',
+                notes: data.notes || null,
+                attachments: data.attachments || null
+            }
         });
-    }
+
+        // 2. Update Finance Account balance
+        if (data.financeAccountId) {
+            const change = data.type === 'RECEIPT' ? data.amount : -data.amount;
+            await prismaTx.financeAccount.update({
+                where: { id: data.financeAccountId },
+                data: { currentBalance: { increment: change } }
+            });
+        }
+
+        // 3. If RECEIPT with customer & invoice allocations: create SalesPayment & update invoices
+        const invoiceAllocs = (data.allocations || []).filter(a => a.invoiceId && a.amount > 0);
+        if (data.type === 'RECEIPT' && data.customerId && invoiceAllocs.length > 0) {
+            const payCount = await prismaTx.salesPayment.count();
+            const payCode = `PAY-${(payCount + 1).toString().padStart(6, '0')}`;
+
+            await prismaTx.salesPayment.create({
+                data: {
+                    code: payCode,
+                    date: date,
+                    amount: data.amount,
+                    paymentMethod: data.paymentMethod || 'CASH',
+                    reference: code,
+                    notes: `Tạo tự động từ Phiếu Thu Kế Toán ${code}. ${data.reason || ''}`,
+                    customerId: data.customerId,
+                    creatorId: user.id,
+                    allocations: {
+                        create: invoiceAllocs.map(a => ({
+                            invoiceId: a.invoiceId!,
+                            amount: a.amount
+                        }))
+                    }
+                }
+            });
+
+            for (const alloc of invoiceAllocs) {
+                const inv = await prismaTx.salesInvoice.findUnique({ where: { id: alloc.invoiceId } });
+                if (inv) {
+                    const newPaid = (inv.paidAmount || 0) + alloc.amount;
+                    const newStatus = (newPaid >= inv.totalAmount - 0.01) ? 'PAID' : 'PARTIAL_PAID';
+                    await prismaTx.salesInvoice.update({
+                        where: { id: inv.id },
+                        data: { paidAmount: newPaid, status: newStatus }
+                    });
+                }
+            }
+
+            await prismaTx.customer.update({
+                where: { id: data.customerId },
+                data: { totalDebt: { decrement: data.amount } }
+            }).catch(() => {});
+        }
+
+        // 4. If PAYMENT with supplier & bill allocations: create PurchasePayment & update bills
+        const billAllocs = (data.allocations || []).filter(a => a.billId && a.amount > 0);
+        if (data.type === 'PAYMENT' && data.supplierId && billAllocs.length > 0) {
+            const payCount = await prismaTx.purchasePayment.count();
+            const payCode = `PAY-${(payCount + 1).toString().padStart(6, '0')}`;
+
+            await prismaTx.purchasePayment.create({
+                data: {
+                    code: payCode,
+                    date: date,
+                    amount: data.amount,
+                    paymentMethod: data.paymentMethod || 'CASH',
+                    reference: code,
+                    notes: `Tạo tự động từ Phiếu Chi Kế Toán ${code}. ${data.reason || ''}`,
+                    supplierId: data.supplierId,
+                    creatorId: user.id,
+                    allocations: {
+                        create: billAllocs.map(a => ({
+                            billId: a.billId!,
+                            amount: a.amount
+                        }))
+                    }
+                }
+            });
+
+            for (const alloc of billAllocs) {
+                const bill = await prismaTx.purchaseBill.findUnique({ where: { id: alloc.billId } });
+                if (bill) {
+                    const newPaid = (bill.paidAmount || 0) + alloc.amount;
+                    const newStatus = (newPaid >= bill.totalAmount - 0.01) ? 'PAID' : 'PARTIAL_PAID';
+                    await prismaTx.purchaseBill.update({
+                        where: { id: bill.id },
+                        data: { paidAmount: newPaid, status: newStatus }
+                    });
+                }
+            }
+
+            await prismaTx.supplier.update({
+                where: { id: data.supplierId },
+                data: { totalDebt: { decrement: data.amount } }
+            }).catch(() => {});
+        }
+
+        return createdTx;
+    });
 
     revalidatePath('/accounting');
     revalidatePath('/accounting/cash-book');
     revalidatePath('/accounting/accounts');
+    revalidatePath('/accounting/debts');
+    revalidatePath('/sales/payments');
+    revalidatePath('/sales/invoices');
+    revalidatePath('/purchasing/payments');
+    revalidatePath('/purchasing/bills');
     return { success: true, data: tx };
 }
 
@@ -419,6 +584,164 @@ export async function deleteCashTransaction(id: string) {
     revalidatePath('/accounting/cash-book');
     revalidatePath('/accounting/accounts');
     return { success: true };
+}
+
+// Helper: Auto-create CashTransaction when SalesPayment is created
+export async function createAutoReceiptFromSalesPayment(prismaTx: any, data: {
+    paymentCode: string;
+    customerId: string;
+    amount: number;
+    date: Date;
+    paymentMethod: string;
+    reference?: string;
+    notes?: string;
+    userId?: string;
+    invoiceCodes?: string[];
+}) {
+    const yy = String(data.date.getFullYear()).slice(-2);
+    const mm = String(data.date.getMonth() + 1).padStart(2, '0');
+    const ymPrefix = `PT-${yy}${mm}-`;
+
+    const lastTx = await prismaTx.cashTransaction.findFirst({
+        where: { code: { startsWith: ymPrefix } },
+        orderBy: { code: 'desc' },
+        select: { code: true }
+    });
+
+    let seq = 1;
+    if (lastTx && lastTx.code) {
+        const parts = lastTx.code.split('-');
+        if (parts.length === 3) {
+            seq = parseInt(parts[2], 10) + 1;
+        }
+    }
+    const code = `${ymPrefix}${String(seq).padStart(4, '0')}`;
+
+    const customer = await prismaTx.customer.findUnique({
+        where: { id: data.customerId },
+        select: { name: true, phone: true, address: true }
+    });
+
+    // Find default finance account matching payment method
+    const defaultAcc = await prismaTx.financeAccount.findFirst({
+        where: {
+            isActive: true,
+            ...(data.paymentMethod === 'CASH' ? { type: 'CASH' } : { type: 'BANK' })
+        },
+        orderBy: { isDefault: 'desc' }
+    });
+
+    const invoiceDesc = data.invoiceCodes && data.invoiceCodes.length > 0 
+        ? ` (HĐ: ${data.invoiceCodes.join(', ')})` 
+        : '';
+
+    const cashTx = await prismaTx.cashTransaction.create({
+        data: {
+            code,
+            type: 'RECEIPT',
+            category: 'SALES',
+            transactionDate: data.date,
+            amount: data.amount,
+            payerReceiver: customer?.name || 'Khách hàng',
+            phone: customer?.phone || null,
+            address: customer?.address || null,
+            reason: `Thu tiền bán hàng theo phiếu ${data.paymentCode}${invoiceDesc}`,
+            paymentMethod: data.paymentMethod || 'BANK_TRANSFER',
+            financeAccountId: defaultAcc?.id || null,
+            customerId: data.customerId,
+            createdById: data.userId || null,
+            status: 'COMPLETED',
+            notes: data.notes || `Tự động tạo từ Phiếu Thu Bán Hàng ${data.paymentCode}`
+        }
+    });
+
+    if (defaultAcc) {
+        await prismaTx.financeAccount.update({
+            where: { id: defaultAcc.id },
+            data: { currentBalance: { increment: data.amount } }
+        });
+    }
+
+    return cashTx;
+}
+
+// Helper: Auto-create CashTransaction when PurchasePayment is created
+export async function createAutoPaymentFromPurchasePayment(prismaTx: any, data: {
+    paymentCode: string;
+    supplierId: string;
+    amount: number;
+    date: Date;
+    paymentMethod: string;
+    reference?: string;
+    notes?: string;
+    userId?: string;
+    billCodes?: string[];
+}) {
+    const yy = String(data.date.getFullYear()).slice(-2);
+    const mm = String(data.date.getMonth() + 1).padStart(2, '0');
+    const ymPrefix = `PC-${yy}${mm}-`;
+
+    const lastTx = await prismaTx.cashTransaction.findFirst({
+        where: { code: { startsWith: ymPrefix } },
+        orderBy: { code: 'desc' },
+        select: { code: true }
+    });
+
+    let seq = 1;
+    if (lastTx && lastTx.code) {
+        const parts = lastTx.code.split('-');
+        if (parts.length === 3) {
+            seq = parseInt(parts[2], 10) + 1;
+        }
+    }
+    const code = `${ymPrefix}${String(seq).padStart(4, '0')}`;
+
+    const supplier = await prismaTx.supplier.findUnique({
+        where: { id: data.supplierId },
+        select: { name: true, phone: true, address: true }
+    });
+
+    // Find default finance account matching payment method
+    const defaultAcc = await prismaTx.financeAccount.findFirst({
+        where: {
+            isActive: true,
+            ...(data.paymentMethod === 'CASH' ? { type: 'CASH' } : { type: 'BANK' })
+        },
+        orderBy: { isDefault: 'desc' }
+    });
+
+    const billDesc = data.billCodes && data.billCodes.length > 0 
+        ? ` (HĐ Mua: ${data.billCodes.join(', ')})` 
+        : '';
+
+    const cashTx = await prismaTx.cashTransaction.create({
+        data: {
+            code,
+            type: 'PAYMENT',
+            category: 'PURCHASE',
+            transactionDate: data.date,
+            amount: data.amount,
+            payerReceiver: supplier?.name || 'Nhà cung cấp',
+            phone: supplier?.phone || null,
+            address: supplier?.address || null,
+            reason: `Chi thanh toán mua hàng theo phiếu ${data.paymentCode}${billDesc}`,
+            paymentMethod: data.paymentMethod || 'BANK_TRANSFER',
+            financeAccountId: defaultAcc?.id || null,
+            supplierId: data.supplierId,
+            createdById: data.userId || null,
+            status: 'COMPLETED',
+            notes: data.notes || `Tự động tạo từ Phiếu Chi Mua Hàng ${data.paymentCode}`
+        }
+    });
+
+    if (defaultAcc) {
+        await prismaTx.financeAccount.update({
+            where: { id: defaultAcc.id },
+            data: { currentBalance: { decrement: data.amount } }
+        });
+    }
+
+    return cashTx;
 }
 
 // ---------------------------------------------------------------------------

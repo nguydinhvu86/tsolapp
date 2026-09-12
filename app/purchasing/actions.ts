@@ -1336,6 +1336,30 @@ export async function createPurchasePayment(data: any) {
             data: { totalDebt: supplier.totalDebt - data.amount }
         });
 
+        // 3. Auto-create Accounting CashTransaction (Phiếu Chi Kế Toán)
+        try {
+            const billCodes: string[] = [];
+            for (const alloc of allocationsData) {
+                const bill = await tx.purchaseBill.findUnique({ where: { id: alloc.billId }, select: { code: true } });
+                if (bill?.code) billCodes.push(bill.code);
+            }
+
+            const { createAutoPaymentFromPurchasePayment } = await import('@/app/accounting/actions');
+            await createAutoPaymentFromPurchasePayment(tx, {
+                paymentCode: code,
+                supplierId: data.supplierId,
+                amount: data.amount,
+                date: data.date ? new Date(data.date) : new Date(),
+                paymentMethod: data.paymentMethod || 'BANK_TRANSFER',
+                reference: data.reference,
+                notes: data.notes,
+                userId: uId,
+                billCodes
+            });
+        } catch (accErr) {
+            console.error('Error auto-creating accounting payment:', accErr);
+        }
+
         return payment;
     });
 }
@@ -1397,6 +1421,24 @@ export async function payPurchaseBill(
                 where: { id: bill.id },
                 data: { paidAmount: { increment: amount } }
             });
+
+            // Auto-create Accounting CashTransaction (Phiếu Chi Kế Toán)
+            try {
+                const { createAutoPaymentFromPurchasePayment } = await import('@/app/accounting/actions');
+                await createAutoPaymentFromPurchasePayment(tx, {
+                    paymentCode: nextCode,
+                    supplierId: bill.supplierId,
+                    amount,
+                    date: new Date(),
+                    paymentMethod,
+                    reference,
+                    notes: notes || `Chi tiền theo hóa đơn ${bill.code}`,
+                    userId: creatorId,
+                    billCodes: [bill.code]
+                });
+            } catch (accErr) {
+                console.error('Error auto-creating accounting payment from payPurchaseBill:', accErr);
+            }
 
             await tx.purchaseBillActivityLog.create({
                 data: {

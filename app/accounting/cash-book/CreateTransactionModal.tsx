@@ -1,8 +1,16 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { X, Check, DollarSign, Calendar, User, Phone, MapPin, FileText, Landmark, ArrowLeft } from 'lucide-react';
-import { createCashTransaction } from '../actions';
+import { 
+    X, Check, DollarSign, Calendar, User, Phone, MapPin, 
+    FileText, Landmark, ArrowLeft, Receipt, ShoppingCart, 
+    CheckCircle2, AlertCircle, RefreshCw, Layers
+} from 'lucide-react';
+import { 
+    createCashTransaction, 
+    getCustomerUnpaidInvoices, 
+    getSupplierUnpaidBills 
+} from '../actions';
 import { numberToVietnameseWords } from '@/lib/vietnameseCurrency';
 
 interface Props {
@@ -51,26 +59,121 @@ export default function CreateTransactionModal({
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
 
-    const handleCustomerChange = (cId: string) => {
+    // Unpaid Invoices / Bills state for allocation
+    const [unpaidInvoices, setUnpaidInvoices] = useState<any[]>([]);
+    const [unpaidBills, setUnpaidBills] = useState<any[]>([]);
+    const [isLoadingDocs, setIsLoadingDocs] = useState<boolean>(false);
+    
+    // Allocations map: { [id: string]: number }
+    const [allocations, setAllocations] = useState<{ [id: string]: number }>({});
+
+    const formatVND = (val: number) => {
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
+    };
+
+    // Load customer unpaid invoices when customer changes
+    const handleCustomerChange = async (cId: string) => {
         setCustomerId(cId);
+        setAllocations({});
         const c = customers.find(item => item.id === cId);
         if (c) {
             setPayerReceiver(c.name);
             if (c.phone) setPhone(c.phone);
             if (c.address) setAddress(c.address);
-            if (!reason) setReason(`Thu tiền bán hàng khách hàng ${c.name}`);
+            if (!reason || reason.startsWith('Thu tiền')) setReason(`Thu tiền bán hàng khách hàng ${c.name}`);
+            
+            setIsLoadingDocs(true);
+            try {
+                const invoices = await getCustomerUnpaidInvoices(cId);
+                setUnpaidInvoices(invoices);
+            } catch (err) {
+                console.error('Error fetching unpaid invoices:', err);
+            } finally {
+                setIsLoadingDocs(false);
+            }
+        } else {
+            setUnpaidInvoices([]);
         }
     };
 
-    const handleSupplierChange = (sId: string) => {
+    // Load supplier unpaid bills when supplier changes
+    const handleSupplierChange = async (sId: string) => {
         setSupplierId(sId);
+        setAllocations({});
         const s = suppliers.find(item => item.id === sId);
         if (s) {
             setPayerReceiver(s.name);
             if (s.phone) setPhone(s.phone);
             if (s.address) setAddress(s.address);
-            if (!reason) setReason(`Chi thanh toán mua hàng NCC ${s.name}`);
+            if (!reason || reason.startsWith('Chi thanh toán')) setReason(`Chi thanh toán mua hàng NCC ${s.name}`);
+
+            setIsLoadingDocs(true);
+            try {
+                const bills = await getSupplierUnpaidBills(sId);
+                setUnpaidBills(bills);
+            } catch (err) {
+                console.error('Error fetching unpaid bills:', err);
+            } finally {
+                setIsLoadingDocs(false);
+            }
+        } else {
+            setUnpaidBills([]);
         }
+    };
+
+    // Allocation change helper
+    const handleAllocationToggle = (docId: string, maxAmount: number) => {
+        setAllocations(prev => {
+            const next = { ...prev };
+            if (next[docId]) {
+                delete next[docId];
+            } else {
+                next[docId] = maxAmount;
+            }
+
+            // Recalculate total amount from allocations
+            const totalAllocated = Object.values(next).reduce((sum, v) => sum + (v || 0), 0);
+            if (totalAllocated > 0) {
+                setAmount(totalAllocated);
+            }
+            return next;
+        });
+    };
+
+    const handleAllocationAmountChange = (docId: string, val: number, maxAmount: number) => {
+        const safeVal = Math.min(Math.max(0, val), maxAmount);
+        setAllocations(prev => {
+            const next = { ...prev };
+            if (safeVal <= 0) {
+                delete next[docId];
+            } else {
+                next[docId] = safeVal;
+            }
+            const totalAllocated = Object.values(next).reduce((sum, v) => sum + (v || 0), 0);
+            if (totalAllocated > 0) {
+                setAmount(totalAllocated);
+            }
+            return next;
+        });
+    };
+
+    // Quick auto allocate from amount
+    const handleAutoAllocate = () => {
+        let remainingToAlloc = amount;
+        if (remainingToAlloc <= 0) return;
+
+        const docs = type === 'RECEIPT' ? unpaidInvoices : unpaidBills;
+        const newAlloc: { [id: string]: number } = {};
+
+        for (const doc of docs) {
+            if (remainingToAlloc <= 0) break;
+            const canTake = Math.min(remainingToAlloc, doc.remainingAmount);
+            if (canTake > 0) {
+                newAlloc[doc.id] = canTake;
+                remainingToAlloc -= canTake;
+            }
+        }
+        setAllocations(newAlloc);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -88,6 +191,15 @@ export default function CreateTransactionModal({
         setError(null);
 
         try {
+            // Build allocations array
+            const formattedAllocations = Object.entries(allocations).map(([id, allocAmount]) => {
+                if (type === 'RECEIPT') {
+                    return { invoiceId: id, amount: allocAmount };
+                } else {
+                    return { billId: id, amount: allocAmount };
+                }
+            });
+
             const res = await createCashTransaction({
                 type,
                 category,
@@ -102,7 +214,8 @@ export default function CreateTransactionModal({
                 customerId: customerId || undefined,
                 supplierId: supplierId || undefined,
                 projectId: projectId || undefined,
-                notes
+                notes,
+                allocations: formattedAllocations
             });
 
             if (res.success) {
@@ -117,14 +230,14 @@ export default function CreateTransactionModal({
 
     return (
         <div 
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm overflow-y-auto"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto"
             onClick={(e) => {
                 if (e.target === e.currentTarget) onClose();
             }}
         >
-            <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden my-8">
+            <div className="bg-white dark:bg-slate-900 w-full max-w-3xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden my-8 max-h-[92vh] flex flex-col">
                 {/* Modal Header */}
-                <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80">
+                <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-800/90 shrink-0">
                     <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-white shadow-md ${
                             type === 'RECEIPT' 
@@ -138,7 +251,7 @@ export default function CreateTransactionModal({
                                 {type === 'RECEIPT' ? 'Lập Phiếu Thu Tiền (PT)' : 'Lập Phiếu Chi Tiền (PC)'}
                             </h2>
                             <p className="text-xs text-slate-500 dark:text-slate-400">
-                                {type === 'RECEIPT' ? 'Ghi nhận dòng tiền vào sổ quỹ & tài khoản ngân hàng' : 'Ghi nhận dòng tiền chi từ quỹ & tài khoản'}
+                                {type === 'RECEIPT' ? 'Ghi nhận dòng tiền vào sổ quỹ & liên kết thu tiền hóa đơn bán hàng' : 'Ghi nhận dòng tiền chi từ quỹ & liên kết thanh toán hóa đơn NCC'}
                             </p>
                         </div>
                     </div>
@@ -154,10 +267,11 @@ export default function CreateTransactionModal({
                 </div>
 
                 {/* Form Body */}
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
                     {error && (
-                        <div className="p-3 bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 text-xs rounded-xl border border-rose-200 dark:border-rose-900 font-semibold flex items-center gap-2">
-                            <span>⚠️</span> {error}
+                        <div className="p-3 bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 text-xs rounded-xl border border-rose-200 dark:border-rose-900 font-semibold flex items-center gap-2">
+                            <AlertCircle className="w-4 h-4 shrink-0" />
+                            <span>{error}</span>
                         </div>
                     )}
 
@@ -168,6 +282,9 @@ export default function CreateTransactionModal({
                             onClick={() => {
                                 setType('RECEIPT');
                                 setCategory('SALES');
+                                setSupplierId('');
+                                setUnpaidBills([]);
+                                setAllocations({});
                             }}
                             className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
                                 type === 'RECEIPT' 
@@ -181,7 +298,10 @@ export default function CreateTransactionModal({
                             type="button"
                             onClick={() => {
                                 setType('PAYMENT');
-                                setCategory('EXPENSE');
+                                setCategory('PURCHASE');
+                                setCustomerId('');
+                                setUnpaidInvoices([]);
+                                setAllocations({});
                             }}
                             className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
                                 type === 'PAYMENT' 
@@ -193,11 +313,248 @@ export default function CreateTransactionModal({
                         </button>
                     </div>
 
-                    {/* Row 1: Amount & Date */}
+                    {/* Partner Selection (Customer for Receipt / Supplier for Payment) */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {type === 'RECEIPT' ? (
+                            <div>
+                                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
+                                    Chọn Khách Hàng (Tự liên kết Hóa đơn nợ)
+                                </label>
+                                <select
+                                    value={customerId}
+                                    onChange={(e) => handleCustomerChange(e.target.value)}
+                                    className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                                >
+                                    <option value="">-- Không chọn / Khách vãng lai --</option>
+                                    {customers.map(c => (
+                                        <option key={c.id} value={c.id}>{c.code ? `[${c.code}] ` : ''}{c.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        ) : (
+                            <div>
+                                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
+                                    Chọn Nhà Cung Cấp (Tự liên kết HĐ mua hàng)
+                                </label>
+                                <select
+                                    value={supplierId}
+                                    onChange={(e) => handleSupplierChange(e.target.value)}
+                                    className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs font-semibold focus:ring-2 focus:ring-rose-500 focus:outline-none"
+                                >
+                                    <option value="">-- Không chọn / NCC khác --</option>
+                                    {suppliers.map(s => (
+                                        <option key={s.id} value={s.id}>[{s.code}] {s.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
+                        <div>
+                            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
+                                Gắn vào Dự Án (Nếu có)
+                            </label>
+                            <select
+                                value={projectId}
+                                onChange={(e) => setProjectId(e.target.value)}
+                                className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                            >
+                                <option value="">-- Không gắn dự án --</option>
+                                {projects.map(p => (
+                                    <option key={p.id} value={p.id}>[{p.code}] {p.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Invoice / Bill Allocations Section (Bidirectional Link) */}
+                    {type === 'RECEIPT' && customerId && (
+                        <div className="p-4 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-2xl border border-emerald-200 dark:border-emerald-900/50 space-y-3">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Receipt className="w-4 h-4 text-emerald-600" />
+                                    <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wide">
+                                        Phân Bổ Thu Tiền Từ Hóa Đơn Bán Hàng ({unpaidInvoices.length} HĐ còn nợ)
+                                    </span>
+                                </div>
+                                {unpaidInvoices.length > 0 && amount > 0 && (
+                                    <button
+                                        type="button"
+                                        onClick={handleAutoAllocate}
+                                        className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 hover:underline flex items-center gap-1"
+                                    >
+                                        <Layers className="w-3.5 h-3.5" />
+                                        Tự động phân bổ theo số tiền
+                                    </button>
+                                )}
+                            </div>
+
+                            {isLoadingDocs ? (
+                                <div className="py-4 text-center text-xs text-slate-400">
+                                    <RefreshCw className="w-4 h-4 animate-spin mx-auto mb-1 text-emerald-600" />
+                                    Đang tải danh sách hóa đơn...
+                                </div>
+                            ) : unpaidInvoices.length > 0 ? (
+                                <div className="border border-emerald-200/80 dark:border-emerald-900/40 rounded-xl overflow-hidden bg-white dark:bg-slate-900">
+                                    <table className="w-full text-left text-xs">
+                                        <thead className="bg-emerald-50/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold border-b border-emerald-200 dark:border-slate-800 text-[10px] uppercase">
+                                            <tr>
+                                                <th className="py-2.5 px-3 w-8 text-center">Chọn</th>
+                                                <th className="py-2.5 px-3">Mã Hóa Đơn</th>
+                                                <th className="py-2.5 px-3">Ngày HĐ</th>
+                                                <th className="py-2.5 px-3 text-right">Tổng Tiền</th>
+                                                <th className="py-2.5 px-3 text-right">Còn Nợ</th>
+                                                <th className="py-2.5 px-3 text-right w-36">Tiền Phân Bổ (đ)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                            {unpaidInvoices.map((inv) => {
+                                                const isAllocated = !!allocations[inv.id];
+                                                const allocVal = allocations[inv.id] || 0;
+                                                return (
+                                                    <tr key={inv.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition">
+                                                        <td className="py-2 px-3 text-center">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={isAllocated}
+                                                                onChange={() => handleAllocationToggle(inv.id, inv.remainingAmount)}
+                                                                className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300"
+                                                            />
+                                                        </td>
+                                                        <td className="py-2 px-3 font-mono font-bold text-slate-900 dark:text-white">
+                                                            {inv.code}
+                                                        </td>
+                                                        <td className="py-2 px-3 text-slate-500">
+                                                            {new Date(inv.date).toLocaleDateString('vi-VN')}
+                                                        </td>
+                                                        <td className="py-2 px-3 text-right font-medium text-slate-700 dark:text-slate-300">
+                                                            {formatVND(inv.totalAmount)}
+                                                        </td>
+                                                        <td className="py-2 px-3 text-right font-bold text-rose-600">
+                                                            {formatVND(inv.remainingAmount)}
+                                                        </td>
+                                                        <td className="py-2 px-3 text-right">
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                max={inv.remainingAmount}
+                                                                value={allocVal || ''}
+                                                                onChange={(e) => handleAllocationAmountChange(inv.id, Number(e.target.value), inv.remainingAmount)}
+                                                                placeholder="0"
+                                                                className="w-full px-2 py-1 text-right font-bold text-xs bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-emerald-700 dark:text-emerald-400 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                <div className="text-xs text-slate-500 italic">
+                                    Khách hàng này hiện không có hóa đơn nào chưa thanh toán. Phiếu thu sẽ được ghi nhận vào sổ quỹ thông thường.
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {type === 'PAYMENT' && supplierId && (
+                        <div className="p-4 bg-rose-50/50 dark:bg-rose-950/20 rounded-2xl border border-rose-200 dark:border-rose-900/50 space-y-3">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <ShoppingCart className="w-4 h-4 text-rose-600" />
+                                    <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wide">
+                                        Phân Bổ Chi Thanh Toán Cho Hóa Đơn NCC ({unpaidBills.length} HĐ còn nợ)
+                                    </span>
+                                </div>
+                                {unpaidBills.length > 0 && amount > 0 && (
+                                    <button
+                                        type="button"
+                                        onClick={handleAutoAllocate}
+                                        className="text-[11px] font-bold text-rose-700 dark:text-rose-300 hover:underline flex items-center gap-1"
+                                    >
+                                        <Layers className="w-3.5 h-3.5" />
+                                        Tự động phân bổ theo số tiền
+                                    </button>
+                                )}
+                            </div>
+
+                            {isLoadingDocs ? (
+                                <div className="py-4 text-center text-xs text-slate-400">
+                                    <RefreshCw className="w-4 h-4 animate-spin mx-auto mb-1 text-rose-600" />
+                                    Đang tải danh sách hóa đơn mua hàng...
+                                </div>
+                            ) : unpaidBills.length > 0 ? (
+                                <div className="border border-rose-200/80 dark:border-rose-900/40 rounded-xl overflow-hidden bg-white dark:bg-slate-900">
+                                    <table className="w-full text-left text-xs">
+                                        <thead className="bg-rose-50/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold border-b border-rose-200 dark:border-slate-800 text-[10px] uppercase">
+                                            <tr>
+                                                <th className="py-2.5 px-3 w-8 text-center">Chọn</th>
+                                                <th className="py-2.5 px-3">Mã Đơn / HĐ Mua</th>
+                                                <th className="py-2.5 px-3">Ngày</th>
+                                                <th className="py-2.5 px-3 text-right">Tổng Tiền</th>
+                                                <th className="py-2.5 px-3 text-right">Còn Nợ</th>
+                                                <th className="py-2.5 px-3 text-right w-36">Tiền Chi (đ)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                            {unpaidBills.map((bill) => {
+                                                const isAllocated = !!allocations[bill.id];
+                                                const allocVal = allocations[bill.id] || 0;
+                                                return (
+                                                    <tr key={bill.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition">
+                                                        <td className="py-2 px-3 text-center">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={isAllocated}
+                                                                onChange={() => handleAllocationToggle(bill.id, bill.remainingAmount)}
+                                                                className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-slate-300"
+                                                            />
+                                                        </td>
+                                                        <td className="py-2 px-3 font-mono font-bold text-slate-900 dark:text-white">
+                                                            {bill.code}
+                                                            {bill.supplierInvoice && (
+                                                                <span className="text-[10px] text-slate-400 block">Số: {bill.supplierInvoice}</span>
+                                                            )}
+                                                        </td>
+                                                        <td className="py-2 px-3 text-slate-500">
+                                                            {new Date(bill.date).toLocaleDateString('vi-VN')}
+                                                        </td>
+                                                        <td className="py-2 px-3 text-right font-medium text-slate-700 dark:text-slate-300">
+                                                            {formatVND(bill.totalAmount)}
+                                                        </td>
+                                                        <td className="py-2 px-3 text-right font-bold text-amber-600">
+                                                            {formatVND(bill.remainingAmount)}
+                                                        </td>
+                                                        <td className="py-2 px-3 text-right">
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                max={bill.remainingAmount}
+                                                                value={allocVal || ''}
+                                                                onChange={(e) => handleAllocationAmountChange(bill.id, Number(e.target.value), bill.remainingAmount)}
+                                                                placeholder="0"
+                                                                className="w-full px-2 py-1 text-right font-bold text-xs bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-rose-700 dark:text-rose-400 focus:ring-2 focus:ring-rose-500 focus:outline-none"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                <div className="text-xs text-slate-500 italic">
+                                    Nhà cung cấp này hiện không có hóa đơn mua hàng nào chưa thanh toán. Phiếu chi sẽ được ghi nhận vào sổ quỹ thông thường.
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Amount & Date */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
-                                Số tiền (VNĐ) <span className="text-rose-500">*</span>
+                                Tổng số tiền chứng từ (VNĐ) <span className="text-rose-500">*</span>
                             </label>
                             <input
                                 type="number"
@@ -235,7 +592,7 @@ export default function CreateTransactionModal({
                         </div>
                     )}
 
-                    {/* Row 2: Category & Account */}
+                    {/* Category & Account */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
@@ -285,60 +642,7 @@ export default function CreateTransactionModal({
                         </div>
                     </div>
 
-                    {/* Row 3: Quick Partner Link (Customer / Supplier / Project) */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {type === 'RECEIPT' ? (
-                            <div>
-                                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
-                                    Chọn Khách Hàng (Tự điền thông tin)
-                                </label>
-                                <select
-                                    value={customerId}
-                                    onChange={(e) => handleCustomerChange(e.target.value)}
-                                    className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                                >
-                                    <option value="">-- Không chọn / Khách vãng lai --</option>
-                                    {customers.map(c => (
-                                        <option key={c.id} value={c.id}>{c.code ? `[${c.code}] ` : ''}{c.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        ) : (
-                            <div>
-                                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
-                                    Chọn Nhà Cung Cấp (Tự điền thông tin)
-                                </label>
-                                <select
-                                    value={supplierId}
-                                    onChange={(e) => handleSupplierChange(e.target.value)}
-                                    className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                                >
-                                    <option value="">-- Không chọn / NCC khác --</option>
-                                    {suppliers.map(s => (
-                                        <option key={s.id} value={s.id}>[{s.code}] {s.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        )}
-
-                        <div>
-                            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
-                                Gắn vào Dự Án (Nếu có)
-                            </label>
-                            <select
-                                value={projectId}
-                                onChange={(e) => setProjectId(e.target.value)}
-                                className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                            >
-                                <option value="">-- Không gắn dự án --</option>
-                                {projects.map(p => (
-                                    <option key={p.id} value={p.id}>[{p.code}] {p.name}</option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* Row 4: Payer/Receiver details */}
+                    {/* Payer/Receiver details */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
@@ -368,7 +672,7 @@ export default function CreateTransactionModal({
                         </div>
                     </div>
 
-                    {/* Row 5: Address */}
+                    {/* Address */}
                     <div>
                         <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
                             Địa chỉ / Đơn vị
@@ -382,7 +686,7 @@ export default function CreateTransactionModal({
                         />
                     </div>
 
-                    {/* Row 6: Reason */}
+                    {/* Reason */}
                     <div>
                         <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
                             Lý do {type === 'RECEIPT' ? 'nộp tiền' : 'chi tiền'}
@@ -416,7 +720,7 @@ export default function CreateTransactionModal({
                             }`}
                         >
                             <Check className="w-4 h-4" />
-                            <span>{isSubmitting ? 'Đang lưu...' : type === 'RECEIPT' ? 'Lưu Phiếu Thu' : 'Lưu Phiếu Chi'}</span>
+                            <span>{isSubmitting ? 'Đang lưu...' : type === 'RECEIPT' ? 'Lưu Phiếu Thu & Phân Bổ' : 'Lưu Phiếu Chi & Phân Bổ'}</span>
                         </button>
                     </div>
                 </form>
