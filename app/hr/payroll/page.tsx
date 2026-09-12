@@ -22,15 +22,51 @@ export default async function PayrollPage({
         where: { month, year },
         include: {
             user: {
-                select: { name: true, email: true, employeeProfile: true }
+                select: { 
+                    id: true,
+                    name: true, 
+                    email: true, 
+                    role: true,
+                    employeeProfile: {
+                        select: {
+                            id: true,
+                            department: true,
+                            position: true,
+                            bankAccount: true,
+                            bankName: true,
+                            taxCode: true,
+                            identityNumber: true,
+                            phoneNumber: true,
+                            baseSalary: true,
+                            hourlyRate: true,
+                            startDate: true,
+                        }
+                    } 
+                }
             }
         },
-        orderBy: { user: { name: 'asc' } }
+        orderBy: [
+            { user: { employeeProfile: { department: 'asc' } } },
+            { user: { name: 'asc' } }
+        ]
     });
+
+    // Lấy danh sách các phòng ban hiện có
+    const allDepartments = await prisma.employeeProfile.findMany({
+        where: { department: { not: null } },
+        select: { department: true },
+        distinct: ['department']
+    });
+    const departments = allDepartments.map(d => d.department).filter(Boolean) as string[];
 
     return (
         <div className="space-y-6 w-full">
-            <PayrollClient initialData={payrolls} currentMonth={month} currentYear={year} />
+            <PayrollClient 
+                initialData={payrolls} 
+                currentMonth={month} 
+                currentYear={year} 
+                departments={departments}
+            />
         </div>
     );
 }

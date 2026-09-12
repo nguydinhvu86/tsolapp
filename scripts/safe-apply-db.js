@@ -264,6 +264,53 @@ async function main() {
     await addColumnIfNotExists('Supplier', 'paymentTerms', 'VARCHAR(191) NULL');
     await addColumnIfNotExists('Supplier', 'creditLimit', 'DOUBLE NULL DEFAULT 0');
 
+    // 4b. LeaveRequest extended fields
+    await addColumnIfNotExists('LeaveRequest', 'duration', "VARCHAR(191) NOT NULL DEFAULT 'FULL_DAY'");
+    await addColumnIfNotExists('LeaveRequest', 'totalDays', "DOUBLE NOT NULL DEFAULT 1");
+    await addColumnIfNotExists('LeaveRequest', 'handoverTo', "VARCHAR(191) NULL");
+    await addColumnIfNotExists('LeaveRequest', 'handoverUserId', "VARCHAR(191) NULL");
+    await addColumnIfNotExists('LeaveRequest', 'contactPhone', "VARCHAR(191) NULL");
+
+    // 4b. Payroll table additions
+    await addColumnIfNotExists('Payroll', 'allowances', "DOUBLE NOT NULL DEFAULT 0");
+    await addColumnIfNotExists('Payroll', 'commissionBonus', "DOUBLE NOT NULL DEFAULT 0");
+    await addColumnIfNotExists('Payroll', 'otSalary', "DOUBLE NOT NULL DEFAULT 0");
+    await addColumnIfNotExists('Payroll', 'advancePayment', "DOUBLE NOT NULL DEFAULT 0");
+    await addColumnIfNotExists('Payroll', 'insuranceDeduction', "DOUBLE NOT NULL DEFAULT 0");
+    await addColumnIfNotExists('Payroll', 'taxDeduction', "DOUBLE NOT NULL DEFAULT 0");
+    await addColumnIfNotExists('Payroll', 'notes', "TEXT NULL");
+    await addColumnIfNotExists('Payroll', 'paymentDate', "DATETIME(3) NULL");
+    await addColumnIfNotExists('Payroll', 'paidByUserId', "VARCHAR(191) NULL");
+
+    // 4b. EmployeeProfile extended fields
+    await addColumnIfNotExists('EmployeeProfile', 'employeeCode', "VARCHAR(191) NULL");
+    await addColumnIfNotExists('EmployeeProfile', 'identityDate', "DATETIME(3) NULL");
+    await addColumnIfNotExists('EmployeeProfile', 'identityPlace', "VARCHAR(191) NULL");
+    await addColumnIfNotExists('EmployeeProfile', 'bankBranch', "VARCHAR(191) NULL");
+    await addColumnIfNotExists('EmployeeProfile', 'placeOfOrigin', "VARCHAR(191) NULL");
+    await addColumnIfNotExists('EmployeeProfile', 'permanentAddress', "TEXT NULL");
+    await addColumnIfNotExists('EmployeeProfile', 'currentAddress', "TEXT NULL");
+    await addColumnIfNotExists('EmployeeProfile', 'personalEmail', "VARCHAR(191) NULL");
+    await addColumnIfNotExists('EmployeeProfile', 'nationality', "VARCHAR(191) NOT NULL DEFAULT 'Việt Nam'");
+    await addColumnIfNotExists('EmployeeProfile', 'ethnicity', "VARCHAR(191) NOT NULL DEFAULT 'Kinh'");
+    await addColumnIfNotExists('EmployeeProfile', 'maritalStatus', "VARCHAR(191) NOT NULL DEFAULT 'SINGLE'");
+    await addColumnIfNotExists('EmployeeProfile', 'emergencyContact', "VARCHAR(191) NULL");
+    await addColumnIfNotExists('EmployeeProfile', 'emergencyPhone', "VARCHAR(191) NULL");
+    await addColumnIfNotExists('EmployeeProfile', 'employmentStatus', "VARCHAR(191) NOT NULL DEFAULT 'OFFICIAL'");
+    await addColumnIfNotExists('EmployeeProfile', 'workLocation', "VARCHAR(191) NULL");
+    await addColumnIfNotExists('EmployeeProfile', 'probationEndDate', "DATETIME(3) NULL");
+    await addColumnIfNotExists('EmployeeProfile', 'officialStartDate', "DATETIME(3) NULL");
+    await addColumnIfNotExists('EmployeeProfile', 'resignationDate', "DATETIME(3) NULL");
+    await addColumnIfNotExists('EmployeeProfile', 'insuranceSalary', "DOUBLE NOT NULL DEFAULT 0");
+    await addColumnIfNotExists('EmployeeProfile', 'allowances', "DOUBLE NOT NULL DEFAULT 0");
+    await addColumnIfNotExists('EmployeeProfile', 'socialInsuranceNumber', "VARCHAR(191) NULL");
+    await addColumnIfNotExists('EmployeeProfile', 'healthInsuranceCardNumber', "VARCHAR(191) NULL");
+    await addColumnIfNotExists('EmployeeProfile', 'healthInsurancePlace', "VARCHAR(191) NULL");
+    await addColumnIfNotExists('EmployeeProfile', 'educationLevel', "VARCHAR(191) NULL");
+    await addColumnIfNotExists('EmployeeProfile', 'major', "VARCHAR(191) NULL");
+    await addColumnIfNotExists('EmployeeProfile', 'schoolName', "VARCHAR(191) NULL");
+    await addColumnIfNotExists('EmployeeProfile', 'graduationYear', "INT NULL");
+
     // 5. Auto-populate customer codes for existing customers without code
     const existingCustomers = await prisma.customer.findMany({ where: { code: null } });
     if (existingCustomers.length > 0) {

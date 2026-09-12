@@ -298,11 +298,45 @@ export async function getMyAttendanceHistory(month: number, year: number) {
     });
 }
 
+import { LEAVE_TYPE_MAP } from './constants';
+
 // ===================================
 // LEAVE REQUESTS
 // ===================================
 
-export async function createLeaveRequest(data: { type: string, startDate: Date, endDate: Date, reason: string, imageUrl?: string }) {
+export async function getColleaguesForHandover() {
+    noStore();
+    const session = await getServerSession(authOptions);
+    if (!session?.user) return [];
+
+    return await prisma.user.findMany({
+        where: {
+            isActive: true,
+            id: { not: session.user.id }
+        },
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+            role: true
+        },
+        orderBy: { name: 'asc' }
+    });
+}
+
+export async function createLeaveRequest(data: {
+    type: string;
+    startDate: Date;
+    endDate: Date;
+    duration?: string;
+    totalDays?: number;
+    reason: string;
+    handoverTo?: string;
+    handoverUserId?: string;
+    contactPhone?: string;
+    imageUrl?: string;
+}) {
     const session = await getServerSession(authOptions);
     if (!session || !session.user) throw new Error("Unauthorized");
 
@@ -313,9 +347,17 @@ export async function createLeaveRequest(data: { type: string, startDate: Date, 
                 type: data.type,
                 startDate: data.startDate,
                 endDate: data.endDate,
+                duration: data.duration || 'FULL_DAY',
+                totalDays: data.totalDays !== undefined ? data.totalDays : 1,
                 reason: data.reason,
-                imageUrl: data.imageUrl,
+                handoverTo: data.handoverTo || null,
+                handoverUserId: data.handoverUserId || null,
+                contactPhone: data.contactPhone || null,
+                imageUrl: data.imageUrl || null,
                 status: 'PENDING'
+            },
+            include: {
+                user: { select: { id: true, name: true, email: true } }
             }
         });
 
@@ -327,13 +369,13 @@ export async function createLeaveRequest(data: { type: string, startDate: Date, 
             select: { id: true, email: true, name: true }
         });
         const sender = await prisma.user.findUnique({ where: { id: session.user.id } });
-        const typeLabels: Record<string, string> = { SICK_LEAVE: 'Nghỉ Ốm', ANNUAL_LEAVE: 'Phép Năm', UNPAID_LEAVE: 'Nghỉ Không Lương' };
+        const typeLabel = LEAVE_TYPE_MAP[data.type] || data.type;
 
         for (const hr of hrUsers) {
             await createNotification(
                 hr.id,
                 "Có Đơn Xin Nghỉ Mới",
-                `Nhân sự ${sender?.name} vừa tạo đơn xin: ${typeLabels[data.type] || data.type} từ ${new Date(data.startDate).toLocaleDateString('vi-VN')}`,
+                `Nhân sự ${sender?.name} vừa tạo đơn: ${typeLabel} (${data.totalDays || 1} ngày) từ ${new Date(data.startDate).toLocaleDateString('vi-VN')}`,
                 "INFO",
                 "/hr/approvals"
             ).catch(console.error);
@@ -343,18 +385,20 @@ export async function createLeaveRequest(data: { type: string, startDate: Date, 
                     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
                         <h2 style="color: #0284c7; margin-top: 0;">Thông Báo Kiểm Duyệt Đơn</h2>
                         <p>Xin chào <strong>${hr.name}</strong>,</p>
-                        <p>Hệ thống vừa nhận được đơn xin nghỉ mới từ Nhân sự <strong>${sender?.name}</strong>.</p>
-                        <div style="background-color: #f8fafc; padding: 15px; border-radius: 6px; margin: 20px 0;">
-                            <p style="margin: 0 0 10px 0;"><strong>Loại Đơn:</strong> <span style="color: #4f46e5; font-weight: bold;">${typeLabels[data.type] || data.type}</span></p>
-                            <p style="margin: 0 0 10px 0;"><strong>Thời gian:</strong> Từ ${new Date(data.startDate).toLocaleDateString('vi-VN')} đến ${new Date(data.endDate).toLocaleDateString('vi-VN')}</p>
+                        <p>Hệ thống vừa nhận được đơn mới từ Nhân sự <strong>${sender?.name}</strong>.</p>
+                        <div style="background-color: #f8fafc; padding: 15px; border-radius: 6px; margin: 20px 0; border: 1px solid #e2e8f0;">
+                            <p style="margin: 0 0 8px 0;"><strong>Loại Đơn:</strong> <span style="color: #4f46e5; font-weight: bold;">${typeLabel}</span></p>
+                            <p style="margin: 0 0 8px 0;"><strong>Thời gian:</strong> Từ ${new Date(data.startDate).toLocaleDateString('vi-VN')} đến ${new Date(data.endDate).toLocaleDateString('vi-VN')} (${data.totalDays || 1} ngày)</p>
+                            ${data.handoverTo ? `<p style="margin: 0 0 8px 0;"><strong>Bàn giao công việc cho:</strong> ${data.handoverTo}</p>` : ''}
+                            ${data.contactPhone ? `<p style="margin: 0 0 8px 0;"><strong>SĐT khẩn cấp:</strong> ${data.contactPhone}</p>` : ''}
                             <p style="margin: 0;"><strong>Lý do:</strong> <em>${data.reason}</em></p>
                         </div>
-                        <p>Bên bộ phận HCNS vui lòng đăng nhập vào ứng dụng và truy cập mục Duyệt Đơn để phản hồi lại cho nhân sự.</p>
+                        <p>Bộ phận HCNS vui lòng đăng nhập vào ứng dụng và truy cập mục <strong>Duyệt Đơn</strong> để phê duyệt cho nhân sự.</p>
                     </div>
                 `;
                 await sendEmailWithTracking({
                     to: hr.email,
-                    subject: `[ERP] Đơn xin ${typeLabels[data.type] || data.type} mới từ ${sender?.name}`,
+                    subject: `[ERP] Đơn ${typeLabel} mới từ ${sender?.name}`,
                     htmlBody: emailHtml
                 }).catch(console.error);
             }
@@ -369,6 +413,7 @@ export async function createLeaveRequest(data: { type: string, startDate: Date, 
 }
 
 export async function getMyLeaveRequests() {
+    noStore();
     const session = await getServerSession(authOptions);
     if (!session || !session.user) return [];
 
@@ -376,14 +421,28 @@ export async function getMyLeaveRequests() {
         where: { userId: session.user.id },
         include: {
             approver: {
-                select: { name: true }
+                select: { id: true, name: true, email: true, avatar: true }
             }
         },
         orderBy: { createdAt: 'desc' }
     });
 }
 
-export async function updateLeaveRequest(id: string, data: { type?: string, startDate?: Date, endDate?: Date, reason?: string, imageUrl?: string }) {
+export async function updateLeaveRequest(
+    id: string,
+    data: {
+        type?: string;
+        startDate?: Date;
+        endDate?: Date;
+        duration?: string;
+        totalDays?: number;
+        reason?: string;
+        handoverTo?: string;
+        handoverUserId?: string;
+        contactPhone?: string;
+        imageUrl?: string;
+    }
+) {
     const session = await getServerSession(authOptions);
     if (!session || !session.user) throw new Error("Unauthorized");
 
@@ -399,8 +458,48 @@ export async function updateLeaveRequest(id: string, data: { type?: string, star
                 type: data.type !== undefined ? data.type : existing.type,
                 startDate: data.startDate !== undefined ? data.startDate : existing.startDate,
                 endDate: data.endDate !== undefined ? data.endDate : existing.endDate,
+                duration: data.duration !== undefined ? data.duration : existing.duration,
+                totalDays: data.totalDays !== undefined ? data.totalDays : existing.totalDays,
                 reason: data.reason !== undefined ? data.reason : existing.reason,
+                handoverTo: data.handoverTo !== undefined ? data.handoverTo : existing.handoverTo,
+                handoverUserId: data.handoverUserId !== undefined ? data.handoverUserId : existing.handoverUserId,
+                contactPhone: data.contactPhone !== undefined ? data.contactPhone : existing.contactPhone,
                 imageUrl: data.imageUrl !== undefined ? data.imageUrl : existing.imageUrl,
+            },
+            include: {
+                approver: {
+                    select: { id: true, name: true, email: true, avatar: true }
+                }
+            }
+        });
+
+        revalidatePath('/leave-requests');
+        revalidatePath('/hr/approvals');
+        return { success: true, data: leave };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+}
+
+export async function cancelLeaveRequest(id: string) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) throw new Error("Unauthorized");
+
+    const existing = await prisma.leaveRequest.findUnique({ where: { id } });
+    if (!existing) throw new Error("Không tìm thấy đơn.");
+    if (existing.userId !== session.user.id) throw new Error("Không có quyền hủy đơn của người khác.");
+    if (existing.status !== 'PENDING') throw new Error("Chỉ có thể hủy đơn đang ở trạng thái Chờ duyệt.");
+
+    try {
+        const leave = await prisma.leaveRequest.update({
+            where: { id },
+            data: {
+                status: 'CANCELLED'
+            },
+            include: {
+                approver: {
+                    select: { id: true, name: true, email: true, avatar: true }
+                }
             }
         });
 
@@ -414,25 +513,55 @@ export async function updateLeaveRequest(id: string, data: { type?: string, star
 
 // HR Actions
 async function checkHR() {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) throw new Error("Unauthorized");
+    
+    // Allow ADMIN, HR or users with ATTENDANCE or HR_MANAGE permission
+    if (['ADMIN', 'HR'].includes(session.user.role)) {
+        return session.user;
+    }
+    
     const user = await verifyActionPermission('HR_MANAGE');
     return user as any;
 }
 
 export async function getPendingLeaveRequests() {
+    noStore();
     await checkHR();
     return await prisma.leaveRequest.findMany({
         where: { status: 'PENDING' },
-        include: { user: { select: { name: true, email: true, role: true } } },
+        include: { 
+            user: { 
+                select: { 
+                    id: true, 
+                    name: true, 
+                    email: true, 
+                    role: true, 
+                    avatar: true,
+                    employeeProfile: { select: { department: true, position: true } }
+                } 
+            } 
+        },
         orderBy: { createdAt: 'desc' }
     });
 }
 
 export async function getAllLeaveRequestsForHR() {
+    noStore();
     await checkHR();
     return await prisma.leaveRequest.findMany({
         include: {
-            user: { select: { name: true, email: true, role: true } },
-            approver: { select: { name: true } }
+            user: { 
+                select: { 
+                    id: true, 
+                    name: true, 
+                    email: true, 
+                    role: true, 
+                    avatar: true,
+                    employeeProfile: { select: { department: true, position: true } }
+                } 
+            },
+            approver: { select: { id: true, name: true, email: true, avatar: true } }
         },
         orderBy: { createdAt: 'desc' }
     });
@@ -448,21 +577,33 @@ export async function resolveLeaveRequest(id: string, action: 'APPROVE' | 'REJEC
                 approverId: me.id,
                 approverNote: note || null
             },
-            include: { user: true }
+            include: { 
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        role: true,
+                        avatar: true,
+                        employeeProfile: { select: { department: true, position: true } }
+                    }
+                },
+                approver: { select: { id: true, name: true, email: true, avatar: true } }
+            }
         });
 
         // ----------------------------------------
         // EMPLOYEE NOTIFICATION FOR APPROVED/REJECTED
         // ----------------------------------------
         const statusLabel = action === 'APPROVE' ? 'ĐƯỢC DUYỆT' : 'BỊ TỪ CHỐI';
-        const typeLabels: Record<string, string> = { SICK_LEAVE: 'Nghỉ Ốm', ANNUAL_LEAVE: 'Phép Năm', UNPAID_LEAVE: 'Nghỉ Không Lương' };
+        const typeLabel = LEAVE_TYPE_MAP[leave.type] || leave.type;
 
         const noteText = note ? ` Lời nhắn: "${note}"` : '';
 
         await createNotification(
             leave.user.id,
-            "Kết quả duyệt đơn nghỉ phép",
-            `Đơn xin ${typeLabels[leave.type] || leave.type} của bạn đã ${statusLabel} bởi ${me.name}.${noteText}`,
+            `Đơn ${typeLabel} đã ${statusLabel}`,
+            `Đơn xin của bạn (${new Date(leave.startDate).toLocaleDateString('vi-VN')} - ${new Date(leave.endDate).toLocaleDateString('vi-VN')}) đã được phản hồi bởi ${me.name || 'Ban Quản Trị'}.${noteText}`,
             action === 'APPROVE' ? "SUCCESS" : "ERROR",
             "/leave-requests"
         ).catch(console.error);
@@ -473,25 +614,26 @@ export async function resolveLeaveRequest(id: string, action: 'APPROVE' | 'REJEC
                 <h2 style="color: ${action === 'APPROVE' ? '#16a34a' : '#ea580c'}; margin-top: 0;">Quyết Định Đơn Nghỉ Phép: ${statusLabel}</h2>
                 <p>Xin chào <strong>${leave.user.name}</strong>,</p>
                 <p>Phòng Hành Chính Nhân Sự đã thực hiện phản hồi đối với đơn xin phép của bạn. Chi tiết như sau:</p>
-                <div style="background-color: #f8fafc; padding: 15px; border-radius: 6px; margin: 20px 0;">
-                    <p style="margin: 0 0 10px 0;"><strong>Loại Đơn:</strong> <span style="color: #4f46e5;">${typeLabels[leave.type] || leave.type}</span></p>
-                    <p style="margin: 0 0 10px 0;"><strong>Thời gian:</strong> Từ ${leave.startDate.toLocaleDateString('vi-VN')} đến ${leave.endDate.toLocaleDateString('vi-VN')}</p>
-                    <p style="margin: 0 0 10px 0;"><strong>Người duyệt đơn:</strong> ${me.name}</p>
-                    <p style="margin: 0 0 10px 0;"><strong>Trạng thái:</strong> <strong style="color: ${action === 'APPROVE' ? '#16a34a' : '#ea580c'};">${statusLabel}</strong></p>
-                    ${note ? `<p style="margin: 0;"><strong>Ghi chú từ HR:</strong> <span style="font-style: italic; color: #475569;">"${note}"</span></p>` : ''}
+                <div style="background-color: #f8fafc; padding: 15px; border-radius: 6px; margin: 20px 0; border: 1px solid #e2e8f0;">
+                    <p style="margin: 0 0 8px 0;"><strong>Loại Đơn:</strong> <span style="color: #4f46e5; font-weight: bold;">${typeLabel}</span></p>
+                    <p style="margin: 0 0 8px 0;"><strong>Thời gian:</strong> Từ ${leave.startDate.toLocaleDateString('vi-VN')} đến ${leave.endDate.toLocaleDateString('vi-VN')} (${leave.totalDays} ngày)</p>
+                    <p style="margin: 0 0 8px 0;"><strong>Người duyệt:</strong> ${me.name || 'HCNS'}</p>
+                    <p style="margin: 0 0 8px 0;"><strong>Trạng thái:</strong> <strong style="color: ${action === 'APPROVE' ? '#16a34a' : '#ea580c'};">${statusLabel}</strong></p>
+                    ${note ? `<p style="margin: 0;"><strong>Ý kiến/Lý do:</strong> <em>${note}</em></p>` : ''}
                 </div>
+                <p>Bạn có thể vào ứng dụng để kiểm tra chi tiết lịch sử đơn từ của mình.</p>
             </div>
             `;
             await sendEmailWithTracking({
                 to: leave.user.email,
-                subject: `[ERP] Kết quả chờ duyệt đơn xin nghỉ: ${statusLabel}`,
+                subject: `[ERP] Kết quả xử lý đơn: ${statusLabel}`,
                 htmlBody: emailHtml
             }).catch(console.error);
         }
 
-        revalidatePath('/hr/approvals');
         revalidatePath('/leave-requests');
-        return { success: true };
+        revalidatePath('/hr/approvals');
+        return { success: true, data: leave };
     } catch (e: any) {
         return { success: false, error: e.message };
     }
@@ -502,10 +644,10 @@ export async function getHRAttendanceMatrix(month: number, year: number) {
     await checkHR();
 
     const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0);
+    const endDate = new Date(year, month, 0, 23, 59, 59, 999);
 
     const users = await prisma.user.findMany({
-        select: { id: true, name: true, role: true, shiftConfig: true },
+        select: { id: true, name: true, email: true, role: true, avatar: true, isActive: true, shiftConfig: true },
         orderBy: { name: 'asc' }
     });
 
@@ -515,22 +657,83 @@ export async function getHRAttendanceMatrix(month: number, year: number) {
                 gte: startDate,
                 lte: endDate
             }
+        },
+        orderBy: { date: 'asc' }
+    });
+
+    // Also get approved leave requests in this month
+    const approvedLeaves = await prisma.leaveRequest.findMany({
+        where: {
+            status: 'APPROVED',
+            OR: [
+                {
+                    startDate: { lte: endDate },
+                    endDate: { gte: startDate }
+                }
+            ]
         }
     });
 
     // Gom dữ liệu chấm công theo Cấu trúc: { [userId]: { [day]: record } }
     const matrix: any = {};
     users.forEach(u => {
-        matrix[u.id] = { user: u, records: {}, totalPresent: 0, totalLate: 0, totalWorkMinutes: 0 };
+        matrix[u.id] = { 
+            user: u, 
+            records: {}, 
+            totalPresent: 0, 
+            totalLate: 0, 
+            totalHalfDay: 0,
+            totalAbsent: 0,
+            totalLeave: 0,
+            totalWorkMinutes: 0 
+        };
     });
 
+    // Map leave requests to days
+    approvedLeaves.forEach(l => {
+        if (!matrix[l.userId]) return;
+        const lStart = new Date(l.startDate);
+        const lEnd = new Date(l.endDate);
+
+        const cur = new Date(Math.max(lStart.getTime(), startDate.getTime()));
+        const maxDate = new Date(Math.min(lEnd.getTime(), endDate.getTime()));
+
+        while (cur <= maxDate) {
+            const day = cur.getDate();
+            // Don't overwrite if actual attendance exists
+            if (!matrix[l.userId].records[day]) {
+                let leaveStatus = 'LEAVE_ANNUAL';
+                if (l.type === 'SICK_LEAVE') leaveStatus = 'LEAVE_SICK';
+                else if (l.type === 'UNPAID_LEAVE') leaveStatus = 'LEAVE_UNPAID';
+                else if (l.type === 'MATERNITY_LEAVE') leaveStatus = 'LEAVE_MATERNITY';
+                else if (l.type === 'SPECIAL_LEAVE') leaveStatus = 'LEAVE_SPECIAL';
+
+                matrix[l.userId].records[day] = {
+                    id: 'leave-' + l.id + '-' + day,
+                    userId: l.userId,
+                    date: new Date(cur),
+                    status: leaveStatus,
+                    leaveType: l.type,
+                    notes: l.reason,
+                    isLeave: true
+                };
+                matrix[l.userId].totalLeave++;
+            }
+            cur.setDate(cur.getDate() + 1);
+        }
+    });
+
+    // Map attendance records
     attendances.forEach(a => {
         if (!matrix[a.userId]) return;
         const day = a.date.getDate();
         matrix[a.userId].records[day] = a;
 
         if (a.status === 'PRESENT') matrix[a.userId].totalPresent++;
-        if (a.status === 'LATE') matrix[a.userId].totalLate++;
+        else if (a.status === 'LATE') matrix[a.userId].totalLate++;
+        else if (a.status === 'HALF_DAY') matrix[a.userId].totalHalfDay++;
+        else if (a.status === 'ABSENT') matrix[a.userId].totalAbsent++;
+        
         if (a.totalWorkMinutes) matrix[a.userId].totalWorkMinutes += a.totalWorkMinutes;
     });
 

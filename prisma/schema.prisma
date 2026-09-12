@@ -1755,12 +1755,17 @@ model LeaveRequest {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation("UserLeaveRequests", fields: [userId], references: [id])
-  type      String // SICK_LEAVE, ANNUAL_LEAVE, UNPAID_LEAVE
+  type      String   // ANNUAL_LEAVE, SICK_LEAVE, UNPAID_LEAVE, MATERNITY_LEAVE, SPECIAL_LEAVE, LATE_EARLY, ATTENDANCE_EXPLANATION, OVERTIME
   startDate DateTime
   endDate   DateTime
+  duration  String   @default("FULL_DAY") // FULL_DAY, MORNING, AFTERNOON, CUSTOM_HOURS
+  totalDays Float    @default(1)
   reason    String
+  handoverTo String?
+  handoverUserId String?
+  contactPhone String?
   imageUrl  String?  @db.LongText
-  status    String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  status    String   @default("PENDING") // PENDING, APPROVED, REJECTED, CANCELLED
 
   approverId   String?
   approver     User?   @relation("ApprovedLeaveRequests", fields: [approverId], references: [id])
@@ -1768,6 +1773,9 @@ model LeaveRequest {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
 }
 
 // ==========================================
@@ -1874,21 +1882,53 @@ model EmployeeProfile {
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  employeeCode   String? // Mã nhân viên (VD: NV-001)
   identityNumber String? @unique
+  identityDate   DateTime? // Ngày cấp CCCD
+  identityPlace  String?   // Nơi cấp CCCD
   taxCode        String?
   bankAccount    String?
   bankName       String?
+  bankBranch     String?   // Chi nhánh ngân hàng
 
-  dob         DateTime?
-  gender      String?   @default("OTHER") // MALE, FEMALE, OTHER
-  address     String?   @db.Text
-  phoneNumber String?
+  dob              DateTime?
+  gender           String?   @default("OTHER") // MALE, FEMALE, OTHER
+  placeOfOrigin    String?   // Quê quán / Nguyên quán
+  permanentAddress String?   @db.Text // Địa chỉ thường trú (hộ khẩu)
+  currentAddress   String?   @db.Text // Địa chỉ tạm trú / Nơi ở hiện nay
+  address          String?   @db.Text
+  phoneNumber      String?
+  personalEmail    String?   // Email cá nhân ngoài công ty
+  nationality      String?   @default("Việt Nam")
+  ethnicity        String?   @default("Kinh")
+  maritalStatus    String?   @default("SINGLE") // SINGLE, MARRIED, DIVORCED, OTHER
+  emergencyContact String?   // Người liên hệ khẩn cấp (Họ tên & mối quan hệ)
+  emergencyPhone   String?   // SĐT người liên hệ khẩn cấp
 
-  department String?
-  position   String?
-  startDate  DateTime?
-  baseSalary Float     @default(0)
-  hourlyRate Float     @default(0)
+  department        String?
+  position          String?
+  employmentStatus  String?   @default("OFFICIAL") // PROBATION (Thử việc), OFFICIAL (Chính thức), RESIGNED (Thôi việc), INTERN (Thực tập)
+  workLocation      String?   // Địa điểm làm việc / Chi nhánh
+  startDate         DateTime? // Ngày nhận việc
+  probationEndDate  DateTime? // Ngày hết hạn thử việc
+  officialStartDate DateTime? // Ngày vào chính thức
+  resignationDate   DateTime? // Ngày thôi việc
+
+  baseSalary      Float @default(0) // Lương cơ bản
+  insuranceSalary Float @default(0) // Mức lương đóng BHXH
+  allowances      Float @default(0) // Tổng phụ cấp cố định
+  hourlyRate      Float @default(0)
+
+  // Thông tin Bảo hiểm & Phúc lợi
+  socialInsuranceNumber     String? // Số sổ BHXH
+  healthInsuranceCardNumber String? // Mã thẻ BHYT
+  healthInsurancePlace      String? // Nơi đăng ký KCB ban đầu
+
+  // Trình độ học vấn & Chuyên môn
+  educationLevel String? // Đại học, Cao đẳng, Thạc sĩ, Tiến sĩ, Trung cấp, Phổ thông
+  major          String? // Chuyên ngành đào tạo
+  schoolName     String? // Trường đào tạo
+  graduationYear Int?    // Năm tốt nghiệp
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1921,13 +1961,24 @@ model Payroll {
   month Int
   year  Int
 
-  baseSalary    Float  @default(0)
-  workDays      Float  @default(0)
-  latePenalties Float  @default(0)
-  bonus         Float  @default(0)
-  deductions    Float  @default(0)
-  netSalary     Float  @default(0)
-  status        String @default("DRAFT") // DRAFT, APPROVED, PAID
+  baseSalary         Float     @default(0)
+  workDays           Float     @default(0)
+  allowances         Float     @default(0) // Phụ cấp trách nhiệm, ăn trưa, xăng xe
+  commissionBonus    Float     @default(0) // Thưởng doanh số / KPI
+  bonus              Float     @default(0) // Thưởng hiệu quả, thành tích
+  otSalary           Float     @default(0) // Lương làm thêm giờ / OT
+  
+  latePenalties      Float     @default(0) // Phạt đi muộn
+  advancePayment     Float     @default(0) // Tạm ứng lương
+  insuranceDeduction Float     @default(0) // Trừ đóng BHXH / BHYT
+  taxDeduction       Float     @default(0) // Thuế TNCN
+  deductions         Float     @default(0) // Các khoản giảm trừ khác
+
+  netSalary          Float     @default(0) // Thực lĩnh
+  notes              String?   @db.Text    // Ghi chú giải trình điều chỉnh
+  status             String    @default("DRAFT") // DRAFT, APPROVED, PAID
+  paymentDate        DateTime? // Ngày chi trả lương
+  paidByUserId       String?   // Người xác nhận chi trả
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

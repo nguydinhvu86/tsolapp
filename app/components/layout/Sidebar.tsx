@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { LayoutDashboard, Users, FileText, Settings, FileSpreadsheet, FileCode, ChevronDown, ChevronRight, FileOutput, FilePlus2, FileStack, Mail, CheckSquare, Package, ShoppingCart, Target, GripVertical, Clock, BookOpen, Phone, Calculator, Megaphone } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Settings, FileSpreadsheet, FileCode, ChevronDown, ChevronRight, FileOutput, FilePlus2, FileStack, Mail, CheckSquare, Package, ShoppingCart, Target, GripVertical, Clock, BookOpen, Phone, Calculator, Megaphone, UserCheck, CalendarDays, Briefcase, Kanban, Activity } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -117,18 +117,18 @@ const mainNavItems: any[] = [
     { name: 'Khách Hàng', nameKey: 'sidebar.customers', href: '/customers', icon: Users, permission: 'CUSTOMERS_VIEW' },
     {
         name: 'Nhân Sự (HR)', nameKey: 'sidebar.hr',
-        icon: Clock,
+        icon: UserCheck,
         children: [
-            { name: 'Công Của Tôi', nameKey: 'sidebar.my_attendance', href: '/my-attendance' },
-            { name: 'Đơn Nghỉ Phép', nameKey: 'sidebar.leave_requests', href: '/leave-requests' },
-            { name: 'Bảng Công', nameKey: 'sidebar.attendance', href: '/hr/attendance', permission: 'ATTENDANCE_VIEW' }, 
-            { name: 'Duyệt Đơn', nameKey: 'sidebar.approvals', href: '/hr/approvals', permission: 'ATTENDANCE_VIEW' },
-            { name: 'Hồ sơ Nhân sự', nameKey: 'sidebar.employees', href: '/hr/employees', permission: 'EMPLOYEES_VIEW' },
-            { name: 'Tính Lương', nameKey: 'sidebar.payroll', href: '/hr/payroll', permission: 'PAYROLL_VIEW' },
-            { name: 'Yêu Cầu Tuyển Dụng', nameKey: 'sidebar.recruitment_req', href: '/hr/recruitment/requisitions', permission: 'RECRUITMENT_VIEW' },
-            { name: 'Tin Đăng Tuyển (Jobs)', nameKey: 'sidebar.recruitment_postings', href: '/hr/recruitment/postings', permission: 'RECRUITMENT_VIEW' },
-            { name: 'Bảng Tuyển Dụng (Pipeline)', nameKey: 'sidebar.recruitment_pipeline', href: '/hr/recruitment/pipeline', permission: 'RECRUITMENT_VIEW' },
-            { name: 'Giám Sát (Ping)', nameKey: 'sidebar.monitoring', href: '/hr/monitoring', permission: 'MONITORING_VIEW' }
+            { name: 'Công Của Tôi', nameKey: 'sidebar.my_attendance', href: '/my-attendance', icon: Clock },
+            { name: 'Đơn Nghỉ Phép', nameKey: 'sidebar.leave_requests', href: '/leave-requests', icon: FileText },
+            { name: 'Bảng Chấm Công', nameKey: 'sidebar.attendance', href: '/hr/attendance', permission: 'ATTENDANCE_VIEW', icon: CalendarDays }, 
+            { name: 'Duyệt Đơn', nameKey: 'sidebar.approvals', href: '/hr/approvals', permission: 'ATTENDANCE_VIEW', icon: CheckSquare },
+            { name: 'Hồ sơ Nhân sự', nameKey: 'sidebar.employees', href: '/hr/employees', permission: 'EMPLOYEES_VIEW', icon: Users },
+            { name: 'Tính Lương', nameKey: 'sidebar.payroll', href: '/hr/payroll', permission: 'PAYROLL_VIEW', icon: Calculator },
+            { name: 'Yêu Cầu Tuyển Dụng', nameKey: 'sidebar.recruitment_req', href: '/hr/recruitment/requisitions', permission: 'RECRUITMENT_VIEW', icon: Briefcase },
+            { name: 'Tin Đăng Tuyển (Jobs)', nameKey: 'sidebar.recruitment_postings', href: '/hr/recruitment/postings', permission: 'RECRUITMENT_VIEW', icon: FilePlus2 },
+            { name: 'Bảng Tuyển Dụng (Pipeline)', nameKey: 'sidebar.recruitment_pipeline', href: '/hr/recruitment/pipeline', permission: 'RECRUITMENT_VIEW', icon: Kanban },
+            { name: 'Giám Sát (Ping)', nameKey: 'sidebar.monitoring', href: '/hr/monitoring', permission: 'MONITORING_VIEW', icon: Activity }
         ]
     },
     { name: 'Tổng Đài', nameKey: 'sidebar.callcenter', href: '/call-center', icon: Phone, permission: 'CALL_CENTER_VIEW' },
@@ -261,18 +261,20 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
                             }
 
                             const isChildMenuActive = pathname?.startsWith(child.href) || pathname === child.href;
+                            const ChildIcon = child.icon;
                             return (
                                 <Link
                                     key={child.name}
                                     href={child.href}
                                     onClick={() => { if (onClose && window.innerWidth < 768) onClose(); }}
-                                    className={`px-2.5 py-1.5 rounded-md text-[12px] transition-all block truncate ${
+                                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[12px] transition-all truncate ${
                                         isChildMenuActive 
                                             ? 'bg-emerald-500/15 text-emerald-400 font-medium border border-emerald-500/25 shadow-2xs' 
                                             : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 font-normal'
                                     }`}
                                 >
-                                    <span>{t(child.nameKey) !== child.nameKey ? t(child.nameKey) : child.name}</span>
+                                    {ChildIcon && <ChildIcon size={13} className={`shrink-0 ${isChildMenuActive ? 'text-emerald-400' : 'text-slate-400'}`} />}
+                                    <span className="truncate">{t(child.nameKey) !== child.nameKey ? t(child.nameKey) : child.name}</span>
                                 </Link>
                             );
                         })}
