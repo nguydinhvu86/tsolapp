@@ -521,6 +521,154 @@ export async function updateFinanceAccount(id: string, data: {
     return { success: true, data: updated };
 }
 
+export async function deleteFinanceAccount(id: string) {
+    await getCurrentUser();
+    const count = await prisma.cashTransaction.count({
+        where: { financeAccountId: id }
+    });
+    if (count > 0) {
+        throw new Error(`Không thể xóa tài khoản này vì đã có ${count} giao dịch. Hãy chuyển sang trạng thái "Tạm khóa" nếu không dùng nữa.`);
+    }
+    await prisma.financeAccount.delete({ where: { id } });
+    revalidatePath('/accounting/accounts');
+    revalidatePath('/accounting');
+    return { success: true };
+}
+
+export async function getAccountTransactions(accountId: string) {
+    await getCurrentUser();
+    const transactions = await prisma.cashTransaction.findMany({
+        where: { financeAccountId: accountId },
+        orderBy: { transactionDate: 'desc' },
+        include: {
+            customer: { select: { id: true, name: true, code: true } },
+            supplier: { select: { id: true, name: true, code: true } },
+            createdBy: { select: { id: true, name: true } }
+        },
+        take: 100
+    });
+    return transactions;
+}
+
+export async function transferInternalFunds(data: {
+    fromAccountId: string;
+    toAccountId: string;
+    amount: number;
+    transactionDate: string | Date;
+    fee?: number;
+    feePaidBy?: 'SENDER' | 'RECEIVER';
+    reason?: string;
+    notes?: string;
+}) {
+    const user = await getCurrentUser();
+
+    if (data.fromAccountId === data.toAccountId) {
+        throw new Error('Tài khoản nguồn và tài khoản đích không được trùng nhau');
+    }
+    if (!data.amount || data.amount <= 0) {
+        throw new Error('Số tiền chuyển khoản phải lớn hơn 0');
+    }
+
+    const fromAcc = await prisma.financeAccount.findUnique({ where: { id: data.fromAccountId } });
+    const toAcc = await prisma.financeAccount.findUnique({ where: { id: data.toAccountId } });
+
+    if (!fromAcc || !toAcc) {
+        throw new Error('Không tìm thấy tài khoản nguồn hoặc tài khoản đích');
+    }
+
+    const fee = data.fee || 0;
+    const date = new Date(data.transactionDate);
+    const yy = String(date.getFullYear()).slice(-2);
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+
+    // Generate PT and PC codes
+    const outPrefix = `PC-${yy}${mm}-`;
+    const inPrefix = `PT-${yy}${mm}-`;
+
+    const lastOut = await prisma.cashTransaction.findFirst({
+        where: { code: { startsWith: outPrefix } },
+        orderBy: { code: 'desc' },
+        select: { code: true }
+    });
+    let outSeq = 1;
+    if (lastOut?.code) {
+        const parts = lastOut.code.split('-');
+        if (parts.length === 3) outSeq = parseInt(parts[2], 10) + 1;
+    }
+    const outCode = `${outPrefix}${String(outSeq).padStart(4, '0')}`;
+
+    const lastIn = await prisma.cashTransaction.findFirst({
+        where: { code: { startsWith: inPrefix } },
+        orderBy: { code: 'desc' },
+        select: { code: true }
+    });
+    let inSeq = 1;
+    if (lastIn?.code) {
+        const parts = lastIn.code.split('-');
+        if (parts.length === 3) inSeq = parseInt(parts[2], 10) + 1;
+    }
+    const inCode = `${inPrefix}${String(inSeq).padStart(4, '0')}`;
+
+    const transferReason = data.reason?.trim() || `Điều chuyển quỹ nội bộ: [${fromAcc.name}] ➔ [${toAcc.name}]`;
+
+    await prisma.$transaction(async (tx) => {
+        const deductAmount = data.amount + (fee > 0 && data.feePaidBy !== 'RECEIVER' ? fee : 0);
+        const receivedAmount = data.amount - (fee > 0 && data.feePaidBy === 'RECEIVER' ? fee : 0);
+
+        // 1. Create Outflow Payment
+        await tx.cashTransaction.create({
+            data: {
+                code: outCode,
+                type: 'PAYMENT',
+                category: 'TRANSFER',
+                transactionDate: date,
+                amount: deductAmount,
+                payerReceiver: toAcc.name,
+                reason: `${transferReason}${fee > 0 ? ` (Bao gồm phí: ${fee.toLocaleString('vi-VN')} đ)` : ''}`,
+                paymentMethod: fromAcc.type === 'BANK' ? 'BANK_TRANSFER' : 'CASH',
+                financeAccountId: fromAcc.id,
+                createdById: user.id,
+                status: 'COMPLETED',
+                notes: data.notes || null
+            }
+        });
+
+        // 2. Create Inflow Receipt
+        await tx.cashTransaction.create({
+            data: {
+                code: inCode,
+                type: 'RECEIPT',
+                category: 'TRANSFER',
+                transactionDate: date,
+                amount: receivedAmount,
+                payerReceiver: fromAcc.name,
+                reason: transferReason,
+                paymentMethod: toAcc.type === 'BANK' ? 'BANK_TRANSFER' : 'CASH',
+                financeAccountId: toAcc.id,
+                createdById: user.id,
+                status: 'COMPLETED',
+                notes: data.notes || null
+            }
+        });
+
+        // 3. Update account balances
+        await tx.financeAccount.update({
+            where: { id: fromAcc.id },
+            data: { currentBalance: { decrement: deductAmount } }
+        });
+
+        await tx.financeAccount.update({
+            where: { id: toAcc.id },
+            data: { currentBalance: { increment: receivedAmount } }
+        });
+    });
+
+    revalidatePath('/accounting');
+    revalidatePath('/accounting/accounts');
+    revalidatePath('/accounting/cash-book');
+    return { success: true };
+}
+
 // ---------------------------------------------------------------------------
 // 4. QUẢN LÝ CÔNG NỢ (DEBT MANAGEMENT - AR & AP)
 // ---------------------------------------------------------------------------
