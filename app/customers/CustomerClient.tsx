@@ -9,7 +9,7 @@ import { Table } from '@/app/components/ui/Table';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { Modal } from '@/app/components/ui/Modal';
 import { Input } from '@/app/components/ui/Input';
-import { createCustomer, updateCustomer, deleteCustomer, lookupCustomerTaxCode } from './actions';
+import { createCustomer, updateCustomer, deleteCustomer, lookupCustomerTaxCode, checkCustomerDuplicate } from './actions';
 import { 
     Plus, Edit, Trash2, Eye, ChevronUp, ChevronDown, ArrowUpDown, 
     Search, Users, TrendingUp, RefreshCcw, Activity, Sparkles, 
@@ -96,6 +96,42 @@ export function CustomerClient({ initialData, users, isAdminOrManager, initialEm
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [formData, setFormData] = useState(emptyCustomerForm);
+    const [duplicateWarnings, setDuplicateWarnings] = useState<{ field: string; message: string; duplicateEntity?: any }[]>([]);
+    const [isCheckingDup, setIsCheckingDup] = useState(false);
+
+    // Real-time duplicate validation with debounce
+    React.useEffect(() => {
+        if (!isModalOpen) {
+            setDuplicateWarnings([]);
+            return;
+        }
+        const timer = setTimeout(async () => {
+            if (!formData.taxCode?.trim() && !formData.email?.trim() && !formData.phone?.trim() && !formData.code?.trim()) {
+                setDuplicateWarnings([]);
+                return;
+            }
+            setIsCheckingDup(true);
+            try {
+                const res = await checkCustomerDuplicate({
+                    code: formData.code,
+                    taxCode: formData.taxCode,
+                    email: formData.email,
+                    phone: formData.phone
+                }, editingId || undefined);
+                if (res.hasDuplicate) {
+                    setDuplicateWarnings(res.duplicates);
+                } else {
+                    setDuplicateWarnings([]);
+                }
+            } catch (e) {
+                // ignore
+            } finally {
+                setIsCheckingDup(false);
+            }
+        }, 350);
+
+        return () => clearTimeout(timer);
+    }, [formData.taxCode, formData.email, formData.phone, formData.code, isModalOpen, editingId]);
 
     // Sort & Filter state
     const [sortField, setSortField] = useState<keyof CustomerWithStats>('createdAt');
@@ -277,6 +313,10 @@ export function CustomerClient({ initialData, users, isAdminOrManager, initialEm
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (duplicateWarnings.length > 0) {
+            alert(`CẢNH BÁO TRÙNG LẶP DỮ LIỆU:\n\n${duplicateWarnings.map(w => `• ${w.message}`).join('\n')}\n\nVui lòng kiểm tra lại trước khi lưu.`);
+            return;
+        }
         setIsSubmitting(true);
         try {
             if (editingId) {
@@ -713,6 +753,20 @@ export function CustomerClient({ initialData, users, isAdminOrManager, initialEm
                                         <span>{taxLookupMessage.text}</span>
                                     </div>
                                 )}
+
+                                {duplicateWarnings.length > 0 && (
+                                    <div className="mt-2 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs flex flex-col gap-1.5 shadow-2xs animate-pulse">
+                                        <div className="font-bold flex items-center gap-1.5 text-rose-900">
+                                            <AlertCircle size={15} className="shrink-0 text-rose-600" />
+                                            <span>PHÁT HIỆN TRÙNG LẶP DỮ LIỆU ({duplicateWarnings.length})</span>
+                                        </div>
+                                        {duplicateWarnings.map((w, idx) => (
+                                            <div key={idx} className="text-rose-700 font-medium pl-5">
+                                                • {w.message}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Tabs Header */}
@@ -761,23 +815,37 @@ export function CustomerClient({ initialData, users, isAdminOrManager, initialEm
                                     <div className="space-y-3">
                                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-3">
                                             <div>
-                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Mã Khách Hàng</label>
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                                                    Mã Khách Hàng
+                                                    {duplicateWarnings.some(w => w.field === 'code') && <span className="text-rose-600 ml-1 font-bold">(Trùng mã)</span>}
+                                                </label>
                                                 <input
                                                     type="text"
                                                     value={formData.code || ''}
                                                     onChange={e => setFormData({ ...formData, code: e.target.value })}
                                                     placeholder="Tự động sinh (KH-xxxx)"
-                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-mono text-slate-900 bg-white"
+                                                    className={`w-full h-[34px] border rounded-lg px-2.5 py-1 text-xs outline-none transition-all font-mono text-slate-900 bg-white ${
+                                                        duplicateWarnings.some(w => w.field === 'code')
+                                                            ? 'border-rose-400 focus:border-rose-500 focus:ring-1 focus:ring-rose-200 bg-rose-50/30'
+                                                            : 'border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary/20'
+                                                    }`}
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Mã Số Thuế</label>
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                                                    Mã Số Thuế
+                                                    {duplicateWarnings.some(w => w.field === 'taxCode') && <span className="text-rose-600 ml-1 font-bold">(Trùng MST)</span>}
+                                                </label>
                                                 <input
                                                     type="text"
                                                     value={formData.taxCode || ''}
                                                     onChange={e => setFormData({ ...formData, taxCode: e.target.value })}
                                                     placeholder="Ví dụ: 0101248141"
-                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-mono text-slate-900 bg-white"
+                                                    className={`w-full h-[34px] border rounded-lg px-2.5 py-1 text-xs outline-none transition-all font-mono text-slate-900 bg-white ${
+                                                        duplicateWarnings.some(w => w.field === 'taxCode')
+                                                            ? 'border-rose-400 focus:border-rose-500 focus:ring-1 focus:ring-rose-200 bg-rose-50/30'
+                                                            : 'border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary/20'
+                                                    }`}
                                                 />
                                             </div>
                                             <div>
@@ -856,26 +924,40 @@ export function CustomerClient({ initialData, users, isAdminOrManager, initialEm
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Số Điện Thoại</label>
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                                                    Số Điện Thoại
+                                                    {duplicateWarnings.some(w => w.field === 'phone') && <span className="text-rose-600 ml-1 font-bold">(Trùng SĐT)</span>}
+                                                </label>
                                                 <input
                                                     type="text"
                                                     value={formData.phone || ''}
                                                     onChange={e => setFormData({ ...formData, phone: e.target.value })}
                                                     placeholder="0987xxxxxx"
-                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
+                                                    className={`w-full h-[34px] border rounded-lg px-2.5 py-1 text-xs outline-none transition-all text-slate-900 bg-white ${
+                                                        duplicateWarnings.some(w => w.field === 'phone')
+                                                            ? 'border-rose-400 focus:border-rose-500 focus:ring-1 focus:ring-rose-200 bg-rose-50/30'
+                                                            : 'border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary/20'
+                                                    }`}
                                                 />
                                             </div>
                                         </div>
 
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
                                             <div>
-                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Email Doanh Nghiệp / Liên Hệ</label>
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                                                    Email Doanh Nghiệp / Liên Hệ
+                                                    {duplicateWarnings.some(w => w.field === 'email') && <span className="text-rose-600 ml-1 font-bold">(Trùng Email)</span>}
+                                                </label>
                                                 <input
                                                     type="email"
                                                     value={formData.email || ''}
                                                     onChange={e => setFormData({ ...formData, email: e.target.value })}
                                                     placeholder="contact@company.com"
-                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
+                                                    className={`w-full h-[34px] border rounded-lg px-2.5 py-1 text-xs outline-none transition-all text-slate-900 bg-white ${
+                                                        duplicateWarnings.some(w => w.field === 'email')
+                                                            ? 'border-rose-400 focus:border-rose-500 focus:ring-1 focus:ring-rose-200 bg-rose-50/30'
+                                                            : 'border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary/20'
+                                                    }`}
                                                 />
                                             </div>
                                             <div>

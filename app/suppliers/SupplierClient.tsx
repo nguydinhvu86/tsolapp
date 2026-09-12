@@ -7,7 +7,7 @@ import {
     Globe, MapPin, DollarSign, X 
 } from 'lucide-react';
 import Link from 'next/link';
-import { createSupplier, updateSupplier, deleteSupplier, lookupSupplierTaxCode } from '@/app/purchasing/actions';
+import { createSupplier, updateSupplier, deleteSupplier, lookupSupplierTaxCode, checkSupplierDuplicate } from '@/app/purchasing/actions';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { Button } from '@/app/components/ui/Button';
 import { useTranslation } from '@/app/i18n/LanguageContext';
@@ -82,6 +82,42 @@ export function SupplierClient({ initialSuppliers }: { initialSuppliers: any[] }
 
     const [formData, setFormData] = useState(emptySupplierForm);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [duplicateWarnings, setDuplicateWarnings] = useState<{ field: string; message: string; duplicateEntity?: any }[]>([]);
+    const [isCheckingDup, setIsCheckingDup] = useState(false);
+
+    // Real-time duplicate validation with debounce
+    React.useEffect(() => {
+        if (!isCreateModalOpen) {
+            setDuplicateWarnings([]);
+            return;
+        }
+        const timer = setTimeout(async () => {
+            if (!formData.taxCode?.trim() && !formData.email?.trim() && !formData.phone?.trim() && !formData.code?.trim()) {
+                setDuplicateWarnings([]);
+                return;
+            }
+            setIsCheckingDup(true);
+            try {
+                const res = await checkSupplierDuplicate({
+                    code: formData.code,
+                    taxCode: formData.taxCode,
+                    email: formData.email,
+                    phone: formData.phone
+                }, editingSupplier ? editingSupplier.id : undefined);
+                if (res.hasDuplicate) {
+                    setDuplicateWarnings(res.duplicates);
+                } else {
+                    setDuplicateWarnings([]);
+                }
+            } catch (e) {
+                // ignore
+            } finally {
+                setIsCheckingDup(false);
+            }
+        }, 350);
+
+        return () => clearTimeout(timer);
+    }, [formData.taxCode, formData.email, formData.phone, formData.code, isCreateModalOpen, editingSupplier]);
 
     React.useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -230,6 +266,10 @@ export function SupplierClient({ initialSuppliers }: { initialSuppliers: any[] }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (duplicateWarnings.length > 0) {
+            alert(`CẢNH BÁO TRÙNG LẶP DỮ LIỆU:\n\n${duplicateWarnings.map(w => `• ${w.message}`).join('\n')}\n\nVui lòng kiểm tra lại trước khi lưu.`);
+            return;
+        }
         setIsSubmitting(true);
         try {
             if (editingSupplier) {
@@ -546,6 +586,20 @@ export function SupplierClient({ initialSuppliers }: { initialSuppliers: any[] }
                                     <span>{taxLookupMessage.text}</span>
                                 </div>
                             )}
+
+                            {duplicateWarnings.length > 0 && (
+                                <div className="mt-2 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs flex flex-col gap-1.5 shadow-2xs animate-pulse">
+                                    <div className="font-bold flex items-center gap-1.5 text-rose-900">
+                                        <AlertCircle size={15} className="shrink-0 text-rose-600" />
+                                        <span>PHÁT HIỆN TRÙNG LẶP DỮ LIỆU ({duplicateWarnings.length})</span>
+                                    </div>
+                                    {duplicateWarnings.map((w, idx) => (
+                                        <div key={idx} className="text-rose-700 font-medium pl-5">
+                                            • {w.message}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         {/* Tabs Header */}
@@ -594,22 +648,36 @@ export function SupplierClient({ initialSuppliers }: { initialSuppliers: any[] }
                                 <div className="space-y-3">
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-3">
                                         <div>
-                                            <label className="block text-xs font-semibold text-slate-600 mb-1">{t('suppliers.codeLabel')}</label>
+                                            <label className="block text-xs font-semibold text-slate-600 mb-1">
+                                                {t('suppliers.codeLabel')}
+                                                {duplicateWarnings.some(w => w.field === 'code') && <span className="text-rose-600 ml-1 font-bold">(Trùng mã)</span>}
+                                            </label>
                                             <input
                                                 type="text"
                                                 value={formData.code}
                                                 onChange={e => setFormData({ ...formData, code: e.target.value })}
-                                                className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-mono text-slate-900 bg-white"
+                                                className={`w-full h-[34px] border rounded-lg px-2.5 py-1 text-xs outline-none transition-all font-mono text-slate-900 bg-white ${
+                                                    duplicateWarnings.some(w => w.field === 'code')
+                                                        ? 'border-rose-400 focus:border-rose-500 focus:ring-1 focus:ring-rose-200 bg-rose-50/30'
+                                                        : 'border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary/20'
+                                                }`}
                                                 placeholder={t('suppliers.codePlaceholder')}
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-semibold text-slate-600 mb-1">{t('suppliers.taxCodeLabel')}</label>
+                                            <label className="block text-xs font-semibold text-slate-600 mb-1">
+                                                {t('suppliers.taxCodeLabel')}
+                                                {duplicateWarnings.some(w => w.field === 'taxCode') && <span className="text-rose-600 ml-1 font-bold">(Trùng MST)</span>}
+                                            </label>
                                             <input
                                                 type="text"
                                                 value={formData.taxCode}
                                                 onChange={e => setFormData({ ...formData, taxCode: e.target.value })}
-                                                className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-mono text-slate-900 bg-white"
+                                                className={`w-full h-[34px] border rounded-lg px-2.5 py-1 text-xs outline-none transition-all font-mono text-slate-900 bg-white ${
+                                                    duplicateWarnings.some(w => w.field === 'taxCode')
+                                                        ? 'border-rose-400 focus:border-rose-500 focus:ring-1 focus:ring-rose-200 bg-rose-50/30'
+                                                        : 'border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary/20'
+                                                }`}
                                                 placeholder={t('suppliers.taxCodePlaceholder')}
                                             />
                                         </div>
@@ -689,12 +757,19 @@ export function SupplierClient({ initialSuppliers }: { initialSuppliers: any[] }
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-semibold text-slate-600 mb-1">{t('suppliers.phone')}</label>
+                                            <label className="block text-xs font-semibold text-slate-600 mb-1">
+                                                {t('suppliers.phone')}
+                                                {duplicateWarnings.some(w => w.field === 'phone') && <span className="text-rose-600 ml-1 font-bold">(Trùng SĐT)</span>}
+                                            </label>
                                             <input
                                                 type="text"
                                                 value={formData.phone}
                                                 onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                                className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
+                                                className={`w-full h-[34px] border rounded-lg px-2.5 py-1 text-xs outline-none transition-all text-slate-900 bg-white ${
+                                                    duplicateWarnings.some(w => w.field === 'phone')
+                                                        ? 'border-rose-400 focus:border-rose-500 focus:ring-1 focus:ring-rose-200 bg-rose-50/30'
+                                                        : 'border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary/20'
+                                                }`}
                                                 placeholder={t('suppliers.phonePlaceholder')}
                                             />
                                         </div>
@@ -702,12 +777,19 @@ export function SupplierClient({ initialSuppliers }: { initialSuppliers: any[] }
 
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
                                         <div>
-                                            <label className="block text-xs font-semibold text-slate-600 mb-1">{t('suppliers.email')}</label>
+                                            <label className="block text-xs font-semibold text-slate-600 mb-1">
+                                                {t('suppliers.email')}
+                                                {duplicateWarnings.some(w => w.field === 'email') && <span className="text-rose-600 ml-1 font-bold">(Trùng Email)</span>}
+                                            </label>
                                             <input
                                                 type="email"
                                                 value={formData.email}
                                                 onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                                className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
+                                                className={`w-full h-[34px] border rounded-lg px-2.5 py-1 text-xs outline-none transition-all text-slate-900 bg-white ${
+                                                    duplicateWarnings.some(w => w.field === 'email')
+                                                        ? 'border-rose-400 focus:border-rose-500 focus:ring-1 focus:ring-rose-200 bg-rose-50/30'
+                                                        : 'border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary/20'
+                                                }`}
                                                 placeholder={t('suppliers.emailPlaceholder')}
                                             />
                                         </div>

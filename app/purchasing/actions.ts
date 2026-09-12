@@ -101,8 +101,115 @@ export async function getSupplier(id: string) {
 
 import { lookupBusinessByTaxCode } from '@/lib/vietqr';
 
+function normalizePhoneNumber(phone?: string | null): string {
+    if (!phone) return '';
+    let digits = phone.replace(/\D/g, '');
+    if (digits.startsWith('84') && digits.length >= 10) {
+        digits = '0' + digits.slice(2);
+    }
+    return digits;
+}
+
 export async function lookupSupplierTaxCode(taxCode: string) {
     return await lookupBusinessByTaxCode(taxCode);
+}
+
+export async function checkSupplierDuplicate(
+    data: { taxCode?: string | null; email?: string | null; phone?: string | null; code?: string | null },
+    excludeId?: string
+) {
+    const taxCode = data.taxCode?.trim();
+    const email = data.email?.trim()?.toLowerCase();
+    const phone = data.phone?.trim();
+    const code = data.code?.trim();
+
+    const duplicates: { field: string; message: string; duplicateEntity?: any }[] = [];
+
+    // 1. Check Code
+    if (code) {
+        const existing = await prisma.supplier.findFirst({
+            where: {
+                code: { equals: code },
+                ...(excludeId ? { id: { not: excludeId } } : {})
+            },
+            select: { id: true, code: true, name: true }
+        });
+        if (existing) {
+            duplicates.push({
+                field: 'code',
+                message: `Mã nhà cung cấp "${code}" đã tồn tại trên NCC "${existing.name}".`,
+                duplicateEntity: existing
+            });
+        }
+    }
+
+    // 2. Check Tax Code (MST)
+    if (taxCode) {
+        const existing = await prisma.supplier.findFirst({
+            where: {
+                taxCode: { equals: taxCode },
+                ...(excludeId ? { id: { not: excludeId } } : {})
+            },
+            select: { id: true, code: true, name: true, taxCode: true }
+        });
+        if (existing) {
+            duplicates.push({
+                field: 'taxCode',
+                message: `Mã số thuế "${taxCode}" đã tồn tại trên nhà cung cấp "${existing.name}" (Mã: ${existing.code || 'Chưa có'}).`,
+                duplicateEntity: existing
+            });
+        }
+    }
+
+    // 3. Check Email
+    if (email) {
+        const existing = await prisma.supplier.findFirst({
+            where: {
+                email: { equals: email },
+                ...(excludeId ? { id: { not: excludeId } } : {})
+            },
+            select: { id: true, code: true, name: true, email: true }
+        });
+        if (existing) {
+            duplicates.push({
+                field: 'email',
+                message: `Email "${email}" đã tồn tại trên nhà cung cấp "${existing.name}" (Mã: ${existing.code || 'Chưa có'}).`,
+                duplicateEntity: existing
+            });
+        }
+    }
+
+    // 4. Check Phone (SĐT)
+    if (phone) {
+        const normInputPhone = normalizePhoneNumber(phone);
+        const candidates = await prisma.supplier.findMany({
+            where: {
+                phone: { not: null },
+                ...(excludeId ? { id: { not: excludeId } } : {})
+            },
+            select: { id: true, code: true, name: true, phone: true }
+        });
+
+        const matching = candidates.find(s => {
+            if (!s.phone) return false;
+            if (s.phone.trim() === phone) return true;
+            if (normInputPhone && normalizePhoneNumber(s.phone) === normInputPhone) return true;
+            return false;
+        });
+
+        if (matching) {
+            duplicates.push({
+                field: 'phone',
+                message: `Số điện thoại "${phone}" đã tồn tại trên nhà cung cấp "${matching.name}" (Mã: ${matching.code || 'Chưa có'}).`,
+                duplicateEntity: matching
+            });
+        }
+    }
+
+    return {
+        hasDuplicate: duplicates.length > 0,
+        duplicates
+    };
 }
 
 export async function createSupplier(data: any) {
@@ -113,6 +220,19 @@ export async function createSupplier(data: any) {
     if (!code) {
         const count = await prisma.supplier.count();
         code = `NCC-${(count + 1).toString().padStart(4, '0')}`;
+    }
+
+    // Strict duplicate check before creating
+    const dupCheck = await checkSupplierDuplicate({
+        code,
+        taxCode: data.taxCode,
+        email: data.email,
+        phone: data.phone
+    });
+
+    if (dupCheck.hasDuplicate) {
+        const msg = dupCheck.duplicates.map(d => `• ${d.message}`).join('\n');
+        throw new Error(`CẢNH BÁO TRÙNG LẶP THÔNG TIN:\n${msg}\n\nHệ thống không cho phép tạo nhà cung cấp bị trùng lặp MST, Email hoặc SĐT!`);
     }
 
     const creditLimit = typeof data.creditLimit === 'number' ? data.creditLimit : (data.creditLimit ? parseFloat(data.creditLimit) : 0);
@@ -148,6 +268,19 @@ export async function createSupplier(data: any) {
 
 export async function updateSupplier(id: string, data: any) {
     await verifyActionPermission('SUPPLIERS_EDIT_ALL');
+
+    // Strict duplicate check before updating
+    const dupCheck = await checkSupplierDuplicate({
+        code: data.code,
+        taxCode: data.taxCode,
+        email: data.email,
+        phone: data.phone
+    }, id);
+
+    if (dupCheck.hasDuplicate) {
+        const msg = dupCheck.duplicates.map(d => `• ${d.message}`).join('\n');
+        throw new Error(`CẢNH BÁO TRÙNG LẶP THÔNG TIN:\n${msg}\n\nHệ thống không cho phép lưu nhà cung cấp bị trùng lặp MST, Email hoặc SĐT!`);
+    }
 
     const creditLimit = typeof data.creditLimit === 'number' ? data.creditLimit : (data.creditLimit ? parseFloat(data.creditLimit) : 0);
 

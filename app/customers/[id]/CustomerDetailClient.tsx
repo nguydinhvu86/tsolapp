@@ -20,7 +20,7 @@ import { useSession } from 'next-auth/react';
 import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
 import { Modal } from '@/app/components/ui/Modal';
 import { Input } from '@/app/components/ui/Input';
-import { sendDebtConfirmationEmail, saveCustomerMenuOrder, updateCustomer, lookupCustomerTaxCode } from '../actions';
+import { sendDebtConfirmationEmail, saveCustomerMenuOrder, updateCustomer, lookupCustomerTaxCode, checkCustomerDuplicate } from '../actions';
 import { updateCustomerPassword } from './actions';
 import { EmailLogTable } from '@/app/components/ui/EmailLogTable';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
@@ -78,6 +78,37 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
     const [newPassword, setNewPassword] = useState('');
     const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
+    const [duplicateWarnings, setDuplicateWarnings] = useState<{ field: string; message: string; duplicateEntity?: any }[]>([]);
+
+    React.useEffect(() => {
+        if (!isEditModalOpen) {
+            setDuplicateWarnings([]);
+            return;
+        }
+        const timer = setTimeout(async () => {
+            if (!editFormData.taxCode?.trim() && !editFormData.email?.trim() && !editFormData.phone?.trim() && !editFormData.code?.trim()) {
+                setDuplicateWarnings([]);
+                return;
+            }
+            try {
+                const res = await checkCustomerDuplicate({
+                    code: editFormData.code,
+                    taxCode: editFormData.taxCode,
+                    email: editFormData.email,
+                    phone: editFormData.phone
+                }, customer.id);
+                if (res.hasDuplicate) {
+                    setDuplicateWarnings(res.duplicates);
+                } else {
+                    setDuplicateWarnings([]);
+                }
+            } catch (e) {
+                // ignore
+            }
+        }, 350);
+
+        return () => clearTimeout(timer);
+    }, [editFormData.taxCode, editFormData.email, editFormData.phone, editFormData.code, isEditModalOpen, customer.id]);
 
     const handleTaxLookup = async () => {
         if (!editFormData.taxCode?.trim()) {
@@ -123,6 +154,10 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
 
     const handleEditSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (duplicateWarnings.length > 0) {
+            alert(`CẢNH BÁO TRÙNG LẶP DỮ LIỆU:\n\n${duplicateWarnings.map(w => `• ${w.message}`).join('\n')}\n\nVui lòng kiểm tra lại trước khi lưu.`);
+            return;
+        }
         setIsSubmittingEdit(true);
         try {
             await updateCustomer(customer.id, editFormData);
@@ -883,6 +918,20 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                     <span>{taxLookupMessage.text}</span>
                                 </div>
                             )}
+
+                            {duplicateWarnings.length > 0 && (
+                                <div className="mt-2.5 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs flex flex-col gap-1.5 shadow-2xs animate-pulse">
+                                    <div className="font-bold flex items-center gap-1.5 text-rose-900">
+                                        <AlertCircle size={15} className="shrink-0 text-rose-600" />
+                                        <span>PHÁT HIỆN TRÙNG LẶP DỮ LIỆU ({duplicateWarnings.length})</span>
+                                    </div>
+                                    {duplicateWarnings.map((w, idx) => (
+                                        <div key={idx} className="text-rose-700 font-medium pl-5">
+                                            • {w.message}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         {/* Tabs Header */}
@@ -931,23 +980,29 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                 <div className="space-y-4">
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                         <div>
-                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Mã Khách Hàng</label>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">
+                                                Mã Khách Hàng
+                                                {duplicateWarnings.some(w => w.field === 'code') && <span className="text-rose-600 ml-1 font-bold lowercase">(trùng)</span>}
+                                            </label>
                                             <input
                                                 type="text"
                                                 value={editFormData.code || ''}
                                                 onChange={e => setEditFormData({ ...editFormData, code: e.target.value })}
                                                 placeholder="KH-xxxx"
-                                                className="input w-full font-mono text-sm"
+                                                className={`input w-full font-mono text-sm ${duplicateWarnings.some(w => w.field === 'code') ? 'border-rose-400 bg-rose-50/30' : ''}`}
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Mã Số Thuế</label>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">
+                                                Mã Số Thuế
+                                                {duplicateWarnings.some(w => w.field === 'taxCode') && <span className="text-rose-600 ml-1 font-bold lowercase">(trùng)</span>}
+                                            </label>
                                             <input
                                                 type="text"
                                                 value={editFormData.taxCode || ''}
                                                 onChange={e => setEditFormData({ ...editFormData, taxCode: e.target.value })}
                                                 placeholder="0101248141"
-                                                className="input w-full font-mono text-sm"
+                                                className={`input w-full font-mono text-sm ${duplicateWarnings.some(w => w.field === 'taxCode') ? 'border-rose-400 bg-rose-50/30' : ''}`}
                                             />
                                         </div>
                                         <div>
@@ -1026,26 +1081,32 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Số Điện Thoại</label>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">
+                                                Số Điện Thoại
+                                                {duplicateWarnings.some(w => w.field === 'phone') && <span className="text-rose-600 ml-1 font-bold lowercase">(trùng)</span>}
+                                            </label>
                                             <input
                                                 type="text"
                                                 value={editFormData.phone || ''}
                                                 onChange={e => setEditFormData({ ...editFormData, phone: e.target.value })}
                                                 placeholder="0987xxxxxx"
-                                                className="input w-full text-sm"
+                                                className={`input w-full text-sm ${duplicateWarnings.some(w => w.field === 'phone') ? 'border-rose-400 bg-rose-50/30' : ''}`}
                                             />
                                         </div>
                                     </div>
 
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Email</label>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">
+                                                Email
+                                                {duplicateWarnings.some(w => w.field === 'email') && <span className="text-rose-600 ml-1 font-bold lowercase">(trùng)</span>}
+                                            </label>
                                             <input
                                                 type="email"
                                                 value={editFormData.email || ''}
                                                 onChange={e => setEditFormData({ ...editFormData, email: e.target.value })}
                                                 placeholder="email@company.com"
-                                                className="input w-full text-sm"
+                                                className={`input w-full text-sm ${duplicateWarnings.some(w => w.field === 'email') ? 'border-rose-400 bg-rose-50/30' : ''}`}
                                             />
                                         </div>
                                         <div>

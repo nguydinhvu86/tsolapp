@@ -70,6 +70,113 @@ export type CustomerInputData = {
     internalNotes?: string | null;
 };
 
+function normalizePhoneNumber(phone?: string | null): string {
+    if (!phone) return '';
+    let digits = phone.replace(/\D/g, '');
+    if (digits.startsWith('84') && digits.length >= 10) {
+        digits = '0' + digits.slice(2);
+    }
+    return digits;
+}
+
+export async function checkCustomerDuplicate(
+    data: { taxCode?: string | null; email?: string | null; phone?: string | null; code?: string | null },
+    excludeId?: string
+) {
+    const taxCode = data.taxCode?.trim();
+    const email = data.email?.trim()?.toLowerCase();
+    const phone = data.phone?.trim();
+    const code = data.code?.trim();
+
+    const duplicates: { field: string; message: string; duplicateEntity?: any }[] = [];
+
+    // 1. Check Code
+    if (code) {
+        const existing = await prisma.customer.findFirst({
+            where: {
+                code: { equals: code },
+                ...(excludeId ? { id: { not: excludeId } } : {})
+            },
+            select: { id: true, code: true, name: true }
+        });
+        if (existing) {
+            duplicates.push({
+                field: 'code',
+                message: `Mã khách hàng "${code}" đã tồn tại trên khách hàng "${existing.name}".`,
+                duplicateEntity: existing
+            });
+        }
+    }
+
+    // 2. Check Tax Code (MST)
+    if (taxCode) {
+        const existing = await prisma.customer.findFirst({
+            where: {
+                taxCode: { equals: taxCode },
+                ...(excludeId ? { id: { not: excludeId } } : {})
+            },
+            select: { id: true, code: true, name: true, taxCode: true }
+        });
+        if (existing) {
+            duplicates.push({
+                field: 'taxCode',
+                message: `Mã số thuế "${taxCode}" đã tồn tại trên khách hàng "${existing.name}" (Mã: ${existing.code || 'Chưa có'}).`,
+                duplicateEntity: existing
+            });
+        }
+    }
+
+    // 3. Check Email
+    if (email) {
+        const existing = await prisma.customer.findFirst({
+            where: {
+                email: { equals: email },
+                ...(excludeId ? { id: { not: excludeId } } : {})
+            },
+            select: { id: true, code: true, name: true, email: true }
+        });
+        if (existing) {
+            duplicates.push({
+                field: 'email',
+                message: `Email "${email}" đã tồn tại trên khách hàng "${existing.name}" (Mã: ${existing.code || 'Chưa có'}).`,
+                duplicateEntity: existing
+            });
+        }
+    }
+
+    // 4. Check Phone (SĐT)
+    if (phone) {
+        const normInputPhone = normalizePhoneNumber(phone);
+        const candidates = await prisma.customer.findMany({
+            where: {
+                phone: { not: null },
+                ...(excludeId ? { id: { not: excludeId } } : {})
+            },
+            select: { id: true, code: true, name: true, phone: true }
+        });
+
+        const matching = candidates.find(c => {
+            if (!c.phone) return false;
+            if (c.phone.trim() === phone) return true;
+            if (normInputPhone && normalizePhoneNumber(c.phone) === normInputPhone) return true;
+            return false;
+        });
+
+        if (matching) {
+            duplicates.push({
+                field: 'phone',
+                message: `Số điện thoại "${phone}" đã tồn tại trên khách hàng "${matching.name}" (Mã: ${matching.code || 'Chưa có'}).`,
+                duplicateEntity: matching
+            });
+        }
+    }
+
+    return {
+        hasDuplicate: duplicates.length > 0,
+        duplicates
+    };
+}
+
 export async function createCustomer(data: CustomerInputData) {
     await verifyActionPermission('CUSTOMERS_CREATE');
     const validatedData = customerSchema.parse(data);
@@ -82,6 +189,19 @@ export async function createCustomer(data: CustomerInputData) {
 
     const email = validatedData.email?.trim() || null;
     const creditLimit = typeof validatedData.creditLimit === 'number' ? validatedData.creditLimit : 0;
+
+    // Strict duplicate check before creating
+    const dupCheck = await checkCustomerDuplicate({
+        code,
+        taxCode: validatedData.taxCode,
+        email: validatedData.email,
+        phone: validatedData.phone
+    });
+
+    if (dupCheck.hasDuplicate) {
+        const msg = dupCheck.duplicates.map(d => `• ${d.message}`).join('\n');
+        throw new Error(`CẢNH BÁO TRÙNG LẶP THÔNG TIN:\n${msg}\n\nHệ thống không cho phép tạo khách hàng bị trùng lặp MST, Email hoặc SĐT!`);
+    }
 
     try {
         const customer = await prisma.customer.create({
@@ -143,6 +263,19 @@ export async function updateCustomer(id: string, data: CustomerInputData) {
     const validatedData = customerSchema.parse(data);
     const email = validatedData.email?.trim() || null;
     const creditLimit = typeof validatedData.creditLimit === 'number' ? validatedData.creditLimit : 0;
+
+    // Strict duplicate check before updating
+    const dupCheck = await checkCustomerDuplicate({
+        code: validatedData.code,
+        taxCode: validatedData.taxCode,
+        email: validatedData.email,
+        phone: validatedData.phone
+    }, id);
+
+    if (dupCheck.hasDuplicate) {
+        const msg = dupCheck.duplicates.map(d => `• ${d.message}`).join('\n');
+        throw new Error(`CẢNH BÁO TRÙNG LẶP THÔNG TIN:\n${msg}\n\nHệ thống không cho phép lưu thông tin bị trùng lặp MST, Email hoặc SĐT!`);
+    }
 
     try {
         const customer = await prisma.customer.update({
