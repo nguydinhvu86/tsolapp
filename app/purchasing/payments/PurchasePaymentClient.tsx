@@ -3,7 +3,7 @@ import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Search, Eye, Trash2, Calendar, DollarSign, Wallet, ArrowUpDown, Upload, CheckCircle2 } from 'lucide-react';
+import { Plus, Search, Eye, Trash2, Calendar, DollarSign, Wallet, ArrowUpDown, Upload, CheckCircle2, CreditCard, Banknote, X, FileText, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { createPurchasePayment, deletePurchasePayment } from '@/app/purchasing/actions';
@@ -16,6 +16,7 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
     const { t } = useTranslation();
     const [payments, setPayments] = useState(initialPayments);
     const [searchQuery, setSearchQuery] = useState('');
+    const [methodFilter, setMethodFilter] = useState<'ALL' | 'BANK_TRANSFER' | 'CASH'>('ALL');
 
     // Sort logic
     const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>({ key: 'date', direction: 'desc' });
@@ -82,11 +83,13 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchParams]);
 
-    const filteredPayments = payments.filter(p =>
-        (p.code && p.code.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (p.reference && p.reference.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (p.supplier && p.supplier.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+    const filteredPayments = payments.filter(p => {
+        const matchesSearch = (p.code && p.code.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (p.reference && p.reference.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (p.supplier && p.supplier.name.toLowerCase().includes(searchQuery.toLowerCase()));
+        const matchesMethod = methodFilter === 'ALL' || p.paymentMethod === methodFilter;
+        return matchesSearch && matchesMethod;
+    });
 
     const sortedPayments = React.useMemo(() => {
         let sortableItems = [...filteredPayments];
@@ -124,7 +127,7 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
         setSortConfig({ key, direction });
     };
 
-    const { paginatedItems, paginationProps } = usePagination(sortedPayments);
+    const { paginatedItems, paginationProps } = usePagination(sortedPayments, 15);
 
     // Supplier's unpaid bills
     const supplierBills = useMemo(() => {
@@ -251,9 +254,6 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
             setPayments([newPaymentUi, ...payments]);
             setIsCreateModalOpen(false);
 
-            // Note: In a real SPA, we'd also update the unpaidBills list in memory here,
-            // or rely on a full page reload / Server Action revalidation.
-            // Next.js revalidatePath will handle the fresh data on next visit anyway.
             router.refresh();
         } catch (error: any) {
             console.error(error);
@@ -262,122 +262,290 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
         }
     };
 
+    const bankPayments = payments.filter(p => p.paymentMethod === 'BANK_TRANSFER');
+    const cashPayments = payments.filter(p => p.paymentMethod === 'CASH');
+    const totalPaidAmount = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const bankAmount = bankPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const cashAmount = cashPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+
     return (
-        <div className="p-4 md:p-8">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div className="flex flex-col gap-4">
+            {/* Top Page Tech Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/80">
                 <div>
-                    <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">{t('purchasePayments.title')}</h1>
-                    <p className="text-sm text-gray-500">{t('purchasePayments.description')}</p>
+                    <div className="flex items-center gap-2 mb-1">
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-2xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            CHUỖI CUNG ỨNG &amp; MUA HÀNG
+                        </span>
+                        <span className="text-[11px] font-semibold text-slate-400">|</span>
+                        <span className="text-[11px] font-medium text-slate-500">{t('purchasePayments.description')}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">{t('purchasePayments.title')}</h1>
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs">
+                            {payments.length}
+                        </span>
+                    </div>
                 </div>
-                <button onClick={handleOpenCreate} className="btn btn-primary flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition">
-                    <Plus size={18} />
-                    <span>{t('purchasePayments.createPayment')}</span>
-                </button>
-            </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center mb-6">
-                <div className="relative w-full md:max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                    <input
-                        type="text"
-                        placeholder={t('purchasePayments.searchPlaceholder')}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    />
-                </div>
-                <div className="flex gap-3 w-full md:w-auto overflow-x-auto hide-scrollbar pb-1 md:pb-0">
-                    <div className="bg-blue-50 border border-blue-100 text-blue-800 px-4 py-3 rounded-lg flex-1 md:flex-none min-w-[140px]">
-                        <div className="text-[10px] font-bold mb-1 uppercase tracking-wider text-blue-600">{t('purchasePayments.totalPayments')}</div>
-                        <div className="text-xl font-bold">{payments.length}</div>
-                    </div>
-                    <div className="bg-emerald-50 border border-emerald-100 text-emerald-800 px-4 py-3 rounded-lg flex-1 md:flex-none min-w-[150px]">
-                        <div className="text-[10px] font-bold mb-1 uppercase tracking-wider text-emerald-600">{t('purchasePayments.totalPaidAmount')}</div>
-                        <div className="text-xl font-bold">
-                            {formatMoney(payments.reduce((sum, p) => sum + (p.amount || 0), 0))}
-                        </div>
-                    </div>
+                <div className="flex items-center gap-2.5 shrink-0">
+                    <button
+                        onClick={handleOpenCreate}
+                        className="btn btn-primary gap-2 h-[34px] px-3.5 text-xs font-bold rounded-lg shadow-sm inline-flex items-center"
+                    >
+                        <Plus size={15} className="stroke-[2.5]" />
+                        <span>{t('purchasePayments.createPayment')}</span>
+                    </button>
                 </div>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto">
-                <table className="w-full text-left whitespace-nowrap">
-                    <thead>
-                        <tr>
-                            <th onClick={() => requestSort('code')} className="cursor-pointer hover:bg-gray-100">
-                                <div className="flex items-center gap-1">{t('purchasePayments.colTxnCode')} <ArrowUpDown size={14} className="text-gray-400" /></div>
-                            </th>
-                            <th onClick={() => requestSort('date')} className="cursor-pointer hover:bg-gray-100">
-                                <div className="flex items-center gap-1">{t('purchasePayments.colDateSupplier')} <ArrowUpDown size={14} className="text-gray-400" /></div>
-                            </th>
-                            <th onClick={() => requestSort('paymentMethod')} className="cursor-pointer hover:bg-gray-100">
-                                <div className="flex items-center gap-1">{t('purchasePayments.colMethod')} <ArrowUpDown size={14} className="text-gray-400" /></div>
-                            </th>
-                            <th onClick={() => requestSort('amount')} className="cursor-pointer hover:bg-gray-100 text-right">
-                                <div className="flex items-center justify-end gap-1">{t('purchasePayments.colAmount')} <ArrowUpDown size={14} className="text-gray-400" /></div>
-                            </th>
-                            <th className="text-center">{t('purchasePayments.colActions')}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {paginatedItems.length === 0 ? (
-                            <tr>
-                                <td colSpan={5} className="p-8 text-center text-gray-500">
-                                    {t('purchasePayments.noPaymentsFound')}
-                                </td>
+            {/* Quick KPI Stats Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {/* 1. Tổng lượt thanh toán */}
+                <div
+                    onClick={() => setMethodFilter('ALL')}
+                    className={`rounded-xl p-3 bg-white border transition-all cursor-pointer shadow-2xs select-none ${
+                        methodFilter === 'ALL'
+                            ? 'border-emerald-500 bg-emerald-50/20 ring-2 ring-emerald-500/20 shadow-xs'
+                            : 'border-slate-200/90 hover:border-slate-300 hover:bg-slate-50/50'
+                    }`}
+                >
+                    <div className="flex items-center justify-between gap-1 mb-1.5">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{t('purchasePayments.totalPayments')}</span>
+                        <Wallet size={14} className="text-slate-400" />
+                    </div>
+                    <div className="text-lg sm:text-xl font-extrabold font-mono text-slate-900 tracking-tight">{payments.length}</div>
+                    <div className="text-[11px] font-medium text-slate-500 mt-0.5">Phiếu chi NCC hệ thống</div>
+                </div>
+
+                {/* 2. Tổng tiền đã chi */}
+                <div className="rounded-xl p-3 bg-white border border-emerald-200/90 bg-gradient-to-br from-emerald-50/30 via-white to-white shadow-2xs">
+                    <div className="flex items-center justify-between gap-1 mb-1.5">
+                        <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">{t('purchasePayments.totalPaidAmount')}</span>
+                        <DollarSign size={14} className="text-emerald-600" />
+                    </div>
+                    <div className="text-lg sm:text-xl font-extrabold font-mono text-emerald-700 tracking-tight truncate" title={formatMoney(totalPaidAmount)}>
+                        {formatMoney(totalPaidAmount)}
+                    </div>
+                    <div className="text-[11px] font-medium text-emerald-600 mt-0.5">Đã giải ngân cho NCC</div>
+                </div>
+
+                {/* 3. Chuyển khoản */}
+                <div
+                    onClick={() => setMethodFilter('BANK_TRANSFER')}
+                    className={`rounded-xl p-3 bg-white border transition-all cursor-pointer shadow-2xs select-none ${
+                        methodFilter === 'BANK_TRANSFER'
+                            ? 'border-blue-500 bg-blue-50/30 ring-2 ring-blue-500/20 shadow-xs'
+                            : 'border-slate-200/90 hover:border-blue-200 hover:bg-blue-50/20'
+                    }`}
+                >
+                    <div className="flex items-center justify-between gap-1 mb-1.5">
+                        <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">CHUYỂN KHOẢN (BANK)</span>
+                        <CreditCard size={14} className="text-blue-500" />
+                    </div>
+                    <div className="text-lg sm:text-xl font-extrabold font-mono text-blue-700 tracking-tight">{bankPayments.length} <span className="text-xs font-normal text-slate-400 font-sans">lượt</span></div>
+                    <div className="text-[11px] font-bold font-mono text-blue-600 mt-0.5 truncate" title={formatMoney(bankAmount)}>
+                        {formatMoney(bankAmount)}
+                    </div>
+                </div>
+
+                {/* 4. Tiền mặt */}
+                <div
+                    onClick={() => setMethodFilter('CASH')}
+                    className={`rounded-xl p-3 bg-white border transition-all cursor-pointer shadow-2xs select-none ${
+                        methodFilter === 'CASH'
+                            ? 'border-amber-500 bg-amber-50/30 ring-2 ring-amber-500/20 shadow-xs'
+                            : 'border-slate-200/90 hover:border-amber-200 hover:bg-amber-50/20'
+                    }`}
+                >
+                    <div className="flex items-center justify-between gap-1 mb-1.5">
+                        <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">TIỀN MẶT (CASH)</span>
+                        <Banknote size={14} className="text-amber-500" />
+                    </div>
+                    <div className="text-lg sm:text-xl font-extrabold font-mono text-amber-700 tracking-tight">{cashPayments.length} <span className="text-xs font-normal text-slate-400 font-sans">lượt</span></div>
+                    <div className="text-[11px] font-bold font-mono text-amber-600 mt-0.5 truncate" title={formatMoney(cashAmount)}>
+                        {formatMoney(cashAmount)}
+                    </div>
+                </div>
+            </div>
+
+            {/* Main Data Container */}
+            <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs overflow-hidden">
+                {/* Search & Actions Toolbar */}
+                <div className="p-3 border-b border-slate-200/80 bg-slate-50/50 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                    <div className="relative w-full sm:w-[320px]">
+                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        <input
+                            type="text"
+                            placeholder={t('purchasePayments.searchPlaceholder')}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full h-[34px] pl-9 pr-8 text-xs bg-white border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-2xs"
+                        />
+                        {searchQuery && (
+                            <button
+                                type="button"
+                                onClick={() => setSearchQuery('')}
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
+                            >
+                                <X size={13} />
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        {methodFilter !== 'ALL' && (
+                            <button
+                                onClick={() => setMethodFilter('ALL')}
+                                className="text-[11px] font-medium text-emerald-600 hover:text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200 transition-colors flex items-center gap-1 cursor-pointer"
+                            >
+                                <span>Hình thức: {methodFilter === 'BANK_TRANSFER' ? 'Chuyển khoản' : 'Tiền mặt'}</span>
+                                <X size={11} />
+                            </button>
+                        )}
+                        <span className="text-[11px] font-semibold text-slate-500 bg-white px-2.5 py-1 rounded-md border border-slate-200 shadow-2xs">
+                            Hiển thị <span className="text-slate-900 font-bold">{sortedPayments.length}</span> / {payments.length} thanh toán
+                        </span>
+                    </div>
+                </div>
+
+                {/* High Density Table */}
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="border-b border-slate-200/90 bg-slate-100/70">
+                                <th onClick={() => requestSort('code')} className="cursor-pointer select-none py-2.5 px-3 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[120px] hover:bg-slate-200/50 transition-colors">
+                                    <div className="flex items-center gap-1">
+                                        {t('purchasePayments.colTxnCode')}
+                                        <ArrowUpDown size={11} className="opacity-40" />
+                                    </div>
+                                </th>
+                                <th onClick={() => requestSort('date')} className="cursor-pointer select-none py-2.5 px-3 text-[11px] font-bold text-slate-600 uppercase tracking-wider hover:bg-slate-200/50 transition-colors">
+                                    <div className="flex items-center gap-1">
+                                        {t('purchasePayments.colDateSupplier')}
+                                        <ArrowUpDown size={11} className="opacity-40" />
+                                    </div>
+                                </th>
+                                <th onClick={() => requestSort('paymentMethod')} className="cursor-pointer select-none py-2.5 px-3 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[180px] hover:bg-slate-200/50 transition-colors">
+                                    <div className="flex items-center gap-1">
+                                        {t('purchasePayments.colMethod')}
+                                        <ArrowUpDown size={11} className="opacity-40" />
+                                    </div>
+                                </th>
+                                <th onClick={() => requestSort('amount')} className="cursor-pointer select-none py-2.5 px-3 text-right text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[160px] hover:bg-slate-200/50 transition-colors">
+                                    <div className="flex items-center justify-end gap-1">
+                                        {t('purchasePayments.colAmount')}
+                                        <ArrowUpDown size={11} className="opacity-40" />
+                                    </div>
+                                </th>
+                                <th className="py-2.5 px-3 text-right text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[85px]">
+                                    {t('purchasePayments.colActions')}
+                                </th>
                             </tr>
-                        ) : (
-                            paginatedItems.map((payment) => (
-                                <tr key={payment.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                                    <td className="p-4 text-sm font-bold text-gray-900 dark:text-gray-100">
-                                        <Link href={`/purchasing/payments/${payment.id}`} className="hover:text-primary hover:underline">
-                                            {payment.code}
-                                        </Link>
-                                    </td>
-                                    <td className="p-4">
-                                        <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-1">
-                                            <Calendar size={13} /> {formatDate(payment.date)}
-                                        </div>
-                                        <Link href={`/suppliers/${payment.supplierId}`} className="font-semibold text-primary hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">
-                                            {payment.supplier?.name}
-                                        </Link>
-                                    </td>
-                                    <td className="p-4 text-sm text-gray-600 dark:text-gray-300">
-                                        {payment.paymentMethod === 'CASH' ? t('purchasePayments.methodCash') : t('purchasePayments.methodBank')}
-                                        {payment.reference && <div className="text-xs text-gray-500 mt-1">{t('purchasePayments.refPrefix')} {payment.reference}</div>}
-                                    </td>
-                                    <td className="p-4 text-right">
-                                        <span className="font-semibold text-green-600 dark:text-green-400">
-                                            {formatMoney(payment.amount)}
-                                        </span>
-                                        <div className="text-xs text-gray-500 mt-1">
-                                            {t('purchasePayments.allocatedPrefix')} {formatMoney(payment.allocations?.reduce((sum: number, a: any) => sum + a.amount, 0) || 0)}
-                                        </div>
-                                    </td>
-                                    <td className="p-4 text-center">
-                                        <div className="flex items-center justify-center gap-2">
-                                            <Link
-                                                href={`/purchasing/payments/${payment.id}`}
-                                                className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded inline-block"
-                                                title={t('purchasePayments.viewTooltip')}
-                                            >
-                                                <Eye size={18} />
-                                            </Link>
-                                            <button
-                                                onClick={() => handleDelete(payment.id, payment.code)}
-                                                className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded inline-block"
-                                                title={t('purchasePayments.deleteTooltip')}
-                                            >
-                                                <Trash2 size={18} />
-                                            </button>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {paginatedItems.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="py-12 text-center text-slate-400">
+                                        <div className="flex flex-col items-center justify-center gap-2">
+                                            <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                                                <Search size={16} />
+                                            </div>
+                                            <p className="text-xs font-semibold text-slate-600">{t('purchasePayments.noPaymentsFound')}</p>
+                                            <p className="text-[11px] text-slate-400">Không có giao dịch thanh toán nào phù hợp với bộ lọc.</p>
                                         </div>
                                     </td>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-                <Pagination {...paginationProps} />
+                            ) : (
+                                paginatedItems.map((payment) => (
+                                    <tr key={payment.id} className="hover:bg-slate-50/80 transition-colors group">
+                                        <td className="py-2 px-3 align-middle">
+                                            <Link
+                                                href={`/purchasing/payments/${payment.id}`}
+                                                className="font-mono text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/80 hover:bg-emerald-100 hover:text-emerald-800 transition-colors inline-block shadow-2xs"
+                                            >
+                                                {payment.code}
+                                            </Link>
+                                        </td>
+                                        <td className="py-2 px-3 align-middle">
+                                            <div className="flex flex-col min-w-0">
+                                                <Link
+                                                    href={`/suppliers/${payment.supplierId}`}
+                                                    className="font-semibold text-xs text-slate-900 hover:text-emerald-700 transition-colors block truncate max-w-[280px] sm:max-w-[360px]"
+                                                    title={payment.supplier?.name}
+                                                >
+                                                    {payment.supplier?.name || '—'}
+                                                </Link>
+                                                <div className="flex items-center gap-2 mt-0.5 text-[10.5px] text-slate-400">
+                                                    <span className="flex items-center gap-1 font-mono">
+                                                        <Calendar size={10.5} className="text-slate-400" />
+                                                        {formatDate(payment.date)}
+                                                    </span>
+                                                    {payment.allocations && payment.allocations.length > 0 && (
+                                                        <span className="text-slate-500 font-medium truncate max-w-[200px]">
+                                                            • Đã phân bổ {payment.allocations.length} hóa đơn
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="py-2 px-3 align-middle">
+                                            <div className="flex flex-col">
+                                                <span className={`inline-flex items-center gap-1 text-[11px] font-semibold w-fit px-2 py-0.5 rounded-full ${
+                                                    payment.paymentMethod === 'BANK_TRANSFER'
+                                                        ? 'bg-blue-50 text-blue-700 border border-blue-200/80'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200/80'
+                                                }`}>
+                                                    {payment.paymentMethod === 'BANK_TRANSFER' ? <CreditCard size={11} /> : <Banknote size={11} />}
+                                                    <span>{payment.paymentMethod === 'BANK_TRANSFER' ? t('purchasePayments.methodBank') : t('purchasePayments.methodCash')}</span>
+                                                </span>
+                                                {payment.reference && (
+                                                    <span className="text-[10.5px] font-mono text-slate-500 mt-0.5 truncate max-w-[170px]" title={payment.reference}>
+                                                        Ref: {payment.reference}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="py-2 px-3 align-middle text-right">
+                                            <div className="flex flex-col items-end">
+                                                <span className="font-mono text-xs font-bold text-slate-900">
+                                                    {formatMoney(payment.amount || 0)}
+                                                </span>
+                                                <span className="text-[10.5px] font-mono text-emerald-600 mt-0.5">
+                                                    Đã PB: {formatMoney(payment.allocations?.reduce((sum: number, a: any) => sum + (a.amount || 0), 0) || 0)}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="py-2 px-3 align-middle text-right">
+                                            <div className="flex items-center justify-end gap-1 opacity-90 group-hover:opacity-100 transition-opacity">
+                                                <Link
+                                                    href={`/purchasing/payments/${payment.id}`}
+                                                    className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-blue-600 transition-colors"
+                                                    title={t('purchasePayments.viewTooltip')}
+                                                >
+                                                    <Eye size={14} />
+                                                </Link>
+                                                <button
+                                                    onClick={() => handleDelete(payment.id, payment.code)}
+                                                    className="w-7 h-7 rounded-lg flex items-center justify-center text-rose-500 hover:bg-rose-50 hover:text-rose-600 transition-colors cursor-pointer"
+                                                    title={t('purchasePayments.deleteTooltip')}
+                                                >
+                                                    <Trash2 size={13.5} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Pagination */}
+                <div className="p-3 border-t border-slate-200/80 bg-slate-50/50">
+                    <Pagination {...paginationProps} />
+                </div>
             </div>
 
             {/* View Payment Modal */}
