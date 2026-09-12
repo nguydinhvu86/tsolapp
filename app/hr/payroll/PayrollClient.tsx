@@ -453,6 +453,20 @@ export default function PayrollClient({ initialData, currentMonth, currentYear, 
             {/* CSS In Ấn Định Dạng Chuẩn Doanh Nghiệp */}
             <style jsx global>{`
                 @media print {
+                    @page {
+                        size: A4 portrait;
+                        margin: 10mm 15mm;
+                    }
+                    html, body {
+                        background: #fff !important;
+                        color: #000 !important;
+                        height: auto !important;
+                        min-height: auto !important;
+                        overflow: visible !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        width: 100% !important;
+                    }
                     body * {
                         visibility: hidden !important;
                     }
@@ -464,12 +478,19 @@ export default function PayrollClient({ initialData, currentMonth, currentYear, 
                         left: 0 !important;
                         top: 0 !important;
                         width: 100% !important;
+                        max-width: 100% !important;
                         background: white !important;
-                        padding: 30px !important;
+                        padding: 0 !important;
+                        margin: 0 !important;
+                        border: none !important;
+                        box-shadow: none !important;
+                        border-radius: 0 !important;
                         box-sizing: border-box !important;
                     }
-                    .no-print {
+                    .no-print,
+                    .print\\:hidden {
                         display: none !important;
+                        visibility: hidden !important;
                     }
                 }
             `}</style>

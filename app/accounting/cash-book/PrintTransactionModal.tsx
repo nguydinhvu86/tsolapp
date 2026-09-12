@@ -51,11 +51,81 @@ export default function PrintTransactionModal({ transaction, companyInfo, onClos
 
     return (
         <div 
-            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md overflow-y-auto"
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md overflow-y-auto print-voucher-overlay"
             onClick={(e) => {
                 if (e.target === e.currentTarget) onClose();
             }}
         >
+            <style jsx global>{`
+                @media print {
+                    @page {
+                        size: A4 portrait;
+                        margin: 10mm 15mm;
+                    }
+                    html, body {
+                        background: #fff !important;
+                        color: #000 !important;
+                        height: auto !important;
+                        min-height: auto !important;
+                        overflow: visible !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        width: 100% !important;
+                    }
+                    /* Ẩn toàn bộ thành phần nền */
+                    body * {
+                        visibility: hidden !important;
+                    }
+                    /* Chỉ hiển thị khu vực in của modal */
+                    .print-voucher-overlay,
+                    .print-voucher-overlay * {
+                        visibility: visible !important;
+                    }
+                    .print-voucher-overlay {
+                        position: absolute !important;
+                        left: 0 !important;
+                        top: 0 !important;
+                        width: 100% !important;
+                        height: auto !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        background: transparent !important;
+                        backdrop-filter: none !important;
+                        display: block !important;
+                        overflow: visible !important;
+                        z-index: 999999 !important;
+                    }
+                    .print-voucher-paper {
+                        position: static !important;
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        border: none !important;
+                        box-shadow: none !important;
+                        border-radius: 0 !important;
+                        background: transparent !important;
+                    }
+                    .no-print,
+                    .print\\:hidden {
+                        display: none !important;
+                        visibility: hidden !important;
+                    }
+                    table {
+                        width: 100% !important;
+                        border-collapse: collapse !important;
+                        page-break-inside: auto !important;
+                    }
+                    tr {
+                        page-break-inside: avoid !important;
+                        page-break-after: auto !important;
+                    }
+                    thead {
+                        display: table-header-group !important;
+                    }
+                }
+            `}</style>
+
             {/* Top Action Bar (Fixed on Screen, Hidden during Print) */}
             <div className="fixed top-4 right-4 sm:right-8 z-50 flex items-center gap-2.5 print:hidden">
                 <button
@@ -76,7 +146,7 @@ export default function PrintTransactionModal({ transaction, companyInfo, onClos
             </div>
 
             {/* Printable Paper */}
-            <div className="bg-white text-slate-900 w-full max-w-3xl p-8 sm:p-12 rounded-2xl shadow-2xl my-8 font-sans border border-slate-200 print:p-0 print:m-0 print:shadow-none print:max-w-none print:w-full print:rounded-none print:border-none">
+            <div className="bg-white text-slate-900 w-full max-w-3xl p-8 sm:p-12 rounded-2xl shadow-2xl my-8 font-sans border border-slate-200 print-voucher-paper">
                 {/* Header Unit Info */}
                 <div className="flex justify-between items-start border-b-2 border-slate-800 pb-4 mb-6">
                     <div className="space-y-1 max-w-lg">
