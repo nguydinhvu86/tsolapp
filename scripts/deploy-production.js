@@ -19,7 +19,6 @@ conn.on('ready', () => {
         `npx prisma generate && ` +
         `node scripts/safe-apply-db.js && ` +
         `(npx prisma migrate deploy 2>/dev/null || true) && ` +
-        `rm -rf .next && ` +
         `npm run build && ` +
         `/www/server/nodejs/v14.17.6/bin/pm2 restart inside.tsol.vn`;
 
