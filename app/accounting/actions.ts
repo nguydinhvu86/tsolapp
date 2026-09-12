@@ -88,7 +88,7 @@ export async function getFinancialOverviewData(year: number = new Date().getFull
 
     // 4. Accounts Receivable (AR) from Sales Invoices
     const salesInvoices = await prisma.salesInvoice.findMany({
-        where: { status: { not: 'CANCELLED' } },
+        where: { status: { notIn: ['CANCELLED', 'DRAFT'] } },
         select: {
             id: true,
             totalAmount: true,
@@ -114,7 +114,7 @@ export async function getFinancialOverviewData(year: number = new Date().getFull
 
     // 5. Accounts Payable (AP) from Purchase Bills
     const purchaseBills = await prisma.purchaseBill.findMany({
-        where: { status: { not: 'CANCELLED' } },
+        where: { status: { notIn: ['CANCELLED', 'DRAFT'] } },
         select: {
             id: true,
             totalAmount: true,
@@ -1013,9 +1013,9 @@ export async function getDebtOverviewData(params?: { startDate?: string; endDate
     await getCurrentUser();
     const now = new Date();
 
-    const invoiceWhere: any = { status: { not: 'CANCELLED' } };
+    const invoiceWhere: any = { status: { notIn: ['CANCELLED', 'DRAFT'] } };
     const paymentWhere: any = {};
-    const billWhere: any = { status: { not: 'CANCELLED' } };
+    const billWhere: any = { status: { notIn: ['CANCELLED', 'DRAFT'] } };
     const purchasePaymentWhere: any = {};
 
     if (params?.startDate || params?.endDate) {
@@ -1204,7 +1204,7 @@ export async function getFinancialReportsData(year: number = new Date().getFullY
     const salesInvoices = await prisma.salesInvoice.findMany({
         where: {
             date: { gte: startOfYear, lte: endOfYear },
-            status: { not: 'CANCELLED' }
+            status: { notIn: ['CANCELLED', 'DRAFT'] }
         },
         include: { items: true }
     });
@@ -1216,7 +1216,7 @@ export async function getFinancialReportsData(year: number = new Date().getFullY
     const purchaseBills = await prisma.purchaseBill.findMany({
         where: {
             date: { gte: startOfYear, lte: endOfYear },
-            status: { not: 'CANCELLED' }
+            status: { notIn: ['CANCELLED', 'DRAFT'] }
         },
         include: { items: true }
     });

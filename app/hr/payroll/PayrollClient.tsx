@@ -20,6 +20,7 @@ import {
 import { Modal } from '@/app/components/ui/Modal';
 import { numberToVietnameseWords, formatVND } from '@/lib/vietnameseCurrency';
 import * as XLSX from 'xlsx';
+import PrintPayslipModal from './PrintPayslipModal';
 
 interface EmployeeProfile {
     id: string;
@@ -89,7 +90,6 @@ interface Props {
 
 export default function PayrollClient({ initialData, currentMonth, currentYear, departments, companyInfo }: Props) {
     const router = useRouter();
-    const printRef = useRef<HTMLDivElement>(null);
 
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -435,11 +435,6 @@ export default function PayrollClient({ initialData, currentMonth, currentYear, 
         XLSX.writeFile(workbook, `Bang_Luong_Cong_Ty_Thang_${currentMonth}_${currentYear}.xlsx`);
     };
 
-    // In Phiếu Lương
-    const handleTriggerPrint = () => {
-        window.print();
-    };
-
     // Helper tạo avatar chữ cái
     const getInitials = (name?: string | null) => {
         if (!name) return 'NV';
@@ -450,51 +445,6 @@ export default function PayrollClient({ initialData, currentMonth, currentYear, 
 
     return (
         <div className="space-y-6">
-            {/* CSS In Ấn Định Dạng Chuẩn Doanh Nghiệp */}
-            <style jsx global>{`
-                @media print {
-                    @page {
-                        size: A4 portrait;
-                        margin: 10mm 15mm;
-                    }
-                    html, body {
-                        background: #fff !important;
-                        color: #000 !important;
-                        height: auto !important;
-                        min-height: auto !important;
-                        overflow: visible !important;
-                        margin: 0 !important;
-                        padding: 0 !important;
-                        width: 100% !important;
-                    }
-                    body * {
-                        visibility: hidden !important;
-                    }
-                    #printable-payslip-area, #printable-payslip-area * {
-                        visibility: visible !important;
-                    }
-                    #printable-payslip-area {
-                        position: absolute !important;
-                        left: 0 !important;
-                        top: 0 !important;
-                        width: 100% !important;
-                        max-width: 100% !important;
-                        background: white !important;
-                        padding: 0 !important;
-                        margin: 0 !important;
-                        border: none !important;
-                        box-shadow: none !important;
-                        border-radius: 0 !important;
-                        box-sizing: border-box !important;
-                    }
-                    .no-print,
-                    .print\\:hidden {
-                        display: none !important;
-                        visibility: hidden !important;
-                    }
-                }
-            `}</style>
-
             {/* TOP HEADER & ACTION CONTROLS */}
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-3.5">
@@ -1010,6 +960,7 @@ export default function PayrollClient({ initialData, currentMonth, currentYear, 
                 isOpen={!!editingRecord} 
                 onClose={() => setEditingRecord(null)} 
                 title={`Điều Chỉnh Chi Tiết Lương: ${editingRecord?.user.name || ''}`}
+                maxWidth="700px"
             >
                 {editingRecord && (
                     <form onSubmit={handleSaveEdit} className="p-5 space-y-5 max-h-[80vh] overflow-y-auto">
@@ -1206,14 +1157,14 @@ export default function PayrollClient({ initialData, currentMonth, currentYear, 
                             <button 
                                 type="button" 
                                 onClick={() => setEditingRecord(null)}
-                                className="px-4.5 py-2 text-xs font-bold rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 transition-colors"
+                                className="px-4.5 py-2 text-xs font-bold rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 transition-colors cursor-pointer"
                             >
                                 Đóng
                             </button>
                             <button 
                                 type="submit" 
                                 disabled={loading}
-                                className="px-5 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20 transition-all disabled:opacity-50"
+                                className="px-5 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20 transition-all disabled:opacity-50 cursor-pointer"
                             >
                                 {loading ? 'Đang lưu...' : 'Lưu Thay Đổi & Cập Nhật'}
                             </button>
@@ -1223,237 +1174,15 @@ export default function PayrollClient({ initialData, currentMonth, currentYear, 
             </Modal>
 
             {/* ======================================================== */}
-            {/* MODAL XEM & IN PHIẾU LƯƠNG CÁ NHÂN (PAYSLIP PRINT MODAL) */}
+            {/* MODAL XEM & IN PHIẾU LƯƠNG CÁ NHÂN (PRINT PAYSLIP MODAL) */}
             {/* ======================================================== */}
-            <Modal 
-                isOpen={!!viewingSlipRecord} 
-                onClose={() => setViewingSlipRecord(null)} 
-                title={`Phiếu Lương: ${viewingSlipRecord?.user.name || ''}`}
-            >
-                {viewingSlipRecord && (
-                    <div className="p-4 space-y-4">
-                        {/* Print Actions Bar */}
-                        <div className="flex items-center justify-between bg-slate-50 p-3.5 rounded-xl border border-slate-200 no-print">
-                            <div className="text-xs text-slate-700 font-bold flex items-center gap-1.5">
-                                <Sparkles size={15} className="text-emerald-600" />
-                                <span>Phiếu lương chuẩn mẫu kế toán doanh nghiệp A4/A5</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <button 
-                                    onClick={handleTriggerPrint}
-                                    className="px-4.5 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 shadow-sm cursor-pointer transition-all active:scale-98"
-                                >
-                                    <Printer size={15} /> In Phiếu Lương
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* ================= KHUNG PHIẾU LƯƠNG IN ================= */}
-                        <div 
-                            id="printable-payslip-area" 
-                            ref={printRef}
-                            className="bg-white p-7 rounded-2xl border border-slate-300 text-slate-900 font-sans shadow-sm"
-                        >
-                            {/* Header Công Ty */}
-                            <div className="border-b-2 border-slate-900 pb-4 flex items-start justify-between">
-                                <div className="space-y-1 max-w-xl">
-                                    <h2 className="text-base font-black uppercase tracking-wide text-slate-900">
-                                        {companyInfo?.fullName || companyInfo?.name || 'CÔNG TY TNHH GIẢI PHÁP CÔNG NGHỆ TSOL'}
-                                    </h2>
-                                    {companyInfo?.address && (
-                                        <p className="text-[11px] text-slate-600">
-                                            Địa chỉ: {companyInfo.address}
-                                        </p>
-                                    )}
-                                    <div className="text-[11px] text-slate-600 flex flex-wrap gap-x-3 gap-y-0.5">
-                                        {companyInfo?.taxCode && (
-                                            <span>Mã số thuế: <strong className="text-slate-900 font-mono">{companyInfo.taxCode}</strong></span>
-                                        )}
-                                        {companyInfo?.phone && (
-                                            <span>Hotline/SĐT: <strong className="text-slate-900">{companyInfo.phone}</strong></span>
-                                        )}
-                                        {companyInfo?.email && (
-                                            <span>Email: {companyInfo.email}</span>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="text-right shrink-0">
-                                    <span className="text-[10px] font-bold px-2.5 py-1 bg-slate-100 border border-slate-300 rounded uppercase text-slate-800">
-                                        Mã PL: PL-{viewingSlipRecord.month}{viewingSlipRecord.year}-{viewingSlipRecord.user.id.slice(-4).toUpperCase()}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Tiêu Đề Phiếu Lương */}
-                            <div className="text-center my-4.5">
-                                <h1 className="text-xl font-black uppercase text-slate-900 tracking-wider">
-                                    PHIẾU LƯƠNG NHÂN VIÊN
-                                </h1>
-                                <p className="text-xs font-bold text-slate-700 mt-1">
-                                    Kỳ tính lương: Tháng {viewingSlipRecord.month} năm {viewingSlipRecord.year}
-                                </p>
-                            </div>
-
-                            {/* Thông Tin Nhân Viên */}
-                            <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs bg-slate-50 p-3.5 rounded-xl border border-slate-200 my-4">
-                                <div>
-                                    <span className="text-slate-600 font-medium">Họ và tên:</span>{' '}
-                                    <strong className="text-slate-900 font-bold">{viewingSlipRecord.user.name}</strong>
-                                </div>
-                                <div>
-                                    <span className="text-slate-600 font-medium">Phòng ban:</span>{' '}
-                                    <strong className="text-slate-900">{viewingSlipRecord.user.employeeProfile?.department || 'Chưa phân ban'}</strong>
-                                </div>
-                                <div>
-                                    <span className="text-slate-600 font-medium">Chức vụ:</span>{' '}
-                                    <strong className="text-slate-900">{viewingSlipRecord.user.employeeProfile?.position || 'Nhân viên'}</strong>
-                                </div>
-                                <div>
-                                    <span className="text-slate-600 font-medium">Mã số thuế:</span>{' '}
-                                    <span className="font-mono font-bold text-slate-900">{viewingSlipRecord.user.employeeProfile?.taxCode || '---'}</span>
-                                </div>
-                                <div>
-                                    <span className="text-slate-600 font-medium">Tài khoản nhận:</span>{' '}
-                                    <span className="font-mono font-bold text-slate-900">{viewingSlipRecord.user.employeeProfile?.bankAccount || '---'}</span>
-                                </div>
-                                <div>
-                                    <span className="text-slate-600 font-medium">Ngân hàng:</span>{' '}
-                                    <span className="font-bold text-slate-900">{viewingSlipRecord.user.employeeProfile?.bankName || '---'}</span>
-                                </div>
-                            </div>
-
-                            {/* Bảng Chi Tiết Thu Nhập & Giảm Trừ */}
-                            {(() => {
-                                const actualSal = Math.round((viewingSlipRecord.baseSalary / 26) * viewingSlipRecord.workDays);
-                                const totalGross = actualSal + viewingSlipRecord.allowances + viewingSlipRecord.commissionBonus + viewingSlipRecord.bonus + viewingSlipRecord.otSalary;
-                                const totalDed = viewingSlipRecord.latePenalties + viewingSlipRecord.advancePayment + viewingSlipRecord.insuranceDeduction + viewingSlipRecord.taxDeduction + viewingSlipRecord.deductions;
-
-                                return (
-                                    <>
-                                        <div className="grid grid-cols-2 gap-4.5 my-4">
-                                            {/* CỘT TRÁI: THU NHẬP */}
-                                            <div className="border border-slate-300 rounded-xl overflow-hidden">
-                                                <div className="bg-emerald-50 px-3.5 py-2.5 border-b border-emerald-200 font-bold text-xs text-emerald-900 uppercase">
-                                                    I. CÁC KHOẢN THU NHẬP (VNĐ)
-                                                </div>
-                                                <div className="divide-y divide-slate-100 text-xs p-1">
-                                                    <div className="flex justify-between py-2 px-2.5">
-                                                        <span className="text-slate-700">1. Lương cơ bản:</span>
-                                                        <span className="font-mono font-bold">{formatVND(viewingSlipRecord.baseSalary)}</span>
-                                                    </div>
-                                                    <div className="flex justify-between py-2 px-2.5">
-                                                        <span className="text-slate-700">2. Ngày công tính ({viewingSlipRecord.workDays}/26):</span>
-                                                        <span className="font-mono font-bold">{formatVND(actualSal)}</span>
-                                                    </div>
-                                                    <div className="flex justify-between py-2 px-2.5">
-                                                        <span className="text-slate-700">3. Phụ cấp cố định:</span>
-                                                        <span className="font-mono font-bold">{formatVND(viewingSlipRecord.allowances)}</span>
-                                                    </div>
-                                                    <div className="flex justify-between py-2 px-2.5">
-                                                        <span className="text-slate-700">4. Thưởng doanh số / KPI:</span>
-                                                        <span className="font-mono font-bold text-amber-700">{formatVND(viewingSlipRecord.commissionBonus)}</span>
-                                                    </div>
-                                                    <div className="flex justify-between py-2 px-2.5">
-                                                        <span className="text-slate-700">5. Thưởng hiệu quả / Khác:</span>
-                                                        <span className="font-mono font-bold text-emerald-700">{formatVND(viewingSlipRecord.bonus)}</span>
-                                                    </div>
-                                                    <div className="flex justify-between py-2 px-2.5">
-                                                        <span className="text-slate-700">6. Tiền làm thêm giờ (OT):</span>
-                                                        <span className="font-mono font-bold text-indigo-700">{formatVND(viewingSlipRecord.otSalary)}</span>
-                                                    </div>
-                                                    <div className="flex justify-between py-2.5 px-2.5 bg-emerald-50 font-black text-emerald-900 border-t border-emerald-300">
-                                                        <span>TỔNG THU NHẬP (A):</span>
-                                                        <span className="font-mono">{formatVND(totalGross)}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* CỘT PHẢI: GIẢM TRỪ */}
-                                            <div className="border border-slate-300 rounded-xl overflow-hidden">
-                                                <div className="bg-rose-50 px-3.5 py-2.5 border-b border-rose-200 font-bold text-xs text-rose-900 uppercase">
-                                                    II. CÁC KHOẢN KHẤU TRỪ (VNĐ)
-                                                </div>
-                                                <div className="divide-y divide-slate-100 text-xs p-1">
-                                                    <div className="flex justify-between py-2 px-2.5 bg-rose-50/60">
-                                                        <span className="text-rose-950 font-bold">1. Tạm ứng đã nhận trong tháng:</span>
-                                                        <span className="font-mono font-black text-rose-700">{formatVND(viewingSlipRecord.advancePayment)}</span>
-                                                    </div>
-                                                    <div className="flex justify-between py-2 px-2.5">
-                                                        <span className="text-slate-700">2. Phạt đi muộn / Kỷ luật:</span>
-                                                        <span className="font-mono font-bold text-rose-600">{formatVND(viewingSlipRecord.latePenalties)}</span>
-                                                    </div>
-                                                    <div className="flex justify-between py-2 px-2.5">
-                                                        <span className="text-slate-700">3. Trừ đóng BHXH / BHYT:</span>
-                                                        <span className="font-mono font-bold">{formatVND(viewingSlipRecord.insuranceDeduction)}</span>
-                                                    </div>
-                                                    <div className="flex justify-between py-2 px-2.5">
-                                                        <span className="text-slate-700">4. Thuế TNCN:</span>
-                                                        <span className="font-mono font-bold">{formatVND(viewingSlipRecord.taxDeduction)}</span>
-                                                    </div>
-                                                    <div className="flex justify-between py-2 px-2.5">
-                                                        <span className="text-slate-700">5. Các khoản giảm trừ khác:</span>
-                                                        <span className="font-mono font-bold">{formatVND(viewingSlipRecord.deductions)}</span>
-                                                    </div>
-                                                    <div className="py-2 px-2.5 invisible">
-                                                        <span>-</span>
-                                                    </div>
-                                                    <div className="flex justify-between py-2.5 px-2.5 bg-rose-50 font-black text-rose-900 border-t border-rose-300">
-                                                        <span>TỔNG KHẤU TRỪ (B):</span>
-                                                        <span className="font-mono">{formatVND(totalDed)}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* TỔNG KẾT THỰC LĨNH */}
-                                        <div className="bg-slate-900 text-white p-5 rounded-2xl my-4.5 shadow-md">
-                                            <div className="flex items-center justify-between">
-                                                <div className="text-sm font-bold uppercase tracking-wider">
-                                                    III. LƯƠNG THỰC LĨNH CHUYỂN KHOẢN (A - B):
-                                                </div>
-                                                <div className="text-2xl font-black font-mono text-emerald-400">
-                                                    {formatVND(viewingSlipRecord.netSalary)}
-                                                </div>
-                                            </div>
-                                            <div className="text-xs text-slate-300 italic mt-1.5 pt-2 border-t border-slate-800">
-                                                Bằng chữ: <strong className="text-white not-italic">{numberToVietnameseWords(viewingSlipRecord.netSalary)}</strong>
-                                            </div>
-                                        </div>
-
-                                        {viewingSlipRecord.notes && (
-                                            <div className="text-xs text-slate-800 bg-amber-50 p-3 rounded-xl border border-amber-300 mb-4">
-                                                <strong>Ghi chú bổ sung:</strong> {viewingSlipRecord.notes}
-                                            </div>
-                                        )}
-                                    </>
-                                );
-                            })()}
-
-                            {/* Chữ Ký 3 Bên */}
-                            <div className="grid grid-cols-3 gap-4 text-center text-xs mt-9 pt-4 border-t border-slate-300">
-                                <div>
-                                    <div className="font-bold text-slate-900 uppercase">Người Lập Biểu</div>
-                                    <div className="text-[10px] text-slate-500 italic">(Ký, họ tên)</div>
-                                    <div className="h-16"></div>
-                                    <div className="font-bold text-slate-900">Phòng Nhân Sự</div>
-                                </div>
-                                <div>
-                                    <div className="font-bold text-slate-900 uppercase">Kế Toán Trưởng</div>
-                                    <div className="text-[10px] text-slate-500 italic">(Ký, họ tên)</div>
-                                    <div className="h-16"></div>
-                                    <div className="font-bold text-slate-900">Kế Toán Thanh Toán</div>
-                                </div>
-                                <div>
-                                    <div className="font-bold text-slate-900 uppercase">Người Nhận Lương</div>
-                                    <div className="text-[10px] text-slate-500 italic">(Ký, ghi rõ họ tên)</div>
-                                    <div className="h-16"></div>
-                                    <div className="font-bold text-slate-900">{viewingSlipRecord.user.name}</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </Modal>
+            {viewingSlipRecord && (
+                <PrintPayslipModal 
+                    record={viewingSlipRecord} 
+                    companyInfo={companyInfo} 
+                    onClose={() => setViewingSlipRecord(null)} 
+                />
+            )}
         </div>
     );
 }
