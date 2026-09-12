@@ -15,6 +15,14 @@ export default function InvoiceDashboardClient({ initialInvoices, suppliers = []
     const [viewingInvoice, setViewingInvoice] = useState<any>(null);
     const router = useRouter();
 
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setViewingInvoice(null);
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
     // Filters and Sorting State
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL');
@@ -745,22 +753,30 @@ export default function InvoiceDashboardClient({ initialInvoices, suppliers = []
 
             {/* Invoice Viewer Modal */}
             {viewingInvoice && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-[999] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col border border-slate-200 overflow-hidden">
+                <div 
+                    className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[999] flex items-center justify-center p-4 overflow-y-auto"
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) setViewingInvoice(null);
+                    }}
+                >
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col border border-slate-200 overflow-hidden my-auto">
                         <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
                             <div className="flex items-center gap-2 text-slate-900">
-                                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                                    <FileText size={18} />
+                                <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shadow-xs">
+                                    <FileText size={20} />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-sm text-slate-900">Chi Tiết Hóa Đơn: <span className="font-mono text-emerald-700">{viewingInvoice.invoiceNumber}</span></h3>
+                                    <h3 className="font-bold text-sm text-slate-900">Chi Tiết Hóa Đơn: <span className="font-mono text-emerald-700 font-bold">{viewingInvoice.invoiceNumber}</span></h3>
+                                    <p className="text-[11px] text-slate-500 font-medium">Bảng kê chi tiết hàng hóa và thông tin tra cứu hóa đơn</p>
                                 </div>
                             </div>
                             <button 
                                 onClick={() => setViewingInvoice(null)} 
-                                className="text-slate-400 hover:text-slate-700 hover:bg-slate-200/80 p-1.5 rounded-lg transition"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 border border-slate-200 hover:border-rose-200 rounded-xl transition text-xs font-bold shadow-xs"
+                                title="Đóng cửa sổ này (ESC)"
                             >
-                                <X size={18} />
+                                <X size={15} />
+                                <span>Đóng</span>
                             </button>
                         </div>
 

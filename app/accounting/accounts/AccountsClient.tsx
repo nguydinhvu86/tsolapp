@@ -19,6 +19,14 @@ export default function AccountsClient({ initialAccounts }: Props) {
     const [showModal, setShowModal] = useState(false);
     const [editingAccount, setEditingAccount] = useState<any | null>(null);
 
+    React.useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setShowModal(false);
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
     // Form state
     const [code, setCode] = useState('');
     const [name, setName] = useState('');
@@ -246,14 +254,29 @@ export default function AccountsClient({ initialAccounts }: Props) {
 
             {/* Modal Create / Edit */}
             {showModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+                <div 
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm overflow-y-auto"
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) setShowModal(false);
+                    }}
+                >
                     <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden my-8">
-                        <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
-                            <h2 className="text-base font-bold text-slate-900 dark:text-white">
-                                {editingAccount ? 'Chỉnh Sửa Tài Khoản / Quỹ' : 'Thêm Tài Khoản / Quỹ Mới'}
-                            </h2>
-                            <button onClick={() => setShowModal(false)} className="p-1 text-slate-400 hover:text-slate-600">
-                                <X className="w-5 h-5" />
+                        <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80">
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-bold">
+                                    <Landmark size={18} />
+                                </div>
+                                <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                                    {editingAccount ? 'Chỉnh Sửa Tài Khoản / Quỹ' : 'Thêm Tài Khoản / Quỹ Mới'}
+                                </h2>
+                            </div>
+                            <button 
+                                onClick={() => setShowModal(false)} 
+                                className="inline-flex items-center gap-1 px-2.5 py-1 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-xs font-bold transition"
+                                title="Đóng (ESC)"
+                            >
+                                <X className="w-4 h-4" />
+                                <span>Đóng</span>
                             </button>
                         </div>
 
