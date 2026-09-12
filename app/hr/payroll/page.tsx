@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/authOptions";
 import { prisma } from "@/lib/prisma";
 import PayrollClient from "./PayrollClient";
 import { Calculator } from "lucide-react";
+import { getCompanyInfo } from "@/lib/companyInfo";
 
 export const metadata = { title: "Quản lý Lương (Payroll)" };
 
@@ -18,45 +19,47 @@ export default async function PayrollPage({
     const month = searchParams.month ? parseInt(searchParams.month) : now.getMonth() + 1;
     const year = searchParams.year ? parseInt(searchParams.year) : now.getFullYear();
 
-    const payrolls = await prisma.payroll.findMany({
-        where: { month, year },
-        include: {
-            user: {
-                select: { 
-                    id: true,
-                    name: true, 
-                    email: true, 
-                    role: true,
-                    employeeProfile: {
-                        select: {
-                            id: true,
-                            department: true,
-                            position: true,
-                            bankAccount: true,
-                            bankName: true,
-                            taxCode: true,
-                            identityNumber: true,
-                            phoneNumber: true,
-                            baseSalary: true,
-                            hourlyRate: true,
-                            startDate: true,
-                        }
-                    } 
+    const [payrolls, allDepartments, companyInfo] = await Promise.all([
+        prisma.payroll.findMany({
+            where: { month, year },
+            include: {
+                user: {
+                    select: { 
+                        id: true,
+                        name: true, 
+                        email: true, 
+                        role: true,
+                        employeeProfile: {
+                            select: {
+                                id: true,
+                                department: true,
+                                position: true,
+                                bankAccount: true,
+                                bankName: true,
+                                taxCode: true,
+                                identityNumber: true,
+                                phoneNumber: true,
+                                baseSalary: true,
+                                hourlyRate: true,
+                                startDate: true,
+                            }
+                        } 
+                    }
                 }
-            }
-        },
-        orderBy: [
-            { user: { employeeProfile: { department: 'asc' } } },
-            { user: { name: 'asc' } }
-        ]
-    });
+            },
+            orderBy: [
+                { user: { employeeProfile: { department: 'asc' } } },
+                { user: { name: 'asc' } }
+            ]
+        }),
+        prisma.employeeProfile.findMany({
+            where: { department: { not: null } },
+            select: { department: true },
+            distinct: ['department']
+        }),
+        getCompanyInfo()
+    ]);
 
-    // Lấy danh sách các phòng ban hiện có
-    const allDepartments = await prisma.employeeProfile.findMany({
-        where: { department: { not: null } },
-        select: { department: true },
-        distinct: ['department']
-    });
     const departments = allDepartments.map(d => d.department).filter(Boolean) as string[];
 
     return (
@@ -66,6 +69,7 @@ export default async function PayrollPage({
                 currentMonth={month} 
                 currentYear={year} 
                 departments={departments}
+                companyInfo={companyInfo}
             />
         </div>
     );

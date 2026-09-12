@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { redirect } from 'next/navigation';
 import { getCashTransactions } from '../actions';
+import { getCompanyInfo } from '@/lib/companyInfo';
 import CashBookClient from './CashBookClient';
 
 export default async function CashBookPage({
@@ -18,18 +19,21 @@ export default async function CashBookPage({
     const canView = permissions.includes('ACCOUNTING_VIEW') || permissions.includes('ACCOUNTING_VIEW_ALL') || role === 'ADMIN';
     if (!canView) redirect('/dashboard');
 
-    const data = await getCashTransactions({
-        type: searchParams?.type || 'ALL',
-        financeAccountId: searchParams?.financeAccountId || 'ALL',
-        category: searchParams?.category || 'ALL',
-        startDate: searchParams?.startDate,
-        endDate: searchParams?.endDate,
-        search: searchParams?.search
-    });
+    const [data, companyInfo] = await Promise.all([
+        getCashTransactions({
+            type: searchParams?.type || 'ALL',
+            financeAccountId: searchParams?.financeAccountId || 'ALL',
+            category: searchParams?.category || 'ALL',
+            startDate: searchParams?.startDate,
+            endDate: searchParams?.endDate,
+            search: searchParams?.search
+        }),
+        getCompanyInfo()
+    ]);
 
     return (
         <div className="p-4 sm:p-6 max-w-7xl mx-auto">
-            <CashBookClient initialData={data} />
+            <CashBookClient initialData={data} companyInfo={companyInfo} />
         </div>
     );
 }

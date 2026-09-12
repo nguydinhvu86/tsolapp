@@ -16,9 +16,20 @@ interface Props {
         supplierDebts: any[];
     };
     initialTab?: 'customers' | 'suppliers';
+    companyInfo?: {
+        name?: string;
+        fullName?: string;
+        displayName?: string;
+        taxCode?: string;
+        address?: string;
+        phone?: string;
+        email?: string;
+        website?: string;
+        logo?: string;
+    };
 }
 
-export default function DebtClient({ initialData, initialTab = 'customers' }: Props) {
+export default function DebtClient({ initialData, initialTab = 'customers', companyInfo }: Props) {
     const [tab, setTab] = useState<'customers' | 'suppliers'>(initialTab);
     const [data, setData] = useState(initialData);
     const [searchQuery, setSearchQuery] = useState<string>('');
@@ -340,6 +351,7 @@ export default function DebtClient({ initialData, initialTab = 'customers' }: Pr
                 <PrintDebtStatementModal
                     partner={selectedPartner}
                     type={tab === 'customers' ? 'CUSTOMER' : 'SUPPLIER'}
+                    companyInfo={companyInfo}
                     onClose={() => setSelectedPartner(null)}
                 />
             )}

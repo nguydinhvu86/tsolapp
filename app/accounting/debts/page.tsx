@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { redirect } from 'next/navigation';
 import { getDebtOverviewData } from '../actions';
+import { getCompanyInfo } from '@/lib/companyInfo';
 import DebtClient from './DebtClient';
 
 export default async function DebtPage({
@@ -18,13 +19,17 @@ export default async function DebtPage({
     const canView = permissions.includes('ACCOUNTING_VIEW') || permissions.includes('ACCOUNTING_VIEW_ALL') || role === 'ADMIN';
     if (!canView) redirect('/dashboard');
 
-    const data = await getDebtOverviewData();
+    const [data, companyInfo] = await Promise.all([
+        getDebtOverviewData(),
+        getCompanyInfo()
+    ]);
 
     return (
         <div className="p-4 sm:p-6 max-w-7xl mx-auto">
             <DebtClient 
                 initialData={data} 
                 initialTab={(searchParams?.tab as any) || 'customers'}
+                companyInfo={companyInfo}
             />
         </div>
     );

@@ -74,9 +74,20 @@ interface Props {
     currentMonth: number;
     currentYear: number;
     departments: string[];
+    companyInfo?: {
+        name?: string;
+        fullName?: string;
+        displayName?: string;
+        taxCode?: string;
+        address?: string;
+        phone?: string;
+        email?: string;
+        website?: string;
+        logo?: string;
+    };
 }
 
-export default function PayrollClient({ initialData, currentMonth, currentYear, departments }: Props) {
+export default function PayrollClient({ initialData, currentMonth, currentYear, departments, companyInfo }: Props) {
     const router = useRouter();
     const printRef = useRef<HTMLDivElement>(null);
 
@@ -1224,18 +1235,28 @@ export default function PayrollClient({ initialData, currentMonth, currentYear, 
                         >
                             {/* Header Công Ty */}
                             <div className="border-b-2 border-slate-900 pb-4 flex items-start justify-between">
-                                <div>
+                                <div className="space-y-1 max-w-xl">
                                     <h2 className="text-base font-black uppercase tracking-wide text-slate-900">
-                                        CÔNG TY TNHH GIẢI PHÁP CÔNG NGHỆ TSOL
+                                        {companyInfo?.fullName || companyInfo?.name || 'CÔNG TY TNHH GIẢI PHÁP CÔNG NGHỆ TSOL'}
                                     </h2>
-                                    <p className="text-[11px] text-slate-600 mt-0.5">
-                                        Địa chỉ: Tòa nhà Văn phòng, TP. Hồ Chí Minh, Việt Nam
-                                    </p>
-                                    <p className="text-[11px] text-slate-600">
-                                        Điện thoại: 1900 xxxx - Email: hr@tsol.vn
-                                    </p>
+                                    {companyInfo?.address && (
+                                        <p className="text-[11px] text-slate-600">
+                                            Địa chỉ: {companyInfo.address}
+                                        </p>
+                                    )}
+                                    <div className="text-[11px] text-slate-600 flex flex-wrap gap-x-3 gap-y-0.5">
+                                        {companyInfo?.taxCode && (
+                                            <span>Mã số thuế: <strong className="text-slate-900 font-mono">{companyInfo.taxCode}</strong></span>
+                                        )}
+                                        {companyInfo?.phone && (
+                                            <span>Hotline/SĐT: <strong className="text-slate-900">{companyInfo.phone}</strong></span>
+                                        )}
+                                        {companyInfo?.email && (
+                                            <span>Email: {companyInfo.email}</span>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="text-right">
+                                <div className="text-right shrink-0">
                                     <span className="text-[10px] font-bold px-2.5 py-1 bg-slate-100 border border-slate-300 rounded uppercase text-slate-800">
                                         Mã PL: PL-{viewingSlipRecord.month}{viewingSlipRecord.year}-{viewingSlipRecord.user.id.slice(-4).toUpperCase()}
                                     </span>

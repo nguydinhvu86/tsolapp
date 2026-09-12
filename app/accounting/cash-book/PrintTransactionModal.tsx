@@ -6,10 +6,21 @@ import { numberToVietnameseWords } from '@/lib/vietnameseCurrency';
 
 interface Props {
     transaction: any;
+    companyInfo?: {
+        name?: string;
+        fullName?: string;
+        displayName?: string;
+        taxCode?: string;
+        address?: string;
+        phone?: string;
+        email?: string;
+        website?: string;
+        logo?: string;
+    };
     onClose: () => void;
 }
 
-export default function PrintTransactionModal({ transaction, onClose }: Props) {
+export default function PrintTransactionModal({ transaction, companyInfo, onClose }: Props) {
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') onClose();
@@ -68,15 +79,25 @@ export default function PrintTransactionModal({ transaction, onClose }: Props) {
             <div className="bg-white text-slate-900 w-full max-w-3xl p-8 sm:p-12 rounded-2xl shadow-2xl my-8 font-sans border border-slate-200 print:p-0 print:m-0 print:shadow-none print:max-w-none print:w-full print:rounded-none print:border-none">
                 {/* Header Unit Info */}
                 <div className="flex justify-between items-start border-b-2 border-slate-800 pb-4 mb-6">
-                    <div>
+                    <div className="space-y-1 max-w-lg">
                         <div className="font-black text-sm tracking-tight text-slate-950 uppercase">
-                            CÔNG TY CỔ PHẦN GIẢI PHÁP CÔNG NGHỆ TSOL
+                            {companyInfo?.fullName || companyInfo?.name || 'CÔNG TY TNHH GIẢI PHÁP CÔNG NGHỆ TSOL'}
                         </div>
-                        <div className="text-xs text-slate-700 mt-0.5 font-medium">
-                            Địa chỉ: Số 12, Ngõ 45, Đường Trần Thái Tông, Cầu Giấy, Hà Nội
-                        </div>
-                        <div className="text-xs text-slate-700">
-                            Mã số thuế: <span className="font-bold">0109876543</span> • Hotline: 024.3999.8888
+                        {companyInfo?.address && (
+                            <div className="text-xs text-slate-700 font-medium">
+                                Địa chỉ: {companyInfo.address}
+                            </div>
+                        )}
+                        <div className="text-xs text-slate-700 flex flex-wrap gap-x-2">
+                            {companyInfo?.taxCode && (
+                                <span>Mã số thuế: <strong className="font-bold">{companyInfo.taxCode}</strong></span>
+                            )}
+                            {companyInfo?.phone && (
+                                <span>• Hotline: <strong className="font-bold">{companyInfo.phone}</strong></span>
+                            )}
+                            {companyInfo?.email && (
+                                <span>• Email: {companyInfo.email}</span>
+                            )}
                         </div>
                     </div>
 

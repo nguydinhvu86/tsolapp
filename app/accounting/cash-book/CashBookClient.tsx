@@ -20,9 +20,20 @@ interface Props {
         suppliers: any[];
         projects: any[];
     };
+    companyInfo?: {
+        name?: string;
+        fullName?: string;
+        displayName?: string;
+        taxCode?: string;
+        address?: string;
+        phone?: string;
+        email?: string;
+        website?: string;
+        logo?: string;
+    };
 }
 
-export default function CashBookClient({ initialData }: Props) {
+export default function CashBookClient({ initialData, companyInfo }: Props) {
     const searchParams = useSearchParams();
     const actionParam = searchParams.get('action');
     const typeParam = searchParams.get('type') || 'ALL';
@@ -390,6 +401,7 @@ export default function CashBookClient({ initialData }: Props) {
             {selectedPrintTx && (
                 <PrintTransactionModal
                     transaction={selectedPrintTx}
+                    companyInfo={companyInfo}
                     onClose={() => setSelectedPrintTx(null)}
                 />
             )}

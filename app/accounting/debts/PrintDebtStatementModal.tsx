@@ -7,10 +7,21 @@ import { numberToVietnameseWords } from '@/lib/vietnameseCurrency';
 interface Props {
     partner: any;
     type: 'CUSTOMER' | 'SUPPLIER';
+    companyInfo?: {
+        name?: string;
+        fullName?: string;
+        displayName?: string;
+        taxCode?: string;
+        address?: string;
+        phone?: string;
+        email?: string;
+        website?: string;
+        logo?: string;
+    };
     onClose: () => void;
 }
 
-export default function PrintDebtStatementModal({ partner, type, onClose }: Props) {
+export default function PrintDebtStatementModal({ partner, type, companyInfo, onClose }: Props) {
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') onClose();
@@ -71,19 +82,29 @@ export default function PrintDebtStatementModal({ partner, type, onClose }: Prop
             <div className="bg-white text-slate-900 w-full max-w-4xl p-8 sm:p-12 rounded-2xl shadow-2xl my-8 font-sans border border-slate-200 print:p-0 print:m-0 print:shadow-none print:max-w-none print:w-full print:rounded-none print:border-none">
                 {/* Header Unit Info */}
                 <div className="flex justify-between items-start border-b-2 border-slate-800 pb-4 mb-6">
-                    <div>
+                    <div className="space-y-1 max-w-lg">
                         <div className="font-black text-sm tracking-tight text-slate-950 uppercase">
-                            CÔNG TY CỔ PHẦN GIẢI PHÁP CÔNG NGHỆ TSOL
+                            {companyInfo?.fullName || companyInfo?.name || 'CÔNG TY TNHH GIẢI PHÁP CÔNG NGHỆ TSOL'}
                         </div>
-                        <div className="text-xs text-slate-700 mt-0.5 font-medium">
-                            Địa chỉ: Số 12, Ngõ 45, Đường Trần Thái Tông, Cầu Giấy, Hà Nội
-                        </div>
-                        <div className="text-xs text-slate-700">
-                            Mã số thuế: <span className="font-bold">0109876543</span> • Điện thoại: 024.3999.8888
+                        {companyInfo?.address && (
+                            <div className="text-xs text-slate-700 font-medium">
+                                Địa chỉ: {companyInfo.address}
+                            </div>
+                        )}
+                        <div className="text-xs text-slate-700 flex flex-wrap gap-x-2">
+                            {companyInfo?.taxCode && (
+                                <span>Mã số thuế: <strong className="font-bold">{companyInfo.taxCode}</strong></span>
+                            )}
+                            {companyInfo?.phone && (
+                                <span>• Hotline/SĐT: <strong className="font-bold">{companyInfo.phone}</strong></span>
+                            )}
+                            {companyInfo?.email && (
+                                <span>• Email: {companyInfo.email}</span>
+                            )}
                         </div>
                     </div>
 
-                    <div className="text-right">
+                    <div className="text-right shrink-0">
                         <div className="text-xs font-semibold text-slate-700">
                             Mã đối tác: <span className="font-bold text-slate-950 font-mono px-1 py-0.5 bg-slate-100 rounded">{partner.code}</span>
                         </div>
@@ -107,11 +128,11 @@ export default function PrintDebtStatementModal({ partner, type, onClose }: Prop
                 <div className="grid grid-cols-2 gap-6 my-6 text-xs text-slate-900 bg-slate-50 p-4 rounded-xl border border-slate-300 print:bg-transparent print:border-slate-400">
                     <div className="space-y-1.5">
                         <div className="font-black text-slate-950 uppercase border-b border-slate-300 pb-1">
-                            BÊN A: CÔNG TY CP GIẢI PHÁP CÔNG NGHỆ TSOL
+                            BÊN A: {companyInfo?.fullName || companyInfo?.name || 'CÔNG TY TNHH GIẢI PHÁP CÔNG NGHỆ TSOL'}
                         </div>
-                        <div><span className="font-semibold text-slate-700">Đại diện:</span> Ban Giám Đốc</div>
-                        <div><span className="font-semibold text-slate-700">Mã số thuế:</span> 0109876543</div>
-                        <div><span className="font-semibold text-slate-700">Điện thoại:</span> 024.3999.8888</div>
+                        <div><span className="font-semibold text-slate-700">Địa chỉ:</span> {companyInfo?.address || '—'}</div>
+                        <div><span className="font-semibold text-slate-700">Mã số thuế:</span> {companyInfo?.taxCode || '—'}</div>
+                        <div><span className="font-semibold text-slate-700">Điện thoại:</span> {companyInfo?.phone || '—'}</div>
                     </div>
 
                     <div className="space-y-1.5">
