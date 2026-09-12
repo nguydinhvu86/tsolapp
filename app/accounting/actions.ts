@@ -524,19 +524,41 @@ export async function updateFinanceAccount(id: string, data: {
 // ---------------------------------------------------------------------------
 // 4. QUẢN LÝ CÔNG NỢ (DEBT MANAGEMENT - AR & AP)
 // ---------------------------------------------------------------------------
-export async function getDebtOverviewData() {
+export async function getDebtOverviewData(params?: { startDate?: string; endDate?: string }) {
     await getCurrentUser();
     const now = new Date();
+
+    const invoiceWhere: any = { status: { not: 'CANCELLED' } };
+    const paymentWhere: any = {};
+    const billWhere: any = { status: { not: 'CANCELLED' } };
+    const purchasePaymentWhere: any = {};
+
+    if (params?.startDate || params?.endDate) {
+        const dateRange: any = {};
+        if (params.startDate) {
+            dateRange.gte = new Date(params.startDate);
+        }
+        if (params.endDate) {
+            const end = new Date(params.endDate);
+            end.setHours(23, 59, 59, 999);
+            dateRange.lte = end;
+        }
+        invoiceWhere.date = dateRange;
+        paymentWhere.date = dateRange;
+        billWhere.date = dateRange;
+        purchasePaymentWhere.date = dateRange;
+    }
 
     // 1. Customer Debts (AR)
     const customers = await prisma.customer.findMany({
         orderBy: { name: 'asc' },
         include: {
             salesInvoices: {
-                where: { status: { not: 'CANCELLED' } },
+                where: invoiceWhere,
                 orderBy: { date: 'desc' }
             },
             salesPayments: {
+                where: paymentWhere,
                 orderBy: { date: 'desc' }
             }
         }
@@ -610,10 +632,11 @@ export async function getDebtOverviewData() {
         orderBy: { name: 'asc' },
         include: {
             bills: {
-                where: { status: { not: 'CANCELLED' } },
+                where: billWhere,
                 orderBy: { date: 'desc' }
             },
             payments: {
+                where: purchasePaymentWhere,
                 orderBy: { date: 'desc' }
             }
         }

@@ -18,10 +18,21 @@ interface Props {
         website?: string;
         logo?: string;
     };
+    startDate?: string;
+    endDate?: string;
+    periodLabel?: string;
     onClose: () => void;
 }
 
-export default function PrintDebtStatementModal({ partner, type, companyInfo, onClose }: Props) {
+export default function PrintDebtStatementModal({ 
+    partner, 
+    type, 
+    companyInfo, 
+    startDate,
+    endDate,
+    periodLabel,
+    onClose 
+}: Props) {
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') onClose();
@@ -46,11 +57,52 @@ export default function PrintDebtStatementModal({ partner, type, companyInfo, on
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
     };
 
+    const formatDateVN = (dateStr: string) => {
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return dateStr;
+        return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+    };
+
     const handlePrint = () => {
         window.print();
     };
 
     const records = isCustomer ? (partner.invoices || []) : (partner.bills || []);
+
+    // Format Period text
+    const periodSubtitle = (() => {
+        if (startDate && endDate) {
+            return `(Khoảng thời gian: Từ ngày ${formatDateVN(startDate)} đến ngày ${formatDateVN(endDate)})`;
+        }
+        if (startDate) {
+            return `(Khoảng thời gian: Từ ngày ${formatDateVN(startDate)} trở đi)`;
+        }
+        if (endDate) {
+            return `(Tính đến ngày ${formatDateVN(endDate)})`;
+        }
+        return `(Tính đến ngày ${day < 10 ? `0${day}` : day}/${month < 10 ? `0${month}` : month}/${year})`;
+    })();
+
+    const periodStatementText = (() => {
+        if (startDate && endDate) {
+            return `từ ngày ${formatDateVN(startDate)} đến ngày ${formatDateVN(endDate)}`;
+        }
+        if (startDate) {
+            return `từ ngày ${formatDateVN(startDate)} đến nay`;
+        }
+        if (endDate) {
+            return `tính đến ngày ${formatDateVN(endDate)}`;
+        }
+        return `tính đến ngày ${day < 10 ? `0${day}` : day}/${month < 10 ? `0${month}` : month}/${year}`;
+    })();
+
+    const conclusionPeriodText = (() => {
+        if (endDate) {
+            return `Tính đến ngày ${formatDateVN(endDate)}`;
+        }
+        return `Tính đến ngày ${day < 10 ? `0${day}` : day}/${month < 10 ? `0${month}` : month}/${year}`;
+    })();
 
     return (
         <div 
@@ -189,8 +241,8 @@ export default function PrintDebtStatementModal({ partner, type, companyInfo, on
                     <h1 className="text-xl sm:text-2xl font-black tracking-wide uppercase text-slate-950">
                         {title}
                     </h1>
-                    <div className="text-xs font-medium text-slate-700 italic mt-1">
-                        (Tính đến ngày {day < 10 ? `0${day}` : day} tháng {month < 10 ? `0${month}` : month} năm {year})
+                    <div className="text-xs font-semibold text-slate-700 italic mt-1.5">
+                        {periodSubtitle}
                     </div>
                 </div>
 
@@ -217,7 +269,7 @@ export default function PrintDebtStatementModal({ partner, type, companyInfo, on
 
                 {/* Statement Content */}
                 <div className="text-xs text-slate-800 my-4 leading-relaxed font-medium">
-                    Hôm nay, ngày {day} tháng {month} năm {year}, hai bên cùng nhau tiến hành đối chiếu tình hình công nợ {isCustomer ? 'mua bán hàng hóa / dịch vụ' : 'cung cấp hàng hóa / dịch vụ'} với các số liệu chi tiết như sau:
+                    Hôm nay, ngày {day} tháng {month} năm {year}, hai bên cùng nhau tiến hành đối chiếu tình hình công nợ {isCustomer ? 'mua bán hàng hóa / dịch vụ' : 'cung cấp hàng hóa / dịch vụ'} phát sinh trong kỳ {periodStatementText} với các số liệu chi tiết như sau:
                 </div>
 
                 {/* Transactions Detail Table */}
@@ -259,6 +311,14 @@ export default function PrintDebtStatementModal({ partner, type, companyInfo, on
                                 </tr>
                             ))}
 
+                            {records.length === 0 && (
+                                <tr>
+                                    <td colSpan={7} className="py-6 text-center text-slate-500 italic">
+                                        Không có phát sinh chứng từ nào trong khoảng thời gian đối chiếu này.
+                                    </td>
+                                </tr>
+                            )}
+
                             {/* Totals Row */}
                             <tr className="bg-slate-100 font-black border-t-2 border-slate-800 text-slate-950">
                                 <td colSpan={4} className="py-3 px-3 border-r border-slate-400 text-right uppercase">
@@ -282,7 +342,7 @@ export default function PrintDebtStatementModal({ partner, type, companyInfo, on
                 <div className="space-y-2 text-xs text-slate-900 my-6 bg-slate-50 p-4 rounded-xl border border-slate-300 print:bg-transparent print:border-slate-400">
                     <div>
                         <span className="font-bold">Kết luận: </span>
-                        Tính đến ngày {day}/{month}/{year}, {isCustomer ? 'Bên B còn phải thanh toán cho Bên A' : 'Bên A còn phải thanh toán cho Bên B'} số tiền là: <span className="font-black text-sm text-slate-950">{formatVND(partner.currentDebt)}</span>
+                        {conclusionPeriodText}, {isCustomer ? 'Bên B còn phải thanh toán cho Bên A' : 'Bên A còn phải thanh toán cho Bên B'} số tiền là: <span className="font-black text-sm text-slate-950">{formatVND(partner.currentDebt)}</span>
                     </div>
                     <div>
                         <span className="font-bold">Bằng chữ: </span>
