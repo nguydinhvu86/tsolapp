@@ -16,6 +16,8 @@ conn.on('ready', () => {
         `chattr +i .user.ini 2>/dev/null || true && ` +
         `export PATH=/www/server/nvm/versions/node/v24.14.0/bin:$PATH && ` +
         `npm install && ` +
+        `(echo 'P@ssw0rdVu' | sudo -S chown -R incall:incall .next 2>/dev/null || true) && ` +
+        `(echo 'P@ssw0rdVu' | sudo -S chmod -R 777 .next 2>/dev/null || true) && ` +
         `npx prisma generate && ` +
         `node scripts/safe-apply-db.js && ` +
         `(npx prisma migrate deploy 2>/dev/null || true) && ` +
