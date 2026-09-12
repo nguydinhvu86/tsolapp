@@ -153,6 +153,7 @@ model User {
   projectAttachments      ProjectAttachment[]
   timeLogs                TaskTimeLog[]
   ProjectTopic            ProjectTopic[]
+  cashTransactionsCreated CashTransaction[]        @relation("CashTransactionCreator")
 
   // Marketing Module
   createdCampaigns MarketingCampaign[] @relation("CampaignCreator")
@@ -228,6 +229,7 @@ model Customer {
   emailLogs    EmailLog[]
   contacts     CustomerContact[] // Relation to CustomerContact model
   managers     User[]                @relation("CustomerManagers")
+  cashTransactions CashTransaction[]
   callLogs     CallLog[]
 
   createdAt            DateTime               @default(now())
@@ -823,6 +825,7 @@ model Supplier {
   callLogs    CallLog[]
   contacts    SupplierContact[]
   invoices    SupplierInvoice[]
+  cashTransactions CashTransaction[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2209,6 +2212,7 @@ model Project {
   purchaseBills    PurchaseBill[]
   purchasePayments PurchasePayment[]
   expenses         Expense[]
+  cashTransactions CashTransaction[]
 
   creatorId String
   creator   User   @relation("ProjectCreator", fields: [creatorId], references: [id])
@@ -2509,3 +2513,60 @@ model EcatalogActivityLog {
   @@index([ecatalogId])
   @@index([userId])
 }
+
+model FinanceAccount {
+  id             String            @id @default(cuid())
+  code           String            @unique
+  name           String
+  type           String            @default("BANK") // BANK or CASH
+  accountNumber  String?
+  bankName       String?
+  branch         String?
+  currency       String            @default("VND")
+  initialBalance Float             @default(0)
+  currentBalance Float             @default(0)
+  description    String?           @db.Text
+  isActive       Boolean           @default(true)
+  isDefault      Boolean           @default(false)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  transactions   CashTransaction[]
+}
+
+model CashTransaction {
+  id               String          @id @default(cuid())
+  code             String          @unique // PT-YYMM-XXXX (Receipt) or PC-YYMM-XXXX (Payment)
+  type             String // RECEIPT (Phiếu Thu) or PAYMENT (Phiếu Chi)
+  category         String          @default("OTHER") // SALES, PURCHASE, EXPENSE, PAYROLL, ADVANCE, REFUND, OTHER
+  transactionDate  DateTime        @default(now())
+  amount           Float           @default(0)
+  payerReceiver    String // Tên người nộp / nhận tiền
+  phone            String?
+  address          String?
+  reason           String?         @db.Text
+  paymentMethod    String          @default("CASH") // CASH, BANK_TRANSFER, CARD, OTHER
+  financeAccountId String?
+  financeAccount   FinanceAccount? @relation(fields: [financeAccountId], references: [id], onDelete: SetNull)
+  customerId       String?
+  customer         Customer?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  supplierId       String?
+  supplier         Supplier?       @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  projectId        String?
+  project          Project?        @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  createdById      String?
+  createdBy        User?           @relation("CashTransactionCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  status           String          @default("COMPLETED") // DRAFT, COMPLETED, CANCELLED
+  attachments      String?         @db.Text // JSON string of attachments
+  notes            String?         @db.Text
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([financeAccountId])
+  @@index([customerId])
+  @@index([supplierId])
+  @@index([projectId])
+  @@index([createdById])
+  @@index([type])
+  @@index([transactionDate])
+}
+

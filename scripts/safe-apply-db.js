@@ -328,6 +328,75 @@ async function main() {
     // 6. Add unique index for Customer.code
     await addUniqueIndexIfNotExists('Customer', 'code', 'Customer_code_key');
 
+    // 7. FinanceAccount & CashTransaction tables (Accounting Module)
+    await prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS \`FinanceAccount\` (
+            \`id\` VARCHAR(191) NOT NULL,
+            \`code\` VARCHAR(191) NOT NULL,
+            \`name\` VARCHAR(191) NOT NULL,
+            \`type\` VARCHAR(191) NOT NULL DEFAULT 'BANK',
+            \`accountNumber\` VARCHAR(191) NULL,
+            \`bankName\` VARCHAR(191) NULL,
+            \`branch\` VARCHAR(191) NULL,
+            \`currency\` VARCHAR(191) NOT NULL DEFAULT 'VND',
+            \`initialBalance\` DOUBLE NOT NULL DEFAULT 0,
+            \`currentBalance\` DOUBLE NOT NULL DEFAULT 0,
+            \`description\` TEXT NULL,
+            \`isActive\` BOOLEAN NOT NULL DEFAULT true,
+            \`isDefault\` BOOLEAN NOT NULL DEFAULT false,
+            \`createdAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+            \`updatedAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+            UNIQUE INDEX \`FinanceAccount_code_key\`(\`code\`),
+            PRIMARY KEY (\`id\`)
+        ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    `);
+
+    await prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS \`CashTransaction\` (
+            \`id\` VARCHAR(191) NOT NULL,
+            \`code\` VARCHAR(191) NOT NULL,
+            \`type\` VARCHAR(191) NOT NULL,
+            \`category\` VARCHAR(191) NOT NULL DEFAULT 'OTHER',
+            \`transactionDate\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+            \`amount\` DOUBLE NOT NULL DEFAULT 0,
+            \`payerReceiver\` VARCHAR(191) NOT NULL,
+            \`phone\` VARCHAR(191) NULL,
+            \`address\` VARCHAR(191) NULL,
+            \`reason\` TEXT NULL,
+            \`paymentMethod\` VARCHAR(191) NOT NULL DEFAULT 'CASH',
+            \`financeAccountId\` VARCHAR(191) NULL,
+            \`customerId\` VARCHAR(191) NULL,
+            \`supplierId\` VARCHAR(191) NULL,
+            \`projectId\` VARCHAR(191) NULL,
+            \`createdById\` VARCHAR(191) NULL,
+            \`status\` VARCHAR(191) NOT NULL DEFAULT 'COMPLETED',
+            \`attachments\` TEXT NULL,
+            \`notes\` TEXT NULL,
+            \`createdAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+            \`updatedAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+            UNIQUE INDEX \`CashTransaction_code_key\`(\`code\`),
+            PRIMARY KEY (\`id\`)
+        ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    `);
+
+    // Seed default finance accounts if none exist
+    const financeAccCount = await prisma.financeAccount.count().catch(() => 0);
+    if (financeAccCount === 0) {
+        console.log('Khởi tạo 2 tài khoản quỹ mặc định...');
+        try {
+            await prisma.$executeRawUnsafe(`
+                INSERT INTO \`FinanceAccount\` (\`id\`, \`code\`, \`name\`, \`type\`, \`currency\`, \`initialBalance\`, \`currentBalance\`, \`description\`, \`isDefault\`, \`createdAt\`, \`updatedAt\`)
+                VALUES 
+                ('fa_cash_vnd', 'TM-VND', 'Quỹ Tiền Mặt (VND)', 'CASH', 'VND', 0, 0, 'Quỹ tiền mặt tại công ty', 1, NOW(), NOW()),
+                ('fa_bank_vcb', 'VCB-01', 'Ngân hàng TMCP Ngoại thương (Vietcombank)', 'BANK', 'VND', 0, 0, 'Tài khoản thanh toán chính', 0, NOW(), NOW())
+                ON DUPLICATE KEY UPDATE \`name\` = \`name\`;
+            `);
+            console.log('✅ Đã tạo tài khoản quỹ mặc định.');
+        } catch (seedErr) {
+            console.warn('Seed note:', seedErr.message);
+        }
+    }
+
     // 7. Verification and record counts
     const projectCount = await prisma.project.count();
     const billCount = await prisma.purchaseBill.count();

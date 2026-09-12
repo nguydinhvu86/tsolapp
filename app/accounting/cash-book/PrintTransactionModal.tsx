@@ -1,0 +1,195 @@
+'use client'
+
+import React from 'react';
+import { X, Printer, Download } from 'lucide-react';
+import { numberToVietnameseWords } from '@/lib/vietnameseCurrency';
+
+interface Props {
+    transaction: any;
+    onClose: () => void;
+}
+
+export default function PrintTransactionModal({ transaction, onClose }: Props) {
+    if (!transaction) return null;
+
+    const isReceipt = transaction.type === 'RECEIPT';
+    const title = isReceipt ? 'PHIẾU THU' : 'PHIẾU CHI';
+    const formCode = isReceipt ? 'Mẫu số 01 - TT' : 'Mẫu số 02 - TT';
+    const subTitle = isReceipt ? '(Liên 1: Lưu - Liên 2: Giao người nộp)' : '(Liên 1: Lưu - Liên 2: Giao người nhận)';
+
+    const date = new Date(transaction.transactionDate);
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
+    const year = date.getFullYear();
+
+    const handlePrint = () => {
+        window.print();
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm overflow-y-auto">
+            {/* Modal Controls */}
+            <div className="fixed top-4 right-4 z-50 flex items-center gap-2 print:hidden">
+                <button
+                    onClick={handlePrint}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-lg transition"
+                >
+                    <Printer className="w-4 h-4" />
+                    In Chứng Từ (A4 / A5)
+                </button>
+                <button
+                    onClick={onClose}
+                    className="p-2 bg-white dark:bg-slate-800 text-slate-600 hover:text-slate-900 rounded-xl shadow-lg transition"
+                >
+                    <X className="w-5 h-5" />
+                </button>
+            </div>
+
+            {/* Printable Paper A4/A5 */}
+            <div className="bg-white text-slate-900 w-full max-w-3xl p-8 sm:p-12 rounded-2xl shadow-2xl my-8 font-sans print:p-0 print:m-0 print:shadow-none print:max-w-none print:w-full print:rounded-none">
+                {/* Header Unit Info */}
+                <div className="flex justify-between items-start border-b border-slate-200 pb-4 mb-6">
+                    <div>
+                        <div className="font-bold text-sm tracking-tight text-slate-900 uppercase">
+                            CÔNG TY CỔ PHẦN GIẢI PHÁP CÔNG NGHỆ TSOL
+                        </div>
+                        <div className="text-xs text-slate-600 mt-0.5">
+                            Địa chỉ: Số 12, Ngõ 45, Đường Trần Thái Tông, Cầu Giấy, Hà Nội
+                        </div>
+                        <div className="text-xs text-slate-600">
+                            Mã số thuế: 0109876543 • Hotline: 024.3999.8888
+                        </div>
+                    </div>
+
+                    <div className="text-right">
+                        <div className="font-bold text-xs text-slate-800">{formCode}</div>
+                        <div className="text-[10px] text-slate-500 italic">
+                            (Ban hành theo Thông tư 200/2014/TT-BTC & 133/2016/TT-BTC)
+                        </div>
+                        <div className="text-xs font-mono font-semibold text-slate-700 mt-1">
+                            Số: <span className="font-bold text-slate-950">{transaction.code}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Voucher Title */}
+                <div className="text-center my-6">
+                    <h1 className="text-2xl font-black tracking-wide uppercase text-slate-950">
+                        {title}
+                    </h1>
+                    <div className="text-xs text-slate-600 italic mt-1">
+                        Ngày {day < 10 ? `0${day}` : day} tháng {month < 10 ? `0${month}` : month} năm {year}
+                    </div>
+                    <div className="text-[11px] text-slate-500 italic mt-0.5">{subTitle}</div>
+                </div>
+
+                {/* Details Section */}
+                <div className="space-y-3.5 text-sm text-slate-800 my-8">
+                    <div className="flex items-baseline">
+                        <span className="w-48 font-medium text-slate-600">
+                            {isReceipt ? 'Họ và tên người nộp tiền:' : 'Họ và tên người nhận tiền:'}
+                        </span>
+                        <span className="flex-1 font-bold text-slate-950 border-b border-dotted border-slate-400 pb-0.5">
+                            {transaction.payerReceiver}
+                        </span>
+                    </div>
+
+                    <div className="flex items-baseline">
+                        <span className="w-48 font-medium text-slate-600">Địa chỉ / Đơn vị:</span>
+                        <span className="flex-1 text-slate-900 border-b border-dotted border-slate-400 pb-0.5">
+                            {transaction.address || transaction.customer?.address || transaction.supplier?.address || '—'}
+                        </span>
+                    </div>
+
+                    <div className="flex items-baseline">
+                        <span className="w-48 font-medium text-slate-600">Số điện thoại:</span>
+                        <span className="flex-1 text-slate-900 border-b border-dotted border-slate-400 pb-0.5">
+                            {transaction.phone || transaction.customer?.phone || transaction.supplier?.phone || '—'}
+                        </span>
+                    </div>
+
+                    <div className="flex items-baseline">
+                        <span className="w-48 font-medium text-slate-600">Lý do {isReceipt ? 'nộp' : 'chi'}:</span>
+                        <span className="flex-1 font-medium text-slate-900 border-b border-dotted border-slate-400 pb-0.5">
+                            {transaction.reason || (isReceipt ? 'Thu tiền theo chứng từ' : 'Chi tiền theo chứng từ')}
+                        </span>
+                    </div>
+
+                    <div className="flex items-baseline">
+                        <span className="w-48 font-medium text-slate-600">Số tiền:</span>
+                        <span className="flex-1 font-black text-lg text-slate-950 border-b border-dotted border-slate-400 pb-0.5">
+                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(transaction.amount)}
+                        </span>
+                    </div>
+
+                    <div className="flex items-baseline">
+                        <span className="w-48 font-medium text-slate-600">Bằng chữ:</span>
+                        <span className="flex-1 font-semibold italic text-slate-900 border-b border-dotted border-slate-400 pb-0.5">
+                            {numberToVietnameseWords(transaction.amount)}
+                        </span>
+                    </div>
+
+                    <div className="flex items-baseline">
+                        <span className="w-48 font-medium text-slate-600">Kèm theo:</span>
+                        <span className="flex-1 text-slate-700 border-b border-dotted border-slate-400 pb-0.5">
+                            ................................... chứng từ gốc
+                        </span>
+                    </div>
+
+                    <div className="flex items-baseline">
+                        <span className="w-48 font-medium text-slate-600">Hình thức thanh toán:</span>
+                        <span className="flex-1 text-slate-900 font-medium border-b border-dotted border-slate-400 pb-0.5">
+                            {transaction.paymentMethod === 'CASH' ? 'Tiền mặt' : transaction.paymentMethod === 'BANK_TRANSFER' ? 'Chuyển khoản ngân hàng' : transaction.paymentMethod}
+                            {transaction.financeAccount ? ` (${transaction.financeAccount.name})` : ''}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Signatures Section */}
+                <div className="mt-12 pt-4">
+                    <div className="text-right text-xs italic text-slate-600 mb-2">
+                        Ngày {day < 10 ? `0${day}` : day} tháng {month < 10 ? `0${month}` : month} năm {year}
+                    </div>
+
+                    <div className="grid grid-cols-5 gap-2 text-center text-xs">
+                        <div>
+                            <div className="font-bold uppercase text-slate-900">Giám Đốc</div>
+                            <div className="text-[10px] text-slate-500 italic">(Ký, họ tên, đóng dấu)</div>
+                            <div className="h-20"></div>
+                        </div>
+
+                        <div>
+                            <div className="font-bold uppercase text-slate-900">Kế Toán Trưởng</div>
+                            <div className="text-[10px] text-slate-500 italic">(Ký, họ tên)</div>
+                            <div className="h-20"></div>
+                        </div>
+
+                        <div>
+                            <div className="font-bold uppercase text-slate-900">Thủ Quỹ</div>
+                            <div className="text-[10px] text-slate-500 italic">(Ký, họ tên)</div>
+                            <div className="h-20"></div>
+                        </div>
+
+                        <div>
+                            <div className="font-bold uppercase text-slate-900">Người Lập Phiếu</div>
+                            <div className="text-[10px] text-slate-500 italic">(Ký, họ tên)</div>
+                            <div className="h-20 flex items-end justify-center">
+                                <span className="font-medium text-slate-800">{transaction.createdBy?.name || ''}</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div className="font-bold uppercase text-slate-900">
+                                {isReceipt ? 'Người Nộp Tiền' : 'Người Nhận Tiền'}
+                            </div>
+                            <div className="text-[10px] text-slate-500 italic">(Ký, họ tên)</div>
+                            <div className="h-20 flex items-end justify-center">
+                                <span className="font-medium text-slate-800">{transaction.payerReceiver}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}

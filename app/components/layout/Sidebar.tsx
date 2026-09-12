@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { LayoutDashboard, Users, FileText, Settings, FileSpreadsheet, FileCode, ChevronDown, ChevronRight, FileOutput, FilePlus2, FileStack, Mail, CheckSquare, Package, ShoppingCart, Target, GripVertical, Clock, BookOpen, Phone, Calculator, Megaphone, UserCheck, CalendarDays, Briefcase, Kanban, Activity } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Settings, FileSpreadsheet, FileCode, ChevronDown, ChevronRight, FileOutput, FilePlus2, FileStack, Mail, CheckSquare, Package, ShoppingCart, Target, GripVertical, Clock, BookOpen, Phone, Calculator, Megaphone, UserCheck, CalendarDays, Briefcase, Kanban, Activity, Landmark, Scale, BarChart3, Wallet } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -110,8 +110,13 @@ const mainNavItems: any[] = [
         name: 'Kế Toán', nameKey: 'sidebar.accounting',
         icon: Calculator,
         children: [
-            { name: 'Hóa Đơn ĐT', nameKey: 'sidebar.accounting_invoices', href: '/accounting/invoices', permission: 'ACCOUNTING_VIEW' },
-            { name: 'Cài Đặt Tự Động', nameKey: 'sidebar.accounting_settings', href: '/accounting/settings', permission: 'ACCOUNTING_VIEW' }
+            { name: 'Tổng Quan Tài Chính', nameKey: 'sidebar.accounting_overview', href: '/accounting', permission: 'ACCOUNTING_VIEW', icon: Scale },
+            { name: 'Sổ Quỹ Thu - Chi', nameKey: 'sidebar.accounting_cashbook', href: '/accounting/cash-book', permission: 'ACCOUNTING_VIEW', icon: Wallet },
+            { name: 'Quản Lý Công Nợ', nameKey: 'sidebar.accounting_debts', href: '/accounting/debts', permission: 'ACCOUNTING_VIEW', icon: Users },
+            { name: 'Tài Khoản & Quỹ', nameKey: 'sidebar.accounting_accounts', href: '/accounting/accounts', permission: 'ACCOUNTING_VIEW', icon: Landmark },
+            { name: 'Báo Cáo Tài Chính', nameKey: 'sidebar.accounting_reports', href: '/accounting/reports', permission: 'ACCOUNTING_VIEW', icon: BarChart3 },
+            { name: 'Hóa Đơn ĐT', nameKey: 'sidebar.accounting_invoices', href: '/accounting/invoices', permission: 'ACCOUNTING_VIEW', icon: FileText },
+            { name: 'Cài Đặt Tự Động', nameKey: 'sidebar.accounting_settings', href: '/accounting/settings', permission: 'ACCOUNTING_VIEW', icon: Settings }
         ]
     },
     { name: 'Khách Hàng', nameKey: 'sidebar.customers', href: '/customers', icon: Users, permission: 'CUSTOMERS_VIEW' },
