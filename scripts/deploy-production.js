@@ -22,7 +22,7 @@ conn.on('ready', () => {
         `node scripts/safe-apply-db.js && ` +
         `(npx prisma migrate deploy 2>/dev/null || true) && ` +
         `npm run build && ` +
-        `/www/server/nodejs/v14.17.6/bin/pm2 restart inside.tsol.vn`;
+        `/www/server/nodejs/v14.17.6/bin/pm2 restart contract-app || /www/server/nodejs/v14.17.6/bin/pm2 restart all`;
 
     conn.exec(cmd, (err, stream) => {
         if (err) throw err;
