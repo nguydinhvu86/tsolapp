@@ -1,10 +1,8 @@
 import React from 'react';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import InvoiceDashboardClient from './InvoiceDashboardClient';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
-
-const prisma = new PrismaClient();
 
 export default async function AccountingInvoicesPage() {
     const session = await getServerSession(authOptions);

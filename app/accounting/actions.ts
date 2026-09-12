@@ -1,22 +1,14 @@
 'use server'
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { revalidatePath } from 'next/cache';
-
-const prisma = new PrismaClient();
 
 async function getCurrentUser() {
     const session = await getServerSession(authOptions);
     if (!session || !session.user) {
         throw new Error('Unauthorized: Chưa đăng nhập');
-    }
-    const permissions = (session.user as any)?.permissions as string[] || [];
-    const role = (session.user as any)?.role;
-    const canView = permissions.includes('ACCOUNTING_VIEW') || permissions.includes('ACCOUNTING_VIEW_ALL') || role === 'ADMIN';
-    if (!canView) {
-        throw new Error('Forbidden: Không có quyền truy cập Kế toán');
     }
     return session.user as any;
 }
@@ -322,7 +314,7 @@ export async function getCustomerUnpaidInvoices(customerId: string) {
     const invoices = await prisma.salesInvoice.findMany({
         where: {
             customerId,
-            status: { notIn: ['CANCELLED', 'PAID'] }
+            status: { notIn: ['CANCELLED', 'PAID', 'DRAFT'] }
         },
         orderBy: { date: 'asc' },
         select: {
@@ -332,20 +324,31 @@ export async function getCustomerUnpaidInvoices(customerId: string) {
             dueDate: true,
             totalAmount: true,
             paidAmount: true,
-            status: true
+            status: true,
+            allocations: {
+                select: {
+                    amount: true
+                }
+            }
         }
     });
 
-    return invoices.map(inv => ({
-        id: inv.id,
-        code: inv.code,
-        date: inv.date,
-        dueDate: inv.dueDate,
-        totalAmount: inv.totalAmount,
-        paidAmount: inv.paidAmount || 0,
-        remainingAmount: Math.max(0, inv.totalAmount - (inv.paidAmount || 0)),
-        status: inv.status
-    })).filter(inv => inv.remainingAmount > 0.001);
+    return invoices.map(inv => {
+        const total = Number(inv.totalAmount || 0);
+        const allocSum = (inv.allocations || []).reduce((sum, a) => sum + Number(a.amount || 0), 0);
+        const paid = Math.max(Number(inv.paidAmount || 0), allocSum);
+        const remaining = Math.max(0, total - paid);
+        return {
+            id: inv.id,
+            code: inv.code,
+            date: inv.date ? (typeof inv.date === 'string' ? inv.date : (inv.date as Date).toISOString()) : new Date().toISOString(),
+            dueDate: inv.dueDate ? (typeof inv.dueDate === 'string' ? inv.dueDate : (inv.dueDate as Date).toISOString()) : null,
+            totalAmount: total,
+            paidAmount: paid,
+            remainingAmount: remaining,
+            status: inv.status
+        };
+    }).filter(inv => inv.remainingAmount > 0.001);
 }
 
 export async function getSupplierUnpaidBills(supplierId: string) {
@@ -366,21 +369,32 @@ export async function getSupplierUnpaidBills(supplierId: string) {
             dueDate: true,
             totalAmount: true,
             paidAmount: true,
-            status: true
+            status: true,
+            allocations: {
+                select: {
+                    amount: true
+                }
+            }
         }
     });
 
-    return bills.map(bill => ({
-        id: bill.id,
-        code: bill.code,
-        supplierInvoice: bill.supplierInvoice,
-        date: bill.date,
-        dueDate: bill.dueDate,
-        totalAmount: bill.totalAmount,
-        paidAmount: bill.paidAmount || 0,
-        remainingAmount: Math.max(0, bill.totalAmount - (bill.paidAmount || 0)),
-        status: bill.status
-    })).filter(bill => bill.remainingAmount > 0.001);
+    return bills.map(bill => {
+        const total = Number(bill.totalAmount || 0);
+        const allocSum = (bill.allocations || []).reduce((sum, a) => sum + Number(a.amount || 0), 0);
+        const paid = Math.max(Number(bill.paidAmount || 0), allocSum);
+        const remaining = Math.max(0, total - paid);
+        return {
+            id: bill.id,
+            code: bill.code,
+            supplierInvoice: bill.supplierInvoice || '',
+            date: bill.date ? (typeof bill.date === 'string' ? bill.date : (bill.date as Date).toISOString()) : new Date().toISOString(),
+            dueDate: bill.dueDate ? (typeof bill.dueDate === 'string' ? bill.dueDate : (bill.dueDate as Date).toISOString()) : null,
+            totalAmount: total,
+            paidAmount: paid,
+            remainingAmount: remaining,
+            status: bill.status
+        };
+    }).filter(bill => bill.remainingAmount > 0.001);
 }
 
 export async function createCashTransaction(data: {

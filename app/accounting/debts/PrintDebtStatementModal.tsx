@@ -185,10 +185,11 @@ export default function PrintDebtStatementModal({
             <div className="fixed top-4 right-4 sm:right-8 z-50 flex items-center gap-2.5 print:hidden">
                 <button
                     onClick={handlePrint}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-lg shadow-blue-600/30 transition transform hover:-translate-y-0.5 active:translate-y-0"
+                    style={{ backgroundColor: '#2563eb', color: '#ffffff' }}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 text-white rounded-xl text-xs font-bold shadow-lg shadow-blue-600/30 transition transform hover:-translate-y-0.5 active:translate-y-0 hover:brightness-110 cursor-pointer"
                 >
-                    <Printer className="w-4 h-4" />
-                    <span>In Biên Bản Đối Chiếu (A4)</span>
+                    <Printer className="w-4 h-4 text-white" />
+                    <span className="text-white font-bold">In Biên Bản Đối Chiếu (A4)</span>
                 </button>
                 <button
                     onClick={onClose}
