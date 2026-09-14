@@ -48,7 +48,14 @@ export default async function TaskDetailPage({ params }: { params: { id: string 
             salesPayment: { select: { id: true, code: true } },
             // @ts-ignore
             emailLogs: { orderBy: { createdAt: 'desc' }, select: { id: true, subject: true, toEmail: true, status: true, openedAt: true, createdAt: true } },
-            lead: { select: { id: true, name: true, code: true } }
+            lead: { select: { id: true, name: true, code: true } },
+            supplier: { select: { id: true, name: true, code: true } },
+            purchaseOrder: { select: { id: true, code: true } },
+            purchaseBill: { select: { id: true, code: true } },
+            purchasePayment: { select: { id: true, code: true } },
+            expense: { select: { id: true, code: true, description: true } },
+            project: { select: { id: true, name: true, code: true } },
+            appendix: { select: { id: true, title: true } }
         }
     });
 

@@ -211,7 +211,7 @@ export function TaskDashboardClient({
     const [linkType, setLinkType] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
-    const [selectedLink, setSelectedLink] = useState<{ id: string, title?: string, name?: string } | null>(null);
+    const [selectedLink, setSelectedLink] = useState<{ id: string, title?: string, name?: string, code?: string, description?: string } | null>(null);
 
     React.useEffect(() => {
         if (!linkType || searchQuery.length < 2) {
@@ -1133,6 +1133,21 @@ export function TaskDashboardClient({
                                                             HĐ: {task.contract.title}
                                                         </Link>
                                                     )}
+                                                    {task.appendixId && task.appendix && (
+                                                        <Link href={`/contracts/appendices/${task.appendixId}`} className="text-primary hover:underline truncate block font-mono text-[11px] font-bold">
+                                                            PL: {task.appendix.title}
+                                                        </Link>
+                                                    )}
+                                                    {task.projectId && task.project && (
+                                                        <Link href={`/projects/${task.projectId}`} className="text-primary hover:underline truncate block font-medium">
+                                                            Dự án: {task.project.name}
+                                                        </Link>
+                                                    )}
+                                                    {task.supplierId && task.supplier && (
+                                                        <Link href={`/suppliers/${task.supplierId}`} className="text-slate-700 hover:underline truncate block text-[11px]">
+                                                            NCC: {task.supplier.name}
+                                                        </Link>
+                                                    )}
                                                     {task.salesInvoiceId && task.salesInvoice && (
                                                         <Link href={`/sales/invoices/${task.salesInvoiceId}`} className="text-primary hover:underline truncate block font-mono text-[11px] font-bold">
                                                             HĐ (Sales): {task.salesInvoice.code}
@@ -1158,7 +1173,17 @@ export function TaskDashboardClient({
                                                             HĐ mua: {task.purchaseBill.code}
                                                         </Link>
                                                     )}
-                                                    {!task.customerId && !task.contractId && !task.salesOrderId && !task.salesInvoiceId && !task.salesEstimateId && !task.purchaseOrderId && !task.purchaseBillId && !task.leadId && (
+                                                    {task.purchasePaymentId && task.purchasePayment && (
+                                                        <Link href={`/purchasing/payments/${task.purchasePaymentId}`} className="text-blue-600 hover:underline truncate block font-mono text-[11px] font-bold">
+                                                            Chi mua: {task.purchasePayment.code}
+                                                        </Link>
+                                                    )}
+                                                    {task.expenseId && task.expense && (
+                                                        <Link href="/sales/expenses" className="text-amber-600 hover:underline truncate block text-[11px] font-bold">
+                                                            Chi phí: {task.expense.code || task.expense.description}
+                                                        </Link>
+                                                    )}
+                                                    {!task.customerId && !task.contractId && !task.salesOrderId && !task.salesInvoiceId && !task.salesEstimateId && !task.purchaseOrderId && !task.purchaseBillId && !task.purchasePaymentId && !task.supplierId && !task.expenseId && !task.leadId && !task.appendixId && !task.projectId && (
                                                         <span className="text-slate-300">-</span>
                                                     )}
                                                 </div>
@@ -1447,7 +1472,7 @@ export function TaskDashboardClient({
                                                         setSearchQuery('');
                                                     }}
                                                 >
-                                                    {res.name || res.title}
+                                                    {res.name || res.title || res.code || res.description}
                                                 </div>
                                             ))}
                                         </div>
@@ -1457,7 +1482,7 @@ export function TaskDashboardClient({
 
                             {selectedLink && (
                                 <div className="flex items-center justify-between px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-lg text-xs font-semibold">
-                                    <span className="truncate">{selectedLink.name || selectedLink.title}</span>
+                                    <span className="truncate">{selectedLink.name || selectedLink.title || selectedLink.code || selectedLink.description}</span>
                                     <button
                                         type="button"
                                         onClick={() => setSelectedLink(null)}

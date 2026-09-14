@@ -82,17 +82,24 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
 
     // Contextual references
     const relatedLinks = [];
-    if (task.contract) relatedLinks.push({ label: 'Hợp đồng', value: task.contract.title, href: `/contracts/${task.contract.id}` });
-    if (task.quote) relatedLinks.push({ label: 'Báo giá', value: task.quote.title, href: `/quotes/${task.quote.id}` });
-    if (task.handover) relatedLinks.push({ label: 'Bàn giao', value: task.handover.title, href: `/handovers/${task.handover.id}` });
-    if (task.paymentReq) relatedLinks.push({ label: 'Thanh toán', value: task.paymentReq.title, href: `/payment-requests/${task.paymentReq.id}` });
-    if (task.dispatch) relatedLinks.push({ label: 'Công văn', value: task.dispatch.title, href: `/dispatches/${task.dispatch.id}` });
+    if (task.project) relatedLinks.push({ label: 'Dự án', value: task.project.name || task.project.code, href: `/projects/${task.project.id}` });
     if (task.customer) relatedLinks.push({ label: 'Khách hàng', value: task.customer.name, href: `/customers/${task.customer.id}` });
-    if (task.salesOrder) relatedLinks.push({ label: 'Đơn hàng', value: task.salesOrder.code, href: `/sales/orders/${task.salesOrder.id}` });
-    if (task.salesInvoice) relatedLinks.push({ label: 'Hóa đơn', value: task.salesInvoice.code, href: `/sales/invoices/${task.salesInvoice.id}` });
+    if (task.contract) relatedLinks.push({ label: 'Hợp đồng', value: task.contract.title, href: `/contracts/${task.contract.id}` });
+    if (task.appendix) relatedLinks.push({ label: 'Phụ lục hợp đồng', value: task.appendix.title, href: `/contracts/appendices/${task.appendix.id}` });
+    if (task.quote) relatedLinks.push({ label: 'Báo giá', value: task.quote.title, href: `/quotes/${task.quote.id}` });
+    if (task.handover) relatedLinks.push({ label: 'Biên bản bàn giao', value: task.handover.title, href: `/handovers/${task.handover.id}` });
+    if (task.paymentReq) relatedLinks.push({ label: 'Đề nghị thanh toán', value: task.paymentReq.title, href: `/payment-requests/${task.paymentReq.id}` });
+    if (task.dispatch) relatedLinks.push({ label: 'Công văn', value: task.dispatch.title, href: `/dispatches/${task.dispatch.id}` });
     if (task.salesEstimate) relatedLinks.push({ label: 'Báo giá (Sales)', value: task.salesEstimate.code, href: `/sales/estimates/${task.salesEstimate.id}` });
+    if (task.salesOrder) relatedLinks.push({ label: 'Đơn hàng (Sales)', value: task.salesOrder.code, href: `/sales/orders/${task.salesOrder.id}` });
+    if (task.salesInvoice) relatedLinks.push({ label: 'Hóa đơn', value: task.salesInvoice.code, href: `/sales/invoices/${task.salesInvoice.id}` });
     if (task.salesPayment) relatedLinks.push({ label: 'Phiếu thu', value: task.salesPayment.code, href: `/sales/payments/${task.salesPayment.id}` });
-    if (task.lead) relatedLinks.push({ label: 'Cơ hội bán hàng', value: task.lead.name, href: `/sales/leads/${task.lead.id}` });
+    if (task.lead) relatedLinks.push({ label: 'Cơ hội bán hàng', value: task.lead.name || task.lead.code, href: `/sales/leads/${task.lead.id}` });
+    if (task.supplier) relatedLinks.push({ label: 'Nhà cung cấp', value: task.supplier.name || task.supplier.code, href: `/suppliers/${task.supplier.id}` });
+    if (task.purchaseOrder) relatedLinks.push({ label: 'Đơn mua hàng', value: task.purchaseOrder.code, href: `/purchasing/orders/${task.purchaseOrder.id}` });
+    if (task.purchaseBill) relatedLinks.push({ label: 'Hóa đơn mua', value: task.purchaseBill.code, href: `/purchasing/bills/${task.purchaseBill.id}` });
+    if (task.purchasePayment) relatedLinks.push({ label: 'Phiếu chi mua hàng', value: task.purchasePayment.code, href: `/purchasing/payments/${task.purchasePayment.id}` });
+    if (task.expense) relatedLinks.push({ label: 'Chi phí', value: task.expense.code || task.expense.description, href: `/sales/expenses` });
 
     // Context Links Linker State
     const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
@@ -304,6 +311,7 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
         const linkMap: any = {
             'CUSTOMER': { customerId: entityId },
             'CONTRACT': { contractId: entityId },
+            'APPENDIX': { appendixId: entityId },
             'QUOTE': { quoteId: entityId },
             'HANDOVER': { handoverId: entityId },
             'PAYMENT_REQ': { paymentReqId: entityId },
@@ -313,9 +321,14 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
             'SALES_ESTIMATE': { salesEstimateId: entityId },
             'SALES_PAYMENT': { salesPaymentId: entityId },
             'LEAD': { leadId: entityId },
-            'PROJECT': { projectId: entityId }
+            'PROJECT': { projectId: entityId },
+            'SUPPLIER': { supplierId: entityId },
+            'PURCHASE_ORDER': { purchaseOrderId: entityId },
+            'PURCHASE_BILL': { purchaseBillId: entityId },
+            'PURCHASE_PAYMENT': { purchasePaymentId: entityId },
+            'EXPENSE': { expenseId: entityId }
         };
-        await updateTaskLinks(task.id, linkMap[linkType], session.user.id);
+        await updateTaskLinks(task.id, linkMap[linkType] || {}, session.user.id);
         setIsLinkModalOpen(false);
         setLinkQuery('');
         setIsSaving(false);
@@ -330,20 +343,27 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
         let linkKey = '';
         if (typeLabel === 'Khách hàng') linkKey = 'CUSTOMER';
         else if (typeLabel === 'Hợp đồng') linkKey = 'CONTRACT';
+        else if (typeLabel === 'Phụ lục hợp đồng') linkKey = 'APPENDIX';
         else if (typeLabel === 'Báo giá') linkKey = 'QUOTE';
-        else if (typeLabel === 'Biên bản bàn giao') linkKey = 'HANDOVER';
-        else if (typeLabel === 'Đề nghị thanh toán') linkKey = 'PAYMENT_REQ';
+        else if (typeLabel === 'Biên bản bàn giao' || typeLabel === 'Bàn giao') linkKey = 'HANDOVER';
+        else if (typeLabel === 'Đề nghị thanh toán' || typeLabel === 'Thanh toán') linkKey = 'PAYMENT_REQ';
         else if (typeLabel === 'Công văn') linkKey = 'DISPATCH';
-        else if (typeLabel === 'Đơn hàng') linkKey = 'SALES_ORDER';
+        else if (typeLabel === 'Đơn hàng' || typeLabel === 'Đơn hàng (Sales)') linkKey = 'SALES_ORDER';
         else if (typeLabel === 'Hóa đơn') linkKey = 'SALES_INVOICE';
         else if (typeLabel === 'Báo giá (Sales)') linkKey = 'SALES_ESTIMATE';
         else if (typeLabel === 'Phiếu thu') linkKey = 'SALES_PAYMENT';
         else if (typeLabel === 'Cơ hội bán hàng') linkKey = 'LEAD';
         else if (typeLabel === 'Dự án') linkKey = 'PROJECT';
+        else if (typeLabel === 'Nhà cung cấp') linkKey = 'SUPPLIER';
+        else if (typeLabel === 'Đơn mua hàng' || typeLabel === 'Đơn đặt hàng') linkKey = 'PURCHASE_ORDER';
+        else if (typeLabel === 'Hóa đơn mua') linkKey = 'PURCHASE_BILL';
+        else if (typeLabel === 'Phiếu chi mua hàng' || typeLabel === 'Thanh toán mua hàng') linkKey = 'PURCHASE_PAYMENT';
+        else if (typeLabel === 'Chi phí') linkKey = 'EXPENSE';
 
         const linkMap: any = {
             'CUSTOMER': { customerId: null },
             'CONTRACT': { contractId: null },
+            'APPENDIX': { appendixId: null },
             'QUOTE': { quoteId: null },
             'HANDOVER': { handoverId: null },
             'PAYMENT_REQ': { paymentReqId: null },
@@ -353,7 +373,12 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
             'SALES_ESTIMATE': { salesEstimateId: null },
             'SALES_PAYMENT': { salesPaymentId: null },
             'LEAD': { leadId: null },
-            'PROJECT': { projectId: null }
+            'PROJECT': { projectId: null },
+            'SUPPLIER': { supplierId: null },
+            'PURCHASE_ORDER': { purchaseOrderId: null },
+            'PURCHASE_BILL': { purchaseBillId: null },
+            'PURCHASE_PAYMENT': { purchasePaymentId: null },
+            'EXPENSE': { expenseId: null }
         };
 
         if (linkKey && linkMap[linkKey]) {
@@ -1620,20 +1645,31 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                                     <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 500 }}>Loại liên kết</label>
                                     <select
                                         value={linkType}
-                                        onChange={e => setLinkType(e.target.value)}
+                                        onChange={e => {
+                                            setLinkType(e.target.value);
+                                            setLinkQuery('');
+                                            setLinkResults([]);
+                                        }}
                                         style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }}
                                     >
                                         <option value="CUSTOMER">Khách hàng</option>
                                         <option value="CONTRACT">Hợp đồng</option>
+                                        <option value="APPENDIX">Phụ lục hợp đồng</option>
                                         <option value="QUOTE">Báo giá</option>
                                         <option value="HANDOVER">Biên bản bàn giao</option>
                                         <option value="PAYMENT_REQ">Đề nghị thanh toán</option>
                                         <option value="DISPATCH">Công văn</option>
+                                        <option value="PROJECT">Dự án</option>
                                         <option value="SALES_ESTIMATE">Báo giá (Sales)</option>
-                                        <option value="SALES_ORDER">Đơn hàng</option>
-                                        <option value="SALES_INVOICE">Hóa đơn</option>
+                                        <option value="SALES_ORDER">Đơn hàng (Sales)</option>
+                                        <option value="SALES_INVOICE">Hóa đơn bán</option>
                                         <option value="SALES_PAYMENT">Phiếu thu</option>
                                         <option value="LEAD">Cơ hội bán hàng</option>
+                                        <option value="SUPPLIER">Nhà cung cấp</option>
+                                        <option value="PURCHASE_ORDER">Đơn mua hàng / Đơn đặt hàng</option>
+                                        <option value="PURCHASE_BILL">Hóa đơn mua</option>
+                                        <option value="PURCHASE_PAYMENT">Phiếu chi mua hàng</option>
+                                        <option value="EXPENSE">Chi phí</option>
                                     </select>
                                 </div>
 
@@ -1659,7 +1695,7 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                                                 style={{ padding: '0.75rem', borderBottom: '1px solid var(--border)', cursor: 'pointer', fontSize: '0.9rem' }}
                                                 className="hover:bg-gray-50 bg-white"
                                             >
-                                                {res.title || res.name || res.code}
+                                                {res.title || res.name || res.code || res.description}
                                             </div>
                                         ))
                                     )}

@@ -131,22 +131,31 @@ const addFrequency = (date: Date, freq: string, step: number) => {
 // Helper to auto-resolve customerId or supplierId from related entities
 async function resolveParentEntityIds(data: any) {
     if (!data.customerId) {
-        if (data.contractId) { const doc = await prisma.contract.findUnique({ where: { id: data.contractId }, select: { customerId: true } }); if (doc) data.customerId = doc.customerId; }
-        else if (data.quoteId) { const doc = await prisma.quote.findUnique({ where: { id: data.quoteId }, select: { customerId: true } }); if (doc) data.customerId = doc.customerId; }
-        else if (data.handoverId) { const doc = await prisma.handover.findUnique({ where: { id: data.handoverId }, select: { customerId: true } }); if (doc) data.customerId = doc.customerId; }
-        else if (data.paymentReqId) { const doc = await prisma.paymentRequest.findUnique({ where: { id: data.paymentReqId }, select: { customerId: true } }); if (doc) data.customerId = doc.customerId; }
-        else if (data.dispatchId) { const doc = await prisma.dispatch.findUnique({ where: { id: data.dispatchId }, select: { customerId: true } }); if (doc) data.customerId = doc.customerId; }
-        else if (data.salesOrderId) { const doc = await prisma.salesOrder.findUnique({ where: { id: data.salesOrderId }, select: { customerId: true } }); if (doc) data.customerId = doc.customerId; }
-        else if (data.salesInvoiceId) { const doc = await prisma.salesInvoice.findUnique({ where: { id: data.salesInvoiceId }, select: { customerId: true } }); if (doc) data.customerId = doc.customerId; }
-        else if (data.salesEstimateId) { const doc = await prisma.salesEstimate.findUnique({ where: { id: data.salesEstimateId }, select: { customerId: true } }); if (doc) data.customerId = doc.customerId; }
-        else if (data.salesPaymentId) { const doc = await prisma.salesPayment.findUnique({ where: { id: data.salesPaymentId }, select: { customerId: true } }); if (doc) data.customerId = doc.customerId; }
-        else if (data.leadId) { const doc = await prisma.lead.findUnique({ where: { id: data.leadId }, select: { customerId: true } }); if (doc && doc.customerId) data.customerId = doc.customerId; }
+        if (data.contractId) { const doc = await prisma.contract.findUnique({ where: { id: data.contractId }, select: { customerId: true } }); if (doc?.customerId) data.customerId = doc.customerId; }
+        else if (data.quoteId) { const doc = await prisma.quote.findUnique({ where: { id: data.quoteId }, select: { customerId: true } }); if (doc?.customerId) data.customerId = doc.customerId; }
+        else if (data.handoverId) { const doc = await prisma.handover.findUnique({ where: { id: data.handoverId }, select: { customerId: true } }); if (doc?.customerId) data.customerId = doc.customerId; }
+        else if (data.paymentReqId) { const doc = await prisma.paymentRequest.findUnique({ where: { id: data.paymentReqId }, select: { customerId: true } }); if (doc?.customerId) data.customerId = doc.customerId; }
+        else if (data.dispatchId) { const doc = await prisma.dispatch.findUnique({ where: { id: data.dispatchId }, select: { customerId: true } }); if (doc?.customerId) data.customerId = doc.customerId; }
+        else if (data.salesOrderId) { const doc = await prisma.salesOrder.findUnique({ where: { id: data.salesOrderId }, select: { customerId: true } }); if (doc?.customerId) data.customerId = doc.customerId; }
+        else if (data.salesInvoiceId) { const doc = await prisma.salesInvoice.findUnique({ where: { id: data.salesInvoiceId }, select: { customerId: true } }); if (doc?.customerId) data.customerId = doc.customerId; }
+        else if (data.salesEstimateId) { const doc = await prisma.salesEstimate.findUnique({ where: { id: data.salesEstimateId }, select: { customerId: true } }); if (doc?.customerId) data.customerId = doc.customerId; }
+        else if (data.salesPaymentId) { const doc = await prisma.salesPayment.findUnique({ where: { id: data.salesPaymentId }, select: { customerId: true } }); if (doc?.customerId) data.customerId = doc.customerId; }
+        else if (data.leadId) { const doc = await prisma.lead.findUnique({ where: { id: data.leadId }, select: { customerId: true } }); if (doc?.customerId) data.customerId = doc.customerId; }
+        else if (data.appendixId) {
+            const doc = await prisma.contractAppendix.findUnique({ where: { id: data.appendixId }, select: { contract: { select: { customerId: true } } } });
+            if (doc?.contract?.customerId) data.customerId = doc.contract.customerId;
+        }
+        else if (data.expenseId) {
+            const doc = await prisma.expense.findUnique({ where: { id: data.expenseId }, select: { customerId: true } });
+            if (doc?.customerId) data.customerId = doc.customerId;
+        }
     }
 
     if (!data.supplierId) {
-        if (data.purchaseOrderId) { const doc = await prisma.purchaseOrder.findUnique({ where: { id: data.purchaseOrderId }, select: { supplierId: true } }); if (doc) data.supplierId = doc.supplierId; }
-        else if (data.purchaseBillId) { const doc = await prisma.purchaseBill.findUnique({ where: { id: data.purchaseBillId }, select: { supplierId: true } }); if (doc) data.supplierId = doc.supplierId; }
-        else if (data.purchasePaymentId) { const doc = await prisma.purchasePayment.findUnique({ where: { id: data.purchasePaymentId }, select: { supplierId: true } }); if (doc) data.supplierId = doc.supplierId; }
+        if (data.purchaseOrderId) { const doc = await prisma.purchaseOrder.findUnique({ where: { id: data.purchaseOrderId }, select: { supplierId: true } }); if (doc?.supplierId) data.supplierId = doc.supplierId; }
+        else if (data.purchaseBillId) { const doc = await prisma.purchaseBill.findUnique({ where: { id: data.purchaseBillId }, select: { supplierId: true } }); if (doc?.supplierId) data.supplierId = doc.supplierId; }
+        else if (data.purchasePaymentId) { const doc = await prisma.purchasePayment.findUnique({ where: { id: data.purchasePaymentId }, select: { supplierId: true } }); if (doc?.supplierId) data.supplierId = doc.supplierId; }
+        else if (data.expenseId) { const doc = await prisma.expense.findUnique({ where: { id: data.expenseId }, select: { supplierId: true } }); if (doc?.supplierId) data.supplierId = doc.supplierId; }
     }
 
     return data;
@@ -335,7 +344,8 @@ export async function triggerAutoTaskEmail(taskId: string, newAssigneeIds: strin
 
 export async function updateTask(id: string, data: any, userId: string) {
     const validatedData = taskBaseSchema.parse(data);
-    const { assignees, observers, recurrence, dependencies, ...restData } = validatedData;
+    const { assignees, observers, recurrence, dependencies, ...restDataUnresolved } = validatedData;
+    const restData = await resolveParentEntityIds(restDataUnresolved);
 
     // Sanitize empty string ID fields to null to prevent foreign key violations
     for (const key of Object.keys(restData)) {
@@ -966,7 +976,30 @@ export async function getTaskComments(taskId: string) {
     return comments;
 }
 
-export async function updateTaskLinks(taskId: string, linkData: { customerId?: string | null, contractId?: string | null, quoteId?: string | null, handoverId?: string | null, paymentReqId?: string | null, dispatchId?: string | null, salesOrderId?: string | null, salesInvoiceId?: string | null, salesEstimateId?: string | null, salesPaymentId?: string | null, supplierId?: string | null, purchaseOrderId?: string | null, purchaseBillId?: string | null, purchasePaymentId?: string | null }, userId: string) {
+export async function updateTaskLinks(
+    taskId: string, 
+    linkData: { 
+        customerId?: string | null, 
+        contractId?: string | null, 
+        appendixId?: string | null,
+        quoteId?: string | null, 
+        handoverId?: string | null, 
+        paymentReqId?: string | null, 
+        dispatchId?: string | null, 
+        salesOrderId?: string | null, 
+        salesInvoiceId?: string | null, 
+        salesEstimateId?: string | null, 
+        salesPaymentId?: string | null, 
+        leadId?: string | null,
+        projectId?: string | null,
+        supplierId?: string | null, 
+        purchaseOrderId?: string | null, 
+        purchaseBillId?: string | null, 
+        purchasePaymentId?: string | null,
+        expenseId?: string | null
+    }, 
+    userId: string
+) {
     const oldTask = await prisma.task.findUnique({ 
         where: { id: taskId },
         include: { assignees: true, observers: true }
@@ -977,7 +1010,7 @@ export async function updateTaskLinks(taskId: string, linkData: { customerId?: s
         await verifyActionOwnership('TASKS', 'EDIT', oldTask.creatorId, allowedUserIds);
     }
 
-    const resolvedLinkData = await resolveParentEntityIds(linkData);
+    const resolvedLinkData = await resolveParentEntityIds({ ...linkData });
 
     await prisma.task.update({
         where: { id: taskId },
@@ -986,14 +1019,33 @@ export async function updateTaskLinks(taskId: string, linkData: { customerId?: s
 
     if (oldTask) {
         const changes: string[] = [];
-        const keysMap: any = { customerId: 'Khách hàng', contractId: 'Hợp đồng', quoteId: 'Báo giá', handoverId: 'Biên bản bàn giao', paymentReqId: 'Đề nghị thanh toán', dispatchId: 'Công văn', salesOrderId: 'Đơn hàng', salesInvoiceId: 'Hóa đơn', salesEstimateId: 'Báo giá (Sales)', salesPaymentId: 'Phiếu thu', leadId: 'Cơ hội bán hàng' };
+        const keysMap: any = { 
+            customerId: 'Khách hàng', 
+            contractId: 'Hợp đồng', 
+            appendixId: 'Phụ lục hợp đồng',
+            quoteId: 'Báo giá', 
+            handoverId: 'Biên bản bàn giao', 
+            paymentReqId: 'Đề nghị thanh toán', 
+            dispatchId: 'Công văn', 
+            salesOrderId: 'Đơn hàng (Sales)', 
+            salesInvoiceId: 'Hóa đơn', 
+            salesEstimateId: 'Báo giá (Sales)', 
+            salesPaymentId: 'Phiếu thu', 
+            leadId: 'Cơ hội bán hàng',
+            projectId: 'Dự án',
+            supplierId: 'Nhà cung cấp',
+            purchaseOrderId: 'Đơn mua hàng',
+            purchaseBillId: 'Hóa đơn mua',
+            purchasePaymentId: 'Phiếu chi mua hàng',
+            expenseId: 'Chi phí'
+        };
 
         for (const key of Object.keys(resolvedLinkData)) {
             const oldVal = (oldTask as any)[key];
             const newVal = (resolvedLinkData as any)[key] ?? null;
             if (oldVal !== newVal) {
-                if (newVal) changes.push(`Gắn liên kết ${keysMap[key]}`);
-                else changes.push(`Gỡ liên kết ${keysMap[key]}`);
+                if (newVal) changes.push(`Gắn liên kết ${keysMap[key] || key}`);
+                else changes.push(`Gỡ liên kết ${keysMap[key] || key}`);
             }
         }
 
@@ -1003,6 +1055,7 @@ export async function updateTaskLinks(taskId: string, linkData: { customerId?: s
     }
 
     revalidatePath(`/tasks/${taskId}`);
+    revalidatePath('/tasks');
 }
 
 import { ResourceId } from '@/lib/permissions';
@@ -1024,74 +1077,75 @@ export async function searchEntities(type: string, query: string = '') {
     switch (type) {
         case 'CUSTOMER': {
             const f = getRes('CUSTOMERS');
-            return f ? prisma.customer.findMany({ where: { AND: [f as any, { name: { contains: q } }] }, take: 5, select: { id: true, name: true } }) : [];
+            return f ? prisma.customer.findMany({ where: { AND: [f as any, { name: { contains: q } }] }, take: 10, select: { id: true, name: true, code: true } }) : [];
         }
         case 'PROJECT': {
             const f = getRes('PROJECTS');
-            return f ? (prisma as any).project.findMany({ where: { AND: [f as any, { name: { contains: q } }] }, take: 5, select: { id: true, name: true, code: true } }) : [];
+            return f ? (prisma as any).project.findMany({ where: { AND: [f as any, { OR: [{ name: { contains: q } }, { code: { contains: q } }] }] }, take: 10, select: { id: true, name: true, code: true } }) : [];
         }
         case 'CONTRACT': {
             const f = getRes('CONTRACTS');
-            return f ? prisma.contract.findMany({ where: { AND: [f as any, { title: { contains: q } }] }, take: 5, select: { id: true, title: true } }) : [];
+            return f ? prisma.contract.findMany({ where: { AND: [f as any, { title: { contains: q } }] }, take: 10, select: { id: true, title: true } }) : [];
         }
         case 'QUOTE': {
             const f = getRes('QUOTES');
-            return f ? prisma.quote.findMany({ where: { AND: [f as any, { title: { contains: q } }] }, take: 5, select: { id: true, title: true } }) : [];
+            return f ? prisma.quote.findMany({ where: { AND: [f as any, { title: { contains: q } }] }, take: 10, select: { id: true, title: true } }) : [];
         }
         case 'HANDOVER': {
             const f = getRes('HANDOVERS');
-            return f ? prisma.handover.findMany({ where: { AND: [f as any, { title: { contains: q } }] }, take: 5, select: { id: true, title: true } }) : [];
+            return f ? prisma.handover.findMany({ where: { AND: [f as any, { title: { contains: q } }] }, take: 10, select: { id: true, title: true } }) : [];
         }
         case 'PAYMENT_REQ': {
             const f = getRes('PAYMENTS');
-            return f ? prisma.paymentRequest.findMany({ where: { AND: [f as any, { title: { contains: q } }] }, take: 5, select: { id: true, title: true } }) : [];
+            return f ? prisma.paymentRequest.findMany({ where: { AND: [f as any, { title: { contains: q } }] }, take: 10, select: { id: true, title: true } }) : [];
         }
         case 'DISPATCH': {
             const f = getRes('DISPATCHES');
-            return f ? prisma.dispatch.findMany({ where: { AND: [f as any, { title: { contains: q } }] }, take: 5, select: { id: true, title: true } }) : [];
+            return f ? prisma.dispatch.findMany({ where: { AND: [f as any, { title: { contains: q } }] }, take: 10, select: { id: true, title: true } }) : [];
         }
         case 'SALES_ORDER': {
             const f = getRes('SALES_ORDERS');
-            return f ? prisma.salesOrder.findMany({ where: { AND: [f as any, { code: { contains: q } }] }, take: 5, select: { id: true, code: true } }) : [];
+            return f ? prisma.salesOrder.findMany({ where: { AND: [f as any, { code: { contains: q } }] }, take: 10, select: { id: true, code: true } }) : [];
         }
         case 'SALES_INVOICE': {
             const f = getRes('SALES_INVOICES');
-            return f ? prisma.salesInvoice.findMany({ where: { AND: [f as any, { code: { contains: q } }] }, take: 5, select: { id: true, code: true } }) : [];
+            return f ? prisma.salesInvoice.findMany({ where: { AND: [f as any, { code: { contains: q } }] }, take: 10, select: { id: true, code: true } }) : [];
         }
         case 'SALES_ESTIMATE': {
             const f = getRes('SALES_ESTIMATES');
-            return f ? prisma.salesEstimate.findMany({ where: { AND: [f as any, { code: { contains: q } }] }, take: 5, select: { id: true, code: true } }) : [];
+            return f ? prisma.salesEstimate.findMany({ where: { AND: [f as any, { code: { contains: q } }] }, take: 10, select: { id: true, code: true } }) : [];
         }
         case 'SALES_PAYMENT': {
             const f = getRes('SALES_PAYMENTS');
-            return f ? prisma.salesPayment.findMany({ where: { AND: [f as any, { code: { contains: q } }] }, take: 5, select: { id: true, code: true } }) : [];
+            return f ? prisma.salesPayment.findMany({ where: { AND: [f as any, { code: { contains: q } }] }, take: 10, select: { id: true, code: true } }) : [];
         }
         case 'LEAD': {
-            return prisma.lead.findMany({ where: { OR: [{ code: { contains: q } }, { name: { contains: q } }] }, take: 5, select: { id: true, name: true, code: true } });
+            return prisma.lead.findMany({ where: { OR: [{ code: { contains: q } }, { name: { contains: q } }] }, take: 10, select: { id: true, name: true, code: true } });
         }
         case 'APPENDIX': {
             const f = getRes('CONTRACTS');
-            return f ? prisma.contractAppendix.findMany({ where: { AND: [{ contract: f as any }, { title: { contains: q } }] }, take: 5, select: { id: true, title: true } }) : [];
+            return f ? prisma.contractAppendix.findMany({ where: { AND: [{ contract: f as any }, { title: { contains: q } }] }, take: 10, select: { id: true, title: true } }) : [];
         }
         case 'SUPPLIER': {
             const f = getRes('SUPPLIERS');
-            return f ? prisma.supplier.findMany({ where: { AND: [f as any, { OR: [{ code: { contains: q } }, { name: { contains: q } }] }] }, take: 5, select: { id: true, name: true, code: true } }) : [];
+            if (!f) return [];
+            return prisma.supplier.findMany({ where: { OR: [{ code: { contains: q } }, { name: { contains: q } }, { shortName: { contains: q } }] }, take: 10, select: { id: true, name: true, code: true } });
         }
         case 'EXPENSE': {
             const f = getRes('SALES_EXPENSES');
-            return f ? prisma.expense.findMany({ where: { AND: [f as any, { OR: [{ code: { contains: q } }, { description: { contains: q } }] }] }, take: 5, select: { id: true, description: true, code: true } }) : [];
+            return f ? prisma.expense.findMany({ where: { AND: [f as any, { OR: [{ code: { contains: q } }, { description: { contains: q } }] }] }, take: 10, select: { id: true, description: true, code: true } }) : [];
         }
         case 'PURCHASE_ORDER': {
             const f = getRes('PURCHASE_ORDERS');
-            return f ? prisma.purchaseOrder.findMany({ where: { AND: [f as any, { code: { contains: q } }] }, take: 5, select: { id: true, code: true } }) : [];
+            return f ? prisma.purchaseOrder.findMany({ where: { AND: [f as any, { code: { contains: q } }] }, take: 10, select: { id: true, code: true } }) : [];
         }
         case 'PURCHASE_BILL': {
             const f = getRes('PURCHASE_BILLS');
-            return f ? prisma.purchaseBill.findMany({ where: { AND: [f as any, { code: { contains: q } }] }, take: 5, select: { id: true, code: true } }) : [];
+            return f ? prisma.purchaseBill.findMany({ where: { AND: [f as any, { OR: [{ code: { contains: q } }, { supplierInvoice: { contains: q } }] }] }, take: 10, select: { id: true, code: true, supplierInvoice: true } }) : [];
         }
         case 'PURCHASE_PAYMENT': {
             const f = getRes('PURCHASE_PAYMENTS');
-            return f ? prisma.purchasePayment.findMany({ where: { AND: [f as any, { code: { contains: q } }] }, take: 5, select: { id: true, code: true } }) : [];
+            return f ? prisma.purchasePayment.findMany({ where: { AND: [f as any, { code: { contains: q } }] }, take: 10, select: { id: true, code: true } }) : [];
         }
         default:
             return [];
