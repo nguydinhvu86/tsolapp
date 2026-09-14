@@ -18,6 +18,7 @@ import { ClickToCallButton } from '@/app/components/ClickToCallButton';
 import { CustomerCallLogsPanel } from '@/app/components/customers/CustomerCallLogsPanel';
 
 import { StatusBadge } from '@/app/components/ui/StatusBadge';
+import { TagDisplay } from '@/app/components/ui/TagDisplay';
 
 export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, warehouses }: { supplier: any, users: any[], tasks: any[], warehouses?: any[] }) {
     const router = useRouter();
@@ -544,20 +545,7 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
                                                             title="Nhấn để sửa thẻ quản lý"
                                                         >
                                                             {bill.tags ? (
-                                                                bill.tags.split(',').map((tag: string, i: number) => (
-                                                                    <span key={i} style={{
-                                                                        padding: '0.125rem 0.5rem',
-                                                                        fontSize: '0.7rem',
-                                                                        backgroundColor: '#f1f5f9',
-                                                                        color: '#475569',
-                                                                        borderRadius: '0.25rem',
-                                                                        border: '1px solid #e2e8f0',
-                                                                        fontWeight: 500,
-                                                                        transition: 'all 0.2s',
-                                                                    }} className="hover:border-indigo-300 hover:text-indigo-600">
-                                                                        {tag.trim()}
-                                                                    </span>
-                                                                ))
+                                                                <TagDisplay tagsString={bill.tags} />
                                                             ) : (
                                                                 <span style={{ color: '#9ca3af', fontSize: '0.75rem', border: '1px dashed #d1d5db', padding: '0.125rem 0.5rem', borderRadius: '0.25rem', transition: 'all 0.2s' }} className="hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50">+ Thêm thẻ</span>
                                                             )}

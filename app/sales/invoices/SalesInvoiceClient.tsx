@@ -854,40 +854,42 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         .status-badge {
             display: inline-flex;
             align-items: center;
-            gap: 4.5px;
-            padding: 2.5px 8px;
-            border-radius: 6px;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 9999px;
             font-family: var(--font-sans), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             font-size: 11px;
-            font-weight: 600;
+            font-weight: 500;
             line-height: 1.25;
-            letter-spacing: -0.015em;
+            letter-spacing: -0.01em;
+            white-space: nowrap;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
             transition: all 0.15s ease;
         }
-        .badge-success { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
-        .badge-warning { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+        .badge-success { background: #ecfdf5; color: #047857; border: 1px solid #d1fae5; }
+        .badge-warning { background: #fffbeb; color: #b45309; border: 1px solid #fef3c7; }
         .badge-neutral { background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; }
-        .badge-info { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
-        .badge-danger { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
-        .badge-overdue { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
+        .badge-info { background: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; }
+        .badge-danger { background: #fff1f2; color: #be123c; border: 1px solid #ffe4e6; }
+        .badge-overdue { background: #fff1f2; color: #be123c; border: 1px solid #ffe4e6; }
         
         .status-select {
             appearance: none;
             cursor: pointer;
             outline: none;
             text-align: left;
-            padding: 2.5px 22px 2.5px 8px !important;
-            border-radius: 6px;
+            padding: 2px 20px 2px 8px !important;
+            border-radius: 9999px;
             font-family: var(--font-sans), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             font-size: 11px;
-            font-weight: 600;
+            font-weight: 500;
             line-height: 1.25;
-            letter-spacing: -0.015em;
+            letter-spacing: -0.01em;
+            white-space: nowrap;
             background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
             background-position: right 5px center;
             background-repeat: no-repeat;
-            background-size: 12px 12px;
+            background-size: 11px 11px;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
             transition: all 0.15s ease;
         }

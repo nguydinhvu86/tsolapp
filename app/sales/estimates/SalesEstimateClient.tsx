@@ -565,24 +565,25 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         .status-badge {
             display: inline-flex;
             align-items: center;
-            gap: 4.5px;
-            padding: 2.5px 8px;
-            border-radius: 6px;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 9999px;
             font-family: var(--font-sans), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             font-size: 11px;
-            font-weight: 600;
+            font-weight: 500;
             line-height: 1.25;
-            letter-spacing: -0.015em;
+            letter-spacing: -0.01em;
+            white-space: nowrap;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
             transition: all 0.15s ease;
         }
-        .badge-success { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
-        .badge-teal { background: #f0fdfa; color: #0f766e; border: 1px solid #99f6e4; }
-        .badge-warning { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+        .badge-success { background: #ecfdf5; color: #047857; border: 1px solid #d1fae5; }
+        .badge-teal { background: #f0fdfa; color: #0f766e; border: 1px solid #ccfbf1; }
+        .badge-warning { background: #fffbeb; color: #b45309; border: 1px solid #fef3c7; }
         .badge-neutral { background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; }
-        .badge-info { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
-        .badge-danger { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
-        .badge-purple { background: #faf5ff; color: #6b21a8; border: 1px solid #f3e8ff; }
+        .badge-info { background: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; }
+        .badge-danger { background: #fff1f2; color: #be123c; border: 1px solid #ffe4e6; }
+        .badge-purple { background: #f5f3ff; color: #6d28d9; border: 1px solid #ede9fe; }
         .badge-expired { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
         .stat-card-gray { background-color: #f8fafc; color: #475569; border-color: #e2e8f0; }
         .stat-card-gray .stat-icon { background-color: #f1f5f9; color: #64748b; }
@@ -593,17 +594,18 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
             cursor: pointer;
             outline: none;
             text-align: left;
-            padding: 2.5px 22px 2.5px 8px !important;
-            border-radius: 6px;
+            padding: 2px 20px 2px 8px !important;
+            border-radius: 9999px;
             font-family: var(--font-sans), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             font-size: 11px;
-            font-weight: 600;
+            font-weight: 500;
             line-height: 1.25;
-            letter-spacing: -0.015em;
+            white-space: nowrap;
+            letter-spacing: -0.01em;
             background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
             background-position: right 5px center;
             background-repeat: no-repeat;
-            background-size: 12px 12px;
+            background-size: 11px 11px;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
             transition: all 0.15s ease;
         }
@@ -849,53 +851,64 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                         </td>
                                         <td className="py-3 px-3 text-right">
                                             <div className="flex justify-end items-center gap-1.5">
-                                                <div className="flex items-center gap-1">
+                                                <div className="flex items-center gap-0.5">
                                                     {est.status === 'DRAFT' && (
-                                                        <button onClick={() => handleEdit(est)} title={t('estimates.edit')} className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors">
-                                                            <Edit2 size={15} />
+                                                        <button onClick={() => handleEdit(est)} title={t('estimates.edit')} className="p-1 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors cursor-pointer">
+                                                            <Edit2 size={14} />
                                                         </button>
                                                     )}
-                                                    <button onClick={() => handleCopy(est)} title={t('estimates.copy')} className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors">
-                                                        <Copy size={15} />
+                                                    <button onClick={() => handleCopy(est)} title={t('estimates.copy')} className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors cursor-pointer">
+                                                        <Copy size={14} />
                                                     </button>
-                                                    <Link href={`/sales/estimates/${est.id}`} title={t('estimates.viewDetails')} className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors block">
-                                                        <Eye size={15} />
+                                                    <Link href={`/sales/estimates/${est.id}`} title={t('estimates.viewDetails')} className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors block">
+                                                        <Eye size={14} />
                                                     </Link>
-                                                    <Link href={`/print/sales/estimate/${est.id}`} target="_blank" title={t('estimates.printPdf')} className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors block">
-                                                        <Download size={15} />
+                                                    <Link href={`/print/sales/estimate/${est.id}`} target="_blank" title={t('estimates.printPdf')} className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors block">
+                                                        <Download size={14} />
                                                     </Link>
-                                                    <Link href={`/public/sales/estimate/${est.id}`} target="_blank" title={t('estimates.publicUrl')} className="p-1.5 text-slate-500 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors block">
-                                                        <LinkIcon size={15} />
+                                                    <Link href={`/public/sales/estimate/${est.id}`} target="_blank" title={t('estimates.publicUrl')} className="p-1 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-md transition-colors block">
+                                                        <LinkIcon size={14} />
                                                     </Link>
-                                                    <button onClick={() => handleDelete(est.id)} className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title={t('estimates.delete')}>
-                                                        <Trash2 size={15} />
-                                                    </button>
+                                                    {est.status === 'DRAFT' && (
+                                                        <button onClick={() => handleDelete(est.id)} className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors cursor-pointer" title={t('estimates.delete')}>
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    )}
                                                 </div>
 
                                                 {est.status === 'DRAFT' && (
-                                                    <Button variant="secondary" onClick={() => handleStatusChange(est.id, 'SENT')} title={t('estimates.actionSend')} className="px-2.5 border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-300 py-1 text-[11px] font-semibold flex-shrink-0 shadow-xs transition-all rounded-md">
+                                                    <button onClick={() => handleStatusChange(est.id, 'SENT')} title={t('estimates.actionSend')} className="h-6 px-2 text-[10.5px] font-semibold text-emerald-700 bg-emerald-50/90 border border-emerald-200/80 hover:bg-emerald-100 transition-colors flex items-center gap-1 rounded-md shrink-0 cursor-pointer">
                                                         {t('estimates.actionSendShort')}
-                                                    </Button>
+                                                    </button>
                                                 )}
                                                 {est.status === 'SENT' && (
-                                                    <Button variant="secondary" onClick={() => handleStatusChange(est.id, 'ACCEPTED')} className="text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 px-2.5 flex-shrink-0 py-1 text-[11px] font-semibold shadow-xs transition-all rounded-md" title={t('estimates.actionAccept')}>
-                                                        <Check size={13} className="mr-1 inline-block" /> {t('estimates.actionAcceptShort')}
-                                                    </Button>
+                                                    <button onClick={() => handleStatusChange(est.id, 'ACCEPTED')} className="h-6 px-2 text-[10.5px] font-semibold text-emerald-700 bg-emerald-50/90 border border-emerald-200/80 hover:bg-emerald-100 transition-colors flex items-center gap-1 rounded-md shrink-0 cursor-pointer" title={t('estimates.actionAccept')}>
+                                                        <Check size={12} /> {t('estimates.actionAcceptShort')}
+                                                    </button>
                                                 )}
                                                 {(est.status === 'DRAFT' || est.status === 'SENT' || est.status === 'ACCEPTED') && (
-                                                    <>
-                                                        <Button variant="secondary" onClick={() => setConvertOrderModalId(est.id)} className="text-indigo-700 bg-indigo-50 border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300 px-2.5 flex-shrink-0 py-1 text-[11px] font-semibold shadow-xs transition-all rounded-md" title={t('estimates.actionCreateOrder')}>
-                                                            <ArrowRightLeft size={13} className="mr-1 inline-block" /> Lên Đơn
-                                                        </Button>
-                                                        <Button variant="secondary" onClick={() => setConvertModalId(est.id)} className="text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300 px-2.5 flex-shrink-0 py-1 text-[11px] font-semibold shadow-xs transition-all rounded-md" title={t('estimates.actionCreateInvoice')}>
-                                                            <ArrowRightLeft size={13} className="mr-1 inline-block" /> Lên HĐ
-                                                        </Button>
-                                                    </>
+                                                    <div className="inline-flex rounded-md border border-slate-200 bg-slate-50/70 p-0.5 shrink-0">
+                                                        <button
+                                                            onClick={() => setConvertOrderModalId(est.id)}
+                                                            className="h-5 px-1.5 text-[10.5px] font-semibold text-indigo-700 hover:bg-white hover:shadow-2xs rounded transition-all flex items-center gap-1 cursor-pointer"
+                                                            title={t('estimates.actionCreateOrder')}
+                                                        >
+                                                            <ArrowRightLeft size={11} /> Lên Đơn
+                                                        </button>
+                                                        <div className="w-px bg-slate-200 my-0.5" />
+                                                        <button
+                                                            onClick={() => setConvertModalId(est.id)}
+                                                            className="h-5 px-1.5 text-[10.5px] font-semibold text-amber-700 hover:bg-white hover:shadow-2xs rounded transition-all flex items-center gap-1 cursor-pointer"
+                                                            title={t('estimates.actionCreateInvoice')}
+                                                        >
+                                                            <ArrowRightLeft size={11} /> Lên HĐ
+                                                        </button>
+                                                    </div>
                                                 )}
                                                 {est.status === 'EXPIRED' && (
-                                                    <Button variant="secondary" onClick={() => handleCopy(est)} className="text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 px-2.5 flex-shrink-0 py-1 text-[11px] font-semibold shadow-xs transition-all rounded-md" title="Tạo một báo giá mới sao chép toàn bộ dữ liệu này">
-                                                        <Copy size={13} className="mr-1 inline-block" /> Tạo Lại Mới
-                                                    </Button>
+                                                    <button onClick={() => handleCopy(est)} className="h-6 px-2 text-[10.5px] font-semibold text-emerald-700 bg-emerald-50/90 border border-emerald-200/80 hover:bg-emerald-100 transition-colors flex items-center gap-1 rounded-md shrink-0 cursor-pointer" title="Tạo một báo giá mới sao chép toàn bộ dữ liệu này">
+                                                        <Copy size={12} /> Tạo Lại Mới
+                                                    </button>
                                                 )}
                                             </div>
                                         </td>

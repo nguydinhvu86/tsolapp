@@ -309,15 +309,21 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
         .status-badge {
             display: inline-flex;
             align-items: center;
+            gap: 4px;
             padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
+            border-radius: 9999px;
+            font-family: var(--font-sans), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 11px;
+            font-weight: 500;
+            line-height: 1.25;
+            letter-spacing: -0.01em;
+            white-space: nowrap;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
         }
-        .badge-success { background: #d1fae5; color: #047857; }
-        .badge-warning { background: #fef3c7; color: #b45309; }
-        .badge-neutral { background: #f3f4f6; color: #374151; }
-        .badge-info { background: #dbeafe; color: #1d4ed8; }
+        .badge-success { background: #ecfdf5; color: #047857; border: 1px solid #d1fae5; }
+        .badge-warning { background: #fffbeb; color: #b45309; border: 1px solid #fef3c7; }
+        .badge-neutral { background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; }
+        .badge-info { background: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; }
     `;
 
     const CustomRechartsTooltip = ({ active, payload, label }: any) => {

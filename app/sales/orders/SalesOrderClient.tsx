@@ -605,43 +605,45 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                                     </td>
                                     <td className="py-3 px-3 text-right">
                                         <div className="flex justify-end items-center gap-1.5">
-                                            <div className="flex items-center gap-1">
+                                            <div className="flex items-center gap-0.5">
                                                 {o.status === 'DRAFT' && (
-                                                    <button onClick={() => handleEdit(o)} title="Chỉnh sửa" className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors">
-                                                        <Edit2 size={15} />
+                                                    <button onClick={() => handleEdit(o)} title="Chỉnh sửa" className="p-1 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors cursor-pointer">
+                                                        <Edit2 size={14} />
                                                     </button>
                                                 )}
-                                                <Link href={`/sales/orders/${o.id}`} title="Xem chi tiết" className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors block">
-                                                    <Eye size={15} />
+                                                <Link href={`/sales/orders/${o.id}`} title="Xem chi tiết" className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors block">
+                                                    <Eye size={14} />
                                                 </Link>
-                                                <Link href={`/print/sales/order/${o.id}`} target="_blank" title="Tải PDF / In ấn" className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors block">
-                                                    <Download size={15} />
+                                                <Link href={`/print/sales/order/${o.id}`} target="_blank" title="Tải PDF / In ấn" className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors block">
+                                                    <Download size={14} />
                                                 </Link>
-                                                <Link href={`/public/sales/order/${o.id}`} target="_blank" title="Link xem Public" className="p-1.5 text-slate-500 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors block">
-                                                    <LinkIcon size={15} />
+                                                <Link href={`/public/sales/order/${o.id}`} target="_blank" title="Link xem Public" className="p-1 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-md transition-colors block">
+                                                    <LinkIcon size={14} />
                                                 </Link>
-                                                <button onClick={() => handleDelete(o.id)} className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Xóa">
-                                                    <Trash2 size={15} />
-                                                </button>
+                                                {o.status === 'DRAFT' && (
+                                                    <button onClick={() => handleDelete(o.id)} className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors cursor-pointer" title="Xóa">
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                )}
                                             </div>
 
                                             {o.status === 'DRAFT' && (
-                                                <Button variant="secondary" onClick={() => handleStatusChange(o.id, 'CONFIRMED')} title="Chốt Đơn" className="px-2.5 border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-300 py-1 text-[11px] font-semibold flex-shrink-0 shadow-xs transition-all rounded-md">
+                                                <button onClick={() => handleStatusChange(o.id, 'CONFIRMED')} title="Chốt Đơn" className="h-6 px-2 text-[10.5px] font-semibold text-emerald-700 bg-emerald-50/90 border border-emerald-200/80 hover:bg-emerald-100 transition-colors flex items-center gap-1 rounded-md shrink-0 cursor-pointer">
                                                     Chốt Đơn
-                                                </Button>
+                                                </button>
                                             )}
                                             {o.status === 'CONFIRMED' && (
-                                                <Button variant="secondary" onClick={() => handleStatusChange(o.id, 'COMPLETED')} className="text-indigo-700 bg-indigo-50 border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300 px-2.5 flex-shrink-0 py-1 text-[11px] font-semibold shadow-xs transition-all rounded-md" title="Hoàn Thành">
-                                                    <PackageCheck size={13} className="mr-1 inline-block" /> Xong
-                                                </Button>
+                                                <button onClick={() => handleStatusChange(o.id, 'COMPLETED')} className="h-6 px-2 text-[10.5px] font-semibold text-indigo-700 bg-indigo-50/90 border border-indigo-200/80 hover:bg-indigo-100 transition-colors flex items-center gap-1 rounded-md shrink-0 cursor-pointer" title="Hoàn Thành">
+                                                    <PackageCheck size={12} /> Xong
+                                                </button>
                                             )}
                                             {(o.status === 'DRAFT' || o.status === 'CONFIRMED') && (
-                                                <Button variant="secondary" onClick={() => setConvertModalId(o.id)} className="text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300 px-2.5 flex-shrink-0 py-1 text-[11px] font-semibold shadow-xs transition-all rounded-md" title="Tạo Hóa Đơn Tự Động">
-                                                    <ArrowRightLeft size={13} className="mr-1 inline-block" /> Lên Hóa Đơn
-                                                </Button>
+                                                <button onClick={() => setConvertModalId(o.id)} className="h-6 px-2 text-[10.5px] font-semibold text-amber-700 bg-amber-50/90 border border-amber-200/80 hover:bg-amber-100 transition-colors flex items-center gap-1 rounded-md shrink-0 cursor-pointer" title="Tạo Hóa Đơn Tự Động">
+                                                    <ArrowRightLeft size={11} /> Lên HĐ
+                                                </button>
                                             )}
                                         </div>
-                                </td>
+                                    </td>
                             </tr>
                         ))}
                         {paginatedItems.length === 0 && (
