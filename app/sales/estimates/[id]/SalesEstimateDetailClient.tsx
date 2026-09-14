@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, FileDown, Plus, ExternalLink, Copy, User, ArrowRightLeft, Edit2 } from 'lucide-react';
+import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, FileDown, Plus, ExternalLink, Copy, User, ArrowRightLeft, Edit2, CornerDownRight } from 'lucide-react';
 import Link from 'next/link';
 import { updateSalesEstimateStatus, convertEstimateToInvoice, convertEstimateToOrder } from '../actions';
 import { formatMoney, formatDate, formatTaxRate } from '@/lib/utils/formatters';
@@ -786,233 +786,246 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                             </button>
                         </div>
 
-                        <div className="p-0">
+                        <div className="p-4 sm:p-6">
                             {activeTab === 'items' && (
-                                <div className="overflow-x-auto w-full">
-                                    {estimate.templateType === 'WITH_IMAGES' ? (
-                                        <table className="w-full min-w-[950px] text-left border-collapse">
-                                            <thead>
-                                                <tr className="bg-slate-50/80 text-slate-600 border-b border-slate-200">
-                                                    <th className="py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-center w-12">S.Ảnh</th>
-                                                    <th className="py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider">Sản Phẩm</th>
-                                                    <th className="py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-center">Xuất Xứ</th>
-                                                    <th className="py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-center">Bảo Hành</th>
-                                                    <th className="py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-center">Số Lượng</th>
-                                                    <th className="py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-right">Đơn Giá</th>
-                                                    <th className="py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-center">Thuế</th>
-                                                    <th className="py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-right">Thành Tiền</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-100">
-                                                {estimate.items?.length === 0 ? (
-                                                    <tr><td colSpan={8} className="text-center py-8 text-xs text-slate-400">Chưa có sản phẩm nào.</td></tr>
-                                                ) : (
-                                                    estimate.items?.map((item: any) => (
-                                                        <tr key={item.id} className={`hover:bg-slate-50/70 transition-colors ${item.isSubItem ? 'bg-slate-50/40' : ''}`}>
-                                                            <td className="py-3 px-3 text-center align-top">
-                                                                {item.imageUrl ? <img src={item.imageUrl} alt="img" className="w-9 h-9 object-contain rounded border border-slate-200 mx-auto bg-white p-0.5" /> : <span className="text-slate-300">-</span>}
-                                                            </td>
-                                                            <td className={`py-3 px-3 align-top ${item.isSubItem ? 'pl-8' : ''}`}>
-                                                                <div className="flex items-center gap-1.5">
-                                                                    {item.isSubItem && <span className="text-slate-400">↳</span>}
-                                                                    <span className="font-semibold text-xs sm:text-[13px] text-slate-900 leading-snug">{item.customName || item.product?.name || 'Sản phẩm tự do'}</span>
-                                                                </div>
-                                                                <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                                                                    {item.product?.sku && (
-                                                                        <span className="text-[10.5px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200/60">
-                                                                            SKU: {item.product.sku}
-                                                                        </span>
-                                                                    )}
-                                                                    {item.manufacture && (
-                                                                        <span className="text-[10.5px] text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200/60">
-                                                                            Hãng: {item.manufacture}
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                                {item.description && (
-                                                                    <div className="text-[11.5px] text-slate-600 mt-1.5 leading-relaxed bg-slate-50/70 p-2 rounded-md border border-slate-100 font-normal whitespace-pre-wrap">
-                                                                        {item.description}
-                                                                    </div>
-                                                                )}
-                                                            </td>
-                                                            <td className="py-3 px-3 text-center text-xs text-slate-600 align-top">{item.origin || '-'}</td>
-                                                            <td className="py-3 px-3 text-center text-xs text-slate-600 align-top">{item.warranty || '-'}</td>
-                                                            <td className="py-3 px-3 text-center text-xs font-mono font-semibold text-slate-800 align-top whitespace-nowrap">
-                                                                {item.quantity} <span className="text-[11px] text-slate-500 font-normal">{item.unit || item.product?.unit || ''}</span>
-                                                            </td>
-                                                            <td className="py-3 px-3 text-right text-xs font-mono font-semibold text-slate-800 align-top whitespace-nowrap">{formatMoney(item.unitPrice)}</td>
-                                                            <td className="py-3 px-3 text-center align-top whitespace-nowrap">
-                                                                <TaxBadge rate={item.taxRate} />
-                                                            </td>
-                                                            <td className="py-3 px-3 text-right text-xs font-mono font-bold text-slate-900 align-top whitespace-nowrap">{formatMoney(item.totalPrice)}</td>
-                                                        </tr>
-                                                    ))
-                                                )}
-                                                {estimate.items?.length > 0 && (
-                                                    <>
-                                                        <tr className="bg-slate-50/50">
-                                                            <td colSpan={7} className="py-2.5 px-4 text-right text-xs font-medium text-slate-500">Tổng tiền trước thuế:</td>
-                                                            <td className="py-2.5 px-4 text-right text-xs font-bold font-mono text-slate-800">{formatMoney(estimate.subTotal || 0)}</td>
-                                                        </tr>
-                                                        <tr className="bg-slate-50/50">
-                                                            <td colSpan={7} className="py-2.5 px-4 text-right text-xs font-medium text-slate-500">Tổng tiền thuế:</td>
-                                                            <td className="py-2.5 px-4 text-right text-xs font-bold font-mono text-slate-800">{formatMoney(estimate.taxAmount || 0)}</td>
-                                                        </tr>
-                                                        <tr className="bg-slate-50 border-t border-slate-200">
-                                                            <td colSpan={7} className="py-3 px-4 text-right text-xs font-bold text-slate-900">Tổng Cộng:</td>
-                                                            <td className="py-3 px-4 text-right font-bold font-mono text-emerald-700 text-sm sm:text-base">{formatMoney(estimate.totalAmount)}</td>
-                                                        </tr>
-                                                    </>
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    ) : estimate.templateType === 'PROJECT_BREAKDOWN' ? (() => {
-                                        let sumVatTu = 0;
-                                        let sumNhanCong = 0;
-                                        estimate.items?.forEach((item: any) => {
-                                            sumVatTu += item.quantity * item.unitPrice;
-                                            sumNhanCong += item.quantity * (item.laborPrice || 0);
-                                        });
-
-                                        return (
-                                            <table className="w-full min-w-[1050px] text-left border-collapse">
+                                <div className="space-y-6">
+                                    <div className="overflow-x-auto w-full rounded-xl border border-slate-200">
+                                        {estimate.templateType === 'WITH_IMAGES' ? (
+                                            <table className="w-full min-w-[950px] text-left border-collapse">
                                                 <thead>
-                                                    <tr className="bg-slate-50/80 text-slate-600 border-b border-slate-200">
-                                                        <th className="py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-center w-12">S.Ảnh</th>
-                                                        <th className="py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider">Sản Phẩm</th>
-                                                        <th className="py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-center">Hãng SX</th>
-                                                        <th className="py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-center">Bảo Hành</th>
-                                                        <th className="py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-center">SL</th>
-                                                        <th className="py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-right">Đ.Giá V.Tư</th>
-                                                        <th className="py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-right">Đ.Giá N.Công</th>
-                                                        <th className="py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-right">Tiền V.Tư</th>
-                                                        <th className="py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-right">Tiền N.Công</th>
+                                                    <tr className="bg-slate-100/70 text-slate-600 border-b border-slate-200/90 font-bold uppercase tracking-wider text-[11px]">
+                                                        <th className="py-2.5 px-3 text-center w-14">Ảnh</th>
+                                                        <th className="py-2.5 px-3.5">Sản Phẩm</th>
+                                                        <th className="py-2.5 px-3 text-center">Xuất Xứ</th>
+                                                        <th className="py-2.5 px-3 text-center">Bảo Hành</th>
+                                                        <th className="py-2.5 px-3 text-center">Số Lượng</th>
+                                                        <th className="py-2.5 px-3 text-right">Đơn Giá</th>
+                                                        <th className="py-2.5 px-3 text-center">Thuế</th>
+                                                        <th className="py-2.5 px-3.5 text-right">Thành Tiền</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-slate-100">
                                                     {estimate.items?.length === 0 ? (
-                                                        <tr><td colSpan={9} className="text-center py-8 text-xs text-slate-400">Chưa có sản phẩm nào.</td></tr>
+                                                        <tr><td colSpan={8} className="text-center py-8 text-xs text-slate-400">Chưa có sản phẩm nào.</td></tr>
                                                     ) : (
-                                                        estimate.items?.map((item: any) => {
-                                                            const tienVatTu = item.quantity * item.unitPrice;
-                                                            const tienNhanCong = item.quantity * (item.laborPrice || 0);
-                                                            return (
-                                                                <tr key={item.id} className={`hover:bg-slate-50/70 transition-colors ${item.isSubItem ? 'bg-slate-50/40' : ''}`}>
-                                                                    <td className="py-3 px-3 text-center align-top">
-                                                                        {item.imageUrl ? <img src={item.imageUrl} alt="img" className="w-9 h-9 object-contain rounded border border-slate-200 mx-auto bg-white p-0.5" /> : <span className="text-slate-300">-</span>}
-                                                                    </td>
-                                                                    <td className={`py-3 px-3 align-top ${item.isSubItem ? 'pl-8' : ''}`}>
-                                                                        <div className="flex items-center gap-1.5">
-                                                                            {item.isSubItem && <span className="text-slate-400">↳</span>}
-                                                                            <span className="font-semibold text-xs sm:text-[13px] text-slate-900 leading-snug">{item.customName || item.product?.name || 'Sản phẩm tự do'}</span>
-                                                                        </div>
-                                                                        {item.description && (
-                                                                            <div className="text-[11.5px] text-slate-600 mt-1.5 leading-relaxed bg-slate-50/70 p-2 rounded-md border border-slate-100 font-normal whitespace-pre-wrap">
-                                                                                {item.description}
+                                                        estimate.items?.map((item: any) => (
+                                                            <tr key={item.id} className={`hover:bg-slate-50/60 transition-colors ${item.isSubItem ? 'bg-slate-50/40' : ''}`}>
+                                                                <td className="py-3 px-3 text-center align-middle">
+                                                                    {item.imageUrl ? (
+                                                                        <img src={item.imageUrl} alt="img" className="w-10 h-10 object-contain rounded-lg border border-slate-200 mx-auto bg-white p-0.5" />
+                                                                    ) : (
+                                                                        <span className="text-slate-300">-</span>
+                                                                    )}
+                                                                </td>
+                                                                <td className={`py-3 px-3.5 align-middle ${item.isSubItem ? 'pl-8' : ''}`}>
+                                                                    <div className="flex items-start gap-1.5">
+                                                                        {item.isSubItem && <CornerDownRight size={13} className="text-slate-400 shrink-0 mt-0.5" />}
+                                                                        <div>
+                                                                            <div className="font-bold text-xs text-slate-900 leading-snug">
+                                                                                {item.customName || item.product?.name || 'Sản phẩm tự do'}
                                                                             </div>
-                                                                        )}
-                                                                    </td>
-                                                                    <td className="py-3 px-3 text-center text-xs text-slate-600 align-top">{item.manufacture || '-'}</td>
-                                                                    <td className="py-3 px-3 text-center text-xs text-slate-600 align-top">{item.warranty || '-'}</td>
-                                                                    <td className="py-3 px-3 text-center text-xs font-mono font-semibold text-slate-800 align-top whitespace-nowrap">
-                                                                        {item.quantity} <span className="text-[11px] text-slate-500 font-normal">{item.unit || item.product?.unit || ''}</span>
-                                                                    </td>
-                                                                    <td className="py-3 px-3 text-right text-xs font-mono font-semibold text-slate-800 align-top whitespace-nowrap">{formatMoney(item.unitPrice)}</td>
-                                                                    <td className="py-3 px-3 text-right text-xs font-mono font-semibold text-slate-800 align-top whitespace-nowrap">{formatMoney(item.laborPrice || 0)}</td>
-                                                                    <td className="py-3 px-3 text-right text-xs font-mono font-bold text-slate-900 align-top whitespace-nowrap">{formatMoney(tienVatTu)}</td>
-                                                                    <td className="py-3 px-3 text-right text-xs font-mono font-bold text-slate-900 align-top whitespace-nowrap">{formatMoney(tienNhanCong)}</td>
-                                                                </tr>
-                                                            );
-                                                        })
-                                                    )}
-                                                    {estimate.items?.length > 0 && (
-                                                        <>
-                                                            <tr className="bg-slate-50/50">
-                                                                <td colSpan={8} className="py-2.5 px-4 text-right text-xs font-medium text-slate-500">Tổng Cộng Vật Tư:</td>
-                                                                <td className="py-2.5 px-4 text-right text-xs font-bold font-mono text-slate-800">{formatMoney(sumVatTu)}</td>
+                                                                            {(item.product?.sku || item.manufacture) && (
+                                                                                <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono text-slate-400 mt-0.5">
+                                                                                    {item.product?.sku && <span>SKU: {item.product.sku}</span>}
+                                                                                    {item.manufacture && <span>• Hãng: {item.manufacture}</span>}
+                                                                                </div>
+                                                                            )}
+                                                                            {item.description && (
+                                                                                <div className="text-xs text-slate-500 mt-1 whitespace-pre-wrap leading-relaxed">
+                                                                                    {item.description}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="py-3 px-3 text-center align-middle text-xs text-slate-600 font-medium">{item.origin || '-'}</td>
+                                                                <td className="py-3 px-3 text-center align-middle text-xs text-slate-600 font-medium">{item.warranty || '-'}</td>
+                                                                <td className="py-3 px-3 text-center align-middle font-mono font-bold text-slate-800">
+                                                                    {item.quantity} <span className="text-[10px] font-normal text-slate-400">{item.unit || item.product?.unit || ''}</span>
+                                                                </td>
+                                                                <td className="py-3 px-3 text-right align-middle font-mono text-slate-700">{formatMoney(item.unitPrice)}</td>
+                                                                <td className="py-3 px-3 text-center align-middle">
+                                                                    <TaxBadge rate={item.taxRate} />
+                                                                </td>
+                                                                <td className="py-3 px-3.5 text-right align-middle font-mono font-bold text-slate-900">{formatMoney(item.totalPrice)}</td>
                                                             </tr>
-                                                            <tr className="bg-slate-50/50">
-                                                                <td colSpan={8} className="py-2.5 px-4 text-right text-xs font-medium text-slate-500">Tổng Cộng Nhân Công:</td>
-                                                                <td className="py-2.5 px-4 text-right text-xs font-bold font-mono text-slate-800">{formatMoney(sumNhanCong)}</td>
-                                                            </tr>
-                                                            <tr className="bg-slate-50/50">
-                                                                <td colSpan={8} className="py-2.5 px-4 text-right text-xs font-medium text-slate-500">VAT Tax:</td>
-                                                                <td className="py-2.5 px-4 text-right text-xs font-bold font-mono text-slate-800">{formatMoney(estimate.taxAmount || 0)}</td>
-                                                            </tr>
-                                                            <tr className="bg-slate-50 border-t border-slate-200">
-                                                                <td colSpan={8} className="py-3 px-4 text-right text-xs font-bold text-slate-900">Tổng Cộng (Gồm VAT):</td>
-                                                                <td className="py-3 px-4 text-right font-bold font-mono text-emerald-700 text-sm sm:text-base">{formatMoney(estimate.totalAmount)}</td>
-                                                            </tr>
-                                                        </>
+                                                        ))
                                                     )}
                                                 </tbody>
                                             </table>
-                                        );
-                                    })() : (
-                                        <table className="w-full min-w-[700px] text-left border-collapse">
-                                            <thead>
-                                                <tr className="bg-slate-50/80 text-slate-600 border-b border-slate-200">
-                                                    <th className="py-2.5 px-4 text-[11px] font-bold uppercase tracking-wider">Sản Phẩm</th>
-                                                    <th className="py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-center">Số Lượng</th>
-                                                    <th className="py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-right">Đơn Giá</th>
-                                                    <th className="py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-center">Thuế</th>
-                                                    <th className="py-2.5 px-4 text-[11px] font-bold uppercase tracking-wider text-right">Thành Tiền</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-100">
-                                                {estimate.items?.length === 0 ? (
-                                                    <tr><td colSpan={5} className="text-center py-8 text-xs text-slate-400">Chưa có sản phẩm nào.</td></tr>
-                                                ) : (
-                                                    estimate.items?.map((item: any) => (
-                                                        <tr key={item.id} className={`hover:bg-slate-50/70 transition-colors ${item.isSubItem ? 'bg-slate-50/40' : ''}`}>
-                                                            <td className={`py-3 px-4 align-top ${item.isSubItem ? 'pl-8' : ''}`}>
-                                                                <div className="flex items-center gap-1.5">
-                                                                    {item.isSubItem && <span className="text-slate-400">↳</span>}
-                                                                    <span className="font-semibold text-xs sm:text-[13px] text-slate-900 leading-snug">{item.customName || item.product?.name || 'Sản phẩm tự do'}</span>
-                                                                </div>
-                                                                {item.product?.sku && (
-                                                                    <div className="mt-1">
-                                                                        <span className="text-[10.5px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200/60 inline-flex items-center gap-1">
-                                                                            SKU: {item.product.sku}
-                                                                        </span>
+                                        ) : estimate.templateType === 'PROJECT_BREAKDOWN' ? (() => {
+                                            return (
+                                                <table className="w-full min-w-[1050px] text-left border-collapse">
+                                                    <thead>
+                                                        <tr className="bg-slate-100/70 text-slate-600 border-b border-slate-200/90 font-bold uppercase tracking-wider text-[11px]">
+                                                            <th className="py-2.5 px-3 text-center w-14">Ảnh</th>
+                                                            <th className="py-2.5 px-3.5">Sản Phẩm</th>
+                                                            <th className="py-2.5 px-3 text-center">Hãng SX</th>
+                                                            <th className="py-2.5 px-3 text-center">Bảo Hành</th>
+                                                            <th className="py-2.5 px-3 text-center">Số Lượng</th>
+                                                            <th className="py-2.5 px-3 text-right">Đ.Giá V.Tư</th>
+                                                            <th className="py-2.5 px-3 text-right">Đ.Giá N.Công</th>
+                                                            <th className="py-2.5 px-3 text-right">Tiền V.Tư</th>
+                                                            <th className="py-2.5 px-3.5 text-right">Tiền N.Công</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-slate-100">
+                                                        {estimate.items?.length === 0 ? (
+                                                            <tr><td colSpan={9} className="text-center py-8 text-xs text-slate-400">Chưa có sản phẩm nào.</td></tr>
+                                                        ) : (
+                                                            estimate.items?.map((item: any) => {
+                                                                const tienVatTu = (item.quantity || 0) * (item.unitPrice || 0);
+                                                                const tienNhanCong = (item.quantity || 0) * (item.laborPrice || 0);
+                                                                return (
+                                                                    <tr key={item.id} className={`hover:bg-slate-50/60 transition-colors ${item.isSubItem ? 'bg-slate-50/40' : ''}`}>
+                                                                        <td className="py-3 px-3 text-center align-middle">
+                                                                            {item.imageUrl ? (
+                                                                                <img src={item.imageUrl} alt="img" className="w-10 h-10 object-contain rounded-lg border border-slate-200 mx-auto bg-white p-0.5" />
+                                                                            ) : (
+                                                                                <span className="text-slate-300">-</span>
+                                                                            )}
+                                                                        </td>
+                                                                        <td className={`py-3 px-3.5 align-middle ${item.isSubItem ? 'pl-8' : ''}`}>
+                                                                            <div className="flex items-start gap-1.5">
+                                                                                {item.isSubItem && <CornerDownRight size={13} className="text-slate-400 shrink-0 mt-0.5" />}
+                                                                                <div>
+                                                                                    <div className="font-bold text-xs text-slate-900 leading-snug">
+                                                                                        {item.customName || item.product?.name || 'Sản phẩm tự do'}
+                                                                                    </div>
+                                                                                    {item.product?.sku && (
+                                                                                        <div className="text-[11px] font-mono text-slate-400 mt-0.5">
+                                                                                            SKU: {item.product.sku}
+                                                                                        </div>
+                                                                                    )}
+                                                                                    {item.description && (
+                                                                                        <div className="text-xs text-slate-500 mt-1 whitespace-pre-wrap leading-relaxed">
+                                                                                            {item.description}
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td className="py-3 px-3 text-center align-middle text-xs text-slate-600 font-medium">{item.manufacture || '-'}</td>
+                                                                        <td className="py-3 px-3 text-center align-middle text-xs text-slate-600 font-medium">{item.warranty || '-'}</td>
+                                                                        <td className="py-3 px-3 text-center align-middle font-mono font-bold text-slate-800">
+                                                                            {item.quantity} <span className="text-[10px] font-normal text-slate-400">{item.unit || item.product?.unit || ''}</span>
+                                                                        </td>
+                                                                        <td className="py-3 px-3 text-right align-middle font-mono text-slate-700">{formatMoney(item.unitPrice)}</td>
+                                                                        <td className="py-3 px-3 text-right align-middle font-mono text-slate-700">{formatMoney(item.laborPrice || 0)}</td>
+                                                                        <td className="py-3 px-3 text-right align-middle font-mono font-bold text-slate-900">{formatMoney(tienVatTu)}</td>
+                                                                        <td className="py-3 px-3.5 text-right align-middle font-mono font-bold text-slate-900">{formatMoney(tienNhanCong)}</td>
+                                                                    </tr>
+                                                                );
+                                                            })
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            );
+                                        })() : (
+                                            <table className="w-full text-left border-collapse">
+                                                <thead>
+                                                    <tr className="bg-slate-100/70 text-slate-600 border-b border-slate-200/90 font-bold uppercase tracking-wider text-[11px]">
+                                                        <th className="py-2.5 px-3.5">Sản Phẩm</th>
+                                                        <th className="py-2.5 px-3 text-center">Số Lượng</th>
+                                                        <th className="py-2.5 px-3 text-right">Đơn Giá</th>
+                                                        <th className="py-2.5 px-3 text-center">Thuế</th>
+                                                        <th className="py-2.5 px-3.5 text-right">Thành Tiền</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-100">
+                                                    {estimate.items?.length === 0 ? (
+                                                        <tr><td colSpan={5} className="text-center py-8 text-xs text-slate-400">Chưa có sản phẩm nào.</td></tr>
+                                                    ) : (
+                                                        estimate.items?.map((item: any) => (
+                                                            <tr key={item.id} className={`hover:bg-slate-50/60 transition-colors ${item.isSubItem ? 'bg-slate-50/40' : ''}`}>
+                                                                <td className={`py-3 px-3.5 align-middle ${item.isSubItem ? 'pl-8' : ''}`}>
+                                                                    <div className="flex items-start gap-1.5">
+                                                                        {item.isSubItem && <CornerDownRight size={13} className="text-slate-400 shrink-0 mt-0.5" />}
+                                                                        <div>
+                                                                            <div className="font-bold text-xs text-slate-900 leading-snug">
+                                                                                {item.customName || item.product?.name || 'Sản phẩm tự do'}
+                                                                            </div>
+                                                                            {item.product?.sku && (
+                                                                                <div className="text-[11px] font-mono text-slate-400 mt-0.5">
+                                                                                    SKU: {item.product.sku}
+                                                                                </div>
+                                                                            )}
+                                                                            {item.description && (
+                                                                                <div className="text-xs text-slate-500 mt-1 whitespace-pre-wrap leading-relaxed">
+                                                                                    {item.description}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
                                                                     </div>
-                                                                )}
-                                                                {item.description && (
-                                                                    <div className="text-[11.5px] text-slate-600 mt-1.5 leading-relaxed bg-slate-50/70 p-2 rounded-md border border-slate-100 font-normal whitespace-pre-wrap">
-                                                                        {item.description}
-                                                                    </div>
-                                                                )}
-                                                            </td>
-                                                            <td className="py-3 px-3 text-center text-xs font-mono font-semibold text-slate-800 align-top whitespace-nowrap">
-                                                                {item.quantity} <span className="text-[11px] text-slate-500 font-normal">{item.unit || item.product?.unit || ''}</span>
-                                                            </td>
-                                                            <td className="py-3 px-3 text-right text-xs font-mono font-semibold text-slate-800 align-top whitespace-nowrap">{formatMoney(item.unitPrice)}</td>
-                                                            <td className="py-3 px-3 text-center align-top whitespace-nowrap">
-                                                                <TaxBadge rate={item.taxRate} />
-                                                            </td>
-                                                            <td className="py-3 px-4 text-right text-xs font-mono font-bold text-slate-900 align-top whitespace-nowrap">{formatMoney(item.totalPrice)}</td>
-                                                        </tr>
-                                                    ))
-                                                )}
-                                                {estimate.items?.length > 0 && (
-                                                    <>
-                                                        <tr className="bg-slate-50/50">
-                                                            <td colSpan={4} className="py-2.5 px-4 text-right text-xs font-medium text-slate-500">Tổng tiền trước thuế:</td>
-                                                            <td className="py-2.5 px-4 text-right text-xs font-bold font-mono text-slate-800">{formatMoney(estimate.subTotal || 0)}</td>
-                                                        </tr>
-                                                        <tr className="bg-slate-50/50">
-                                                            <td colSpan={4} className="py-2.5 px-4 text-right text-xs font-medium text-slate-500">Tổng tiền thuế:</td>
-                                                            <td className="py-2.5 px-4 text-right text-xs font-bold font-mono text-slate-800">{formatMoney(estimate.taxAmount || 0)}</td>
-                                                        </tr>
-                                                        <tr className="bg-slate-50 border-t border-slate-200">
-                                                            <td colSpan={4} className="py-3 px-4 text-right text-xs font-bold text-slate-900">Tổng Cộng:</td>
-                                                            <td className="py-3 px-4 text-right font-bold font-mono text-emerald-700 text-sm sm:text-base">{formatMoney(estimate.totalAmount)}</td>
-                                                        </tr>
-                                                    </>
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    )}
+                                                                </td>
+                                                                <td className="py-3 px-3 text-center align-middle font-mono font-bold text-slate-800">
+                                                                    {item.quantity} <span className="text-[10px] font-normal text-slate-400">{item.unit || item.product?.unit || ''}</span>
+                                                                </td>
+                                                                <td className="py-3 px-3 text-right align-middle font-mono text-slate-700">{formatMoney(item.unitPrice)}</td>
+                                                                <td className="py-3 px-3 text-center align-middle">
+                                                                    <TaxBadge rate={item.taxRate} />
+                                                                </td>
+                                                                <td className="py-3 px-3.5 text-right align-middle font-mono font-bold text-slate-900">{formatMoney(item.totalPrice)}</td>
+                                                            </tr>
+                                                        ))
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        )}
+                                    </div>
+
+                                    {/* Financial Calculation Summary Box */}
+                                    <div className="flex justify-end">
+                                        {estimate.templateType === 'PROJECT_BREAKDOWN' ? (() => {
+                                            let sumVatTu = 0;
+                                            let sumNhanCong = 0;
+                                            estimate.items?.forEach((item: any) => {
+                                                sumVatTu += (item.quantity || 0) * (item.unitPrice || 0);
+                                                sumNhanCong += (item.quantity || 0) * (item.laborPrice || 0);
+                                            });
+                                            return (
+                                                <div className="w-full sm:w-96 bg-slate-50/80 rounded-2xl p-4 md:p-5 border border-slate-200/90 shadow-2xs space-y-2.5">
+                                                    <div className="flex justify-between text-xs text-slate-600">
+                                                        <span>Tổng tiền vật tư:</span>
+                                                        <span className="font-mono font-bold text-slate-800">{formatMoney(sumVatTu)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between text-xs text-slate-600">
+                                                        <span>Tổng tiền nhân công:</span>
+                                                        <span className="font-mono font-bold text-slate-800">{formatMoney(sumNhanCong)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between text-xs text-slate-600">
+                                                        <span>Tổng tiền trước thuế:</span>
+                                                        <span className="font-mono font-bold text-slate-800">{formatMoney(sumVatTu + sumNhanCong)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between text-xs text-slate-600">
+                                                        <span>Tiền thuế (VAT):</span>
+                                                        <span className="font-mono font-bold text-slate-800">{formatMoney(estimate.taxAmount || 0)}</span>
+                                                    </div>
+                                                    <div className="h-px bg-slate-200 my-2" />
+                                                    <div className="flex justify-between items-center text-xs font-bold text-slate-900">
+                                                        <span>Tổng Báo Giá:</span>
+                                                        <span className="font-mono text-base font-black text-emerald-700">{formatMoney(estimate.totalAmount)}</span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })() : (
+                                            <div className="w-full sm:w-88 bg-slate-50/80 rounded-2xl p-4 md:p-5 border border-slate-200/90 shadow-2xs space-y-2.5">
+                                                <div className="flex justify-between text-xs text-slate-600">
+                                                    <span>Tổng tiền hàng (Chưa thuế):</span>
+                                                    <span className="font-mono font-bold text-slate-800">{formatMoney(estimate.subTotal || 0)}</span>
+                                                </div>
+                                                <div className="flex justify-between text-xs text-slate-600">
+                                                    <span>Tổng thuế GTGT:</span>
+                                                    <span className="font-mono font-bold text-slate-800">{formatMoney(estimate.taxAmount || 0)}</span>
+                                                </div>
+                                                <div className="h-px bg-slate-200 my-2" />
+                                                <div className="flex justify-between items-center text-xs font-bold text-slate-900">
+                                                    <span>Tổng Báo Giá:</span>
+                                                    <span className="font-mono text-base font-black text-emerald-700">{formatMoney(estimate.totalAmount)}</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             )}
 
