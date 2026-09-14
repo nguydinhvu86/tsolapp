@@ -766,119 +766,147 @@ export default function SalesInvoiceDetailClient({
                 {/* ================= LEFT 8-COLUMNS: INVOICE INFO & ITEMS ================= */}
                 <div className="lg:col-span-8 space-y-6">
                     {/* Customer & General Info Card */}
-                    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 md:p-6 space-y-5">
-                        <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
-                            <div className="flex items-center gap-2">
-                                <Building2 size={18} className="text-emerald-600" />
-                                <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                                    Thông Tin Khách Hàng & Giao Dịch
-                                </h2>
+                    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 md:p-6 space-y-4">
+                        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100/80">
+                                    <Building2 size={16} />
+                                </div>
+                                <div>
+                                    <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider m-0">
+                                        Thông Tin Khách Hàng & Giao Dịch
+                                    </h2>
+                                    <p className="text-[11px] text-slate-400 m-0 mt-0.5 font-medium">Chi tiết thông tin xuất hóa đơn và đối tác</p>
+                                </div>
                             </div>
                             {invoice.customer && (
                                 <Link
                                     href={`/customers/${invoice.customerId}`}
-                                    className="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/80 rounded-lg transition-colors shadow-2xs cursor-pointer"
                                 >
                                     <span>Hồ sơ khách hàng</span>
-                                    <ChevronRight size={14} />
+                                    <ChevronRight size={13} />
                                 </Link>
                             )}
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                        {/* Info Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                             {/* Customer Name */}
-                            <div className="space-y-1">
-                                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                                    Khách Hàng / Đơn Vị
+                            <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100 flex flex-col justify-between">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
+                                    <Building2 size={12} className="text-emerald-600" /> Khách Hàng / Đơn Vị
                                 </span>
-                                <div className="text-xs font-bold text-slate-900">
-                                    {invoice.customer?.name || '—'}
+                                <div>
+                                    <Link 
+                                        href={`/customers/${invoice.customerId}`} 
+                                        className="font-bold text-xs text-slate-900 hover:text-emerald-700 hover:underline transition-colors block line-clamp-2"
+                                        title={invoice.customer?.name}
+                                    >
+                                        {invoice.customer?.name || '—'}
+                                    </Link>
+                                    <div className="flex flex-wrap items-center gap-2 mt-1 text-[11px] font-mono text-slate-400">
+                                        {invoice.customer?.code && <span>Mã: <strong className="text-slate-600">{invoice.customer.code}</strong></span>}
+                                        {invoice.customer?.taxCode && <span>• MST: <strong className="text-slate-600">{invoice.customer.taxCode}</strong></span>}
+                                    </div>
                                 </div>
-                                {invoice.customer?.code && (
-                                    <span className="text-[10px] font-mono text-slate-400 block">
-                                        Mã: {invoice.customer.code}
-                                    </span>
-                                )}
                             </div>
 
                             {/* Contact & Phone */}
-                            <div className="space-y-1">
-                                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                                    Người liên hệ & SĐT
+                            <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100 flex flex-col justify-between">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
+                                    <User size={12} className="text-slate-400" /> Người Liên Hệ & SĐT
                                 </span>
-                                <div className="text-xs font-semibold text-slate-800 flex items-center gap-1">
-                                    <User size={13} className="text-slate-400" />
-                                    <span>{invoice.customer?.contactName || '—'}</span>
-                                </div>
-                                <div className="text-xs font-mono text-slate-600 flex items-center gap-1 mt-0.5">
-                                    <Phone size={12} className="text-slate-400" />
-                                    <span>{invoice.customer?.phone || '—'}</span>
-                                    {invoice.customer?.phone && (
-                                        <ClickToCallButton phoneNumber={invoice.customer.phone} className="ml-1 scale-75 origin-left" />
-                                    )}
+                                <div>
+                                    <div className="font-semibold text-xs text-slate-800">
+                                        {invoice.customer?.contactName || '—'}
+                                    </div>
+                                    <div className="flex items-center gap-1.5 mt-1 text-xs font-mono text-slate-600">
+                                        <Phone size={12} className="text-slate-400 shrink-0" />
+                                        <span>{invoice.customer?.phone || '—'}</span>
+                                        {invoice.customer?.phone && (
+                                            <ClickToCallButton phoneNumber={invoice.customer.phone} className="ml-1 scale-75 origin-left" />
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
                             {/* Email */}
-                            <div className="space-y-1">
-                                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                                    Email nhận hóa đơn
+                            <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100 flex flex-col justify-between">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
+                                    <Mail size={12} className="text-slate-400" /> Email Nhận Hóa Đơn
                                 </span>
-                                <div className="text-xs font-semibold text-slate-800 flex items-center gap-1 truncate">
-                                    <Mail size={13} className="text-slate-400 shrink-0" />
-                                    <span className="truncate">{invoice.customer?.email || '—'}</span>
+                                <div>
+                                    <div className="font-semibold text-xs text-slate-800 truncate" title={invoice.customer?.email}>
+                                        {invoice.customer?.email || '—'}
+                                    </div>
+                                    <span className="text-[10px] text-slate-400 mt-1 block">Gửi bản điện tử & biên lai</span>
                                 </div>
                             </div>
 
                             {/* Dates */}
-                            <div className="space-y-1">
-                                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                                    Ngày lập hóa đơn
+                            <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100 flex flex-col justify-between">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
+                                    <Calendar size={12} className="text-slate-400" /> Ngày Lập Hóa Đơn
                                 </span>
-                                <div className="text-xs font-mono font-semibold text-slate-800 flex items-center gap-1.5">
-                                    <Calendar size={13} className="text-slate-400" />
-                                    <span>{formatDate(invoice.date)}</span>
+                                <div>
+                                    <div className="font-mono font-bold text-xs text-slate-800">
+                                        {formatDate(invoice.date)}
+                                    </div>
+                                    <span className="text-[10px] text-slate-400 mt-1 block">Ngày hạch toán chứng từ</span>
                                 </div>
                             </div>
 
                             {/* Due Date */}
-                            <div className="space-y-1">
-                                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                                    Hạn thanh toán
+                            <div className={`p-3 rounded-xl border flex flex-col justify-between ${
+                                isOverdue ? 'bg-rose-50/60 border-rose-200/80' : 'bg-slate-50/70 border-slate-100'
+                            }`}>
+                                <span className={`text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 mb-1.5 ${
+                                    isOverdue ? 'text-rose-600' : 'text-slate-400'
+                                }`}>
+                                    <Clock size={12} className={isOverdue ? 'text-rose-600' : 'text-slate-400'} /> Hạn Thanh Toán
                                 </span>
-                                <div className={`text-xs font-mono font-semibold flex items-center gap-1.5 ${isOverdue ? 'text-rose-600 font-bold' : 'text-slate-800'}`}>
-                                    <Clock size={13} className={isOverdue ? 'text-rose-600' : 'text-slate-400'} />
-                                    <span>{formatDate(invoice.dueDate)}</span>
+                                <div>
+                                    <div className={`font-mono font-bold text-xs ${isOverdue ? 'text-rose-700' : 'text-slate-800'}`}>
+                                        {formatDate(invoice.dueDate)}
+                                    </div>
+                                    <span className={`text-[10px] mt-1 block font-medium ${isOverdue ? 'text-rose-600 font-semibold' : 'text-slate-400'}`}>
+                                        {isOverdue ? 'Đã quá hạn thanh toán' : 'Thời hạn theo thỏa thuận'}
+                                    </span>
                                 </div>
                             </div>
 
-                            {/* Tax Code */}
-                            <div className="space-y-1">
-                                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                                    Mã số thuế
+                            {/* Creator */}
+                            <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100 flex flex-col justify-between">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
+                                    <UserCheck size={12} className="text-slate-400" /> Nhân Viên Lập
                                 </span>
-                                <div className="text-xs font-mono font-semibold text-slate-800">
-                                    {invoice.customer?.taxCode || '—'}
+                                <div>
+                                    <div className="font-semibold text-xs text-slate-800 truncate" title={invoice.creator?.name}>
+                                        {invoice.creator?.name || '—'}
+                                    </div>
+                                    <span className="text-[10px] text-slate-400 mt-1 block">Phòng kế toán / Kinh doanh</span>
                                 </div>
                             </div>
                         </div>
 
                         {/* Customer Address */}
                         {invoice.customer?.address && (
-                            <div className="pt-3 border-t border-slate-100 flex items-start gap-2 text-xs text-slate-600">
+                            <div className="p-2.5 bg-slate-50/60 rounded-xl border border-slate-100 flex items-start gap-2 text-xs text-slate-600">
                                 <MapPin size={14} className="text-slate-400 shrink-0 mt-0.5" />
-                                <span>Địa chỉ: <strong className="text-slate-800">{invoice.customer.address}</strong></span>
+                                <span className="leading-relaxed">
+                                    Địa chỉ xuất HĐ: <strong className="text-slate-800 font-medium">{invoice.customer.address}</strong>
+                                </span>
                             </div>
                         )}
 
                         {/* Invoice Notes */}
                         {invoice.notes && (
-                            <div className="pt-3 border-t border-slate-100 space-y-1">
-                                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                                    Ghi chú hóa đơn
-                                </span>
-                                <div className="p-3 bg-amber-50/60 rounded-xl border border-amber-200/80 text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
-                                    {invoice.notes}
+                            <div className="p-3 bg-amber-50/60 rounded-xl border border-amber-200/70 text-xs text-slate-700 flex items-start gap-2.5 leading-relaxed">
+                                <FileText size={14} className="text-amber-600 shrink-0 mt-0.5" />
+                                <div>
+                                    <strong className="text-amber-900 font-semibold mr-1">Ghi chú hóa đơn:</strong>
+                                    <span>{invoice.notes}</span>
                                 </div>
                             </div>
                         )}
