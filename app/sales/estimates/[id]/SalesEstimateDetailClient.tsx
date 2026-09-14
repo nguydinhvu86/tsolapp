@@ -749,59 +749,75 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                     </div>
 
                     {/* Tabs area */}
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
-                        <div className="flex overflow-x-auto whitespace-nowrap border-b border-slate-200 px-3 bg-slate-50/60 gap-1 hide-scrollbar">
+                    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+                        {/* Tab Switcher */}
+                        <div className="flex border-b border-slate-200/80 bg-slate-50/60 px-4 pt-2 gap-2 overflow-x-auto whitespace-nowrap hide-scrollbar">
                             <button
                                 onClick={() => setActiveTab('items')}
-                                className={`py-2.5 px-3.5 flex items-center gap-2 border-b-2 text-xs font-semibold transition-all cursor-pointer relative
-                                    ${activeTab === 'items' ? 'text-emerald-700 border-emerald-600 bg-white shadow-2xs -mb-[1px] rounded-t-lg' : 'text-slate-600 border-transparent hover:text-slate-900'}`}
+                                className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer ${
+                                    activeTab === 'items'
+                                        ? 'border-emerald-600 text-emerald-800 bg-white rounded-t-xl shadow-2xs'
+                                        : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100/50'
+                                }`}
                             >
-                                <ShoppingCart size={14} /> Chi Tiết Sản Phẩm
-                                <span className={`px-1.5 py-0.2 rounded-full text-[10.5px] font-bold font-mono
-                                    ${activeTab === 'items' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200/80 text-slate-600'}`}>
+                                <ShoppingCart size={15} />
+                                <span>Chi Tiết Sản Phẩm Báo Giá</span>
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                    activeTab === 'items' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'
+                                }`}>
                                     {estimate.items?.length || 0}
                                 </span>
                             </button>
                             <button
                                 onClick={() => setActiveTab('emailLogs')}
-                                className={`py-2.5 px-3.5 flex items-center gap-2 border-b-2 text-xs font-semibold transition-all cursor-pointer relative
-                                    ${activeTab === 'emailLogs' ? 'text-emerald-700 border-emerald-600 bg-white shadow-2xs -mb-[1px] rounded-t-lg' : 'text-slate-600 border-transparent hover:text-slate-900'}`}
+                                className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer ${
+                                    activeTab === 'emailLogs'
+                                        ? 'border-emerald-600 text-emerald-800 bg-white rounded-t-xl shadow-2xs'
+                                        : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100/50'
+                                }`}
                             >
-                                <Mail size={14} /> Lịch Sử Email
-                                <span className={`px-1.5 py-0.2 rounded-full text-[10.5px] font-bold font-mono
-                                    ${activeTab === 'emailLogs' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200/80 text-slate-600'}`}>
+                                <Mail size={15} />
+                                <span>Lịch Sử Gửi Email</span>
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                    activeTab === 'emailLogs' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'
+                                }`}>
                                     {estimate.emailLogs?.length || 0}
                                 </span>
                             </button>
                             <button
                                 onClick={() => setActiveTab('managers')}
-                                className={`py-2.5 px-3.5 flex items-center gap-2 border-b-2 text-xs font-semibold transition-all cursor-pointer relative
-                                    ${activeTab === 'managers' ? 'text-emerald-700 border-emerald-600 bg-white shadow-2xs -mb-[1px] rounded-t-lg' : 'text-slate-600 border-transparent hover:text-slate-900'}`}
+                                className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer ${
+                                    activeTab === 'managers'
+                                        ? 'border-emerald-600 text-emerald-800 bg-white rounded-t-xl shadow-2xs'
+                                        : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100/50'
+                                }`}
                             >
-                                <UserCheck size={14} /> Người Phụ Trách
-                                <span className={`px-1.5 py-0.2 rounded-full text-[10.5px] font-bold font-mono
-                                    ${activeTab === 'managers' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200/80 text-slate-600'}`}>
+                                <UserCheck size={15} />
+                                <span>Người Phụ Trách</span>
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                    activeTab === 'managers' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'
+                                }`}>
                                     {estimate.managers?.length || 0}
                                 </span>
                             </button>
                         </div>
 
-                        <div className="p-4 sm:p-6">
+                        <div className="p-5">
                             {activeTab === 'items' && (
                                 <div className="space-y-6">
                                     <div className="overflow-x-auto w-full rounded-xl border border-slate-200">
                                         {estimate.templateType === 'WITH_IMAGES' ? (
-                                            <table className="w-full min-w-[950px] text-left border-collapse">
+                                            <table className="w-full min-w-[950px] text-left text-xs border-collapse">
                                                 <thead>
                                                     <tr className="bg-slate-100/70 text-slate-600 border-b border-slate-200/90 font-bold uppercase tracking-wider text-[11px]">
-                                                        <th className="py-2.5 px-3 text-center w-14">Ảnh</th>
-                                                        <th className="py-2.5 px-3.5">Sản Phẩm</th>
-                                                        <th className="py-2.5 px-3 text-center">Xuất Xứ</th>
-                                                        <th className="py-2.5 px-3 text-center">Bảo Hành</th>
-                                                        <th className="py-2.5 px-3 text-center">Số Lượng</th>
-                                                        <th className="py-2.5 px-3 text-right">Đơn Giá</th>
-                                                        <th className="py-2.5 px-3 text-center">Thuế</th>
-                                                        <th className="py-2.5 px-3.5 text-right">Thành Tiền</th>
+                                                        <th className="py-2.5 px-3.5 text-center w-[60px]">Ảnh</th>
+                                                        <th className="py-2.5 px-3.5">Tên Sản Phẩm / Dịch Vụ</th>
+                                                        <th className="py-2.5 px-3.5 text-center w-[110px]">Xuất Xứ</th>
+                                                        <th className="py-2.5 px-3.5 text-center w-[110px]">Bảo Hành</th>
+                                                        <th className="py-2.5 px-3.5 text-center w-[100px]">Số Lượng</th>
+                                                        <th className="py-2.5 px-3.5 text-right w-[130px]">Đơn Giá</th>
+                                                        <th className="py-2.5 px-3.5 text-center w-[95px]">Thuế GTGT</th>
+                                                        <th className="py-2.5 px-3.5 text-right w-[140px]">Thành Tiền</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-slate-100">
@@ -810,7 +826,7 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                                                     ) : (
                                                         estimate.items?.map((item: any) => (
                                                             <tr key={item.id} className={`hover:bg-slate-50/60 transition-colors ${item.isSubItem ? 'bg-slate-50/40' : ''}`}>
-                                                                <td className="py-3 px-3 text-center align-middle">
+                                                                <td className="py-3 px-3.5 text-center align-middle">
                                                                     {item.imageUrl ? (
                                                                         <img src={item.imageUrl} alt="img" className="w-10 h-10 object-contain rounded-lg border border-slate-200 mx-auto bg-white p-0.5" />
                                                                     ) : (
@@ -838,13 +854,13 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                                                                         </div>
                                                                     </div>
                                                                 </td>
-                                                                <td className="py-3 px-3 text-center align-middle text-xs text-slate-600 font-medium">{item.origin || '-'}</td>
-                                                                <td className="py-3 px-3 text-center align-middle text-xs text-slate-600 font-medium">{item.warranty || '-'}</td>
-                                                                <td className="py-3 px-3 text-center align-middle font-mono font-bold text-slate-800">
+                                                                <td className="py-3 px-3.5 text-center align-middle text-xs text-slate-600 font-medium">{item.origin || '-'}</td>
+                                                                <td className="py-3 px-3.5 text-center align-middle text-xs text-slate-600 font-medium">{item.warranty || '-'}</td>
+                                                                <td className="py-3 px-3.5 text-center align-middle font-mono font-bold text-slate-800">
                                                                     {item.quantity} <span className="text-[10px] font-normal text-slate-400">{item.unit || item.product?.unit || ''}</span>
                                                                 </td>
-                                                                <td className="py-3 px-3 text-right align-middle font-mono text-slate-700">{formatMoney(item.unitPrice)}</td>
-                                                                <td className="py-3 px-3 text-center align-middle">
+                                                                <td className="py-3 px-3.5 text-right align-middle font-mono text-slate-700">{formatMoney(item.unitPrice)}</td>
+                                                                <td className="py-3 px-3.5 text-center align-middle">
                                                                     <TaxBadge rate={item.taxRate} />
                                                                 </td>
                                                                 <td className="py-3 px-3.5 text-right align-middle font-mono font-bold text-slate-900">{formatMoney(item.totalPrice)}</td>
@@ -855,18 +871,18 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                                             </table>
                                         ) : estimate.templateType === 'PROJECT_BREAKDOWN' ? (() => {
                                             return (
-                                                <table className="w-full min-w-[1050px] text-left border-collapse">
+                                                <table className="w-full min-w-[1050px] text-left text-xs border-collapse">
                                                     <thead>
                                                         <tr className="bg-slate-100/70 text-slate-600 border-b border-slate-200/90 font-bold uppercase tracking-wider text-[11px]">
-                                                            <th className="py-2.5 px-3 text-center w-14">Ảnh</th>
-                                                            <th className="py-2.5 px-3.5">Sản Phẩm</th>
-                                                            <th className="py-2.5 px-3 text-center">Hãng SX</th>
-                                                            <th className="py-2.5 px-3 text-center">Bảo Hành</th>
-                                                            <th className="py-2.5 px-3 text-center">Số Lượng</th>
-                                                            <th className="py-2.5 px-3 text-right">Đ.Giá V.Tư</th>
-                                                            <th className="py-2.5 px-3 text-right">Đ.Giá N.Công</th>
-                                                            <th className="py-2.5 px-3 text-right">Tiền V.Tư</th>
-                                                            <th className="py-2.5 px-3.5 text-right">Tiền N.Công</th>
+                                                            <th className="py-2.5 px-3.5 text-center w-[60px]">Ảnh</th>
+                                                            <th className="py-2.5 px-3.5">Tên Sản Phẩm / Dịch Vụ</th>
+                                                            <th className="py-2.5 px-3.5 text-center w-[110px]">Hãng SX</th>
+                                                            <th className="py-2.5 px-3.5 text-center w-[110px]">Bảo Hành</th>
+                                                            <th className="py-2.5 px-3.5 text-center w-[100px]">Số Lượng</th>
+                                                            <th className="py-2.5 px-3.5 text-right w-[120px]">Đ.Giá V.Tư</th>
+                                                            <th className="py-2.5 px-3.5 text-right w-[120px]">Đ.Giá N.Công</th>
+                                                            <th className="py-2.5 px-3.5 text-right w-[130px]">Tiền V.Tư</th>
+                                                            <th className="py-2.5 px-3.5 text-right w-[130px]">Tiền N.Công</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody className="divide-y divide-slate-100">
@@ -878,7 +894,7 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                                                                 const tienNhanCong = (item.quantity || 0) * (item.laborPrice || 0);
                                                                 return (
                                                                     <tr key={item.id} className={`hover:bg-slate-50/60 transition-colors ${item.isSubItem ? 'bg-slate-50/40' : ''}`}>
-                                                                        <td className="py-3 px-3 text-center align-middle">
+                                                                        <td className="py-3 px-3.5 text-center align-middle">
                                                                             {item.imageUrl ? (
                                                                                 <img src={item.imageUrl} alt="img" className="w-10 h-10 object-contain rounded-lg border border-slate-200 mx-auto bg-white p-0.5" />
                                                                             ) : (
@@ -905,14 +921,14 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                                                                                 </div>
                                                                             </div>
                                                                         </td>
-                                                                        <td className="py-3 px-3 text-center align-middle text-xs text-slate-600 font-medium">{item.manufacture || '-'}</td>
-                                                                        <td className="py-3 px-3 text-center align-middle text-xs text-slate-600 font-medium">{item.warranty || '-'}</td>
-                                                                        <td className="py-3 px-3 text-center align-middle font-mono font-bold text-slate-800">
+                                                                        <td className="py-3 px-3.5 text-center align-middle text-xs text-slate-600 font-medium">{item.manufacture || '-'}</td>
+                                                                        <td className="py-3 px-3.5 text-center align-middle text-xs text-slate-600 font-medium">{item.warranty || '-'}</td>
+                                                                        <td className="py-3 px-3.5 text-center align-middle font-mono font-bold text-slate-800">
                                                                             {item.quantity} <span className="text-[10px] font-normal text-slate-400">{item.unit || item.product?.unit || ''}</span>
                                                                         </td>
-                                                                        <td className="py-3 px-3 text-right align-middle font-mono text-slate-700">{formatMoney(item.unitPrice)}</td>
-                                                                        <td className="py-3 px-3 text-right align-middle font-mono text-slate-700">{formatMoney(item.laborPrice || 0)}</td>
-                                                                        <td className="py-3 px-3 text-right align-middle font-mono font-bold text-slate-900">{formatMoney(tienVatTu)}</td>
+                                                                        <td className="py-3 px-3.5 text-right align-middle font-mono text-slate-700">{formatMoney(item.unitPrice)}</td>
+                                                                        <td className="py-3 px-3.5 text-right align-middle font-mono text-slate-700">{formatMoney(item.laborPrice || 0)}</td>
+                                                                        <td className="py-3 px-3.5 text-right align-middle font-mono font-bold text-slate-900">{formatMoney(tienVatTu)}</td>
                                                                         <td className="py-3 px-3.5 text-right align-middle font-mono font-bold text-slate-900">{formatMoney(tienNhanCong)}</td>
                                                                     </tr>
                                                                 );
@@ -922,14 +938,14 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                                                 </table>
                                             );
                                         })() : (
-                                            <table className="w-full text-left border-collapse">
+                                            <table className="w-full text-left text-xs border-collapse">
                                                 <thead>
                                                     <tr className="bg-slate-100/70 text-slate-600 border-b border-slate-200/90 font-bold uppercase tracking-wider text-[11px]">
-                                                        <th className="py-2.5 px-3.5">Sản Phẩm</th>
-                                                        <th className="py-2.5 px-3 text-center">Số Lượng</th>
-                                                        <th className="py-2.5 px-3 text-right">Đơn Giá</th>
-                                                        <th className="py-2.5 px-3 text-center">Thuế</th>
-                                                        <th className="py-2.5 px-3.5 text-right">Thành Tiền</th>
+                                                        <th className="py-2.5 px-3.5">Tên Sản Phẩm / Dịch Vụ</th>
+                                                        <th className="py-2.5 px-3.5 text-center w-[100px]">Số Lượng</th>
+                                                        <th className="py-2.5 px-3.5 text-right w-[130px]">Đơn Giá</th>
+                                                        <th className="py-2.5 px-3.5 text-center w-[95px]">Thuế GTGT</th>
+                                                        <th className="py-2.5 px-3.5 text-right w-[140px]">Thành Tiền</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-slate-100">
@@ -958,14 +974,18 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                                                                         </div>
                                                                     </div>
                                                                 </td>
-                                                                <td className="py-3 px-3 text-center align-middle font-mono font-bold text-slate-800">
+                                                                <td className="py-3 px-3.5 text-center align-middle font-mono font-bold text-slate-800">
                                                                     {item.quantity} <span className="text-[10px] font-normal text-slate-400">{item.unit || item.product?.unit || ''}</span>
                                                                 </td>
-                                                                <td className="py-3 px-3 text-right align-middle font-mono text-slate-700">{formatMoney(item.unitPrice)}</td>
-                                                                <td className="py-3 px-3 text-center align-middle">
+                                                                <td className="py-3 px-3.5 text-right align-middle font-mono text-slate-700">
+                                                                    {formatMoney(item.unitPrice)}
+                                                                </td>
+                                                                <td className="py-3 px-3.5 text-center align-middle">
                                                                     <TaxBadge rate={item.taxRate} />
                                                                 </td>
-                                                                <td className="py-3 px-3.5 text-right align-middle font-mono font-bold text-slate-900">{formatMoney(item.totalPrice)}</td>
+                                                                <td className="py-3 px-3.5 text-right align-middle font-mono font-bold text-slate-900">
+                                                                    {formatMoney(item.totalPrice)}
+                                                                </td>
                                                             </tr>
                                                         ))
                                                     )}
@@ -984,7 +1004,7 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                                                 sumNhanCong += (item.quantity || 0) * (item.laborPrice || 0);
                                             });
                                             return (
-                                                <div className="w-full sm:w-96 bg-slate-50/80 rounded-2xl p-4 md:p-5 border border-slate-200/90 shadow-2xs space-y-2.5">
+                                                <div className="w-full sm:w-[380px] bg-slate-50/80 rounded-2xl p-4 md:p-5 border border-slate-200/90 shadow-2xs space-y-2.5">
                                                     <div className="flex justify-between text-xs text-slate-600">
                                                         <span>Tổng tiền vật tư:</span>
                                                         <span className="font-mono font-bold text-slate-800">{formatMoney(sumVatTu)}</span>
@@ -1009,7 +1029,7 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                                                 </div>
                                             );
                                         })() : (
-                                            <div className="w-full sm:w-88 bg-slate-50/80 rounded-2xl p-4 md:p-5 border border-slate-200/90 shadow-2xs space-y-2.5">
+                                            <div className="w-full sm:w-[380px] bg-slate-50/80 rounded-2xl p-4 md:p-5 border border-slate-200/90 shadow-2xs space-y-2.5">
                                                 <div className="flex justify-between text-xs text-slate-600">
                                                     <span>Tổng tiền hàng (Chưa thuế):</span>
                                                     <span className="font-mono font-bold text-slate-800">{formatMoney(estimate.subTotal || 0)}</span>

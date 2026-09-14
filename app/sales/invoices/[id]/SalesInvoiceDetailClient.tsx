@@ -991,7 +991,7 @@ export default function SalesInvoiceDetailClient({
 
                                     {/* Financial Calculation Summary Box */}
                                     <div className="flex justify-end">
-                                        <div className="w-full sm:w-88 bg-slate-50/80 rounded-2xl p-4 md:p-5 border border-slate-200/90 shadow-2xs space-y-2.5">
+                                        <div className="w-full sm:w-[380px] bg-slate-50/80 rounded-2xl p-4 md:p-5 border border-slate-200/90 shadow-2xs space-y-2.5">
                                             <div className="flex justify-between text-xs text-slate-600">
                                                 <span>Tổng tiền hàng (Chưa thuế):</span>
                                                 <span className="font-mono font-bold text-slate-800">{formatMoney(invoice.subTotal)}</span>
