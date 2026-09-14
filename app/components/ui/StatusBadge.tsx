@@ -30,10 +30,17 @@ interface StatusBadgeProps {
 const statusConfigMap: Record<string, { bg: string, text: string, border: string, dot: string, defaultLabel: string }> = {
     DRAFT: {
         bg: 'bg-slate-50',
-        text: 'text-slate-600',
+        text: 'text-slate-700',
         border: 'border-slate-200',
         dot: 'bg-slate-400',
         defaultLabel: 'Bản nháp'
+    },
+    ISSUED: {
+        bg: 'bg-blue-50',
+        text: 'text-blue-700',
+        border: 'border-blue-200',
+        dot: 'bg-blue-500',
+        defaultLabel: 'Đã xuất kho / Ghi nợ'
     },
     SENT: {
         bg: 'bg-blue-50',
@@ -68,7 +75,21 @@ const statusConfigMap: Record<string, { bg: string, text: string, border: string
         text: 'text-emerald-700',
         border: 'border-emerald-200',
         dot: 'bg-emerald-500',
-        defaultLabel: 'Đã chấp thuận'
+        defaultLabel: 'Khách chốt'
+    },
+    ORDERED: {
+        bg: 'bg-indigo-50',
+        text: 'text-indigo-700',
+        border: 'border-indigo-200',
+        dot: 'bg-indigo-500',
+        defaultLabel: 'Đã lên đơn'
+    },
+    INVOICED: {
+        bg: 'bg-teal-50',
+        text: 'text-teal-700',
+        border: 'border-teal-200',
+        dot: 'bg-teal-500',
+        defaultLabel: 'Đã xuất hóa đơn'
     },
     ACTIVE: {
         bg: 'bg-emerald-50',
@@ -189,6 +210,13 @@ const statusConfigMap: Record<string, { bg: string, text: string, border: string
         dot: 'bg-rose-500',
         defaultLabel: 'Từ chối'
     },
+    EXPIRED: {
+        bg: 'bg-zinc-100',
+        text: 'text-zinc-600',
+        border: 'border-zinc-200',
+        dot: 'bg-zinc-400',
+        defaultLabel: 'Hết hiệu lực'
+    },
     INACTIVE: {
         bg: 'bg-zinc-100',
         text: 'text-zinc-600',
@@ -212,7 +240,11 @@ export function StatusBadge({ status, label, showDot = true, className = '' }: S
 
     return (
         <span
-            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide border shadow-[0_1px_2px_rgba(0,0,0,0.02)] ${config.bg} ${config.text} ${config.border} ${className}`}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold tracking-tight border shadow-[0_1px_2px_rgba(0,0,0,0.02)] ${config.bg} ${config.text} ${config.border} ${className}`}
+            style={{
+                fontFamily: "var(--font-sans), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                lineHeight: '1.25'
+            }}
         >
             {showDot && <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${config.dot}`} />}
             <span>{displayLabel}</span>

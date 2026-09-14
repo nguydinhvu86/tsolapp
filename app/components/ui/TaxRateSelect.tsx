@@ -88,7 +88,7 @@ export function TaxBadge({ rate, className = '' }: { rate: number | string | nul
 
     if (formatted === 'KCT') {
         return (
-            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300 border border-purple-200 dark:border-purple-800 shadow-sm ${className}`}>
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-purple-50 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 border border-purple-200 dark:border-purple-800 shadow-2xs ${className}`} style={{ fontFamily: "var(--font-sans), 'Inter', sans-serif" }}>
                 KCT
             </span>
         );
@@ -96,14 +96,14 @@ export function TaxBadge({ rate, className = '' }: { rate: number | string | nul
 
     if (formatted === '0%') {
         return (
-            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700 ${className}`}>
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-2xs ${className}`} style={{ fontFamily: "var(--font-sans), 'Inter', sans-serif" }}>
                 0%
             </span>
         );
     }
 
     return (
-        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800 ${className}`}>
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shadow-2xs ${className}`} style={{ fontFamily: "var(--font-sans), 'Inter', sans-serif" }}>
             {formatted}
         </span>
     );

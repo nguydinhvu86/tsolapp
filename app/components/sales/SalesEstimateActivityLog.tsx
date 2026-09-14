@@ -117,10 +117,10 @@ export function SalesEstimateActivityLog({ logs }: ActivityLogProps) {
     };
 
     return (
-        <div style={{ backgroundColor: 'white', borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)', marginBottom: '1.5rem', overflow: 'hidden' }}>
-            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Activity size={18} color="#64748b" />
-                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: '#1e293b' }}>Lịch sử làm việc</h3>
+        <div style={{ backgroundColor: 'white', borderRadius: '0.75rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.04)', marginBottom: '1.5rem', overflow: 'hidden' }}>
+            <div style={{ padding: '0.875rem 1.25rem', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Activity size={16} color="#64748b" />
+                <h3 style={{ margin: 0, fontSize: '0.8125rem', fontWeight: 700, color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Lịch sử làm việc</h3>
             </div>
             <div style={{ padding: '1.5rem' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', position: 'relative' }}>

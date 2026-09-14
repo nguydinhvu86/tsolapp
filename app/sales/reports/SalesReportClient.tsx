@@ -393,16 +393,21 @@ export function SalesReportClient({ invoices, payments, expenses, customers, est
         .status-badge {
             display: inline-flex;
             align-items: center;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.75rem;
+            gap: 4px;
+            padding: 2.5px 8px;
+            border-radius: 6px;
+            font-family: var(--font-sans), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 11px;
             font-weight: 600;
+            line-height: 1.25;
+            letter-spacing: -0.015em;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
         }
-        .badge-success { background: #d1fae5; color: #047857; }
-        .badge-warning { background: #fef3c7; color: #b45309; }
-        .badge-neutral { background: #f3f4f6; color: #374151; }
-        .badge-info { background: #dbeafe; color: #1d4ed8; }
-        .badge-danger { background: #fee2e2; color: #dc2626; }
+        .badge-success { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+        .badge-warning { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+        .badge-neutral { background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; }
+        .badge-info { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        .badge-danger { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
     `;
 
     const CustomRechartsTooltip = ({ active, payload, label }: any) => {

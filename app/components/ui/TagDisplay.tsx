@@ -4,17 +4,18 @@ interface TagDisplayProps {
     tagsString: string | null | undefined;
     className?: string;
     size?: 'sm' | 'md' | 'lg';
+    showHash?: boolean;
 }
 
 const colorPairs = [
-    { bg: '#f1f5f9', text: '#334155', border: '#e2e8f0' }, // slate
-    { bg: '#eff6ff', text: '#1e40af', border: '#dbeafe' }, // blue
-    { bg: '#f0fdf4', text: '#166534', border: '#dcfce7' }, // emerald
-    { bg: '#fff7ed', text: '#9a3412', border: '#ffedd5' }, // orange
-    { bg: '#faf5ff', text: '#6b21a8', border: '#f3e8ff' }, // purple
-    { bg: '#f0fdfa', text: '#115e59', border: '#ccfbf1' }, // teal
-    { bg: '#fdf2f8', text: '#9d174d', border: '#fce7f3' }, // pink
-    { bg: '#f8fafc', text: '#475569', border: '#cbd5e1' }, // zinc
+    { bg: '#f8fafc', text: '#334155', border: '#e2e8f0', hash: '#94a3b8' }, // Slate
+    { bg: '#f0f9ff', text: '#0369a1', border: '#bae6fd', hash: '#38bdf8' }, // Sky
+    { bg: '#f0fdf4', text: '#15803d', border: '#bbf7d0', hash: '#4ade80' }, // Emerald
+    { bg: '#fffbeb', text: '#b45309', border: '#fde68a', hash: '#fbbf24' }, // Amber
+    { bg: '#faf5ff', text: '#7e22ce', border: '#e9d5ff', hash: '#c084fc' }, // Purple
+    { bg: '#f0fdfa', text: '#0f766e', border: '#99f6e4', hash: '#2dd4bf' }, // Teal
+    { bg: '#fff1f2', text: '#be123c', border: '#fecdd3', hash: '#fb7185' }, // Rose
+    { bg: '#eef2ff', text: '#4338ca', border: '#c7d2fe', hash: '#818cf8' }, // Indigo
 ];
 
 function getHash(str: string): number {
@@ -25,7 +26,7 @@ function getHash(str: string): number {
     return Math.abs(hash);
 }
 
-export function TagDisplay({ tagsString, className = '', size = 'sm' }: TagDisplayProps) {
+export function TagDisplay({ tagsString, className = '', size = 'sm', showHash = true }: TagDisplayProps) {
     if (!tagsString) return null;
 
     const tags = tagsString
@@ -36,9 +37,9 @@ export function TagDisplay({ tagsString, className = '', size = 'sm' }: TagDispl
     if (tags.length === 0) return null;
 
     const sizeStyles = {
-        sm: { fontSize: '11px', padding: '1.5px 6px', lineHeight: '1.3' },
-        md: { fontSize: '12px', padding: '3px 8px', lineHeight: '1.3' },
-        lg: { fontSize: '13px', padding: '4px 10px', lineHeight: '1.4' },
+        sm: { fontSize: '11px', padding: '1.5px 6.5px', minHeight: '20px' },
+        md: { fontSize: '11.5px', padding: '2.5px 8px', minHeight: '22px' },
+        lg: { fontSize: '12.5px', padding: '3.5px 10px', minHeight: '26px' },
     };
 
     return (
@@ -53,23 +54,41 @@ export function TagDisplay({ tagsString, className = '', size = 'sm' }: TagDispl
                         style={{
                             display: 'inline-flex',
                             alignItems: 'center',
-                            fontWeight: 500,
+                            fontFamily: "var(--font-sans), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                            fontWeight: 550,
                             borderRadius: '5px',
                             borderWidth: '1px',
                             borderStyle: 'solid',
                             backgroundColor: colors.bg,
                             color: colors.text,
                             borderColor: colors.border,
-                            letterSpacing: '-0.01em',
+                            letterSpacing: '-0.015em',
+                            lineHeight: 1.25,
                             whiteSpace: 'nowrap',
+                            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.02)',
+                            transition: 'all 0.15s ease',
                             ...sizeStyles[size]
                         }}
                     >
-                        {tag}
+                        {showHash && (
+                            <span
+                                style={{
+                                    color: colors.hash,
+                                    marginRight: '2.5px',
+                                    fontWeight: 600,
+                                    fontSize: '10px',
+                                    userSelect: 'none'
+                                }}
+                            >
+                                #
+                            </span>
+                        )}
+                        <span>{tag}</span>
                     </span>
                 );
             })}
         </div>
     );
 }
+
 

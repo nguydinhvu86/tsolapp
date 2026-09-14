@@ -854,13 +854,15 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         .status-badge {
             display: inline-flex;
             align-items: center;
-            gap: 4px;
-            padding: 3px 8px;
+            gap: 4.5px;
+            padding: 2.5px 8px;
             border-radius: 6px;
-            font-size: 11.5px;
+            font-family: var(--font-sans), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 11px;
             font-weight: 600;
-            line-height: 1.3;
-            letter-spacing: -0.01em;
+            line-height: 1.25;
+            letter-spacing: -0.015em;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
             transition: all 0.15s ease;
         }
         .badge-success { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
@@ -875,17 +877,28 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
             cursor: pointer;
             outline: none;
             text-align: left;
-            padding: 3px 22px 3px 8px !important;
+            padding: 2.5px 22px 2.5px 8px !important;
             border-radius: 6px;
-            font-size: 11.5px;
+            font-family: var(--font-sans), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 11px;
             font-weight: 600;
-            line-height: 1.3;
+            line-height: 1.25;
+            letter-spacing: -0.015em;
             background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-            background-position: right 4px center;
+            background-position: right 5px center;
             background-repeat: no-repeat;
-            background-size: 14px 14px;
+            background-size: 12px 12px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+            transition: all 0.15s ease;
         }
-        .status-select:hover { opacity: 0.92; }
+        .status-select:hover { 
+            filter: brightness(0.97);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        .status-select:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.2);
+        }
 
         @keyframes overduePulse {
             0%, 100% {

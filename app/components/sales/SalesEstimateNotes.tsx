@@ -149,20 +149,20 @@ export function SalesEstimateNotes({ estimateId, notes, currentUserId, currentUs
     };
 
     return (
-        <div style={{ backgroundColor: 'white', borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)', overflow: 'hidden' }}>
+        <div style={{ backgroundColor: 'white', borderRadius: '0.75rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.04)', overflow: 'hidden' }}>
             {/* Header */}
-            <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ padding: '0.875rem 1.25rem', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-                    <div style={{ width: '32px', height: '32px', borderRadius: '0.5rem', backgroundColor: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6' }}>
-                        <MessageSquare size={17} />
+                    <div style={{ width: '28px', height: '28px', borderRadius: '0.375rem', backgroundColor: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6' }}>
+                        <MessageSquare size={15} />
                     </div>
                     <div>
-                        <h3 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 600, color: '#1e293b' }}>Ghi Chú & Tài Liệu Báo Giá</h3>
+                        <h3 style={{ margin: 0, fontSize: '0.8125rem', fontWeight: 700, color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ghi Chú & Tài Liệu Báo Giá</h3>
                         <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b' }}>Ghi chú việc đã làm, cần làm, đính kèm file hoặc dán ảnh (Ctrl+V)</p>
                     </div>
                 </div>
                 {notes && notes.length > 0 && (
-                    <span style={{ fontSize: '0.75rem', fontWeight: 600, backgroundColor: '#f1f5f9', color: '#475569', padding: '0.2rem 0.6rem', borderRadius: '9999px', border: '1px solid #e2e8f0' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 600, backgroundColor: '#f1f5f9', color: '#475569', padding: '0.15rem 0.5rem', borderRadius: '9999px', border: '1px solid #e2e8f0' }}>
                         {notes.length} ghi chú
                     </span>
                 )}
