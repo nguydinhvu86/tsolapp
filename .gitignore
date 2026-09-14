@@ -1,4 +1,4 @@
-﻿.env
+.env
 node_modules/
 .next/
 build_log*
@@ -8,3 +8,7 @@ ts_err*
 
 deploy-*.js
 *hotfix*.js
+uploads_data/
+uploads/
+public/uploads/
+
