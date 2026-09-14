@@ -232,6 +232,7 @@ export function TaskDashboardClient({
     // Filter State
     const [filterStatus, setFilterStatus] = useState<string>('ALL');
     const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
+    const [showAllFutureTasks, setShowAllFutureTasks] = useState(false);
 
     // View Mode State
     const [viewMode, setViewMode] = useState<'LIST' | 'GANTT'>('LIST');
@@ -262,6 +263,46 @@ export function TaskDashboardClient({
         return new Date(dueDate).getTime() < new Date().getTime();
     };
 
+    // Calculate count of future tasks
+    const futureTaskCount = React.useMemo(() => {
+        const threshold10Days = new Date().getTime() + 10 * 24 * 60 * 60 * 1000;
+        const threshold7Days = new Date();
+        threshold7Days.setDate(threshold7Days.getDate() + 7);
+
+        const activeRecurringIds = new Set<string>();
+        const seriesMap = new Map<string, any[]>();
+        initialTasks.forEach((t: any) => {
+            if (t.isRecurring) {
+                const seriesId = t.parentTaskId || t.id;
+                if (!seriesMap.has(seriesId)) seriesMap.set(seriesId, []);
+                seriesMap.get(seriesId)!.push(t);
+            }
+        });
+
+        seriesMap.forEach((tasksInSeries) => {
+            tasksInSeries.sort((a, b) => {
+                const dateA = a.startDate ? new Date(a.startDate).getTime() : new Date(a.dueDate).getTime();
+                const dateB = b.startDate ? new Date(b.startDate).getTime() : new Date(b.dueDate).getTime();
+                return dateA - dateB;
+            });
+            const firstIncomplete = tasksInSeries.find(t => t.status !== 'DONE');
+            if (firstIncomplete) {
+                const taskDate = firstIncomplete.startDate ? new Date(firstIncomplete.startDate) : new Date(firstIncomplete.dueDate);
+                if (taskDate.getTime() <= threshold7Days.getTime()) {
+                    activeRecurringIds.add(firstIncomplete.id);
+                }
+            }
+        });
+
+        return initialTasks.filter((t: any) => {
+            if (t.status === 'DONE' || t.status === 'CANCELLED') return false;
+            const isFarStart = t.startDate && new Date(t.startDate).getTime() > threshold10Days;
+            const isFutureRecurring = t.isRecurring && !activeRecurringIds.has(t.id);
+            const isFarDue = t.dueDate && new Date(t.dueDate).getTime() > threshold10Days;
+            return isFarStart || isFutureRecurring || isFarDue;
+        }).length;
+    }, [initialTasks]);
+
     const filteredTasks = React.useMemo(() => {
         // Find the "active" task for each recurring series
         const activeRecurringIds = new Set<string>();
@@ -287,14 +328,13 @@ export function TaskDashboardClient({
             const firstIncomplete = tasksInSeries.find(t => t.status !== 'DONE');
             if (firstIncomplete) {
                 // Check if this task is happening reasonably soon (e.g. within 7 days)
-                // If the user wants to see ALL RECURRING tasks, we bypass this hide logic later.
-                // But for the default views, we only treat it as "active" if it's near.
+                // If showAllFutureTasks is ON or filterStatus is RECURRING / FUTURE, bypass hide logic.
                 const thresholdDate = new Date();
                 thresholdDate.setDate(thresholdDate.getDate() + 7); // Show 7 days in advance
 
                 const taskDate = firstIncomplete.startDate ? new Date(firstIncomplete.startDate) : new Date(firstIncomplete.dueDate);
 
-                if (taskDate.getTime() <= thresholdDate.getTime() || filterStatus === 'RECURRING') {
+                if (showAllFutureTasks || filterStatus === 'FUTURE' || filterStatus === 'RECURRING' || taskDate.getTime() <= thresholdDate.getTime()) {
                     activeRecurringIds.add(firstIncomplete.id);
                 }
             } else {
@@ -317,14 +357,14 @@ export function TaskDashboardClient({
                 if (!matchesSearch) return false;
             }
 
-            // Hide tasks that start > 10 days in the future
-            if (task.startDate) {
+            // Hide tasks that start > 10 days in the future (unless showAllFutureTasks is active or filterStatus is FUTURE)
+            if (!showAllFutureTasks && filterStatus !== 'FUTURE' && task.startDate) {
                 const threshold = new Date().getTime() + 10 * 24 * 60 * 60 * 1000;
                 if (new Date(task.startDate).getTime() > threshold) return false;
             }
 
-            // Hide future/past recurring tasks unless in RECURRING tab
-            if (filterStatus !== 'RECURRING' && task.isRecurring) {
+            // Hide future/past recurring tasks unless in RECURRING tab, FUTURE tab, or showAllFutureTasks is active
+            if (!showAllFutureTasks && filterStatus !== 'RECURRING' && filterStatus !== 'FUTURE' && task.isRecurring) {
                 if (!activeRecurringIds.has(task.id)) return false;
             }
 
@@ -352,6 +392,13 @@ export function TaskDashboardClient({
                 const d2 = new Date().setHours(0, 0, 0, 0);
                 return d1 > d2;
             }
+            if (filterStatus === 'FUTURE') {
+                const threshold10Days = new Date().getTime() + 10 * 24 * 60 * 60 * 1000;
+                const isFarStart = task.startDate && new Date(task.startDate).getTime() > threshold10Days;
+                const isFutureRecurring = task.isRecurring && !activeRecurringIds.has(task.id);
+                const isFarDue = task.dueDate && new Date(task.dueDate).getTime() > threshold10Days;
+                return isFarStart || isFutureRecurring || isFarDue;
+            }
 
             // Assignee based
             if (filterStatus === 'ASSIGNED_ME') {
@@ -371,7 +418,7 @@ export function TaskDashboardClient({
 
             return true;
         });
-    }, [initialTasks, filterStatus, session?.user?.id]);
+    }, [initialTasks, filterStatus, globalFilter, session?.user?.id, showAllFutureTasks]);
 
     const filterCounts = React.useMemo(() => {
         let all = 0;
@@ -770,7 +817,7 @@ export function TaskDashboardClient({
                                 className="h-[34px] px-3 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 shadow-2xs cursor-pointer transition-all"
                             >
                                 <Filter size={13} className="text-slate-500" />
-                                <span>Lọc: {filterStatus}</span>
+                                <span>Lọc: {filterStatus === 'FUTURE' ? 'Việc tương lai' : filterStatus}</span>
                                 <ChevronDown size={12} className="text-slate-400" />
                             </button>
                             {isFilterMenuOpen && (
@@ -806,7 +853,8 @@ export function TaskDashboardClient({
                                     {[
                                         { id: 'TODAY', label: 'Hôm nay' },
                                         { id: 'OVERDUE', label: 'Quá hạn' },
-                                        { id: 'UPCOMING', label: 'Sắp tới' }
+                                        { id: 'UPCOMING', label: 'Sắp tới' },
+                                        { id: 'FUTURE', label: 'Toàn bộ việc tương lai' }
                                     ].map(item => (
                                         <div
                                             key={item.id}
@@ -836,6 +884,30 @@ export function TaskDashboardClient({
                                 </div>
                             )}
                         </div>
+
+                        {/* Toggle Hiện Toàn Bộ Việc Trong Tương Lai */}
+                        <button
+                            type="button"
+                            onClick={() => setShowAllFutureTasks(!showAllFutureTasks)}
+                            className={`h-[34px] px-3 rounded-lg text-xs font-semibold flex items-center gap-2 border transition-all cursor-pointer shadow-2xs select-none ${
+                                showAllFutureTasks
+                                    ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700 shadow-indigo-100'
+                                    : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+                            }`}
+                            title="Hiển thị toàn bộ công việc có ngày bắt đầu xa (>10 ngày) hoặc toàn bộ chuỗi công việc định kỳ trong tương lai để cập nhật/chỉnh sửa"
+                        >
+                            <Clock size={13} className={showAllFutureTasks ? 'text-white' : 'text-indigo-600'} />
+                            <span>Hiện toàn bộ việc tương lai</span>
+                            <span
+                                className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold transition-colors ${
+                                    showAllFutureTasks
+                                        ? 'bg-indigo-800 text-white'
+                                        : 'bg-indigo-50 text-indigo-700 border border-indigo-200/60'
+                                }`}
+                            >
+                                {showAllFutureTasks ? 'ĐANG BẬT' : `+${futureTaskCount}`}
+                            </span>
+                        </button>
                     </div>
 
                     <div className="flex items-center gap-2.5">
