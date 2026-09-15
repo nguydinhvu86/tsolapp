@@ -74,7 +74,8 @@ export default async function CustomersPage({ searchParams }: { searchParams: { 
                 salesInvoices: {
                     select: {
                         status: true,
-                        totalAmount: true
+                        totalAmount: true,
+                        paidAmount: true
                     }
                 },
                 activityLogs: {
@@ -88,13 +89,17 @@ export default async function CustomersPage({ searchParams }: { searchParams: { 
     ]);
 
     const customersWithStats = rawCustomers.map((c: any) => {
+        // Filter valid invoices (ignoring DRAFT and CANCELLED)
+        const validInvoices = (c.salesInvoices || []).filter((inv: any) => !['DRAFT', 'CANCELLED'].includes(inv.status));
+        
         // Calculate revenue from valid invoices
-        const revenue = c.salesInvoices.reduce((sum: number, inv: any) => {
-            if (['ISSUED', 'PARTIAL_PAID', 'PAID'].includes(inv.status)) {
-                return sum + inv.totalAmount;
-            }
-            return sum;
-        }, 0);
+        const revenue = validInvoices.reduce((sum: number, inv: any) => sum + (Number(inv.totalAmount) || 0), 0);
+        
+        // Calculate paid amount from valid invoices
+        const exactPayments = validInvoices.reduce((sum: number, inv: any) => sum + (Number(inv.paidAmount) || 0), 0);
+        
+        // Dynamic live debt matching customer details and statement
+        const computedDebt = revenue - exactPayments;
 
         // Get last activity date or fallback to customer creation date
         const lastActivityAt = c.activityLogs?.length > 0
@@ -106,6 +111,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: { 
 
         return {
             ...rest,
+            totalDebt: computedDebt,
             createdAt: rest.createdAt ? rest.createdAt.toISOString() : null,
             updatedAt: rest.updatedAt ? rest.updatedAt.toISOString() : null,
             revenue,

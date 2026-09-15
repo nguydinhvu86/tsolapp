@@ -66,7 +66,7 @@ export async function getSalesReportData(employeeId?: string) {
                     status: { notIn: ['DRAFT', 'CANCELLED'] },
                     ...salesFilter
                 },
-                select: { totalAmount: true }
+                select: { status: true, totalAmount: true, paidAmount: true }
             },
             salesPayments: {
                 where: paymentFilter,
