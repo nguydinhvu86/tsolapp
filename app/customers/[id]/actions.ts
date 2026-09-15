@@ -58,6 +58,7 @@ export async function getCustomerWithRelations(id: string) {
                 },
                 salesEstimates: { orderBy: { createdAt: 'desc' } },
                 salesOrders: { orderBy: { createdAt: 'desc' } },
+                salesInvoices: { orderBy: { createdAt: 'desc' } },
                 salesPayments: {
                     include: {
                         allocations: {
