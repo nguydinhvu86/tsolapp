@@ -311,6 +311,17 @@ async function main() {
     await addColumnIfNotExists('EmployeeProfile', 'schoolName', "VARCHAR(191) NULL");
     await addColumnIfNotExists('EmployeeProfile', 'graduationYear', "INT NULL");
 
+    // 4c. Task fields
+    await addColumnIfNotExists('Task', 'purchaseOrderId', 'VARCHAR(191) NULL');
+    await addColumnIfNotExists('Task', 'purchaseBillId', 'VARCHAR(191) NULL');
+    await addColumnIfNotExists('Task', 'purchasePaymentId', 'VARCHAR(191) NULL');
+    await addColumnIfNotExists('Task', 'salesEstimateId', 'VARCHAR(191) NULL');
+    await addColumnIfNotExists('Task', 'salesOrderId', 'VARCHAR(191) NULL');
+    await addColumnIfNotExists('Task', 'salesInvoiceId', 'VARCHAR(191) NULL');
+    await addColumnIfNotExists('Task', 'salesPaymentId', 'VARCHAR(191) NULL');
+    await addColumnIfNotExists('Task', 'marketingCampaignId', 'VARCHAR(191) NULL');
+    await addColumnIfNotExists('Task', 'ecatalogId', 'VARCHAR(191) NULL');
+
     // 5. Auto-populate customer codes for existing customers without code
     const existingCustomers = await prisma.customer.findMany({ where: { code: null } });
     if (existingCustomers.length > 0) {
@@ -398,6 +409,8 @@ async function main() {
     }
 
     // 7. Verification and record counts
+    const taskCount = await prisma.task.count();
+    const todoCount = await prisma.todo.count();
     const projectCount = await prisma.project.count();
     const billCount = await prisma.purchaseBill.count();
     const invoiceCount = await prisma.salesInvoice.count();
@@ -406,6 +419,8 @@ async function main() {
     const productCount = await prisma.product.count();
 
     console.log('\n--- Kiểm tra tính toàn vẹn của dữ liệu ---');
+    console.log(`- Việc cần làm / Nhiệm vụ (Tasks): ${taskCount} bản ghi`);
+    console.log(`- To-Do cá nhân (Todos): ${todoCount} bản ghi`);
     console.log(`- Dự án (Projects): ${projectCount} bản ghi`);
     console.log(`- Hóa đơn mua hàng (Purchase Bills): ${billCount} bản ghi`);
     console.log(`- Hóa đơn bán hàng (Sales Invoices): ${invoiceCount} bản ghi`);
