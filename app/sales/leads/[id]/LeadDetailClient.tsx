@@ -366,41 +366,47 @@ export function LeadDetailClient({
                     {activeTab === 'info' ? (
                         <>
                             {/* General Information Card */}
-                            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 space-y-5">
-                                <div className="flex items-center gap-2.5 pb-3.5 border-b border-slate-100">
-                                    <div className="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-200/70 text-emerald-600 flex items-center justify-center">
-                                        <Building2 size={15} />
+                            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 space-y-4">
+                                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                                    <div className="flex items-center gap-2">
+                                        <Building2 size={16} className="text-emerald-600" />
+                                        <h2 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                                            {t('leadDetails.generalInfo')}
+                                        </h2>
                                     </div>
-                                    <h2 className="text-xs sm:text-sm font-bold text-slate-900 uppercase tracking-wider">
-                                        {t('leadDetails.generalInfo')}
-                                    </h2>
+                                    <Link
+                                        href={`/sales/leads/${lead.id}/edit`}
+                                        className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+                                    >
+                                        <Edit size={12} /> Chỉnh sửa
+                                    </Link>
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-3.5 py-1">
                                     {/* Company / Customer */}
-                                    <div className="p-3.5 rounded-xl bg-slate-50/60 border border-slate-200/70 space-y-1.5">
-                                        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">
+                                    <div className="space-y-1 min-w-0">
+                                        <span className="text-[11px] font-medium uppercase tracking-wider text-slate-400 block">
                                             {t('leadDetails.companyOrg')}
                                         </span>
-                                        <div className="text-xs font-semibold text-slate-800 leading-snug">
+                                        <div className="text-xs font-semibold text-slate-800 truncate" title={lead.customer?.name || lead.company || '—'}>
                                             {lead.customer?.name || lead.company || '—'}
                                         </div>
                                     </div>
 
                                     {/* Contact Person */}
-                                    <div className="p-3.5 rounded-xl bg-slate-50/60 border border-slate-200/70 space-y-1.5">
-                                        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">
+                                    <div className="space-y-1 min-w-0">
+                                        <span className="text-[11px] font-medium uppercase tracking-wider text-slate-400 block">
                                             {t('leadDetails.contactPerson')}
                                         </span>
-                                        <div className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                                        <div className="text-xs font-semibold text-slate-800 flex items-center gap-1.5 truncate">
                                             <User size={13} className="text-slate-400 shrink-0" />
                                             <span className="truncate">{lead.customer?.contactName || lead.contactName || '—'}</span>
                                         </div>
                                     </div>
 
                                     {/* Phone Number */}
-                                    <div className="p-3.5 rounded-xl bg-slate-50/60 border border-slate-200/70 space-y-1.5">
-                                        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">
+                                    <div className="space-y-1 min-w-0">
+                                        <span className="text-[11px] font-medium uppercase tracking-wider text-slate-400 block">
                                             {t('leadDetails.phoneNumber')}
                                         </span>
                                         <div className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
@@ -413,8 +419,8 @@ export function LeadDetailClient({
                                     </div>
 
                                     {/* Email */}
-                                    <div className="p-3.5 rounded-xl bg-slate-50/60 border border-slate-200/70 space-y-1.5">
-                                        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">
+                                    <div className="space-y-1 min-w-0">
+                                        <span className="text-[11px] font-medium uppercase tracking-wider text-slate-400 block">
                                             {t('leadDetails.email')}
                                         </span>
                                         <div className="text-xs font-semibold text-slate-800 flex items-center gap-1.5 truncate">
@@ -424,8 +430,8 @@ export function LeadDetailClient({
                                     </div>
 
                                     {/* Expected Close Date */}
-                                    <div className="p-3.5 rounded-xl bg-slate-50/60 border border-slate-200/70 space-y-1.5">
-                                        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">
+                                    <div className="space-y-1 min-w-0">
+                                        <span className="text-[11px] font-medium uppercase tracking-wider text-slate-400 block">
                                             {t('leadDetails.expectedCloseDate')}
                                         </span>
                                         <div className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
@@ -435,13 +441,13 @@ export function LeadDetailClient({
                                     </div>
 
                                     {/* Lead Source */}
-                                    <div className="p-3.5 rounded-xl bg-slate-50/60 border border-slate-200/70 space-y-1.5">
-                                        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">
+                                    <div className="space-y-1 min-w-0">
+                                        <span className="text-[11px] font-medium uppercase tracking-wider text-slate-400 block">
                                             {t('leadDetails.leadSource')}
                                         </span>
                                         <div className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
                                             <Tag size={13} className="text-slate-400 shrink-0" />
-                                            <span className="inline-block px-2 py-0.5 rounded bg-white text-slate-700 text-[11px] font-medium border border-slate-200/80 shadow-2xs">
+                                            <span className="inline-block px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-medium border border-slate-200/80">
                                                 {lead.source || '—'}
                                             </span>
                                         </div>
@@ -450,13 +456,9 @@ export function LeadDetailClient({
 
                                 {/* Internal Notes */}
                                 {lead.notes && (
-                                    <div className="pt-4 border-t border-slate-100 space-y-2">
-                                        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                                            <FileText size={13} /> {t('leadDetails.internalNotes')}
-                                        </span>
-                                        <div className="p-3.5 bg-amber-50/60 rounded-xl border border-amber-200/80 text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
-                                            {lead.notes}
-                                        </div>
+                                    <div className="pt-3 border-t border-slate-100 flex items-start gap-2 text-xs bg-amber-50/50 rounded-xl p-3 border border-amber-200/70 text-slate-700 leading-relaxed">
+                                        <FileText size={14} className="text-amber-600 shrink-0 mt-0.5" />
+                                        <div className="flex-1 whitespace-pre-wrap">{lead.notes}</div>
                                     </div>
                                 )}
                             </div>
@@ -465,11 +467,9 @@ export function LeadDetailClient({
                             {lead.salesEstimates && lead.salesEstimates.length > 0 && (
                                 <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 space-y-3.5">
                                     <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
-                                        <div className="flex items-center gap-2.5">
-                                            <div className="w-7 h-7 rounded-lg bg-sky-50 border border-sky-200/70 text-sky-600 flex items-center justify-center">
-                                                <FileText size={15} />
-                                            </div>
-                                            <h2 className="text-xs sm:text-sm font-bold text-slate-900 uppercase tracking-wider">
+                                        <div className="flex items-center gap-2">
+                                            <FileText size={16} className="text-sky-600" />
+                                            <h2 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
                                                 {t('leadDetails.relatedEstimates')} ({lead.salesEstimates.length})
                                             </h2>
                                         </div>
@@ -533,19 +533,23 @@ export function LeadDetailClient({
                 <div className="lg:col-span-4 space-y-6">
                     {/* Big Value Metric Card */}
                     <div 
-                        className="rounded-2xl p-5 shadow-xs space-y-3 relative overflow-hidden border border-emerald-900/60 bg-gradient-to-br from-slate-950 via-emerald-950 to-slate-900 text-white"
+                        className="rounded-2xl p-5 shadow-xs space-y-3 relative overflow-hidden border border-emerald-800"
+                        style={{
+                            background: 'linear-gradient(135deg, #022c22 0%, #064e3b 45%, #0f172a 100%)',
+                            color: '#ffffff'
+                        }}
                     >
-                        <div className="absolute right-0 top-0 translate-x-4 -translate-y-4 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
-                        <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-emerald-300">
+                        <div className="absolute right-0 top-0 translate-x-4 -translate-y-4 w-32 h-32 bg-emerald-400/10 rounded-full blur-2xl pointer-events-none" />
+                        <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider" style={{ color: '#6ee7b7' }}>
                             <span>{t('leadDetails.expectedValue')}</span>
-                            <Sparkles size={16} className="text-emerald-400" />
+                            <Sparkles size={16} style={{ color: '#34d399' }} />
                         </div>
-                        <div className="font-mono text-2xl sm:text-3xl font-black tracking-tight text-white">
+                        <div className="font-mono text-2xl sm:text-3xl font-black tracking-tight" style={{ color: '#ffffff' }}>
                             {formatMoney(lead.estimatedValue || 0)}
                         </div>
-                        <div className="pt-2.5 flex items-center justify-between text-xs border-t border-white/10 text-emerald-100/90">
-                            <span className="text-emerald-300/80">Xác suất thành công:</span>
-                            <span className="font-bold font-mono text-sm text-white">
+                        <div className="pt-2.5 flex items-center justify-between text-xs" style={{ borderTop: '1px solid rgba(255,255,255,0.15)', color: '#d1fae5' }}>
+                            <span style={{ color: '#a7f3d0' }}>Xác suất thành công:</span>
+                            <span className="font-bold font-mono text-sm" style={{ color: '#34d399' }}>
                                 {lead.status === 'WON' ? '100%' : lead.status === 'PROPOSAL' ? '75%' : lead.status === 'QUALIFIED' ? '50%' : lead.status === 'CONTACTED' ? '25%' : lead.status === 'LOST' ? '0%' : '10%'}
                             </span>
                         </div>
