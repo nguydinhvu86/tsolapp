@@ -4,10 +4,10 @@ import { TaxBadge } from '@/app/components/ui/TaxRateSelect';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, CreditCard, Clock, Plus, Trash2, FileDown, ExternalLink, Copy, XCircle, AlertTriangle, Edit2, Activity } from 'lucide-react';
+import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, CreditCard, Clock, Plus, Trash2, FileDown, ExternalLink, Copy, XCircle, AlertTriangle, Edit2, Activity, GripVertical, ChevronUp, ChevronDown, Loader2 } from 'lucide-react';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import Link from 'next/link';
-import { uploadPurchaseBillDocument, cancelPurchaseBill, updatePurchaseBillNotes, approvePurchaseBill, payPurchaseBill } from '@/app/purchasing/actions';
+import { uploadPurchaseBillDocument, cancelPurchaseBill, updatePurchaseBillNotes, approvePurchaseBill, payPurchaseBill, reorderPurchaseBillItems } from '@/app/purchasing/actions';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { DocumentPreviewModal } from '@/app/components/ui/DocumentPreviewModal';
 import { CheckCircle2, DollarSign } from 'lucide-react';
@@ -25,6 +25,78 @@ export function PurchaseBillDetailClient({ bill, tasks, users, warehouses }: { b
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [copied, setCopied] = useState(false);
     const [previewDoc, setPreviewDoc] = useState<{ url: string, name: string } | null>(null);
+
+    // Reorder state
+    const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
+    const [dragOverItemIndex, setDragOverItemIndex] = useState<number | null>(null);
+    const [isSavingOrder, setIsSavingOrder] = useState(false);
+    const [reorderSuccessToast, setReorderSuccessToast] = useState(false);
+
+    const handleReorder = async (newItems: any[]) => {
+        setLocalBill((prev: any) => ({ ...prev, items: newItems }));
+        setIsSavingOrder(true);
+        try {
+            const res = await reorderPurchaseBillItems(localBill.id, newItems);
+            if (res.success) {
+                setReorderSuccessToast(true);
+                setTimeout(() => setReorderSuccessToast(false), 2500);
+            } else {
+                alert(res.error || 'Lỗi khi cập nhật thứ tự');
+                setLocalBill(bill);
+            }
+        } catch (e: any) {
+            alert(e.message || 'Lỗi khi cập nhật thứ tự');
+            setLocalBill(bill);
+        } finally {
+            setIsSavingOrder(false);
+        }
+    };
+
+    const handleItemDragStart = (e: React.DragEvent, index: number) => {
+        setDraggedItemIndex(index);
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', index.toString());
+    };
+
+    const handleItemDragOver = (e: React.DragEvent, index: number) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (dragOverItemIndex !== index) {
+            setDragOverItemIndex(index);
+        }
+    };
+
+    const handleItemDrop = (e: React.DragEvent, targetIndex: number) => {
+        e.preventDefault();
+        if (draggedItemIndex === null || draggedItemIndex === targetIndex) {
+            setDraggedItemIndex(null);
+            setDragOverItemIndex(null);
+            return;
+        }
+
+        const newItems = [...(localBill.items || [])];
+        const [movedItem] = newItems.splice(draggedItemIndex, 1);
+        newItems.splice(targetIndex, 0, movedItem);
+
+        setDraggedItemIndex(null);
+        setDragOverItemIndex(null);
+        handleReorder(newItems);
+    };
+
+    const handleItemDragEnd = () => {
+        setDraggedItemIndex(null);
+        setDragOverItemIndex(null);
+    };
+
+    const moveItem = (index: number, direction: 'up' | 'down') => {
+        const targetIndex = direction === 'up' ? index - 1 : index + 1;
+        const items = localBill.items || [];
+        if (targetIndex < 0 || targetIndex >= items.length) return;
+        const newItems = [...items];
+        const [movedItem] = newItems.splice(index, 1);
+        newItems.splice(targetIndex, 0, movedItem);
+        handleReorder(newItems);
+    };
 
     // Payment Modal State
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -350,55 +422,130 @@ export function PurchaseBillDetailClient({ bill, tasks, users, warehouses }: { b
 
                         <div style={{ padding: '1.5rem' }}>
                             {activeTab === 'items' && (
-                                <div style={{ overflowX: 'auto' }}>
-                                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
-                                        <thead>
-                                            <tr style={{ backgroundColor: '#f8fafc', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>
-                                                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Sản Phẩm</th>
-                                                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Số Lượng</th>
-                                                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Đơn Giá</th>
-                                                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Thuế</th>
-                                                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Thành Tiền</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {itemsPag.paginatedItems.length === 0 ? (
-                                                <tr><td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Chưa có sản phẩm nào được nhập kho.</td></tr>
-                                            ) : (
-                                                itemsPag.paginatedItems.map((item: any) => (
-                                                    <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                                        <td style={{ padding: '1rem', fontWeight: 500, color: '#1e293b' }}>
-                                                            {item.product?.name || item.productName || 'Sản phẩm không xác định'}
-                                                            {item.product?.sku && <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>SKU: {item.product.sku}</div>}
-                                                        </td>
-                                                        <td style={{ padding: '1rem', textAlign: 'center', color: '#475569' }}>{item.quantity} {item.product?.unit || ''}</td>
-                                                        <td style={{ padding: '1rem', textAlign: 'right', color: '#475569' }}>{formatMoney(item.unitPrice)}</td>
-                                                        <td style={{ padding: '1rem', textAlign: 'center' }}>
-                                                            <TaxBadge rate={item.taxRate} />
-                                                        </td>
-                                                        <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>{formatMoney(item.totalPrice)}</td>
-                                                    </tr>
-                                                ))
-                                            )}
-                                            {bill.items?.length > 0 && (
-                                                <>
-                                                    <tr style={{ backgroundColor: '#f8fafc' }}>
-                                                        <td colSpan={4} style={{ padding: '1rem', textAlign: 'right', color: '#64748b' }}>Tổng tiền trước thuế:</td>
-                                                        <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 500, color: '#1e293b' }}>{formatMoney(bill.subTotal || 0)}</td>
-                                                    </tr>
-                                                    <tr style={{ backgroundColor: '#f8fafc' }}>
-                                                        <td colSpan={4} style={{ padding: '1rem', textAlign: 'right', color: '#64748b' }}>Tổng tiền thuế:</td>
-                                                        <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 500, color: '#1e293b' }}>{formatMoney(bill.taxAmount || 0)}</td>
-                                                    </tr>
-                                                    <tr style={{ backgroundColor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
-                                                        <td colSpan={4} style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>Tổng Cộng:</td>
-                                                        <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 700, color: '#10b981', fontSize: '1.1rem' }}>{formatMoney(bill.totalAmount)}</td>
-                                                    </tr>
-                                                </>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                    <Pagination {...itemsPag.paginationProps} />
+                                <div className="space-y-4">
+                                    {/* Reorder feedback / instructions banner */}
+                                    <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 bg-emerald-50/70 border border-emerald-200/80 rounded-xl text-xs text-emerald-900">
+                                        <div className="flex items-center gap-2">
+                                            <GripVertical size={14} className="text-emerald-700" />
+                                            <span>Kéo thả biểu tượng ⠿ hoặc dùng nút mũi tên để đổi thứ tự sản phẩm. Hệ thống sẽ tự động lưu.</span>
+                                        </div>
+                                        {isSavingOrder && (
+                                            <div className="flex items-center gap-1.5 text-emerald-700 font-semibold text-[11px]">
+                                                <Loader2 size={13} className="animate-spin" />
+                                                <span>Đang lưu thứ tự...</span>
+                                            </div>
+                                        )}
+                                        {reorderSuccessToast && (
+                                            <div className="flex items-center gap-1.5 text-emerald-700 font-semibold text-[11px]">
+                                                <CheckCircle2 size={13} />
+                                                <span>Đã lưu thứ tự mới!</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div style={{ overflowX: 'auto' }}>
+                                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+                                            <thead>
+                                                <tr style={{ backgroundColor: '#f8fafc', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>
+                                                    <th style={{ padding: '0.75rem 0.5rem', fontWeight: 600, width: '60px', textAlign: 'center' }}>STT</th>
+                                                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Sản Phẩm</th>
+                                                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Số Lượng</th>
+                                                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Đơn Giá</th>
+                                                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Thuế</th>
+                                                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Thành Tiền</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {(!localBill.items || localBill.items.length === 0) ? (
+                                                    <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Chưa có sản phẩm nào được nhập kho.</td></tr>
+                                                ) : (
+                                                    localBill.items.map((item: any, idx: number) => {
+                                                        const isDragging = draggedItemIndex === idx;
+                                                        const isDragOver = dragOverItemIndex === idx;
+                                                        return (
+                                                            <tr 
+                                                                key={item.id || idx} 
+                                                                draggable
+                                                                onDragStart={(e) => handleItemDragStart(e, idx)}
+                                                                onDragOver={(e) => handleItemDragOver(e, idx)}
+                                                                onDrop={(e) => handleItemDrop(e, idx)}
+                                                                onDragEnd={handleItemDragEnd}
+                                                                className={`group transition-colors ${
+                                                                    isDragging 
+                                                                        ? 'opacity-40 bg-emerald-50/50' 
+                                                                        : isDragOver 
+                                                                            ? 'bg-emerald-50 border-t-2 border-emerald-500' 
+                                                                            : 'hover:bg-slate-50'
+                                                                }`}
+                                                                style={{ borderBottom: '1px solid #f1f5f9' }}
+                                                            >
+                                                                <td style={{ padding: '0.5rem', textAlign: 'center', verticalAlign: 'middle' }}>
+                                                                    <div className="flex items-center justify-center gap-1">
+                                                                        <div 
+                                                                            className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-emerald-700 p-1 rounded hover:bg-emerald-50"
+                                                                            title="Kéo thả để sắp xếp"
+                                                                        >
+                                                                            <GripVertical size={14} />
+                                                                        </div>
+                                                                        <span className="font-mono text-slate-500 font-semibold text-[11px] w-4 text-center">
+                                                                            {idx + 1}
+                                                                        </span>
+                                                                        <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                            <button 
+                                                                                type="button"
+                                                                                disabled={idx === 0}
+                                                                                onClick={() => moveItem(idx, 'up')}
+                                                                                className="p-0.5 hover:text-emerald-600 disabled:opacity-20 cursor-pointer"
+                                                                                title="Di chuyển lên"
+                                                                            >
+                                                                                <ChevronUp size={11} />
+                                                                            </button>
+                                                                            <button 
+                                                                                type="button"
+                                                                                disabled={idx === localBill.items.length - 1}
+                                                                                onClick={() => moveItem(idx, 'down')}
+                                                                                className="p-0.5 hover:text-emerald-600 disabled:opacity-20 cursor-pointer"
+                                                                                title="Di chuyển xuống"
+                                                                            >
+                                                                                <ChevronDown size={11} />
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td style={{ padding: '1rem', fontWeight: 500, color: '#1e293b' }}>
+                                                                    {item.product?.name || item.productName || item.customName || 'Sản phẩm không xác định'}
+                                                                    {item.product?.sku && <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>SKU: {item.product.sku}</div>}
+                                                                    {item.description && <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem', whiteSpace: 'pre-wrap' }}>{item.description}</div>}
+                                                                </td>
+                                                                <td style={{ padding: '1rem', textAlign: 'center', color: '#475569' }}>{item.quantity} {item.unit || item.product?.unit || ''}</td>
+                                                                <td style={{ padding: '1rem', textAlign: 'right', color: '#475569' }}>{formatMoney(item.unitPrice)}</td>
+                                                                <td style={{ padding: '1rem', textAlign: 'center' }}>
+                                                                    <TaxBadge rate={item.taxRate} />
+                                                                </td>
+                                                                <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>{formatMoney(item.totalPrice)}</td>
+                                                            </tr>
+                                                        );
+                                                    })
+                                                )}
+                                                {localBill.items?.length > 0 && (
+                                                    <>
+                                                        <tr style={{ backgroundColor: '#f8fafc' }}>
+                                                            <td colSpan={5} style={{ padding: '1rem', textAlign: 'right', color: '#64748b' }}>Tổng tiền trước thuế:</td>
+                                                            <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 500, color: '#1e293b' }}>{formatMoney(localBill.subTotal || 0)}</td>
+                                                        </tr>
+                                                        <tr style={{ backgroundColor: '#f8fafc' }}>
+                                                            <td colSpan={5} style={{ padding: '1rem', textAlign: 'right', color: '#64748b' }}>Tổng tiền thuế:</td>
+                                                            <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 500, color: '#1e293b' }}>{formatMoney(localBill.taxAmount || 0)}</td>
+                                                        </tr>
+                                                        <tr style={{ backgroundColor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+                                                            <td colSpan={5} style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>Tổng Cộng:</td>
+                                                            <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 700, color: '#10b981', fontSize: '1.1rem' }}>{formatMoney(localBill.totalAmount)}</td>
+                                                        </tr>
+                                                    </>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             )}
 

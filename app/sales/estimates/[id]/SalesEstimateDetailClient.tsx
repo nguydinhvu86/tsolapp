@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, FileDown, Plus, ExternalLink, Copy, User, ArrowRightLeft, Edit2, CornerDownRight } from 'lucide-react';
+import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, FileDown, Plus, ExternalLink, Copy, User, ArrowRightLeft, Edit2, CornerDownRight, GripVertical, ChevronUp, ChevronDown, Check, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { updateSalesEstimateStatus, convertEstimateToInvoice, convertEstimateToOrder } from '../actions';
+import { updateSalesEstimateStatus, convertEstimateToInvoice, convertEstimateToOrder, reorderSalesEstimateItems } from '../actions';
 import { formatMoney, formatDate, formatTaxRate } from '@/lib/utils/formatters';
 import { TaxBadge } from '@/app/components/ui/TaxRateSelect';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
@@ -40,6 +40,79 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
     // Generic Action Modal State
     const [actionModal, setActionModal] = useState<{ isOpen: boolean, title: string, message: React.ReactNode, action: () => Promise<void> } | null>(null);
     const [isActioning, setIsActioning] = useState(false);
+
+    // Reorder Items State
+    const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
+    const [dragOverItemIndex, setDragOverItemIndex] = useState<number | null>(null);
+    const [isSavingOrder, setIsSavingOrder] = useState(false);
+    const [reorderSuccessToast, setReorderSuccessToast] = useState(false);
+
+    const handleReorder = async (newItems: any[]) => {
+        setEstimate((prev: any) => ({ ...prev, items: newItems }));
+        setIsSavingOrder(true);
+        try {
+            const res = await reorderSalesEstimateItems(estimate.id, newItems);
+            if (res.success) {
+                setReorderSuccessToast(true);
+                setTimeout(() => setReorderSuccessToast(false), 2500);
+            } else {
+                alert('Lỗi khi lưu thứ tự: ' + res.error);
+                router.refresh();
+            }
+        } catch (e: any) {
+            console.error('Reorder error:', e);
+            alert('Lỗi hệ thống khi sắp xếp lại sản phẩm.');
+            router.refresh();
+        } finally {
+            setIsSavingOrder(false);
+        }
+    };
+
+    const handleItemDragStart = (e: React.DragEvent, index: number) => {
+        setDraggedItemIndex(index);
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', index.toString());
+    };
+
+    const handleItemDragOver = (e: React.DragEvent, index: number) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (dragOverItemIndex !== index) {
+            setDragOverItemIndex(index);
+        }
+    };
+
+    const handleItemDrop = (e: React.DragEvent, targetIndex: number) => {
+        e.preventDefault();
+        if (draggedItemIndex === null || draggedItemIndex === targetIndex) {
+            setDraggedItemIndex(null);
+            setDragOverItemIndex(null);
+            return;
+        }
+
+        const newItems = [...(estimate.items || [])];
+        const [movedItem] = newItems.splice(draggedItemIndex, 1);
+        newItems.splice(targetIndex, 0, movedItem);
+
+        setDraggedItemIndex(null);
+        setDragOverItemIndex(null);
+        handleReorder(newItems);
+    };
+
+    const handleItemDragEnd = () => {
+        setDraggedItemIndex(null);
+        setDragOverItemIndex(null);
+    };
+
+    const moveItem = (index: number, direction: 'up' | 'down') => {
+        const targetIndex = direction === 'up' ? index - 1 : index + 1;
+        if (!estimate.items || targetIndex < 0 || targetIndex >= estimate.items.length) return;
+
+        const newItems = [...estimate.items];
+        const [movedItem] = newItems.splice(index, 1);
+        newItems.splice(targetIndex, 0, movedItem);
+        handleReorder(newItems);
+    };
 
     useEffect(() => {
         setEstimate(initialData);
@@ -804,12 +877,37 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
 
                         <div className="p-5">
                             {activeTab === 'items' && (
-                                <div className="space-y-6">
+                                <div className="space-y-4">
+                                    <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50/80 px-3.5 py-2.5 rounded-xl border border-slate-200/80 text-xs">
+                                        <div className="flex items-center gap-2 text-slate-600 font-medium">
+                                            <GripVertical size={14} className="text-slate-400" />
+                                            <span>Kéo thả biểu tượng hoặc nhấn nút mũi tên để đổi vị trí thứ tự sản phẩm</span>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            {isSavingOrder && (
+                                                <span className="flex items-center gap-1.5 text-indigo-600 font-medium">
+                                                    <Loader2 size={13} className="animate-spin" />
+                                                    Đang lưu thứ tự...
+                                                </span>
+                                            )}
+                                            {reorderSuccessToast && (
+                                                <span className="flex items-center gap-1 text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 animate-in fade-in duration-200">
+                                                    <Check size={13} />
+                                                    Đã cập nhật vị trí
+                                                </span>
+                                            )}
+                                            <span className="text-slate-500 font-medium font-mono">
+                                                Tổng: <strong>{estimate.items?.length || 0}</strong> sản phẩm
+                                            </span>
+                                        </div>
+                                    </div>
+
                                     <div className="overflow-x-auto w-full rounded-xl border border-slate-200">
                                         {estimate.templateType === 'WITH_IMAGES' ? (
-                                            <table className="w-full min-w-[950px] text-left text-xs border-collapse">
+                                            <table className="w-full min-w-[950px] text-left text-xs border-collapse bg-white">
                                                 <thead>
                                                     <tr className="bg-slate-100/70 text-slate-600 border-b border-slate-200/90 font-bold uppercase tracking-wider text-[11px]">
+                                                        <th className="py-2.5 px-3 text-center w-[54px]">#</th>
                                                         <th className="py-2.5 px-3.5 text-center w-[60px]">Ảnh</th>
                                                         <th className="py-2.5 px-3.5">Tên Sản Phẩm / Dịch Vụ</th>
                                                         <th className="py-2.5 px-3.5 text-center w-[110px]">Xuất Xứ</th>
@@ -822,58 +920,104 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                                                 </thead>
                                                 <tbody className="divide-y divide-slate-100">
                                                     {estimate.items?.length === 0 ? (
-                                                        <tr><td colSpan={8} className="text-center py-8 text-xs text-slate-400">Chưa có sản phẩm nào.</td></tr>
+                                                        <tr><td colSpan={9} className="text-center py-8 text-xs text-slate-400">Chưa có sản phẩm nào.</td></tr>
                                                     ) : (
-                                                        estimate.items?.map((item: any) => (
-                                                            <tr key={item.id} className={`hover:bg-slate-50/60 transition-colors ${item.isSubItem ? 'bg-slate-50/40' : ''}`}>
-                                                                <td className="py-3 px-3.5 text-center align-middle">
-                                                                    {item.imageUrl ? (
-                                                                        <img src={item.imageUrl} alt="img" className="w-10 h-10 object-contain rounded-lg border border-slate-200 mx-auto bg-white p-0.5" />
-                                                                    ) : (
-                                                                        <span className="text-slate-300">-</span>
-                                                                    )}
-                                                                </td>
-                                                                <td className={`py-3 px-3.5 align-middle ${item.isSubItem ? 'pl-8' : ''}`}>
-                                                                    <div className="flex items-start gap-1.5">
-                                                                        {item.isSubItem && <CornerDownRight size={13} className="text-slate-400 shrink-0 mt-0.5" />}
-                                                                        <div>
-                                                                            <div className="font-bold text-xs text-slate-900 leading-snug">
-                                                                                {item.customName || item.product?.name || 'Sản phẩm tự do'}
+                                                        estimate.items?.map((item: any, i: number) => {
+                                                            const isDragging = draggedItemIndex === i;
+                                                            const isDragOver = dragOverItemIndex === i && draggedItemIndex !== i;
+                                                            return (
+                                                                <tr
+                                                                    key={item.id || i}
+                                                                    draggable
+                                                                    onDragStart={(e) => handleItemDragStart(e, i)}
+                                                                    onDragOver={(e) => handleItemDragOver(e, i)}
+                                                                    onDrop={(e) => handleItemDrop(e, i)}
+                                                                    onDragEnd={handleItemDragEnd}
+                                                                    className={`transition-all duration-150 group ${item.isSubItem ? 'bg-slate-50/40' : 'bg-white'} ${
+                                                                        isDragging ? 'opacity-40 bg-indigo-50/70 scale-[0.99] border-dashed border-2 border-indigo-400' : 'hover:bg-slate-50/80'
+                                                                    } ${isDragOver ? 'border-t-2 border-t-indigo-500 bg-indigo-50/40' : ''}`}
+                                                                >
+                                                                    <td className="py-3 px-2 text-center align-middle">
+                                                                        <div className="flex items-center justify-center gap-0.5">
+                                                                            <button
+                                                                                type="button"
+                                                                                title="Kéo để đổi vị trí"
+                                                                                className="cursor-grab active:cursor-grabbing p-1 text-slate-400 hover:text-indigo-600 rounded transition-colors"
+                                                                            >
+                                                                                <GripVertical size={14} />
+                                                                            </button>
+                                                                            <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                                <button
+                                                                                    type="button"
+                                                                                    disabled={i === 0}
+                                                                                    onClick={() => moveItem(i, 'up')}
+                                                                                    className="p-0.5 text-slate-400 hover:text-indigo-600 disabled:opacity-20 disabled:hover:text-slate-400 rounded transition-colors"
+                                                                                    title="Di chuyển lên"
+                                                                                >
+                                                                                    <ChevronUp size={10} />
+                                                                                </button>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    disabled={i === estimate.items.length - 1}
+                                                                                    onClick={() => moveItem(i, 'down')}
+                                                                                    className="p-0.5 text-slate-400 hover:text-indigo-600 disabled:opacity-20 disabled:hover:text-slate-400 rounded transition-colors"
+                                                                                    title="Di chuyển xuống"
+                                                                                >
+                                                                                    <ChevronDown size={10} />
+                                                                                </button>
                                                                             </div>
-                                                                            {(item.product?.sku || item.manufacture) && (
-                                                                                <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono text-slate-400 mt-0.5">
-                                                                                    {item.product?.sku && <span>SKU: {item.product.sku}</span>}
-                                                                                    {item.manufacture && <span>• Hãng: {item.manufacture}</span>}
-                                                                                </div>
-                                                                            )}
-                                                                            {item.description && (
-                                                                                <div className="text-xs text-slate-500 mt-1 whitespace-pre-wrap leading-relaxed">
-                                                                                    {item.description}
-                                                                                </div>
-                                                                            )}
                                                                         </div>
-                                                                    </div>
-                                                                </td>
-                                                                <td className="py-3 px-3.5 text-center align-middle text-xs text-slate-600 font-medium">{item.origin || '-'}</td>
-                                                                <td className="py-3 px-3.5 text-center align-middle text-xs text-slate-600 font-medium">{item.warranty || '-'}</td>
-                                                                <td className="py-3 px-3.5 text-center align-middle font-mono font-bold text-slate-800">
-                                                                    {item.quantity} <span className="text-[10px] font-normal text-slate-400">{item.unit || item.product?.unit || ''}</span>
-                                                                </td>
-                                                                <td className="py-3 px-3.5 text-right align-middle font-mono text-slate-700">{formatMoney(item.unitPrice)}</td>
-                                                                <td className="py-3 px-3.5 text-center align-middle">
-                                                                    <TaxBadge rate={item.taxRate} />
-                                                                </td>
-                                                                <td className="py-3 px-3.5 text-right align-middle font-mono font-bold text-slate-900">{formatMoney(item.totalPrice)}</td>
-                                                            </tr>
-                                                        ))
+                                                                    </td>
+                                                                    <td className="py-3 px-3.5 text-center align-middle">
+                                                                        {item.imageUrl ? (
+                                                                            <img src={item.imageUrl} alt="img" className="w-10 h-10 object-contain rounded-lg border border-slate-200 mx-auto bg-white p-0.5" />
+                                                                        ) : (
+                                                                            <span className="text-slate-300">-</span>
+                                                                        )}
+                                                                    </td>
+                                                                    <td className={`py-3 px-3.5 align-middle ${item.isSubItem ? 'pl-8' : ''}`}>
+                                                                        <div className="flex items-start gap-1.5">
+                                                                            {item.isSubItem && <CornerDownRight size={13} className="text-slate-400 shrink-0 mt-0.5" />}
+                                                                            <div>
+                                                                                <div className="font-bold text-xs text-slate-900 leading-snug">
+                                                                                    {item.customName || item.product?.name || 'Sản phẩm tự do'}
+                                                                                </div>
+                                                                                {(item.product?.sku || item.manufacture) && (
+                                                                                    <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono text-slate-400 mt-0.5">
+                                                                                        {item.product?.sku && <span>SKU: {item.product.sku}</span>}
+                                                                                        {item.manufacture && <span>• Hãng: {item.manufacture}</span>}
+                                                                                    </div>
+                                                                                )}
+                                                                                {item.description && (
+                                                                                    <div className="text-xs text-slate-500 mt-1 whitespace-pre-wrap leading-relaxed">
+                                                                                        {item.description}
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    </td>
+                                                                    <td className="py-3 px-3.5 text-center align-middle text-xs text-slate-600 font-medium">{item.origin || '-'}</td>
+                                                                    <td className="py-3 px-3.5 text-center align-middle text-xs text-slate-600 font-medium">{item.warranty || '-'}</td>
+                                                                    <td className="py-3 px-3.5 text-center align-middle font-mono font-bold text-slate-800">
+                                                                        {item.quantity} <span className="text-[10px] font-normal text-slate-400">{item.unit || item.product?.unit || ''}</span>
+                                                                    </td>
+                                                                    <td className="py-3 px-3.5 text-right align-middle font-mono text-slate-700">{formatMoney(item.unitPrice)}</td>
+                                                                    <td className="py-3 px-3.5 text-center align-middle">
+                                                                        <TaxBadge rate={item.taxRate} />
+                                                                    </td>
+                                                                    <td className="py-3 px-3.5 text-right align-middle font-mono font-bold text-slate-900">{formatMoney(item.totalPrice)}</td>
+                                                                </tr>
+                                                            );
+                                                        })
                                                     )}
                                                 </tbody>
                                             </table>
                                         ) : estimate.templateType === 'PROJECT_BREAKDOWN' ? (() => {
                                             return (
-                                                <table className="w-full min-w-[1050px] text-left text-xs border-collapse">
+                                                <table className="w-full min-w-[1050px] text-left text-xs border-collapse bg-white">
                                                     <thead>
                                                         <tr className="bg-slate-100/70 text-slate-600 border-b border-slate-200/90 font-bold uppercase tracking-wider text-[11px]">
+                                                            <th className="py-2.5 px-3 text-center w-[54px]">#</th>
                                                             <th className="py-2.5 px-3.5 text-center w-[60px]">Ảnh</th>
                                                             <th className="py-2.5 px-3.5">Tên Sản Phẩm / Dịch Vụ</th>
                                                             <th className="py-2.5 px-3.5 text-center w-[110px]">Hãng SX</th>
@@ -887,13 +1031,56 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                                                     </thead>
                                                     <tbody className="divide-y divide-slate-100">
                                                         {estimate.items?.length === 0 ? (
-                                                            <tr><td colSpan={9} className="text-center py-8 text-xs text-slate-400">Chưa có sản phẩm nào.</td></tr>
+                                                            <tr><td colSpan={10} className="text-center py-8 text-xs text-slate-400">Chưa có sản phẩm nào.</td></tr>
                                                         ) : (
-                                                            estimate.items?.map((item: any) => {
+                                                            estimate.items?.map((item: any, i: number) => {
                                                                 const tienVatTu = (item.quantity || 0) * (item.unitPrice || 0);
                                                                 const tienNhanCong = (item.quantity || 0) * (item.laborPrice || 0);
+                                                                const isDragging = draggedItemIndex === i;
+                                                                const isDragOver = dragOverItemIndex === i && draggedItemIndex !== i;
                                                                 return (
-                                                                    <tr key={item.id} className={`hover:bg-slate-50/60 transition-colors ${item.isSubItem ? 'bg-slate-50/40' : ''}`}>
+                                                                    <tr
+                                                                        key={item.id || i}
+                                                                        draggable
+                                                                        onDragStart={(e) => handleItemDragStart(e, i)}
+                                                                        onDragOver={(e) => handleItemDragOver(e, i)}
+                                                                        onDrop={(e) => handleItemDrop(e, i)}
+                                                                        onDragEnd={handleItemDragEnd}
+                                                                        className={`transition-all duration-150 group ${item.isSubItem ? 'bg-slate-50/40' : 'bg-white'} ${
+                                                                            isDragging ? 'opacity-40 bg-indigo-50/70 scale-[0.99] border-dashed border-2 border-indigo-400' : 'hover:bg-slate-50/80'
+                                                                        } ${isDragOver ? 'border-t-2 border-t-indigo-500 bg-indigo-50/40' : ''}`}
+                                                                    >
+                                                                        <td className="py-3 px-2 text-center align-middle">
+                                                                            <div className="flex items-center justify-center gap-0.5">
+                                                                                <button
+                                                                                    type="button"
+                                                                                    title="Kéo để đổi vị trí"
+                                                                                    className="cursor-grab active:cursor-grabbing p-1 text-slate-400 hover:text-indigo-600 rounded transition-colors"
+                                                                                >
+                                                                                    <GripVertical size={14} />
+                                                                                </button>
+                                                                                <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        disabled={i === 0}
+                                                                                        onClick={() => moveItem(i, 'up')}
+                                                                                        className="p-0.5 text-slate-400 hover:text-indigo-600 disabled:opacity-20 disabled:hover:text-slate-400 rounded transition-colors"
+                                                                                        title="Di chuyển lên"
+                                                                                    >
+                                                                                        <ChevronUp size={10} />
+                                                                                    </button>
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        disabled={i === estimate.items.length - 1}
+                                                                                        onClick={() => moveItem(i, 'down')}
+                                                                                        className="p-0.5 text-slate-400 hover:text-indigo-600 disabled:opacity-20 disabled:hover:text-slate-400 rounded transition-colors"
+                                                                                        title="Di chuyển xuống"
+                                                                                    >
+                                                                                        <ChevronDown size={10} />
+                                                                                    </button>
+                                                                                </div>
+                                                                            </div>
+                                                                        </td>
                                                                         <td className="py-3 px-3.5 text-center align-middle">
                                                                             {item.imageUrl ? (
                                                                                 <img src={item.imageUrl} alt="img" className="w-10 h-10 object-contain rounded-lg border border-slate-200 mx-auto bg-white p-0.5" />
@@ -938,9 +1125,10 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                                                 </table>
                                             );
                                         })() : (
-                                            <table className="w-full text-left text-xs border-collapse">
+                                            <table className="w-full text-left text-xs border-collapse bg-white">
                                                 <thead>
                                                     <tr className="bg-slate-100/70 text-slate-600 border-b border-slate-200/90 font-bold uppercase tracking-wider text-[11px]">
+                                                        <th className="py-2.5 px-3 text-center w-[54px]">#</th>
                                                         <th className="py-2.5 px-3.5">Tên Sản Phẩm / Dịch Vụ</th>
                                                         <th className="py-2.5 px-3.5 text-center w-[100px]">Số Lượng</th>
                                                         <th className="py-2.5 px-3.5 text-right w-[130px]">Đơn Giá</th>
@@ -950,44 +1138,89 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                                                 </thead>
                                                 <tbody className="divide-y divide-slate-100">
                                                     {estimate.items?.length === 0 ? (
-                                                        <tr><td colSpan={5} className="text-center py-8 text-xs text-slate-400">Chưa có sản phẩm nào.</td></tr>
+                                                        <tr><td colSpan={6} className="text-center py-8 text-xs text-slate-400">Chưa có sản phẩm nào.</td></tr>
                                                     ) : (
-                                                        estimate.items?.map((item: any) => (
-                                                            <tr key={item.id} className={`hover:bg-slate-50/60 transition-colors ${item.isSubItem ? 'bg-slate-50/40' : ''}`}>
-                                                                <td className={`py-3 px-3.5 align-middle ${item.isSubItem ? 'pl-8' : ''}`}>
-                                                                    <div className="flex items-start gap-1.5">
-                                                                        {item.isSubItem && <CornerDownRight size={13} className="text-slate-400 shrink-0 mt-0.5" />}
-                                                                        <div>
-                                                                            <div className="font-bold text-xs text-slate-900 leading-snug">
-                                                                                {item.customName || item.product?.name || 'Sản phẩm tự do'}
+                                                        estimate.items?.map((item: any, i: number) => {
+                                                            const isDragging = draggedItemIndex === i;
+                                                            const isDragOver = dragOverItemIndex === i && draggedItemIndex !== i;
+                                                            return (
+                                                                <tr
+                                                                    key={item.id || i}
+                                                                    draggable
+                                                                    onDragStart={(e) => handleItemDragStart(e, i)}
+                                                                    onDragOver={(e) => handleItemDragOver(e, i)}
+                                                                    onDrop={(e) => handleItemDrop(e, i)}
+                                                                    onDragEnd={handleItemDragEnd}
+                                                                    className={`transition-all duration-150 group ${item.isSubItem ? 'bg-slate-50/40' : 'bg-white'} ${
+                                                                        isDragging ? 'opacity-40 bg-indigo-50/70 scale-[0.99] border-dashed border-2 border-indigo-400' : 'hover:bg-slate-50/80'
+                                                                    } ${isDragOver ? 'border-t-2 border-t-indigo-500 bg-indigo-50/40' : ''}`}
+                                                                >
+                                                                    <td className="py-3 px-2 text-center align-middle">
+                                                                        <div className="flex items-center justify-center gap-0.5">
+                                                                            <button
+                                                                                type="button"
+                                                                                title="Kéo để đổi vị trí"
+                                                                                className="cursor-grab active:cursor-grabbing p-1 text-slate-400 hover:text-indigo-600 rounded transition-colors"
+                                                                            >
+                                                                                <GripVertical size={14} />
+                                                                            </button>
+                                                                            <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                                <button
+                                                                                    type="button"
+                                                                                    disabled={i === 0}
+                                                                                    onClick={() => moveItem(i, 'up')}
+                                                                                    className="p-0.5 text-slate-400 hover:text-indigo-600 disabled:opacity-20 disabled:hover:text-slate-400 rounded transition-colors"
+                                                                                    title="Di chuyển lên"
+                                                                                >
+                                                                                    <ChevronUp size={10} />
+                                                                                </button>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    disabled={i === estimate.items.length - 1}
+                                                                                    onClick={() => moveItem(i, 'down')}
+                                                                                    className="p-0.5 text-slate-400 hover:text-indigo-600 disabled:opacity-20 disabled:hover:text-slate-400 rounded transition-colors"
+                                                                                    title="Di chuyển xuống"
+                                                                                >
+                                                                                    <ChevronDown size={10} />
+                                                                                </button>
                                                                             </div>
-                                                                            {item.product?.sku && (
-                                                                                <div className="text-[11px] font-mono text-slate-400 mt-0.5">
-                                                                                    SKU: {item.product.sku}
-                                                                                </div>
-                                                                            )}
-                                                                            {item.description && (
-                                                                                <div className="text-xs text-slate-500 mt-1 whitespace-pre-wrap leading-relaxed">
-                                                                                    {item.description}
-                                                                                </div>
-                                                                            )}
                                                                         </div>
-                                                                    </div>
-                                                                </td>
-                                                                <td className="py-3 px-3.5 text-center align-middle font-mono font-bold text-slate-800">
-                                                                    {item.quantity} <span className="text-[10px] font-normal text-slate-400">{item.unit || item.product?.unit || ''}</span>
-                                                                </td>
-                                                                <td className="py-3 px-3.5 text-right align-middle font-mono text-slate-700">
-                                                                    {formatMoney(item.unitPrice)}
-                                                                </td>
-                                                                <td className="py-3 px-3.5 text-center align-middle">
-                                                                    <TaxBadge rate={item.taxRate} />
-                                                                </td>
-                                                                <td className="py-3 px-3.5 text-right align-middle font-mono font-bold text-slate-900">
-                                                                    {formatMoney(item.totalPrice)}
-                                                                </td>
-                                                            </tr>
-                                                        ))
+                                                                    </td>
+                                                                    <td className={`py-3 px-3.5 align-middle ${item.isSubItem ? 'pl-8' : ''}`}>
+                                                                        <div className="flex items-start gap-1.5">
+                                                                            {item.isSubItem && <CornerDownRight size={13} className="text-slate-400 shrink-0 mt-0.5" />}
+                                                                            <div>
+                                                                                <div className="font-bold text-xs text-slate-900 leading-snug">
+                                                                                    {item.customName || item.product?.name || 'Sản phẩm tự do'}
+                                                                                </div>
+                                                                                {item.product?.sku && (
+                                                                                    <div className="text-[11px] font-mono text-slate-400 mt-0.5">
+                                                                                        SKU: {item.product.sku}
+                                                                                    </div>
+                                                                                )}
+                                                                                {item.description && (
+                                                                                    <div className="text-xs text-slate-500 mt-1 whitespace-pre-wrap leading-relaxed">
+                                                                                        {item.description}
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    </td>
+                                                                    <td className="py-3 px-3.5 text-center align-middle font-mono font-bold text-slate-800">
+                                                                        {item.quantity} <span className="text-[10px] font-normal text-slate-400">{item.unit || item.product?.unit || ''}</span>
+                                                                    </td>
+                                                                    <td className="py-3 px-3.5 text-right align-middle font-mono text-slate-700">
+                                                                        {formatMoney(item.unitPrice)}
+                                                                    </td>
+                                                                    <td className="py-3 px-3.5 text-center align-middle">
+                                                                        <TaxBadge rate={item.taxRate} />
+                                                                    </td>
+                                                                    <td className="py-3 px-3.5 text-right align-middle font-mono font-bold text-slate-900">
+                                                                        {formatMoney(item.totalPrice)}
+                                                                    </td>
+                                                                </tr>
+                                                            );
+                                                        })
                                                     )}
                                                 </tbody>
                                             </table>

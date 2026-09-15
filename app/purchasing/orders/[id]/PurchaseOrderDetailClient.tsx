@@ -3,35 +3,112 @@ import { formatDate, formatMoney } from '@/lib/utils/formatters';
 import { TaxBadge } from '@/app/components/ui/TaxRateSelect';
 import { StatusBadge } from '@/app/components/ui/StatusBadge';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, FileDown, Plus, ExternalLink, Copy, Mail, User } from 'lucide-react';
+import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, FileDown, Plus, ExternalLink, Copy, Mail, User, CheckCircle2, GripVertical, ChevronUp, ChevronDown, Loader2 } from 'lucide-react';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
-import { sendPurchaseOrderEmail } from '../../actions';
+import { sendPurchaseOrderEmail, reorderPurchaseOrderItems } from '../../actions';
 import Link from 'next/link';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 
 export function PurchaseOrderDetailClient({ order, tasks, users, emailTemplates = [] }: { order: any, tasks: any[], users: any[], emailTemplates?: any[] }) {
     const router = useRouter();
+    const [localOrder, setLocalOrder] = useState(order);
     const [activeTab, setActiveTab] = useState<'items' | 'bills' | 'tasks'>('items');
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
     const [copied, setCopied] = useState(false);
 
+    // Reorder state
+    const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
+    const [dragOverItemIndex, setDragOverItemIndex] = useState<number | null>(null);
+    const [isSavingOrder, setIsSavingOrder] = useState(false);
+    const [reorderSuccessToast, setReorderSuccessToast] = useState(false);
+
+    useEffect(() => {
+        setLocalOrder(order);
+    }, [order]);
+
+    const handleReorder = async (newItems: any[]) => {
+        setLocalOrder((prev: any) => ({ ...prev, items: newItems }));
+        setIsSavingOrder(true);
+        try {
+            const res = await reorderPurchaseOrderItems(localOrder.id, newItems);
+            if (res.success) {
+                setReorderSuccessToast(true);
+                setTimeout(() => setReorderSuccessToast(false), 2500);
+            } else {
+                alert(res.error || 'Lỗi khi cập nhật thứ tự');
+                setLocalOrder(order);
+            }
+        } catch (e: any) {
+            alert(e.message || 'Lỗi khi cập nhật thứ tự');
+            setLocalOrder(order);
+        } finally {
+            setIsSavingOrder(false);
+        }
+    };
+
+    const handleItemDragStart = (e: React.DragEvent, index: number) => {
+        setDraggedItemIndex(index);
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', index.toString());
+    };
+
+    const handleItemDragOver = (e: React.DragEvent, index: number) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (dragOverItemIndex !== index) {
+            setDragOverItemIndex(index);
+        }
+    };
+
+    const handleItemDrop = (e: React.DragEvent, targetIndex: number) => {
+        e.preventDefault();
+        if (draggedItemIndex === null || draggedItemIndex === targetIndex) {
+            setDraggedItemIndex(null);
+            setDragOverItemIndex(null);
+            return;
+        }
+
+        const newItems = [...(localOrder.items || [])];
+        const [movedItem] = newItems.splice(draggedItemIndex, 1);
+        newItems.splice(targetIndex, 0, movedItem);
+
+        setDraggedItemIndex(null);
+        setDragOverItemIndex(null);
+        handleReorder(newItems);
+    };
+
+    const handleItemDragEnd = () => {
+        setDraggedItemIndex(null);
+        setDragOverItemIndex(null);
+    };
+
+    const moveItem = (index: number, direction: 'up' | 'down') => {
+        const targetIndex = direction === 'up' ? index - 1 : index + 1;
+        const items = localOrder.items || [];
+        if (targetIndex < 0 || targetIndex >= items.length) return;
+        const newItems = [...items];
+        const [movedItem] = newItems.splice(index, 1);
+        newItems.splice(targetIndex, 0, movedItem);
+        handleReorder(newItems);
+    };
+
     // Pagination hooks
-    const itemsPag = usePagination(order.items || []);
-    const billsPag = usePagination(order.bills || []);
+    const itemsPag = usePagination(localOrder.items || []);
+    const billsPag = usePagination(localOrder.bills || []);
 
     const handleCopyPublicLink = () => {
-        const publicUrl = `${window.location.origin}/public/purchasing/orders/${order.id}`;
+        const publicUrl = `${window.location.origin}/public/purchasing/orders/${localOrder.id}`;
         navigator.clipboard.writeText(publicUrl);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
 
     const tabs = [
-        { id: 'items', label: 'Chi tiết sản phẩm', icon: <ShoppingCart size={16} />, count: order.items?.length || 0 },
-        { id: 'bills', label: 'Hóa đơn & Nhập kho', icon: <FileDown size={16} />, count: order.bills?.length || 0 },
+        { id: 'items', label: 'Chi tiết sản phẩm', icon: <ShoppingCart size={16} />, count: localOrder.items?.length || 0 },
+        { id: 'bills', label: 'Hóa đơn & Nhập kho', icon: <FileDown size={16} />, count: localOrder.bills?.length || 0 },
         { id: 'tasks', label: 'Công việc liên quan', icon: <CheckSquare size={16} />, count: tasks.length },
     ] as const;
 
@@ -166,66 +243,138 @@ export function PurchaseOrderDetailClient({ order, tasks, users, emailTemplates 
 
                         <div className="p-5">
                             {activeTab === 'items' && (
-                                <div className="overflow-x-auto w-full rounded-lg border border-slate-100">
-                                    <table className="w-full text-left text-xs border-collapse">
-                                        <thead>
-                                            <tr className="bg-slate-50/80 text-slate-600 border-b border-slate-200">
-                                                <th className="py-2.5 px-3.5 font-semibold">Sản Phẩm</th>
-                                                <th className="py-2.5 px-3.5 font-semibold text-center">Số Lượng</th>
-                                                <th className="py-2.5 px-3.5 font-semibold text-right">Đơn Giá</th>
-                                                <th className="py-2.5 px-3.5 font-semibold text-center">Thuế</th>
-                                                <th className="py-2.5 px-3.5 font-semibold text-right">Thành Tiền</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100">
-                                            {itemsPag.paginatedItems.length === 0 ? (
-                                                <tr>
-                                                    <td colSpan={5} className="text-center py-8 text-slate-400 italic">
-                                                        Chưa có sản phẩm nào trong đơn đặt hàng.
-                                                    </td>
+                                <div className="space-y-4">
+                                    {/* Reorder feedback / instructions banner */}
+                                    <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 bg-emerald-50/70 border border-emerald-200/80 rounded-xl text-xs text-emerald-900">
+                                        <div className="flex items-center gap-2">
+                                            <GripVertical size={14} className="text-emerald-700" />
+                                            <span>Kéo thả biểu tượng ⠿ hoặc dùng nút mũi tên để đổi thứ tự sản phẩm. Hệ thống sẽ tự động lưu.</span>
+                                        </div>
+                                        {isSavingOrder && (
+                                            <div className="flex items-center gap-1.5 text-emerald-700 font-semibold text-[11px]">
+                                                <Loader2 size={13} className="animate-spin" />
+                                                <span>Đang lưu thứ tự...</span>
+                                            </div>
+                                        )}
+                                        {reorderSuccessToast && (
+                                            <div className="flex items-center gap-1.5 text-emerald-700 font-semibold text-[11px]">
+                                                <CheckCircle2 size={13} />
+                                                <span>Đã lưu thứ tự mới!</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="overflow-x-auto w-full rounded-lg border border-slate-100">
+                                        <table className="w-full text-left text-xs border-collapse">
+                                            <thead>
+                                                <tr className="bg-slate-50/80 text-slate-600 border-b border-slate-200">
+                                                    <th className="py-2.5 px-2 w-[60px] text-center font-semibold">STT</th>
+                                                    <th className="py-2.5 px-3.5 font-semibold">Sản Phẩm</th>
+                                                    <th className="py-2.5 px-3.5 font-semibold text-center">Số Lượng</th>
+                                                    <th className="py-2.5 px-3.5 font-semibold text-right">Đơn Giá</th>
+                                                    <th className="py-2.5 px-3.5 font-semibold text-center">Thuế</th>
+                                                    <th className="py-2.5 px-3.5 font-semibold text-right">Thành Tiền</th>
                                                 </tr>
-                                            ) : (
-                                                itemsPag.paginatedItems.map((item: any) => (
-                                                    <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
-                                                        <td className="py-3 px-3.5 font-medium text-slate-800">
-                                                            <div className="font-semibold">{item.product?.name || item.productName || 'Sản phẩm không xác định'}</div>
-                                                            {item.product?.sku && <div className="text-[11px] font-mono text-slate-400 mt-0.5">SKU: {item.product.sku}</div>}
-                                                        </td>
-                                                        <td className="py-3 px-3.5 text-center text-slate-600 font-medium">
-                                                            {item.quantity} {item.product?.unit || ''}
-                                                        </td>
-                                                        <td className="py-3 px-3.5 text-right font-mono text-slate-700">
-                                                            {formatMoney(item.unitPrice)}
-                                                        </td>
-                                                        <td className="py-3 px-3.5 text-center">
-                                                            <TaxBadge rate={item.taxRate} />
-                                                        </td>
-                                                        <td className="py-3 px-3.5 text-right font-mono font-semibold text-slate-900">
-                                                            {formatMoney(item.totalPrice)}
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {(!localOrder.items || localOrder.items.length === 0) ? (
+                                                    <tr>
+                                                        <td colSpan={6} className="text-center py-8 text-slate-400 italic">
+                                                            Chưa có sản phẩm nào trong đơn đặt hàng.
                                                         </td>
                                                     </tr>
-                                                ))
-                                            )}
-                                            {order.items?.length > 0 && (
-                                                <>
+                                                ) : (
+                                                    localOrder.items.map((item: any, idx: number) => {
+                                                        const isDragging = draggedItemIndex === idx;
+                                                        const isDragOver = dragOverItemIndex === idx;
+                                                        return (
+                                                            <tr 
+                                                                key={item.id || idx}
+                                                                draggable
+                                                                onDragStart={(e) => handleItemDragStart(e, idx)}
+                                                                onDragOver={(e) => handleItemDragOver(e, idx)}
+                                                                onDrop={(e) => handleItemDrop(e, idx)}
+                                                                onDragEnd={handleItemDragEnd}
+                                                                className={`group transition-colors ${
+                                                                    isDragging 
+                                                                        ? 'opacity-40 bg-emerald-50/50' 
+                                                                        : isDragOver 
+                                                                            ? 'bg-emerald-50 border-t-2 border-emerald-500' 
+                                                                            : 'hover:bg-slate-50/50'
+                                                                }`}
+                                                            >
+                                                                <td className="py-2 px-2 text-center align-middle">
+                                                                    <div className="flex items-center justify-center gap-1">
+                                                                        <div 
+                                                                            className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-emerald-700 p-1 rounded hover:bg-emerald-50"
+                                                                            title="Kéo thả để sắp xếp"
+                                                                        >
+                                                                            <GripVertical size={14} />
+                                                                        </div>
+                                                                        <span className="font-mono text-slate-500 font-semibold text-[11px] w-4 text-center">
+                                                                            {idx + 1}
+                                                                        </span>
+                                                                        <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                            <button 
+                                                                                type="button"
+                                                                                disabled={idx === 0}
+                                                                                onClick={() => moveItem(idx, 'up')}
+                                                                                className="p-0.5 hover:text-emerald-600 disabled:opacity-20 cursor-pointer"
+                                                                                title="Di chuyển lên"
+                                                                            >
+                                                                                <ChevronUp size={11} />
+                                                                            </button>
+                                                                            <button 
+                                                                                type="button"
+                                                                                disabled={idx === localOrder.items.length - 1}
+                                                                                onClick={() => moveItem(idx, 'down')}
+                                                                                className="p-0.5 hover:text-emerald-600 disabled:opacity-20 cursor-pointer"
+                                                                                title="Di chuyển xuống"
+                                                                            >
+                                                                                <ChevronDown size={11} />
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="py-3 px-3.5 font-medium text-slate-800">
+                                                                    <div className="font-semibold">{item.product?.name || item.productName || item.customName || 'Sản phẩm không xác định'}</div>
+                                                                    {item.product?.sku && <div className="text-[11px] font-mono text-slate-400 mt-0.5">SKU: {item.product.sku}</div>}
+                                                                    {item.description && <div className="text-xs text-slate-500 mt-1 whitespace-pre-wrap font-normal leading-relaxed">{item.description}</div>}
+                                                                </td>
+                                                                <td className="py-3 px-3.5 text-center text-slate-600 font-medium">
+                                                                    {item.quantity} {item.unit || item.product?.unit || ''}
+                                                                </td>
+                                                                <td className="py-3 px-3.5 text-right font-mono text-slate-700">
+                                                                    {formatMoney(item.unitPrice)}
+                                                                </td>
+                                                                <td className="py-3 px-3.5 text-center">
+                                                                    <TaxBadge rate={item.taxRate} />
+                                                                </td>
+                                                                <td className="py-3 px-3.5 text-right font-mono font-semibold text-slate-900">
+                                                                    {formatMoney(item.totalPrice)}
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })
+                                                )}
+                                            </tbody>
+                                            {localOrder.items?.length > 0 && (
+                                                <tfoot>
                                                     <tr className="bg-slate-50/40 border-t border-slate-200">
-                                                        <td colSpan={4} className="py-2.5 px-3.5 text-right text-slate-500 font-medium">Tiền trước thuế:</td>
-                                                        <td className="py-2.5 px-3.5 text-right font-mono font-medium text-slate-800">{formatMoney(order.subTotal || 0)}</td>
+                                                        <td colSpan={5} className="py-2.5 px-3.5 text-right text-slate-500 font-medium">Tiền trước thuế:</td>
+                                                        <td className="py-2.5 px-3.5 text-right font-mono font-medium text-slate-800">{formatMoney(localOrder.subTotal || 0)}</td>
                                                     </tr>
                                                     <tr className="bg-slate-50/40">
-                                                        <td colSpan={4} className="py-2.5 px-3.5 text-right text-slate-500 font-medium">Tiền thuế:</td>
-                                                        <td className="py-2.5 px-3.5 text-right font-mono font-medium text-slate-800">{formatMoney(order.taxAmount || 0)}</td>
+                                                        <td colSpan={5} className="py-2.5 px-3.5 text-right text-slate-500 font-medium">Tiền thuế:</td>
+                                                        <td className="py-2.5 px-3.5 text-right font-mono font-medium text-slate-800">{formatMoney(localOrder.taxAmount || 0)}</td>
                                                     </tr>
                                                     <tr className="bg-emerald-50/30 border-t border-slate-200">
-                                                        <td colSpan={4} className="py-3 px-3.5 text-right font-bold text-slate-900">Tổng Cộng:</td>
-                                                        <td className="py-3 px-3.5 text-right font-mono font-bold text-[var(--primary)] text-sm">{formatMoney(order.totalAmount)}</td>
+                                                        <td colSpan={5} className="py-3 px-3.5 text-right font-bold text-slate-900">Tổng Cộng:</td>
+                                                        <td className="py-3 px-3.5 text-right font-mono font-bold text-[var(--primary)] text-sm">{formatMoney(localOrder.totalAmount)}</td>
                                                     </tr>
-                                                </>
+                                                </tfoot>
                                             )}
-                                        </tbody>
-                                    </table>
-                                    <div className="p-3 border-t border-slate-100">
-                                        <Pagination {...itemsPag.paginationProps} />
+                                        </table>
                                     </div>
                                 </div>
                             )}

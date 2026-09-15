@@ -1455,3 +1455,61 @@ export async function removeSalesInvoiceManager(invoiceId: string, userId: strin
     revalidatePath(`/sales/invoices/${invoiceId}`);
     return doc;
 }
+
+export async function reorderSalesInvoiceItems(invoiceId: string, items: any[]) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" };
+        }
+        const userId = session.user.id;
+
+        const invoice = await prisma.salesInvoice.findUnique({
+            where: { id: invoiceId },
+            select: { id: true, creatorId: true, code: true }
+        });
+        if (!invoice) {
+            return { success: false, error: "Không tìm thấy hóa đơn." };
+        }
+
+        await verifyActionOwnership('SALES_INVOICES', 'EDIT', invoice.creatorId);
+
+        await prisma.$transaction(async (tx) => {
+            await tx.salesInvoiceItem.deleteMany({
+                where: { invoiceId }
+            });
+            for (const item of items) {
+                await tx.salesInvoiceItem.create({
+                    data: {
+                        invoiceId,
+                        productId: item.productId || null,
+                        customName: item.customName || null,
+                        description: item.description || null,
+                        unit: item.unit || null,
+                        quantity: Number(item.quantity) || 1,
+                        unitPrice: Number(item.unitPrice) || 0,
+                        taxRate: Number(item.taxRate) || 0,
+                        taxAmount: Number(item.taxAmount) || 0,
+                        totalPrice: Number(item.totalPrice) || 0,
+                        isSubItem: item.isSubItem || false
+                    }
+                });
+            }
+            await tx.salesInvoiceActivityLog.create({
+                data: {
+                    invoiceId,
+                    userId,
+                    action: 'UPDATED',
+                    details: 'Sắp xếp lại thứ tự danh sách sản phẩm / dịch vụ'
+                }
+            });
+        });
+
+        revalidatePath(`/sales/invoices/${invoiceId}`);
+        revalidatePath('/sales/invoices');
+        return { success: true };
+    } catch (error: any) {
+        console.error("reorderSalesInvoiceItems error:", error);
+        return { success: false, error: error.message || "Lỗi khi sắp xếp sản phẩm" };
+    }
+}

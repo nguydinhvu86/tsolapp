@@ -7,7 +7,8 @@ import {
     Info, CheckSquare, XCircle, Undo2, History, ArrowRight, Clock, AlertTriangle, 
     PackageCheck, Activity, Edit2, Edit, Building, Building2, Mail, UserCheck, Calendar,
     CreditCard, DollarSign, Sparkles, Check, Phone, MapPin, Receipt, ShieldAlert,
-    ChevronRight, CornerDownRight, Percent, Eye, FileDown, CalendarClock, BellRing
+    ChevronRight, CornerDownRight, Percent, Eye, FileDown, CalendarClock, BellRing,
+    GripVertical, ChevronUp, ChevronDown, Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 import ExcelJS from 'exceljs';
@@ -15,7 +16,7 @@ import { saveAs } from 'file-saver';
 import { 
     approveSalesInvoice, updateSalesInvoiceStatus, cancelSalesInvoice, 
     restoreSalesInvoice, paySalesInvoice, sendInvoiceEmail, 
-    assignSalesInvoiceManagers, removeSalesInvoiceManager 
+    assignSalesInvoiceManagers, removeSalesInvoiceManager, reorderSalesInvoiceItems
 } from '../actions';
 import { formatMoney, formatDate, formatDateTime, formatTaxRate } from '@/lib/utils/formatters';
 import { TaxBadge } from '@/app/components/ui/TaxRateSelect';
@@ -62,6 +63,12 @@ export default function SalesInvoiceDetailClient({
     // Renewal Reminder Modal State
     const [isRenewalModalOpen, setIsRenewalModalOpen] = useState(false);
 
+    // Drag & drop reorder state
+    const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
+    const [dragOverItemIndex, setDragOverItemIndex] = useState<number | null>(null);
+    const [isSavingOrder, setIsSavingOrder] = useState(false);
+    const [reorderSuccessToast, setReorderSuccessToast] = useState(false);
+
     // Action Modal State
     const [actionModal, setActionModal] = useState<{
         isOpen: boolean,
@@ -87,6 +94,72 @@ export default function SalesInvoiceDetailClient({
     useEffect(() => {
         setInvoice(initialData);
     }, [initialData]);
+
+    const handleReorder = async (newItems: any[]) => {
+        setInvoice((prev: any) => ({ ...prev, items: newItems }));
+        setIsSavingOrder(true);
+        try {
+            const res = await reorderSalesInvoiceItems(invoice.id, newItems);
+            if (res.success) {
+                setReorderSuccessToast(true);
+                setTimeout(() => setReorderSuccessToast(false), 2500);
+            } else {
+                alert(res.error || 'Lỗi khi cập nhật thứ tự');
+                setInvoice(initialData);
+            }
+        } catch (e: any) {
+            alert(e.message || 'Lỗi khi cập nhật thứ tự');
+            setInvoice(initialData);
+        } finally {
+            setIsSavingOrder(false);
+        }
+    };
+
+    const handleItemDragStart = (e: React.DragEvent, index: number) => {
+        setDraggedItemIndex(index);
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', index.toString());
+    };
+
+    const handleItemDragOver = (e: React.DragEvent, index: number) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (dragOverItemIndex !== index) {
+            setDragOverItemIndex(index);
+        }
+    };
+
+    const handleItemDrop = (e: React.DragEvent, targetIndex: number) => {
+        e.preventDefault();
+        if (draggedItemIndex === null || draggedItemIndex === targetIndex) {
+            setDraggedItemIndex(null);
+            setDragOverItemIndex(null);
+            return;
+        }
+
+        const newItems = [...(invoice.items || [])];
+        const [movedItem] = newItems.splice(draggedItemIndex, 1);
+        newItems.splice(targetIndex, 0, movedItem);
+
+        setDraggedItemIndex(null);
+        setDragOverItemIndex(null);
+        handleReorder(newItems);
+    };
+
+    const handleItemDragEnd = () => {
+        setDraggedItemIndex(null);
+        setDragOverItemIndex(null);
+    };
+
+    const moveItem = (index: number, direction: 'up' | 'down') => {
+        const targetIndex = direction === 'up' ? index - 1 : index + 1;
+        const items = invoice.items || [];
+        if (targetIndex < 0 || targetIndex >= items.length) return;
+        const newItems = [...items];
+        const [movedItem] = newItems.splice(index, 1);
+        newItems.splice(targetIndex, 0, movedItem);
+        handleReorder(newItems);
+    };
 
     const handleCopyPublicLink = () => {
         const publicUrl = `${window.location.origin}/public/sales/invoice/${invoice.id}`;
@@ -965,10 +1038,31 @@ export default function SalesInvoiceDetailClient({
                         <div className="p-5">
                             {activeTab === 'items' && (
                                 <div className="space-y-6">
+                                    {/* Reorder feedback / instructions banner */}
+                                    <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 bg-emerald-50/70 border border-emerald-200/80 rounded-xl text-xs text-emerald-900">
+                                        <div className="flex items-center gap-2">
+                                            <GripVertical size={14} className="text-emerald-700" />
+                                            <span>Kéo thả biểu tượng ⠿ hoặc dùng nút mũi tên để đổi thứ tự sản phẩm. Hệ thống sẽ tự động lưu.</span>
+                                        </div>
+                                        {isSavingOrder && (
+                                            <div className="flex items-center gap-1.5 text-emerald-700 font-semibold text-[11px]">
+                                                <Loader2 size={13} className="animate-spin" />
+                                                <span>Đang lưu thứ tự...</span>
+                                            </div>
+                                        )}
+                                        {reorderSuccessToast && (
+                                            <div className="flex items-center gap-1.5 text-emerald-700 font-semibold text-[11px] animate-fade-in">
+                                                <CheckCircle2 size={13} />
+                                                <span>Đã lưu thứ tự mới!</span>
+                                            </div>
+                                        )}
+                                    </div>
+
                                     <div className="overflow-x-auto w-full rounded-xl border border-slate-200">
                                         <table className="w-full text-left text-xs border-collapse">
                                             <thead>
                                                 <tr className="bg-slate-100/70 text-slate-600 border-b border-slate-200/90 font-bold uppercase tracking-wider text-[11px]">
+                                                    <th className="py-2.5 px-3 w-[60px] text-center">STT</th>
                                                     <th className="py-2.5 px-3.5">Tên Sản Phẩm / Dịch Vụ</th>
                                                     <th className="py-2.5 px-3.5 text-center w-[90px]">Số Lượng</th>
                                                     <th className="py-2.5 px-3.5 text-right w-[130px]">Đơn Giá</th>
@@ -977,42 +1071,95 @@ export default function SalesInvoiceDetailClient({
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-100">
-                                                {invoice.items?.map((item: any) => (
-                                                    <tr key={item.id} className={`hover:bg-slate-50/60 transition-colors ${item.isSubItem ? 'bg-slate-50/40' : ''}`}>
-                                                        <td className={`py-3 px-3.5 align-middle ${item.isSubItem ? 'pl-8' : ''}`}>
-                                                            <div className="flex items-start gap-1.5">
-                                                                {item.isSubItem && <CornerDownRight size={13} className="text-slate-400 shrink-0 mt-0.5" />}
-                                                                <div>
-                                                                    <div className="font-bold text-xs text-slate-900">
-                                                                        {item.customName || item.product?.name || 'Sản phẩm tự do'}
+                                                {invoice.items?.map((item: any, idx: number) => {
+                                                    const isDragging = draggedItemIndex === idx;
+                                                    const isDragOver = dragOverItemIndex === idx;
+                                                    return (
+                                                        <tr 
+                                                            key={item.id || idx}
+                                                            draggable
+                                                            onDragStart={(e) => handleItemDragStart(e, idx)}
+                                                            onDragOver={(e) => handleItemDragOver(e, idx)}
+                                                            onDrop={(e) => handleItemDrop(e, idx)}
+                                                            onDragEnd={handleItemDragEnd}
+                                                            className={`transition-colors group ${
+                                                                isDragging 
+                                                                    ? 'opacity-40 bg-emerald-50/50' 
+                                                                    : isDragOver 
+                                                                        ? 'bg-emerald-50 border-t-2 border-emerald-500' 
+                                                                        : item.isSubItem 
+                                                                            ? 'bg-slate-50/40 hover:bg-slate-50' 
+                                                                            : 'hover:bg-slate-50/60'
+                                                            }`}
+                                                        >
+                                                            <td className="py-2.5 px-2 text-center align-middle">
+                                                                <div className="flex items-center justify-center gap-1">
+                                                                    <div 
+                                                                        className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-emerald-700 p-1 rounded hover:bg-emerald-50"
+                                                                        title="Kéo thả để sắp xếp"
+                                                                    >
+                                                                        <GripVertical size={14} />
                                                                     </div>
-                                                                    {item.product?.sku && (
-                                                                        <div className="text-[11px] font-mono text-slate-400 mt-0.5">
-                                                                            SKU: {item.product.sku}
-                                                                        </div>
-                                                                    )}
-                                                                    {item.description && (
-                                                                        <div className="text-xs text-slate-500 mt-1 whitespace-pre-wrap leading-relaxed">
-                                                                            {item.description}
-                                                                        </div>
-                                                                    )}
+                                                                    <span className="font-mono text-slate-500 font-semibold text-[11px] w-4 text-center">
+                                                                        {idx + 1}
+                                                                    </span>
+                                                                    <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                        <button 
+                                                                            type="button"
+                                                                            disabled={idx === 0}
+                                                                            onClick={() => moveItem(idx, 'up')}
+                                                                            className="p-0.5 hover:text-emerald-600 disabled:opacity-20 cursor-pointer"
+                                                                            title="Di chuyển lên"
+                                                                        >
+                                                                            <ChevronUp size={11} />
+                                                                        </button>
+                                                                        <button 
+                                                                            type="button"
+                                                                            disabled={idx === (invoice.items?.length || 0) - 1}
+                                                                            onClick={() => moveItem(idx, 'down')}
+                                                                            className="p-0.5 hover:text-emerald-600 disabled:opacity-20 cursor-pointer"
+                                                                            title="Di chuyển xuống"
+                                                                        >
+                                                                            <ChevronDown size={11} />
+                                                                        </button>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        </td>
-                                                        <td className="py-3 px-3.5 text-center align-middle font-mono font-bold text-slate-800">
-                                                            {item.quantity} <span className="text-[10px] font-normal text-slate-400">{item.unit || item.product?.unit || ''}</span>
-                                                        </td>
-                                                        <td className="py-3 px-3.5 text-right align-middle font-mono text-slate-700">
-                                                            {formatMoney(item.unitPrice)}
-                                                        </td>
-                                                        <td className="py-3 px-3.5 text-center align-middle">
-                                                            <TaxBadge rate={item.taxRate} />
-                                                        </td>
-                                                        <td className="py-3 px-3.5 text-right align-middle font-mono font-bold text-slate-900">
-                                                            {formatMoney(item.totalPrice)}
-                                                        </td>
-                                                    </tr>
-                                                ))}
+                                                            </td>
+                                                            <td className={`py-3 px-3.5 align-middle ${item.isSubItem ? 'pl-8' : ''}`}>
+                                                                <div className="flex items-start gap-1.5">
+                                                                    {item.isSubItem && <CornerDownRight size={13} className="text-slate-400 shrink-0 mt-0.5" />}
+                                                                    <div>
+                                                                        <div className="font-bold text-xs text-slate-900">
+                                                                            {item.customName || item.product?.name || 'Sản phẩm tự do'}
+                                                                        </div>
+                                                                        {item.product?.sku && (
+                                                                            <div className="text-[11px] font-mono text-slate-400 mt-0.5">
+                                                                                SKU: {item.product.sku}
+                                                                            </div>
+                                                                        )}
+                                                                        {item.description && (
+                                                                            <div className="text-xs text-slate-500 mt-1 whitespace-pre-wrap leading-relaxed">
+                                                                                {item.description}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                            <td className="py-3 px-3.5 text-center align-middle font-mono font-bold text-slate-800">
+                                                                {item.quantity} <span className="text-[10px] font-normal text-slate-400">{item.unit || item.product?.unit || ''}</span>
+                                                            </td>
+                                                            <td className="py-3 px-3.5 text-right align-middle font-mono text-slate-700">
+                                                                {formatMoney(item.unitPrice)}
+                                                            </td>
+                                                            <td className="py-3 px-3.5 text-center align-middle">
+                                                                <TaxBadge rate={item.taxRate} />
+                                                            </td>
+                                                            <td className="py-3 px-3.5 text-right align-middle font-mono font-bold text-slate-900">
+                                                                {formatMoney(item.totalPrice)}
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
                                             </tbody>
                                         </table>
                                     </div>

@@ -10,7 +10,7 @@ import { Button } from '@/app/components/ui/Button';
 import { useTranslation } from '@/app/i18n/LanguageContext';
 import { Modal } from '@/app/components/ui/Modal';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
-import { Plus, Edit2, Trash2, Save, X, Printer, FileText, Search, Calendar, FolderClock, LayoutList, CheckCircle2, XCircle, Eye, Link as LinkIcon, Download, ChevronUp, ChevronDown, Check, ArrowRightLeft, ShoppingCart, Copy, ArrowUpDown } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Printer, FileText, Search, Calendar, FolderClock, LayoutList, CheckCircle2, XCircle, Eye, Link as LinkIcon, Download, ChevronUp, ChevronDown, Check, ArrowRightLeft, ShoppingCart, Copy, ArrowUpDown, GripVertical } from 'lucide-react';
 import { submitSalesEstimate, updateSalesEstimateStatus, deleteSalesEstimate, updateSalesEstimate, convertEstimateToInvoice, convertEstimateToOrder } from './actions';
 import { formatMoney, formatDate, formatTaxRate, calcPreTaxPrice, calcTaxAmount } from '@/lib/utils/formatters';
 import { TaxRateSelect, TaxBadge } from '@/app/components/ui/TaxRateSelect';
@@ -388,6 +388,65 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         setItemLaborPrice(item.laborPrice || 0);
 
         handleRemoveItem(index);
+    };
+
+    const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
+    const [dragOverItemIndex, setDragOverItemIndex] = useState<number | null>(null);
+
+    const handleItemDragStart = (e: React.DragEvent, index: number) => {
+        setDraggedItemIndex(index);
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', index.toString());
+    };
+
+    const handleItemDragOver = (e: React.DragEvent, index: number) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (dragOverItemIndex !== index) {
+            setDragOverItemIndex(index);
+        }
+    };
+
+    const handleItemDrop = (e: React.DragEvent, targetIndex: number) => {
+        e.preventDefault();
+        if (draggedItemIndex === null || draggedItemIndex === targetIndex) {
+            setDraggedItemIndex(null);
+            setDragOverItemIndex(null);
+            return;
+        }
+
+        setFormData((prev: any) => {
+            const newItems = [...prev.items];
+            const [movedItem] = newItems.splice(draggedItemIndex, 1);
+            newItems.splice(targetIndex, 0, movedItem);
+            return {
+                ...prev,
+                items: newItems
+            };
+        });
+
+        setDraggedItemIndex(null);
+        setDragOverItemIndex(null);
+    };
+
+    const handleItemDragEnd = () => {
+        setDraggedItemIndex(null);
+        setDragOverItemIndex(null);
+    };
+
+    const moveItem = (index: number, direction: 'up' | 'down') => {
+        const targetIndex = direction === 'up' ? index - 1 : index + 1;
+        if (targetIndex < 0 || targetIndex >= formData.items.length) return;
+
+        setFormData((prev: any) => {
+            const newItems = [...prev.items];
+            const [movedItem] = newItems.splice(index, 1);
+            newItems.splice(targetIndex, 0, movedItem);
+            return {
+                ...prev,
+                items: newItems
+            };
+        });
     };
 
     const handleSave = async () => {
@@ -1177,9 +1236,17 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
 
                             {formData.items.length > 0 && (
                                 <div className="border border-slate-200 rounded-xl overflow-x-auto border-t mt-3 pt-3">
-                                    <table className="w-full min-w-[600px] text-xs bg-white text-left">
+                                    <div className="flex items-center justify-between px-2 pb-2 text-[11px] text-slate-500 font-medium">
+                                        <span className="flex items-center gap-1.5">
+                                            <GripVertical size={13} className="text-slate-400" />
+                                            Kéo biểu tượng hoặc dùng mũi tên để sắp xếp thứ tự dòng sản phẩm
+                                        </span>
+                                        <span>Tổng {formData.items.length} dòng</span>
+                                    </div>
+                                    <table className="w-full min-w-[640px] text-xs bg-white text-left">
                                         <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
                                             <tr>
+                                                <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider text-center w-12">#</th>
                                                 <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider">Sản Phẩm</th>
                                                 <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider text-center w-16">SL</th>
                                                 <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider text-right w-28">{formData.templateType === 'PROJECT_BREAKDOWN' ? 'Đ.Giá Vật Tư' : 'Đ.Giá'}</th>
@@ -1188,64 +1255,110 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                                 )}
                                                 <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider text-center w-20">Thuế</th>
                                                 <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider text-right w-32">Thành Tiền</th>
-                                                <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider text-center w-10"></th>
+                                                <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider text-center w-14"></th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">
-                                            {formData.items.map((item: any, i: number) => (
-                                                <tr key={i} className={`hover:bg-slate-50/80 transition-colors ${item.isSubItem ? 'bg-slate-50/50' : ''}`}>
-                                                    <td className="p-2.5 text-slate-800" style={item.isSubItem ? { paddingLeft: '1.5rem' } : {}}>
-                                                        <div className="font-semibold flex items-center gap-1.5 flex-wrap">
-                                                            {item.isSubItem && <span className="text-slate-400">↳</span>}
-                                                            <span className={item.isSubItem ? 'text-slate-600 font-medium' : ''}>{item.productName || item.customName}</span>
-                                                            {item.saveToInventory === false && (
-                                                                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 border border-amber-200" title="Sản phẩm dùng 1 lần cho báo giá này, không lưu vào kho">
-                                                                    ⚡ Dùng 1 lần
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        {item.description && <div className="text-[11px] text-slate-500 mt-0.5 max-w-sm whitespace-pre-wrap">{item.description}</div>}
-                                                        {(formData.templateType === 'WITH_IMAGES' || formData.templateType === 'PROJECT_BREAKDOWN') && (
-                                                             <div className="text-[10px] text-slate-500 mt-0.5 flex flex-wrap gap-2">
-                                                                {item.manufacture && <span>Hãng: <span className="font-medium text-slate-700">{item.manufacture}</span></span>}
-                                                                {item.origin && <span>XX: <span className="font-medium text-slate-700">{item.origin}</span></span>}
-                                                                {item.warranty && <span>BH: <span className="font-medium text-slate-700">{item.warranty}</span></span>}
+                                            {formData.items.map((item: any, i: number) => {
+                                                const isDragging = draggedItemIndex === i;
+                                                const isDragOver = dragOverItemIndex === i && draggedItemIndex !== i;
+                                                return (
+                                                    <tr
+                                                        key={i}
+                                                        draggable
+                                                        onDragStart={(e) => handleItemDragStart(e, i)}
+                                                        onDragOver={(e) => handleItemDragOver(e, i)}
+                                                        onDrop={(e) => handleItemDrop(e, i)}
+                                                        onDragEnd={handleItemDragEnd}
+                                                        className={`transition-all duration-150 group ${item.isSubItem ? 'bg-slate-50/50' : 'bg-white'} ${
+                                                            isDragging ? 'opacity-40 bg-indigo-50/60 scale-[0.99] border-dashed border-2 border-indigo-400' : 'hover:bg-slate-50/90'
+                                                        } ${isDragOver ? 'border-t-2 border-t-indigo-500 bg-indigo-50/40' : ''}`}
+                                                    >
+                                                        <td className="p-2.5 text-center text-slate-400 align-middle">
+                                                            <div className="flex items-center justify-center gap-0.5">
+                                                                <button
+                                                                    type="button"
+                                                                    title="Kéo để đổi vị trí"
+                                                                    className="cursor-grab active:cursor-grabbing p-1 text-slate-400 hover:text-indigo-600 rounded transition-colors"
+                                                                >
+                                                                    <GripVertical size={14} />
+                                                                </button>
+                                                                <span className="font-mono text-[11px] text-slate-500 w-4">{i + 1}</span>
                                                             </div>
+                                                        </td>
+                                                        <td className="p-2.5 text-slate-800" style={item.isSubItem ? { paddingLeft: '1.5rem' } : {}}>
+                                                            <div className="font-semibold flex items-center gap-1.5 flex-wrap">
+                                                                {item.isSubItem && <span className="text-slate-400">↳</span>}
+                                                                <span className={item.isSubItem ? 'text-slate-600 font-medium' : ''}>{item.productName || item.customName}</span>
+                                                                {item.saveToInventory === false && (
+                                                                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 border border-amber-200" title="Sản phẩm dùng 1 lần cho báo giá này, không lưu vào kho">
+                                                                        ⚡ Dùng 1 lần
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            {item.description && <div className="text-[11px] text-slate-500 mt-0.5 max-w-sm whitespace-pre-wrap">{item.description}</div>}
+                                                            {(formData.templateType === 'WITH_IMAGES' || formData.templateType === 'PROJECT_BREAKDOWN') && (
+                                                                <div className="text-[10px] text-slate-500 mt-0.5 flex flex-wrap gap-2">
+                                                                    {item.manufacture && <span>Hãng: <span className="font-medium text-slate-700">{item.manufacture}</span></span>}
+                                                                    {item.origin && <span>XX: <span className="font-medium text-slate-700">{item.origin}</span></span>}
+                                                                    {item.warranty && <span>BH: <span className="font-medium text-slate-700">{item.warranty}</span></span>}
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                        <td className="p-2.5 text-center text-slate-800 font-mono">
+                                                            {item.quantity} <span className="text-[11px] text-slate-500 ml-0.5">{item.unit}</span>
+                                                        </td>
+                                                        <td className="p-2.5 text-right text-slate-700 font-mono">{formatMoney(item.unitPrice)}</td>
+                                                        {formData.templateType === 'PROJECT_BREAKDOWN' && (
+                                                            <td className="p-2.5 text-right text-emerald-700 font-mono">{formatMoney(item.laborPrice || 0)}</td>
                                                         )}
-                                                    </td>
-                                                    <td className="p-2.5 text-center text-slate-800 font-mono">
-                                                        {item.quantity} <span className="text-[11px] text-slate-500 ml-0.5">{item.unit}</span>
-                                                    </td>
-                                                    <td className="p-2.5 text-right text-slate-700 font-mono">{formatMoney(item.unitPrice)}</td>
-                                                    {formData.templateType === 'PROJECT_BREAKDOWN' && (
-                                                        <td className="p-2.5 text-right text-emerald-700 font-mono">{formatMoney(item.laborPrice || 0)}</td>
-                                                    )}
-                                                    <td className="p-2.5 text-center bg-slate-50/50 border-x border-slate-100">
-                                                        <TaxBadge rate={item.taxRate} />
-                                                    </td>
-                                                    <td className="p-2.5 text-right font-bold text-slate-900 font-mono">{formatMoney(item.totalPrice)}</td>
-                                                    <td className="p-2.5 text-center">
-                                                        <div className="flex items-center justify-center gap-1">
-                                                            <button type="button" onClick={() => handleEditItem(i)} className="text-blue-600 hover:text-blue-800 p-1 hover:bg-blue-50 rounded transition-colors" title="Sửa dòng này"><Edit2 size={14} /></button>
-                                                            <button type="button" onClick={() => handleRemoveItem(i)} className="text-rose-500 hover:text-rose-700 p-1 hover:bg-rose-50 rounded transition-colors" title="Xóa"><Trash2 size={14} /></button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
+                                                        <td className="p-2.5 text-center bg-slate-50/50 border-x border-slate-100">
+                                                            <TaxBadge rate={item.taxRate} />
+                                                        </td>
+                                                        <td className="p-2.5 text-right font-bold text-slate-900 font-mono">{formatMoney(item.totalPrice)}</td>
+                                                        <td className="p-2.5 text-center">
+                                                            <div className="flex items-center justify-center gap-1">
+                                                                <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                    <button
+                                                                        type="button"
+                                                                        disabled={i === 0}
+                                                                        onClick={() => moveItem(i, 'up')}
+                                                                        className="p-0.5 text-slate-400 hover:text-indigo-600 disabled:opacity-20 disabled:hover:text-slate-400 rounded transition-colors"
+                                                                        title="Di chuyển lên"
+                                                                    >
+                                                                        <ChevronUp size={11} />
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        disabled={i === formData.items.length - 1}
+                                                                        onClick={() => moveItem(i, 'down')}
+                                                                        className="p-0.5 text-slate-400 hover:text-indigo-600 disabled:opacity-20 disabled:hover:text-slate-400 rounded transition-colors"
+                                                                        title="Di chuyển xuống"
+                                                                    >
+                                                                        <ChevronDown size={11} />
+                                                                    </button>
+                                                                </div>
+                                                                <button type="button" onClick={() => handleEditItem(i)} className="text-blue-600 hover:text-blue-800 p-1 hover:bg-blue-50 rounded transition-colors" title="Sửa dòng này"><Edit2 size={13} /></button>
+                                                                <button type="button" onClick={() => handleRemoveItem(i)} className="text-rose-500 hover:text-rose-700 p-1 hover:bg-rose-50 rounded transition-colors" title="Xóa"><Trash2 size={13} /></button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                         <tfoot className="bg-slate-50 border-t border-slate-200 text-slate-700 text-xs">
                                             <tr>
-                                                <td colSpan={formData.templateType === 'PROJECT_BREAKDOWN' ? 5 : 4} className="p-2.5 text-right">{t('estimates.subTotal')}:</td>
+                                                <td colSpan={formData.templateType === 'PROJECT_BREAKDOWN' ? 6 : 5} className="p-2.5 text-right">{t('estimates.subTotal')}:</td>
                                                 <td className="p-2.5 text-right font-medium font-mono">{formatMoney(formData.subTotal || 0)}</td>
                                                 <td className="p-2.5"></td>
                                             </tr>
                                             <tr>
-                                                <td colSpan={formData.templateType === 'PROJECT_BREAKDOWN' ? 5 : 4} className="p-2.5 text-right">{t('estimates.totalTax')}:</td>
+                                                <td colSpan={formData.templateType === 'PROJECT_BREAKDOWN' ? 6 : 5} className="p-2.5 text-right">{t('estimates.totalTax')}:</td>
                                                 <td className="p-2.5 text-right font-medium text-slate-500 font-mono">{formatMoney(formData.taxAmount || 0)}</td>
                                                 <td className="p-2.5"></td>
                                             </tr>
                                             <tr className="border-t border-slate-200">
-                                                <td colSpan={formData.templateType === 'PROJECT_BREAKDOWN' ? 5 : 4} className="p-2.5 text-right font-bold text-xs">{t('estimates.grandTotal')}:</td>
+                                                <td colSpan={formData.templateType === 'PROJECT_BREAKDOWN' ? 6 : 5} className="p-2.5 text-right font-bold text-xs">{t('estimates.grandTotal')}:</td>
                                                 <td className="p-2.5 text-right font-bold text-emerald-700 text-sm font-mono">{formatMoney(formData.totalAmount || 0)}</td>
                                                 <td className="p-2.5"></td>
                                             </tr>

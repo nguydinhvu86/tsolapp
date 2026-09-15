@@ -960,3 +960,59 @@ export async function deleteSalesEstimateNote(noteId: string) {
     }
 }
 
+export async function reorderSalesEstimateItems(estimateId: string, items: any[]) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" };
+        }
+        const userId = session.user.id;
+
+        const estimate = await prisma.salesEstimate.findUnique({
+            where: { id: estimateId },
+            select: { id: true, creatorId: true, code: true }
+        });
+        if (!estimate) {
+            return { success: false, error: "Không tìm thấy báo giá." };
+        }
+
+        await verifyActionOwnership('SALES_ESTIMATES', 'EDIT', estimate.creatorId);
+
+        await prisma.$transaction(async (tx) => {
+            await tx.salesEstimateItem.deleteMany({
+                where: { estimateId }
+            });
+            for (const item of items) {
+                await tx.salesEstimateItem.create({
+                    data: {
+                        estimateId,
+                        productId: item.productId || null,
+                        customName: item.customName || null,
+                        description: item.description || null,
+                        unit: item.unit || null,
+                        quantity: Number(item.quantity) || 1,
+                        unitPrice: Number(item.unitPrice) || 0,
+                        taxRate: Number(item.taxRate) || 0,
+                        taxAmount: Number(item.taxAmount) || 0,
+                        totalPrice: Number(item.totalPrice) || 0,
+                        isSubItem: item.isSubItem || false,
+                        origin: item.origin || null,
+                        warranty: item.warranty || null,
+                        manufacture: item.manufacture || null,
+                        imageUrl: item.imageUrl || null,
+                        laborPrice: Number(item.laborPrice) || 0
+                    }
+                });
+            }
+        });
+
+        await logSalesEstimateActivity(estimateId, userId, 'UPDATED', 'Sắp xếp lại thứ tự danh sách sản phẩm / dịch vụ');
+        revalidatePath(`/sales/estimates/${estimateId}`);
+        revalidatePath('/sales/estimates');
+        return { success: true };
+    } catch (error: any) {
+        console.error("reorderSalesEstimateItems error:", error);
+        return { success: false, error: error.message || "Lỗi khi sắp xếp sản phẩm" };
+    }
+}
+

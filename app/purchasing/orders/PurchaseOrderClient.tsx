@@ -3,7 +3,7 @@ import { formatMoney, formatDate, formatTaxRate, calcPreTaxPrice, calcTaxAmount 
 import { TaxRateSelect, TaxBadge } from '@/app/components/ui/TaxRateSelect';
 
 import React, { useState } from 'react';
-import { Plus, Search, Eye, Trash2, Calendar, FileText, ShoppingCart, ArrowUpDown, Edit2, X } from 'lucide-react';
+import { Plus, Search, Eye, Trash2, Calendar, FileText, ShoppingCart, ArrowUpDown, Edit2, X, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { createPurchaseOrder, deletePurchaseOrder, updatePurchaseOrder } from '@/app/purchasing/actions';
@@ -265,6 +265,54 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
         setQty(1);
         setPrice(0);
         setIsPriceInclusiveVat(false);
+    };
+
+    const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
+    const [dragOverItemIndex, setDragOverItemIndex] = useState<number | null>(null);
+
+    const handleItemDragStart = (e: React.DragEvent, index: number) => {
+        setDraggedItemIndex(index);
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', index.toString());
+    };
+
+    const handleItemDragOver = (e: React.DragEvent, index: number) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (dragOverItemIndex !== index) {
+            setDragOverItemIndex(index);
+        }
+    };
+
+    const handleItemDrop = (e: React.DragEvent, targetIndex: number) => {
+        e.preventDefault();
+        if (draggedItemIndex === null || draggedItemIndex === targetIndex) {
+            setDraggedItemIndex(null);
+            setDragOverItemIndex(null);
+            return;
+        }
+
+        const newItems = [...orderItems];
+        const [movedItem] = newItems.splice(draggedItemIndex, 1);
+        newItems.splice(targetIndex, 0, movedItem);
+
+        setOrderItems(newItems);
+        setDraggedItemIndex(null);
+        setDragOverItemIndex(null);
+    };
+
+    const handleItemDragEnd = () => {
+        setDraggedItemIndex(null);
+        setDragOverItemIndex(null);
+    };
+
+    const moveItem = (index: number, direction: 'up' | 'down') => {
+        const targetIndex = direction === 'up' ? index - 1 : index + 1;
+        if (targetIndex < 0 || targetIndex >= orderItems.length) return;
+        const newItems = [...orderItems];
+        const [movedItem] = newItems.splice(index, 1);
+        newItems.splice(targetIndex, 0, movedItem);
+        setOrderItems(newItems);
     };
 
     const handleRemoveItem = (index: number) => {
@@ -763,9 +811,14 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                                     {/* Read-Only Items Table */}
                                     {orderItems.length > 0 && (
                                         <div className="border border-slate-200 rounded-xl overflow-x-auto mt-2 border-t pt-3">
+                                            <div className="text-[11px] text-slate-500 mb-2 flex items-center gap-1.5 px-2">
+                                                <GripVertical size={13} className="text-slate-400" />
+                                                <span>Kéo thả biểu tượng ⠿ hoặc dùng mũi tên để đổi thứ tự dòng sản phẩm</span>
+                                            </div>
                                             <table className="w-full min-w-[600px] text-xs mb-3 bg-white text-left">
                                                 <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
                                                     <tr>
+                                                        <th className="p-2.5 font-semibold text-center w-16">STT</th>
                                                         <th className="p-2.5 font-semibold">{t('purchaseOrders.orderedProduct')}</th>
                                                         <th className="p-2.5 font-semibold text-center w-20">{t('purchaseOrders.colQty')}</th>
                                                         <th className="p-2.5 font-semibold text-right w-32">{t('purchaseOrders.colPrice')}</th>
@@ -779,8 +832,57 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                                                         const rowSubtotal = item.quantity * item.unitPrice;
                                                         const rowTax = calcTaxAmount(rowSubtotal, item.taxRate);
                                                         const rowTotal = rowSubtotal + rowTax;
+                                                        const isDragging = draggedItemIndex === i;
+                                                        const isDragOver = dragOverItemIndex === i;
                                                         return (
-                                                            <tr key={i} className="hover:bg-slate-50 transition-colors">
+                                                            <tr 
+                                                                key={i} 
+                                                                draggable
+                                                                onDragStart={(e) => handleItemDragStart(e, i)}
+                                                                onDragOver={(e) => handleItemDragOver(e, i)}
+                                                                onDrop={(e) => handleItemDrop(e, i)}
+                                                                onDragEnd={handleItemDragEnd}
+                                                                className={`transition-colors group ${
+                                                                    isDragging 
+                                                                        ? 'opacity-40 bg-emerald-50/50' 
+                                                                        : isDragOver 
+                                                                            ? 'bg-emerald-50 border-t-2 border-emerald-500' 
+                                                                            : 'hover:bg-slate-50'
+                                                                }`}
+                                                            >
+                                                                <td className="p-2 text-center align-middle">
+                                                                    <div className="flex items-center justify-center gap-1">
+                                                                        <div 
+                                                                            className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-emerald-700 p-0.5 rounded hover:bg-emerald-50"
+                                                                            title="Kéo thả để sắp xếp"
+                                                                        >
+                                                                            <GripVertical size={13} />
+                                                                        </div>
+                                                                        <span className="font-mono text-slate-500 font-semibold text-[11px] w-3 text-center">
+                                                                            {i + 1}
+                                                                        </span>
+                                                                        <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                            <button 
+                                                                                type="button"
+                                                                                disabled={i === 0}
+                                                                                onClick={() => moveItem(i, 'up')}
+                                                                                className="p-0.5 hover:text-emerald-600 disabled:opacity-20 cursor-pointer"
+                                                                                title="Di chuyển lên"
+                                                                            >
+                                                                                <ChevronUp size={10} />
+                                                                            </button>
+                                                                            <button 
+                                                                                type="button"
+                                                                                disabled={i === orderItems.length - 1}
+                                                                                onClick={() => moveItem(i, 'down')}
+                                                                                className="p-0.5 hover:text-emerald-600 disabled:opacity-20 cursor-pointer"
+                                                                                title="Di chuyển xuống"
+                                                                            >
+                                                                                <ChevronDown size={10} />
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
                                                                 <td className="p-2.5 text-slate-800">
                                                                     <div className="font-semibold flex items-center gap-1.5">
                                                                         <span>{item.productName || item.customName}</span>
@@ -810,17 +912,17 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                                                 </tbody>
                                                 <tfoot>
                                                     <tr className="bg-slate-50/80 border-t border-slate-200">
-                                                        <td colSpan={4} className="p-2.5 text-right font-medium text-slate-600 text-xs">{t('purchaseOrders.subTotal')}</td>
+                                                        <td colSpan={5} className="p-2.5 text-right font-medium text-slate-600 text-xs">{t('purchaseOrders.subTotal')}</td>
                                                         <td className="p-2.5 text-right font-semibold text-slate-800 text-xs">{formatMoney(calculateSubTotal())}</td>
                                                         <td className="p-2.5"></td>
                                                     </tr>
                                                     <tr className="bg-slate-50/80">
-                                                        <td colSpan={4} className="p-2.5 text-right font-medium text-slate-600 text-xs">{t('purchaseOrders.taxAmount')}</td>
+                                                        <td colSpan={5} className="p-2.5 text-right font-medium text-slate-600 text-xs">{t('purchaseOrders.taxAmount')}</td>
                                                         <td className="p-2.5 text-right font-semibold text-slate-800 text-xs">{formatMoney(calculateTax())}</td>
                                                         <td className="p-2.5"></td>
                                                     </tr>
                                                     <tr className="bg-emerald-50/50 border-t border-emerald-200">
-                                                        <td colSpan={4} className="p-2.5 text-right font-bold text-slate-800 text-xs">{t('purchaseOrders.grandTotal')}</td>
+                                                        <td colSpan={5} className="p-2.5 text-right font-bold text-slate-800 text-xs">{t('purchaseOrders.grandTotal')}</td>
                                                         <td className="p-2.5 text-right font-bold text-emerald-700 text-sm">{formatMoney(calculateTotal())}</td>
                                                         <td className="p-2.5"></td>
                                                     </tr>

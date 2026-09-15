@@ -1814,3 +1814,95 @@ export async function sendPurchaseOrderEmail(orderId: string, to: string, subjec
         return { success: false, error: error.message };
     }
 }
+
+export async function reorderPurchaseBillItems(billId: string, items: any[]) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" };
+        }
+
+        const bill = await prisma.purchaseBill.findUnique({
+            where: { id: billId },
+            select: { id: true, code: true }
+        });
+        if (!bill) {
+            return { success: false, error: "Không tìm thấy hóa đơn mua hàng." };
+        }
+
+        await prisma.$transaction(async (tx) => {
+            await tx.purchaseBillItem.deleteMany({
+                where: { billId }
+            });
+            for (const item of items) {
+                await tx.purchaseBillItem.create({
+                    data: {
+                        billId,
+                        productId: item.productId || null,
+                        productName: item.productName || item.customName || null,
+                        description: item.description || null,
+                        unit: item.unit || null,
+                        quantity: Number(item.quantity) || 1,
+                        unitPrice: Number(item.unitPrice) || 0,
+                        taxRate: Number(item.taxRate) || 0,
+                        taxAmount: Number(item.taxAmount) || 0,
+                        totalPrice: Number(item.totalPrice) || 0
+                    }
+                });
+            }
+        });
+
+        revalidatePath(`/purchasing/bills/${billId}`);
+        revalidatePath('/purchasing/bills');
+        return { success: true };
+    } catch (error: any) {
+        console.error("reorderPurchaseBillItems error:", error);
+        return { success: false, error: error.message || "Lỗi khi sắp xếp sản phẩm" };
+    }
+}
+
+export async function reorderPurchaseOrderItems(orderId: string, items: any[]) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" };
+        }
+
+        const order = await prisma.purchaseOrder.findUnique({
+            where: { id: orderId },
+            select: { id: true, code: true }
+        });
+        if (!order) {
+            return { success: false, error: "Không tìm thấy đơn mua hàng." };
+        }
+
+        await prisma.$transaction(async (tx) => {
+            await tx.purchaseOrderItem.deleteMany({
+                where: { orderId }
+            });
+            for (const item of items) {
+                await tx.purchaseOrderItem.create({
+                    data: {
+                        orderId,
+                        productId: item.productId || null,
+                        productName: item.productName || item.customName || null,
+                        description: item.description || null,
+                        unit: item.unit || null,
+                        quantity: Number(item.quantity) || 1,
+                        unitPrice: Number(item.unitPrice) || 0,
+                        taxRate: Number(item.taxRate) || 0,
+                        taxAmount: Number(item.taxAmount) || 0,
+                        totalPrice: Number(item.totalPrice) || 0
+                    }
+                });
+            }
+        });
+
+        revalidatePath(`/purchasing/orders/${orderId}`);
+        revalidatePath('/purchasing/orders');
+        return { success: true };
+    } catch (error: any) {
+        console.error("reorderPurchaseOrderItems error:", error);
+        return { success: false, error: error.message || "Lỗi khi sắp xếp sản phẩm" };
+    }
+}

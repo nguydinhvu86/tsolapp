@@ -469,3 +469,50 @@ export async function convertOrderToInvoice(orderId: string) {
         return { success: false, error: error.message };
     }
 }
+
+export async function reorderSalesOrderItems(orderId: string, items: any[]) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" };
+        }
+
+        const order = await prisma.salesOrder.findUnique({
+            where: { id: orderId },
+            select: { id: true, code: true }
+        });
+        if (!order) {
+            return { success: false, error: "Không tìm thấy đơn hàng." };
+        }
+
+        await prisma.$transaction(async (tx) => {
+            await tx.salesOrderItem.deleteMany({
+                where: { orderId }
+            });
+            for (const item of items) {
+                await tx.salesOrderItem.create({
+                    data: {
+                        orderId,
+                        productId: item.productId || null,
+                        customName: item.customName || null,
+                        description: item.description || null,
+                        unit: item.unit || null,
+                        quantity: Number(item.quantity) || 1,
+                        unitPrice: Number(item.unitPrice) || 0,
+                        taxRate: Number(item.taxRate) || 0,
+                        taxAmount: Number(item.taxAmount) || 0,
+                        totalPrice: Number(item.totalPrice) || 0,
+                        isSubItem: item.isSubItem || false
+                    }
+                });
+            }
+        });
+
+        revalidatePath(`/sales/orders/${orderId}`);
+        revalidatePath('/sales/orders');
+        return { success: true };
+    } catch (error: any) {
+        console.error("reorderSalesOrderItems error:", error);
+        return { success: false, error: error.message || "Lỗi khi sắp xếp sản phẩm" };
+    }
+}

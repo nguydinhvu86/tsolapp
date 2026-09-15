@@ -8,7 +8,7 @@ import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
-import { Plus, Edit2, Trash2, Save, X, Printer, PackageCheck, Search, Calendar, LayoutList, FolderClock, CheckCircle2, XCircle, FileText, ChevronUp, ChevronDown, Eye, Link as LinkIcon, Download, Check, ArrowRightLeft, ArrowUpDown } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Printer, PackageCheck, Search, Calendar, LayoutList, FolderClock, CheckCircle2, XCircle, FileText, ChevronUp, ChevronDown, Eye, Link as LinkIcon, Download, Check, ArrowRightLeft, ArrowUpDown, GripVertical } from 'lucide-react';
 import { submitSalesOrder, updateSalesOrderStatus, deleteSalesOrder, updateSalesOrder, convertOrderToInvoice } from './actions';
 import { formatMoney, formatDate, formatTaxRate, calcPreTaxPrice, calcTaxAmount } from '@/lib/utils/formatters';
 import { TaxRateSelect, TaxBadge } from '@/app/components/ui/TaxRateSelect';
@@ -234,6 +234,61 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
         setIsSubItem(false);
         setSaveToInventory(true);
         setIsPriceInclusiveVat(false);
+    };
+
+    const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
+    const [dragOverItemIndex, setDragOverItemIndex] = useState<number | null>(null);
+
+    const handleItemDragStart = (e: React.DragEvent, index: number) => {
+        setDraggedItemIndex(index);
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', index.toString());
+    };
+
+    const handleItemDragOver = (e: React.DragEvent, index: number) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (dragOverItemIndex !== index) {
+            setDragOverItemIndex(index);
+        }
+    };
+
+    const handleItemDrop = (e: React.DragEvent, targetIndex: number) => {
+        e.preventDefault();
+        if (draggedItemIndex === null || draggedItemIndex === targetIndex) {
+            setDraggedItemIndex(null);
+            setDragOverItemIndex(null);
+            return;
+        }
+
+        const newItems = [...(formData.items || [])];
+        const [movedItem] = newItems.splice(draggedItemIndex, 1);
+        newItems.splice(targetIndex, 0, movedItem);
+
+        setFormData((prev: any) => ({
+            ...prev,
+            items: newItems
+        }));
+        setDraggedItemIndex(null);
+        setDragOverItemIndex(null);
+    };
+
+    const handleItemDragEnd = () => {
+        setDraggedItemIndex(null);
+        setDragOverItemIndex(null);
+    };
+
+    const moveItem = (index: number, direction: 'up' | 'down') => {
+        const targetIndex = direction === 'up' ? index - 1 : index + 1;
+        const items = formData.items || [];
+        if (targetIndex < 0 || targetIndex >= items.length) return;
+        const newItems = [...items];
+        const [movedItem] = newItems.splice(index, 1);
+        newItems.splice(targetIndex, 0, movedItem);
+        setFormData((prev: any) => ({
+            ...prev,
+            items: newItems
+        }));
     };
 
     const handleRemoveItem = (index: number) => {
@@ -834,9 +889,14 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
 
                             {formData.items.length > 0 && (
                                 <div className="border border-slate-200 rounded-xl overflow-x-auto mt-2 border-t pt-3">
+                                    <div className="text-[11px] text-slate-500 mb-2 flex items-center gap-1.5 px-2">
+                                        <GripVertical size={13} className="text-slate-400" />
+                                        <span>Kéo thả biểu tượng ⠿ hoặc dùng mũi tên để đổi thứ tự dòng sản phẩm</span>
+                                    </div>
                                     <table className="w-full min-w-[600px] text-xs bg-white text-left">
                                         <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
                                             <tr>
+                                                <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider text-center w-16">STT</th>
                                                 <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider">Sản Phẩm</th>
                                                 <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider text-center w-16">SL</th>
                                                 <th className="p-2.5 font-bold text-[11px] uppercase tracking-wider text-right w-28">Đ.Giá</th>
@@ -846,50 +906,103 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">
-                                            {formData.items.map((item: any, i: number) => (
-                                                <tr key={i} className={`hover:bg-slate-50/80 transition-colors ${item.isSubItem ? 'bg-slate-50/50' : ''}`}>
-                                                    <td className="p-2.5 text-slate-800" style={item.isSubItem ? { paddingLeft: '1.5rem' } : {}}>
-                                                        <div className="font-semibold flex items-center gap-1.5 flex-wrap">
-                                                            {item.isSubItem && <span className="text-slate-400">↳</span>}
-                                                            <span className={item.isSubItem ? 'text-slate-600 font-medium' : ''}>{item.productName || item.customName}</span>
-                                                            {item.saveToInventory === false && (
-                                                                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 border border-amber-200" title="Sản phẩm dùng 1 lần cho đơn hàng này, không lưu vào kho">
-                                                                    ⚡ Dùng 1 lần
+                                            {formData.items.map((item: any, i: number) => {
+                                                const isDragging = draggedItemIndex === i;
+                                                const isDragOver = dragOverItemIndex === i;
+                                                return (
+                                                    <tr 
+                                                        key={i} 
+                                                        draggable
+                                                        onDragStart={(e) => handleItemDragStart(e, i)}
+                                                        onDragOver={(e) => handleItemDragOver(e, i)}
+                                                        onDrop={(e) => handleItemDrop(e, i)}
+                                                        onDragEnd={handleItemDragEnd}
+                                                        className={`transition-colors group ${
+                                                            isDragging 
+                                                                ? 'opacity-40 bg-emerald-50/50' 
+                                                                : isDragOver 
+                                                                    ? 'bg-emerald-50 border-t-2 border-emerald-500' 
+                                                                    : item.isSubItem 
+                                                                        ? 'bg-slate-50/50 hover:bg-slate-50' 
+                                                                        : 'hover:bg-slate-50/80'
+                                                        }`}
+                                                    >
+                                                        <td className="p-2 text-center align-middle">
+                                                            <div className="flex items-center justify-center gap-1">
+                                                                <div 
+                                                                    className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-emerald-700 p-0.5 rounded hover:bg-emerald-50"
+                                                                    title="Kéo thả để sắp xếp"
+                                                                >
+                                                                    <GripVertical size={13} />
+                                                                </div>
+                                                                <span className="font-mono text-slate-500 font-semibold text-[11px] w-3 text-center">
+                                                                    {i + 1}
                                                                 </span>
-                                                            )}
-                                                        </div>
-                                                        {item.description && <div className="text-[11px] text-slate-500 mt-0.5 max-w-sm whitespace-pre-wrap">{item.description}</div>}
-                                                    </td>
-                                                    <td className="p-2.5 text-center text-slate-800 font-mono">
-                                                        {item.quantity} <span className="text-[11px] text-slate-500 ml-0.5">{item.unit}</span>
-                                                    </td>
-                                                    <td className="p-2.5 text-right text-slate-700 font-mono">{formatMoney(item.unitPrice)}</td>
-                                                    <td className="p-2.5 text-center bg-slate-50/50 border-x border-slate-100">
-                                                        <TaxBadge rate={item.taxRate} />
-                                                    </td>
-                                                    <td className="p-2.5 text-right font-bold text-slate-900 font-mono">{formatMoney(item.totalPrice)}</td>
-                                                    <td className="p-2.5 text-center">
-                                                        <div className="flex items-center justify-center gap-1">
-                                                            <button type="button" onClick={() => handleEditItem(i)} className="text-blue-600 hover:text-blue-800 p-1 hover:bg-blue-50 rounded transition-colors" title="Sửa dòng này"><Edit2 size={14} /></button>
-                                                            <button type="button" onClick={() => handleRemoveItem(i)} className="text-rose-500 hover:text-rose-700 p-1 hover:bg-rose-50 rounded transition-colors" title="Xóa"><Trash2 size={14} /></button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
+                                                                <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                    <button 
+                                                                        type="button"
+                                                                        disabled={i === 0}
+                                                                        onClick={() => moveItem(i, 'up')}
+                                                                        className="p-0.5 hover:text-emerald-600 disabled:opacity-20 cursor-pointer"
+                                                                        title="Di chuyển lên"
+                                                                    >
+                                                                        <ChevronUp size={10} />
+                                                                    </button>
+                                                                    <button 
+                                                                        type="button"
+                                                                        disabled={i === formData.items.length - 1}
+                                                                        onClick={() => moveItem(i, 'down')}
+                                                                        className="p-0.5 hover:text-emerald-600 disabled:opacity-20 cursor-pointer"
+                                                                        title="Di chuyển xuống"
+                                                                    >
+                                                                        <ChevronDown size={10} />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-2.5 text-slate-800" style={item.isSubItem ? { paddingLeft: '1.5rem' } : {}}>
+                                                            <div className="font-semibold flex items-center gap-1.5 flex-wrap">
+                                                                {item.isSubItem && <span className="text-slate-400">↳</span>}
+                                                                <span className={item.isSubItem ? 'text-slate-600 font-medium' : ''}>{item.productName || item.customName}</span>
+                                                                {item.saveToInventory === false && (
+                                                                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 border border-amber-200" title="Sản phẩm dùng 1 lần cho đơn hàng này, không lưu vào kho">
+                                                                        ⚡ Dùng 1 lần
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            {item.description && <div className="text-[11px] text-slate-500 mt-0.5 max-w-sm whitespace-pre-wrap">{item.description}</div>}
+                                                        </td>
+                                                        <td className="p-2.5 text-center text-slate-800 font-mono">
+                                                            {item.quantity} <span className="text-[11px] text-slate-500 ml-0.5">{item.unit}</span>
+                                                        </td>
+                                                        <td className="p-2.5 text-right text-slate-700 font-mono">{formatMoney(item.unitPrice)}</td>
+                                                        <td className="p-2.5 text-center bg-slate-50/50 border-x border-slate-100">
+                                                            <TaxBadge rate={item.taxRate} />
+                                                        </td>
+                                                        <td className="p-2.5 text-right font-bold text-slate-900 font-mono">{formatMoney(item.totalPrice)}</td>
+                                                        <td className="p-2.5 text-center">
+                                                            <div className="flex items-center justify-center gap-1">
+                                                                <button type="button" onClick={() => handleEditItem(i)} className="text-blue-600 hover:text-blue-800 p-1 hover:bg-blue-50 rounded transition-colors" title="Sửa dòng này"><Edit2 size={14} /></button>
+                                                                <button type="button" onClick={() => handleRemoveItem(i)} className="text-rose-500 hover:text-rose-700 p-1 hover:bg-rose-50 rounded transition-colors" title="Xóa"><Trash2 size={14} /></button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                         <tfoot className="bg-slate-50 border-t border-slate-200 text-slate-700 text-xs">
                                             <tr>
-                                                <td colSpan={4} className="p-2.5 text-right">Tổng tiền trước thuế:</td>
+                                                <td colSpan={5} className="p-2.5 text-right">Tổng tiền trước thuế:</td>
                                                 <td className="p-2.5 text-right font-medium font-mono">{formatMoney(formData.subTotal || 0)}</td>
                                                 <td className="p-2.5"></td>
                                             </tr>
                                             <tr>
-                                                <td colSpan={4} className="p-2.5 text-right">Tổng tiền thuế:</td>
+                                                <td colSpan={5} className="p-2.5 text-right">Tổng tiền thuế:</td>
                                                 <td className="p-2.5 text-right font-medium text-slate-500 font-mono">{formatMoney(formData.taxAmount || 0)}</td>
                                                 <td className="p-2.5"></td>
                                             </tr>
                                             <tr className="border-t border-slate-200">
-                                                <td colSpan={4} className="p-2.5 text-right font-bold text-xs">Tổng Cộng:</td>
+                                                <td colSpan={5} className="p-2.5 text-right font-bold text-xs">Tổng Cộng:</td>
                                                 <td className="p-2.5 text-right font-bold text-emerald-700 text-sm font-mono">{formatMoney(formData.totalAmount || 0)}</td>
                                                 <td className="p-2.5"></td>
                                             </tr>
