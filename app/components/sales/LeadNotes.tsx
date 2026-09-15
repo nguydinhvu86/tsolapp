@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { FileText, User as UserIcon, Send, Trash2, Paperclip, MessageSquare } from 'lucide-react';
+import { FileText, Send, Trash2, Paperclip, MessageSquare, ImageIcon, Loader2 } from 'lucide-react';
 import { createLeadNote, deleteLeadNote } from '../../sales/leads/actions';
 import { Modal } from '@/app/components/ui/Modal';
 import { DocumentPreviewModal } from '@/app/components/ui/DocumentPreviewModal';
@@ -91,185 +91,182 @@ export function LeadNotes({ leadId, notes, currentUserId, currentUserRole }: Lea
     };
 
     return (
-        <div style={{ backgroundColor: 'white', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)', overflow: 'hidden', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
-            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <MessageSquare size={18} color="#64748b" />
-                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: '#1e293b' }}>Ghi Chép & Tài Liệu</h3>
+        <div className="space-y-4">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                    <MessageSquare size={16} className="text-slate-500" />
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                        Ghi Chép & Tài Liệu
+                    </h3>
+                </div>
+                <span className="text-[11px] font-semibold text-slate-400">
+                    {notes?.length || 0} ghi chú
+                </span>
             </div>
 
-            <div style={{ padding: '1.5rem' }}>
-                {/* Submit Note Form */}
-                <form onSubmit={handleSubmit} style={{ marginBottom: '1.5rem' }}>
-                    <div style={{ position: 'relative', borderRadius: '0.5rem', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', padding: '0.75rem', paddingBottom: '3rem', transition: 'all 0.2s', boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.05)' }}
-                        onFocus={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
-                        onBlur={(e) => e.currentTarget.style.borderColor = '#cbd5e1'}>
-                        <textarea
-                            value={content}
-                            onChange={(e) => setContent(e.target.value)}
-                            onPaste={handlePaste}
-                            placeholder="Ghi chú chi tiết trao đổi, hoặc kéo thả/dán (Ctrl+V) tài liệu vào đây..."
-                            style={{ width: '100%', minHeight: '60px', border: 'none', backgroundColor: 'transparent', resize: 'vertical', outline: 'none', fontSize: '0.875rem', color: '#1e293b', fontFamily: 'inherit' }}
-                        />
-                        <div style={{ position: 'absolute', bottom: '0.75rem', left: '0.75rem', right: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                <div style={{ position: 'relative' }}>
-                                    <input
-                                        type="file"
-                                        multiple
-                                        accept="image/*"
-                                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
-                                        disabled={isUploading}
-                                        onChange={async (e) => {
-                                            const files = e.target.files;
-                                            if (!files || files.length === 0) return;
-                                            setIsUploading(true);
-                                            try {
-                                                const newAttachments = [...attachments];
-                                                for (let i = 0; i < files.length; i++) {
-                                                    const formData = new FormData();
-                                                    formData.append('file', files[i]);
-                                                    const res = await fetch('/api/upload', { method: 'POST', body: formData });
-                                                    if (!res.ok) throw new Error('Upload failed');
-                                                    const data = await res.json();
-                                                    newAttachments.push({ url: data.url, name: files[i].name });
-                                                }
-                                                setAttachments(newAttachments);
-                                            } catch (err) {
-                                                alert('Lỗi tải hình ảnh');
-                                            } finally {
-                                                setIsUploading(false);
-                                                e.target.value = '';
+            {/* Submit Note Form */}
+            <form onSubmit={handleSubmit} className="space-y-2">
+                <div className="relative rounded-xl border border-slate-200 bg-slate-50/60 p-3 pb-11 transition-all focus-within:border-emerald-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-500/10">
+                    <textarea
+                        value={content}
+                        onChange={(e) => setContent(e.target.value)}
+                        onPaste={handlePaste}
+                        placeholder="Ghi chú chi tiết trao đổi, hoặc kéo thả/dán (Ctrl+V) tài liệu vào đây..."
+                        className="w-full min-h-[60px] border-none bg-transparent resize-y outline-none text-xs text-slate-800 placeholder:text-slate-400 leading-relaxed font-sans"
+                    />
+                    <div className="absolute bottom-2.5 left-2.5 right-2.5 flex justify-between items-center">
+                        <div className="flex items-center gap-1.5">
+                            {/* Upload Image */}
+                            <label className="relative cursor-pointer p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-colors" title="Thêm hình ảnh">
+                                <ImageIcon size={15} />
+                                <input
+                                    type="file"
+                                    multiple
+                                    accept="image/*"
+                                    className="hidden"
+                                    disabled={isUploading}
+                                    onChange={async (e) => {
+                                        const files = e.target.files;
+                                        if (!files || files.length === 0) return;
+                                        setIsUploading(true);
+                                        try {
+                                            const newAttachments = [...attachments];
+                                            for (let i = 0; i < files.length; i++) {
+                                                const formData = new FormData();
+                                                formData.append('file', files[i]);
+                                                const res = await fetch('/api/upload', { method: 'POST', body: formData });
+                                                if (!res.ok) throw new Error('Upload failed');
+                                                const data = await res.json();
+                                                newAttachments.push({ url: data.url, name: files[i].name });
                                             }
-                                        }}
-                                        title="Thêm hình ảnh"
-                                    />
-                                    <button type="button" disabled={isUploading} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '0.375rem', backgroundColor: 'transparent', border: 'none', color: isUploading ? '#cbd5e1' : '#64748b', cursor: isUploading ? 'not-allowed' : 'pointer' }} title="Thêm hình ảnh" className="hover:bg-slate-200">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>
-                                    </button>
-                                </div>
-                                <div style={{ position: 'relative' }}>
-                                    <input
-                                        type="file"
-                                        multiple
-                                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
-                                        disabled={isUploading}
-                                        onChange={async (e) => {
-                                            const files = e.target.files;
-                                            if (!files || files.length === 0) return;
-                                            setIsUploading(true);
-                                            try {
-                                                const newAttachments = [...attachments];
-                                                for (let i = 0; i < files.length; i++) {
-                                                    const formData = new FormData();
-                                                    formData.append('file', files[i]);
-                                                    const res = await fetch('/api/upload', { method: 'POST', body: formData });
-                                                    if (!res.ok) throw new Error('Upload failed');
-                                                    const data = await res.json();
-                                                    newAttachments.push({ url: data.url, name: files[i].name });
-                                                }
-                                                setAttachments(newAttachments);
-                                            } catch (err) {
-                                                alert('Lỗi tải tệp tin');
-                                            } finally {
-                                                setIsUploading(false);
-                                                e.target.value = '';
+                                            setAttachments(newAttachments);
+                                        } catch (err) {
+                                            alert('Lỗi tải hình ảnh');
+                                        } finally {
+                                            setIsUploading(false);
+                                            e.target.value = '';
+                                        }
+                                    }}
+                                />
+                            </label>
+
+                            {/* Upload Document */}
+                            <label className="relative cursor-pointer p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-colors" title="Đính kèm tài liệu">
+                                <Paperclip size={15} />
+                                <input
+                                    type="file"
+                                    multiple
+                                    className="hidden"
+                                    disabled={isUploading}
+                                    onChange={async (e) => {
+                                        const files = e.target.files;
+                                        if (!files || files.length === 0) return;
+                                        setIsUploading(true);
+                                        try {
+                                            const newAttachments = [...attachments];
+                                            for (let i = 0; i < files.length; i++) {
+                                                const formData = new FormData();
+                                                formData.append('file', files[i]);
+                                                const res = await fetch('/api/upload', { method: 'POST', body: formData });
+                                                if (!res.ok) throw new Error('Upload failed');
+                                                const data = await res.json();
+                                                newAttachments.push({ url: data.url, name: files[i].name });
                                             }
-                                        }}
-                                        title="Đính kèm tài liệu"
-                                    />
-                                    <button type="button" disabled={isUploading} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '0.375rem', backgroundColor: 'transparent', border: 'none', color: isUploading ? '#cbd5e1' : '#64748b', cursor: isUploading ? 'not-allowed' : 'pointer' }} title="Đính kèm file" className="hover:bg-slate-200">
-                                        <Paperclip size={16} />
-                                    </button>
-                                </div>
-                                {isUploading && <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Đang tải...</span>}
-                            </div>
-                            <button
-                                type="submit"
-                                disabled={isSubmitting || (!content.trim() && attachments.length === 0) || isUploading}
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', padding: '0.375rem 1rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: ((content.trim() || attachments.length > 0) && !isSubmitting && !isUploading) ? '#2563eb' : '#94a3b8', color: 'white', border: 'none', cursor: ((content.trim() || attachments.length > 0) && !isSubmitting && !isUploading) ? 'pointer' : 'not-allowed', transition: 'background-color 0.2s' }}
-                            >
-                                {isSubmitting ? 'Đang lưu...' : <><Send size={14} /> Gửi Ý Kiến</>}
-                            </button>
+                                            setAttachments(newAttachments);
+                                        } catch (err) {
+                                            alert('Lỗi tải tệp tin');
+                                        } finally {
+                                            setIsUploading(false);
+                                            e.target.value = '';
+                                        }
+                                    }}
+                                />
+                            </label>
+
+                            {isUploading && (
+                                <span className="inline-flex items-center gap-1 text-[11px] text-slate-400">
+                                    <Loader2 size={12} className="animate-spin text-emerald-600" /> Đang tải...
+                                </span>
+                            )}
                         </div>
+
+                        <button
+                            type="submit"
+                            disabled={isSubmitting || (!content.trim() && attachments.length === 0) || isUploading}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shadow-2xs ${
+                                (content.trim() || attachments.length > 0) && !isSubmitting && !isUploading
+                                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
+                                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                            }`}
+                        >
+                            {isSubmitting ? (
+                                <><Loader2 size={12} className="animate-spin" /> Đang lưu...</>
+                            ) : (
+                                <><Send size={12} /> Gửi Ý Kiến</>
+                            )}
+                        </button>
                     </div>
-                </form>
+                </div>
 
                 {/* Pending Attachments List */}
                 {attachments.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                    <div className="flex flex-wrap gap-2 pt-1">
                         {attachments.map((att, idx) => (
-                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.25rem 0.5rem', backgroundColor: '#e0e7ff', border: '1px solid #c7d2fe', borderRadius: '0.375rem', fontSize: '0.75rem', color: '#4338ca', maxWidth: '100%', minWidth: 0 }}>
-                                <FileText size={12} style={{ flexShrink: 0 }} />
-                                <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{att.name}</span>
-                                <button type="button" onClick={() => setAttachments(attachments.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <div key={idx} className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200/80 rounded-lg text-xs text-emerald-800 max-w-full">
+                                <FileText size={12} className="shrink-0 text-emerald-600" />
+                                <span className="truncate max-w-[180px] font-medium">{att.name}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setAttachments(attachments.filter((_, i) => i !== idx))}
+                                    className="text-emerald-600 hover:text-rose-600 p-0.5 cursor-pointer"
+                                >
                                     <Trash2 size={12} />
                                 </button>
                             </div>
                         ))}
                     </div>
                 )}
+            </form>
 
-                {/* Notes List */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', maxHeight: '450px', overflowY: 'auto', paddingRight: '4px' }}>
-                    {displayNotes && displayNotes.length > 0 ? (
-                        displayNotes.map((note) => (
-                            <div key={note.id} style={{ display: 'flex', gap: '1rem', minWidth: 0, width: '100%' }}>
-                                <div style={{ flexShrink: 0 }}>
-                                    <AvatarImage
-                                        src={note.user?.avatar}
-                                        name={note.user?.name}
-                                        size={40}
-                                    />
-                                </div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                    {note.content && note.content.trim() ? (
-                                        <div style={{ display: 'inline-block', backgroundColor: '#f8fafc', padding: '0.75rem 1rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0', minWidth: '250px', maxWidth: '100%' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.375rem' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                    <span style={{ fontWeight: 600, color: '#0f172a', fontSize: '0.9rem' }}>{note.user?.name || 'User'}</span>
-                                                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                                                        {format(new Date(note.createdAt), 'HH:mm - dd/MM/yyyy', { locale: vi })}
-                                                    </span>
-                                                </div>
-                                                {(currentUserId === note.userId || currentUserRole === 'ADMIN') && (
-                                                    <button
-                                                        onClick={() => handleDelete(note.id)}
-                                                        disabled={isDeletingId === note.id}
-                                                        style={{ backgroundColor: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '24px', borderRadius: '0.25rem', transition: 'all 0.2s', marginLeft: '1rem' }}
-                                                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fee2e2'; e.currentTarget.style.color = '#ef4444'; }}
-                                                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#94a3b8'; }}
-                                                        title="Xóa ghi chú"
-                                                    >
-                                                        {isDeletingId === note.id ? <span style={{ fontSize: '0.75rem' }}>...</span> : <Trash2 size={14} />}
-                                                    </button>
-                                                )}
-                                            </div>
-                                            <div
-                                                style={{ fontSize: '0.9375rem', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: 1.5, wordBreak: 'break-word' }}
-                                                dangerouslySetInnerHTML={{ __html: autoLinkText(note.content) }}
-                                            />
+            {/* Notes List */}
+            <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1 custom-scrollbar">
+                {displayNotes && displayNotes.length > 0 ? (
+                    displayNotes.map((note) => (
+                        <div key={note.id} className="flex items-start gap-3 group">
+                            <div className="shrink-0 mt-0.5">
+                                <AvatarImage
+                                    src={note.user?.avatar}
+                                    name={note.user?.name}
+                                    size={32}
+                                />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <div className="bg-slate-50/80 rounded-xl p-3 border border-slate-200/70 space-y-1.5">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs font-semibold text-slate-900">{note.user?.name || 'Người dùng'}</span>
+                                            <span className="text-[10px] text-slate-400 font-mono">
+                                                {format(new Date(note.createdAt), 'HH:mm - dd/MM/yyyy', { locale: vi })}
+                                            </span>
                                         </div>
-                                    ) : (
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                <span style={{ fontWeight: 600, color: '#0f172a', fontSize: '0.9rem' }}>{note.user?.name || 'User'}</span>
-                                                <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                                                    {format(new Date(note.createdAt), 'HH:mm - dd/MM/yyyy', { locale: vi })}
-                                                </span>
-                                            </div>
-                                            {(currentUserId === note.userId || currentUserRole === 'ADMIN') && (
-                                                <button
-                                                    onClick={() => handleDelete(note.id)}
-                                                    disabled={isDeletingId === note.id}
-                                                    style={{ backgroundColor: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '24px', borderRadius: '0.25rem', transition: 'all 0.2s', marginLeft: '1rem' }}
-                                                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fee2e2'; e.currentTarget.style.color = '#ef4444'; }}
-                                                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#94a3b8'; }}
-                                                    title="Xóa ghi chú"
-                                                >
-                                                    {isDeletingId === note.id ? <span style={{ fontSize: '0.75rem' }}>...</span> : <Trash2 size={14} />}
-                                                </button>
-                                            )}
-                                        </div>
+                                        {(currentUserId === note.userId || currentUserRole === 'ADMIN') && (
+                                            <button
+                                                onClick={() => handleDelete(note.id)}
+                                                disabled={isDeletingId === note.id}
+                                                className="text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer p-0.5"
+                                                title="Xóa ghi chú"
+                                            >
+                                                {isDeletingId === note.id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={13} />}
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {note.content && note.content.trim() && (
+                                        <div
+                                            className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed break-words"
+                                            dangerouslySetInnerHTML={{ __html: autoLinkText(note.content) }}
+                                        />
                                     )}
 
                                     {note.attachment && (() => {
@@ -277,23 +274,29 @@ export function LeadNotes({ leadId, notes, currentUserId, currentUserRole }: Lea
                                             const parsed = JSON.parse(note.attachment);
                                             if (Array.isArray(parsed) && parsed.length > 0) {
                                                 return (
-                                                    <div style={{ marginTop: '0.25rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                                    <div className="flex flex-wrap gap-2 pt-1.5">
                                                         {parsed.map((att: any, idx: number) => {
-                                                            const isImage = att.url.match(/\.(jpeg|jpg|gif|png|webp)($|\?)/i) || (att.name && att.name.match(/\.(jpeg|jpg|gif|png|webp)$/i));
+                                                            const isImage = att.url?.match(/\.(jpeg|jpg|gif|png|webp)($|\?)/i) || (att.name && att.name.match(/\.(jpeg|jpg|gif|png|webp)$/i));
                                                             if (isImage) {
                                                                 return (
-                                                                    <div key={idx} style={{ position: 'relative', height: '120px', borderRadius: '0.5rem', overflow: 'hidden', border: '1px solid #cbd5e1', cursor: 'pointer', maxWidth: '100%', backgroundColor: '#f1f5f9' }} onClick={() => setPreviewDoc({ url: att.url, name: att.name || 'Hỉnh ảnh đính kèm' })}>
+                                                                    <div
+                                                                        key={idx}
+                                                                        className="relative h-20 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 cursor-pointer shadow-2xs hover:opacity-90"
+                                                                        onClick={() => setPreviewDoc({ url: att.url, name: att.name || 'Hình ảnh đính kèm' })}
+                                                                    >
                                                                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                                        <img src={att.url} alt={att.name || 'Image'} style={{ height: '100%', width: 'auto', maxWidth: '100%', objectFit: 'contain' }} />
+                                                                        <img src={att.url} alt={att.name || 'Image'} className="h-full w-auto object-cover" />
                                                                     </div>
                                                                 );
                                                             } else {
                                                                 return (
-                                                                    <button key={idx} onClick={() => setPreviewDoc({ url: att.url, name: att.name || 'Tài liệu đính kèm' })} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.5rem 0.75rem', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '0.5rem', fontSize: '0.875rem', color: '#4338ca', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', maxWidth: '100%', minWidth: 0 }} className="hover:bg-slate-50">
-                                                                        <FileText size={16} style={{ flexShrink: 0, color: '#6366f1' }} />
-                                                                        <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, fontWeight: 500 }}>
-                                                                            {att.name || 'Tài liệu đính kèm'}
-                                                                        </span>
+                                                                    <button
+                                                                        key={idx}
+                                                                        onClick={() => setPreviewDoc({ url: att.url, name: att.name || 'Tài liệu đính kèm' })}
+                                                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-slate-50 border border-slate-200/90 rounded-lg text-xs text-slate-700 cursor-pointer transition-all shadow-2xs"
+                                                                    >
+                                                                        <FileText size={13} className="text-emerald-600 shrink-0" />
+                                                                        <span className="truncate max-w-[160px] font-medium">{att.name || 'Tài liệu'}</span>
                                                                     </button>
                                                                 );
                                                             }
@@ -303,128 +306,68 @@ export function LeadNotes({ leadId, notes, currentUserId, currentUserRole }: Lea
                                             }
                                         } catch (e) {
                                             return (
-                                                <div style={{ marginTop: '0.25rem' }}>
-                                                    <button onClick={() => setPreviewDoc({ url: note.attachment, name: 'Tài liệu đính kèm' })} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', padding: '0.5rem 0.75rem', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '0.5rem', fontSize: '0.875rem', color: '#4338ca', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', maxWidth: '100%', minWidth: 0 }} className="hover:bg-slate-50">
-                                                        <FileText size={16} style={{ flexShrink: 0, color: '#6366f1' }} />
-                                                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, fontWeight: 500 }}>
-                                                            Xem đính kèm
-                                                        </span>
-                                                    </button>
-                                                </div>
+                                                <button
+                                                    onClick={() => setPreviewDoc({ url: note.attachment, name: 'Tài liệu đính kèm' })}
+                                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-slate-50 border border-slate-200/90 rounded-lg text-xs text-slate-700 cursor-pointer transition-all shadow-2xs"
+                                                >
+                                                    <FileText size={13} className="text-emerald-600 shrink-0" />
+                                                    <span className="font-medium">Xem đính kèm</span>
+                                                </button>
                                             );
                                         }
                                         return null;
                                     })()}
                                 </div>
                             </div>
-                        ))
-                    ) : (
-                        <div style={{ textAlign: 'center', padding: '2rem 0', color: '#94a3b8', fontSize: '0.875rem' }}>
-                            <FileText size={32} style={{ margin: '0 auto 0.5rem auto', opacity: 0.5 }} />
-                            Chưa có ghi chép nào.
                         </div>
-                    )}
-                </div>
+                    ))
+                ) : (
+                    <div className="text-center py-6 text-slate-400 text-xs">
+                        <FileText size={24} className="mx-auto mb-1.5 opacity-40" />
+                        Chưa có ghi chép nào.
+                    </div>
+                )}
             </div>
 
-            {(notes && notes.length > 5) && (
-                <div style={{ padding: '0.75rem 1.5rem', borderTop: '1px solid #e2e8f0', backgroundColor: '#f8fafc', textAlign: 'center' }}>
+            {notes && notes.length > 5 && (
+                <div className="pt-2 border-t border-slate-100 text-center">
                     <button
                         onClick={() => setIsModalOpen(true)}
-                        style={{ background: 'transparent', border: 'none', color: '#3b82f6', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', outline: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem', width: '100%' }}
-                        className="hover:text-blue-700 hover:underline"
+                        className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer"
                     >
-                        Xem toàn bộ lịch sử ghi chú ({notes.length} thao tác)
+                        Xem toàn bộ lịch sử ghi chú ({notes.length} mục)
                     </button>
                 </div>
             )}
 
+            {/* All Notes Modal */}
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Lịch Sử Ghi Chép">
-                <div style={{ padding: '1.5rem', maxHeight: '75vh', overflowY: 'auto' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                        {notes?.map((note) => (
-                            <div key={note.id} style={{ display: 'flex', gap: '1rem', minWidth: 0, width: '100%' }}>
-                                <div style={{ flexShrink: 0 }}>
-                                    <AvatarImage
-                                        src={note.user?.avatar}
-                                        name={note.user?.name}
-                                        size={40}
-                                    />
-                                </div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                    {note.content && note.content.trim() ? (
-                                        <div style={{ display: 'inline-block', backgroundColor: '#f8fafc', padding: '0.75rem 1rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0', minWidth: '250px', maxWidth: '100%' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.375rem' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                    <span style={{ fontWeight: 600, color: '#0f172a', fontSize: '0.9rem' }}>{note.user?.name || 'User'}</span>
-                                                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                                                        {format(new Date(note.createdAt), 'HH:mm - dd/MM/yyyy', { locale: vi })}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div
-                                                style={{ fontSize: '0.9375rem', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: 1.5, wordBreak: 'break-word' }}
-                                                dangerouslySetInnerHTML={{ __html: autoLinkText(note.content) }}
-                                            />
-                                        </div>
-                                    ) : (
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                <span style={{ fontWeight: 600, color: '#0f172a', fontSize: '0.9rem' }}>{note.user?.name || 'User'}</span>
-                                                <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                                                    {format(new Date(note.createdAt), 'HH:mm - dd/MM/yyyy', { locale: vi })}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {note.attachment && (() => {
-                                        try {
-                                            const parsed = JSON.parse(note.attachment);
-                                            if (Array.isArray(parsed) && parsed.length > 0) {
-                                                return (
-                                                    <div style={{ marginTop: '0.25rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                                                        {parsed.map((att: any, idx: number) => {
-                                                            const isImage = att.url.match(/\.(jpeg|jpg|gif|png|webp)($|\?)/i) || (att.name && att.name.match(/\.(jpeg|jpg|gif|png|webp)$/i));
-                                                            if (isImage) {
-                                                                return (
-                                                                    <div key={idx} style={{ position: 'relative', height: '120px', borderRadius: '0.5rem', overflow: 'hidden', border: '1px solid #cbd5e1', cursor: 'pointer', maxWidth: '100%', backgroundColor: '#f1f5f9' }} onClick={() => setPreviewDoc({ url: att.url, name: att.name || 'Hỉnh ảnh đính kèm' })}>
-                                                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                                        <img src={att.url} alt={att.name || 'Image'} style={{ height: '100%', width: 'auto', maxWidth: '100%', objectFit: 'contain' }} />
-                                                                    </div>
-                                                                );
-                                                            } else {
-                                                                return (
-                                                                    <button key={idx} onClick={() => setPreviewDoc({ url: att.url, name: att.name || 'Tài liệu đính kèm' })} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.5rem 0.75rem', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '0.5rem', fontSize: '0.875rem', color: '#4338ca', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', maxWidth: '100%', minWidth: 0 }} className="hover:bg-slate-50">
-                                                                        <FileText size={16} style={{ flexShrink: 0, color: '#6366f1' }} />
-                                                                        <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, fontWeight: 500 }}>
-                                                                            {att.name || 'Tài liệu đính kèm'}
-                                                                        </span>
-                                                                    </button>
-                                                                );
-                                                            }
-                                                        })}
-                                                    </div>
-                                                );
-                                            }
-                                        } catch (e) {
-                                            return (
-                                                <div style={{ marginTop: '0.25rem' }}>
-                                                    <button onClick={() => setPreviewDoc({ url: note.attachment, name: 'Tài liệu đính kèm' })} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.5rem 0.75rem', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '0.5rem', fontSize: '0.875rem', color: '#4338ca', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', maxWidth: '100%', minWidth: 0 }} className="hover:bg-slate-50">
-                                                        <FileText size={16} style={{ flexShrink: 0, color: '#6366f1' }} />
-                                                        <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, fontWeight: 500 }}>
-                                                            Xem đính kèm
-                                                        </span>
-                                                    </button>
-                                                </div>
-                                            );
-                                        }
-                                        return null;
-                                    })()}
-                                </div>
+                <div className="p-4 max-h-[70vh] overflow-y-auto space-y-3">
+                    {notes?.map((note) => (
+                        <div key={note.id} className="flex items-start gap-3">
+                            <div className="shrink-0 mt-0.5">
+                                <AvatarImage
+                                    src={note.user?.avatar}
+                                    name={note.user?.name}
+                                    size={32}
+                                />
                             </div>
-                        ))}
-                    </div>
+                            <div className="flex-1 min-w-0 bg-slate-50 rounded-xl p-3 border border-slate-200/70 space-y-1.5">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs font-semibold text-slate-900">{note.user?.name || 'Người dùng'}</span>
+                                    <span className="text-[10px] text-slate-400 font-mono">
+                                        {format(new Date(note.createdAt), 'HH:mm - dd/MM/yyyy', { locale: vi })}
+                                    </span>
+                                </div>
+                                {note.content && note.content.trim() && (
+                                    <div
+                                        className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed break-words"
+                                        dangerouslySetInnerHTML={{ __html: autoLinkText(note.content) }}
+                                    />
+                                )}
+                            </div>
+                        </div>
+                    ))}
                 </div>
             </Modal>
 

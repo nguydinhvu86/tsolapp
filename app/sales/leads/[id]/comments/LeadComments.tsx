@@ -4,10 +4,9 @@ import React, { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { MessageSquare, ImageIcon, Paperclip, Send, Trash2, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { MessageSquare, ImageIcon, Paperclip, Send, Trash2, ChevronLeft, ChevronRight, X, Loader2 } from 'lucide-react';
 import { createLeadComment, deleteLeadComment, toggleLeadCommentReaction, getLeadComments } from './actions';
 import { autoLinkHtml } from '@/lib/utils/formatters';
-import { Button } from '@/app/components/ui/Button';
 import { useRouter } from 'next/navigation';
 import { DocumentPreviewModal } from '@/app/components/ui/DocumentPreviewModal';
 
@@ -131,7 +130,7 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
             const newAttachments = [...attachments];
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
-                if (file.size > 52428800) continue; // 50MB check just in case
+                if (file.size > 52428800) continue;
                 
                 setUploadProgress(prev => ({ ...prev, [file.name]: 0 }));
                 const formData = new FormData();
@@ -157,39 +156,37 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
                     });
                     newAttachments.push({ url, name: file.name });
                 } catch (err) {
-                    throw new Error('Upload failed');
+                    alert(`Không thể tải tệp: ${file.name}`);
                 } finally {
                     setUploadProgress(prev => { const next = { ...prev }; delete next[file.name]; return next; });
                 }
             }
             setAttachments(newAttachments);
-        } catch (err) {
-            alert('Lỗi tải tệp tin');
         } finally {
             setIsSaving(false);
             e.target.value = '';
         }
     };
 
-    const handleAddComment = async (e?: React.FormEvent) => {
-        if (e) e.preventDefault();
+    const handleAddComment = async () => {
         if (!newComment.trim() && attachments.length === 0 && commentImages.length === 0) return;
-        if (!session?.user?.id) return;
+        if (!session?.user?.id) {
+            alert('Bạn phải đăng nhập để bình luận');
+            return;
+        }
 
         setIsSaving(true);
         try {
+            let finalHtml = newComment.trim();
             const filesStr = attachments.length > 0 ? JSON.stringify(attachments) : undefined;
 
-            let finalHtml = newComment.replace(/\n/g, '<br/>');
-            finalHtml = finalHtml.replace(/@([a-zA-Z0-9_\u00C0-\u024F\u1E00-\u1EFF ]+?)(?=\s|$|<)/g, '<strong style="color: #4f46e5;">@$1</strong>');
-
             if (commentImages.length > 0) {
-                const uploadedImages = [];
+                const uploadedImages: string[] = [];
                 for (const img of commentImages) {
-                    setUploadProgress(prev => ({ ...prev, [img.file.name]: 0 }));
                     const formData = new FormData();
                     formData.append('file', img.file);
-                    
+                    setUploadProgress(prev => ({ ...prev, [img.file.name]: 0 }));
+
                     try {
                         const url = await new Promise<string>((resolve, reject) => {
                             const xhr = new XMLHttpRequest();
@@ -216,8 +213,8 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
                     }
                 }
 
-                const imgTags = uploadedImages.map(url => `<img src="${url}" style="max-width: 100%; max-height: 200px; border-radius: 8px; margin-top: 8px; cursor: pointer; border: 1px solid #e2e8f0;"/>`).join('');
-                finalHtml += `<div style="display: flex; gap: 8px; flex-wrap: wrap;">${imgTags}</div>`;
+                const imgTags = uploadedImages.map(url => `<img src="${url}" class="max-w-full max-h-[200px] rounded-lg mt-2 cursor-pointer border border-slate-200 object-contain shadow-2xs"/>`).join('');
+                finalHtml += `<div class="flex gap-2 flex-wrap">${imgTags}</div>`;
             }
 
             // Optimistic update
@@ -241,10 +238,9 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
 
             const res = await createLeadComment(leadId, finalHtml, parentId || undefined, undefined, filesStr);
             if (res.success && res.data) {
-                router.refresh(); // Sync actual IDs
+                router.refresh();
             } else {
                 alert(res.error || 'Lỗi gửi bình luận');
-                // Revert optimistic if needed
             }
         } catch (err) {
             console.error(err);
@@ -256,9 +252,7 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
     const handleDeleteComment = async (commentId: string) => {
         if (!confirm('Bạn có chắc chắn muốn xóa bình luận này?')) return;
         try {
-            // Optimistic
             setComments(prev => prev.filter(c => c.id !== commentId));
-
             const res = await deleteLeadComment(commentId);
             if (!res.success) {
                 alert(res.error || 'Lỗi xóa bình luận');
@@ -273,16 +267,15 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
         if (!session?.user?.id) return;
         const uid = session.user.id;
 
-        // Optimistic Update
         setComments(prev => {
             return prev.map((c: any) => {
                 if (c.id === commentId) {
                     const existingIdx = c.reactions?.findIndex((r: any) => r.emoji === emoji && r.user?.id === uid);
                     const newReactions = [...(c.reactions || [])];
                     if (existingIdx !== undefined && existingIdx >= 0) {
-                        newReactions.splice(existingIdx, 1); // Remove
+                        newReactions.splice(existingIdx, 1);
                     } else {
-                        newReactions.push({ emoji, user: { id: uid, name: session.user?.name } }); // Add
+                        newReactions.push({ emoji, user: { id: uid, name: session.user?.name } });
                     }
                     return { ...c, reactions: newReactions };
                 }
@@ -294,131 +287,118 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
         router.refresh();
     };
 
-    // Prepare comment tree
     const rootComments = comments.filter((c: any) => !c.parentId);
     const getReplies = (parentId: string) => comments.filter((c: any) => c.parentId === parentId);
 
     return (
-        <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '16px', boxShadow: '0 2px 10px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9' }}>
-            {/* Lighbox */}
+        <div className="space-y-4">
+            {/* Lightbox Modal */}
             {lightboxData && (
                 <div
-                    style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                    className="fixed inset-0 bg-black/80 z-[9999] flex items-center justify-center cursor-pointer p-4 backdrop-blur-xs"
                     onClick={() => setLightboxData(null)}
                 >
-                    <button style={{ position: 'absolute', top: '20px', right: '20px', background: 'none', border: 'none', color: 'white', cursor: 'pointer', zIndex: 10001 }} onClick={() => setLightboxData(null)}>
-                        <X size={32} />
+                    <button className="absolute top-5 right-5 text-white/80 hover:text-white p-2 cursor-pointer z-10" onClick={() => setLightboxData(null)}>
+                        <X size={28} />
                     </button>
 
                     {lightboxData.images.length > 1 && (
-                        <button onClick={handlePrevImage} style={{ position: 'absolute', left: '20px', background: 'rgba(255,255,255,0.2)', color: 'white', border: 'none', borderRadius: '50%', width: '50px', height: '50px', fontSize: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 10000 }} className="hover:bg-white/40">
-                            <ChevronLeft size={32} />
+                        <button onClick={handlePrevImage} className="absolute left-5 bg-white/20 hover:bg-white/40 text-white rounded-full p-2.5 transition-all cursor-pointer z-10">
+                            <ChevronLeft size={28} />
                         </button>
                     )}
 
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={lightboxData.images[lightboxData.currentIndex]} alt="Phóng to" style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain', borderRadius: '8px' }} />
+                    <img src={lightboxData.images[lightboxData.currentIndex]} alt="Phóng to" className="max-w-[90%] max-h-[90%] object-contain rounded-xl shadow-2xl" />
 
                     {lightboxData.images.length > 1 && (
-                        <button onClick={handleNextImage} style={{ position: 'absolute', right: '20px', background: 'rgba(255,255,255,0.2)', color: 'white', border: 'none', borderRadius: '50%', width: '50px', height: '50px', fontSize: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 10000 }} className="hover:bg-white/40">
-                            <ChevronRight size={32} />
+                        <button onClick={handleNextImage} className="absolute right-5 bg-white/20 hover:bg-white/40 text-white rounded-full p-2.5 transition-all cursor-pointer z-10">
+                            <ChevronRight size={28} />
                         </button>
                     )}
 
                     {lightboxData.images.length > 1 && (
-                        <div style={{ position: 'absolute', bottom: '20px', color: 'white', background: 'rgba(0,0,0,0.5)', padding: '6px 16px', borderRadius: '20px', fontSize: '14px', fontWeight: 500 }}>
+                        <div className="absolute bottom-5 text-white bg-black/60 px-4 py-1.5 rounded-full text-xs font-medium">
                             {lightboxData.currentIndex + 1} / {lightboxData.images.length}
                         </div>
                     )}
                 </div>
             )}
 
-            <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e293b', marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid #f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <MessageSquare size={20} color="#6366f1" /> Thảo luận nội bộ
-                <span style={{ backgroundColor: '#e0e7ff', color: '#4f46e5', padding: '2px 8px', borderRadius: '99px', fontSize: '12px' }}>{comments.length}</span>
-            </h3>
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
+                <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-200/70 text-emerald-600 flex items-center justify-center">
+                        <MessageSquare size={15} />
+                    </div>
+                    <h2 className="text-xs sm:text-sm font-bold text-slate-900 uppercase tracking-wider">
+                        Thảo luận nội bộ
+                    </h2>
+                </div>
+                <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200/80">
+                    {comments.length} bình luận
+                </span>
+            </div>
 
             {/* Main Comment Form */}
             {!replyTo && (
-                <div style={{ backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '2rem' }}>
-                    <div style={{ position: 'relative' }}>
-                        <textarea
-                            value={newComment}
-                            onChange={(e) => setNewComment(e.target.value)}
-                            style={{
-                                width: '100%',
-                                minHeight: '80px',
-                                padding: '0.75rem',
-                                paddingBottom: '2.5rem',
-                                borderRadius: '8px',
-                                border: '1px solid #cbd5e1',
-                                resize: 'vertical',
-                                fontSize: '0.95rem',
-                                lineHeight: 1.5,
-                                outline: 'none',
-                                fontFamily: 'inherit'
-                            }}
-                            onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                            onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
-                            onPaste={handlePaste}
-                            placeholder="Thêm tin nhắn, trao đổi, thông tin về khách hàng này (có thể dán ảnh trực tiếp)..."
-                        />
-                        <div style={{ position: 'absolute', bottom: '0.75rem', left: '0.75rem', display: 'flex', gap: '0.5rem' }}>
-                            <label style={{ cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '6px' }} className="hover:bg-slate-200">
-                                <ImageIcon size={18} />
+                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 pb-11 relative transition-all focus-within:border-emerald-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-500/10">
+                    <textarea
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        onPaste={handlePaste}
+                        placeholder="Thêm tin nhắn, trao đổi, thông tin về khách hàng này (có thể dán ảnh trực tiếp)..."
+                        className="w-full min-h-[65px] border-none bg-transparent resize-y outline-none text-xs text-slate-800 placeholder:text-slate-400 leading-relaxed font-sans"
+                    />
+                    <div className="absolute bottom-2.5 left-2.5 right-2.5 flex justify-between items-center">
+                        <div className="flex items-center gap-1.5">
+                            <label className="cursor-pointer p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-colors" title="Thêm ảnh">
+                                <ImageIcon size={15} />
                                 <input type="file" hidden multiple accept="image/*" onChange={handleCommentImageSelect} disabled={isSaving} />
                             </label>
-                            <label style={{ cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '6px' }} className="hover:bg-slate-200">
-                                <Paperclip size={18} />
+                            <label className="cursor-pointer p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-colors" title="Đính kèm file">
+                                <Paperclip size={15} />
                                 <input type="file" hidden multiple onChange={handleFileUpload} disabled={isSaving} />
                             </label>
+                            {isSaving && (
+                                <span className="inline-flex items-center gap-1 text-[11px] text-slate-400">
+                                    <Loader2 size={12} className="animate-spin text-emerald-600" /> Đang tải...
+                                </span>
+                            )}
                         </div>
-                        <div style={{ position: 'absolute', bottom: '0.75rem', right: '0.75rem' }}>
-                            <Button
-                                onClick={() => handleAddComment()}
-                                disabled={isSaving || (!newComment.trim() && attachments.length === 0 && commentImages.length === 0)}
-                                style={{ padding: '6px 16px', height: 'auto', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
-                            >
-                                {isSaving ? 'Đang gửi...' : <><Send size={14} /> Gửi</>}
-                            </Button>
-                        </div>
+
+                        <button
+                            type="button"
+                            onClick={handleAddComment}
+                            disabled={isSaving || (!newComment.trim() && attachments.length === 0 && commentImages.length === 0)}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shadow-2xs ${
+                                (newComment.trim() || attachments.length > 0 || commentImages.length > 0) && !isSaving
+                                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
+                                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                            }`}
+                        >
+                            {isSaving ? <><Loader2 size={12} className="animate-spin" /> Đang gửi...</> : <><Send size={12} /> Gửi</>}
+                        </button>
                     </div>
 
-                    {/* Upload Progress */}
-                    {Object.keys(uploadProgress).length > 0 && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '12px' }}>
-                            {Object.entries(uploadProgress).map(([fileName, progress]) => (
-                                <div key={fileName} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '0.5rem', backgroundColor: '#f1f5f9', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
-                                        <span style={{ color: 'var(--primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '80%' }}>Đang tải: <strong>{fileName}</strong></span>
-                                        <span style={{ color: 'var(--primary)', fontWeight: 500 }}>{progress}%</span>
-                                    </div>
-                                    <div style={{ width: '100%', height: '4px', backgroundColor: '#cbd5e1', borderRadius: '2px', overflow: 'hidden' }}>
-                                        <div style={{ width: `${progress}%`, height: '100%', backgroundColor: 'var(--primary)', transition: 'width 0.2s ease-out' }} />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* Pending Items */}
+                    {/* Attachments / Images Preview */}
                     {(attachments.length > 0 || commentImages.length > 0) && (
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '12px' }}>
+                        <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-200/60 mt-2">
                             {commentImages.map((img, idx) => (
-                                <div key={`img-${idx}`} style={{ position: 'relative', width: '60px', height: '60px', borderRadius: '6px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+                                <div key={`img-${idx}`} className="relative w-14 h-14 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 shadow-2xs">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src={img.url} alt="Upload preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                    <button onClick={() => removeCommentImage(idx)} style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(0,0,0,0.5)', color: 'white', border: 'none', borderRadius: '50%', padding: '2px', cursor: 'pointer', display: 'flex' }}>
-                                        <Trash2 size={12} />
+                                    <img src={img.url} alt="Upload preview" className="w-full h-full object-cover" />
+                                    <button onClick={() => removeCommentImage(idx)} className="absolute top-1 right-1 bg-black/60 hover:bg-black/80 text-white rounded-full p-0.5 cursor-pointer">
+                                        <Trash2 size={10} />
                                     </button>
                                 </div>
                             ))}
                             {attachments.map((att, idx) => (
-                                <div key={`doc-${idx}`} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 8px', backgroundColor: '#e0e7ff', border: '1px solid #c7d2fe', borderRadius: '6px', fontSize: '12px', color: '#4338ca', height: 'max-content' }}>
-                                    <Paperclip size={12} />
-                                    <span style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{att.name || 'Tệp đính kèm'}</span>
-                                    <button type="button" onClick={() => setAttachments(attachments.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6366f1', display: 'flex' }}>
-                                        <Trash2 size={12} />
+                                <div key={`doc-${idx}`} className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200/80 rounded-lg text-xs text-emerald-800">
+                                    <Paperclip size={12} className="text-emerald-600 shrink-0" />
+                                    <span className="truncate max-w-[150px] font-medium">{att.name || 'Tệp'}</span>
+                                    <button type="button" onClick={() => setAttachments(attachments.filter((_, i) => i !== idx))} className="text-emerald-600 hover:text-rose-600 p-0.5 cursor-pointer">
+                                        <Trash2 size={11} />
                                     </button>
                                 </div>
                             ))}
@@ -428,9 +408,9 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
             )}
 
             {/* Comments List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div className="space-y-4 pt-1">
                 {rootComments.length === 0 ? (
-                    <p style={{ color: '#64748b', fontSize: '0.9rem', textAlign: 'center', fontStyle: 'italic' }}>Chưa có thảo luận nào.</p>
+                    <p className="text-xs text-slate-400 text-center py-6 italic">Chưa có thảo luận nào.</p>
                 ) : (
                     rootComments.map((comment: any) => {
                         const replies = getReplies(comment.id);
@@ -444,32 +424,36 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
                             const isOwner = session?.user?.id === c.userId;
                             const isAdmin = session?.user?.role === 'ADMIN';
 
-                            // Group reactions by emoji
                             const reactionCounts = c.reactions?.reduce((acc: any, r: any) => {
                                 acc[r.emoji] = (acc[r.emoji] || 0) + 1;
                                 return acc;
                             }, {}) || {};
 
-                            // Check if current user reacted
                             const userReactions = c.reactions?.filter((r: any) => r.user?.id === session?.user?.id).map((r: any) => r.emoji) || [];
 
                             return (
-                                <div key={c.id} style={{ display: 'flex', gap: '12px', marginTop: isReply ? '1rem' : '0' }}>
-                                    <div style={{ width: isReply ? '28px' : '36px', height: isReply ? '28px' : '36px', borderRadius: '50%', backgroundColor: isReply ? '#f1f5f9' : '#e0e7ff', color: isReply ? '#475569' : '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', flexShrink: 0, fontSize: isReply ? '12px' : '14px', border: '1px solid #e2e8f0' }}>
+                                <div key={c.id} className={`flex gap-3 ${isReply ? 'mt-3' : ''}`}>
+                                    <div className={`rounded-full flex items-center justify-center font-bold shrink-0 text-xs shadow-2xs border ${
+                                        isReply 
+                                            ? 'w-7 h-7 bg-slate-100 text-slate-600 border-slate-200' 
+                                            : 'w-8 h-8 bg-emerald-50 text-emerald-800 border-emerald-200/80'
+                                    }`}>
                                         {c.user?.name?.[0]?.toUpperCase() || '?'}
                                     </div>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '4px' }}>
-                                            <span style={{ fontWeight: 600, fontSize: isReply ? '13px' : '14px', color: '#0f172a' }}>{c.user?.name || c.user?.email || 'Người dùng'}</span>
-                                            <span style={{ fontSize: '11px', color: '#64748b' }}>
+                                    <div className="flex-1 min-w-0 space-y-1">
+                                        <div className="flex items-baseline gap-2">
+                                            <span className="font-semibold text-xs text-slate-900">{c.user?.name || c.user?.email || 'Người dùng'}</span>
+                                            <span className="text-[10px] text-slate-400 font-mono">
                                                 {c.createdAt ? formatDistanceToNow(new Date(c.createdAt), { addSuffix: true, locale: vi }) : 'Vừa xong'}
                                             </span>
                                         </div>
 
                                         {/* Text Content */}
-                                        {c.content && c.content !== '' && (
+                                        {c.content && (
                                             <div
-                                                style={{ padding: isReply ? '8px 12px' : '12px', backgroundColor: isReply ? '#f1f5f9' : '#f8fafc', borderRadius: '0px 12px 12px 12px', border: '1px solid #e2e8f0', fontSize: isReply ? '13.5px' : '14px', color: '#334155', lineHeight: 1.5, overflowWrap: 'anywhere' }}
+                                                className={`p-3 rounded-xl border leading-relaxed text-xs text-slate-800 break-words ${
+                                                    isReply ? 'bg-slate-50/70 border-slate-200/70' : 'bg-slate-50/90 border-slate-200/80'
+                                                }`}
                                                 dangerouslySetInnerHTML={{ __html: autoLinkHtml(c.content) }}
                                                 onClick={handleCommentClick}
                                             />
@@ -477,52 +461,76 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
 
                                         {/* Document Attachments */}
                                         {parsedFiles.length > 0 && (
-                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: c.content ? '8px' : '0' }}>
+                                            <div className="flex flex-wrap gap-2 pt-1">
                                                 {parsedFiles.map((att, idx) => (
-                                                    <button key={idx} onClick={() => setPreviewDoc({ url: att.url, name: att.name || 'Tài liệu đính kèm' })} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', backgroundColor: 'white', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '12px', color: '#4f46e5', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }} className="hover:border-indigo-300 hover:bg-indigo-50">
-                                                        <Paperclip size={12} style={{ color: '#6366f1' }} /> {att.name || 'Tài liệu đính kèm'}
+                                                    <button
+                                                        key={idx}
+                                                        onClick={() => setPreviewDoc({ url: att.url, name: att.name || 'Tài liệu đính kèm' })}
+                                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-slate-50 border border-slate-200/90 rounded-lg text-xs text-slate-700 cursor-pointer transition-all shadow-2xs"
+                                                    >
+                                                        <Paperclip size={12} className="text-emerald-600 shrink-0" />
+                                                        <span className="truncate max-w-[150px] font-medium">{att.name || 'Tệp đính kèm'}</span>
                                                     </button>
                                                 ))}
                                             </div>
                                         )}
 
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem' }}>
+                                        {/* Reactions & Actions */}
+                                        <div className="flex items-center gap-3 pt-0.5">
                                             {/* Reaction Summary */}
                                             {Object.keys(reactionCounts).length > 0 && (
-                                                <div style={{ display: 'flex', gap: '0.25rem' }}>
+                                                <div className="flex gap-1">
                                                     {Object.entries(reactionCounts).map(([emoji, count]) => (
-                                                        <div key={emoji} style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', padding: '2px 6px', backgroundColor: userReactions.includes(emoji) ? '#e0e7ff' : '#f1f5f9', borderRadius: '12px', fontSize: '0.8rem', cursor: 'pointer', border: userReactions.includes(emoji) ? '1px solid #c7d2fe' : '1px solid transparent' }} onClick={() => handleToggleReaction(c.id, emoji)}>
+                                                        <button
+                                                            key={emoji}
+                                                            onClick={() => handleToggleReaction(c.id, emoji)}
+                                                            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs cursor-pointer border ${
+                                                                userReactions.includes(emoji)
+                                                                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700 font-semibold'
+                                                                    : 'bg-slate-100 border-transparent text-slate-600'
+                                                            }`}
+                                                        >
                                                             <span>{emoji}</span>
-                                                            <span style={{ color: userReactions.includes(emoji) ? '#4f46e5' : '#64748b', fontWeight: 600 }}>{count as number}</span>
-                                                        </div>
+                                                            <span className="text-[10px]">{count as number}</span>
+                                                        </button>
                                                     ))}
                                                 </div>
                                             )}
 
-                                            {/* Quick Emojis & Actions */}
-                                            <div style={{ display: 'flex', gap: '0.75rem', opacity: 0.8, alignItems: 'center' }}>
+                                            {/* Quick Emojis */}
+                                            <div className="flex items-center gap-1.5 opacity-75 hover:opacity-100 transition-opacity">
                                                 {EMOJIS.slice(0, 3).map(emoji => (
-                                                    <button key={emoji} onClick={() => handleToggleReaction(c.id, emoji)} style={{ fontSize: '0.85rem', cursor: 'pointer', transition: 'transform 0.1s', border: 'none', background: 'none' }} title="Thả cảm xúc" className="hover:scale-110">
+                                                    <button
+                                                        key={emoji}
+                                                        onClick={() => handleToggleReaction(c.id, emoji)}
+                                                        className="text-xs hover:scale-125 transition-transform cursor-pointer"
+                                                        title="Thả cảm xúc"
+                                                    >
                                                         {emoji}
                                                     </button>
                                                 ))}
 
                                                 {!isReply && (
-                                                    <button onClick={() => {
-                                                        // Reset form when clicking another reply
-                                                        if (replyTo !== c.id) {
-                                                            setNewComment('@' + (c.user?.name || 'Người dùng') + ' ');
-                                                            setAttachments([]);
-                                                            setCommentImages([]);
-                                                        }
-                                                        setReplyTo(c.id);
-                                                    }} style={{ fontSize: '12px', color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500 }} className="hover:text-indigo-600">
+                                                    <button
+                                                        onClick={() => {
+                                                            if (replyTo !== c.id) {
+                                                                setNewComment('@' + (c.user?.name || 'Người dùng') + ' ');
+                                                                setAttachments([]);
+                                                                setCommentImages([]);
+                                                            }
+                                                            setReplyTo(c.id);
+                                                        }}
+                                                        className="text-[11px] font-semibold text-slate-500 hover:text-emerald-600 cursor-pointer ml-1"
+                                                    >
                                                         Trả lời
                                                     </button>
                                                 )}
 
                                                 {(isOwner || isAdmin) && (
-                                                    <button onClick={() => handleDeleteComment(c.id)} style={{ fontSize: '12px', color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }} className="hover:text-red-500">
+                                                    <button
+                                                        onClick={() => handleDeleteComment(c.id)}
+                                                        className="text-[11px] font-semibold text-slate-400 hover:text-rose-600 cursor-pointer ml-1"
+                                                    >
                                                         Xóa
                                                     </button>
                                                 )}
@@ -531,88 +539,51 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
 
                                         {/* Inline Reply Form */}
                                         {replyTo === c.id && !isReply && (
-                                            <div style={{ backgroundColor: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #3b82f6', marginTop: '12px', transition: 'all 0.2s', position: 'relative' }}>
-                                                <div style={{ position: 'relative' }}>
-                                                    <textarea
-                                                        value={newComment}
-                                                        onChange={(e) => setNewComment(e.target.value)}
-                                                        style={{
-                                                            width: '100%',
-                                                            minHeight: '80px',
-                                                            padding: '0.75rem',
-                                                            paddingBottom: '2.5rem',
-                                                            borderRadius: '8px',
-                                                            border: '1px solid #cbd5e1',
-                                                            resize: 'vertical',
-                                                            fontSize: '0.95rem',
-                                                            lineHeight: 1.5,
-                                                            outline: 'none',
-                                                            fontFamily: 'inherit'
-                                                        }}
-                                                        onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                                                        onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
-                                                        onPaste={handlePaste}
-                                                        placeholder="Viết câu trả lời của bạn (có thể dán ảnh trực tiếp)..."
-                                                        autoFocus
-                                                    />
-                                                    <div style={{ position: 'absolute', bottom: '0.75rem', left: '0.75rem', display: 'flex', gap: '0.5rem' }}>
-                                                        <label style={{ cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '6px' }} className="hover:bg-slate-200">
-                                                            <ImageIcon size={18} />
+                                            <div className="rounded-xl border border-emerald-400 bg-white p-3 pb-11 relative mt-2.5 shadow-xs">
+                                                <textarea
+                                                    value={newComment}
+                                                    onChange={(e) => setNewComment(e.target.value)}
+                                                    onPaste={handlePaste}
+                                                    placeholder="Viết câu trả lời của bạn..."
+                                                    autoFocus
+                                                    className="w-full min-h-[60px] border-none bg-transparent resize-y outline-none text-xs text-slate-800 placeholder:text-slate-400 leading-relaxed font-sans"
+                                                />
+                                                <div className="absolute bottom-2.5 left-2.5 right-2.5 flex justify-between items-center">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <label className="cursor-pointer p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100" title="Thêm ảnh">
+                                                            <ImageIcon size={15} />
                                                             <input type="file" hidden multiple accept="image/*" onChange={handleCommentImageSelect} disabled={isSaving} />
                                                         </label>
-                                                        <label style={{ cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '6px' }} className="hover:bg-slate-200">
-                                                            <Paperclip size={18} />
+                                                        <label className="cursor-pointer p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100" title="Đính kèm file">
+                                                            <Paperclip size={15} />
                                                             <input type="file" hidden multiple onChange={handleFileUpload} disabled={isSaving} />
                                                         </label>
                                                     </div>
-                                                    <div style={{ position: 'absolute', bottom: '0.75rem', right: '0.75rem', display: 'flex', gap: '8px' }}>
-                                                        <Button
-                                                            variant="secondary"
+                                                    <div className="flex items-center gap-1.5">
+                                                        <button
+                                                            type="button"
                                                             onClick={() => setReplyTo(null)}
                                                             disabled={isSaving}
-                                                            style={{ padding: '6px 16px', height: 'auto', fontSize: '13px' }}
+                                                            className="px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 cursor-pointer"
                                                         >
                                                             Hủy
-                                                        </Button>
-                                                        <Button
-                                                            onClick={() => handleAddComment()}
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleAddComment}
                                                             disabled={isSaving || (!newComment.trim() && attachments.length === 0 && commentImages.length === 0)}
-                                                            style={{ padding: '6px 16px', height: 'auto', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                                                            className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-2xs cursor-pointer"
                                                         >
-                                                            {isSaving ? 'Đang gửi...' : <><Send size={14} /> Gửi trả lời</>}
-                                                        </Button>
+                                                            {isSaving ? <Loader2 size={12} className="animate-spin" /> : <><Send size={11} /> Gửi</>}
+                                                        </button>
                                                     </div>
                                                 </div>
-
-                                                {/* Pending Items in Reply */}
-                                                {(attachments.length > 0 || commentImages.length > 0) && (
-                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '12px' }}>
-                                                        {commentImages.map((img, idx) => (
-                                                            <div key={`img-${idx}`} style={{ position: 'relative', width: '60px', height: '60px', borderRadius: '6px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
-                                                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                                <img src={img.url} alt="Upload preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                                <button onClick={() => removeCommentImage(idx)} style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(0,0,0,0.5)', color: 'white', border: 'none', borderRadius: '50%', padding: '2px', cursor: 'pointer', display: 'flex' }}>
-                                                                    <Trash2 size={12} />
-                                                                </button>
-                                                            </div>
-                                                        ))}
-                                                        {attachments.map((att, idx) => (
-                                                            <div key={`doc-${idx}`} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 8px', backgroundColor: '#e0e7ff', border: '1px solid #c7d2fe', borderRadius: '6px', fontSize: '12px', color: '#4338ca', height: 'max-content' }}>
-                                                                <Paperclip size={12} />
-                                                                <span style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{att.name || 'Tệp đính kèm'}</span>
-                                                                <button type="button" onClick={() => setAttachments(attachments.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6366f1', display: 'flex' }}>
-                                                                    <Trash2 size={12} />
-                                                                </button>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                )}
                                             </div>
                                         )}
 
                                         {/* Nested Replies */}
                                         {!isReply && replies.length > 0 && (
-                                            <div style={{ display: 'flex', flexDirection: 'column', marginTop: '0.75rem', paddingLeft: '1rem', borderLeft: '2px solid #e2e8f0' }}>
+                                            <div className="space-y-3 pl-3 border-l-2 border-slate-200/80 mt-2">
                                                 {replies.map((r: any) => renderComment(r, true))}
                                             </div>
                                         )}

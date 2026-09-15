@@ -160,52 +160,52 @@ export function LeadDetailClient({
             {/* Lightbox Modal */}
             {lightboxImage && (
                 <div
-                    className="fixed inset-0 bg-black/80 z-[9999] flex items-center justify-center cursor-pointer p-4"
+                    className="fixed inset-0 bg-black/80 z-[9999] flex items-center justify-center cursor-pointer p-4 backdrop-blur-xs"
                     onClick={() => setLightboxImage(null)}
                 >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={lightboxImage} alt="Phóng to" className="max-w-[90%] max-h-[90%] object-contain rounded-xl shadow-2xl" />
+                    <img src={lightboxImage} alt="Phóng to" className="max-w-[90%] max-h-[90%] object-contain rounded-2xl shadow-2xl" />
                 </div>
             )}
 
             {/* Top Navigation & Action Header */}
-            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-4 md:p-5 flex flex-col md:flex-row justify-between md:items-center gap-4">
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-4 sm:p-5 flex flex-col md:flex-row justify-between md:items-center gap-4">
                 <div className="flex items-start sm:items-center gap-3.5">
                     <Link
                         href="/sales/leads"
-                        className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors shrink-0 cursor-pointer shadow-2xs"
+                        className="w-9 h-9 rounded-xl bg-white hover:bg-slate-50 text-slate-600 border border-slate-200/90 flex items-center justify-center transition-all shrink-0 cursor-pointer shadow-2xs hover:text-slate-900"
                         title="Quay lại danh sách"
                     >
                         <ArrowLeft size={18} />
                     </Link>
                     <div>
                         <div className="flex items-center gap-2.5 flex-wrap">
-                            <span className="font-mono text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 shadow-2xs">
+                            <span className="font-mono text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200/80 shadow-2xs">
                                 {lead.code}
                             </span>
                             <h1 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900 line-clamp-1">
                                 {lead.name}
                             </h1>
-                            <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border shadow-2xs ${currentStatus.badgeClass}`}>
+                            <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border shadow-2xs ${currentStatus.badgeClass}`}>
                                 {currentStatus.label}
                             </span>
                             {lead.customerId && (
-                                <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs">
+                                <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
                                     <CheckCircle2 size={12} className="text-emerald-600" /> {t('leadDetails.hasCustomer')}
                                 </span>
                             )}
                         </div>
 
-                        <div className="flex items-center gap-3 text-xs text-slate-500 mt-1 flex-wrap font-medium">
+                        <div className="flex items-center gap-3 text-xs text-slate-500 mt-1.5 flex-wrap font-medium">
                             <span>Ngày tạo: <strong className="text-slate-700">{formatDate(lead.createdAt || new Date())}</strong></span>
-                            <span>•</span>
+                            <span className="text-slate-300">•</span>
                             <div className="flex items-center gap-1.5">
                                 <span>Người phụ trách:</span>
                                 {lead.assignees && lead.assignees.length > 0 ? (
-                                    <div className="flex items-center gap-1 flex-wrap">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
                                         {lead.assignees.map((a: any) => (
-                                            <span key={a.userId} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-700 text-[11px] font-medium shadow-2xs">
-                                                <span className="w-3.5 h-3.5 rounded-full bg-emerald-600 text-white text-[8px] font-bold inline-flex items-center justify-center">
+                                            <span key={a.userId} className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200/80 text-slate-700 text-xs font-medium shadow-2xs">
+                                                <span className="w-4 h-4 rounded-full bg-emerald-600 text-white text-[9px] font-bold inline-flex items-center justify-center">
                                                     {getInitials(a.user?.name || a.user?.email)}
                                                 </span>
                                                 {a.user?.name}
@@ -217,10 +217,10 @@ export function LeadDetailClient({
                                 )}
                                 <button
                                     onClick={() => setIsAssigneeModalOpen(true)}
-                                    className="text-emerald-600 hover:text-emerald-700 p-0.5 rounded cursor-pointer"
+                                    className="text-slate-400 hover:text-emerald-600 p-1 rounded-md transition-colors cursor-pointer"
                                     title={t('leadDetails.editAssigneeTitle')}
                                 >
-                                    <Edit size={12} />
+                                    <Edit size={13} />
                                 </button>
                             </div>
                         </div>
@@ -232,7 +232,7 @@ export function LeadDetailClient({
                     {!lead.customerId ? (
                         <button
                             onClick={() => setIsConvertModalOpen(true)}
-                            className="inline-flex items-center justify-center gap-1.5 h-[34px] px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-emerald-600/20 active:scale-98 cursor-pointer"
+                            className="inline-flex items-center justify-center gap-1.5 h-9 px-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer active:scale-98"
                         >
                             <RefreshCcw size={14} className="stroke-[2.2]" />
                             <span>{t('leadDetails.convertToCustomer')}</span>
@@ -240,42 +240,42 @@ export function LeadDetailClient({
                     ) : (
                         <Link
                             href={`/customers/${lead.customerId}`}
-                            className="inline-flex items-center justify-center gap-1.5 h-[34px] px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                            className="inline-flex items-center justify-center gap-1.5 h-9 px-3.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/90 rounded-xl text-xs font-semibold transition-all shadow-2xs cursor-pointer"
                         >
-                            <User size={14} />
+                            <User size={14} className="text-slate-400" />
                             <span>{t('leadDetails.viewCustomerProfile')}</span>
                         </Link>
                     )}
 
                     <Link
                         href={`/sales/estimates?action=new&leadId=${lead.id}&customerId=${lead.customerId || ''}`}
-                        className="inline-flex items-center justify-center gap-1.5 h-[34px] px-3 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                        className="inline-flex items-center justify-center gap-1.5 h-9 px-3.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/90 rounded-xl text-xs font-semibold transition-all shadow-2xs cursor-pointer"
                         title={t('leadDetails.createEstimate')}
                     >
-                        <FileText size={14} />
+                        <FileText size={14} className="text-slate-400" />
                         <span>{t('leadDetails.createEstimate')}</span>
                     </Link>
 
                     <button
                         onClick={() => setIsEmailModalOpen(true)}
-                        className="inline-flex items-center justify-center gap-1.5 h-[34px] px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                        className="inline-flex items-center justify-center gap-1.5 h-9 px-3.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/90 rounded-xl text-xs font-semibold transition-all shadow-2xs cursor-pointer"
                         title={t('leadDetails.sendEmail')}
                     >
-                        <Mail size={14} />
+                        <Mail size={14} className="text-slate-400" />
                         <span>{t('leadDetails.sendEmail')}</span>
                     </button>
 
                     <Link
                         href={`/sales/leads/${lead.id}/edit`}
-                        className="inline-flex items-center justify-center gap-1.5 h-[34px] px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                        className="inline-flex items-center justify-center gap-1.5 h-9 px-3.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/90 rounded-xl text-xs font-semibold transition-all shadow-2xs cursor-pointer"
                     >
-                        <Edit size={14} />
+                        <Edit size={14} className="text-slate-400" />
                         <span>{t('leadDetails.edit')}</span>
                     </Link>
 
                     <button
                         onClick={() => setIsDeleteModalOpen(true)}
-                        className="inline-flex items-center justify-center h-[34px] w-[34px] bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl transition-all shadow-2xs cursor-pointer"
+                        className="inline-flex items-center justify-center h-9 w-9 bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200/90 rounded-xl transition-all shadow-2xs cursor-pointer"
                         title={t('leadDetails.deleteModalTitle')}
                     >
                         <Trash2 size={14} />
@@ -285,7 +285,7 @@ export function LeadDetailClient({
 
             {/* Interactive Deal Pipeline Stepper */}
             <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 relative overflow-hidden">
-                <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 flex items-center justify-between">
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-4 flex items-center justify-between">
                     <span>Quy Trình Xử Lý Cơ Hội (Sales Pipeline)</span>
                     <span className="text-[11px] text-slate-400 font-normal">Nhấn vào từng bước để cập nhật trạng thái nhanh</span>
                 </div>
@@ -302,26 +302,26 @@ export function LeadDetailClient({
                                 onClick={() => handleStatusChange(s.id)}
                                 className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all cursor-pointer relative ${
                                     isCurrent
-                                        ? `${s.activeBg} ring-2 ring-emerald-500/30 shadow-xs font-extrabold`
+                                        ? 'border-emerald-500/80 bg-emerald-50/40 text-emerald-800 ring-2 ring-emerald-500/20 shadow-xs font-bold'
                                         : isPast
-                                            ? 'bg-slate-50/80 border-slate-200 text-slate-700 hover:bg-slate-100'
-                                            : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'
+                                            ? 'bg-slate-50/80 border-slate-200/80 text-slate-700 hover:bg-slate-100/80 font-medium'
+                                            : 'bg-white border-slate-200/80 text-slate-400 hover:border-slate-300 font-medium'
                                 }`}
                             >
                                 <div className={`w-7 h-7 rounded-full flex items-center justify-center mb-1.5 font-mono text-xs font-bold shadow-2xs transition-transform ${
                                     isCurrent
-                                        ? `${s.nodeColor} scale-110 shadow-md`
+                                        ? 'bg-emerald-600 text-white scale-105 shadow-md shadow-emerald-600/20'
                                         : isPast
                                             ? 'bg-emerald-600 text-white'
-                                            : 'bg-slate-100 text-slate-400 border border-slate-200'
+                                            : 'bg-slate-100 text-slate-400 border border-slate-200/80'
                                 }`}>
                                     {isPast || s.id === 'WON' ? (
-                                        <Check size={14} className="stroke-[3]" />
+                                        <Check size={13} className="stroke-[3]" />
                                     ) : (
                                         idx + 1
                                     )}
                                 </div>
-                                <span className="text-xs truncate w-full font-bold">
+                                <span className="text-xs truncate w-full">
                                     {s.label}
                                 </span>
                             </button>
@@ -335,10 +335,10 @@ export function LeadDetailClient({
                 {/* Left 8-Columns: Detailed Info, Quotes, Comments */}
                 <div className="lg:col-span-8 space-y-6">
                     {/* Navigation Tabs */}
-                    <div className="flex bg-slate-100/90 p-1 rounded-xl border border-slate-200 shadow-2xs">
+                    <div className="flex bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 shadow-2xs">
                         <button
                             onClick={() => setActiveTab('info')}
-                            className={`flex-1 py-2 px-4 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                            className={`flex-1 py-2 px-4 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                                 activeTab === 'info'
                                     ? 'bg-white text-slate-900 shadow-xs'
                                     : 'text-slate-600 hover:text-slate-900'
@@ -349,7 +349,7 @@ export function LeadDetailClient({
                         </button>
                         <button
                             onClick={() => setActiveTab('emailLogs')}
-                            className={`flex-1 py-2 px-4 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                            className={`flex-1 py-2 px-4 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                                 activeTab === 'emailLogs'
                                     ? 'bg-white text-slate-900 shadow-xs'
                                     : 'text-slate-600 hover:text-slate-900'
@@ -367,42 +367,44 @@ export function LeadDetailClient({
                         <>
                             {/* General Information Card */}
                             <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 space-y-5">
-                                <div className="flex items-center gap-2 pb-3.5 border-b border-slate-100">
-                                    <Building2 size={18} className="text-emerald-600" />
-                                    <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                                <div className="flex items-center gap-2.5 pb-3.5 border-b border-slate-100">
+                                    <div className="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-200/70 text-emerald-600 flex items-center justify-center">
+                                        <Building2 size={15} />
+                                    </div>
+                                    <h2 className="text-xs sm:text-sm font-bold text-slate-900 uppercase tracking-wider">
                                         {t('leadDetails.generalInfo')}
                                     </h2>
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                                     {/* Company / Customer */}
-                                    <div className="space-y-1">
-                                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                                    <div className="p-3.5 rounded-xl bg-slate-50/60 border border-slate-200/70 space-y-1.5">
+                                        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">
                                             {t('leadDetails.companyOrg')}
                                         </span>
-                                        <div className="text-xs font-semibold text-slate-900">
+                                        <div className="text-xs font-semibold text-slate-800 leading-snug">
                                             {lead.customer?.name || lead.company || '—'}
                                         </div>
                                     </div>
 
                                     {/* Contact Person */}
-                                    <div className="space-y-1">
-                                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                                    <div className="p-3.5 rounded-xl bg-slate-50/60 border border-slate-200/70 space-y-1.5">
+                                        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">
                                             {t('leadDetails.contactPerson')}
                                         </span>
-                                        <div className="text-xs font-semibold text-slate-900 flex items-center gap-1.5">
-                                            <User size={13} className="text-slate-400" />
-                                            <span>{lead.customer?.contactName || lead.contactName || '—'}</span>
+                                        <div className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                                            <User size={13} className="text-slate-400 shrink-0" />
+                                            <span className="truncate">{lead.customer?.contactName || lead.contactName || '—'}</span>
                                         </div>
                                     </div>
 
                                     {/* Phone Number */}
-                                    <div className="space-y-1">
-                                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                                    <div className="p-3.5 rounded-xl bg-slate-50/60 border border-slate-200/70 space-y-1.5">
+                                        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">
                                             {t('leadDetails.phoneNumber')}
                                         </span>
-                                        <div className="text-xs font-semibold text-slate-900 flex items-center gap-1.5">
-                                            <Phone size={13} className="text-slate-400" />
+                                        <div className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                                            <Phone size={13} className="text-slate-400 shrink-0" />
                                             <span>{lead.customer?.phone || lead.phone || '—'}</span>
                                             {(lead.customer?.phone || lead.phone) && (
                                                 <ClickToCallButton phoneNumber={lead.customer?.phone || lead.phone} className="ml-1 scale-90 origin-left" />
@@ -411,35 +413,35 @@ export function LeadDetailClient({
                                     </div>
 
                                     {/* Email */}
-                                    <div className="space-y-1">
-                                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                                    <div className="p-3.5 rounded-xl bg-slate-50/60 border border-slate-200/70 space-y-1.5">
+                                        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">
                                             {t('leadDetails.email')}
                                         </span>
-                                        <div className="text-xs font-semibold text-slate-900 flex items-center gap-1.5 truncate">
+                                        <div className="text-xs font-semibold text-slate-800 flex items-center gap-1.5 truncate">
                                             <Mail size={13} className="text-slate-400 shrink-0" />
                                             <span className="truncate">{lead.customer?.email || lead.email || '—'}</span>
                                         </div>
                                     </div>
 
                                     {/* Expected Close Date */}
-                                    <div className="space-y-1">
-                                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                                    <div className="p-3.5 rounded-xl bg-slate-50/60 border border-slate-200/70 space-y-1.5">
+                                        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">
                                             {t('leadDetails.expectedCloseDate')}
                                         </span>
-                                        <div className="text-xs font-semibold text-slate-900 flex items-center gap-1.5">
-                                            <Calendar size={13} className="text-slate-400" />
+                                        <div className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                                            <Calendar size={13} className="text-slate-400 shrink-0" />
                                             <span>{lead.expectedCloseDate ? formatDate(lead.expectedCloseDate) : '—'}</span>
                                         </div>
                                     </div>
 
                                     {/* Lead Source */}
-                                    <div className="space-y-1">
-                                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                                    <div className="p-3.5 rounded-xl bg-slate-50/60 border border-slate-200/70 space-y-1.5">
+                                        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">
                                             {t('leadDetails.leadSource')}
                                         </span>
-                                        <div className="text-xs font-semibold text-slate-900 flex items-center gap-1.5">
-                                            <Tag size={13} className="text-slate-400" />
-                                            <span className="inline-block px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[11px] font-medium border border-slate-200">
+                                        <div className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                                            <Tag size={13} className="text-slate-400 shrink-0" />
+                                            <span className="inline-block px-2 py-0.5 rounded bg-white text-slate-700 text-[11px] font-medium border border-slate-200/80 shadow-2xs">
                                                 {lead.source || '—'}
                                             </span>
                                         </div>
@@ -448,8 +450,8 @@ export function LeadDetailClient({
 
                                 {/* Internal Notes */}
                                 {lead.notes && (
-                                    <div className="pt-4 border-t border-slate-100 space-y-1.5">
-                                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                                    <div className="pt-4 border-t border-slate-100 space-y-2">
+                                        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                                             <FileText size={13} /> {t('leadDetails.internalNotes')}
                                         </span>
                                         <div className="p-3.5 bg-amber-50/60 rounded-xl border border-amber-200/80 text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
@@ -461,17 +463,19 @@ export function LeadDetailClient({
 
                             {/* Related Estimates Card */}
                             {lead.salesEstimates && lead.salesEstimates.length > 0 && (
-                                <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 space-y-3">
-                                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                                        <div className="flex items-center gap-2">
-                                            <FileText size={18} className="text-sky-600" />
-                                            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                                <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 space-y-3.5">
+                                    <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="w-7 h-7 rounded-lg bg-sky-50 border border-sky-200/70 text-sky-600 flex items-center justify-center">
+                                                <FileText size={15} />
+                                            </div>
+                                            <h2 className="text-xs sm:text-sm font-bold text-slate-900 uppercase tracking-wider">
                                                 {t('leadDetails.relatedEstimates')} ({lead.salesEstimates.length})
                                             </h2>
                                         </div>
                                         <Link
                                             href={`/sales/estimates?action=new&leadId=${lead.id}&customerId=${lead.customerId || ''}`}
-                                            className="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+                                            className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
                                         >
                                             <Plus size={13} /> Tạo thêm báo giá
                                         </Link>
@@ -481,7 +485,7 @@ export function LeadDetailClient({
                                         {lead.salesEstimates.map((est: any) => (
                                             <div
                                                 key={est.id}
-                                                className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-slate-100/70 transition-colors"
+                                                className="flex items-center justify-between p-3 rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-slate-100/70 transition-colors"
                                             >
                                                 <div className="flex items-center gap-3">
                                                     <Link
@@ -498,7 +502,7 @@ export function LeadDetailClient({
                                                     <span className="font-mono font-bold text-xs text-slate-900">
                                                         {formatMoney(est.totalAmount)}
                                                     </span>
-                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                                                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
                                                         est.status === 'ACCEPTED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                                                         est.status === 'REJECTED' ? 'bg-rose-50 text-rose-700 border-rose-200' :
                                                         est.status === 'SENT' ? 'bg-blue-50 text-blue-700 border-blue-200' :
@@ -529,23 +533,19 @@ export function LeadDetailClient({
                 <div className="lg:col-span-4 space-y-6">
                     {/* Big Value Metric Card */}
                     <div 
-                        className="rounded-2xl p-5 shadow-sm space-y-3 relative overflow-hidden border border-emerald-900"
-                        style={{
-                            background: 'linear-gradient(135deg, #064e3b 0%, #047857 50%, #0f172a 100%)',
-                            color: '#ffffff'
-                        }}
+                        className="rounded-2xl p-5 shadow-xs space-y-3 relative overflow-hidden border border-emerald-900/60 bg-gradient-to-br from-slate-950 via-emerald-950 to-slate-900 text-white"
                     >
-                        <div className="absolute right-0 top-0 translate-x-4 -translate-y-4 w-32 h-32 bg-white/5 rounded-full blur-2xl pointer-events-none" />
-                        <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider" style={{ color: '#a7f3d0' }}>
+                        <div className="absolute right-0 top-0 translate-x-4 -translate-y-4 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+                        <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-emerald-300">
                             <span>{t('leadDetails.expectedValue')}</span>
-                            <Sparkles size={16} style={{ color: '#6ee7b7' }} />
+                            <Sparkles size={16} className="text-emerald-400" />
                         </div>
-                        <div className="font-mono text-2xl sm:text-3xl font-black tracking-tight" style={{ color: '#ffffff' }}>
+                        <div className="font-mono text-2xl sm:text-3xl font-black tracking-tight text-white">
                             {formatMoney(lead.estimatedValue || 0)}
                         </div>
-                        <div className="pt-2.5 flex items-center justify-between text-xs" style={{ borderTop: '1px solid rgba(255,255,255,0.15)', color: '#d1fae5' }}>
-                            <span style={{ color: '#a7f3d0' }}>Xác suất thành công:</span>
-                            <span className="font-bold font-mono text-sm" style={{ color: '#ffffff' }}>
+                        <div className="pt-2.5 flex items-center justify-between text-xs border-t border-white/10 text-emerald-100/90">
+                            <span className="text-emerald-300/80">Xác suất thành công:</span>
+                            <span className="font-bold font-mono text-sm text-white">
                                 {lead.status === 'WON' ? '100%' : lead.status === 'PROPOSAL' ? '75%' : lead.status === 'QUALIFIED' ? '50%' : lead.status === 'CONTACTED' ? '25%' : lead.status === 'LOST' ? '0%' : '10%'}
                             </span>
                         </div>
@@ -571,7 +571,7 @@ export function LeadDetailClient({
                     <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 space-y-4">
                         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                             <div className="flex items-center gap-2">
-                                <Clock size={16} className="text-slate-500" />
+                                <Clock size={16} className="text-slate-400" />
                                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
                                     {t('leadDetails.activityHistory')}
                                 </h3>
@@ -588,16 +588,16 @@ export function LeadDetailClient({
 
                                 return sysLogs.map((log: any) => (
                                     <div key={log.id} className="flex items-start gap-3 relative pb-2 last:pb-0">
-                                        <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px] flex items-center justify-center shrink-0 shadow-2xs border border-emerald-200">
+                                        <div className="w-7 h-7 rounded-full bg-emerald-50 text-emerald-800 font-bold text-[10px] flex items-center justify-center shrink-0 shadow-2xs border border-emerald-200/80">
                                             {log.user?.name ? getInitials(log.user.name) : '?'}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <div className="text-xs font-bold text-slate-900">{log.action}</div>
+                                            <div className="text-xs font-semibold text-slate-900">{log.action}</div>
                                             <div className="text-[10px] text-slate-400 font-mono mt-0.5">
                                                 {formatDateTime(log.createdAt)} • {log.user?.name}
                                             </div>
                                             {log.details && (
-                                                <div className="text-xs text-slate-600 bg-slate-50 p-2 rounded-lg border border-slate-200/70 mt-1.5 leading-relaxed whitespace-pre-wrap">
+                                                <div className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-200/70 mt-1.5 leading-relaxed whitespace-pre-wrap">
                                                     {log.details}
                                                 </div>
                                             )}
