@@ -375,15 +375,47 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
                                         {payment.reference && <div className="text-xs text-gray-500 mt-1">Ref: {payment.reference}</div>}
                                     </td>
                                     <td className="p-4 text-right">
-                                        <span className={`font-semibold text-base ${payment.status === 'CANCELLED' ? 'text-gray-500 line-through' : 'text-green-600 dark:text-green-400'}`}>
-                                            {formatMoney(payment.amount)}
-                                        </span>
-                                        <div className="text-xs text-gray-500 mt-1">
-                                            Đã PB: {formatMoney(payment.allocations?.reduce((sum: number, a: any) => sum + a.amount, 0) || 0)}
-                                        </div>
+                                        {(() => {
+                                            const allocated = payment.allocations?.reduce((sum: number, a: any) => sum + a.amount, 0) || 0;
+                                            const unallocated = Math.max(0, payment.amount - allocated);
+                                            const isCancelled = payment.status === 'CANCELLED';
+                                            const hasRemaining = !isCancelled && unallocated > 0.01;
+
+                                            return (
+                                                <div>
+                                                    <span className={`font-semibold text-base ${isCancelled ? 'text-gray-500 line-through' : 'text-green-600 dark:text-green-400'}`}>
+                                                        {formatMoney(payment.amount)}
+                                                    </span>
+                                                    <div className="text-xs text-gray-500 mt-0.5 font-mono">
+                                                        Đã PB: {formatMoney(allocated)}
+                                                    </div>
+                                                    {hasRemaining ? (
+                                                        <div className="mt-1 flex justify-end">
+                                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                                                Dư {formatMoney(unallocated)}
+                                                            </span>
+                                                        </div>
+                                                    ) : !isCancelled ? (
+                                                        <div className="text-[10px] text-gray-400 mt-0.5">
+                                                            Đã phân bổ 100%
+                                                        </div>
+                                                    ) : null}
+                                                </div>
+                                            );
+                                        })()}
                                     </td>
                                     <td className="p-4 text-center">
-                                        <div className="flex items-center justify-center gap-2">
+                                        <div className="flex items-center justify-center gap-1.5">
+                                            {payment.status !== 'CANCELLED' && (payment.amount - (payment.allocations?.reduce((sum: number, a: any) => sum + a.amount, 0) || 0)) > 0.01 && (
+                                                <Link
+                                                    href={`/sales/payments/${payment.id}?openAllocate=true`}
+                                                    className="px-2 py-1 text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded inline-flex items-center gap-1 transition-colors"
+                                                    title="Phân bổ số tiền còn dư cho hóa đơn"
+                                                >
+                                                    <Plus size={13} strokeWidth={2.5} /> Phân bổ
+                                                </Link>
+                                            )}
                                             <Link
                                                 href={`/sales/payments/${payment.id}`}
                                                 className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded inline-block"

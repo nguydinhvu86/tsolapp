@@ -30,9 +30,18 @@ export function SalesPaymentDetailClient({ payment, tasks, users, unpaidInvoices
     const [isAllocationModalOpen, setIsAllocationModalOpen] = useState(false);
     const [allocations, setAllocations] = useState<{ [key: string]: number }>({});
 
+    React.useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('openAllocate') === 'true') {
+                setIsAllocationModalOpen(true);
+            }
+        }
+    }, []);
+
     // Derived values
     const allocatedAmount = localPayment.allocations?.reduce((acc: number, cur: any) => acc + cur.amount, 0) || 0;
-    const unallocatedAmount = localPayment.amount - allocatedAmount;
+    const unallocatedAmount = Math.max(0, localPayment.amount - allocatedAmount);
 
     const [editData, setEditData] = useState({
         date: payment.date ? new Date(payment.date).toISOString().split('T')[0] : '',
@@ -304,6 +313,24 @@ export function SalesPaymentDetailClient({ payment, tasks, users, unpaidInvoices
                             <div>
                                 <p style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600, color: '#94a3b8', marginBottom: '0.25rem' }}>Tổng Số Tiền Nhận</p>
                                 <p style={{ margin: 0, fontWeight: 700, color: localPayment.status === 'CANCELLED' ? '#94a3b8' : '#10b981', fontSize: '1.25rem', textDecoration: localPayment.status === 'CANCELLED' ? 'line-through' : 'none' }}>{formatMoney(localPayment.amount)}</p>
+                                {localPayment.status !== 'CANCELLED' && (
+                                    <div className="mt-1.5 flex flex-col gap-0.5">
+                                        <div className="text-xs text-slate-500 flex items-center gap-1.5">
+                                            <span>Đã phân bổ:</span>
+                                            <span className="font-semibold text-slate-700 font-mono">{formatMoney(allocatedAmount)}</span>
+                                        </div>
+                                        {unallocatedAmount > 0.01 ? (
+                                            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold mt-0.5">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                                <span>Còn dư: {formatMoney(unallocatedAmount)}</span>
+                                            </div>
+                                        ) : (
+                                            <div className="text-[11px] text-slate-400 font-medium">
+                                                ✓ Đã phân bổ hết
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
                             {localPayment.notes && (
@@ -342,6 +369,37 @@ export function SalesPaymentDetailClient({ payment, tasks, users, unpaidInvoices
                         <div style={{ padding: '1.5rem' }}>
                             {activeTab === 'allocations' && (
                                 <div>
+                                    {unallocatedAmount > 0.01 && localPayment.status !== 'CANCELLED' && (
+                                        <div className="mb-4 p-3.5 bg-emerald-50/80 border border-emerald-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                                                    <Building size={16} />
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs text-emerald-900 font-bold m-0">
+                                                        Phiếu thu còn dư <span className="text-emerald-700 font-extrabold underline">{formatMoney(unallocatedAmount)}</span> chưa phân bổ hết
+                                                    </p>
+                                                    <p className="text-[11px] text-emerald-700 m-0 mt-0.5">
+                                                        {unpaidInvoices && unpaidInvoices.length > 0 
+                                                            ? `Hiện có ${unpaidInvoices.length} hóa đơn đang còn nợ có thể cấn trừ ngay.`
+                                                            : `Hiện chưa có hóa đơn nợ nào. Khoản tiền dư này đang được lưu giữ tạm ứng và sẵn sàng phân bổ khi phát sinh hóa đơn mới.`}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            {unpaidInvoices && unpaidInvoices.length > 0 && (
+                                                <button
+                                                    onClick={() => {
+                                                        setAllocations({});
+                                                        setIsAllocationModalOpen(true);
+                                                    }}
+                                                    className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-lg text-xs font-semibold shadow-2xs transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+                                                >
+                                                    + Phân Bổ Ngay
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                                         <p style={{ color: '#64748b', fontSize: '0.875rem', margin: 0 }}>Khoản tiền này đã được phân bổ để trả nợ cho các Hóa đơn sau:</p>
                                         {unallocatedAmount > 0 && unpaidInvoices && unpaidInvoices.length > 0 && localPayment.status !== 'CANCELLED' && (

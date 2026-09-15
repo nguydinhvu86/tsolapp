@@ -58,8 +58,16 @@ export async function getCustomerWithRelations(id: string) {
                 },
                 salesEstimates: { orderBy: { createdAt: 'desc' } },
                 salesOrders: { orderBy: { createdAt: 'desc' } },
-                salesInvoices: { orderBy: { createdAt: 'desc' } },
-                salesPayments: { orderBy: { createdAt: 'desc' } },
+                salesPayments: {
+                    include: {
+                        allocations: {
+                            include: {
+                                invoice: { select: { id: true, code: true, totalAmount: true, paidAmount: true, status: true } }
+                            }
+                        }
+                    },
+                    orderBy: { date: 'desc' }
+                },
                 leads: { orderBy: { createdAt: 'desc' } },
                 callLogs: {
                     include: { user: { select: { name: true, extension: true } } },

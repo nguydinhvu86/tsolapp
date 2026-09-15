@@ -191,13 +191,37 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
 
     const computedDebt = exactSales - exactPayments;
 
+    // Process sales payments with allocations
+    const paymentsWithAllocations = React.useMemo(() => {
+        return (customer.salesPayments || []).map((p: any) => {
+            const allocated = (p.allocations || []).reduce((sum: number, a: any) => sum + (Number(a.amount) || 0), 0);
+            const unallocated = Math.max(0, Number(p.amount) - allocated);
+            return {
+                ...p,
+                allocatedAmount: allocated,
+                unallocatedAmount: unallocated,
+                hasUnallocated: p.status !== 'CANCELLED' && unallocated > 0.01
+            };
+        });
+    }, [customer.salesPayments]);
+
+    const unallocatedPayments = React.useMemo(() => paymentsWithAllocations.filter((p: any) => p.hasUnallocated), [paymentsWithAllocations]);
+    const totalUnallocatedFunds = React.useMemo(() => unallocatedPayments.reduce((sum: number, p: any) => sum + p.unallocatedAmount, 0), [unallocatedPayments]);
+
     const tabs = [
         { id: 'contacts', name: 'Người Liên Hệ', count: customer.contacts?.length || 0, icon: Users },
         { id: 'leads', name: 'Cơ hội Bán hàng', count: customer.leads?.length || 0, icon: Target },
         { id: 'salesEstimates', name: 'Báo Giá (ERP)', count: validEstimatesCount, icon: SearchCode },
         { id: 'salesOrders', name: 'Đơn Đặt Hàng', count: customer.salesOrders?.length || 0, icon: ShoppingCart },
         { id: 'salesInvoices', name: 'HĐ Bán & Nợ', count: unpaidInvoicesCount, icon: Ticket },
-        { id: 'salesPayments', name: 'Thu Tiền', count: customer.salesPayments?.length || 0, icon: HandCoins },
+        { 
+            id: 'salesPayments', 
+            name: 'Thu Tiền', 
+            count: customer.salesPayments?.length || 0, 
+            icon: HandCoins,
+            unallocatedCount: unallocatedPayments.length,
+            unallocatedTotal: totalUnallocatedFunds
+        },
         { id: 'statement', name: 'Sao Kê Công Nợ', count: '-', icon: FileSpreadsheet },
         { id: 'documents', name: 'Tủ Hồ Sơ', count: customer.notes?.length || 0, icon: FileText },
         { id: 'quotes', name: 'Báo Giá', count: customer.quotes?.length || 0, icon: FileSpreadsheet },
@@ -419,6 +443,42 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                     <p className="m-0 text-xs font-bold text-rose-600 font-mono break-words mt-0.5">{formatMoney(computedDebt)}</p>
                                 </div>
                             </div>
+                            <div 
+                                onClick={() => {
+                                    if (unallocatedPayments.length > 0) setActiveTab('salesPayments');
+                                }}
+                                className={`flex items-start gap-2.5 p-2 rounded-lg border transition-all ${
+                                    unallocatedPayments.length > 0 
+                                        ? 'bg-emerald-50/70 border-emerald-200 cursor-pointer hover:bg-emerald-100/70 shadow-2xs' 
+                                        : 'bg-slate-50/60 border-slate-100/80'
+                                }`}
+                                title={unallocatedPayments.length > 0 ? "Bấm để xem các phiếu thu còn tiền chưa phân bổ hết" : undefined}
+                            >
+                                <div className={`mt-0.5 w-6 h-6 rounded-md bg-white border flex items-center justify-center flex-shrink-0 ${
+                                    unallocatedPayments.length > 0 ? 'border-emerald-300 text-emerald-600' : 'border-slate-200/60 text-slate-400'
+                                }`}>
+                                    <HandCoins size={13} />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex items-center justify-between gap-1">
+                                        <p className={`m-0 text-[10px] font-semibold uppercase tracking-wider ${
+                                            unallocatedPayments.length > 0 ? 'text-emerald-700' : 'text-slate-400'
+                                        }`}>
+                                            Tiền Thu Chưa Phân Bổ
+                                        </p>
+                                        {unallocatedPayments.length > 0 && (
+                                            <span className="text-[9px] font-extrabold px-1.5 py-0.2 bg-emerald-200 text-emerald-900 rounded-full animate-pulse">
+                                                {unallocatedPayments.length} PT còn dư
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className={`m-0 text-xs font-bold font-mono break-words mt-0.5 ${
+                                        unallocatedPayments.length > 0 ? 'text-emerald-700' : 'text-slate-700'
+                                    }`}>
+                                        {formatMoney(totalUnallocatedFunds)}
+                                    </p>
+                                </div>
+                            </div>
                             <div className="flex items-start gap-2.5 p-2 rounded-lg bg-slate-50/60 border border-slate-100/80">
                                 <div className="mt-0.5 w-6 h-6 rounded-md bg-white border border-slate-200/60 flex items-center justify-center text-slate-400 flex-shrink-0"><User size={13} /></div>
                                 <div className="min-w-0 flex-1">
@@ -456,6 +516,38 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                     </div>
                 </div>
             </Card>
+
+            {/* Unallocated Sales Payments Notification Banner */}
+            {unallocatedPayments.length > 0 && (
+                <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-emerald-50/90 via-teal-50/80 to-emerald-50/90 border border-emerald-200/90 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="flex items-start sm:items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs mt-0.5 sm:mt-0">
+                            <HandCoins size={18} />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xs sm:text-sm font-bold text-slate-900">
+                                    Khách hàng có {unallocatedPayments.length} Phiếu Thu còn tiền chưa phân bổ hết
+                                </span>
+                                <span className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-900 border border-emerald-300 font-mono">
+                                    Tổng dư: {formatMoney(totalUnallocatedFunds)}
+                                </span>
+                            </div>
+                            <p className="text-xs text-slate-600 m-0 mt-0.5">
+                                Các khoản thu này có thể tiếp tục phân bổ cấn trừ cho các hóa đơn hiện tại hoặc các hóa đơn phát sinh trong tương lai.
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('salesPayments')}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-semibold shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap shrink-0"
+                    >
+                        <span>Xem & Phân Bổ Ngay</span>
+                        <ArrowLeft className="rotate-180" size={13} />
+                    </button>
+                </div>
+            )}
 
             {/* Navigation Menu (2 Horizontal Rows) */}
             <Card style={{ padding: '0.5rem', background: '#ffffff', borderRadius: '12px', border: '1px solid var(--border)' }}>
@@ -502,6 +594,11 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                                                 <span className="flex items-center gap-2 min-w-0 flex-1 truncate">
                                                                     <Icon size={15} className={`shrink-0 ${isActive ? 'text-emerald-600' : 'text-slate-400'}`} />
                                                                     <span className="truncate">{tab.name}</span>
+                                                                    {tab.id === 'salesPayments' && totalUnallocatedFunds > 0 && (
+                                                                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300 animate-pulse shrink-0" title={`Còn ${formatMoney(totalUnallocatedFunds)} chưa phân bổ`}>
+                                                                            <span>⚡ Còn dư</span>
+                                                                        </span>
+                                                                    )}
                                                                 </span>
                                                                 <span className={`px-1.5 py-0.5 rounded-full text-[11px] font-bold min-w-[20px] text-center shrink-0 ${
                                                                     isActive
@@ -539,6 +636,11 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                             <span className="flex items-center gap-2 min-w-0 flex-1 truncate">
                                                 <Icon size={15} className={`shrink-0 ${isActive ? 'text-emerald-600' : 'text-slate-400'}`} />
                                                 <span className="truncate">{tab.name}</span>
+                                                {tab.id === 'salesPayments' && totalUnallocatedFunds > 0 && (
+                                                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300 animate-pulse shrink-0" title={`Còn ${formatMoney(totalUnallocatedFunds)} chưa phân bổ`}>
+                                                        <span>⚡ Còn dư</span>
+                                                    </span>
+                                                )}
                                             </span>
                                             <span className={`px-1.5 py-0.5 rounded-full text-[11px] font-bold min-w-[20px] text-center shrink-0 ${
                                                 isActive
@@ -696,14 +798,26 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                             <div className="overflow-x-auto">
                                 <Table>
                                     <thead className="whitespace-nowrap bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                                        <tr>
-                                            <th className="py-3 px-4 font-bold">Mã HS</th>
-                                            <th className="py-3 px-4 font-bold">Tiêu đề</th>
-                                            {activeTab === 'salesInvoices' && <th className="py-3 px-4 font-bold">Thẻ Quản Lý</th>}
-                                            <th className="py-3 px-4 font-bold">Trạng thái</th>
-                                            <th className="py-3 px-4 font-bold">Ngày tạo</th>
-                                            <th className="py-3 px-4 font-bold text-right" style={{ width: '100px' }}>Thao tác</th>
-                                        </tr>
+                                        {activeTab === 'salesPayments' ? (
+                                            <tr>
+                                                <th className="py-3 px-4 font-bold">Mã Phiếu Thu</th>
+                                                <th className="py-3 px-4 font-bold">Tổng Thu</th>
+                                                <th className="py-3 px-4 font-bold">Đã Cấn Trừ HĐ</th>
+                                                <th className="py-3 px-4 font-bold">Trạng Thái Phân Bổ</th>
+                                                <th className="py-3 px-4 font-bold">Ngày Thu</th>
+                                                <th className="py-3 px-4 font-bold">Trạng Thái</th>
+                                                <th className="py-3 px-4 font-bold text-right" style={{ minWidth: '130px' }}>Thao tác</th>
+                                            </tr>
+                                        ) : (
+                                            <tr>
+                                                <th className="py-3 px-4 font-bold">Mã HS</th>
+                                                <th className="py-3 px-4 font-bold">Tiêu đề</th>
+                                                {activeTab === 'salesInvoices' && <th className="py-3 px-4 font-bold">Thẻ Quản Lý</th>}
+                                                <th className="py-3 px-4 font-bold">Trạng thái</th>
+                                                <th className="py-3 px-4 font-bold">Ngày tạo</th>
+                                                <th className="py-3 px-4 font-bold text-right" style={{ width: '100px' }}>Thao tác</th>
+                                            </tr>
+                                        )}
                                     </thead>
                                     <tbody>
                                         {(() => {
@@ -731,7 +845,7 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                                 salesEstimates: filterDocs(customer.salesEstimates || []),
                                                 salesOrders: filterDocs(customer.salesOrders || []),
                                                 salesInvoices: filterDocs(customer.salesInvoices || []),
-                                                salesPayments: filterDocs(customer.salesPayments || []),
+                                                salesPayments: filterDocs(paymentsWithAllocations),
                                                 leads: filterDocs(customer.leads || []),
                                             };
 
@@ -740,7 +854,7 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                             if (currentList.length === 0) {
                                                 return (
                                                     <tr>
-                                                        <td colSpan={5} style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-muted)' }}>
+                                                        <td colSpan={activeTab === 'salesPayments' ? 7 : (activeTab === 'salesInvoices' ? 6 : 5)} style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-muted)' }}>
                                                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
                                                                 <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--background)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
                                                                     {React.createElement(tabs.find(t => t.id === activeTab)?.icon || FileText, { size: 24 })}
@@ -750,6 +864,12 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                                         </td>
                                                     </tr>
                                                 );
+                                            }
+
+                                            if (activeTab === 'salesPayments') {
+                                                return currentList.map((doc: any) => (
+                                                    <SalesPaymentRow key={doc.id} doc={doc} />
+                                                ));
                                             }
 
                                             return currentList.map((doc: any) => {
@@ -1315,6 +1435,86 @@ export function SalesDocumentRow({ doc, type }: { doc: any, type: string, getSta
             <td>
                 <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                     <Link href={`/${type}/${doc.id}`} className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-600 transition-all flex items-center justify-center border border-slate-200" title="Tới phân hệ">
+                        <Eye size={15} />
+                    </Link>
+                </div>
+            </td>
+        </tr>
+    );
+}
+
+function SalesPaymentRow({ doc }: { doc: any }) {
+    const isCancelled = doc.status === 'CANCELLED';
+    const hasRemaining = !isCancelled && doc.unallocatedAmount > 0.01;
+
+    return (
+        <tr className={`hover:bg-slate-50/70 transition-colors ${hasRemaining ? 'bg-emerald-50/20' : ''}`}>
+            <td className="py-3 px-4">
+                <div className="flex flex-col">
+                    <Link href={`/sales/payments/${doc.id}`} className="hover:text-emerald-600 hover:underline font-mono font-bold text-slate-800 text-xs">
+                        #{doc.code}
+                    </Link>
+                    <span className="text-[11px] text-slate-500 mt-0.5">
+                        {doc.paymentMethod === 'BANK_TRANSFER' ? 'Chuyển khoản' : 'Tiền mặt'}
+                        {doc.reference ? ` • Ref: ${doc.reference}` : ''}
+                    </span>
+                </div>
+            </td>
+            <td className="py-3 px-4 font-bold text-slate-900 text-xs font-mono">
+                {formatMoney(doc.amount)}
+            </td>
+            <td className="py-3 px-4 text-xs font-medium text-slate-700">
+                <div className="flex flex-col">
+                    <span className="font-semibold text-slate-800 font-mono">{formatMoney(doc.allocatedAmount)}</span>
+                    <span className="text-[10px] text-slate-500">
+                        {doc.allocations?.length ? `Cấn trừ ${doc.allocations.length} hóa đơn` : 'Chưa cấn trừ HĐ nào'}
+                    </span>
+                </div>
+            </td>
+            <td className="py-3 px-4">
+                {isCancelled ? (
+                    <span className="text-[11px] text-slate-400 font-medium italic">Đã hủy phiếu</span>
+                ) : hasRemaining ? (
+                    <div className="inline-flex flex-col items-start">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 shadow-2xs">
+                            <HandCoins size={13} className="text-emerald-700 shrink-0" />
+                            <span>Còn dư {formatMoney(doc.unallocatedAmount)}</span>
+                        </span>
+                        <span className="text-[10px] text-emerald-700 font-semibold mt-0.5 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Chờ phân bổ cho HĐ
+                        </span>
+                    </div>
+                ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                        <Check size={12} className="text-slate-500" />
+                        <span>Đã phân bổ đủ 100%</span>
+                    </span>
+                )}
+            </td>
+            <td className="py-3 px-4 text-xs text-slate-600" suppressHydrationWarning>
+                {formatDate(new Date(doc.date || doc.createdAt))}
+            </td>
+            <td className="py-3 px-4">
+                <StatusBadge status={doc.status} />
+            </td>
+            <td className="py-3 px-4 text-right">
+                <div className="flex items-center justify-end gap-1.5">
+                    {hasRemaining && (
+                        <Link 
+                            href={`/sales/payments/${doc.id}?openAllocate=true`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-semibold shadow-2xs transition-all whitespace-nowrap cursor-pointer"
+                            title="Tiếp tục phân bổ số tiền còn lại cho hóa đơn"
+                        >
+                            <Plus size={13} strokeWidth={2.5} />
+                            <span>Phân bổ</span>
+                        </Link>
+                    )}
+                    <Link 
+                        href={`/sales/payments/${doc.id}`} 
+                        className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-600 transition-all flex items-center justify-center border border-slate-200" 
+                        title="Xem chi tiết phiếu thu"
+                    >
                         <Eye size={15} />
                     </Link>
                 </div>
