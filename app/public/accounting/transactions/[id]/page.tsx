@@ -87,7 +87,7 @@ export default async function PublicCashTransactionPage({ params }: { params: { 
     };
 
     return (
-        <div className="print-wrapper bg-slate-100 min-h-screen py-6 px-3 sm:px-6 flex flex-col items-center">
+        <div className="print-wrapper bg-slate-100/90 min-h-screen py-8 px-3 sm:px-6 flex flex-col items-center justify-start">
             <style dangerouslySetInnerHTML={{
                 __html: `
                 @media print {
@@ -134,19 +134,19 @@ export default async function PublicCashTransactionPage({ params }: { params: { 
             `}} />
 
             {/* Top Toolbar */}
-            <div className="no-print w-full max-w-4xl mb-4 flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
-                <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-                        <FileText size={18} />
+            <div className="no-print w-full max-w-[210mm] mb-4 flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
+                <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                        <FileText size={19} />
                     </div>
                     <div>
                         <div className="text-xs font-bold text-slate-800">
                             {titleText} #{transaction.code}
                         </div>
-                        <div className="text-[11px] text-slate-500">
+                        <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
                             {transaction.payerSignature ? (
                                 <span className="text-emerald-600 font-semibold flex items-center gap-1">
-                                    <Check size={12} strokeWidth={3} /> Đã ký xác nhận online
+                                    <Check size={12} strokeWidth={3} /> Đã ký xác nhận điện tử
                                 </span>
                             ) : (
                                 <span className="text-amber-600 font-medium">Chờ ký xác nhận</span>
@@ -162,7 +162,7 @@ export default async function PublicCashTransactionPage({ params }: { params: { 
             </div>
 
             {/* A4 Document Paper */}
-            <div className="a4-document relative w-full max-w-4xl bg-white p-8 sm:p-12 shadow-xl border border-slate-200/90 rounded-2xl text-slate-900 font-sans">
+            <div className="a4-document relative w-full max-w-[210mm] bg-white p-8 sm:p-12 shadow-xl border border-slate-200/90 rounded-2xl text-slate-900 font-sans">
                 <Watermark settings={settingsMap} documentType={isReceipt ? 'SALES_PAYMENT' : 'PURCHASE_PAYMENT'} />
 
                 {/* Header: Company Info + Form Code */}
@@ -282,63 +282,120 @@ export default async function PublicCashTransactionPage({ params }: { params: { 
                     </div>
                 </div>
 
-                {/* Signatures Section with Online Signing Pad */}
+                {/* Signatures Section with 5 Balanced Columns */}
                 <div className="mt-8 pt-2">
-                    <div className="text-right text-xs italic text-slate-700 mb-4 font-medium">
-                        {cityName}, ngày {day < 10 ? `0${day}` : day} tháng {month < 10 ? `0${month}` : month} năm {year}
+                    <div className="flex justify-end mb-2">
+                        <div className="text-right text-xs italic text-slate-700 font-medium">
+                            {cityName}, ngày {day < 10 ? `0${day}` : day} tháng {month < 10 ? `0${month}` : month} năm {year}
+                        </div>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center text-xs">
-                        <div className="space-y-1">
-                            <div className="font-bold uppercase text-slate-950 tracking-tight">Giám Đốc</div>
-                            <div className="text-[10px] text-slate-500 italic">(Ký, đóng dấu)</div>
-                            <div className="h-20 flex items-center justify-center"></div>
-                        </div>
-
-                        <div className="space-y-1">
-                            <div className="font-bold uppercase text-slate-950 tracking-tight">Kế Toán Trưởng</div>
-                            <div className="text-[10px] text-slate-500 italic">(Ký, họ tên)</div>
-                            <div className="h-20 flex items-center justify-center"></div>
-                        </div>
-
-                        <div className="space-y-1">
-                            <div className="font-bold uppercase text-slate-950 tracking-tight">Thủ Quỹ</div>
-                            <div className="text-[10px] text-slate-500 italic">(Ký, họ tên)</div>
-                            <div className="h-20 flex items-center justify-center"></div>
-                        </div>
-
-                        <div className="space-y-1">
-                            <div className="font-bold uppercase text-slate-950 tracking-tight">Người Lập Phiếu</div>
-                            <div className="text-[10px] text-slate-500 italic">(Ký, họ tên)</div>
-                            <div className="h-20 flex items-end justify-center">
-                                <span className="font-bold text-slate-950 text-xs">{transaction.createdBy?.name || 'Sys Admin'}</span>
+                    <div className="grid grid-cols-5 gap-2 text-center items-start">
+                        {/* 1. Giám đốc */}
+                        <div className="flex flex-col items-center">
+                            <div className="h-8 flex items-center justify-center">
+                                <span className="font-bold text-[11px] sm:text-xs uppercase text-slate-950 tracking-tight leading-tight">
+                                    Giám Đốc
+                                </span>
+                            </div>
+                            <div className="h-4 flex items-center justify-center">
+                                <span className="text-[10px] text-slate-500 italic">(Ký, đóng dấu)</span>
+                            </div>
+                            <div className="h-24 sm:h-28 flex items-center justify-center w-full" />
+                            <div className="min-h-[24px] flex items-center justify-center">
+                                <span className="text-xs font-semibold text-slate-700" />
                             </div>
                         </div>
 
-                        {/* Customer / Payer Signature Block (Online Interactive) */}
-                        <div className="col-span-2 sm:col-span-1">
-                            <DocumentSignatureBlock
-                                entityType="CASH_TRANSACTION"
-                                entityId={transaction.id}
-                                role="PAYER_RECEIVER"
-                                initialSignature={transaction.payerSignature}
-                                initialSignedAt={transaction.payerSignedAt}
-                                title={isReceipt ? 'Người Nộp Tiền' : 'Người Nhận Tiền'}
-                                subtitle="(Ký, ghi rõ họ tên)"
-                                signerName={transaction.payerReceiver}
-                                canSign={true}
-                                metadata={{
-                                    ip: transaction.payerSignIP,
-                                    device: transaction.payerSignDevice,
-                                    location: transaction.payerSignLocation
-                                }}
-                            />
+                        {/* 2. Kế toán trưởng */}
+                        <div className="flex flex-col items-center">
+                            <div className="h-8 flex items-center justify-center">
+                                <span className="font-bold text-[11px] sm:text-xs uppercase text-slate-950 tracking-tight leading-tight">
+                                    Kế Toán Trưởng
+                                </span>
+                            </div>
+                            <div className="h-4 flex items-center justify-center">
+                                <span className="text-[10px] text-slate-500 italic">(Ký, họ tên)</span>
+                            </div>
+                            <div className="h-24 sm:h-28 flex items-center justify-center w-full" />
+                            <div className="min-h-[24px] flex items-center justify-center">
+                                <span className="text-xs font-semibold text-slate-700" />
+                            </div>
+                        </div>
+
+                        {/* 3. Thủ quỹ */}
+                        <div className="flex flex-col items-center">
+                            <div className="h-8 flex items-center justify-center">
+                                <span className="font-bold text-[11px] sm:text-xs uppercase text-slate-950 tracking-tight leading-tight">
+                                    Thủ Quỹ
+                                </span>
+                            </div>
+                            <div className="h-4 flex items-center justify-center">
+                                <span className="text-[10px] text-slate-500 italic">(Ký, họ tên)</span>
+                            </div>
+                            <div className="h-24 sm:h-28 flex items-center justify-center w-full" />
+                            <div className="min-h-[24px] flex items-center justify-center">
+                                <span className="text-xs font-semibold text-slate-700" />
+                            </div>
+                        </div>
+
+                        {/* 4. Người lập phiếu */}
+                        <div className="flex flex-col items-center">
+                            <div className="h-8 flex items-center justify-center">
+                                <span className="font-bold text-[11px] sm:text-xs uppercase text-slate-950 tracking-tight leading-tight">
+                                    Người Lập Phiếu
+                                </span>
+                            </div>
+                            <div className="h-4 flex items-center justify-center">
+                                <span className="text-[10px] text-slate-500 italic">(Ký, họ tên)</span>
+                            </div>
+                            <div className="h-24 sm:h-28 flex items-center justify-center w-full" />
+                            <div className="min-h-[24px] flex items-center justify-center px-1">
+                                <span className="font-bold text-slate-950 text-xs truncate max-w-full">
+                                    {transaction.createdBy?.name || 'Nguy Dinh Vu'}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* 5. Người nộp tiền / Người nhận tiền (Online Interactive) */}
+                        <div className="flex flex-col items-center">
+                            <div className="h-8 flex items-center justify-center">
+                                <span className="font-bold text-[11px] sm:text-xs uppercase text-slate-950 tracking-tight leading-tight">
+                                    {isReceipt ? 'Người Nộp Tiền' : 'Người Nhận Tiền'}
+                                </span>
+                            </div>
+                            <div className="h-4 flex items-center justify-center">
+                                <span className="text-[10px] text-slate-500 italic">(Ký, ghi rõ họ tên)</span>
+                            </div>
+                            <div className="h-24 sm:h-28 flex flex-col items-center justify-center w-full relative">
+                                <DocumentSignatureBlock
+                                    entityType="CASH_TRANSACTION"
+                                    entityId={transaction.id}
+                                    role="PAYER_RECEIVER"
+                                    initialSignature={transaction.payerSignature}
+                                    initialSignedAt={transaction.payerSignedAt}
+                                    title={isReceipt ? 'Người Nộp Tiền' : 'Người Nhận Tiền'}
+                                    signerName={transaction.payerReceiver}
+                                    canSign={true}
+                                    variant="inline"
+                                    metadata={{
+                                        ip: transaction.payerSignIP,
+                                        device: transaction.payerSignDevice,
+                                        location: transaction.payerSignLocation
+                                    }}
+                                />
+                            </div>
+                            <div className="min-h-[24px] flex items-center justify-center px-1">
+                                <span className="font-bold text-slate-950 text-xs truncate max-w-full text-center">
+                                    {transaction.payerReceiver || '—'}
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Receipt Acknowledgement Bottom Section */}
-                <div className="mt-8 pt-4 border-t border-slate-200 text-xs text-slate-700 italic space-y-1">
+                <div className="mt-6 pt-3 border-t border-slate-200 text-xs text-slate-700 italic space-y-1">
                     <div>
                         Đã nhận đủ số tiền (viết bằng chữ): <span className="font-semibold not-italic text-slate-900">{numberToVietnameseWords(transaction.amount)}</span>
                     </div>

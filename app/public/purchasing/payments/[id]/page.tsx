@@ -72,13 +72,13 @@ export default async function PublicPurchasePaymentPage({ params }: { params: { 
     };
 
     return (
-        <div className="print-wrapper" style={{ minHeight: '100vh', backgroundColor: '#e2e8f0', padding: '2rem 1rem', margin: '0 auto', maxWidth: '210mm' }}>
+        <div className="print-wrapper bg-slate-100/90 min-h-screen py-8 px-3 sm:px-6 flex flex-col items-center justify-start">
             <style dangerouslySetInnerHTML={{
                 __html: `
                 @media print {
                     @page {
-                        margin: 15mm;
-                        size: A4;
+                        margin: 10mm 12mm;
+                        size: A4 portrait;
                     }
                     body, html {
                         height: auto !important;
@@ -125,7 +125,8 @@ export default async function PublicPurchasePaymentPage({ params }: { params: { 
                 }
             `}} />
 
-            <div className="no-print w-full flex items-center justify-between gap-3 mb-4 bg-white p-3 rounded-2xl shadow-sm border border-slate-200">
+            {/* Top Toolbar */}
+            <div className="no-print w-full max-w-[210mm] mx-auto flex items-center justify-between gap-3 mb-4 bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
                 <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-slate-800">Phiếu Chi #{payment.code}</span>
                 </div>
@@ -135,130 +136,154 @@ export default async function PublicPurchasePaymentPage({ params }: { params: { 
                 </div>
             </div>
 
-            <div className="a4-document" style={{
-                position: 'relative',
-                width: '100%',
-                maxWidth: '210mm',
-                minHeight: '297mm',
-                backgroundColor: 'white',
-                padding: '20mm',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                fontFamily: '"Times New Roman", Times, serif',
-                color: '#000'
-            }}>
-                <Watermark settings={settingsMap} documentType="PURCHASE_PAYMENT" />
-                {/* Header: Company Info */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #1e293b', paddingBottom: '1.5rem', marginBottom: '2rem' }}>
-                    <div style={{ flex: 1 }}>
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 0.5rem 0', textTransform: 'uppercase', color: '#0f172a' }}>
-                            {compName}
-                        </h2>
-                        <div style={{ fontSize: '0.875rem', lineHeight: '1.5', color: '#334155' }}>
-                            {compAddress && <div><strong>Địa chỉ:</strong> {compAddress}</div>}
-                            {settingsMap['COMPANY_PHONE'] && <div><strong>Điện thoại:</strong> {settingsMap['COMPANY_PHONE']}</div>}
-                            {settingsMap['COMPANY_EMAIL'] && <div><strong>Email:</strong> {settingsMap['COMPANY_EMAIL']}</div>}
-                            {settingsMap['COMPANY_TAX'] && <div><strong>Mã số thuế:</strong> {settingsMap['COMPANY_TAX']}</div>}
+            <div className="a4-document relative w-full max-w-[210mm] min-h-[297mm] mx-auto bg-white p-8 sm:p-12 shadow-xl rounded-2xl border border-slate-200/90 text-slate-900 font-sans flex flex-col justify-between">
+                <div>
+                    <Watermark settings={settingsMap} documentType="PURCHASE_PAYMENT" />
+                    {/* Header: Company Info */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #1e293b', paddingBottom: '1.5rem', marginBottom: '2rem' }}>
+                        <div style={{ flex: 1 }}>
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 0.5rem 0', textTransform: 'uppercase', color: '#0f172a' }}>
+                                {compName}
+                            </h2>
+                            <div style={{ fontSize: '0.875rem', lineHeight: '1.5', color: '#334155' }}>
+                                {compAddress && <div><strong>Địa chỉ:</strong> {compAddress}</div>}
+                                {settingsMap['COMPANY_PHONE'] && <div><strong>Điện thoại:</strong> {settingsMap['COMPANY_PHONE']}</div>}
+                                {settingsMap['COMPANY_EMAIL'] && <div><strong>Email:</strong> {settingsMap['COMPANY_EMAIL']}</div>}
+                                {settingsMap['COMPANY_TAX'] && <div><strong>Mã số thuế:</strong> {settingsMap['COMPANY_TAX']}</div>}
+                            </div>
+                        </div>
+                        {compLogo && (
+                            <div style={{ marginLeft: '2rem' }}>
+                                <img src={compLogo} alt="Logo" style={{ maxHeight: '90px', maxWidth: '220px', objectFit: 'contain' }} />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Title */}
+                    <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+                        <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 0.5rem 0', color: '#0f172a' }}>PHIẾU CHI (PAYMENT VOUCHER)</h1>
+                        <i style={{ fontSize: '0.95rem', color: '#475569' }}>Số: {payment.code} | Ngày: {formatDate(payment.date)}</i>
+                    </div>
+
+                    {/* Detail Info */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem', fontSize: '0.95rem', lineHeight: '1.6' }}>
+                        <div style={{ flex: 1, paddingRight: '1rem' }}>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 700, borderBottom: '1px dotted #ccc', display: 'inline-block', paddingBottom: '0.25rem', marginBottom: '0.75rem' }}>THÔNG TIN NGƯỜI NHẬN TIỀN</h3>
+                            <div><strong>Họ Tên / Đơn vị:</strong> {payment.supplier?.name}</div>
+                            {payment.supplier?.address && <div><strong>Địa chỉ:</strong> {payment.supplier?.address}</div>}
+                            <div><strong>Lý do chi:</strong> {payment.notes || 'Thanh toán tiền mua hàng'}</div>
+                        </div>
+                        <div style={{ flex: 1, paddingLeft: '1rem', textAlign: 'right' }}>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 700, borderBottom: '1px dotted #ccc', display: 'inline-block', paddingBottom: '0.25rem', marginBottom: '0.75rem' }}>THÔNG TIN CHỨNG TỪ</h3>
+                            <div><strong>Ngày lập phiếu:</strong> {formatDate(payment.date)}</div>
+                            <div><strong>Hình thức:</strong> {payment.paymentMethod === 'BANK_TRANSFER' ? 'Chuyển Khoản' : 'Tiền Mặt'}</div>
+                            <div><strong>Tham chiếu:</strong> {payment.reference || '--'}</div>
+                            <div><strong>Người lập phiếu:</strong> {payment.creator?.name || '--'}</div>
                         </div>
                     </div>
-                    {compLogo && (
-                        <div style={{ marginLeft: '2rem' }}>
-                            <img src={compLogo} alt="Logo" style={{ maxHeight: '90px', maxWidth: '220px', objectFit: 'contain' }} />
-                        </div>
+
+                    <div style={{ marginBottom: '2rem' }}>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>Số Tiền Chi: <span style={{ color: '#10b981' }}>{formatMoney(payment.amount)}</span></h3>
+                        <i style={{ margin: 0, color: '#475569', fontSize: '0.95rem' }}>Kèm theo chứng từ gốc: Mời xem đính kèm (nếu có).</i>
+                    </div>
+
+                    {payment.allocations && payment.allocations.length > 0 && (
+                        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '3rem', marginTop: '2rem', fontSize: '0.95rem' }}>
+                            <thead>
+                                <tr style={{ backgroundColor: '#f1f5f9' }}>
+                                    <th style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center', width: '60px' }}>STT</th>
+                                    <th style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'left' }}>Cấn Trừ Hóa Đơn Số</th>
+                                    <th style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', width: '200px' }}>Số Tiền Phân Bổ (VNĐ)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {payment.allocations.map((alloc: any, index: number) => (
+                                    <tr key={alloc.id}>
+                                        <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{index + 1}</td>
+                                        <td style={{ border: '1px solid #cbd5e1', padding: '8px' }}>{alloc.bill?.code}</td>
+                                        <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'right', fontWeight: 600 }}>{formatMoney(alloc.amount)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colSpan={2} style={{ border: '1px solid #cbd5e1', padding: '10px 16px', textAlign: 'right', fontWeight: 700 }}>Tổng Phân Bổ Tiền:</td>
+                                    <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', fontWeight: 800, fontSize: '1.05rem', color: '#0f172a' }}>
+                                        {formatMoney(payment.allocations.reduce((acc: number, cur: any) => acc + cur.amount, 0))}
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
                     )}
                 </div>
 
-                {/* Title */}
-                <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-                    <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 0.5rem 0', color: '#0f172a' }}>PHIẾU CHI (PAYMENT VOUCHER)</h1>
-                    <i style={{ fontSize: '0.95rem', color: '#475569' }}>Số: {payment.code} | Ngày: {formatDate(payment.date)}</i>
-                </div>
-
-                {/* Detail Info */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem', fontSize: '0.95rem', lineHeight: '1.6' }}>
-                    <div style={{ flex: 1, paddingRight: '1rem' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 700, borderBottom: '1px dotted #ccc', display: 'inline-block', paddingBottom: '0.25rem', marginBottom: '0.75rem' }}>THÔNG TIN NGƯỜI NHẬN TIỀN</h3>
-                        <div><strong>Họ Tên / Đơn vị:</strong> {payment.supplier?.name}</div>
-                        {payment.supplier?.address && <div><strong>Địa chỉ:</strong> {payment.supplier?.address}</div>}
-                        <div><strong>Lý do chi:</strong> {payment.notes || 'Thanh toán tiền mua hàng'}</div>
+                {/* Date line + Signatures */}
+                <div className="mt-8 pt-4">
+                    <div style={{ textAlign: 'right', fontSize: '0.95rem', fontStyle: 'italic', marginBottom: '1.5rem', color: '#334155' }}>
+                        {cityName}, ngày {new Date(payment.date).getDate()} tháng {new Date(payment.date).getMonth() + 1} năm {new Date(payment.date).getFullYear()}
                     </div>
-                    <div style={{ flex: 1, paddingLeft: '1rem', textAlign: 'right' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 700, borderBottom: '1px dotted #ccc', display: 'inline-block', paddingBottom: '0.25rem', marginBottom: '0.75rem' }}>THÔNG TIN CHỨNG TỪ</h3>
-                        <div><strong>Ngày lập phiếu:</strong> {formatDate(payment.date)}</div>
-                        <div><strong>Hình thức:</strong> {payment.paymentMethod === 'BANK_TRANSFER' ? 'Chuyển Khoản' : 'Tiền Mặt'}</div>
-                        <div><strong>Tham chiếu:</strong> {payment.reference || '--'}</div>
-                        <div><strong>Người lập phiếu:</strong> {payment.creator?.name || '--'}</div>
-                    </div>
-                </div>
 
-                <div style={{ marginBottom: '2rem' }}>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>Số Tiền Chi: <span style={{ color: '#10b981' }}>{formatMoney(payment.amount)}</span></h3>
-                    <i style={{ margin: 0, color: '#475569', fontSize: '0.95rem' }}>Kèm theo chứng từ gốc: Mời xem đính kèm (nếu có).</i>
-                </div>
+                    <div className="grid grid-cols-3 gap-4 text-center items-start">
+                        {/* 1. Thủ quỹ / Kế toán */}
+                        <div className="flex flex-col items-center">
+                            <div className="h-8 flex items-center justify-center">
+                                <span className="font-bold text-xs uppercase text-slate-950 tracking-tight">THỦ QUỸ / KẾ TOÁN TRƯỞNG</span>
+                            </div>
+                            <div className="h-4 flex items-center justify-center">
+                                <span className="text-[11px] text-slate-500 italic">(Ký và ghi rõ họ tên)</span>
+                            </div>
+                            <div className="h-24 sm:h-28 flex items-center justify-center w-full" />
+                            <div className="min-h-[24px] flex items-center justify-center" />
+                        </div>
 
-                {payment.allocations && payment.allocations.length > 0 && (
-                    <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '3rem', marginTop: '2rem', fontSize: '0.95rem' }}>
-                        <thead>
-                            <tr style={{ backgroundColor: '#f1f5f9' }}>
-                                <th style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'center', width: '60px' }}>STT</th>
-                                <th style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'left' }}>Cấn Trừ Hóa Đơn Số</th>
-                                <th style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', width: '200px' }}>Số Tiền Phân Bổ (VNĐ)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {payment.allocations.map((alloc: any, index: number) => (
-                                <tr key={alloc.id}>
-                                    <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{index + 1}</td>
-                                    <td style={{ border: '1px solid #cbd5e1', padding: '8px' }}>{alloc.bill?.code}</td>
-                                    <td style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'right', fontWeight: 600 }}>{formatMoney(alloc.amount)}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colSpan={2} style={{ border: '1px solid #cbd5e1', padding: '10px 16px', textAlign: 'right', fontWeight: 700 }}>Tổng Phân Bổ Tiền:</td>
-                                <td style={{ border: '1px solid #cbd5e1', padding: '10px 8px', textAlign: 'right', fontWeight: 800, fontSize: '1.05rem', color: '#0f172a' }}>
-                                    {formatMoney(payment.allocations.reduce((acc: number, cur: any) => acc + cur.amount, 0))}
-                                </td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                )}
+                        {/* 2. Người lập phiếu */}
+                        <div className="flex flex-col items-center">
+                            <div className="h-8 flex items-center justify-center">
+                                <span className="font-bold text-xs uppercase text-slate-950 tracking-tight">NGƯỜI LẬP PHIẾU</span>
+                            </div>
+                            <div className="h-4 flex items-center justify-center">
+                                <span className="text-[11px] text-slate-500 italic">(Ký và ghi rõ họ tên)</span>
+                            </div>
+                            <div className="h-24 sm:h-28 flex items-center justify-center w-full" />
+                            <div className="min-h-[24px] flex items-center justify-center px-1">
+                                <span className="font-bold text-slate-950 text-xs truncate max-w-full">
+                                    {payment.creator?.name || '—'}
+                                </span>
+                            </div>
+                        </div>
 
-                {/* Date line with City */}
-                <div style={{ textAlign: 'right', fontSize: '0.95rem', fontStyle: 'italic', marginBottom: '2rem', color: '#334155' }}>
-                    {cityName}, ngày {new Date(payment.date).getDate()} tháng {new Date(payment.date).getMonth() + 1} năm {new Date(payment.date).getFullYear()}
-                </div>
-
-                {/* Signatures */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 1rem', marginTop: '2rem' }}>
-                    <div style={{ flex: 1 }}>
-                        <DocumentSignatureBlock
-                            entityType="PURCHASE_PAYMENT"
-                            entityId={payment.id}
-                            role="SUPPLIER"
-                            initialSignature={payment.supplierSignature}
-                            initialSignedAt={payment.supplierSignedAt}
-                            title="NGƯỜI NHẬN TIỀN"
-                            subtitle="(Ký và ghi rõ họ tên)"
-                            signerName={payment.supplier?.name}
-                            canSign={true}
-                            metadata={{
-                                ip: payment.supplierSignIP,
-                                device: payment.supplierSignDevice,
-                                location: payment.supplierSignLocation
-                            }}
-                        />
-                    </div>
-                    <div style={{ flex: 1, textAlign: 'center' }}>
-                        <strong style={{ display: 'block', fontSize: '1rem' }}>NGƯỜI LẬP PHIẾU</strong>
-                        <i style={{ fontSize: '0.85rem', color: '#64748b' }}>(Ký và ghi rõ họ tên)</i>
-                        <div style={{ height: '100px' }}></div>
-                        <strong>{payment.creator?.name}</strong>
-                    </div>
-                    <div style={{ flex: 1, textAlign: 'center' }}>
-                        <strong style={{ display: 'block', fontSize: '1rem' }}>THỦ QUỸ / KẾ TOÁN TRƯỞNG</strong>
-                        <i style={{ fontSize: '0.85rem', color: '#64748b' }}>(Ký và ghi rõ họ tên)</i>
-                        <div style={{ height: '100px' }}></div>
+                        {/* 3. Người nhận tiền */}
+                        <div className="flex flex-col items-center">
+                            <div className="h-8 flex items-center justify-center">
+                                <span className="font-bold text-xs uppercase text-slate-950 tracking-tight">NGƯỜI NHẬN TIỀN</span>
+                            </div>
+                            <div className="h-4 flex items-center justify-center">
+                                <span className="text-[11px] text-slate-500 italic">(Ký và ghi rõ họ tên)</span>
+                            </div>
+                            <div className="h-24 sm:h-28 flex flex-col items-center justify-center w-full relative">
+                                <DocumentSignatureBlock
+                                    entityType="PURCHASE_PAYMENT"
+                                    entityId={payment.id}
+                                    role="SUPPLIER"
+                                    initialSignature={payment.supplierSignature}
+                                    initialSignedAt={payment.supplierSignedAt}
+                                    title="NGƯỜI NHẬN TIỀN"
+                                    signerName={payment.supplier?.name}
+                                    canSign={true}
+                                    variant="inline"
+                                    metadata={{
+                                        ip: payment.supplierSignIP,
+                                        device: payment.supplierSignDevice,
+                                        location: payment.supplierSignLocation
+                                    }}
+                                />
+                            </div>
+                            <div className="min-h-[24px] flex items-center justify-center px-1">
+                                <span className="font-bold text-slate-950 text-xs truncate max-w-full text-center">
+                                    {payment.supplier?.name || '—'}
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
