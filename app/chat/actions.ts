@@ -23,7 +23,8 @@ export async function getActiveUsersForChat() {
             name: true,
             email: true,
             role: true,
-            avatar: true
+            avatar: true,
+            lastActiveAt: true
         },
         orderBy: { name: 'asc' }
     });
@@ -43,7 +44,7 @@ export async function getChatRooms() {
         },
         include: {
             participants: {
-                include: { user: { select: { id: true, name: true, email: true, avatar: true } } }
+                include: { user: { select: { id: true, name: true, email: true, avatar: true, lastActiveAt: true } } }
             },
             messages: {
                 orderBy: { createdAt: 'desc' },

@@ -15,14 +15,15 @@ import {
 } from '@/app/chat/actions';
 
 // Vibrant Gradient Palettes for Avatars without Images
-const AVATAR_GRADIENTS = [
-    'from-blue-500 to-indigo-600',
-    'from-emerald-500 to-teal-600',
-    'from-violet-500 to-purple-600',
-    'from-rose-500 to-pink-600',
-    'from-amber-500 to-orange-600',
-    'from-cyan-500 to-blue-600',
-    'from-fuchsia-500 to-rose-600',
+const AVATAR_PALETTES = [
+    'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)', // Blue
+    'linear-gradient(135deg, #10b981 0%, #047857 100%)', // Emerald
+    'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)', // Violet
+    'linear-gradient(135deg, #f43f5e 0%, #be123c 100%)', // Rose
+    'linear-gradient(135deg, #f59e0b 0%, #b45309 100%)', // Amber
+    'linear-gradient(135deg, #06b6d4 0%, #0369a1 100%)', // Cyan
+    'linear-gradient(135deg, #ec4899 0%, #be185d 100%)', // Pink
+    'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)', // Indigo
 ];
 
 function getInitials(name?: string) {
@@ -32,14 +33,14 @@ function getInitials(name?: string) {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-function getGradientByName(name?: string) {
-    if (!name) return AVATAR_GRADIENTS[0];
+function getAvatarBackground(name?: string) {
+    if (!name) return AVATAR_PALETTES[0];
     let hash = 0;
     for (let i = 0; i < name.length; i++) {
         hash = name.charCodeAt(i) + ((hash << 5) - hash);
     }
-    const index = Math.abs(hash) % AVATAR_GRADIENTS.length;
-    return AVATAR_GRADIENTS[index];
+    const index = Math.abs(hash) % AVATAR_PALETTES.length;
+    return AVATAR_PALETTES[index];
 }
 
 // User Avatar Component
@@ -81,7 +82,10 @@ function UserAvatar({
     if (isGroup) {
         return (
             <div className="relative shrink-0">
-                <div className={`${sizeClasses} rounded-full bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 text-white font-bold flex items-center justify-center shadow-sm`}>
+                <div
+                    style={{ background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%)' }}
+                    className={`${sizeClasses} rounded-full text-white font-bold flex items-center justify-center shadow-xs`}
+                >
                     <Users size={size === 'xs' ? 12 : size === 'sm' ? 16 : size === 'lg' ? 22 : 18} />
                 </div>
             </div>
@@ -98,14 +102,17 @@ function UserAvatar({
                     className={`${sizeClasses} rounded-full object-cover shadow-xs border border-slate-200/80 bg-white`}
                 />
             ) : (
-                <div className={`${sizeClasses} rounded-full bg-gradient-to-tr ${getGradientByName(displayName)} text-white font-bold flex items-center justify-center shadow-xs tracking-wider`}>
+                <div
+                    style={{ background: getAvatarBackground(displayName) }}
+                    className={`${sizeClasses} rounded-full text-white font-bold flex items-center justify-center shadow-xs tracking-wider`}
+                >
                     {getInitials(displayName)}
                 </div>
             )}
             {showOnline && (
                 <span
                     className={`absolute bottom-0 right-0 ${onlineDotSize} rounded-full ring-white ${isOnline ? 'bg-emerald-500' : 'bg-slate-300'}`}
-                    title={isOnline ? 'Đang hoạt động' : 'Ngoại tuyến'}
+                    title={isOnline ? 'Đang trực tuyến' : 'Ngoại tuyến'}
                 />
             )}
         </div>
@@ -164,6 +171,41 @@ export default function ChatWindow({
     const [showMediaDrawer, setShowMediaDrawer] = useState(false);
     const [mediaItems, setMediaItems] = useState<any[]>([]);
     const [isLoadingMedia, setIsLoadingMedia] = useState(false);
+
+    // Online Users Tracking
+    const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
+
+    const checkIsOnline = (userId?: string, lastActiveAt?: string | Date | null) => {
+        if (userId && onlineUserIds.has(userId)) return true;
+        if (!lastActiveAt) return false;
+        const diffMs = Date.now() - new Date(lastActiveAt).getTime();
+        return diffMs >= 0 && diffMs <= 5 * 60 * 1000;
+    };
+
+    // Poll online users
+    useEffect(() => {
+        let isMounted = true;
+        const fetchOnlineUsers = async () => {
+            try {
+                const res = await fetch('/api/users/online');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (isMounted && data.users && Array.isArray(data.users)) {
+                        setOnlineUserIds(new Set(data.users.map((u: any) => u.id)));
+                    }
+                }
+            } catch (e) {
+                // Ignore fetch error
+            }
+        };
+
+        fetchOnlineUsers();
+        const timer = setInterval(fetchOnlineUsers, 15000);
+        return () => {
+            isMounted = false;
+            clearInterval(timer);
+        };
+    }, []);
 
     // Search in Chat
     const [showChatSearch, setShowChatSearch] = useState(false);
@@ -582,6 +624,7 @@ export default function ChatWindow({
                                 const lastMsg = room.messages?.[0];
                                 const isUnread = myParticipant && lastMsg && new Date(lastMsg.createdAt) > new Date(myParticipant.lastRead);
                                 const otherUser = getRoomOtherUser(room);
+                                const isOtherOnline = checkIsOnline(otherUser?.id, otherUser?.lastActiveAt);
                                 const isSelected = activeRoomId === room.id && !isCreatingChat;
 
                                 return (
@@ -604,7 +647,7 @@ export default function ChatWindow({
                                             name={getRoomDisplayName(room)}
                                             size="md"
                                             showOnline={!room.isGroup}
-                                            isOnline={true}
+                                            isOnline={isOtherOnline}
                                         />
 
                                         <div className="flex-1 min-w-0">
@@ -661,35 +704,43 @@ export default function ChatWindow({
                                 </div>
                             </div>
 
-                            {filteredUsers.map((u: any) => (
-                                <div
-                                    key={u.id}
-                                    onClick={async () => {
-                                        setIsSending(true);
-                                        try {
-                                            const roomId = await createDirectChat(u.id);
-                                            await fetchRooms();
-                                            setActiveRoomId(roomId);
-                                            setActiveTab('rooms');
-                                            setIsCreatingChat(false);
-                                        } catch (e) {
-                                            alert('Lỗi tạo chat');
-                                        } finally {
-                                            setIsSending(false);
-                                        }
-                                    }}
-                                    className="p-2.5 rounded-xl cursor-pointer hover:bg-white transition-all flex items-center gap-3"
-                                >
-                                    <UserAvatar user={u} size="md" showOnline isOnline={true} />
-                                    <div className="flex-1 min-w-0">
-                                        <div className="text-xs font-semibold text-slate-800 truncate">{u.name}</div>
-                                        <div className="text-[11px] text-slate-400 truncate">{u.email}</div>
+                            {filteredUsers.map((u: any) => {
+                                const isUserOnline = checkIsOnline(u.id, u.lastActiveAt);
+                                return (
+                                    <div
+                                        key={u.id}
+                                        onClick={async () => {
+                                            setIsSending(true);
+                                            try {
+                                                const roomId = await createDirectChat(u.id);
+                                                await fetchRooms();
+                                                setActiveRoomId(roomId);
+                                                setActiveTab('rooms');
+                                                setIsCreatingChat(false);
+                                            } catch (e) {
+                                                alert('Lỗi tạo chat');
+                                            } finally {
+                                                setIsSending(false);
+                                            }
+                                        }}
+                                        className="p-2.5 rounded-xl cursor-pointer hover:bg-white transition-all flex items-center gap-3 group/user"
+                                    >
+                                        <UserAvatar user={u} size="md" showOnline isOnline={isUserOnline} />
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-xs font-semibold text-slate-800 truncate flex items-center gap-1.5">
+                                                <span>{u.name}</span>
+                                                {isUserOnline && (
+                                                    <span className="text-[10px] text-emerald-600 font-medium">● Online</span>
+                                                )}
+                                            </div>
+                                            <div className="text-[11px] text-slate-400 truncate">{u.email}</div>
+                                        </div>
+                                        <button className="text-xs text-blue-600 bg-blue-50 group-hover/user:bg-blue-600 group-hover/user:text-white px-2.5 py-1 rounded-lg font-semibold transition-all">
+                                            Nhắn tin
+                                        </button>
                                     </div>
-                                    <button className="text-xs text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white px-2.5 py-1 rounded-lg font-semibold transition-all">
-                                        Nhắn tin
-                                    </button>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </div>
@@ -828,29 +879,44 @@ export default function ChatWindow({
                                     <ArrowLeft size={18} />
                                 </button>
 
-                                <UserAvatar
-                                    user={getRoomOtherUser(activeRoom)}
-                                    isGroup={activeRoom.isGroup}
-                                    name={getRoomDisplayName(activeRoom)}
-                                    size="md"
-                                    showOnline={!activeRoom.isGroup}
-                                    isOnline={true}
-                                />
+                                {(() => {
+                                    const otherUser = getRoomOtherUser(activeRoom);
+                                    const isOtherOnline = checkIsOnline(otherUser?.id, otherUser?.lastActiveAt);
 
-                                <div className="min-w-0">
-                                    <h2 className="text-sm font-bold text-slate-900 truncate leading-tight flex items-center gap-1.5">
-                                        {getRoomDisplayName(activeRoom)}
-                                    </h2>
-                                    <p className="text-[11px] text-slate-400 truncate mt-0.5 font-medium">
-                                        {activeRoom.isGroup ? (
-                                            <span>{activeRoom.participants?.length || 0} thành viên: {activeRoom.participants?.map((p: any) => p.user.name).join(', ')}</span>
-                                        ) : (
-                                            <span className="text-emerald-600 font-semibold flex items-center gap-1">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Đang trực tuyến
-                                            </span>
-                                        )}
-                                    </p>
-                                </div>
+                                    return (
+                                        <>
+                                            <UserAvatar
+                                                user={otherUser}
+                                                isGroup={activeRoom.isGroup}
+                                                name={getRoomDisplayName(activeRoom)}
+                                                size="md"
+                                                showOnline={!activeRoom.isGroup}
+                                                isOnline={isOtherOnline}
+                                            />
+
+                                            <div className="min-w-0">
+                                                <h2 className="text-sm font-bold text-slate-900 truncate leading-tight flex items-center gap-1.5">
+                                                    {getRoomDisplayName(activeRoom)}
+                                                </h2>
+                                                <p className="text-[11px] text-slate-400 truncate mt-0.5 font-medium">
+                                                    {activeRoom.isGroup ? (
+                                                        <span>{activeRoom.participants?.length || 0} thành viên: {activeRoom.participants?.map((p: any) => p.user?.name).join(', ')}</span>
+                                                    ) : (
+                                                        isOtherOnline ? (
+                                                            <span className="text-emerald-600 font-semibold flex items-center gap-1">
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Đang trực tuyến
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-slate-400 flex items-center gap-1">
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span> {otherUser?.lastActiveAt ? `Hoạt động ${formatChatTime(otherUser.lastActiveAt)}` : 'Ngoại tuyến'}
+                                                            </span>
+                                                        )
+                                                    )}
+                                                </p>
+                                            </div>
+                                        </>
+                                    );
+                                })()}
                             </div>
 
                             {/* Header Action Tools */}
