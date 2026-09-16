@@ -878,12 +878,8 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                         <div className="p-5">
                             {activeTab === 'items' && (
                                 <div className="space-y-4">
-                                    <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50/80 px-3.5 py-2.5 rounded-xl border border-slate-200/80 text-xs">
-                                        <div className="flex items-center gap-2 text-slate-600 font-medium">
-                                            <GripVertical size={14} className="text-slate-400" />
-                                            <span>Kéo thả biểu tượng hoặc nhấn nút mũi tên để đổi vị trí thứ tự sản phẩm</span>
-                                        </div>
-                                        <div className="flex items-center gap-3">
+                                    {(isSavingOrder || reorderSuccessToast) && (
+                                        <div className="flex items-center justify-end gap-3 text-xs">
                                             {isSavingOrder && (
                                                 <span className="flex items-center gap-1.5 text-indigo-600 font-medium">
                                                     <Loader2 size={13} className="animate-spin" />
@@ -896,11 +892,8 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                                                     Đã cập nhật vị trí
                                                 </span>
                                             )}
-                                            <span className="text-slate-500 font-medium font-mono">
-                                                Tổng: <strong>{estimate.items?.length || 0}</strong> sản phẩm
-                                            </span>
                                         </div>
-                                    </div>
+                                    )}
 
                                     <div className="overflow-x-auto w-full rounded-xl border border-slate-200">
                                         {estimate.templateType === 'WITH_IMAGES' ? (

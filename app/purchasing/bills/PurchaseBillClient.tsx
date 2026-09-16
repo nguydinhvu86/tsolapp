@@ -1264,11 +1264,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
 
                                     {/* Read-Only Items Table */}
                                     {billItems.length > 0 && (
-                                        <div className="border border-slate-200 rounded-xl overflow-x-auto mt-2 border-t pt-3">
-                                            <div className="text-[11px] text-slate-500 mb-2 flex items-center gap-1.5 px-2">
-                                                <GripVertical size={13} className="text-slate-400" />
-                                                <span>Kéo thả biểu tượng ⠿ hoặc dùng mũi tên để đổi thứ tự dòng sản phẩm</span>
-                                            </div>
+                                        <div className="border border-slate-200 rounded-xl overflow-x-auto mt-2">
                                             <table className="w-full min-w-[600px] text-xs mb-3 bg-white text-left">
                                                 <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
                                                     <tr>

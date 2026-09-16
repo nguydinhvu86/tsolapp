@@ -1037,26 +1037,23 @@ export default function SalesInvoiceDetailClient({
 
                         <div className="p-5">
                             {activeTab === 'items' && (
-                                <div className="space-y-6">
-                                    {/* Reorder feedback / instructions banner */}
-                                    <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 bg-emerald-50/70 border border-emerald-200/80 rounded-xl text-xs text-emerald-900">
-                                        <div className="flex items-center gap-2">
-                                            <GripVertical size={14} className="text-emerald-700" />
-                                            <span>Kéo thả biểu tượng ⠿ hoặc dùng nút mũi tên để đổi thứ tự sản phẩm. Hệ thống sẽ tự động lưu.</span>
+                                <div className="space-y-4">
+                                    {(isSavingOrder || reorderSuccessToast) && (
+                                        <div className="flex items-center justify-end gap-3 text-xs">
+                                            {isSavingOrder && (
+                                                <div className="flex items-center gap-1.5 text-emerald-700 font-semibold text-[11px]">
+                                                    <Loader2 size={13} className="animate-spin" />
+                                                    <span>Đang lưu thứ tự...</span>
+                                                </div>
+                                            )}
+                                            {reorderSuccessToast && (
+                                                <div className="flex items-center gap-1.5 text-emerald-700 font-semibold text-[11px] animate-fade-in">
+                                                    <CheckCircle2 size={13} />
+                                                    <span>Đã lưu thứ tự mới!</span>
+                                                </div>
+                                            )}
                                         </div>
-                                        {isSavingOrder && (
-                                            <div className="flex items-center gap-1.5 text-emerald-700 font-semibold text-[11px]">
-                                                <Loader2 size={13} className="animate-spin" />
-                                                <span>Đang lưu thứ tự...</span>
-                                            </div>
-                                        )}
-                                        {reorderSuccessToast && (
-                                            <div className="flex items-center gap-1.5 text-emerald-700 font-semibold text-[11px] animate-fade-in">
-                                                <CheckCircle2 size={13} />
-                                                <span>Đã lưu thứ tự mới!</span>
-                                            </div>
-                                        )}
-                                    </div>
+                                    )}
 
                                     <div className="overflow-x-auto w-full rounded-xl border border-slate-200">
                                         <table className="w-full text-left text-xs border-collapse">
