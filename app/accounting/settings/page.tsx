@@ -62,7 +62,7 @@ export default function InvoiceSettingsPage() {
     }
 
     return (
-        <div className="space-y-6 max-w-5xl mx-auto pb-12">
+        <div className="space-y-6 w-full mx-auto pb-12">
             {/* Header Toolbar */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
                 <div>

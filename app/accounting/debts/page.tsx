@@ -28,7 +28,7 @@ export default async function DebtPage({
     ]);
 
     return (
-        <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+        <div className="p-3 sm:p-6 w-full mx-auto space-y-6">
             <DebtClient 
                 initialData={data} 
                 initialTab={(searchParams?.tab as any) || 'customers'}

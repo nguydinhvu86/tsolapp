@@ -15,12 +15,21 @@ type SortOption =
     | 'DEBT_DESC' 
     | 'DEBT_ASC' 
     | 'OVERDUE_DESC' 
+    | 'OVERDUE_ASC'
     | 'NAME_ASC' 
     | 'NAME_DESC' 
     | 'CODE_ASC' 
+    | 'CODE_DESC'
     | 'TOTAL_DESC' 
     | 'TOTAL_ASC'
-    | 'PAID_DESC';
+    | 'PAID_DESC'
+    | 'PAID_ASC'
+    | 'INDUE_DESC'
+    | 'INDUE_ASC'
+    | 'O1_DESC'
+    | 'O1_ASC'
+    | 'O2_DESC'
+    | 'O2_ASC';
 
 type DatePreset = 'ALL' | 'THIS_MONTH' | 'LAST_MONTH' | 'THIS_QUARTER' | 'THIS_YEAR' | 'CUSTOM';
 
@@ -155,7 +164,8 @@ export default function DebtClient({
                 return (
                     item.name.toLowerCase().includes(s) ||
                     item.code.toLowerCase().includes(s) ||
-                    item.phone.toLowerCase().includes(s)
+                    item.phone?.toLowerCase().includes(s) ||
+                    item.taxCode?.toLowerCase().includes(s)
                 );
             }
             return true;
@@ -165,6 +175,8 @@ export default function DebtClient({
         list = [...list].sort((a, b) => {
             const totalA = tab === 'customers' ? (a.totalInvoiced || 0) : (a.totalBilled || 0);
             const totalB = tab === 'customers' ? (b.totalInvoiced || 0) : (b.totalBilled || 0);
+            const over60A = (a.overdue61to90 || 0) + (a.overdueOver90 || 0);
+            const over60B = (b.overdue61to90 || 0) + (b.overdueOver90 || 0);
 
             switch (sortBy) {
                 case 'DEBT_DESC':
@@ -172,19 +184,37 @@ export default function DebtClient({
                 case 'DEBT_ASC':
                     return (a.currentDebt || 0) - (b.currentDebt || 0);
                 case 'OVERDUE_DESC':
-                    return (b.totalOverdue || 0) - (a.totalOverdue || 0);
+                    return over60B - over60A;
+                case 'OVERDUE_ASC':
+                    return over60A - over60B;
                 case 'NAME_ASC':
                     return (a.name || '').localeCompare(b.name || '', 'vi');
                 case 'NAME_DESC':
                     return (b.name || '').localeCompare(a.name || '', 'vi');
                 case 'CODE_ASC':
                     return (a.code || '').localeCompare(b.code || '', 'vi');
+                case 'CODE_DESC':
+                    return (b.code || '').localeCompare(a.code || '', 'vi');
                 case 'TOTAL_DESC':
                     return totalB - totalA;
                 case 'TOTAL_ASC':
                     return totalA - totalB;
                 case 'PAID_DESC':
                     return (b.totalPaid || 0) - (a.totalPaid || 0);
+                case 'PAID_ASC':
+                    return (a.totalPaid || 0) - (b.totalPaid || 0);
+                case 'INDUE_DESC':
+                    return (b.inDue || 0) - (a.inDue || 0);
+                case 'INDUE_ASC':
+                    return (a.inDue || 0) - (b.inDue || 0);
+                case 'O1_DESC':
+                    return (b.overdue1to30 || 0) - (a.overdue1to30 || 0);
+                case 'O1_ASC':
+                    return (a.overdue1to30 || 0) - (b.overdue1to30 || 0);
+                case 'O2_DESC':
+                    return (b.overdue31to60 || 0) - (a.overdue31to60 || 0);
+                case 'O2_ASC':
+                    return (a.overdue31to60 || 0) - (b.overdue31to60 || 0);
                 default:
                     return 0;
             }
@@ -226,19 +256,35 @@ export default function DebtClient({
     }, [currentList]);
 
     // Toggle header sort helper
-    const handleColumnSort = (field: 'code' | 'name' | 'total' | 'paid' | 'debt' | 'overdue') => {
-        if (field === 'debt') {
-            setSortBy(prev => prev === 'DEBT_DESC' ? 'DEBT_ASC' : 'DEBT_DESC');
-        } else if (field === 'name') {
-            setSortBy(prev => prev === 'NAME_ASC' ? 'NAME_DESC' : 'NAME_ASC');
-        } else if (field === 'total') {
-            setSortBy(prev => prev === 'TOTAL_DESC' ? 'TOTAL_ASC' : 'TOTAL_DESC');
-        } else if (field === 'paid') {
-            setSortBy(prev => prev === 'PAID_DESC' ? 'DEBT_DESC' : 'PAID_DESC');
-        } else if (field === 'code') {
-            setSortBy('CODE_ASC');
-        } else if (field === 'overdue') {
-            setSortBy('OVERDUE_DESC');
+    const handleColumnSort = (field: string) => {
+        switch (field) {
+            case 'code':
+                setSortBy(prev => prev === 'CODE_ASC' ? 'CODE_DESC' : 'CODE_ASC');
+                break;
+            case 'name':
+                setSortBy(prev => prev === 'NAME_ASC' ? 'NAME_DESC' : 'NAME_ASC');
+                break;
+            case 'total':
+                setSortBy(prev => prev === 'TOTAL_DESC' ? 'TOTAL_ASC' : 'TOTAL_DESC');
+                break;
+            case 'paid':
+                setSortBy(prev => prev === 'PAID_DESC' ? 'PAID_ASC' : 'PAID_DESC');
+                break;
+            case 'debt':
+                setSortBy(prev => prev === 'DEBT_DESC' ? 'DEBT_ASC' : 'DEBT_DESC');
+                break;
+            case 'inDue':
+                setSortBy(prev => prev === 'INDUE_DESC' ? 'INDUE_ASC' : 'INDUE_DESC');
+                break;
+            case 'o1':
+                setSortBy(prev => prev === 'O1_DESC' ? 'O1_ASC' : 'O1_DESC');
+                break;
+            case 'o2':
+                setSortBy(prev => prev === 'O2_DESC' ? 'O2_ASC' : 'O2_DESC');
+                break;
+            case 'overdue':
+                setSortBy(prev => prev === 'OVERDUE_DESC' ? 'OVERDUE_ASC' : 'OVERDUE_DESC');
+                break;
         }
     };
 
@@ -282,7 +328,7 @@ export default function DebtClient({
     }, [startDate, endDate]);
 
     return (
-        <div className="space-y-6 pb-12">
+        <div className="space-y-6 w-full mx-auto pb-12">
             {/* Header Toolbar */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
                 <div>
@@ -525,7 +571,7 @@ export default function DebtClient({
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Tìm tên đối tác, mã, SĐT..."
+                            placeholder="Tìm tên đối tác, mã, SĐT, MST..."
                             className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
                         />
                     </div>
@@ -542,7 +588,7 @@ export default function DebtClient({
                             >
                                 <option value="DEBT_DESC">Công nợ: Cao nhất ➔ Thấp nhất</option>
                                 <option value="DEBT_ASC">Công nợ: Thấp nhất ➔ Cao nhất</option>
-                                <option value="OVERDUE_DESC">Nợ quá hạn: Nhiều nhất</option>
+                                <option value="OVERDUE_DESC">Nợ quá hạn &gt;60 ngày: Nhiều nhất</option>
                                 <option value="NAME_ASC">Tên đối tác: A ➔ Z</option>
                                 <option value="NAME_DESC">Tên đối tác: Z ➔ A</option>
                                 <option value="CODE_ASC">Mã đối tác: A ➔ Z</option>
@@ -579,9 +625,9 @@ export default function DebtClient({
 
             {/* Debts Table */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                        <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 uppercase text-[10px] font-semibold border-b border-slate-100 dark:border-slate-800 select-none">
+                <div className="overflow-x-auto w-full">
+                    <table className="w-full text-left text-xs min-w-[980px]">
+                        <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800 select-none">
                             <tr>
                                 <th 
                                     onClick={() => handleColumnSort('code')}
@@ -590,7 +636,13 @@ export default function DebtClient({
                                 >
                                     <div className="flex items-center gap-1">
                                         <span>Mã</span>
-                                        <ArrowUpDown className={`w-3 h-3 ${sortBy === 'CODE_ASC' ? 'text-blue-600' : 'text-slate-300'}`} />
+                                        {sortBy === 'CODE_ASC' ? (
+                                            <ArrowUp className="w-3 h-3 text-blue-600" />
+                                        ) : sortBy === 'CODE_DESC' ? (
+                                            <ArrowDown className="w-3 h-3 text-blue-600" />
+                                        ) : (
+                                            <ArrowUpDown className="w-3 h-3 text-slate-300" />
+                                        )}
                                     </div>
                                 </th>
                                 <th 
@@ -632,7 +684,13 @@ export default function DebtClient({
                                 >
                                     <div className="flex items-center justify-end gap-1">
                                         <span>Đã Thanh Toán</span>
-                                        <ArrowUpDown className={`w-3 h-3 ${sortBy === 'PAID_DESC' ? 'text-blue-600' : 'text-slate-300'}`} />
+                                        {sortBy === 'PAID_DESC' ? (
+                                            <ArrowDown className="w-3 h-3 text-blue-600" />
+                                        ) : sortBy === 'PAID_ASC' ? (
+                                            <ArrowUp className="w-3 h-3 text-blue-600" />
+                                        ) : (
+                                            <ArrowUpDown className="w-3 h-3 text-slate-300" />
+                                        )}
                                     </div>
                                 </th>
                                 <th 
@@ -651,17 +709,68 @@ export default function DebtClient({
                                         )}
                                     </div>
                                 </th>
-                                <th className="py-3 px-3 text-right text-emerald-600">Trong Hạn</th>
-                                <th className="py-3 px-3 text-right text-amber-600">1 - 30 Ngày</th>
-                                <th className="py-3 px-3 text-right text-orange-600">31 - 60 Ngày</th>
+                                <th 
+                                    onClick={() => handleColumnSort('inDue')}
+                                    className="py-3 px-3 text-right text-emerald-600 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                                    title="Nhấn để sắp xếp theo Nợ Trong Hạn"
+                                >
+                                    <div className="flex items-center justify-end gap-1">
+                                        <span>Trong Hạn</span>
+                                        {sortBy === 'INDUE_DESC' ? (
+                                            <ArrowDown className="w-3 h-3 text-emerald-600" />
+                                        ) : sortBy === 'INDUE_ASC' ? (
+                                            <ArrowUp className="w-3 h-3 text-emerald-600" />
+                                        ) : (
+                                            <ArrowUpDown className="w-3 h-3 text-slate-300" />
+                                        )}
+                                    </div>
+                                </th>
+                                <th 
+                                    onClick={() => handleColumnSort('o1')}
+                                    className="py-3 px-3 text-right text-amber-600 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                                    title="Nhấn để sắp xếp theo Quá Hạn 1-30 Ngày"
+                                >
+                                    <div className="flex items-center justify-end gap-1">
+                                        <span>1 - 30 Ngày</span>
+                                        {sortBy === 'O1_DESC' ? (
+                                            <ArrowDown className="w-3 h-3 text-amber-600" />
+                                        ) : sortBy === 'O1_ASC' ? (
+                                            <ArrowUp className="w-3 h-3 text-amber-600" />
+                                        ) : (
+                                            <ArrowUpDown className="w-3 h-3 text-slate-300" />
+                                        )}
+                                    </div>
+                                </th>
+                                <th 
+                                    onClick={() => handleColumnSort('o2')}
+                                    className="py-3 px-3 text-right text-orange-600 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                                    title="Nhấn để sắp xếp theo Quá Hạn 31-60 Ngày"
+                                >
+                                    <div className="flex items-center justify-end gap-1">
+                                        <span>31 - 60 Ngày</span>
+                                        {sortBy === 'O2_DESC' ? (
+                                            <ArrowDown className="w-3 h-3 text-orange-600" />
+                                        ) : sortBy === 'O2_ASC' ? (
+                                            <ArrowUp className="w-3 h-3 text-orange-600" />
+                                        ) : (
+                                            <ArrowUpDown className="w-3 h-3 text-slate-300" />
+                                        )}
+                                    </div>
+                                </th>
                                 <th 
                                     onClick={() => handleColumnSort('overdue')}
                                     className="py-3 px-3 text-right text-rose-600 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                                    title="Nhấn để sắp xếp theo Nợ Quá Hạn"
+                                    title="Nhấn để sắp xếp theo Nợ Quá Hạn >60 Ngày"
                                 >
                                     <div className="flex items-center justify-end gap-1">
                                         <span>&gt; 60 Ngày</span>
-                                        <ArrowUpDown className={`w-3 h-3 ${sortBy === 'OVERDUE_DESC' ? 'text-rose-600' : 'text-slate-300'}`} />
+                                        {sortBy === 'OVERDUE_DESC' ? (
+                                            <ArrowDown className="w-3 h-3 text-rose-600" />
+                                        ) : sortBy === 'OVERDUE_ASC' ? (
+                                            <ArrowUp className="w-3 h-3 text-rose-600" />
+                                        ) : (
+                                            <ArrowUpDown className="w-3 h-3 text-slate-300" />
+                                        )}
                                     </div>
                                 </th>
                                 <th className="py-3 px-4 text-center">Thao Tác</th>
@@ -670,37 +779,37 @@ export default function DebtClient({
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                             {filteredList.map((partner: any) => (
                                 <tr key={partner.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
-                                    <td className="py-3.5 px-4 font-mono font-bold text-slate-900 dark:text-white">
+                                    <td className="py-3.5 px-4 font-mono font-bold text-slate-900 dark:text-white whitespace-nowrap">
                                         {partner.code}
                                     </td>
                                     <td className="py-3.5 px-3">
                                         <div className="font-bold text-slate-900 dark:text-white">{partner.name}</div>
                                         <div className="text-[11px] text-slate-400">{partner.phone || partner.taxCode || '—'}</div>
                                     </td>
-                                    <td className="py-3.5 px-3 text-right font-medium text-slate-700 dark:text-slate-300">
+                                    <td className="py-3.5 px-3 text-right font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
                                         {formatVND(tab === 'customers' ? partner.totalInvoiced : partner.totalBilled)}
                                     </td>
-                                    <td className="py-3.5 px-3 text-right text-emerald-600 dark:text-emerald-400 font-medium">
+                                    <td className="py-3.5 px-3 text-right text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap">
                                         {formatVND(partner.totalPaid)}
                                     </td>
-                                    <td className="py-3.5 px-3 text-right font-black text-sm text-slate-900 dark:text-white">
+                                    <td className="py-3.5 px-3 text-right font-black text-sm text-slate-900 dark:text-white whitespace-nowrap">
                                         {formatVND(partner.currentDebt)}
                                     </td>
-                                    <td className="py-3.5 px-3 text-right text-emerald-600 font-medium">
+                                    <td className="py-3.5 px-3 text-right text-emerald-600 font-medium whitespace-nowrap">
                                         {partner.inDue > 0 ? formatVND(partner.inDue) : '—'}
                                     </td>
-                                    <td className="py-3.5 px-3 text-right text-amber-600 font-medium">
+                                    <td className="py-3.5 px-3 text-right text-amber-600 font-medium whitespace-nowrap">
                                         {partner.overdue1to30 > 0 ? formatVND(partner.overdue1to30) : '—'}
                                     </td>
-                                    <td className="py-3.5 px-3 text-right text-orange-600 font-medium">
+                                    <td className="py-3.5 px-3 text-right text-orange-600 font-medium whitespace-nowrap">
                                         {partner.overdue31to60 > 0 ? formatVND(partner.overdue31to60) : '—'}
                                     </td>
-                                    <td className="py-3.5 px-3 text-right text-rose-600 font-bold">
+                                    <td className="py-3.5 px-3 text-right text-rose-600 font-bold whitespace-nowrap">
                                         {(partner.overdue61to90 + partner.overdueOver90) > 0 
                                             ? formatVND(partner.overdue61to90 + partner.overdueOver90) 
                                             : '—'}
                                     </td>
-                                    <td className="py-3.5 px-4 text-center">
+                                    <td className="py-3.5 px-4 text-center whitespace-nowrap">
                                         <button
                                             onClick={() => setSelectedPartner(partner)}
                                             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 rounded-xl text-xs font-bold transition border border-blue-200/60 dark:border-blue-800 shadow-sm hover:shadow"

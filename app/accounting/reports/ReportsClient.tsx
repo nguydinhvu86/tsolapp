@@ -59,7 +59,7 @@ export default function ReportsClient({ initialData }: Props) {
     };
 
     return (
-        <div className="space-y-6 pb-12">
+        <div className="space-y-6 w-full mx-auto pb-12">
             {/* Header Toolbar */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
                 <div>
@@ -185,8 +185,9 @@ export default function ReportsClient({ initialData }: Props) {
                             <p className="text-[11px] text-slate-500 italic">Đơn vị tính: VNĐ • Tính theo doanh thu và chi phí phát sinh trong kỳ</p>
                         </div>
 
-                        <table className="w-full text-left text-xs">
-                            <thead className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-700">
+                        <div className="overflow-x-auto w-full">
+                            <table className="w-full text-left text-xs min-w-[550px]">
+                                <thead className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-700">
                                 <tr>
                                     <th className="py-3 px-4 w-12 text-center">STT</th>
                                     <th className="py-3 px-4">Chỉ Tiêu Tài Chính</th>
@@ -270,6 +271,7 @@ export default function ReportsClient({ initialData }: Props) {
                                 </tr>
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 </div>
             )}
@@ -285,8 +287,9 @@ export default function ReportsClient({ initialData }: Props) {
                             <p className="text-[11px] text-slate-500 italic">Đơn vị tính: VNĐ • Dòng tiền thực thu - thực chi thực tế qua quỹ & tài khoản</p>
                         </div>
 
-                        <table className="w-full text-left text-xs">
-                            <thead className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-700">
+                        <div className="overflow-x-auto w-full">
+                            <table className="w-full text-left text-xs min-w-[550px]">
+                                <thead className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-700">
                                 <tr>
                                     <th className="py-3 px-4 w-12 text-center">STT</th>
                                     <th className="py-3 px-4">Dòng Tiền Lưu Chuyển Từ Hoạt Động Kinh Doanh</th>
@@ -343,6 +346,7 @@ export default function ReportsClient({ initialData }: Props) {
                                 </tr>
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 </div>
             )}

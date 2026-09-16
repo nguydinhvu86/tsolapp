@@ -23,7 +23,7 @@ export default async function AccountingPage() {
     const data = await getFinancialOverviewData(currentYear);
 
     return (
-        <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+        <div className="p-3 sm:p-6 w-full mx-auto space-y-6">
             <AccountingDashboardClient initialData={data} />
         </div>
     );

@@ -1,11 +1,12 @@
 'use client'
 
-import React, { useState, useTransition } from 'react';
+import React, { useState, useTransition, useMemo } from 'react';
 import Link from 'next/link';
 import { 
     DollarSign, TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownRight, 
     CreditCard, Users, Building2, FileText, Calendar, Plus, RefreshCw, 
-    ArrowRight, CheckCircle2, Clock, AlertCircle, PieChart, BarChart3, Scale
+    ArrowRight, CheckCircle2, Clock, AlertCircle, PieChart, BarChart3, Scale,
+    ArrowUpDown, ArrowUp, ArrowDown
 } from 'lucide-react';
 import { getFinancialOverviewData } from './actions';
 
@@ -13,10 +14,17 @@ interface Props {
     initialData: any;
 }
 
+type SortField = 'code' | 'transactionDate' | 'type' | 'payerReceiver' | 'reason' | 'account' | 'amount';
+type SortDirection = 'asc' | 'desc';
+
 export default function AccountingDashboardClient({ initialData }: Props) {
     const [data, setData] = useState(initialData);
     const [year, setYear] = useState<number>(initialData.year || new Date().getFullYear());
     const [isPending, startTransition] = useTransition();
+
+    // Sorting state for recent transactions
+    const [sortField, setSortField] = useState<SortField>('transactionDate');
+    const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
     const handleYearChange = (newYear: number) => {
         setYear(newYear);
@@ -30,6 +38,59 @@ export default function AccountingDashboardClient({ initialData }: Props) {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0);
     };
 
+    const handleSort = (field: SortField) => {
+        if (sortField === field) {
+            setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortField(field);
+            setSortDirection(field === 'amount' || field === 'transactionDate' ? 'desc' : 'asc');
+        }
+    };
+
+    const sortedTransactions = useMemo(() => {
+        if (!data.recentTransactions || !Array.isArray(data.recentTransactions)) return [];
+        return [...data.recentTransactions].sort((a: any, b: any) => {
+            let comp = 0;
+            switch (sortField) {
+                case 'code':
+                    comp = (a.code || '').localeCompare(b.code || '', 'vi');
+                    break;
+                case 'transactionDate':
+                    comp = new Date(a.transactionDate).getTime() - new Date(b.transactionDate).getTime();
+                    break;
+                case 'type':
+                    comp = (a.type || '').localeCompare(b.type || '', 'vi');
+                    break;
+                case 'payerReceiver':
+                    comp = (a.payerReceiver || '').localeCompare(b.payerReceiver || '', 'vi');
+                    break;
+                case 'reason':
+                    comp = (a.reason || '').localeCompare(b.reason || '', 'vi');
+                    break;
+                case 'account':
+                    comp = ((a.financeAccount?.name || 'Tiền mặt')).localeCompare((b.financeAccount?.name || 'Tiền mặt'), 'vi');
+                    break;
+                case 'amount':
+                    comp = (a.amount || 0) - (b.amount || 0);
+                    break;
+                default:
+                    comp = 0;
+            }
+            return sortDirection === 'asc' ? comp : -comp;
+        });
+    }, [data.recentTransactions, sortField, sortDirection]);
+
+    const renderSortIcon = (field: SortField) => {
+        if (sortField !== field) {
+            return <ArrowUpDown className="w-3 h-3 text-slate-300 dark:text-slate-600 ml-1 inline-block" />;
+        }
+        return sortDirection === 'asc' ? (
+            <ArrowUp className="w-3 h-3 text-emerald-600 dark:text-emerald-400 ml-1 inline-block" />
+        ) : (
+            <ArrowDown className="w-3 h-3 text-emerald-600 dark:text-emerald-400 ml-1 inline-block" />
+        );
+    };
+
     // Calculate max value for chart scaling
     const maxMonthlyVal = Math.max(
         ...data.monthlyData.map((m: any) => Math.max(m.inflow, m.outflow)),
@@ -37,7 +98,7 @@ export default function AccountingDashboardClient({ initialData }: Props) {
     );
 
     return (
-        <div className="space-y-6 pb-12">
+        <div className="space-y-6 w-full mx-auto pb-12">
             {/* Header Toolbar */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
                 <div>
@@ -409,12 +470,12 @@ export default function AccountingDashboardClient({ initialData }: Props) {
 
             {/* Recent Cash Transactions Table */}
             <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                     <div>
                         <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                             Chứng Từ Thu - Chi Mới Phát Sinh
                         </h3>
-                        <p className="text-xs text-slate-500">Các phiếu thu và phiếu chi gần nhất trong sổ quỹ</p>
+                        <p className="text-xs text-slate-500">Các phiếu thu và phiếu chi gần nhất trong sổ quỹ (Nhấn vào tiêu đề cột để sắp xếp)</p>
                     </div>
                     <Link
                         href="/accounting/cash-book"
@@ -424,29 +485,85 @@ export default function AccountingDashboardClient({ initialData }: Props) {
                     </Link>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                        <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 uppercase text-[10px] font-semibold border-y border-slate-100 dark:border-slate-800">
+                <div className="overflow-x-auto w-full">
+                    <table className="w-full text-left text-xs min-w-[850px]">
+                        <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 uppercase text-[10px] font-semibold border-y border-slate-200 dark:border-slate-800 select-none">
                             <tr>
-                                <th className="py-2.5 px-3">Mã Phiếu</th>
-                                <th className="py-2.5 px-3">Ngày Lập</th>
-                                <th className="py-2.5 px-3">Loại Phiếu</th>
-                                <th className="py-2.5 px-3">Người Nộp / Nhận</th>
-                                <th className="py-2.5 px-3">Lý Do / Nội Dung</th>
-                                <th className="py-2.5 px-3">Tài Khoản / Quỹ</th>
-                                <th className="py-2.5 px-3 text-right">Số Tiền (VNĐ)</th>
+                                <th 
+                                    onClick={() => handleSort('code')}
+                                    className="py-3 px-3.5 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                                >
+                                    <div className="flex items-center">
+                                        <span>Mã Phiếu</span>
+                                        {renderSortIcon('code')}
+                                    </div>
+                                </th>
+                                <th 
+                                    onClick={() => handleSort('transactionDate')}
+                                    className="py-3 px-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                                >
+                                    <div className="flex items-center">
+                                        <span>Ngày Lập</span>
+                                        {renderSortIcon('transactionDate')}
+                                    </div>
+                                </th>
+                                <th 
+                                    onClick={() => handleSort('type')}
+                                    className="py-3 px-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                                >
+                                    <div className="flex items-center">
+                                        <span>Loại Phiếu</span>
+                                        {renderSortIcon('type')}
+                                    </div>
+                                </th>
+                                <th 
+                                    onClick={() => handleSort('payerReceiver')}
+                                    className="py-3 px-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                                >
+                                    <div className="flex items-center">
+                                        <span>Người Nộp / Nhận</span>
+                                        {renderSortIcon('payerReceiver')}
+                                    </div>
+                                </th>
+                                <th 
+                                    onClick={() => handleSort('reason')}
+                                    className="py-3 px-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                                >
+                                    <div className="flex items-center">
+                                        <span>Lý Do / Nội Dung</span>
+                                        {renderSortIcon('reason')}
+                                    </div>
+                                </th>
+                                <th 
+                                    onClick={() => handleSort('account')}
+                                    className="py-3 px-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                                >
+                                    <div className="flex items-center">
+                                        <span>Tài Khoản / Quỹ</span>
+                                        {renderSortIcon('account')}
+                                    </div>
+                                </th>
+                                <th 
+                                    onClick={() => handleSort('amount')}
+                                    className="py-3 px-3 text-right cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                                >
+                                    <div className="flex items-center justify-end">
+                                        <span>Số Tiền (VNĐ)</span>
+                                        {renderSortIcon('amount')}
+                                    </div>
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                            {data.recentTransactions.map((tx: any) => (
+                            {sortedTransactions.map((tx: any) => (
                                 <tr key={tx.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
-                                    <td className="py-3 px-3 font-mono font-bold text-slate-900 dark:text-white">
+                                    <td className="py-3 px-3.5 font-mono font-bold text-slate-900 dark:text-white whitespace-nowrap">
                                         {tx.code}
                                     </td>
-                                    <td className="py-3 px-3 text-slate-600 dark:text-slate-300">
+                                    <td className="py-3 px-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">
                                         {new Date(tx.transactionDate).toLocaleDateString('vi-VN')}
                                     </td>
-                                    <td className="py-3 px-3">
+                                    <td className="py-3 px-3 whitespace-nowrap">
                                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
                                             tx.type === 'RECEIPT' 
                                                 ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400' 
@@ -461,10 +578,10 @@ export default function AccountingDashboardClient({ initialData }: Props) {
                                     <td className="py-3 px-3 text-slate-500 max-w-xs truncate">
                                         {tx.reason || '—'}
                                     </td>
-                                    <td className="py-3 px-3 text-slate-600 dark:text-slate-300">
+                                    <td className="py-3 px-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">
                                         {tx.financeAccount?.name || 'Tiền mặt'}
                                     </td>
-                                    <td className={`py-3 px-3 text-right font-bold ${
+                                    <td className={`py-3 px-3 text-right font-bold whitespace-nowrap ${
                                         tx.type === 'RECEIPT' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
                                     }`}>
                                         {tx.type === 'RECEIPT' ? '+' : '-'}{formatVND(tx.amount)}
@@ -472,7 +589,7 @@ export default function AccountingDashboardClient({ initialData }: Props) {
                                 </tr>
                             ))}
 
-                            {data.recentTransactions.length === 0 && (
+                            {sortedTransactions.length === 0 && (
                                 <tr>
                                     <td colSpan={7} className="py-8 text-center text-slate-400 text-xs">
                                         Chưa có phát sinh phiếu thu / phiếu chi trong sổ quỹ.
