@@ -4,16 +4,22 @@ import path from 'path';
 
 export async function GET(req: NextRequest, { params }: { params: { path: string[] } }) {
     try {
-        const filePath = path.join(process.cwd(), 'uploads_data', ...params.path);
-
-        // Security check: ensure path is within uploads_data
         const uploadsDir = path.join(process.cwd(), 'uploads_data');
-        if (!filePath.startsWith(uploadsDir)) {
-            return new NextResponse('Forbidden', { status: 403 });
-        }
+        const publicUploadsDir = path.join(process.cwd(), 'public', 'uploads');
 
+        let filePath = path.join(uploadsDir, ...params.path);
+
+        // Security check: ensure path is within allowed directories
         if (!fs.existsSync(filePath)) {
-            return new NextResponse('Not Found', { status: 404 });
+            // Check fallback in public/uploads (for legacy uploaded files)
+            const fallbackPath = path.join(publicUploadsDir, ...params.path);
+            if (fs.existsSync(fallbackPath) && fallbackPath.startsWith(publicUploadsDir)) {
+                filePath = fallbackPath;
+            } else {
+                return new NextResponse('File Not Found', { status: 404, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+            }
+        } else if (!filePath.startsWith(uploadsDir)) {
+            return new NextResponse('Forbidden', { status: 403 });
         }
 
         const stats = fs.statSync(filePath);
@@ -33,6 +39,15 @@ export async function GET(req: NextRequest, { params }: { params: { path: string
             case '.xml': mimeType = 'application/xml; charset=utf-8'; break;
             case '.mp4': mimeType = 'video/mp4'; break;
             case '.webm': mimeType = 'video/webm'; break;
+            case '.doc': mimeType = 'application/msword'; break;
+            case '.docx': mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'; break;
+            case '.xls': mimeType = 'application/vnd.ms-excel'; break;
+            case '.xlsx': mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'; break;
+            case '.ppt': mimeType = 'application/vnd.ms-powerpoint'; break;
+            case '.pptx': mimeType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation'; break;
+            case '.txt': case '.csv': mimeType = 'text/plain; charset=utf-8'; break;
+            case '.zip': mimeType = 'application/zip'; break;
+            case '.rar': mimeType = 'application/vnd.rar'; break;
         }
 
         const headers = new Headers();
@@ -42,6 +57,8 @@ export async function GET(req: NextRequest, { params }: { params: { path: string
         if (ext === '.svg') {
             headers.set('Content-Disposition', `attachment; filename="${path.basename(filePath)}"`);
             headers.set('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'");
+        } else {
+            headers.set('Content-Disposition', `inline; filename="${encodeURIComponent(path.basename(filePath))}"`);
         }
 
         headers.set('Content-Length', stats.size.toString());

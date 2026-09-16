@@ -19,6 +19,7 @@ export default withAuth(
 
 export const config = {
     matcher: [
-        "/((?!api/auth|api/callcenter|api/og-image|og-image\\.(?:png|jpg|jpeg|webp)|_next/static|_next/image|favicon\\.ico|manifest\\.json|sw\\.js|icons/|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp)$|login|forgot-password|reset-password|public|uploads|portal/login).*)"
+        "/((?!api/auth|api/callcenter|api/og-image|api/files|og-image\\.(?:png|jpg|jpeg|webp)|_next/static|_next/image|favicon\\.ico|manifest\\.json|sw\\.js|icons/|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp)$|login|forgot-password|reset-password|public|uploads|portal/login).*)"
     ]
 };
+
