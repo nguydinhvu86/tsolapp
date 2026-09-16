@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { sendEmailWithTracking } from '@/lib/mailer';
 import { sendWebPushNotification } from '@/lib/notifications/webPush';
+import { triggerPusherEvent } from '@/lib/pusher-server';
 
 export async function getSessionUserId() {
     const session = await getServerSession(authOptions);
@@ -21,7 +22,8 @@ export async function getActiveUsersForChat() {
             id: true,
             name: true,
             email: true,
-            role: true
+            role: true,
+            avatar: true
         },
         orderBy: { name: 'asc' }
     });
@@ -41,7 +43,7 @@ export async function getChatRooms() {
         },
         include: {
             participants: {
-                include: { user: { select: { id: true, name: true, email: true } } }
+                include: { user: { select: { id: true, name: true, email: true, avatar: true } } }
             },
             messages: {
                 orderBy: { createdAt: 'desc' },
@@ -63,9 +65,9 @@ export async function getChatMessages(roomId: string) {
         where: { roomId },
         orderBy: { createdAt: 'asc' },
         include: {
-            sender: { select: { id: true, name: true, email: true } },
-            replyTo: { select: { id: true, content: true, sender: { select: { name: true } } } },
-            reactions: { include: { user: { select: { id: true, name: true } } } }
+            sender: { select: { id: true, name: true, email: true, avatar: true } },
+            replyTo: { select: { id: true, content: true, sender: { select: { name: true, avatar: true } } } },
+            reactions: { include: { user: { select: { id: true, name: true, avatar: true } } } }
         }
     });
 }
@@ -83,9 +85,9 @@ export async function sendMessage(roomId: string, content: string, attachmentUrl
             replyToId
         },
         include: {
-            sender: { select: { id: true, name: true, email: true } },
-            replyTo: { select: { id: true, content: true, sender: { select: { name: true } } } },
-            reactions: { include: { user: { select: { id: true, name: true } } } }
+            sender: { select: { id: true, name: true, email: true, avatar: true } },
+            replyTo: { select: { id: true, content: true, sender: { select: { name: true, avatar: true } } } },
+            reactions: { include: { user: { select: { id: true, name: true, avatar: true } } } }
         }
     });
 
@@ -96,6 +98,9 @@ export async function sendMessage(roomId: string, content: string, attachmentUrl
     });
 
     await markRoomAsRead(roomId);
+
+    // Trigger realtime event via Pusher
+    triggerPusherEvent(`chat-room-${roomId}`, 'new-message', message).catch(() => {});
 
     // Notifications
     try {
@@ -112,7 +117,7 @@ export async function sendMessage(roomId: string, content: string, attachmentUrl
             if (userIdsToNotify.length > 0) {
                 const roomNameText = room.isGroup && room.name ? ` trong nhóm ${room.name}` : '';
                 const titleText = `Tin nhắn mới từ ${message.sender.name}${roomNameText}`;
-                const bodyText = content.trim() || 'Đã gửi một hình ảnh đính kèm';
+                const bodyText = content.trim() || 'Đã gửi một tập tin đính kèm';
                 await sendChatNotifications(userIdsToNotify, titleText, bodyText, '/', message.sender.name);
             }
         }
@@ -305,3 +310,35 @@ async function sendChatNotifications(
         }
     }
 }
+
+export async function deleteChatMessage(messageId: string) {
+    const userId = await getSessionUserId();
+    if (!userId) throw new Error('Unauthorized');
+
+    const msg = await prisma.chatMessage.findUnique({ where: { id: messageId } });
+    if (!msg) throw new Error('Không tìm thấy tin nhắn');
+    if (msg.senderId !== userId) throw new Error('Chỉ người gửi mới có thể thu hồi tin nhắn này');
+
+    await prisma.chatMessage.delete({ where: { id: messageId } });
+    return { success: true };
+}
+
+export async function getRoomMedia(roomId: string) {
+    const userId = await getSessionUserId();
+    if (!userId) return [];
+
+    return await prisma.chatMessage.findMany({
+        where: {
+            roomId,
+            attachmentUrl: { not: null }
+        },
+        select: {
+            id: true,
+            attachmentUrl: true,
+            createdAt: true,
+            sender: { select: { name: true } }
+        },
+        orderBy: { createdAt: 'desc' }
+    });
+}
+

@@ -28,9 +28,8 @@ export default function ChatWidget({ currentUser }: { currentUser: any }) {
             const count = await getUnreadCount();
             setUnreadCount(count);
 
-            // Kiểm tra có tin nhắn mới không
+            // Check for new incoming messages
             if (count > prevUnreadCountRef.current && prevUnreadCountRef.current !== -1) {
-                // Có tin nhắn mới tăng lên!
                 triggerNewMessageAlert();
             }
             prevUnreadCountRef.current = count;
@@ -40,14 +39,14 @@ export default function ChatWidget({ currentUser }: { currentUser: any }) {
     };
 
     const triggerNewMessageAlert = () => {
-        // 1. Hiện Toast
+        // 1. Show Toast
         setShowToast(true);
         setTimeout(() => setShowToast(false), 5000);
 
-        // 2. Phát Âm Thanh (Ding!)
+        // 2. Play Audio chime
         playAudioChime();
 
-        // 3. Desktop Notification (Nếu được cho phép)
+        // 3. Desktop Notification
         if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
             new Notification('Tin nhắn mới', {
                 body: 'Bạn có tin nhắn chưa đọc trong hệ thống ERP.',
@@ -58,8 +57,6 @@ export default function ChatWidget({ currentUser }: { currentUser: any }) {
 
     const playAudioChime = () => {
         try {
-            // Sử dụng Web Audio API để tạo ra một tiếng 'Ding' đơn giản 
-            // tranh việc phải dùng file âm thanh rời phức tạp
             const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
             const oscillator = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
@@ -68,7 +65,7 @@ export default function ChatWidget({ currentUser }: { currentUser: any }) {
             gainNode.connect(audioCtx.destination);
 
             oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(800, audioCtx.currentTime); // Note G5
+            oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
             oscillator.frequency.exponentialRampToValueAtTime(1100, audioCtx.currentTime + 0.1);
 
             gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
@@ -83,24 +80,21 @@ export default function ChatWidget({ currentUser }: { currentUser: any }) {
     };
 
     useEffect(() => {
-        // Fetch ngay lần đầu để set prevUnreadCountRef (tránh báo tiếng ding khi mới vào trang)
         getUnreadCount().then(c => {
             setUnreadCount(c);
             prevUnreadCountRef.current = c;
         });
 
-        const interval = setInterval(fetchUnread, 15000); // Poll every 15s for new unread status
+        const interval = setInterval(fetchUnread, 12000);
         return () => clearInterval(interval);
     }, []);
 
     const toggleWindow = () => {
         setIsOpen(!isOpen);
         if (!isOpen) {
-            // When opening window, optimistically clear unread count since they'll read it
             setUnreadCount(0);
             prevUnreadCountRef.current = 0;
 
-            // browser policy requires user interaction before granting permission or audio
             if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
                 Notification.requestPermission();
             }
@@ -114,44 +108,19 @@ export default function ChatWidget({ currentUser }: { currentUser: any }) {
     };
 
     return (
-        <div style={{ position: 'relative' }}>
+        <div className="relative">
             <button
                 onClick={toggleWindow}
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
-                    backgroundColor: isOpen ? '#eef2ff' : 'transparent',
-                    color: isOpen ? '#4f46e5' : '#64748b',
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    position: 'relative'
-                }}
-                className={`hover:bg-slate-100 ${isOpen ? 'bg-indigo-50 text-indigo-600' : ''}`}
+                className={`relative w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${
+                    isOpen
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30'
+                        : 'text-slate-600 hover:text-blue-600 hover:bg-slate-100 bg-transparent'
+                }`}
+                title="Trò chuyện nội bộ"
             >
-                <MessageCircle size={22} />
+                <MessageCircle size={20} />
                 {unreadCount > 0 && (
-                    <span style={{
-                        position: 'absolute',
-                        top: '4px',
-                        right: '4px',
-                        minWidth: '18px',
-                        height: '18px',
-                        padding: '0 4px',
-                        borderRadius: '9px',
-                        backgroundColor: '#ef4444',
-                        color: 'white',
-                        fontSize: '0.65rem',
-                        fontWeight: 700,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        border: '2px solid white'
-                    }}>
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-white shadow-xs animate-bounce">
                         {unreadCount > 99 ? '99+' : unreadCount}
                     </span>
                 )}
@@ -159,34 +128,16 @@ export default function ChatWidget({ currentUser }: { currentUser: any }) {
 
             {/* Toast Notification */}
             {showToast && typeof window !== 'undefined' && createPortal(
-                <div style={{
-                    position: 'fixed',
-                    bottom: '80px',
-                    right: '24px',
-                    width: 'max-content',
-                    backgroundColor: 'white',
-                    padding: '12px 16px',
-                    borderRadius: '8px',
-                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-                    border: '1px solid #e2e8f0',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    animation: 'slide-up-fade 0.3s ease-out forwards',
-                    zIndex: 999999
-                }}>
-                    <style>{`
-                        @keyframes slide-up-fade {
-                            0% { opacity: 0; transform: translateY(10px); }
-                            100% { opacity: 1; transform: translateY(0); }
-                        }
-                    `}</style>
-                    <div style={{ backgroundColor: '#eff6ff', padding: '8px', borderRadius: '50%', color: '#3b82f6' }}>
+                <div
+                    onClick={() => { setShowToast(false); setIsOpen(true); }}
+                    className="fixed bottom-20 right-6 bg-white/95 backdrop-blur-md px-4 py-3 rounded-2xl shadow-xl border border-slate-200/80 flex items-center gap-3 z-[999999] cursor-pointer hover:scale-102 transition-all animate-bounce"
+                >
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-xs">
                         <MessageCircle size={18} />
                     </div>
                     <div>
-                        <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#1e293b' }}>Tin nhắn mới</div>
-                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Bạn có tin nhắn chưa đọc!</div>
+                        <div className="font-bold text-xs text-slate-900">Tin nhắn mới</div>
+                        <div className="text-[11px] text-slate-500">Bạn có tin nhắn chưa đọc trong hệ thống.</div>
                     </div>
                 </div>,
                 document.body
@@ -194,7 +145,11 @@ export default function ChatWidget({ currentUser }: { currentUser: any }) {
 
             {isOpen && typeof window !== 'undefined' && createPortal(
                 <div className="fixed inset-0 sm:inset-auto sm:bottom-6 sm:right-6 z-[99999] flex flex-col sm:block overflow-hidden bg-white sm:bg-transparent">
-                    <ChatWindow currentUser={currentUser} onClose={() => { setIsOpen(false); setTargetChatUserId(null); }} initialTargetUserId={targetChatUserId} />
+                    <ChatWindow
+                        currentUser={currentUser}
+                        onClose={() => { setIsOpen(false); setTargetChatUserId(null); }}
+                        initialTargetUserId={targetChatUserId}
+                    />
                 </div>,
                 document.body
             )}
