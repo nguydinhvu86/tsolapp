@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import { PrintButton } from '@/app/components/ui/PrintButton';
 import { Watermark } from '@/app/components/ui/Watermark';
+import { DocumentSignatureBlock } from '@/app/components/ui/DocumentSignatureBlock';
+import PublicShareButton from '@/app/components/ui/PublicShareButton';
 
 import { Metadata } from 'next';
 
@@ -24,22 +26,11 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
         openGraph: {
             title: docTitle,
             description: desc,
-            images: [
-                {
-                    url: 'https://inside.tsol.vn/og-image.jpg',
-                    secureUrl: 'https://inside.tsol.vn/og-image.jpg',
-                    width: 1200,
-                    height: 630,
-                    type: 'image/jpeg',
-                    alt: 'T-SOLUTION Business Software',
-                },
-            ],
         },
         twitter: {
             card: 'summary_large_image',
             title: docTitle,
             description: desc,
-            images: ['https://inside.tsol.vn/og-image.jpg'],
         },
     };
 }
@@ -62,7 +53,7 @@ export default async function PublicPurchasePaymentPage({ params }: { params: { 
         where: {
             key: {
                 in: [
-                    'COMPANY_FULL_NAME', 'COMPANY_NAME', 'COMPANY_ADDRESS', 'COMPANY_LOGO', 'COMPANY_PHONE', 'COMPANY_EMAIL', 'COMPANY_TAX',
+                    'COMPANY_FULL_NAME', 'COMPANY_NAME', 'COMPANY_ADDRESS', 'COMPANY_LOGO', 'COMPANY_PHONE', 'COMPANY_EMAIL', 'COMPANY_TAX', 'COMPANY_CITY',
                     'WATERMARK_ENABLED', 'WATERMARK_TYPE', 'WATERMARK_TEXT', 'WATERMARK_IMAGE_URL', 'WATERMARK_OPACITY', 'WATERMARK_ROTATION', 'WATERMARK_COLOR', 'WATERMARK_SIZE', 'WATERMARK_DOCUMENTS'
                 ]
             }
@@ -71,14 +62,14 @@ export default async function PublicPurchasePaymentPage({ params }: { params: { 
     const settingsMap: Record<string, string> = {};
     settings.forEach(s => settingsMap[s.key] = s.value);
 
-    const compName = settingsMap['COMPANY_FULL_NAME'] || settingsMap['COMPANY_NAME'] || 'CÔNG TY CỔ PHẦN CÔNG NGHỆ DEMO';
-    const compAddress = settingsMap['COMPANY_ADDRESS'] || 'Tầng 12, Tòa nhà Center, TP. Hà Nội';
+    const compName = settingsMap['COMPANY_FULL_NAME'] || settingsMap['COMPANY_NAME'] || 'CÔNG TY TNHH GIẢI PHÁP CÔNG NGHỆ TSOL';
+    const compAddress = settingsMap['COMPANY_ADDRESS'] || 'TP. Hồ Chí Minh, Việt Nam';
     const compLogo = settingsMap['COMPANY_LOGO'] || null;
+    const cityName = settingsMap['COMPANY_CITY'] || 'TP. Hồ Chí Minh';
 
     const formatMoney = (amount: number) => {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 6, minimumFractionDigits: 0 }).format(amount || 0);
     };
-
 
     return (
         <div className="print-wrapper" style={{ minHeight: '100vh', backgroundColor: '#e2e8f0', padding: '2rem 1rem', margin: '0 auto', maxWidth: '210mm' }}>
@@ -133,7 +124,16 @@ export default async function PublicPurchasePaymentPage({ params }: { params: { 
                     }
                 }
             `}} />
-            <PrintButton label="In Phiếu Chi" />
+
+            <div className="no-print w-full flex items-center justify-between gap-3 mb-4 bg-white p-3 rounded-2xl shadow-sm border border-slate-200">
+                <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-800">Phiếu Chi #{payment.code}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <PublicShareButton title={`Phiếu Chi ${payment.code}`} />
+                    <PrintButton label="In Phiếu Chi" />
+                </div>
+            </div>
 
             <div className="a4-document" style={{
                 position: 'relative',
@@ -224,21 +224,38 @@ export default async function PublicPurchasePaymentPage({ params }: { params: { 
                     </table>
                 )}
 
+                {/* Date line with City */}
+                <div style={{ textAlign: 'right', fontSize: '0.95rem', fontStyle: 'italic', marginBottom: '2rem', color: '#334155' }}>
+                    {cityName}, ngày {new Date(payment.date).getDate()} tháng {new Date(payment.date).getMonth() + 1} năm {new Date(payment.date).getFullYear()}
+                </div>
+
                 {/* Signatures */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 1rem', marginTop: '4rem' }}>
-                    <div style={{ textAlign: 'center' }}>
-                        <strong style={{ display: 'block', fontSize: '1rem' }}>NGƯỜI NHẬN TIỀN</strong>
-                        <i style={{ fontSize: '0.85rem', color: '#64748b' }}>(Ký và ghi rõ họ tên)</i>
-                        <div style={{ height: '100px' }}></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 1rem', marginTop: '2rem' }}>
+                    <div style={{ flex: 1 }}>
+                        <DocumentSignatureBlock
+                            entityType="PURCHASE_PAYMENT"
+                            entityId={payment.id}
+                            role="SUPPLIER"
+                            initialSignature={payment.supplierSignature}
+                            initialSignedAt={payment.supplierSignedAt}
+                            title="NGƯỜI NHẬN TIỀN"
+                            subtitle="(Ký và ghi rõ họ tên)"
+                            signerName={payment.supplier?.name}
+                            canSign={true}
+                            metadata={{
+                                ip: payment.supplierSignIP,
+                                device: payment.supplierSignDevice,
+                                location: payment.supplierSignLocation
+                            }}
+                        />
                     </div>
-                    <div style={{ textAlign: 'center' }}>
+                    <div style={{ flex: 1, textAlign: 'center' }}>
                         <strong style={{ display: 'block', fontSize: '1rem' }}>NGƯỜI LẬP PHIẾU</strong>
                         <i style={{ fontSize: '0.85rem', color: '#64748b' }}>(Ký và ghi rõ họ tên)</i>
                         <div style={{ height: '100px' }}></div>
-                        {/* Removed: <strong>{payment.supplier?.name}</strong> */}
                         <strong>{payment.creator?.name}</strong>
                     </div>
-                    <div style={{ textAlign: 'center' }}>
+                    <div style={{ flex: 1, textAlign: 'center' }}>
                         <strong style={{ display: 'block', fontSize: '1rem' }}>THỦ QUỸ / KẾ TOÁN TRƯỞNG</strong>
                         <i style={{ fontSize: '0.85rem', color: '#64748b' }}>(Ký và ghi rõ họ tên)</i>
                         <div style={{ height: '100px' }}></div>

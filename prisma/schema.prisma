@@ -1012,6 +1012,12 @@ model PurchasePayment {
   projectId String?
   project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
+  supplierSignature    String?   @db.LongText
+  supplierSignedAt     DateTime?
+  supplierSignIP       String?
+  supplierSignDevice   String?
+  supplierSignLocation String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -1315,6 +1321,12 @@ model SalesPayment {
 
   allocations SalesPaymentAllocation[]
   tasks       Task[]
+
+  customerSignature    String?   @db.LongText
+  customerSignedAt     DateTime?
+  customerSignIP       String?
+  customerSignDevice   String?
+  customerSignLocation String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2558,6 +2570,11 @@ model CashTransaction {
   status           String          @default("COMPLETED") // DRAFT, COMPLETED, CANCELLED
   attachments      String?         @db.Text // JSON string of attachments
   notes            String?         @db.Text
+  payerSignature   String?         @db.LongText // Chữ ký online người nộp/nhận
+  payerSignedAt    DateTime?
+  payerSignIP      String?
+  payerSignDevice  String?
+  payerSignLocation String?
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 

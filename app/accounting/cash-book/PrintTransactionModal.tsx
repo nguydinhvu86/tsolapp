@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react';
-import { X, Printer, ArrowLeft, FileText, Copy } from 'lucide-react';
+import { X, Printer, ArrowLeft, FileText, Copy, Share2, Check, ExternalLink } from 'lucide-react';
 import { numberToVietnameseWords } from '@/lib/vietnameseCurrency';
 
 interface Props {
@@ -43,7 +43,19 @@ export default function PrintTransactionModal({ transaction, companyInfo, onClos
     const month = date.getMonth() + 1;
     const year = date.getFullYear();
 
-    const cityName = companyInfo?.city || 'Hà Nội';
+    const cityName = companyInfo?.city || 'TP. Hồ Chí Minh';
+    const [copiedLink, setCopiedLink] = useState(false);
+
+    const handleCopyPublicLink = async () => {
+        const url = `${window.location.origin}/public/accounting/transactions/${transaction.id}`;
+        try {
+            await navigator.clipboard.writeText(url);
+            setCopiedLink(true);
+            setTimeout(() => setCopiedLink(false), 2500);
+        } catch (e) {
+            alert(`Link: ${url}`);
+        }
+    };
 
     // Account debit / credit suggestions based on standard Vietnamese Chart of Accounts
     const debitAccount = isReceipt 
@@ -227,9 +239,19 @@ export default function PrintTransactionModal({ transaction, companyInfo, onClos
                             {isReceipt ? 'Người Nộp Tiền' : 'Người Nhận Tiền'}
                         </div>
                         <div className="text-[10px] text-slate-500 italic mt-0.5">(Ký, họ tên)</div>
-                        <div className="h-20 sm:h-24 flex items-end justify-center">
-                            <span className="font-bold text-slate-950 text-[11px] sm:text-xs">{transaction.payerReceiver}</span>
-                        </div>
+                        {transaction.payerSignature ? (
+                            <div className="h-20 sm:h-24 flex flex-col items-center justify-end">
+                                <img src={transaction.payerSignature} alt="Chữ ký" style={{ maxHeight: '50px', maxWidth: '130px', objectFit: 'contain' }} />
+                                <span className="font-bold text-slate-950 text-[11px] sm:text-xs mt-0.5">{transaction.payerReceiver}</span>
+                                {transaction.payerSignedAt && (
+                                    <span className="text-[9px] text-slate-400 font-mono">Đã ký online {new Date(transaction.payerSignedAt).toLocaleDateString('vi-VN')}</span>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="h-20 sm:h-24 flex items-end justify-center">
+                                <span className="font-bold text-slate-950 text-[11px] sm:text-xs">{transaction.payerReceiver}</span>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -349,6 +371,30 @@ export default function PrintTransactionModal({ transaction, companyInfo, onClos
                         <span>In 2 Liên / Trang</span>
                     </button>
                 </div>
+
+                {/* Share Link for Online Signing */}
+                <button
+                    type="button"
+                    onClick={handleCopyPublicLink}
+                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold shadow transition cursor-pointer ${
+                        copiedLink ? 'bg-emerald-600 text-white' : 'bg-blue-600 hover:bg-blue-500 text-white'
+                    }`}
+                    title="Sao chép link gửi khách hàng ký online"
+                >
+                    {copiedLink ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
+                    <span>{copiedLink ? 'Đã sao chép link!' : 'Gửi link ký Online'}</span>
+                </button>
+
+                <a
+                    href={`/public/accounting/transactions/${transaction.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold shadow border border-slate-700 transition no-underline"
+                    title="Mở trang ký Online trong tab mới"
+                >
+                    <ExternalLink className="w-4 h-4 text-slate-300" />
+                    <span>Xem trang ký</span>
+                </a>
 
                 {/* Print Action Button */}
                 <button

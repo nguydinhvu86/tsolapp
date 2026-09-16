@@ -6,9 +6,9 @@ import { saveDocumentSignature } from '@/app/actions/signature';
 import { useRouter } from 'next/navigation';
 
 interface Props {
-    entityType: 'SALES_ESTIMATE' | 'SALES_ORDER' | 'SALES_INVOICE';
+    entityType: 'SALES_ESTIMATE' | 'SALES_ORDER' | 'SALES_INVOICE' | 'CASH_TRANSACTION' | 'SALES_PAYMENT' | 'PURCHASE_PAYMENT';
     entityId: string;
-    role: 'CUSTOMER' | 'COMPANY';
+    role: 'CUSTOMER' | 'COMPANY' | 'PAYER_RECEIVER' | 'SUPPLIER';
     initialSignature?: string | null;
     initialSignedAt?: Date | null;
     title: string;

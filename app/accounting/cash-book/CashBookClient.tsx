@@ -6,7 +6,7 @@ import * as XLSX from 'xlsx';
 import { 
     Plus, Search, Filter, Printer, Download, Trash2, 
     ArrowUpRight, ArrowDownRight, Wallet, Calendar, Building2, User, 
-    CheckCircle2, RefreshCw, FileSpreadsheet, Eye
+    CheckCircle2, RefreshCw, FileSpreadsheet, Eye, Share2, Check, ExternalLink
 } from 'lucide-react';
 import { getCashTransactions, deleteCashTransaction } from '../actions';
 import CreateTransactionModal from './CreateTransactionModal';
@@ -52,6 +52,18 @@ export default function CashBookClient({ initialData, companyInfo }: Props) {
     const [showCreateModal, setShowCreateModal] = useState<boolean>(actionParam === 'receipt' || actionParam === 'payment');
     const [createType, setCreateType] = useState<'RECEIPT' | 'PAYMENT'>(actionParam === 'payment' ? 'PAYMENT' : 'RECEIPT');
     const [selectedPrintTx, setSelectedPrintTx] = useState<any | null>(null);
+    const [copiedTxId, setCopiedTxId] = useState<string | null>(null);
+
+    const handleCopyLink = async (txId: string) => {
+        const url = `${window.location.origin}/public/accounting/transactions/${txId}`;
+        try {
+            await navigator.clipboard.writeText(url);
+            setCopiedTxId(txId);
+            setTimeout(() => setCopiedTxId(null), 2000);
+        } catch (e) {
+            alert(`Link: ${url}`);
+        }
+    };
 
     const formatVND = (val: number) => {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
@@ -351,9 +363,20 @@ export default function CashBookClient({ initialData, companyInfo }: Props) {
                                     <td className="py-3.5 px-4 text-center">
                                         <div className="flex items-center justify-center gap-1.5">
                                             <button
+                                                onClick={() => handleCopyLink(tx.id)}
+                                                className={`p-1.5 rounded-lg transition ${
+                                                    copiedTxId === tx.id 
+                                                        ? 'text-white bg-emerald-600' 
+                                                        : 'text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50'
+                                                }`}
+                                                title="Sao chép link gửi khách hàng ký online"
+                                            >
+                                                {copiedTxId === tx.id ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
+                                            </button>
+                                            <button
                                                 onClick={() => setSelectedPrintTx(tx)}
                                                 className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 rounded-lg transition"
-                                                title="In phiếu A4/A5"
+                                                title="In phiếu A4/A5 hoặc xem ký online"
                                             >
                                                 <Printer className="w-4 h-4" />
                                             </button>
