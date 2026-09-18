@@ -406,6 +406,7 @@ export async function getSocialFeed(params?: { page?: number; limit?: number }) 
 
     let formattedPosts: any[] = [];
     let total = 0;
+    let ormSuccess = false;
 
     if (prisma.leaderboardPost) {
         try {
@@ -500,7 +501,7 @@ export async function getSocialFeed(params?: { page?: number; limit?: number }) 
                 }
 
                 const reactionCounts: Record<string, { count: number; users: { id: string; name: string; avatar?: string | null }[] }> = {};
-                post.reactions.forEach((r: any) => {
+                (post.reactions || []).forEach((r: any) => {
                     if (!reactionCounts[r.emoji]) {
                         reactionCounts[r.emoji] = { count: 0, users: [] };
                     }
@@ -513,29 +514,30 @@ export async function getSocialFeed(params?: { page?: number; limit?: number }) 
                     images: parsedImages,
                     metadata: parsedMetadata,
                     reactionCounts,
-                    commentsCount: post.comments.length
+                    commentsCount: (post.comments || []).length
                 };
             });
+            ormSuccess = true;
         } catch (err) {
             console.warn('Prisma ORM failed on leaderboardPost, using SQL fallback:', err);
         }
     }
 
-    if (formattedPosts.length === 0 && total === 0) {
-        // Fallback SQL query
+    if (!ormSuccess) {
+        // Fallback SQL query with exact case table names
         try {
             const [rawPosts, countRes] = (await Promise.all([
                 prisma.$queryRawUnsafe(`
                     SELECT p.*, 
                            u.name as authorName, u.avatar as authorAvatar, u.email as authorEmail, u.role as authorRole,
                            ep.department as authorDepartment, ep.position as authorPosition
-                    FROM leaderboardpost p
-                    LEFT JOIN User u ON p.authorId = u.id
-                    LEFT JOIN EmployeeProfile ep ON u.id = ep.userId
+                    FROM \`LeaderboardPost\` p
+                    LEFT JOIN \`User\` u ON p.authorId = u.id
+                    LEFT JOIN \`EmployeeProfile\` ep ON u.id = ep.userId
                     ORDER BY p.isPinned DESC, p.createdAt DESC
                     LIMIT ${limit} OFFSET ${skip}
                 `),
-                prisma.$queryRawUnsafe(`SELECT COUNT(*) as total FROM leaderboardpost`)
+                prisma.$queryRawUnsafe(`SELECT COUNT(*) as total FROM \`LeaderboardPost\``)
             ])) as [any[], any[]];
 
             total = Number(countRes[0]?.total || 0);
@@ -549,14 +551,14 @@ export async function getSocialFeed(params?: { page?: number; limit?: number }) 
                 const [rawReactions, rawComments] = (await Promise.all([
                     prisma.$queryRawUnsafe(`
                         SELECT r.*, u.name as userName, u.avatar as userAvatar
-                        FROM leaderboardreaction r
-                        LEFT JOIN User u ON r.userId = u.id
+                        FROM \`LeaderboardReaction\` r
+                        LEFT JOIN \`User\` u ON r.userId = u.id
                         WHERE r.postId IN (${inList})
                     `),
                     prisma.$queryRawUnsafe(`
                         SELECT c.*, u.name as authorName, u.avatar as authorAvatar
-                        FROM leaderboardcomment c
-                        LEFT JOIN User u ON c.authorId = u.id
+                        FROM \`LeaderboardComment\` c
+                        LEFT JOIN \`User\` u ON c.authorId = u.id
                         WHERE c.postId IN (${inList})
                         ORDER BY c.createdAt ASC
                     `)
@@ -708,7 +710,7 @@ export async function createSocialPost(data: {
         const escapedMeta = metadataJson ? `'${metadataJson.replace(/'/g, "\\'")}'` : 'NULL';
 
         await prisma.$executeRawUnsafe(`
-            INSERT INTO leaderboardpost (id, authorId, content, images, type, isPinned, metadata, createdAt, updatedAt)
+            INSERT INTO \`LeaderboardPost\` (id, authorId, content, images, type, isPinned, metadata, createdAt, updatedAt)
             VALUES ('${postId}', '${currentUser.id}', '${escapedContent}', ${escapedImages}, '${postType}', 0, ${escapedMeta}, NOW(3), NOW(3))
         `);
         newPost = { id: postId, authorId: currentUser.id, content: data.content };
@@ -733,13 +735,13 @@ export async function createSocialPost(data: {
                         });
                     } catch (e) {
                         await prisma.$executeRawUnsafe(`
-                            INSERT INTO leaderboardmention (id, postId, mentionedUserId, createdAt)
+                            INSERT INTO \`LeaderboardMention\` (id, postId, mentionedUserId, createdAt)
                             VALUES ('${mentionId}', '${newPost.id}', '${targetUserId}', NOW(3))
                         `);
                     }
                 } else {
                     await prisma.$executeRawUnsafe(`
-                        INSERT INTO leaderboardmention (id, postId, mentionedUserId, createdAt)
+                        INSERT INTO \`LeaderboardMention\` (id, postId, mentionedUserId, createdAt)
                         VALUES ('${mentionId}', '${newPost.id}', '${targetUserId}', NOW(3))
                     `);
                 }
@@ -815,27 +817,27 @@ export async function togglePostReaction(postId: string, emoji: ReactionEmoji) {
     if (!currentUser) throw new Error('Tài khoản không hợp lệ.');
 
     const existingRows: any[] = await prisma.$queryRawUnsafe(`
-        SELECT id FROM leaderboardreaction 
+        SELECT id FROM \`LeaderboardReaction\` 
         WHERE postId = '${postId}' AND userId = '${currentUser.id}' AND emoji = '${emoji}'
         LIMIT 1
     `);
 
     if (existingRows.length > 0) {
         await prisma.$executeRawUnsafe(`
-            DELETE FROM leaderboardreaction WHERE id = '${existingRows[0].id}'
+            DELETE FROM \`LeaderboardReaction\` WHERE id = '${existingRows[0].id}'
         `);
         revalidatePath('/leaderboard');
         return { success: true, action: 'REMOVED' };
     } else {
         const reactionId = genId();
         await prisma.$executeRawUnsafe(`
-            INSERT INTO leaderboardreaction (id, postId, userId, emoji, createdAt)
+            INSERT INTO \`LeaderboardReaction\` (id, postId, userId, emoji, createdAt)
             VALUES ('${reactionId}', '${postId}', '${currentUser.id}', '${emoji}', NOW(3))
         `);
 
         // Notify post author
         const postRows: any[] = await prisma.$queryRawUnsafe(`
-            SELECT authorId FROM leaderboardpost WHERE id = '${postId}' LIMIT 1
+            SELECT authorId FROM \`LeaderboardPost\` WHERE id = '${postId}' LIMIT 1
         `);
         const postAuthorId = postRows[0]?.authorId;
 
@@ -885,7 +887,7 @@ export async function addPostComment(data: {
     const imageVal = data.image ? `'${data.image.replace(/'/g, "\\'")}'` : 'NULL';
 
     await prisma.$executeRawUnsafe(`
-        INSERT INTO leaderboardcomment (id, postId, authorId, content, parentId, image, createdAt, updatedAt)
+        INSERT INTO \`LeaderboardComment\` (id, postId, authorId, content, parentId, image, createdAt, updatedAt)
         VALUES ('${commentId}', '${data.postId}', '${currentUser.id}', '${escapedContent}', ${parentVal}, ${imageVal}, NOW(3), NOW(3))
     `);
 
@@ -901,7 +903,7 @@ export async function addPostComment(data: {
 
     // Notify post author
     const postRows: any[] = await prisma.$queryRawUnsafe(`
-        SELECT authorId FROM leaderboardpost WHERE id = '${data.postId}' LIMIT 1
+        SELECT authorId FROM \`LeaderboardPost\` WHERE id = '${data.postId}' LIMIT 1
     `);
     const postAuthorId = postRows[0]?.authorId;
 
@@ -923,7 +925,7 @@ export async function addPostComment(data: {
                 if (targetUserId === currentUser.id) return;
                 const mentionId = genId();
                 await prisma.$executeRawUnsafe(`
-                    INSERT INTO leaderboardmention (id, commentId, mentionedUserId, createdAt)
+                    INSERT INTO \`LeaderboardMention\` (id, commentId, mentionedUserId, createdAt)
                     VALUES ('${mentionId}', '${commentId}', '${targetUserId}', NOW(3))
                 `);
 
@@ -957,7 +959,7 @@ export async function pinSocialPost(postId: string, isPinned: boolean) {
     }
 
     await prisma.$executeRawUnsafe(`
-        UPDATE leaderboardpost SET isPinned = ${isPinned ? 1 : 0}, updatedAt = NOW(3)
+        UPDATE \`LeaderboardPost\` SET isPinned = ${isPinned ? 1 : 0}, updatedAt = NOW(3)
         WHERE id = '${postId}'
     `);
 
@@ -976,7 +978,7 @@ export async function deleteSocialPost(postId: string) {
     });
 
     const postRows: any[] = await prisma.$queryRawUnsafe(`
-        SELECT authorId FROM leaderboardpost WHERE id = '${postId}' LIMIT 1
+        SELECT authorId FROM \`LeaderboardPost\` WHERE id = '${postId}' LIMIT 1
     `);
 
     if (postRows.length === 0) throw new Error('Bài viết không tồn tại.');
@@ -984,10 +986,10 @@ export async function deleteSocialPost(postId: string) {
         throw new Error('Bạn không có quyền xóa bài viết này.');
     }
 
-    await prisma.$executeRawUnsafe(`DELETE FROM leaderboardmention WHERE postId = '${postId}'`);
-    await prisma.$executeRawUnsafe(`DELETE FROM leaderboardreaction WHERE postId = '${postId}'`);
-    await prisma.$executeRawUnsafe(`DELETE FROM leaderboardcomment WHERE postId = '${postId}'`);
-    await prisma.$executeRawUnsafe(`DELETE FROM leaderboardpost WHERE id = '${postId}'`);
+    await prisma.$executeRawUnsafe(`DELETE FROM \`LeaderboardMention\` WHERE postId = '${postId}'`);
+    await prisma.$executeRawUnsafe(`DELETE FROM \`LeaderboardReaction\` WHERE postId = '${postId}'`);
+    await prisma.$executeRawUnsafe(`DELETE FROM \`LeaderboardComment\` WHERE postId = '${postId}'`);
+    await prisma.$executeRawUnsafe(`DELETE FROM \`LeaderboardPost\` WHERE id = '${postId}'`);
 
     revalidatePath('/leaderboard');
     return { success: true };
