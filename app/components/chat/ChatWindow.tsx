@@ -528,7 +528,10 @@ export default function ChatWindow({
                 <div className="p-3.5 pb-2 border-b border-slate-200/80 bg-white">
                     <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-xs">
+                            <div
+                                style={{ background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)' }}
+                                className="w-8 h-8 rounded-xl text-white flex items-center justify-center shadow-xs"
+                            >
                                 <MessageCircle size={18} />
                             </div>
                             <div>
@@ -693,7 +696,8 @@ export default function ChatWindow({
                         <div className="space-y-1">
                             <div
                                 onClick={() => { setIsCreatingChat(true); setActiveRoomId(null); }}
-                                className="p-2.5 rounded-xl cursor-pointer bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 hover:from-blue-100 hover:to-indigo-100 transition-all flex items-center gap-3 text-blue-700 font-semibold text-xs shadow-2xs"
+                                style={{ background: 'linear-gradient(to right, #eff6ff, #eef2ff)' }}
+                                className="p-2.5 rounded-xl cursor-pointer border border-blue-100 hover:brightness-95 transition-all flex items-center gap-3 text-blue-700 font-semibold text-xs shadow-2xs"
                             >
                                 <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xs">
                                     <Users size={16} />
@@ -841,7 +845,8 @@ export default function ChatWindow({
                             <button
                                 onClick={handleCreateChat}
                                 disabled={selectedUsers.length === 0 || (selectedUsers.length > 1 && !groupName.trim()) || isSending}
-                                className="px-5 py-2 text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-xl shadow-xs disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                style={{ background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)' }}
+                                className="px-5 py-2 text-xs font-bold text-white rounded-xl shadow-xs disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:opacity-95"
                             >
                                 {isSending ? 'Đang tạo...' : 'Tạo nhóm ngay'}
                             </button>
@@ -851,7 +856,10 @@ export default function ChatWindow({
                 ) : !activeRoom ? (
                     // --- EMPTY STATE ---
                     <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-slate-50/40">
-                        <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-blue-100 to-indigo-100 text-blue-600 flex items-center justify-center mb-4 shadow-sm">
+                        <div
+                            style={{ background: 'linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%)' }}
+                            className="w-16 h-16 rounded-3xl text-blue-600 flex items-center justify-center mb-4 shadow-sm"
+                        >
                             <Sparkles size={32} />
                         </div>
                         <h3 className="text-base font-bold text-slate-800 mb-1">Chào mừng bạn đến với Chat Nội Bộ</h3>
@@ -1014,7 +1022,7 @@ export default function ChatWindow({
                                                 {/* Date Separator Pill */}
                                                 {isNewDay && (
                                                     <div className="flex justify-center my-2">
-                                                        <span className="px-3 py-1 bg-slate-200/80 text-slate-600 text-[11px] font-semibold rounded-full shadow-2xs">
+                                                        <span className="px-3 py-1 bg-slate-200 text-slate-700 text-[11px] font-semibold rounded-full shadow-2xs">
                                                             {msgDate.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
                                                         </span>
                                                     </div>
@@ -1040,7 +1048,7 @@ export default function ChatWindow({
                                                     <div className={`flex flex-col max-w-[78%] relative ${isMine ? 'items-end' : 'items-start'}`}>
                                                         {/* Sender Name in Group Chat */}
                                                         {showName && activeRoom.isGroup && (
-                                                            <span className="text-[11px] text-slate-500 font-semibold mb-1 ml-1">
+                                                            <span className="text-[11px] text-slate-600 font-semibold mb-1 ml-1">
                                                                 {msg.sender?.name}
                                                             </span>
                                                         )}
@@ -1111,25 +1119,41 @@ export default function ChatWindow({
 
                                                         {/* Main Bubble Content */}
                                                         <div
-                                                            className={`p-3 rounded-2xl text-[13.5px] leading-relaxed break-words shadow-2xs ${
+                                                            style={
                                                                 isMine
-                                                                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-br-xs'
-                                                                    : 'bg-white border border-slate-200/90 text-slate-900 rounded-bl-xs'
+                                                                    ? {
+                                                                        background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                                                                        backgroundColor: '#2563eb',
+                                                                        color: '#ffffff',
+                                                                        boxShadow: '0 2px 4px rgba(37, 99, 235, 0.25)'
+                                                                    }
+                                                                    : {
+                                                                        backgroundColor: '#ffffff',
+                                                                        color: '#0f172a',
+                                                                        borderColor: '#e2e8f0',
+                                                                        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.06)'
+                                                                    }
+                                                            }
+                                                            className={`p-3 rounded-2xl text-[13.5px] leading-relaxed break-words border ${
+                                                                isMine
+                                                                    ? 'text-white border-blue-600 rounded-br-xs'
+                                                                    : 'bg-white border-slate-200/90 text-slate-900 rounded-bl-xs'
                                                             }`}
                                                         >
                                                             {/* Quoted Message Preview if replying */}
                                                             {msg.replyTo && (
                                                                 <div
-                                                                    className={`p-2 mb-2 rounded-lg text-xs border-l-3 ${
+                                                                    style={
                                                                         isMine
-                                                                            ? 'bg-black/15 border-white/80 text-white/90'
-                                                                            : 'bg-slate-100/90 border-blue-600 text-slate-700'
-                                                                    }`}
+                                                                            ? { backgroundColor: 'rgba(0, 0, 0, 0.18)', borderColor: '#ffffff', color: '#ffffff' }
+                                                                            : { backgroundColor: '#f1f5f9', borderColor: '#2563eb', color: '#334155' }
+                                                                    }
+                                                                    className="p-2 mb-2 rounded-lg text-xs border-l-4"
                                                                 >
-                                                                    <div className="font-bold text-[11px] mb-0.5">
+                                                                    <div className="font-bold text-[11px] mb-0.5" style={{ color: isMine ? '#ffffff' : '#0f172a' }}>
                                                                         {msg.replyTo.sender?.name || 'Ai đó'}
                                                                     </div>
-                                                                    <div className="truncate opacity-80 text-[11px]">
+                                                                    <div className="truncate text-[11px]" style={{ opacity: 0.9 }}>
                                                                         {msg.replyTo.content || '[Tập tin đính kèm]'}
                                                                     </div>
                                                                 </div>
@@ -1140,7 +1164,7 @@ export default function ChatWindow({
 
                                                             {/* Text Content */}
                                                             {msg.content && (
-                                                                <div className="whitespace-pre-wrap">
+                                                                <div className="whitespace-pre-wrap font-normal" style={{ color: isMine ? '#ffffff' : '#0f172a' }}>
                                                                     {msg.content}
                                                                 </div>
                                                             )}
@@ -1171,7 +1195,7 @@ export default function ChatWindow({
                                                         )}
 
                                                         {/* Timestamp */}
-                                                        <span className={`text-[10px] text-slate-400 mt-1 ${isMine ? 'mr-1' : 'ml-1'}`}>
+                                                        <span className={`text-[11px] font-medium text-slate-500 mt-1 ${isMine ? 'mr-1 text-right' : 'ml-1'}`}>
                                                             {msgDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                                                         </span>
                                                     </div>
@@ -1377,7 +1401,8 @@ export default function ChatWindow({
                                 <button
                                     type="submit"
                                     disabled={(!newMessage.trim() && !attachment) || isSending}
-                                    className="p-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs transition-all shrink-0 font-bold"
+                                    style={{ background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', backgroundColor: '#2563eb' }}
+                                    className="p-2.5 rounded-xl text-white hover:opacity-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs transition-all shrink-0 font-bold"
                                     title="Gửi tin nhắn"
                                 >
                                     <Send size={18} className="translate-x-0.5" />

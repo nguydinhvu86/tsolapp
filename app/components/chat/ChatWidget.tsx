@@ -132,7 +132,10 @@ export default function ChatWidget({ currentUser }: { currentUser: any }) {
                     onClick={() => { setShowToast(false); setIsOpen(true); }}
                     className="fixed bottom-20 right-6 bg-white/95 backdrop-blur-md px-4 py-3 rounded-2xl shadow-xl border border-slate-200/80 flex items-center gap-3 z-[999999] cursor-pointer hover:scale-102 transition-all animate-bounce"
                 >
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-xs">
+                    <div
+                        style={{ background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)' }}
+                        className="w-9 h-9 rounded-xl text-white flex items-center justify-center shadow-xs"
+                    >
                         <MessageCircle size={18} />
                     </div>
                     <div>
