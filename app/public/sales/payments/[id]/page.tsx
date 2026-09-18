@@ -127,17 +127,17 @@ export default async function PublicSalesPaymentPage({ params }: { params: { id:
             `}} />
             
             {/* Top Toolbar */}
-            <div className="no-print w-full max-w-[210mm] mx-auto flex items-center justify-between gap-3 mb-4 bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
+            <div className="no-print w-full max-w-[850px] mx-auto flex items-center justify-between gap-3 mb-4 bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
                 <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-slate-800">Phiếu Thu #{payment.code}</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <PublicShareButton title={`Phiếu Thu ${payment.code}`} />
-                    <PrintButton label="In Phiếu Thu" />
+                    <PrintButton label="In Phiếu Thu" inline={true} />
                 </div>
             </div>
 
-            <div className="a4-document relative w-full max-w-[210mm] min-h-[297mm] mx-auto bg-white p-8 sm:p-12 shadow-xl rounded-2xl border border-slate-200/90 text-slate-900 font-sans flex flex-col justify-between">
+            <div className="a4-document relative w-full max-w-[850px] min-h-[297mm] mx-auto bg-white p-8 sm:p-12 shadow-xl rounded-2xl border border-slate-200/90 text-slate-900 font-sans flex flex-col justify-between">
                 <div>
                     <Watermark settings={settingsMap} documentType="SALES_PAYMENT" />
                     {/* Header: Company Info */}
@@ -219,49 +219,49 @@ export default async function PublicSalesPaymentPage({ params }: { params: { id:
                 </div>
 
                 {/* Date line + Signatures */}
-                <div className="mt-8 pt-4">
+                <div className="mt-8 pt-4 border-t border-slate-200/60">
                     <div style={{ textAlign: 'right', fontSize: '0.95rem', fontStyle: 'italic', marginBottom: '1.5rem', color: '#334155' }}>
                         {cityName}, ngày {new Date(payment.date).getDate()} tháng {new Date(payment.date).getMonth() + 1} năm {new Date(payment.date).getFullYear()}
                     </div>
 
                     <div className="grid grid-cols-3 gap-4 text-center items-start">
                         {/* 1. Thủ quỹ / Kế toán */}
-                        <div className="flex flex-col items-center">
+                        <div className="min-w-0 flex flex-col items-center">
                             <div className="h-8 flex items-center justify-center">
                                 <span className="font-bold text-xs uppercase text-slate-950 tracking-tight">THỦ QUỸ / KẾ TOÁN TRƯỞNG</span>
                             </div>
                             <div className="h-4 flex items-center justify-center">
                                 <span className="text-[11px] text-slate-500 italic">(Ký và ghi rõ họ tên)</span>
                             </div>
-                            <div className="h-24 sm:h-28 flex items-center justify-center w-full" />
-                            <div className="min-h-[24px] flex items-center justify-center" />
+                            <div className="min-h-[80px] sm:min-h-[90px] flex items-center justify-center w-full" />
+                            <div className="min-h-[28px] flex items-center justify-center px-0.5" />
                         </div>
 
                         {/* 2. Người lập phiếu */}
-                        <div className="flex flex-col items-center">
+                        <div className="min-w-0 flex flex-col items-center">
                             <div className="h-8 flex items-center justify-center">
                                 <span className="font-bold text-xs uppercase text-slate-950 tracking-tight">NGƯỜI LẬP PHIẾU</span>
                             </div>
                             <div className="h-4 flex items-center justify-center">
                                 <span className="text-[11px] text-slate-500 italic">(Ký và ghi rõ họ tên)</span>
                             </div>
-                            <div className="h-24 sm:h-28 flex items-center justify-center w-full" />
-                            <div className="min-h-[24px] flex items-center justify-center px-1">
-                                <span className="font-bold text-slate-950 text-xs truncate max-w-full">
+                            <div className="min-h-[80px] sm:min-h-[90px] flex items-center justify-center w-full" />
+                            <div className="min-h-[28px] flex items-center justify-center px-0.5 w-full">
+                                <span className="font-bold text-slate-950 text-xs break-words leading-snug text-center block w-full">
                                     {payment.creator?.name || '—'}
                                 </span>
                             </div>
                         </div>
 
                         {/* 3. Người nộp tiền */}
-                        <div className="flex flex-col items-center">
+                        <div className="min-w-0 flex flex-col items-center">
                             <div className="h-8 flex items-center justify-center">
                                 <span className="font-bold text-xs uppercase text-slate-950 tracking-tight">NGƯỜI NỘP TIỀN</span>
                             </div>
                             <div className="h-4 flex items-center justify-center">
                                 <span className="text-[11px] text-slate-500 italic">(Ký và ghi rõ họ tên)</span>
                             </div>
-                            <div className="h-24 sm:h-28 flex flex-col items-center justify-center w-full relative">
+                            <div className="min-h-[80px] sm:min-h-[90px] flex flex-col items-center justify-center w-full relative py-0.5">
                                 <DocumentSignatureBlock
                                     entityType="SALES_PAYMENT"
                                     entityId={payment.id}
@@ -279,8 +279,8 @@ export default async function PublicSalesPaymentPage({ params }: { params: { id:
                                     }}
                                 />
                             </div>
-                            <div className="min-h-[24px] flex items-center justify-center px-1">
-                                <span className="font-bold text-slate-950 text-xs truncate max-w-full text-center">
+                            <div className="min-h-[28px] flex items-center justify-center px-0.5 w-full">
+                                <span className="font-bold text-slate-950 text-xs break-words leading-snug text-center block w-full">
                                     {payment.customer?.name || '—'}
                                 </span>
                             </div>

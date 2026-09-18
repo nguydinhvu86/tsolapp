@@ -140,6 +140,7 @@
     },
     "sidebar": {
         "dashboard": "仪表板",
+        "leaderboard": "荣誉排行榜",
         "projects": "项目",
         "tasks": "任务跟进",
         "library": "媒体与培训",

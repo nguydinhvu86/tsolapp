@@ -140,6 +140,7 @@
     },
     "sidebar": {
         "dashboard": "Bảng Điều Khiển",
+        "leaderboard": "Bảng Vinh Danh",
         "projects": "Dự Án (Projects)",
         "tasks": "Công Việc & Giao Việc",
         "library": "Thư Viện & Đào Tạo",

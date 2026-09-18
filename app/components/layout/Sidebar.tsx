@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { LayoutDashboard, Users, FileText, Settings, FileSpreadsheet, FileCode, ChevronDown, ChevronRight, FileOutput, FilePlus2, FileStack, Mail, CheckSquare, Package, ShoppingCart, Target, GripVertical, Clock, BookOpen, Phone, Calculator, Megaphone, UserCheck, CalendarDays, Briefcase, Kanban, Activity, Landmark, Scale, BarChart3, Wallet } from 'lucide-react';
+import { LayoutDashboard, Trophy, Users, FileText, Settings, FileSpreadsheet, FileCode, ChevronDown, ChevronRight, FileOutput, FilePlus2, FileStack, Mail, CheckSquare, Package, ShoppingCart, Target, GripVertical, Clock, BookOpen, Phone, Calculator, Megaphone, UserCheck, CalendarDays, Briefcase, Kanban, Activity, Landmark, Scale, BarChart3, Wallet } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -31,6 +31,7 @@ const hasPermission = (permissions: string[], requiredPerm: string) => {
 
 const mainNavItems: any[] = [
     { name: 'Bảng Điều Khiển', nameKey: 'sidebar.dashboard', href: '/dashboard', icon: LayoutDashboard, permission: 'VIEW_DASHBOARD' },
+    { name: 'Bảng Vinh Danh', nameKey: 'sidebar.leaderboard', href: '/leaderboard', icon: Trophy, permission: 'VIEW_DASHBOARD' },
     { name: 'Dự Án (Projects)', nameKey: 'sidebar.projects', href: '/projects', icon: Target, permission: 'TASKS_VIEW' },
     { name: 'Công Việc & Giao Việc', nameKey: 'sidebar.tasks', href: '/tasks', icon: CheckSquare, permission: 'TASKS_VIEW' },
     { name: 'Thư Viện & Đào Tạo', nameKey: 'sidebar.library', href: '/library', icon: BookOpen, permission: 'TASKS_VIEW' },

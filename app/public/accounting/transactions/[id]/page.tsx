@@ -133,8 +133,8 @@ export default async function PublicCashTransactionPage({ params }: { params: { 
                 }
             `}} />
 
-            {/* Top Toolbar */}
-            <div className="no-print w-full max-w-[210mm] mb-4 flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
+            {/* Top Toolbar - Centered matching document width */}
+            <div className="no-print w-full max-w-[850px] mb-4 flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
                 <div className="flex items-center gap-2.5">
                     <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
                         <FileText size={19} />
@@ -155,14 +155,14 @@ export default async function PublicCashTransactionPage({ params }: { params: { 
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                     <PublicShareButton title={`Phiếu ${isReceipt ? 'Thu' : 'Chi'} ${transaction.code}`} />
-                    <PrintButton label="In / Tải PDF" />
+                    <PrintButton label="In / Tải PDF" inline={true} />
                 </div>
             </div>
 
-            {/* A4 Document Paper */}
-            <div className="a4-document relative w-full max-w-[210mm] bg-white p-8 sm:p-12 shadow-xl border border-slate-200/90 rounded-2xl text-slate-900 font-sans">
+            {/* A4 Document Paper - Centered */}
+            <div className="a4-document relative w-full max-w-[850px] bg-white p-8 sm:p-12 shadow-xl border border-slate-200/90 rounded-2xl text-slate-900 font-sans">
                 <Watermark settings={settingsMap} documentType={isReceipt ? 'SALES_PAYMENT' : 'PURCHASE_PAYMENT'} />
 
                 {/* Header: Company Info + Form Code */}
@@ -283,8 +283,8 @@ export default async function PublicCashTransactionPage({ params }: { params: { 
                 </div>
 
                 {/* Signatures Section with 5 Balanced Columns */}
-                <div className="mt-8 pt-2">
-                    <div className="flex justify-end mb-2">
+                <div className="mt-8 pt-4 border-t border-slate-200/60">
+                    <div className="flex justify-end mb-3">
                         <div className="text-right text-xs italic text-slate-700 font-medium">
                             {cityName}, ngày {day < 10 ? `0${day}` : day} tháng {month < 10 ? `0${month}` : month} năm {year}
                         </div>
@@ -292,8 +292,8 @@ export default async function PublicCashTransactionPage({ params }: { params: { 
 
                     <div className="grid grid-cols-5 gap-2 text-center items-start">
                         {/* 1. Giám đốc */}
-                        <div className="flex flex-col items-center">
-                            <div className="h-8 flex items-center justify-center">
+                        <div className="min-w-0 flex flex-col items-center">
+                            <div className="h-7 flex items-center justify-center">
                                 <span className="font-bold text-[11px] sm:text-xs uppercase text-slate-950 tracking-tight leading-tight">
                                     Giám Đốc
                                 </span>
@@ -301,15 +301,15 @@ export default async function PublicCashTransactionPage({ params }: { params: { 
                             <div className="h-4 flex items-center justify-center">
                                 <span className="text-[10px] text-slate-500 italic">(Ký, đóng dấu)</span>
                             </div>
-                            <div className="h-24 sm:h-28 flex items-center justify-center w-full" />
-                            <div className="min-h-[24px] flex items-center justify-center">
+                            <div className="min-h-[80px] sm:min-h-[90px] flex items-center justify-center w-full" />
+                            <div className="min-h-[28px] flex items-center justify-center px-0.5">
                                 <span className="text-xs font-semibold text-slate-700" />
                             </div>
                         </div>
 
                         {/* 2. Kế toán trưởng */}
-                        <div className="flex flex-col items-center">
-                            <div className="h-8 flex items-center justify-center">
+                        <div className="min-w-0 flex flex-col items-center">
+                            <div className="h-7 flex items-center justify-center">
                                 <span className="font-bold text-[11px] sm:text-xs uppercase text-slate-950 tracking-tight leading-tight">
                                     Kế Toán Trưởng
                                 </span>
@@ -317,15 +317,15 @@ export default async function PublicCashTransactionPage({ params }: { params: { 
                             <div className="h-4 flex items-center justify-center">
                                 <span className="text-[10px] text-slate-500 italic">(Ký, họ tên)</span>
                             </div>
-                            <div className="h-24 sm:h-28 flex items-center justify-center w-full" />
-                            <div className="min-h-[24px] flex items-center justify-center">
+                            <div className="min-h-[80px] sm:min-h-[90px] flex items-center justify-center w-full" />
+                            <div className="min-h-[28px] flex items-center justify-center px-0.5">
                                 <span className="text-xs font-semibold text-slate-700" />
                             </div>
                         </div>
 
                         {/* 3. Thủ quỹ */}
-                        <div className="flex flex-col items-center">
-                            <div className="h-8 flex items-center justify-center">
+                        <div className="min-w-0 flex flex-col items-center">
+                            <div className="h-7 flex items-center justify-center">
                                 <span className="font-bold text-[11px] sm:text-xs uppercase text-slate-950 tracking-tight leading-tight">
                                     Thủ Quỹ
                                 </span>
@@ -333,15 +333,15 @@ export default async function PublicCashTransactionPage({ params }: { params: { 
                             <div className="h-4 flex items-center justify-center">
                                 <span className="text-[10px] text-slate-500 italic">(Ký, họ tên)</span>
                             </div>
-                            <div className="h-24 sm:h-28 flex items-center justify-center w-full" />
-                            <div className="min-h-[24px] flex items-center justify-center">
+                            <div className="min-h-[80px] sm:min-h-[90px] flex items-center justify-center w-full" />
+                            <div className="min-h-[28px] flex items-center justify-center px-0.5">
                                 <span className="text-xs font-semibold text-slate-700" />
                             </div>
                         </div>
 
                         {/* 4. Người lập phiếu */}
-                        <div className="flex flex-col items-center">
-                            <div className="h-8 flex items-center justify-center">
+                        <div className="min-w-0 flex flex-col items-center">
+                            <div className="h-7 flex items-center justify-center">
                                 <span className="font-bold text-[11px] sm:text-xs uppercase text-slate-950 tracking-tight leading-tight">
                                     Người Lập Phiếu
                                 </span>
@@ -349,17 +349,17 @@ export default async function PublicCashTransactionPage({ params }: { params: { 
                             <div className="h-4 flex items-center justify-center">
                                 <span className="text-[10px] text-slate-500 italic">(Ký, họ tên)</span>
                             </div>
-                            <div className="h-24 sm:h-28 flex items-center justify-center w-full" />
-                            <div className="min-h-[24px] flex items-center justify-center px-1">
-                                <span className="font-bold text-slate-950 text-xs truncate max-w-full">
-                                    {transaction.createdBy?.name || 'Nguy Dinh Vu'}
+                            <div className="min-h-[80px] sm:min-h-[90px] flex items-center justify-center w-full" />
+                            <div className="min-h-[28px] flex items-center justify-center px-0.5 w-full">
+                                <span className="font-bold text-slate-950 text-[11px] sm:text-xs break-words leading-snug text-center block w-full">
+                                    {transaction.createdBy?.name || 'Sys Admin'}
                                 </span>
                             </div>
                         </div>
 
                         {/* 5. Người nộp tiền / Người nhận tiền (Online Interactive) */}
-                        <div className="flex flex-col items-center">
-                            <div className="h-8 flex items-center justify-center">
+                        <div className="min-w-0 flex flex-col items-center">
+                            <div className="h-7 flex items-center justify-center">
                                 <span className="font-bold text-[11px] sm:text-xs uppercase text-slate-950 tracking-tight leading-tight">
                                     {isReceipt ? 'Người Nộp Tiền' : 'Người Nhận Tiền'}
                                 </span>
@@ -367,7 +367,7 @@ export default async function PublicCashTransactionPage({ params }: { params: { 
                             <div className="h-4 flex items-center justify-center">
                                 <span className="text-[10px] text-slate-500 italic">(Ký, ghi rõ họ tên)</span>
                             </div>
-                            <div className="h-24 sm:h-28 flex flex-col items-center justify-center w-full relative">
+                            <div className="min-h-[80px] sm:min-h-[90px] flex flex-col items-center justify-center w-full relative py-0.5">
                                 <DocumentSignatureBlock
                                     entityType="CASH_TRANSACTION"
                                     entityId={transaction.id}
@@ -385,8 +385,8 @@ export default async function PublicCashTransactionPage({ params }: { params: { 
                                     }}
                                 />
                             </div>
-                            <div className="min-h-[24px] flex items-center justify-center px-1">
-                                <span className="font-bold text-slate-950 text-xs truncate max-w-full text-center">
+                            <div className="min-h-[28px] flex items-center justify-center px-0.5 w-full">
+                                <span className="font-bold text-slate-950 text-[11px] sm:text-xs break-words leading-snug text-center block w-full">
                                     {transaction.payerReceiver || '—'}
                                 </span>
                             </div>

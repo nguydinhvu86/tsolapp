@@ -157,6 +157,12 @@ model User {
 
   // Marketing Module
   createdCampaigns MarketingCampaign[] @relation("CampaignCreator")
+
+  // Leaderboard & Social Wall
+  leaderboardPosts     LeaderboardPost[]
+  leaderboardReactions LeaderboardReaction[]
+  leaderboardComments  LeaderboardComment[]
+  leaderboardMentions  LeaderboardMention[]
 }
 
 model SystemSetting {
@@ -2586,4 +2592,82 @@ model CashTransaction {
   @@index([type])
   @@index([transactionDate])
 }
+
+// ==========================================
+// LEADERBOARD & INTERNAL SOCIAL WALL
+// ==========================================
+
+model LeaderboardPost {
+  id          String   @id @default(cuid())
+  authorId    String
+  content     String   @db.Text
+  images      String?  @db.Text // JSON string array of image URLs
+  type        String   @default("USER_POST") // USER_POST, ACHIEVEMENT_ANNOUNCEMENT, SYSTEM_MILESTONE
+  isPinned    Boolean  @default(false)
+  metadata    String?  @db.Text // JSON string for extra data
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  reactions   LeaderboardReaction[]
+  comments    LeaderboardComment[]
+  mentions    LeaderboardMention[]
+
+  @@index([authorId])
+  @@index([createdAt])
+  @@index([isPinned])
+}
+
+model LeaderboardReaction {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  emoji     String   // HEART, FIRE, CLAP, CELEBRATE, ROCKET, TROPHY
+  createdAt DateTime @default(now())
+
+  post      LeaderboardPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId, emoji])
+  @@index([postId])
+  @@index([userId])
+}
+
+model LeaderboardComment {
+  id        String   @id @default(cuid())
+  postId    String
+  authorId  String
+  parentId  String?  // Trả lời bình luận khác (Threaded reply)
+  content   String   @db.Text
+  image     String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  post      LeaderboardPost      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author    User                 @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent    LeaderboardComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   LeaderboardComment[] @relation("CommentReplies")
+  mentions  LeaderboardMention[]
+
+  @@index([postId])
+  @@index([authorId])
+  @@index([parentId])
+}
+
+model LeaderboardMention {
+  id              String   @id @default(cuid())
+  postId          String?
+  commentId       String?
+  mentionedUserId String
+  createdAt       DateTime @default(now())
+
+  post            LeaderboardPost?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  comment         LeaderboardComment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  mentionedUser   User                @relation(fields: [mentionedUserId], references: [id], onDelete: Cascade)
+
+  @@index([mentionedUserId])
+  @@index([postId])
+  @@index([commentId])
+}
+
 

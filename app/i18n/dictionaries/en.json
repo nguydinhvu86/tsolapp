@@ -140,6 +140,7 @@
     },
     "sidebar": {
         "dashboard": "Dashboard",
+        "leaderboard": "Leaderboard",
         "projects": "Projects",
         "tasks": "Tasks & Assignments",
         "library": "Library & Training",

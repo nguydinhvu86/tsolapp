@@ -107,22 +107,22 @@ export function DocumentSignatureBlock({
     // Inline Variant (for Vouchers / Tables where header & signer name are rendered by parent grid)
     if (variant === 'inline') {
         return (
-            <div className={`w-full h-full flex flex-col items-center justify-center ${className}`}>
+            <div className={`w-full flex flex-col items-center justify-center min-w-0 ${className}`}>
                 {initialSignature ? (
-                    <div className="flex flex-col items-center justify-center text-center">
+                    <div className="flex flex-col items-center justify-center text-center w-full min-w-0">
                         <img 
                             src={initialSignature} 
                             alt="Chữ ký" 
-                            className="max-h-[64px] max-w-[130px] object-contain drop-shadow-xs" 
+                            className="max-h-[46px] max-w-[110px] object-contain drop-shadow-xs" 
                         />
                         {initialSignedAt && (
-                            <div className="no-print text-[9px] text-emerald-700 font-medium mt-1 flex items-center justify-center gap-1">
+                            <div className="no-print text-[9px] text-emerald-700 font-semibold mt-0.5 flex items-center justify-center gap-1 leading-tight">
                                 <CheckCircle2 size={10} className="text-emerald-600 shrink-0" />
                                 <span>{new Date(initialSignedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} {new Date(initialSignedAt).toLocaleDateString('vi-VN')}</span>
                             </div>
                         )}
                         {metadata?.ip && (
-                            <div className="no-print text-[8px] text-slate-400 font-mono mt-0.5 leading-tight text-center">
+                            <div className="no-print text-[8px] text-slate-400 font-mono mt-0.5 leading-tight text-center truncate max-w-full">
                                 IP: {metadata.ip}
                             </div>
                         )}
@@ -137,7 +137,7 @@ export function DocumentSignatureBlock({
                         <span>Ký ngay</span>
                     </button>
                 ) : (
-                    <div className="w-full h-12" />
+                    <div className="w-full h-8" />
                 )}
                 {modalElement}
             </div>

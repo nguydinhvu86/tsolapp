@@ -2,11 +2,14 @@
 
 import React, { useState } from 'react';
 
+import { Printer, Download } from 'lucide-react';
+
 interface PrintButtonProps {
     label?: string;
+    inline?: boolean;
 }
 
-export function PrintButton({ label = 'In Tài Liệu (A4)' }: PrintButtonProps) {
+export function PrintButton({ label = 'In Tài Liệu (A4)', inline = false }: PrintButtonProps) {
     const [isDownloading, setIsDownloading] = useState(false);
 
     const handleDownloadPdf = async () => {
@@ -62,6 +65,34 @@ export function PrintButton({ label = 'In Tài Liệu (A4)' }: PrintButtonProps)
         }
     };
 
+    if (inline) {
+        return (
+            <div className="no-print flex items-center gap-2">
+                <button
+                    onClick={handleDownloadPdf}
+                    disabled={isDownloading}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                    title="Tải xuống tập tin PDF"
+                >
+                    {isDownloading ? (
+                        <span className="w-3.5 h-3.5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></span>
+                    ) : (
+                        <Download size={14} className="text-slate-500" />
+                    )}
+                    <span>{isDownloading ? 'Đang tạo...' : 'Tải PDF'}</span>
+                </button>
+                <button
+                    onClick={() => window.print()}
+                    className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-xs hover:shadow transition-all cursor-pointer"
+                    title="In trực tiếp ra máy in"
+                >
+                    <Printer size={14} />
+                    <span>{label}</span>
+                </button>
+            </div>
+        );
+    }
+
     return (
         <div className="no-print" style={{ position: 'fixed', top: '24px', right: '24px', zIndex: 9999, display: 'flex', gap: '12px' }}>
             <button
@@ -87,7 +118,7 @@ export function PrintButton({ label = 'In Tài Liệu (A4)' }: PrintButtonProps)
                 {isDownloading ? (
                     <span style={{ display: 'inline-block', width: '16px', height: '16px', border: '2px solid var(--primary)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></span>
                 ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    <Download size={18} />
                 )}
                 {isDownloading ? 'Đang tạo...' : 'Tải PDF'}
             </button>
@@ -110,7 +141,7 @@ export function PrintButton({ label = 'In Tài Liệu (A4)' }: PrintButtonProps)
                 }}
                 title="In trực tiếp ra máy in"
             >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                <Printer size={20} />
                 {label}
             </button>
         </div>

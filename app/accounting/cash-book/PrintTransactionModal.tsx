@@ -202,56 +202,66 @@ export default function PrintTransactionModal({ transaction, companyInfo, onClos
             </div>
 
             {/* Signatures Section (5 Standard Columns) */}
-            <div className="mt-8 pt-2">
+            <div className="mt-8 pt-4 border-t border-slate-200/60">
                 <div className="text-right text-xs italic text-slate-700 mb-3 font-medium">
                     {cityName}, ngày {day < 10 ? `0${day}` : day} tháng {month < 10 ? `0${month}` : month} năm {year}
                 </div>
 
-                <div className="grid grid-cols-5 gap-1 text-center text-xs">
-                    <div>
-                        <div className="font-bold uppercase text-slate-950 tracking-tight">Giám Đốc</div>
+                <div className="grid grid-cols-5 gap-2 text-center text-xs items-start">
+                    <div className="min-w-0 flex flex-col items-center">
+                        <div className="font-bold uppercase text-slate-950 tracking-tight text-[11px] sm:text-xs">Giám Đốc</div>
                         <div className="text-[10px] text-slate-500 italic mt-0.5">(Ký, đóng dấu)</div>
-                        <div className="h-20 sm:h-24"></div>
+                        <div className="min-h-[70px] sm:min-h-[85px] w-full"></div>
+                        <div className="min-h-[24px]"></div>
                     </div>
 
-                    <div>
-                        <div className="font-bold uppercase text-slate-950 tracking-tight">Kế Toán Trưởng</div>
+                    <div className="min-w-0 flex flex-col items-center">
+                        <div className="font-bold uppercase text-slate-950 tracking-tight text-[11px] sm:text-xs">Kế Toán Trưởng</div>
                         <div className="text-[10px] text-slate-500 italic mt-0.5">(Ký, họ tên)</div>
-                        <div className="h-20 sm:h-24"></div>
+                        <div className="min-h-[70px] sm:min-h-[85px] w-full"></div>
+                        <div className="min-h-[24px]"></div>
                     </div>
 
-                    <div>
-                        <div className="font-bold uppercase text-slate-950 tracking-tight">Thủ Quỹ</div>
+                    <div className="min-w-0 flex flex-col items-center">
+                        <div className="font-bold uppercase text-slate-950 tracking-tight text-[11px] sm:text-xs">Thủ Quỹ</div>
                         <div className="text-[10px] text-slate-500 italic mt-0.5">(Ký, họ tên)</div>
-                        <div className="h-20 sm:h-24"></div>
+                        <div className="min-h-[70px] sm:min-h-[85px] w-full"></div>
+                        <div className="min-h-[24px]"></div>
                     </div>
 
-                    <div>
-                        <div className="font-bold uppercase text-slate-950 tracking-tight">Người Lập Phiếu</div>
+                    <div className="min-w-0 flex flex-col items-center">
+                        <div className="font-bold uppercase text-slate-950 tracking-tight text-[11px] sm:text-xs">Người Lập Phiếu</div>
                         <div className="text-[10px] text-slate-500 italic mt-0.5">(Ký, họ tên)</div>
-                        <div className="h-20 sm:h-24 flex items-end justify-center">
-                            <span className="font-bold text-slate-950 text-[11px] sm:text-xs">{transaction.createdBy?.name || 'Sys Admin'}</span>
+                        <div className="min-h-[70px] sm:min-h-[85px] flex items-center justify-center w-full"></div>
+                        <div className="min-h-[24px] flex items-center justify-center px-0.5 w-full">
+                            <span className="font-bold text-slate-950 text-[11px] sm:text-xs break-words leading-snug text-center block w-full">
+                                {transaction.createdBy?.name || 'Sys Admin'}
+                            </span>
                         </div>
                     </div>
 
-                    <div>
-                        <div className="font-bold uppercase text-slate-950 tracking-tight">
+                    <div className="min-w-0 flex flex-col items-center">
+                        <div className="font-bold uppercase text-slate-950 tracking-tight text-[11px] sm:text-xs">
                             {isReceipt ? 'Người Nộp Tiền' : 'Người Nhận Tiền'}
                         </div>
                         <div className="text-[10px] text-slate-500 italic mt-0.5">(Ký, họ tên)</div>
-                        {transaction.payerSignature ? (
-                            <div className="h-20 sm:h-24 flex flex-col items-center justify-end">
-                                <img src={transaction.payerSignature} alt="Chữ ký" style={{ maxHeight: '50px', maxWidth: '130px', objectFit: 'contain' }} />
-                                <span className="font-bold text-slate-950 text-[11px] sm:text-xs mt-0.5">{transaction.payerReceiver}</span>
-                                {transaction.payerSignedAt && (
-                                    <span className="text-[9px] text-slate-400 font-mono">Đã ký online {new Date(transaction.payerSignedAt).toLocaleDateString('vi-VN')}</span>
-                                )}
-                            </div>
-                        ) : (
-                            <div className="h-20 sm:h-24 flex items-end justify-center">
-                                <span className="font-bold text-slate-950 text-[11px] sm:text-xs">{transaction.payerReceiver}</span>
-                            </div>
-                        )}
+                        <div className="min-h-[70px] sm:min-h-[85px] flex flex-col items-center justify-center w-full py-1">
+                            {transaction.payerSignature ? (
+                                <div className="flex flex-col items-center justify-center w-full">
+                                    <img src={transaction.payerSignature} alt="Chữ ký" style={{ maxHeight: '46px', maxWidth: '110px', objectFit: 'contain' }} />
+                                    {transaction.payerSignedAt && (
+                                        <span className="text-[9px] text-emerald-700 font-mono mt-0.5">
+                                            Đã ký {new Date(transaction.payerSignedAt).toLocaleDateString('vi-VN')}
+                                        </span>
+                                    )}
+                                </div>
+                            ) : null}
+                        </div>
+                        <div className="min-h-[24px] flex items-center justify-center px-0.5 w-full">
+                            <span className="font-bold text-slate-950 text-[11px] sm:text-xs break-words leading-snug text-center block w-full">
+                                {transaction.payerReceiver || '—'}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -418,7 +428,7 @@ export default function PrintTransactionModal({ transaction, companyInfo, onClos
             </div>
 
             {/* Document Printable Container */}
-            <div className="w-full max-w-3xl my-12 print-container space-y-8">
+            <div className="w-full max-w-4xl mx-auto my-12 print-container space-y-8">
                 {printMode === 'A4_SINGLE' ? (
                     renderVoucherContent()
                 ) : (

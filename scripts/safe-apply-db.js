@@ -408,7 +408,90 @@ async function main() {
         }
     }
 
-    // 7. Verification and record counts
+    // 8. Leaderboard & Internal Social Wall Tables (Bảo toàn 100% dữ liệu)
+    await prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS \`LeaderboardPost\` (
+            \`id\` VARCHAR(191) NOT NULL,
+            \`authorId\` VARCHAR(191) NOT NULL,
+            \`content\` TEXT NOT NULL,
+            \`images\` TEXT NULL,
+            \`type\` VARCHAR(191) NOT NULL DEFAULT 'USER_POST',
+            \`isPinned\` BOOLEAN NOT NULL DEFAULT false,
+            \`metadata\` TEXT NULL,
+            \`createdAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+            \`updatedAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+            PRIMARY KEY (\`id\`),
+            INDEX \`LeaderboardPost_authorId_idx\` (\`authorId\`),
+            INDEX \`LeaderboardPost_createdAt_idx\` (\`createdAt\`),
+            INDEX \`LeaderboardPost_isPinned_idx\` (\`isPinned\`)
+        ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    `);
+
+    await prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS \`LeaderboardReaction\` (
+            \`id\` VARCHAR(191) NOT NULL,
+            \`postId\` VARCHAR(191) NOT NULL,
+            \`userId\` VARCHAR(191) NOT NULL,
+            \`emoji\` VARCHAR(191) NOT NULL,
+            \`createdAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+            UNIQUE INDEX \`LeaderboardReaction_postId_userId_emoji_key\` (\`postId\`, \`userId\`, \`emoji\`),
+            PRIMARY KEY (\`id\`),
+            INDEX \`LeaderboardReaction_postId_idx\` (\`postId\`),
+            INDEX \`LeaderboardReaction_userId_idx\` (\`userId\`)
+        ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    `);
+
+    await prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS \`LeaderboardComment\` (
+            \`id\` VARCHAR(191) NOT NULL,
+            \`postId\` VARCHAR(191) NOT NULL,
+            \`authorId\` VARCHAR(191) NOT NULL,
+            \`parentId\` VARCHAR(191) NULL,
+            \`content\` TEXT NOT NULL,
+            \`image\` TEXT NULL,
+            \`createdAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+            \`updatedAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+            PRIMARY KEY (\`id\`),
+            INDEX \`LeaderboardComment_postId_idx\` (\`postId\`),
+            INDEX \`LeaderboardComment_authorId_idx\` (\`authorId\`),
+            INDEX \`LeaderboardComment_parentId_idx\` (\`parentId\`)
+        ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    `);
+
+    await prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS \`LeaderboardMention\` (
+            \`id\` VARCHAR(191) NOT NULL,
+            \`postId\` VARCHAR(191) NULL,
+            \`commentId\` VARCHAR(191) NULL,
+            \`mentionedUserId\` VARCHAR(191) NOT NULL,
+            \`createdAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+            PRIMARY KEY (\`id\`),
+            INDEX \`LeaderboardMention_mentionedUserId_idx\` (\`mentionedUserId\`),
+            INDEX \`LeaderboardMention_postId_idx\` (\`postId\`),
+            INDEX \`LeaderboardMention_commentId_idx\` (\`commentId\`)
+        ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    `);
+
+    // 9. Ensure all signature columns exist
+    await addColumnIfNotExists('SalesPayment', 'customerSignature', 'LONGTEXT NULL');
+    await addColumnIfNotExists('SalesPayment', 'customerSignedAt', 'DATETIME(3) NULL');
+    await addColumnIfNotExists('SalesPayment', 'customerSignIP', 'VARCHAR(191) NULL');
+    await addColumnIfNotExists('SalesPayment', 'customerSignDevice', 'VARCHAR(191) NULL');
+    await addColumnIfNotExists('SalesPayment', 'customerSignLocation', 'VARCHAR(191) NULL');
+
+    await addColumnIfNotExists('CashTransaction', 'payerSignature', 'LONGTEXT NULL');
+    await addColumnIfNotExists('CashTransaction', 'payerSignedAt', 'DATETIME(3) NULL');
+    await addColumnIfNotExists('CashTransaction', 'payerSignIP', 'VARCHAR(191) NULL');
+    await addColumnIfNotExists('CashTransaction', 'payerSignDevice', 'VARCHAR(191) NULL');
+    await addColumnIfNotExists('CashTransaction', 'payerSignLocation', 'VARCHAR(191) NULL');
+
+    await addColumnIfNotExists('PurchasePayment', 'supplierSignature', 'LONGTEXT NULL');
+    await addColumnIfNotExists('PurchasePayment', 'supplierSignedAt', 'DATETIME(3) NULL');
+    await addColumnIfNotExists('PurchasePayment', 'supplierSignIP', 'VARCHAR(191) NULL');
+    await addColumnIfNotExists('PurchasePayment', 'supplierSignDevice', 'VARCHAR(191) NULL');
+    await addColumnIfNotExists('PurchasePayment', 'supplierSignLocation', 'VARCHAR(191) NULL');
+
+    // 10. Verification and record counts
     const taskCount = await prisma.task.count();
     const todoCount = await prisma.todo.count();
     const projectCount = await prisma.project.count();
