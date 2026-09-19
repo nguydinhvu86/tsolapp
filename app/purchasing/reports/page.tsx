@@ -45,7 +45,14 @@ export default async function PurchasingReportPage() {
     });
 
     const suppliers = await prisma.supplier.findMany({
-        select: { id: true, name: true, totalDebt: true, code: true }
+        include: {
+            bills: {
+                where: { status: { notIn: ['DRAFT', 'CANCELLED'] } }
+            },
+            payments: {
+                where: { status: { not: 'CANCELLED' } }
+            }
+        }
     });
 
     return (

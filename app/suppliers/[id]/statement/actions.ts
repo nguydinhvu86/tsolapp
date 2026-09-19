@@ -37,7 +37,7 @@ export async function getSupplierStatement(supplierId: string, startDateStr: str
         const pastBills = await prisma.purchaseBill.aggregate({
             where: {
                 supplierId,
-                status: { in: ['APPROVED', 'PARTIAL_PAID', 'PAID'] },
+                status: { notIn: ['DRAFT', 'CANCELLED'] },
                 date: { lt: startDate }
             },
             _sum: { totalAmount: true }
@@ -46,6 +46,7 @@ export async function getSupplierStatement(supplierId: string, startDateStr: str
         const pastPayments = await prisma.purchasePayment.aggregate({
             where: {
                 supplierId,
+                status: { not: 'CANCELLED' },
                 date: { lt: startDate }
             },
             _sum: { amount: true }
@@ -57,7 +58,7 @@ export async function getSupplierStatement(supplierId: string, startDateStr: str
         const periodBills = await prisma.purchaseBill.findMany({
             where: {
                 supplierId,
-                status: { in: ['APPROVED', 'PARTIAL_PAID', 'PAID'] },
+                status: { notIn: ['DRAFT', 'CANCELLED'] },
                 date: { gte: startDate, lte: endDate }
             },
             select: { id: true, code: true, supplierInvoice: true, date: true, notes: true, totalAmount: true },
@@ -67,6 +68,7 @@ export async function getSupplierStatement(supplierId: string, startDateStr: str
         const periodPayments = await prisma.purchasePayment.findMany({
             where: {
                 supplierId,
+                status: { not: 'CANCELLED' },
                 date: { gte: startDate, lte: endDate }
             },
             select: { id: true, code: true, date: true, notes: true, amount: true },

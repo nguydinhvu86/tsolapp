@@ -45,7 +45,7 @@ export async function getSuppliers() {
     }
 
     try {
-        return await prisma.supplier.findMany({
+        const suppliers = await prisma.supplier.findMany({
             where: filter,
             orderBy: { updatedAt: 'desc' },
             include: {
@@ -56,6 +56,20 @@ export async function getSuppliers() {
                 },
                 payments: true
             }
+        });
+
+        return suppliers.map((s: any) => {
+            const validBills = (s.bills || []).filter((b: any) => !['DRAFT', 'CANCELLED'].includes(b?.status));
+            const exactPurchases = validBills.reduce((acc: number, b: any) => acc + (b?.totalAmount || 0), 0);
+            const validPayments = (s.payments || []).filter((p: any) => p?.status !== 'CANCELLED');
+            const exactPayments = validPayments.reduce((acc: number, p: any) => acc + (p?.amount || 0), 0);
+            const dynamicDebt = exactPurchases - exactPayments;
+
+            return {
+                ...s,
+                totalDebt: dynamicDebt,
+                computedDebt: dynamicDebt
+            };
         });
     } catch (error) {
         console.error('getSuppliers error:', error);
@@ -88,7 +102,7 @@ export async function getSupplier(id: string) {
     }
 
     try {
-        return await prisma.supplier.findFirst({
+        const supplier = await prisma.supplier.findFirst({
             where: { id, ...filter },
             include: {
                 products: {
@@ -109,6 +123,20 @@ export async function getSupplier(id: string) {
                 }
             }
         });
+
+        if (!supplier) return null;
+
+        const validBills = (supplier.bills || []).filter((b: any) => !['DRAFT', 'CANCELLED'].includes(b?.status));
+        const exactPurchases = validBills.reduce((acc: number, b: any) => acc + (b?.totalAmount || 0), 0);
+        const validPayments = (supplier.payments || []).filter((p: any) => p?.status !== 'CANCELLED');
+        const exactPayments = validPayments.reduce((acc: number, p: any) => acc + (p?.amount || 0), 0);
+        const dynamicDebt = exactPurchases - exactPayments;
+
+        return {
+            ...supplier,
+            totalDebt: dynamicDebt,
+            computedDebt: dynamicDebt
+        };
     } catch (error) {
         console.error('getSupplier error:', error);
         return null;

@@ -135,10 +135,13 @@ export function SupplierClient({ initialSuppliers }: { initialSuppliers: any[] }
             if (!s) return s;
             const validBills = s.bills && Array.isArray(s.bills) ? s.bills.filter((b: any) => !['DRAFT', 'CANCELLED'].includes(b?.status)) : [];
             const exactPurchases = validBills.reduce((acc: number, b: any) => acc + (b?.totalAmount || 0), 0);
-            const exactPayments = (s.payments && Array.isArray(s.payments) ? s.payments : []).reduce((acc: number, p: any) => acc + (p?.amount || 0), 0);
+            const validPayments = s.payments && Array.isArray(s.payments) ? s.payments.filter((p: any) => p?.status !== 'CANCELLED') : [];
+            const exactPayments = validPayments.reduce((acc: number, p: any) => acc + (p?.amount || 0), 0);
+            const dynamicDebt = s.computedDebt !== undefined && !s.bills ? s.computedDebt : (exactPurchases - exactPayments);
             return {
                 ...s,
-                computedDebt: exactPurchases - exactPayments
+                computedDebt: dynamicDebt,
+                totalDebt: dynamicDebt
             };
         });
     }, [suppliers]);

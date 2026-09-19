@@ -124,7 +124,8 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
     }, [supplier?.bills, sortConfig]);
     const computedDebt = React.useMemo(() => {
         const exactPurchases = validBills.reduce((acc: number, bill: any) => acc + (bill.totalAmount || 0), 0);
-        const exactPayments = (supplier?.payments || []).reduce((acc: number, pay: any) => acc + (pay.amount || 0), 0);
+        const validPayments = (supplier?.payments || []).filter((pay: any) => pay?.status !== 'CANCELLED');
+        const exactPayments = validPayments.reduce((acc: number, pay: any) => acc + (pay.amount || 0), 0);
         return exactPurchases - exactPayments;
     }, [validBills, supplier?.payments]);
 
@@ -643,30 +644,47 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
                                         <tr>
                                             <th style={{ padding: '1rem 0', fontWeight: 600 }}>Mã HS</th>
                                             <th style={{ padding: '1rem 0', fontWeight: 600 }}>Tiêu đề</th>
+                                            <th style={{ padding: '1rem 0', fontWeight: 600 }}>Trạng Thái</th>
                                             <th style={{ padding: '1rem 0', fontWeight: 600 }}>Thanh Toán</th>
                                             <th style={{ padding: '1rem 0', fontWeight: 600 }}>Ngày tạo</th>
                                             <th style={{ padding: '1rem 0', fontWeight: 600, textAlign: 'right' }}>Thao tác</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {supplier.payments?.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>Không có dữ liệu.</td></tr>}
-                                        {supplier.payments?.map((payment: any) => (
-                                            <tr key={payment.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                                                <td style={{ padding: '1rem 0', fontWeight: 500 }}>
-                                                    <Link href={`/purchasing/payments/${payment.id}`} className="hover:text-primary transition-colors text-gray-500">{payment.code}</Link>
-                                                </td>
-                                                <td style={{ padding: '1rem 0', fontWeight: 500 }}>
-                                                    <Link href={`/purchasing/payments/${payment.id}`} className="hover:text-primary transition-colors text-gray-900">Phiếu chi {payment.code}</Link>
-                                                </td>
-                                                <td style={{ padding: '1rem 0', fontWeight: 600, color: '#16a34a' }}>{formatMoney(payment.amount)}</td>
-                                                <td style={{ padding: '1rem 0', color: '#4b5563' }}>{formatDate(payment.date)}</td>
-                                                <td style={{ padding: '1rem 0', textAlign: 'right' }}>
-                                                    <Link href={`/purchasing/payments/${payment.id}`} style={{ display: 'inline-block', border: 'none', background: '#e0e7ff', color: '#4f46e5', padding: '0.4rem 0.6rem', borderRadius: '0.25rem', cursor: 'pointer' }}>
-                                                        <Search size={16} />
-                                                    </Link>
-                                                </td>
-                                            </tr>
-                                        ))}
+                                        {supplier.payments?.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>Không có dữ liệu.</td></tr>}
+                                        {supplier.payments?.map((payment: any) => {
+                                            const isCancelled = payment.status === 'CANCELLED';
+                                            return (
+                                                <tr key={payment.id} style={{ borderBottom: '1px solid #f3f4f6', opacity: isCancelled ? 0.75 : 1 }}>
+                                                    <td style={{ padding: '1rem 0', fontWeight: 500 }}>
+                                                        <Link href={`/purchasing/payments/${payment.id}`} className="hover:text-primary transition-colors text-gray-500 font-mono">{payment.code}</Link>
+                                                    </td>
+                                                    <td style={{ padding: '1rem 0', fontWeight: 500 }}>
+                                                        <Link href={`/purchasing/payments/${payment.id}`} className="hover:text-primary transition-colors text-gray-900">Phiếu chi {payment.code}</Link>
+                                                    </td>
+                                                    <td style={{ padding: '1rem 0' }}>
+                                                        {isCancelled ? (
+                                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                                                                ĐÃ HỦY
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                                HOÀN THÀNH
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td style={{ padding: '1rem 0', fontWeight: 600, color: isCancelled ? '#94a3b8' : '#16a34a', textDecoration: isCancelled ? 'line-through' : 'none' }}>
+                                                        {formatMoney(payment.amount)}
+                                                    </td>
+                                                    <td style={{ padding: '1rem 0', color: '#4b5563' }}>{formatDate(payment.date)}</td>
+                                                    <td style={{ padding: '1rem 0', textAlign: 'right' }}>
+                                                        <Link href={`/purchasing/payments/${payment.id}`} style={{ display: 'inline-block', border: 'none', background: '#e0e7ff', color: '#4f46e5', padding: '0.4rem 0.6rem', borderRadius: '0.25rem', cursor: 'pointer' }}>
+                                                            <Search size={16} />
+                                                        </Link>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                             )}
@@ -686,7 +704,7 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
                                             <Wallet size={18} /> <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>Tổng Đã Thanh Toán</span>
                                         </div>
                                         <span style={{ display: 'block', fontSize: '1.5rem', fontWeight: 'bold', color: '#16a34a' }}>
-                                            {formatMoney(supplier.payments?.reduce((sum: number, pay: any) => sum + pay.amount, 0) || 0)}
+                                            {formatMoney((supplier.payments || []).filter((pay: any) => pay?.status !== 'CANCELLED').reduce((sum: number, pay: any) => sum + (pay.amount || 0), 0))}
                                         </span>
                                     </div>
                                     <div style={{ padding: '1.5rem', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '0.5rem' }}>

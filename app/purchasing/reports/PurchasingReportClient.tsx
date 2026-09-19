@@ -55,15 +55,20 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
 
     // --- Tab 1: Overview Data ---
     const validFilteredBills = useMemo(() => filteredBills.filter(b => !['DRAFT', 'CANCELLED'].includes(b.status)), [filteredBills]);
+    const validFilteredPayments = useMemo(() => filteredPayments.filter(p => p.status !== 'CANCELLED'), [filteredPayments]);
 
     const totalPurchases = validFilteredBills.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
-    const totalPayments = filteredPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const totalPayments = validFilteredPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
 
     // Compute total debt dynamically from all valid bills and payments per supplier
     const totalDebt = suppliers.reduce((sum, s) => {
+        if (s.computedDebt !== undefined) return sum + s.computedDebt;
         const validSupplierBills = s.bills ? s.bills.filter((b: any) => !['DRAFT', 'CANCELLED'].includes(b.status)) : [];
         const exactPurchases = validSupplierBills.reduce((acc: number, bill: any) => acc + (bill.totalAmount || 0), 0);
-        const exactPayments = validSupplierBills.reduce((acc: number, bill: any) => acc + (bill.paidAmount || 0), 0);
+        const validSupplierPayments = s.payments ? s.payments.filter((p: any) => p.status !== 'CANCELLED') : [];
+        const exactPayments = validSupplierPayments.length > 0
+            ? validSupplierPayments.reduce((acc: number, pay: any) => acc + (pay.amount || 0), 0)
+            : validSupplierBills.reduce((acc: number, bill: any) => acc + (bill.paidAmount || 0), 0);
         return sum + (exactPurchases - exactPayments);
     }, 0);
 
@@ -76,7 +81,7 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
             dataMap.get(dateStr)['Mua Hàng'] += (b.totalAmount || 0);
         });
 
-        filteredPayments.forEach(p => {
+        validFilteredPayments.forEach(p => {
             const dateStr = new Date(p.date).toISOString().split('T')[0];
             if (!dataMap.has(dateStr)) dataMap.set(dateStr, { date: dateStr, 'Mua Hàng': 0, 'Thanh Toán': 0 });
             dataMap.get(dateStr)['Thanh Toán'] += p.amount;
@@ -88,7 +93,7 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
             ...d,
             displayDate: formatDate(new Date(d.date))
         }));
-    }, [filteredBills, filteredPayments]);
+    }, [validFilteredBills, validFilteredPayments]);
 
     // --- Tab 2: Supplier Data ---
     const supplierReportData = useMemo(() => {
@@ -97,7 +102,10 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
         suppliers.forEach(s => {
             const validSupplierBills = s.bills ? s.bills.filter((b: any) => !['DRAFT', 'CANCELLED'].includes(b.status)) : [];
             const exactPurchases = validSupplierBills.reduce((acc: number, bill: any) => acc + (bill.totalAmount || 0), 0);
-            const exactPayments = validSupplierBills.reduce((acc: number, bill: any) => acc + (bill.paidAmount || 0), 0);
+            const validSupplierPayments = s.payments ? s.payments.filter((p: any) => p.status !== 'CANCELLED') : [];
+            const exactPayments = validSupplierPayments.length > 0
+                ? validSupplierPayments.reduce((acc: number, pay: any) => acc + (pay.amount || 0), 0)
+                : validSupplierBills.reduce((acc: number, bill: any) => acc + (bill.paidAmount || 0), 0);
 
             map.set(s.id, {
                 id: s.id,
@@ -105,7 +113,7 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
                 name: s.name,
                 totalPurchased: 0,
                 totalPaid: 0,
-                currentDebt: exactPurchases - exactPayments
+                currentDebt: s.computedDebt !== undefined ? s.computedDebt : (exactPurchases - exactPayments)
             });
         });
 
@@ -115,7 +123,7 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
             }
         });
 
-        filteredPayments.forEach(p => {
+        validFilteredPayments.forEach(p => {
             if (p.supplierId && map.has(p.supplierId)) {
                 map.get(p.supplierId).totalPaid += p.amount;
             }
@@ -216,7 +224,7 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
     }, [filteredOrders, orderSearch, orderStatus]);
 
     const displayPayments = useMemo(() => {
-        let result = filteredPayments;
+        let result = validFilteredPayments;
         if (paymentSearch.trim()) {
             const query = paymentSearch.toLowerCase();
             result = result.filter(p => p.code?.toLowerCase().includes(query) || p.reference?.toLowerCase().includes(query) || p.supplier?.name?.toLowerCase().includes(query));
@@ -225,7 +233,7 @@ export function PurchasingReportClient({ bills, payments, orders, suppliers }: {
             result = result.filter(p => p.paymentMethod === paymentMethod);
         }
         return result;
-    }, [filteredPayments, paymentSearch, paymentMethod]);
+    }, [validFilteredPayments, paymentSearch, paymentMethod]);
 
 
     // Custom Premium Styles injected directly to ensure they work alongside globals.css
