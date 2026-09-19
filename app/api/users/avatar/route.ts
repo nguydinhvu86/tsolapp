@@ -28,10 +28,19 @@ export async function POST(req: NextRequest) {
             fs.mkdirSync(uploadDir, { recursive: true });
         }
 
+        const publicUploadDir = path.join(process.cwd(), "public", "uploads", "avatars");
+        if (!fs.existsSync(publicUploadDir)) {
+            fs.mkdirSync(publicUploadDir, { recursive: true });
+        }
+
         const filename = `${session.user.id}-${Date.now()}${path.extname(file.name)}`;
         const filepath = path.join(uploadDir, filename);
-
         fs.writeFileSync(filepath, buffer);
+
+        try {
+            const publicFilepath = path.join(publicUploadDir, filename);
+            fs.writeFileSync(publicFilepath, buffer);
+        } catch (_) {}
 
         const avatarUrl = `/api/files/avatars/${filename}`;
 
