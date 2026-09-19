@@ -549,6 +549,21 @@ export async function updateTaskStatus(id: string, status: string, userId: strin
     await prisma.task.update({ where: { id }, data: { status } });
     logActivity(id, userId, 'STATUS_CHANGED', JSON.stringify({ to: status }));
 
+    // Stop any running timers on this task if status becomes CANCELLED or DONE
+    if (status === 'CANCELLED' || status === 'DONE') {
+        const activeLogs = await prisma.taskTimeLog.findMany({
+            where: { taskId: id, endTime: null }
+        });
+        const now = new Date();
+        for (const log of activeLogs) {
+            const durationSec = Math.floor((now.getTime() - new Date(log.startTime).getTime()) / 1000);
+            await prisma.taskTimeLog.update({
+                where: { id: log.id },
+                data: { endTime: now, durationSec }
+            });
+        }
+    }
+
     // --- NOTIFICATION & EMAIL LOGIC ---
     if (oldTask && oldTask.status !== status) {
         const statusMap: Record<string, string> = {
@@ -1257,6 +1272,15 @@ export async function startTaskTimer(taskId: string) {
     if (!session || !session.user || !session.user.id) throw new Error("Chưa đăng nhập");
     const userId = session.user.id;
 
+    const task = await prisma.task.findUnique({ where: { id: taskId } });
+    if (!task) throw new Error("Thẻ công việc không tồn tại");
+    if (task.status === 'CANCELLED') {
+        throw new Error("Không thể đếm giờ cho công việc đã bị hủy.");
+    }
+    if (task.status === 'DONE') {
+        throw new Error("Không thể đếm giờ cho công việc đã hoàn thành.");
+    }
+
     // Check if user has any active timer globally
     const activeLog = await prisma.taskTimeLog.findFirst({
         where: { userId, endTime: null }
@@ -1274,8 +1298,7 @@ export async function startTaskTimer(taskId: string) {
     });
 
     // Auto update task to IN_PROGRESS if it's currently TODO
-    const task = await prisma.task.findUnique({ where: { id: taskId } });
-    if (task && task.status === 'TODO') {
+    if (task.status === 'TODO') {
         await prisma.task.update({
             where: { id: taskId },
             data: { status: 'IN_PROGRESS' }

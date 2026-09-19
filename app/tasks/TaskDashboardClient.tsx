@@ -94,6 +94,19 @@ function TimerCell({ task, session }: { task: any, session: any }) {
     const mins = Math.floor((currentTotal % 3600) / 60);
     const timeDisplay = hours > 0 ? `${hours}h${mins}m` : (mins > 0 ? `${mins}m` : '0m');
 
+    if (task.status === 'CANCELLED') {
+        return (
+            <div className="flex flex-col items-center justify-center gap-0.5 min-w-[90px] whitespace-nowrap">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-500 border border-slate-200">
+                    Đã hủy
+                </span>
+                {totalDurationSec > 0 && (
+                    <span className="text-[10px] font-mono text-slate-400 whitespace-nowrap leading-tight mt-0.5">{timeDisplay}</span>
+                )}
+            </div>
+        );
+    }
+
     if (activeLog) {
         return (
             <div className="flex flex-col items-center justify-center gap-1 min-w-[90px] whitespace-nowrap">
@@ -109,13 +122,19 @@ function TimerCell({ task, session }: { task: any, session: any }) {
     } else {
         return (
             <div className="flex flex-col items-center justify-center gap-0.5 min-w-[90px] whitespace-nowrap">
-                <button 
-                    onClick={handleStart} 
-                    disabled={isLoading}
-                    className="inline-flex items-center justify-center gap-1 h-[22px] px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300/80 rounded text-[10px] font-semibold transition-all cursor-pointer shadow-2xs whitespace-nowrap shrink-0"
-                >
-                    {isLoading ? '...' : `▶ Bắt Đầu`}
-                </button>
+                {task.status === 'DONE' ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        Hoàn tất
+                    </span>
+                ) : (
+                    <button 
+                        onClick={handleStart} 
+                        disabled={isLoading}
+                        className="inline-flex items-center justify-center gap-1 h-[22px] px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300/80 rounded text-[10px] font-semibold transition-all cursor-pointer shadow-2xs whitespace-nowrap shrink-0"
+                    >
+                        {isLoading ? '...' : `▶ Bắt Đầu`}
+                    </button>
+                )}
                 <span className="text-[10px] font-mono text-slate-400 whitespace-nowrap leading-tight mt-0.5">{timeDisplay}</span>
             </div>
         );
@@ -259,7 +278,7 @@ export function TaskDashboardClient({
     };
 
     const isOverdue = (dueDate: Date | string | null, status: string) => {
-        if (!dueDate || status === 'DONE') return false;
+        if (!dueDate || status === 'DONE' || status === 'CANCELLED') return false;
         return new Date(dueDate).getTime() < new Date().getTime();
     };
 
@@ -285,7 +304,7 @@ export function TaskDashboardClient({
                 const dateB = b.startDate ? new Date(b.startDate).getTime() : new Date(b.dueDate).getTime();
                 return dateA - dateB;
             });
-            const firstIncomplete = tasksInSeries.find(t => t.status !== 'DONE');
+            const firstIncomplete = tasksInSeries.find(t => t.status !== 'DONE' && t.status !== 'CANCELLED');
             if (firstIncomplete) {
                 const taskDate = firstIncomplete.startDate ? new Date(firstIncomplete.startDate) : new Date(firstIncomplete.dueDate);
                 if (taskDate.getTime() <= threshold7Days.getTime()) {
@@ -325,7 +344,7 @@ export function TaskDashboardClient({
             });
 
             // Find first incomplete
-            const firstIncomplete = tasksInSeries.find(t => t.status !== 'DONE');
+            const firstIncomplete = tasksInSeries.find(t => t.status !== 'DONE' && t.status !== 'CANCELLED');
             if (firstIncomplete) {
                 // Check if this task is happening reasonably soon (e.g. within 7 days)
                 // If showAllFutureTasks is ON or filterStatus is RECURRING / FUTURE, bypass hide logic.
@@ -357,6 +376,16 @@ export function TaskDashboardClient({
                 if (!matchesSearch) return false;
             }
 
+            // If user explicitly chose CANCELLED filter
+            if (filterStatus === 'CANCELLED') {
+                return task.status === 'CANCELLED';
+            }
+
+            // For ALL other views/tabs, hide cancelled tasks
+            if (task.status === 'CANCELLED') {
+                return false;
+            }
+
             // Hide tasks that start > 10 days in the future (unless showAllFutureTasks is active or filterStatus is FUTURE)
             if (!showAllFutureTasks && filterStatus !== 'FUTURE' && task.startDate) {
                 const threshold = new Date().getTime() + 10 * 24 * 60 * 60 * 1000;
@@ -369,12 +398,11 @@ export function TaskDashboardClient({
             }
 
             if (filterStatus === 'ALL') {
-                if (globalFilter && globalFilter.trim() !== '') return true;
-                return task.status !== 'DONE' && task.status !== 'CANCELLED';
+                return task.status !== 'DONE';
             }
 
             // Core Statuses (also matched by the top cards)
-            if (['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE', 'PAUSED', 'CANCELLED'].includes(filterStatus)) {
+            if (['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE', 'PAUSED'].includes(filterStatus)) {
                 return task.status === filterStatus;
             }
 
@@ -422,20 +450,21 @@ export function TaskDashboardClient({
 
     const filterCounts = React.useMemo(() => {
         let all = 0;
-        let todo = 0, inProgress = 0, review = 0, done = 0, overdue = 0;
+        let todo = 0, inProgress = 0, review = 0, done = 0, overdue = 0, cancelled = 0;
 
         initialTasks.forEach((task: any) => {
             if (task.status === 'TODO') todo++;
             else if (task.status === 'IN_PROGRESS') inProgress++;
             else if (task.status === 'REVIEW') review++;
             else if (task.status === 'DONE') done++;
+            else if (task.status === 'CANCELLED') cancelled++;
 
-            if (task.status !== 'DONE') all++; // Re-calculate 'all' to mean 'all active'
+            if (task.status !== 'DONE' && task.status !== 'CANCELLED') all++; // Re-calculate 'all' to mean 'all active'
 
             if (isOverdue(task.dueDate, task.status)) overdue++;
         });
 
-        return { all, todo, inProgress, review, done, overdue };
+        return { all, todo, inProgress, review, done, overdue, cancelled };
     }, [initialTasks]);
 
     const sortedTasks = React.useMemo(() => {
@@ -817,7 +846,25 @@ export function TaskDashboardClient({
                                 className="h-[34px] px-3 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 shadow-2xs cursor-pointer transition-all"
                             >
                                 <Filter size={13} className="text-slate-500" />
-                                <span>Lọc: {filterStatus === 'FUTURE' ? 'Việc tương lai' : filterStatus}</span>
+                                <span>
+                                    Lọc: {
+                                        filterStatus === 'ALL' ? 'Toàn bộ đang xử lý' :
+                                        filterStatus === 'TODO' ? 'Cần làm' :
+                                        filterStatus === 'IN_PROGRESS' ? 'Đang làm' :
+                                        filterStatus === 'REVIEW' ? 'Chờ duyệt' :
+                                        filterStatus === 'DONE' ? 'Hoàn thành' :
+                                        filterStatus === 'PAUSED' ? 'Tạm ngưng' :
+                                        filterStatus === 'CANCELLED' ? 'Đã hủy' :
+                                        filterStatus === 'TODAY' ? 'Hôm nay' :
+                                        filterStatus === 'OVERDUE' ? 'Quá hạn' :
+                                        filterStatus === 'UPCOMING' ? 'Sắp tới' :
+                                        filterStatus === 'FUTURE' ? 'Việc tương lai' :
+                                        filterStatus === 'ASSIGNED_ME' ? 'Giao cho tôi' :
+                                        filterStatus === 'FOLLOWING' ? 'Tôi theo dõi' :
+                                        filterStatus === 'UNASSIGNED' ? 'Chưa phân công' :
+                                        filterStatus === 'RECURRING' ? 'Chu kỳ lặp' : filterStatus
+                                    }
+                                </span>
                                 <ChevronDown size={12} className="text-slate-400" />
                             </button>
                             {isFilterMenuOpen && (
@@ -997,7 +1044,7 @@ export function TaskDashboardClient({
                             <tbody>
                                 {paginatedItems.map((task: any) => {
                                     const overdue = isOverdue(task.dueDate, task.status);
-                                    const isDueSoon = task.dueDate && new Date(task.dueDate).getTime() - new Date().getTime() < 86400000 && task.status !== 'DONE';
+                                    const isDueSoon = task.dueDate && new Date(task.dueDate).getTime() - new Date().getTime() < 86400000 && task.status !== 'DONE' && task.status !== 'CANCELLED';
 
                                     return (
                                         <tr 

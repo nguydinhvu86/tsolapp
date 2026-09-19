@@ -254,7 +254,7 @@ export function TaskPanel({ initialTasks, users, entityType, entityId, initialTi
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                         {displayTasks.map(task => {
                             const assigneesNames = task.assignees?.map((a: any) => a.user.name || a.user.email).join(', ') || 'Chưa phân công';
-                            const isOverdue = task.dueDate && task.status !== 'DONE' && new Date(task.dueDate).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0);
+                            const isOverdue = task.dueDate && task.status !== 'DONE' && task.status !== 'CANCELLED' && new Date(task.dueDate).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0);
 
                             return (
                                 <div key={task.id} style={{
@@ -369,7 +369,7 @@ export function TaskPanel({ initialTasks, users, entityType, entityId, initialTi
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem', maxHeight: '70vh', overflowY: 'auto' }}>
                     {activeTasks.map(task => {
                         const assigneesNames = task.assignees?.map((a: any) => a.user.name || a.user.email).join(', ') || 'Chưa phân công';
-                        const isOverdue = task.dueDate && task.status !== 'DONE' && new Date(task.dueDate).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0);
+                        const isOverdue = task.dueDate && task.status !== 'DONE' && task.status !== 'CANCELLED' && new Date(task.dueDate).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0);
 
                         return (
                             <div key={task.id} style={{
