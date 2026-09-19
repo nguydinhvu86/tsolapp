@@ -264,6 +264,9 @@ async function main() {
     await addColumnIfNotExists('Supplier', 'paymentTerms', 'VARCHAR(191) NULL');
     await addColumnIfNotExists('Supplier', 'creditLimit', 'DOUBLE NULL DEFAULT 0');
 
+    // 4.1. PurchasePayment fields
+    await addColumnIfNotExists('PurchasePayment', 'status', "VARCHAR(191) NOT NULL DEFAULT 'COMPLETED'");
+
     // 4b. LeaveRequest extended fields
     await addColumnIfNotExists('LeaveRequest', 'duration', "VARCHAR(191) NOT NULL DEFAULT 'FULL_DAY'");
     await addColumnIfNotExists('LeaveRequest', 'totalDays', "DOUBLE NOT NULL DEFAULT 1");

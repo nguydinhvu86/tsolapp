@@ -3,10 +3,10 @@ import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Calendar, FileText, CheckSquare, Building, CreditCard, Link as LinkIcon, Paperclip, Upload, X, CheckCircle2, ExternalLink, Copy } from 'lucide-react';
+import { ArrowLeft, Calendar, FileText, CheckSquare, Building, CreditCard, Link as LinkIcon, Paperclip, Upload, X, CheckCircle2, ExternalLink, Copy, Ban, RotateCcw, Trash2, AlertTriangle } from 'lucide-react';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import Link from 'next/link';
-import { uploadPurchasePaymentDocument } from '@/app/purchasing/actions';
+import { uploadPurchasePaymentDocument, cancelPurchasePayment, restorePurchasePayment, deletePurchasePayment } from '@/app/purchasing/actions';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { DocumentPreviewModal } from '@/app/components/ui/DocumentPreviewModal';
 
@@ -17,6 +17,20 @@ export function PurchasePaymentDetailClient({ payment, tasks, users }: { payment
     const [localPayment, setLocalPayment] = useState(payment);
     const [copied, setCopied] = useState(false);
     const [previewDoc, setPreviewDoc] = useState<{ url: string, name: string } | null>(null);
+    const [actionModal, setActionModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        type?: 'danger' | 'warning' | 'primary';
+        action: () => Promise<void>;
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        type: 'danger',
+        action: async () => { }
+    });
+    const [isActionLoading, setIsActionLoading] = useState(false);
 
     // Pagination hooks
     const allocationsPag = usePagination(localPayment.allocations || []);
@@ -26,6 +40,71 @@ export function PurchasePaymentDetailClient({ payment, tasks, users }: { payment
         navigator.clipboard.writeText(publicUrl);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
+    };
+
+    const handleCancel = () => {
+        setActionModal({
+            isOpen: true,
+            title: 'Hủy Phiếu Thanh Toán NCC',
+            message: `Bạn có chắc chắn muốn HỦY Phiếu chi ${localPayment.code}? Số tiền ${formatMoney(localPayment.amount)} sẽ tự động HOÀN TRẢ CỘNG LẠI vào công nợ của Nhà Cung Cấp và các Hóa đơn liên quan.`,
+            type: 'danger',
+            action: async () => {
+                setIsActionLoading(true);
+                try {
+                    const res = await cancelPurchasePayment(localPayment.id);
+                    setLocalPayment(res);
+                    setActionModal(prev => ({ ...prev, isOpen: false }));
+                    router.refresh();
+                } catch (e: any) {
+                    alert(e.message || 'Lỗi khi hủy phiếu chi');
+                } finally {
+                    setIsActionLoading(false);
+                }
+            }
+        });
+    };
+
+    const handleRestore = () => {
+        setActionModal({
+            isOpen: true,
+            title: 'Khôi Phục Phiếu Thanh Toán NCC',
+            message: `Bạn có chắc chắn muốn KHÔI PHỤC Phiếu chi ${localPayment.code}? Hệ thống sẽ tính lại trừ tiền công nợ của Nhà Cung Cấp và cấn trừ lại các Hóa đơn.`,
+            type: 'primary',
+            action: async () => {
+                setIsActionLoading(true);
+                try {
+                    const res = await restorePurchasePayment(localPayment.id);
+                    setLocalPayment(res);
+                    setActionModal(prev => ({ ...prev, isOpen: false }));
+                    router.refresh();
+                } catch (e: any) {
+                    alert(e.message || 'Lỗi khi khôi phục phiếu chi');
+                } finally {
+                    setIsActionLoading(false);
+                }
+            }
+        });
+    };
+
+    const handleDelete = () => {
+        setActionModal({
+            isOpen: true,
+            title: 'Xóa Vĩnh Viễn Phiếu Thanh Toán',
+            message: `Bạn có chắc chắn muốn XÓA VĨNH VIỄN Phiếu chi ${localPayment.code}? Hành động này không thể hoàn tác.`,
+            type: 'danger',
+            action: async () => {
+                setIsActionLoading(true);
+                try {
+                    await deletePurchasePayment(localPayment.id);
+                    setActionModal(prev => ({ ...prev, isOpen: false }));
+                    router.push('/purchasing/payments');
+                } catch (e: any) {
+                    alert(e.message || 'Lỗi khi xóa phiếu chi');
+                } finally {
+                    setIsActionLoading(false);
+                }
+            }
+        });
     };
 
     // Derived documents list
@@ -43,6 +122,7 @@ export function PurchasePaymentDetailClient({ payment, tasks, users }: { payment
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 6, minimumFractionDigits: 0 }).format(amount || 0);
     };
 
+    const isCancelled = localPayment.status === 'CANCELLED';
 
     const tabs = [
         { id: 'allocations', label: 'Cấn trừ Hóa Đơn', icon: <LinkIcon size={18} />, count: localPayment.allocations?.length || 0 },
@@ -51,7 +131,7 @@ export function PurchasePaymentDetailClient({ payment, tasks, users }: { payment
 
     return (
         <div style={{ padding: '2rem', maxWidth: '100%', margin: '0 auto', fontFamily: 'Inter, sans-serif', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <button
                         onClick={() => router.back()}
@@ -67,16 +147,49 @@ export function PurchasePaymentDetailClient({ payment, tasks, users }: { payment
                     </button>
                     <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.25rem' }}>
-                            <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#0f172a', margin: 0, letterSpacing: '-0.025em' }}>
+                            <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: isCancelled ? '#64748b' : '#0f172a', margin: 0, letterSpacing: '-0.025em', textDecoration: isCancelled ? 'line-through' : 'none' }}>
                                 Phiếu Chi {localPayment.code}
                             </h1>
-                            <span className="px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-medium">Đã Thanh Toán</span>
+                            {isCancelled ? (
+                                <span className="px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 text-xs font-bold border border-rose-200 uppercase">
+                                    ĐÃ HỦY
+                                </span>
+                            ) : (
+                                <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold border border-emerald-200">
+                                    Đã Thanh Toán
+                                </span>
+                            )}
                         </div>
                         <p style={{ color: '#64748b', margin: 0, fontSize: '0.875rem' }}>Chi tiết lệnh chuyển tiền/chi tiền mặt cho nhà cung cấp.</p>
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', gap: '0.625rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                    {isCancelled ? (
+                        <button
+                            onClick={handleRestore}
+                            className="btn btn-secondary"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 600, backgroundColor: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                        >
+                            <RotateCcw size={16} /> Khôi Phục Phiếu
+                        </button>
+                    ) : (
+                        <button
+                            onClick={handleCancel}
+                            className="btn btn-secondary"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 600, backgroundColor: '#fff1f2', color: '#e11d48', border: '1px solid #fecdd3', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                        >
+                            <Ban size={16} /> Hủy Phiếu Chi
+                        </button>
+                    )}
+                    <button
+                        onClick={handleDelete}
+                        className="btn btn-secondary"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 0.875rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500, backgroundColor: 'white', color: '#e11d48', border: '1px solid #e2e8f0', cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                        title="Xóa phiếu"
+                    >
+                        <Trash2 size={16} />
+                    </button>
                     <button
                         onClick={handleCopyPublicLink}
                         className="btn btn-secondary"
@@ -94,6 +207,15 @@ export function PurchasePaymentDetailClient({ payment, tasks, users }: { payment
                     </Link>
                 </div>
             </div>
+
+            {isCancelled && (
+                <div style={{ backgroundColor: '#fff1f2', border: '1px solid #fecdd3', borderRadius: '0.75rem', padding: '1rem 1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#9f1239' }}>
+                    <AlertTriangle size={20} className="shrink-0 text-rose-600" />
+                    <div style={{ fontSize: '0.875rem', lineHeight: '1.5' }}>
+                        <strong>Phiếu thanh toán này đã bị hủy.</strong> Số tiền chi trả đã được hoàn trả lại vào công nợ của Nhà Cung Cấp, và các Hóa đơn liên quan đã được khôi phục trạng thái công nợ.
+                    </div>
+                </div>
+            )}
 
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 5fr) minmax(0, 3fr)', gap: '2rem' }}>
                 {/* Left Column: Details & Tabs */}
@@ -136,7 +258,9 @@ export function PurchasePaymentDetailClient({ payment, tasks, users }: { payment
                             </div>
                             <div>
                                 <p style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600, color: '#94a3b8', marginBottom: '0.25rem' }}>Tổng Số Tiền Chi</p>
-                                <p style={{ margin: 0, fontWeight: 700, color: '#10b981', fontSize: '1.25rem' }}>{formatMoney(localPayment.amount)}</p>
+                                <p style={{ margin: 0, fontWeight: 700, color: isCancelled ? '#94a3b8' : '#10b981', fontSize: '1.25rem', textDecoration: isCancelled ? 'line-through' : 'none' }}>
+                                    {formatMoney(localPayment.amount)}
+                                </p>
                             </div>
 
                             {localPayment.notes && (
@@ -322,6 +446,55 @@ export function PurchasePaymentDetailClient({ payment, tasks, users }: { payment
                     fileUrl={previewDoc.url}
                     fileName={previewDoc.name}
                 />
+            )}
+
+            {/* Action Confirmation Modal */}
+            {actionModal.isOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 scale-100 animate-in zoom-in-95 duration-150">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                                actionModal.type === 'primary' 
+                                    ? 'bg-emerald-50 text-emerald-600' 
+                                    : 'bg-rose-50 text-rose-600'
+                            }`}>
+                                {actionModal.type === 'primary' ? (
+                                    <RotateCcw size={20} />
+                                ) : (
+                                    <AlertTriangle size={20} />
+                                )}
+                            </div>
+                            <h3 className="text-base font-bold text-slate-900">
+                                {actionModal.title}
+                            </h3>
+                        </div>
+                        <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+                            {actionModal.message}
+                        </p>
+                        <div className="flex items-center justify-end gap-3">
+                            <button
+                                type="button"
+                                disabled={isActionLoading}
+                                onClick={() => setActionModal(prev => ({ ...prev, isOpen: false }))}
+                                className="px-4 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+                            >
+                                Đóng
+                            </button>
+                            <button
+                                type="button"
+                                disabled={isActionLoading}
+                                onClick={actionModal.action}
+                                className={`px-4 py-2 text-xs font-bold text-white rounded-lg transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer ${
+                                    actionModal.type === 'primary'
+                                        ? 'bg-emerald-600 hover:bg-emerald-700'
+                                        : 'bg-rose-600 hover:bg-rose-700'
+                                }`}
+                            >
+                                {isActionLoading ? 'Đang xử lý...' : 'Xác nhận'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div >
     );

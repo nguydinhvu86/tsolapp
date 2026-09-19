@@ -1000,6 +1000,7 @@ model PurchasePayment {
   id            String   @id @default(cuid())
   code          String   @unique
   date          DateTime @default(now())
+  status        String   @default("COMPLETED") // COMPLETED, CANCELLED
   amount        Float
   paymentMethod String   @default("CASH") // CASH, BANK_TRANSFER
   reference     String? // Transaction ID

@@ -3,10 +3,10 @@ import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Search, Eye, Trash2, Calendar, DollarSign, Wallet, ArrowUpDown, Upload, CheckCircle2, CreditCard, Banknote, X, FileText, CheckCircle } from 'lucide-react';
+import { Plus, Search, Eye, Trash2, Calendar, DollarSign, Wallet, ArrowUpDown, Upload, CheckCircle2, CreditCard, Banknote, X, FileText, CheckCircle, RotateCcw, Ban, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { createPurchasePayment, deletePurchasePayment } from '@/app/purchasing/actions';
+import { createPurchasePayment, deletePurchasePayment, cancelPurchasePayment, restorePurchasePayment } from '@/app/purchasing/actions';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { useTranslation } from '@/app/i18n/LanguageContext';
@@ -24,6 +24,20 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
     // Modals
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [viewingPayment, setViewingPayment] = useState<any | null>(null);
+    const [actionModal, setActionModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        type?: 'danger' | 'warning' | 'primary';
+        action: () => Promise<void>;
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        type: 'danger',
+        action: async () => { }
+    });
+    const [isActionLoading, setIsActionLoading] = useState(false);
 
     // Form
     const [formData, setFormData] = useState({
@@ -199,15 +213,70 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
         setAllocations(newAllocations);
     };
 
-    const handleDelete = async (id: string, code: string) => {
-        if (confirm(t('purchasePayments.deletePrompt').replace('{{code}}', code))) {
-            try {
-                await deletePurchasePayment(id);
-                setPayments(payments.filter(p => p.id !== id));
-            } catch (error: any) {
-                alert(error.message || t('purchasePayments.deleteError'));
+    const handleCancel = async (id: string, code: string) => {
+        setActionModal({
+            isOpen: true,
+            title: 'Hủy Phiếu Thanh Toán NCC',
+            message: `Bạn có chắc chắn muốn HỦY Phiếu chi ${code}? Hệ thống sẽ tự động HOÀN TRẢ số tiền này CỘNG LẠI vào công nợ của Nhà Cung Cấp và các Hóa đơn đã được cấn trừ.`,
+            type: 'danger',
+            action: async () => {
+                setIsActionLoading(true);
+                try {
+                    const res = await cancelPurchasePayment(id);
+                    setPayments(payments.map(p => p.id === id ? { ...p, status: 'CANCELLED' } : p));
+                    setActionModal(prev => ({ ...prev, isOpen: false }));
+                    router.refresh();
+                } catch (error: any) {
+                    alert(error.message || 'Lỗi khi hủy phiếu chi');
+                } finally {
+                    setIsActionLoading(false);
+                }
             }
-        }
+        });
+    };
+
+    const handleRestore = async (id: string, code: string) => {
+        setActionModal({
+            isOpen: true,
+            title: 'Khôi Phục Phiếu Thanh Toán NCC',
+            message: `Bạn có chắc chắn muốn KHÔI PHỤC Phiếu chi ${code}? Hệ thống sẽ tính lại trừ công nợ của Nhà Cung Cấp và áp dụng lại vào các Hóa đơn.`,
+            type: 'primary',
+            action: async () => {
+                setIsActionLoading(true);
+                try {
+                    const res = await restorePurchasePayment(id);
+                    setPayments(payments.map(p => p.id === id ? { ...p, status: 'COMPLETED' } : p));
+                    setActionModal(prev => ({ ...prev, isOpen: false }));
+                    router.refresh();
+                } catch (error: any) {
+                    alert(error.message || 'Lỗi khi khôi phục phiếu chi');
+                } finally {
+                    setIsActionLoading(false);
+                }
+            }
+        });
+    };
+
+    const handleDelete = async (id: string, code: string) => {
+        setActionModal({
+            isOpen: true,
+            title: 'Xóa Vĩnh Viễn Phiếu Thanh Toán',
+            message: `Bạn có chắc chắn muốn XÓA VĨNH VIỄN Phiếu chi ${code}? Nếu phiếu chưa hủy, công nợ sẽ được hoàn trả trước khi xóa.`,
+            type: 'danger',
+            action: async () => {
+                setIsActionLoading(true);
+                try {
+                    await deletePurchasePayment(id);
+                    setPayments(payments.filter(p => p.id !== id));
+                    setActionModal(prev => ({ ...prev, isOpen: false }));
+                    router.refresh();
+                } catch (error: any) {
+                    alert(error.message || t('purchasePayments.deleteError'));
+                } finally {
+                    setIsActionLoading(false);
+                }
+            }
+        });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -262,9 +331,12 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
         }
     };
 
-    const bankPayments = payments.filter(p => p.paymentMethod === 'BANK_TRANSFER');
-    const cashPayments = payments.filter(p => p.paymentMethod === 'CASH');
-    const totalPaidAmount = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+    // Calculate stats considering CANCELLED payments
+    const activePayments = payments.filter(p => p.status !== 'CANCELLED');
+    const cancelledPayments = payments.filter(p => p.status === 'CANCELLED');
+    const bankPayments = activePayments.filter(p => p.paymentMethod === 'BANK_TRANSFER');
+    const cashPayments = activePayments.filter(p => p.paymentMethod === 'CASH');
+    const totalPaidAmount = activePayments.reduce((sum, p) => sum + (p.amount || 0), 0);
     const bankAmount = bankPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
     const cashAmount = cashPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
 
@@ -458,85 +530,131 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                                     </td>
                                 </tr>
                             ) : (
-                                paginatedItems.map((payment) => (
-                                    <tr key={payment.id} className="hover:bg-slate-50/80 transition-colors group">
-                                        <td className="py-2 px-3 align-middle">
-                                            <Link
-                                                href={`/purchasing/payments/${payment.id}`}
-                                                className="font-mono text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/80 hover:bg-emerald-100 hover:text-emerald-800 transition-colors inline-block shadow-2xs"
-                                            >
-                                                {payment.code}
-                                            </Link>
-                                        </td>
-                                        <td className="py-2 px-3 align-middle">
-                                            <div className="flex flex-col min-w-0">
-                                                <Link
-                                                    href={`/suppliers/${payment.supplierId}`}
-                                                    className="font-semibold text-xs text-slate-900 hover:text-emerald-700 transition-colors block truncate max-w-[280px] sm:max-w-[360px]"
-                                                    title={payment.supplier?.name}
-                                                >
-                                                    {payment.supplier?.name || '—'}
-                                                </Link>
-                                                <div className="flex items-center gap-2 mt-0.5 text-[10.5px] text-slate-400">
-                                                    <span className="flex items-center gap-1 font-mono">
-                                                        <Calendar size={10.5} className="text-slate-400" />
-                                                        {formatDate(payment.date)}
-                                                    </span>
-                                                    {payment.allocations && payment.allocations.length > 0 && (
-                                                        <span className="text-slate-500 font-medium truncate max-w-[200px]">
-                                                            • Đã phân bổ {payment.allocations.length} hóa đơn
+                                paginatedItems.map((payment) => {
+                                    const isCancelled = payment.status === 'CANCELLED';
+                                    return (
+                                        <tr
+                                            key={payment.id}
+                                            className={`transition-colors group ${
+                                                isCancelled
+                                                    ? 'opacity-70 bg-rose-50/20 hover:bg-rose-50/40'
+                                                    : 'hover:bg-slate-50/80'
+                                            }`}
+                                        >
+                                            <td className="py-2 px-3 align-middle">
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                    <Link
+                                                        href={`/purchasing/payments/${payment.id}`}
+                                                        className={`font-mono text-[11px] font-bold px-2 py-0.5 rounded border transition-colors inline-block shadow-2xs ${
+                                                            isCancelled
+                                                                ? 'text-slate-500 bg-slate-100 border-slate-300 line-through'
+                                                                : 'text-emerald-700 bg-emerald-50 border-emerald-200/80 hover:bg-emerald-100 hover:text-emerald-800'
+                                                        }`}
+                                                    >
+                                                        {payment.code}
+                                                    </Link>
+                                                    {isCancelled && (
+                                                        <span className="text-[9.5px] font-bold tracking-wider text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.2 rounded uppercase">
+                                                            ĐÃ HỦY
                                                         </span>
                                                     )}
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td className="py-2 px-3 align-middle">
-                                            <div className="flex flex-col">
-                                                <span className={`inline-flex items-center gap-1 text-[11px] font-semibold w-fit px-2 py-0.5 rounded-full ${
-                                                    payment.paymentMethod === 'BANK_TRANSFER'
-                                                        ? 'bg-blue-50 text-blue-700 border border-blue-200/80'
-                                                        : 'bg-amber-50 text-amber-700 border border-amber-200/80'
-                                                }`}>
-                                                    {payment.paymentMethod === 'BANK_TRANSFER' ? <CreditCard size={11} /> : <Banknote size={11} />}
-                                                    <span>{payment.paymentMethod === 'BANK_TRANSFER' ? t('purchasePayments.methodBank') : t('purchasePayments.methodCash')}</span>
-                                                </span>
-                                                {payment.reference && (
-                                                    <span className="text-[10.5px] font-mono text-slate-500 mt-0.5 truncate max-w-[170px]" title={payment.reference}>
-                                                        Ref: {payment.reference}
+                                            </td>
+                                            <td className="py-2 px-3 align-middle">
+                                                <div className="flex flex-col min-w-0">
+                                                    <Link
+                                                        href={`/suppliers/${payment.supplierId}`}
+                                                        className={`font-semibold text-xs transition-colors block truncate max-w-[280px] sm:max-w-[360px] ${
+                                                            isCancelled
+                                                                ? 'text-slate-500 hover:text-slate-700'
+                                                                : 'text-slate-900 hover:text-emerald-700'
+                                                        }`}
+                                                        title={payment.supplier?.name}
+                                                    >
+                                                        {payment.supplier?.name || '—'}
+                                                    </Link>
+                                                    <div className="flex items-center gap-2 mt-0.5 text-[10.5px] text-slate-400">
+                                                        <span className="flex items-center gap-1 font-mono">
+                                                            <Calendar size={10.5} className="text-slate-400" />
+                                                            {formatDate(payment.date)}
+                                                        </span>
+                                                        {payment.allocations && payment.allocations.length > 0 && (
+                                                            <span className="text-slate-500 font-medium truncate max-w-[200px]">
+                                                                • Đã phân bổ {payment.allocations.length} hóa đơn
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="py-2 px-3 align-middle">
+                                                <div className="flex flex-col">
+                                                    <span className={`inline-flex items-center gap-1 text-[11px] font-semibold w-fit px-2 py-0.5 rounded-full ${
+                                                        payment.paymentMethod === 'BANK_TRANSFER'
+                                                            ? 'bg-blue-50 text-blue-700 border border-blue-200/80'
+                                                            : 'bg-amber-50 text-amber-700 border border-amber-200/80'
+                                                    }`}>
+                                                        {payment.paymentMethod === 'BANK_TRANSFER' ? <CreditCard size={11} /> : <Banknote size={11} />}
+                                                        <span>{payment.paymentMethod === 'BANK_TRANSFER' ? t('purchasePayments.methodBank') : t('purchasePayments.methodCash')}</span>
                                                     </span>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="py-2 px-3 align-middle text-right">
-                                            <div className="flex flex-col items-end">
-                                                <span className="font-mono text-xs font-bold text-slate-900">
-                                                    {formatMoney(payment.amount || 0)}
-                                                </span>
-                                                <span className="text-[10.5px] font-mono text-emerald-600 mt-0.5">
-                                                    Đã PB: {formatMoney(payment.allocations?.reduce((sum: number, a: any) => sum + (a.amount || 0), 0) || 0)}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="py-2 px-3 align-middle text-right">
-                                            <div className="flex items-center justify-end gap-1 opacity-90 group-hover:opacity-100 transition-opacity">
-                                                <Link
-                                                    href={`/purchasing/payments/${payment.id}`}
-                                                    className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-blue-600 transition-colors"
-                                                    title={t('purchasePayments.viewTooltip')}
-                                                >
-                                                    <Eye size={14} />
-                                                </Link>
-                                                <button
-                                                    onClick={() => handleDelete(payment.id, payment.code)}
-                                                    className="w-7 h-7 rounded-lg flex items-center justify-center text-rose-500 hover:bg-rose-50 hover:text-rose-600 transition-colors cursor-pointer"
-                                                    title={t('purchasePayments.deleteTooltip')}
-                                                >
-                                                    <Trash2 size={13.5} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
+                                                    {payment.reference && (
+                                                        <span className="text-[10.5px] font-mono text-slate-500 mt-0.5 truncate max-w-[170px]" title={payment.reference}>
+                                                            Ref: {payment.reference}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="py-2 px-3 align-middle text-right">
+                                                <div className="flex flex-col items-end">
+                                                    <span className={`font-mono text-xs font-bold ${
+                                                        isCancelled ? 'text-slate-400 line-through' : 'text-slate-900'
+                                                    }`}>
+                                                        {formatMoney(payment.amount || 0)}
+                                                    </span>
+                                                    <span className={`text-[10.5px] font-mono mt-0.5 ${
+                                                        isCancelled ? 'text-slate-400 line-through' : 'text-emerald-600'
+                                                    }`}>
+                                                        Đã PB: {formatMoney(payment.allocations?.reduce((sum: number, a: any) => sum + (a.amount || 0), 0) || 0)}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="py-2 px-3 align-middle text-right">
+                                                <div className="flex items-center justify-end gap-1 opacity-90 group-hover:opacity-100 transition-opacity">
+                                                    <Link
+                                                        href={`/purchasing/payments/${payment.id}`}
+                                                        className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-blue-600 transition-colors"
+                                                        title={t('purchasePayments.viewTooltip')}
+                                                    >
+                                                        <Eye size={14} />
+                                                    </Link>
+                                                    {isCancelled ? (
+                                                        <button
+                                                            onClick={() => handleRestore(payment.id, payment.code)}
+                                                            className="w-7 h-7 rounded-lg flex items-center justify-center text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors cursor-pointer"
+                                                            title="Khôi phục phiếu thanh toán (Tính lại công nợ)"
+                                                        >
+                                                            <RotateCcw size={13.5} />
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => handleCancel(payment.id, payment.code)}
+                                                            className="w-7 h-7 rounded-lg flex items-center justify-center text-amber-600 hover:bg-amber-50 hover:text-amber-700 transition-colors cursor-pointer"
+                                                            title="Hủy phiếu thanh toán (Hoàn trả công nợ NCC)"
+                                                        >
+                                                            <Ban size={13.5} />
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={() => handleDelete(payment.id, payment.code)}
+                                                        className="w-7 h-7 rounded-lg flex items-center justify-center text-rose-500 hover:bg-rose-50 hover:text-rose-600 transition-colors cursor-pointer"
+                                                        title={t('purchasePayments.deleteTooltip')}
+                                                    >
+                                                        <Trash2 size={13.5} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
                             )}
                         </tbody>
                     </table>
@@ -804,6 +922,55 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                     </div>
                 )
             }
+
+            {/* Action Confirmation Modal */}
+            {actionModal.isOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 scale-100 animate-in zoom-in-95 duration-150">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                                actionModal.type === 'primary' 
+                                    ? 'bg-emerald-50 text-emerald-600' 
+                                    : 'bg-rose-50 text-rose-600'
+                            }`}>
+                                {actionModal.type === 'primary' ? (
+                                    <RotateCcw size={20} />
+                                ) : (
+                                    <AlertTriangle size={20} />
+                                )}
+                            </div>
+                            <h3 className="text-base font-bold text-slate-900">
+                                {actionModal.title}
+                            </h3>
+                        </div>
+                        <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+                            {actionModal.message}
+                        </p>
+                        <div className="flex items-center justify-end gap-3">
+                            <button
+                                type="button"
+                                disabled={isActionLoading}
+                                onClick={() => setActionModal(prev => ({ ...prev, isOpen: false }))}
+                                className="px-4 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+                            >
+                                Đóng
+                            </button>
+                            <button
+                                type="button"
+                                disabled={isActionLoading}
+                                onClick={actionModal.action}
+                                className={`px-4 py-2 text-xs font-bold text-white rounded-lg transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer ${
+                                    actionModal.type === 'primary'
+                                        ? 'bg-emerald-600 hover:bg-emerald-700'
+                                        : 'bg-rose-600 hover:bg-rose-700'
+                                }`}
+                            >
+                                {isActionLoading ? 'Đang xử lý...' : 'Xác nhận'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div >
     );
 }

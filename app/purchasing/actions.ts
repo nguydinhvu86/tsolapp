@@ -1640,6 +1640,216 @@ export async function updatePurchasePayment(id: string, data: any) {
     return payment;
 }
 
+export async function cancelPurchasePayment(id: string) {
+    const user: any = await getUser();
+
+    return prisma.$transaction(async (tx: any) => {
+        const payment = await tx.purchasePayment.findUnique({
+            where: { id },
+            include: {
+                allocations: {
+                    include: { bill: true }
+                },
+                supplier: true
+            }
+        });
+
+        if (!payment) throw new Error("Phiếu chi không tồn tại");
+        await verifyActionOwnership('PURCHASE_PAYMENTS', 'EDIT', payment.creatorId);
+        if (payment.status === 'CANCELLED') throw new Error("Phiếu chi đã bị hủy từ trước");
+
+        // 1. Reverse supplier debt: Cộng số tiền bị hủy vào công nợ NCC
+        const supplier = await tx.supplier.findUnique({ where: { id: payment.supplierId } });
+        if (supplier) {
+            await tx.supplier.update({
+                where: { id: payment.supplierId },
+                data: { totalDebt: supplier.totalDebt + payment.amount }
+            });
+        }
+
+        // 2. Reverse bill allocations & ghi vào lịch sử hóa đơn (PurchaseBillActivityLog)
+        for (const alloc of payment.allocations) {
+            const bill = await tx.purchaseBill.findUnique({ where: { id: alloc.billId } });
+            if (bill) {
+                const newPaidAmount = Math.max(0, bill.paidAmount - alloc.amount);
+                const newStatus = (newPaidAmount >= bill.totalAmount - 0.01) ? 'PAID' : (newPaidAmount > 0 ? 'PARTIAL_PAID' : 'APPROVED');
+                await tx.purchaseBill.update({
+                    where: { id: bill.id },
+                    data: { paidAmount: newPaidAmount, status: newStatus }
+                });
+
+                // Ghi nhận vào nhật ký hoạt động của Hóa đơn
+                await tx.purchaseBillActivityLog.create({
+                    data: {
+                        billId: bill.id,
+                        userId: user.id,
+                        action: 'PAYMENT_CANCELLED',
+                        details: `Hủy phiếu chi ${payment.code}: Hoàn trả ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 6 }).format(alloc.amount)} vào công nợ hóa đơn.`
+                    }
+                });
+            }
+        }
+
+        // 3. Update related CashTransaction (Phiếu Chi Kế Toán) if any
+        try {
+            const relatedCashTx = await tx.cashTransaction.findFirst({
+                where: {
+                    OR: [
+                        { notes: { contains: payment.code } },
+                        { reason: { contains: payment.code } }
+                    ]
+                }
+            });
+            if (relatedCashTx && relatedCashTx.status !== 'CANCELLED') {
+                await tx.cashTransaction.update({
+                    where: { id: relatedCashTx.id },
+                    data: {
+                        status: 'CANCELLED',
+                        notes: `${relatedCashTx.notes || ''} [Đã hủy cùng Phiếu chi NCC ${payment.code}]`
+                    }
+                });
+            }
+        } catch (accErr) {
+            console.error('Error updating related CashTransaction on payment cancel:', accErr);
+        }
+
+        // 4. Update status of PurchasePayment to CANCELLED & record history in notes
+        const cancelNote = `[ĐÃ HỦY vào ${new Date().toLocaleString('vi-VN')} bởi ${user.name || user.email || 'Người dùng'}]`;
+        const updatedNotes = payment.notes ? `${payment.notes}\n${cancelNote}` : cancelNote;
+
+        const updatedPayment = await tx.purchasePayment.update({
+            where: { id },
+            data: {
+                status: 'CANCELLED',
+                notes: updatedNotes
+            },
+            include: {
+                supplier: true,
+                creator: true,
+                allocations: {
+                    include: { bill: true }
+                }
+            }
+        });
+
+        revalidatePath('/purchasing/payments');
+        revalidatePath(`/purchasing/payments/${id}`);
+        revalidatePath('/purchasing/bills');
+        for (const alloc of payment.allocations) {
+            revalidatePath(`/purchasing/bills/${alloc.billId}`);
+        }
+        revalidatePath('/suppliers');
+        revalidatePath(`/suppliers/${payment.supplierId}`);
+        return updatedPayment;
+    }, {
+        maxWait: 15000,
+        timeout: 60000
+    });
+}
+
+export async function restorePurchasePayment(id: string) {
+    const user: any = await getUser();
+
+    return prisma.$transaction(async (tx: any) => {
+        const payment = await tx.purchasePayment.findUnique({
+            where: { id },
+            include: {
+                allocations: {
+                    include: { bill: true }
+                },
+                supplier: true
+            }
+        });
+
+        if (!payment) throw new Error("Phiếu chi không tồn tại");
+        await verifyActionOwnership('PURCHASE_PAYMENTS', 'EDIT', payment.creatorId);
+        if (payment.status !== 'CANCELLED') throw new Error("Phiếu chi đang hoạt động, không thể khôi phục");
+
+        // 1. Áp dụng lại công nợ NCC: Trừ tiền nợ
+        const supplier = await tx.supplier.findUnique({ where: { id: payment.supplierId } });
+        if (supplier) {
+            await tx.supplier.update({
+                where: { id: payment.supplierId },
+                data: { totalDebt: supplier.totalDebt - payment.amount }
+            });
+        }
+
+        // 2. Áp dụng lại allocations và ghi log vào hóa đơn
+        for (const alloc of payment.allocations) {
+            const bill = await tx.purchaseBill.findUnique({ where: { id: alloc.billId } });
+            if (bill) {
+                const newPaidAmount = bill.paidAmount + alloc.amount;
+                const newStatus = (newPaidAmount >= bill.totalAmount - 0.01) ? 'PAID' : 'PARTIAL_PAID';
+                await tx.purchaseBill.update({
+                    where: { id: bill.id },
+                    data: { paidAmount: newPaidAmount, status: newStatus }
+                });
+
+                await tx.purchaseBillActivityLog.create({
+                    data: {
+                        billId: bill.id,
+                        userId: user.id,
+                        action: 'PAYMENT_RESTORED',
+                        details: `Khôi phục phiếu chi ${payment.code}: Cấn trừ ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 6 }).format(alloc.amount)} vào hóa đơn.`
+                    }
+                });
+            }
+        }
+
+        // 3. Restore related CashTransaction if any
+        try {
+            const relatedCashTx = await tx.cashTransaction.findFirst({
+                where: {
+                    OR: [
+                        { notes: { contains: payment.code } },
+                        { reason: { contains: payment.code } }
+                    ]
+                }
+            });
+            if (relatedCashTx) {
+                await tx.cashTransaction.update({
+                    where: { id: relatedCashTx.id },
+                    data: { status: 'COMPLETED' }
+                });
+            }
+        } catch (accErr) {
+            console.error('Error updating related CashTransaction on restore:', accErr);
+        }
+
+        // 4. Update status to COMPLETED & note
+        const restoreNote = `[KHÔI PHỤC vào ${new Date().toLocaleString('vi-VN')} bởi ${user.name || user.email || 'Người dùng'}]`;
+        const updatedNotes = payment.notes ? `${payment.notes}\n${restoreNote}` : restoreNote;
+
+        const updatedPayment = await tx.purchasePayment.update({
+            where: { id },
+            data: {
+                status: 'COMPLETED',
+                notes: updatedNotes
+            },
+            include: {
+                supplier: true,
+                creator: true,
+                allocations: {
+                    include: { bill: true }
+                }
+            }
+        });
+
+        revalidatePath('/purchasing/payments');
+        revalidatePath(`/purchasing/payments/${id}`);
+        revalidatePath('/purchasing/bills');
+        for (const alloc of payment.allocations) {
+            revalidatePath(`/purchasing/bills/${alloc.billId}`);
+        }
+        revalidatePath('/suppliers');
+        revalidatePath(`/suppliers/${payment.supplierId}`);
+        return updatedPayment;
+    }, {
+        maxWait: 15000,
+        timeout: 60000
+    });
+}
+
 export async function deletePurchasePayment(id: string) {
     await getUser();
 
@@ -1652,24 +1862,44 @@ export async function deletePurchasePayment(id: string) {
         if (!payment) throw new Error("Phiếu chi không tồn tại");
         await verifyActionOwnership('PURCHASE_PAYMENTS', 'DELETE', payment.creatorId);
 
-        // Reverse debt
-        const supplier = await tx.supplier.findUnique({ where: { id: payment.supplierId } });
-        await tx.supplier.update({
-            where: { id: payment.supplierId },
-            data: { totalDebt: supplier.totalDebt + payment.amount }
-        });
-
-        // Reverse bill status and paid amount
-        for (const alloc of payment.allocations) {
-            const bill = await tx.purchaseBill.findUnique({ where: { id: alloc.billId } });
-            if (bill) {
-                const newPaidAmount = Math.max(0, bill.paidAmount - alloc.amount);
-                const newStatus = (newPaidAmount >= bill.totalAmount - 0.01) ? 'PAID' : (newPaidAmount > 0 ? 'PARTIAL_PAID' : 'APPROVED');
-                await tx.purchaseBill.update({
-                    where: { id: bill.id },
-                    data: { paidAmount: newPaidAmount, status: newStatus }
+        // If payment was not cancelled, reverse debt and bill allocations before deleting
+        if (payment.status !== 'CANCELLED') {
+            const supplier = await tx.supplier.findUnique({ where: { id: payment.supplierId } });
+            if (supplier) {
+                await tx.supplier.update({
+                    where: { id: payment.supplierId },
+                    data: { totalDebt: supplier.totalDebt + payment.amount }
                 });
             }
+
+            for (const alloc of payment.allocations) {
+                const bill = await tx.purchaseBill.findUnique({ where: { id: alloc.billId } });
+                if (bill) {
+                    const newPaidAmount = Math.max(0, bill.paidAmount - alloc.amount);
+                    const newStatus = (newPaidAmount >= bill.totalAmount - 0.01) ? 'PAID' : (newPaidAmount > 0 ? 'PARTIAL_PAID' : 'APPROVED');
+                    await tx.purchaseBill.update({
+                        where: { id: bill.id },
+                        data: { paidAmount: newPaidAmount, status: newStatus }
+                    });
+                }
+            }
+        }
+
+        // Delete related CashTransaction if any
+        try {
+            const relatedCashTx = await tx.cashTransaction.findFirst({
+                where: {
+                    OR: [
+                        { notes: { contains: payment.code } },
+                        { reason: { contains: payment.code } }
+                    ]
+                }
+            });
+            if (relatedCashTx) {
+                await tx.cashTransaction.delete({ where: { id: relatedCashTx.id } });
+            }
+        } catch (accErr) {
+            console.error('Error deleting related CashTransaction on payment delete:', accErr);
         }
 
         // Delete allocations then payment
@@ -1677,6 +1907,8 @@ export async function deletePurchasePayment(id: string) {
         await tx.purchasePayment.delete({ where: { id } });
 
         revalidatePath('/purchasing/payments');
+        revalidatePath('/purchasing/bills');
+        revalidatePath('/suppliers');
         return true;
     });
 }

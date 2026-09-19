@@ -564,24 +564,36 @@ export function PurchaseBillDetailClient({ bill, tasks, users, warehouses }: { b
                                             {allocationsPag.paginatedItems.length === 0 ? (
                                                 <tr><td colSpan={4} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Chưa có thanh toán nào được thực hiện cho hóa đơn này.</td></tr>
                                             ) : (
-                                                allocationsPag.paginatedItems.map((allocation: any) => (
-                                                    <tr key={allocation.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                                        <td style={{ padding: '1rem' }}>
-                                                            <Link href={`/purchasing/payments/${allocation.payment?.id}`} style={{ fontWeight: 600, color: '#4f46e5', textDecoration: 'none' }} className="hover:underline">
-                                                                {allocation.payment?.code}
-                                                            </Link>
-                                                        </td>
-                                                        <td style={{ padding: '1rem', color: '#475569' }}>{formatDate(allocation.createdAt)}</td>
-                                                        <td style={{ padding: '1rem' }}>
-                                                            {allocation.payment?.paymentMethod === 'BANK_TRANSFER' ? (
-                                                                <span className="px-2 py-1 rounded bg-blue-50 text-blue-600 text-xs font-medium">Chuyển Khoản</span>
-                                                            ) : (
-                                                                <span className="px-2 py-1 rounded bg-amber-50 text-amber-600 text-xs font-medium">Tiền Mặt</span>
-                                                            )}
-                                                        </td>
-                                                        <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#10b981' }}>{formatMoney(allocation.amount)}</td>
-                                                    </tr>
-                                                ))
+                                                allocationsPag.paginatedItems.map((allocation: any) => {
+                                                    const isCancelled = allocation.payment?.status === 'CANCELLED';
+                                                    return (
+                                                        <tr key={allocation.id} style={{ borderBottom: '1px solid #f1f5f9', opacity: isCancelled ? 0.65 : 1 }}>
+                                                            <td style={{ padding: '1rem' }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                    <Link href={`/purchasing/payments/${allocation.payment?.id}`} style={{ fontWeight: 600, color: isCancelled ? '#64748b' : '#4f46e5', textDecoration: isCancelled ? 'line-through' : 'none' }} className="hover:underline">
+                                                                        {allocation.payment?.code}
+                                                                    </Link>
+                                                                    {isCancelled && (
+                                                                        <span className="px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 text-[10px] font-bold uppercase">
+                                                                            ĐÃ HỦY
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </td>
+                                                            <td style={{ padding: '1rem', color: '#475569' }}>{formatDate(allocation.createdAt)}</td>
+                                                            <td style={{ padding: '1rem' }}>
+                                                                {allocation.payment?.paymentMethod === 'BANK_TRANSFER' ? (
+                                                                    <span className="px-2 py-1 rounded bg-blue-50 text-blue-600 text-xs font-medium">Chuyển Khoản</span>
+                                                                ) : (
+                                                                    <span className="px-2 py-1 rounded bg-amber-50 text-amber-600 text-xs font-medium">Tiền Mặt</span>
+                                                                )}
+                                                            </td>
+                                                            <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: isCancelled ? '#94a3b8' : '#10b981', textDecoration: isCancelled ? 'line-through' : 'none' }}>
+                                                                {formatMoney(allocation.amount)}
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })
                                             )}
                                         </tbody>
                                     </table>

@@ -56,6 +56,18 @@ export function PurchaseBillActivityLog({ logs, billCreator, billCreatedAt }: Pu
                     icon: <XCircle size={15} className="text-rose-500" />,
                     bg: 'bg-rose-50 border-rose-200 text-rose-700'
                 };
+            case 'PAYMENT_CANCELLED':
+                return {
+                    label: 'Hủy phiếu chi NCC',
+                    icon: <XCircle size={15} className="text-rose-500" />,
+                    bg: 'bg-rose-50 border-rose-200 text-rose-700'
+                };
+            case 'PAYMENT_RESTORED':
+                return {
+                    label: 'Khôi phục phiếu chi',
+                    icon: <CheckCircle2 size={15} className="text-emerald-500" />,
+                    bg: 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                };
             default:
                 return {
                     label: action,

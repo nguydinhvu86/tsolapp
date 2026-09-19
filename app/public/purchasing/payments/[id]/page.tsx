@@ -160,8 +160,13 @@ export default async function PublicPurchasePaymentPage({ params }: { params: { 
                     </div>
 
                     {/* Title */}
-                    <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-                        <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 0.5rem 0', color: '#0f172a' }}>PHIẾU CHI (PAYMENT VOUCHER)</h1>
+                    <div style={{ textAlign: 'center', marginBottom: '3rem', position: 'relative' }}>
+                        {payment.status === 'CANCELLED' && (
+                            <div className="inline-block mb-3 px-4 py-1.5 rounded-full bg-rose-100 border-2 border-rose-500 text-rose-700 font-extrabold text-sm tracking-wider uppercase shadow-xs">
+                                ⚠ PHIẾU CHI ĐÃ HỦY (VOID)
+                            </div>
+                        )}
+                        <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 0.5rem 0', color: payment.status === 'CANCELLED' ? '#64748b' : '#0f172a', textDecoration: payment.status === 'CANCELLED' ? 'line-through' : 'none' }}>PHIẾU CHI (PAYMENT VOUCHER)</h1>
                         <i style={{ fontSize: '0.95rem', color: '#475569' }}>Số: {payment.code} | Ngày: {formatDate(payment.date)}</i>
                     </div>
 
