@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { LayoutDashboard, Trophy, Users, FileText, Settings, FileSpreadsheet, FileCode, ChevronDown, ChevronRight, FileOutput, FilePlus2, FileStack, Mail, CheckSquare, Package, ShoppingCart, Target, GripVertical, Clock, BookOpen, Phone, Calculator, Megaphone, UserCheck, CalendarDays, Briefcase, Kanban, Activity, Landmark, Scale, BarChart3, Wallet } from 'lucide-react';
+import { LayoutDashboard, Trophy, Users, FileText, Settings, FileSpreadsheet, FileCode, ChevronDown, ChevronRight, FileOutput, FilePlus2, FileStack, Mail, CheckSquare, Package, ShoppingCart, Target, GripVertical, Clock, BookOpen, Phone, Calculator, Megaphone, UserCheck, CalendarDays, Briefcase, Kanban, Activity, Landmark, Scale, BarChart3, Wallet, QrCode, MessageSquare, HardDrive } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -31,6 +31,7 @@ const hasPermission = (permissions: string[], requiredPerm: string) => {
 
 const mainNavItems: any[] = [
     { name: 'Bảng Điều Khiển', nameKey: 'sidebar.dashboard', href: '/dashboard', icon: LayoutDashboard, permission: 'VIEW_DASHBOARD' },
+    { name: 'Executive BI & Dự Báo', nameKey: 'sidebar.executive_bi', href: '/executive-bi', icon: Activity, permission: 'VIEW_DASHBOARD' },
     { name: 'Bảng Vinh Danh', nameKey: 'sidebar.leaderboard', href: '/leaderboard', icon: Trophy, permission: 'VIEW_DASHBOARD' },
     { name: 'Dự Án (Projects)', nameKey: 'sidebar.projects', href: '/projects', icon: Target, permission: 'TASKS_VIEW' },
     { name: 'Công Việc & Giao Việc', nameKey: 'sidebar.tasks', href: '/tasks', icon: CheckSquare, permission: 'TASKS_VIEW' },
@@ -65,6 +66,8 @@ const mainNavItems: any[] = [
         icon: Package,
         children: [
             { name: 'Sản Phẩm & Dịch Vụ', nameKey: 'sidebar.products', href: '/inventory/products', permission: 'PRODUCTS_VIEW' },
+            { name: 'Đơn Vị Tính Quy Đổi', nameKey: 'sidebar.unit_conversions', href: '/inventory/unit-conversions', permission: 'PRODUCTS_VIEW' },
+            { name: 'Serial / IMEI & Bảo Hành', nameKey: 'sidebar.serials', href: '/inventory/serials', permission: 'INVENTORY_TX_VIEW' },
             { name: 'Danh Sách Kho', nameKey: 'sidebar.warehouses', href: '/inventory/warehouses', permission: 'WAREHOUSES_VIEW' },
             { name: 'Lịch Sử Lệnh Kho', nameKey: 'sidebar.inventory_tx', href: '/inventory/transactions', permission: 'INVENTORY_TX_VIEW' },
             { name: 'Kiểm Kê Kho', nameKey: 'sidebar.inventory_adj', href: '/inventory/adjustments', permission: 'INVENTORY_TX_VIEW' },
@@ -86,7 +89,7 @@ const mainNavItems: any[] = [
         name: 'Bán Hàng', nameKey: 'sidebar.sales',
         icon: ShoppingCart,
         children: [
-            { name: 'Cơ Hội Bán Hàng', nameKey: 'sidebar.leads', href: '/sales/leads', permission: 'SALES_ESTIMATES_VIEW' }, // FIXME later with proper permission
+            { name: 'Cơ Hội Bán Hàng', nameKey: 'sidebar.leads', href: '/sales/leads', permission: 'SALES_ESTIMATES_VIEW' },
             { name: 'Báo Giá (ERP)', nameKey: 'sidebar.estimates', href: '/sales/estimates', permission: 'SALES_ESTIMATES_VIEW' },
             { name: 'E-Catalog', nameKey: 'sidebar.ecatalogs', href: '/ecatalogs', permission: 'SALES_ESTIMATES_VIEW' },
             { name: 'Đơn Đặt Hàng', nameKey: 'sidebar.so', href: '/sales/orders', permission: 'SALES_ORDERS_VIEW' },
@@ -112,6 +115,8 @@ const mainNavItems: any[] = [
         icon: Calculator,
         children: [
             { name: 'Tổng Quan Tài Chính', nameKey: 'sidebar.accounting_overview', href: '/accounting', permission: 'ACCOUNTING_VIEW', icon: Scale },
+            { name: 'Sổ Cái Kế Toán (VAS)', nameKey: 'sidebar.general_ledger', href: '/accounting/general-ledger', permission: 'ACCOUNTING_VIEW', icon: BookOpen },
+            { name: 'Phê Duyệt Chi Tiêu', nameKey: 'sidebar.accounting_approvals', href: '/accounting/approvals', permission: 'ACCOUNTING_VIEW', icon: CheckSquare },
             { name: 'Sổ Quỹ Thu - Chi', nameKey: 'sidebar.accounting_cashbook', href: '/accounting/cash-book', permission: 'ACCOUNTING_VIEW', icon: Wallet },
             { name: 'Quản Lý Công Nợ', nameKey: 'sidebar.accounting_debts', href: '/accounting/debts', permission: 'ACCOUNTING_VIEW', icon: Users },
             { name: 'Tài Khoản & Quỹ', nameKey: 'sidebar.accounting_accounts', href: '/accounting/accounts', permission: 'ACCOUNTING_VIEW', icon: Landmark },
@@ -144,6 +149,8 @@ const mainNavItems: any[] = [
         children: [
             { name: 'Quản lý Người dùng', nameKey: 'sidebar.users', href: '/users', permission: 'USERS_VIEW', icon: Users },
             { name: 'Nhóm Quyền', nameKey: 'sidebar.roles', href: '/users/roles', permission: 'ROLES_VIEW', icon: CheckSquare },
+            { name: 'Mẫu Tin Zalo ZNS', nameKey: 'sidebar.zns_templates', href: '/settings/zns-templates', permission: 'SETTINGS_VIEW', icon: MessageSquare },
+            { name: 'Kho Lưu Trữ & Kiểm Toán', nameKey: 'sidebar.storage_vault', href: '/settings/storage-vault', permission: 'SETTINGS_VIEW', icon: HardDrive },
             { name: 'Cấu hình Email', nameKey: 'sidebar.email_config', href: '/email-config', permission: 'SETTINGS_VIEW', icon: Mail },
             { name: 'Mẫu Email', nameKey: 'sidebar.email_templates', href: '/email-templates', permission: 'SETTINGS_VIEW', icon: FileText },
             { name: 'Cấu hình Lead', nameKey: 'sidebar.lead_settings', href: '/settings/lead-forms', permission: 'SETTINGS_VIEW', icon: Target },

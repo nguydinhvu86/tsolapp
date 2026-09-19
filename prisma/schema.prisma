@@ -5,7 +5,7 @@ datasource db {
 
 generator client {
   provider      = "prisma-client-js"
-  engineType    = "binary"
+  engineType    = "library"
   binaryTargets = ["native", "windows"]
 }
 
@@ -163,6 +163,15 @@ model User {
   leaderboardReactions LeaderboardReaction[]
   leaderboardComments  LeaderboardComment[]
   leaderboardMentions  LeaderboardMention[]
+
+  // Centralized Vault & Unified Logs
+  systemAttachments    SystemAttachment[]   @relation("UserSystemAttachments")
+  unifiedActivityLogs  UnifiedActivityLog[] @relation("UserUnifiedLogs")
+
+  // Accounting & Approvals
+  createdJournalEntries   JournalEntry[]    @relation("JournalEntryCreator")
+  approvalRequestsRequested ApprovalRequest[] @relation("ApprovalRequester")
+  approvalStepLogs        ApprovalStepLog[] @relation("ApproverUser")
 }
 
 model SystemSetting {
@@ -237,6 +246,7 @@ model Customer {
   managers     User[]                @relation("CustomerManagers")
   cashTransactions CashTransaction[]
   callLogs     CallLog[]
+  purchasedSerials ProductSerial[]
 
   createdAt            DateTime               @default(now())
   updatedAt            DateTime               @updatedAt
@@ -568,6 +578,8 @@ model Task {
   @@index([creatorId])
   @@index([customerId])
   @@index([dueDate])
+  @@index([projectId, status, dueDate])
+  @@index([customerId, status])
 }
 
 model TaskDependency {
@@ -696,6 +708,7 @@ model Warehouse {
   inventories     Inventory[]
   transactionsOut InventoryTransaction[] @relation("WarehouseOut")
   transactionsIn  InventoryTransaction[] @relation("WarehouseIn")
+  productSerials  ProductSerial[]
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
 }
@@ -738,6 +751,9 @@ model Product {
   salesEstimateItems SalesEstimateItem[]
   salesOrderItems    SalesOrderItem[]
   salesInvoiceItems  SalesInvoiceItem[]
+
+  unitConversions ProductUnitConversion[]
+  serials         ProductSerial[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -790,6 +806,46 @@ model InventoryTransactionItem {
 
   transaction InventoryTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
   product     Product              @relation(fields: [productId], references: [id])
+}
+
+model ProductUnitConversion {
+  id             String   @id @default(cuid())
+  productId      String
+  product        Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  unitName       String   // vd: "Thùng", "Hộp", "Cuộn", "Mét"
+  conversionRate Float    // Tỷ lệ quy đổi ra đơn vị cơ bản (vd: 1 Thùng = 24 Cái -> conversionRate = 24)
+  isBaseUnit     Boolean  @default(false)
+  salePrice      Float?   // Giá bán riêng theo đơn vị này (nếu có)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([productId, unitName])
+  @@index([productId])
+}
+
+model ProductSerial {
+  id              String        @id @default(cuid())
+  productId       String
+  product         Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  serialNumber    String        @unique
+  status          String        @default("IN_STOCK") // "IN_STOCK", "SOLD", "WARRANTY_RETURN", "DEFECTIVE"
+  warehouseId     String?
+  warehouse       Warehouse?    @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+  purchaseBillId  String?
+  purchaseBill    PurchaseBill? @relation(fields: [purchaseBillId], references: [id], onDelete: SetNull)
+  salesInvoiceId  String?
+  salesInvoice    SalesInvoice? @relation(fields: [salesInvoiceId], references: [id], onDelete: SetNull)
+  customerId      String?
+  customer        Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  warrantyEndDate DateTime?     // Hạn bảo hành
+  notes           String?       @db.Text
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([productId, status])
+  @@index([customerId])
+  @@index([salesInvoiceId])
+  @@index([purchaseBillId])
 }
 
 // --- PROCUREMENT & SUPPLIER MANAGEMENT MODULE ---
@@ -971,12 +1027,18 @@ model PurchaseBill {
   allocations PurchasePaymentAllocation[] // Payments allocated to this bill
   tasks       Task[]
   activityLogs PurchaseBillActivityLog[]
+  receivedSerials ProductSerial[]
 
   projectId String?
   project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([supplierId])
+  @@index([creatorId])
+  @@index([supplierId, status, date])
 }
 
 model PurchaseBillItem {
@@ -1249,6 +1311,7 @@ model SalesInvoice {
   activityLogs SalesInvoiceActivityLog[]
   emailLogs    EmailLog[]
   managers     User[]                    @relation("SalesInvoiceManagers")
+  soldSerials  ProductSerial[]
 
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
@@ -1264,6 +1327,7 @@ model SalesInvoice {
   @@index([status])
   @@index([customerId])
   @@index([creatorId])
+  @@index([customerId, status, date])
 }
 
 model SalesInvoiceItem {
@@ -1392,6 +1456,13 @@ model CallLog {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([customerId])
+  @@index([leadId])
+  @@index([supplierId])
+  @@index([phone, startedAt])
+  @@index([extension, startedAt])
 }
 
 // --- EXPENSE MANAGEMENT MODULE ---
@@ -1495,6 +1566,8 @@ model Lead {
   estimatedValue    Float?    @default(0) // Giá trị ước tính
   expectedCloseDate DateTime? // Ngày dự kiến chốt hợp đồng/đơn hàng
   notes             String?   @db.Text
+  score             Int       @default(0) // Điểm số cơ hội (0 - 100)
+  temperature       String    @default("COLD") // COLD, WARM, HOT
 
   // Người phụ trách
   assignedToId String?
@@ -2592,6 +2665,8 @@ model CashTransaction {
   @@index([createdById])
   @@index([type])
   @@index([transactionDate])
+  @@index([financeAccountId, transactionDate])
+  @@index([type, transactionDate])
 }
 
 // ==========================================
@@ -2670,5 +2745,201 @@ model LeaderboardMention {
   @@index([postId])
   @@index([commentId])
 }
+
+// ==========================================
+// CENTRALIZED ATTACHMENT VAULT & UNIFIED AUDIT LOG
+// ==========================================
+
+model SystemAttachment {
+  id           String   @id @default(cuid())
+  fileName     String
+  fileUrl      String   @db.LongText
+  fileType     String?  // PDF, IMAGE, EXCEL, DOCX, AUDIO, VIDEO, OTHER
+  fileSize     Int?     // Size in bytes
+  entityType   String   // "SALES_INVOICE", "PURCHASE_BILL", "EXPENSE", "TASK", "CUSTOMER", "SUPPLIER", "CASH_TRANSACTION", "PROJECT", "LEAD"
+  entityId     String   // ID của chứng từ/thực thể
+  notes        String?  @db.Text
+  uploadedById String?
+  uploadedBy   User?    @relation("UserSystemAttachments", fields: [uploadedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([entityType, entityId])
+  @@index([uploadedById])
+  @@index([createdAt])
+}
+
+model UnifiedActivityLog {
+  id         String   @id @default(cuid())
+  entityType String   // "CUSTOMER", "INVOICE", "ESTIMATE", "ORDER", "BILL", "PAYMENT", "PROJECT", "TASK", "EXPENSE", "LEAD"
+  entityId   String
+  userId     String?
+  user       User?    @relation("UserUnifiedLogs", fields: [userId], references: [id], onDelete: SetNull)
+  action     String   // "CREATE", "UPDATE", "STATUS_CHANGE", "CANCEL", "ALLOCATE", "SIGN", "DELETE"
+  details    String?  @db.Text
+  oldData    String?  @db.LongText // JSON diff trước khi sửa
+  newData    String?  @db.LongText // JSON diff sau khi sửa
+  ipAddress  String?
+  userAgent  String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId, createdAt])
+  @@index([userId, createdAt])
+  @@index([action])
+}
+
+// ==========================================
+// DOUBLE-ENTRY ACCOUNTING & GENERAL LEDGER (VAS TT200/133)
+// ==========================================
+
+model ChartOfAccount {
+  id             String             @id @default(cuid())
+  code           String             @unique // 111, 112, 131, 331, 156, 511, 632, 642, 133, 3331
+  name           String
+  type           String             // "ASSET", "LIABILITY", "EQUITY", "REVENUE", "EXPENSE"
+  parentCode     String?
+  level          Int                @default(1)
+  balance        Float              @default(0) // Số dư hiện tại
+  isActive       Boolean            @default(true)
+  description    String?            @db.Text
+  journalLines   JournalEntryLine[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@index([type])
+  @@index([parentCode])
+}
+
+model JournalEntry {
+  id          String             @id @default(cuid())
+  entryNumber String             @unique // e.g. JE-2024-0001
+  date        DateTime           @default(now())
+  description String             @db.Text
+  refType     String?            // "SALES_INVOICE", "SALES_PAYMENT", "PURCHASE_BILL", "PURCHASE_PAYMENT", "EXPENSE", "CASH_TRANSACTION", "MANUAL"
+  refId       String?            // ID chứng từ liên quan
+  status      String             @default("POSTED") // "DRAFT", "POSTED", "CANCELLED"
+  totalDebit  Float              @default(0)
+  totalCredit Float              @default(0)
+  creatorId   String?
+  creator     User?              @relation("JournalEntryCreator", fields: [creatorId], references: [id], onDelete: SetNull)
+  lines       JournalEntryLine[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([refType, refId])
+  @@index([status])
+  @@index([date])
+}
+
+model JournalEntryLine {
+  id           String         @id @default(cuid())
+  entryId      String
+  entry        JournalEntry   @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  accountCode  String
+  account      ChartOfAccount @relation(fields: [accountCode], references: [code])
+  debitAmount  Float          @default(0) // Số tiền ghi Nợ
+  creditAmount Float          @default(0) // Số tiền ghi Có
+  description  String?        @db.Text
+  partnerType  String?        // "CUSTOMER", "SUPPLIER", "EMPLOYEE"
+  partnerId    String?        // ID đối tác liên quan
+  createdAt    DateTime       @default(now())
+
+  @@index([entryId])
+  @@index([accountCode])
+  @@index([partnerType, partnerId])
+}
+
+// ==========================================
+// MULTI-LEVEL APPROVAL WORKFLOW ENGINE
+// ==========================================
+
+model ApprovalRule {
+  id           String   @id @default(cuid())
+  name         String
+  entityType   String   // "EXPENSE", "PURCHASE_BILL", "PURCHASE_PAYMENT", "CASH_TRANSACTION"
+  minAmount    Float    @default(0)
+  maxAmount    Float?   // null means unlimited
+  requiredRole String   // "MANAGER", "CFO", "CEO", "ADMIN"
+  stepOrder    Int      @default(1)
+  isEnabled    Boolean  @default(true)
+  description  String?  @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([entityType, isEnabled])
+}
+
+model ApprovalRequest {
+  id              String            @id @default(cuid())
+  entityType      String            // "EXPENSE", "PURCHASE_BILL", "PURCHASE_PAYMENT", "CASH_TRANSACTION"
+  entityId        String
+  title           String
+  requestedAmount Float             @default(0)
+  currentStep     Int               @default(1)
+  totalSteps      Int               @default(1)
+  status          String            @default("PENDING") // "PENDING", "APPROVED", "REJECTED", "CANCELLED"
+  requestedById   String?
+  requestedBy     User?             @relation("ApprovalRequester", fields: [requestedById], references: [id], onDelete: SetNull)
+  stepLogs        ApprovalStepLog[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([entityType, entityId])
+  @@index([status])
+  @@index([requestedById])
+}
+
+model ApprovalStepLog {
+  id         String          @id @default(cuid())
+  requestId  String
+  request    ApprovalRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  stepOrder  Int
+  approverId String?
+  approver   User?           @relation("ApproverUser", fields: [approverId], references: [id], onDelete: SetNull)
+  status     String          // "APPROVED", "REJECTED"
+  notes      String?         @db.Text
+  actedAt    DateTime        @default(now())
+
+  @@index([requestId])
+  @@index([approverId])
+}
+
+// ==========================================
+// OMNI-CHANNEL CRM & ZALO ZNS / SMS MESSAGING
+// ==========================================
+
+model ZnsTemplate {
+  id              String   @id @default(cuid())
+  templateId      String   @unique // Mã Template từ Zalo ZNS Console
+  templateName    String
+  templateType    String   @default("TRANSACTIONAL") // TRANSACTIONAL, OTP, PROMOTIONAL
+  content         String   @db.Text
+  pricePerMessage Float    @default(300) // Chi phí trung bình (VND)
+  isEnabled       Boolean  @default(true)
+  znsLogs         ZnsLog[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model ZnsLog {
+  id             String       @id @default(cuid())
+  recipientPhone String
+  recipientName  String?
+  templateId     String
+  template       ZnsTemplate  @relation(fields: [templateId], references: [templateId], onDelete: Cascade)
+  dataPayload    String       @db.Text // JSON chuỗi tham số gửi
+  status         String       @default("DELIVERED") // PENDING, DELIVERED, FAILED
+  trackingId     String?      @unique
+  errorCode      String?
+  errorMessage   String?      @db.Text
+  sentAt         DateTime     @default(now())
+
+  @@index([recipientPhone])
+  @@index([status])
+  @@index([sentAt])
+}
+
+
+
 
 

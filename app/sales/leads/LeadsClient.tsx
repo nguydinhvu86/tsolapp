@@ -598,6 +598,9 @@ export function LeadsClient({
                                             {sortBy === 'amount_asc' ? <ChevronUp size={12} className="text-emerald-600" /> : sortBy === 'amount_desc' ? <ChevronDown size={12} className="text-emerald-600" /> : <ArrowUpDown size={11} className="opacity-30" />}
                                         </div>
                                     </th>
+                                    <th className="py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider text-center w-[130px]">
+                                        ĐIỂM TIỀM NĂNG
+                                    </th>
                                     <th className="py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider text-center w-[140px]">
                                         {t('leads.status')}
                                     </th>
@@ -683,6 +686,33 @@ export function LeadsClient({
                                                 <span className="font-mono font-bold text-xs text-slate-900">
                                                     {formatMoney(lead.estimatedValue || 0)}
                                                 </span>
+                                            </td>
+
+                                            {/* Lead Scoring & Temperature */}
+                                            <td className="py-2.5 px-3.5 align-middle text-center">
+                                                {(() => {
+                                                    const score = lead.score || 0;
+                                                    const temp = lead.temperature || (score >= 70 ? 'HOT' : score >= 40 ? 'WARM' : 'COLD');
+                                                    if (temp === 'HOT') {
+                                                        return (
+                                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-200">
+                                                                🔥 HOT ({score}đ)
+                                                            </span>
+                                                        );
+                                                    } else if (temp === 'WARM') {
+                                                        return (
+                                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                                                ⚡ WARM ({score}đ)
+                                                            </span>
+                                                        );
+                                                    } else {
+                                                        return (
+                                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                                                                ❄️ COLD ({score}đ)
+                                                            </span>
+                                                        );
+                                                    }
+                                                })()}
                                             </td>
 
                                             {/* Status */}

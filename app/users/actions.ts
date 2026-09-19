@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { revalidatePath } from 'next/cache';
 import bcrypt from 'bcryptjs';
+import { encryptSensitive, decryptSensitive } from '@/lib/crypto';
 
 // Kiểm tra quyền với fallback cho Admin chưa gán nhóm
 async function checkUserPermission(action: string) {
@@ -62,6 +63,7 @@ export async function getUsers() {
         }
         return {
             ...u,
+            sipPassword: decryptSensitive(u.sipPassword),
             permissions: parsedPermissions as string[]
         };
     });
@@ -105,7 +107,7 @@ export async function createUser(data: CreateUserData) {
         sidebarOrder: "[]",
         customerMenuOrder: "[]",
         extension: data.extension || null,
-        sipPassword: data.sipPassword || null
+        sipPassword: encryptSensitive(data.sipPassword)
     };
 
     if (data.permissionGroupId) {
@@ -173,7 +175,7 @@ export async function updateUser(id: string, data: UpdateUserData) {
     }
 
     if (data.sipPassword !== undefined) {
-        updateData.sipPassword = data.sipPassword || null;
+        updateData.sipPassword = encryptSensitive(data.sipPassword);
     }
 
     const updatedUser = await prisma.user.update({

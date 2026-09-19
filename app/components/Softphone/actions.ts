@@ -3,6 +3,7 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/authOptions";
 import { prisma } from "@/lib/prisma";
+import { decryptSensitive } from "@/lib/crypto";
 
 export async function getSoftphoneCredentials() {
     const session = await getServerSession(authOptions);
@@ -38,7 +39,7 @@ export async function getSoftphoneCredentials() {
 
     return {
         extension: user.extension,
-        sipPassword: user.sipPassword,
+        sipPassword: decryptSensitive(user.sipPassword),
         canUseSoftphone
     };
 }
