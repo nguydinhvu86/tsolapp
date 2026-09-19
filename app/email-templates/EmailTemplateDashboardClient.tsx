@@ -13,7 +13,14 @@ import {
     FileText,
     Receipt,
     Users,
-    Layers
+    Layers,
+    ShoppingBag,
+    CheckCircle2,
+    Scale,
+    Truck,
+    Target,
+    CheckSquare,
+    Sparkles
 } from 'lucide-react';
 import { deleteEmailTemplate } from './actions';
 import { useRouter } from 'next/navigation';
@@ -36,10 +43,10 @@ export default function EmailTemplateDashboardClient({ initialTemplates }: { ini
 
     const stats = useMemo(() => {
         const total = templates.length;
-        const estimate = templates.filter(t => t.module === 'ESTIMATE').length;
-        const invoice = templates.filter(t => t.module === 'INVOICE').length;
-        const customer = templates.filter(t => t.module === 'CUSTOMER').length;
-        return { total, estimate, invoice, customer };
+        const sales = templates.filter(t => ['ESTIMATE', 'ORDER', 'LEAD'].includes(t.module)).length;
+        const finance = templates.filter(t => ['INVOICE', 'PAYMENT_CONFIRMATION', 'DEBT_CONFIRMATION'].includes(t.module)).length;
+        const operations = templates.filter(t => ['PURCHASE_ORDER', 'TASK', 'CUSTOMER', 'GENERAL'].includes(t.module) || !t.module).length;
+        return { total, sales, finance, operations };
     }, [templates]);
 
     const filteredTemplates = useMemo(() => {
@@ -57,29 +64,79 @@ export default function EmailTemplateDashboardClient({ initialTemplates }: { ini
             case 'ESTIMATE':
                 return {
                     label: 'Báo Giá',
-                    icon: <FileText className="w-3 h-3" />,
-                    style: 'bg-blue-50 text-blue-700 border-blue-200/60'
+                    icon: <FileText className="w-3.5 h-3.5" />,
+                    style: 'bg-blue-50 text-blue-700 border-blue-200/80'
+                };
+            case 'ORDER':
+                return {
+                    label: 'Đơn Hàng',
+                    icon: <ShoppingBag className="w-3.5 h-3.5" />,
+                    style: 'bg-indigo-50 text-indigo-700 border-indigo-200/80'
                 };
             case 'INVOICE':
                 return {
                     label: 'Hóa Đơn',
-                    icon: <Receipt className="w-3 h-3" />,
-                    style: 'bg-emerald-50 text-emerald-700 border-emerald-200/60'
+                    icon: <Receipt className="w-3.5 h-3.5" />,
+                    style: 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
+                };
+            case 'PAYMENT_CONFIRMATION':
+                return {
+                    label: 'Phiếu Thu / TT',
+                    icon: <CheckCircle2 className="w-3.5 h-3.5" />,
+                    style: 'bg-teal-50 text-teal-700 border-teal-200/80'
+                };
+            case 'DEBT_CONFIRMATION':
+                return {
+                    label: 'Xác Nhận Nợ',
+                    icon: <Scale className="w-3.5 h-3.5" />,
+                    style: 'bg-amber-50 text-amber-700 border-amber-200/80'
+                };
+            case 'PURCHASE_ORDER':
+                return {
+                    label: 'Đơn Mua PO',
+                    icon: <Truck className="w-3.5 h-3.5" />,
+                    style: 'bg-pink-50 text-pink-700 border-pink-200/80'
+                };
+            case 'LEAD':
+                return {
+                    label: 'Lead Mới',
+                    icon: <Target className="w-3.5 h-3.5" />,
+                    style: 'bg-orange-50 text-orange-700 border-orange-200/80'
+                };
+            case 'TASK':
+                return {
+                    label: 'Công Việc',
+                    icon: <CheckSquare className="w-3.5 h-3.5" />,
+                    style: 'bg-violet-50 text-violet-700 border-violet-200/80'
                 };
             case 'CUSTOMER':
                 return {
                     label: 'Khách Hàng',
-                    icon: <Users className="w-3 h-3" />,
-                    style: 'bg-purple-50 text-purple-700 border-purple-200/60'
+                    icon: <Users className="w-3.5 h-3.5" />,
+                    style: 'bg-sky-50 text-sky-700 border-sky-200/80'
                 };
             default:
                 return {
                     label: 'Chung',
-                    icon: <Layers className="w-3 h-3" />,
+                    icon: <Layers className="w-3.5 h-3.5" />,
                     style: 'bg-slate-100 text-slate-700 border-slate-200'
                 };
         }
     };
+
+    const moduleTabs = [
+        { id: 'ALL', label: 'Tất cả' },
+        { id: 'ESTIMATE', label: 'Báo Giá' },
+        { id: 'ORDER', label: 'Đơn Hàng' },
+        { id: 'INVOICE', label: 'Hóa Đơn' },
+        { id: 'PAYMENT_CONFIRMATION', label: 'Phiếu Thu' },
+        { id: 'DEBT_CONFIRMATION', label: 'Công Nợ' },
+        { id: 'PURCHASE_ORDER', label: 'Mua Hàng (PO)' },
+        { id: 'LEAD', label: 'Lead Mới' },
+        { id: 'TASK', label: 'Công Việc' },
+        { id: 'CUSTOMER', label: 'Khách Hàng' },
+        { id: 'GENERAL', label: 'Chung' }
+    ];
 
     return (
         <div className="space-y-6 max-w-7xl mx-auto pb-12">
@@ -91,13 +148,13 @@ export default function EmailTemplateDashboardClient({ initialTemplates }: { ini
                     </div>
                     <div>
                         <div className="flex items-center gap-2">
-                            <h1 className="text-xl font-bold text-slate-900">Quản Lý Mẫu Email</h1>
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/60">
-                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
-                                {templates.length} Mẫu
+                            <h1 className="text-xl font-bold text-slate-900">Quản Lý Mẫu Email Doanh Nghiệp</h1>
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                                <Sparkles className="w-3 h-3 text-emerald-600" />
+                                {templates.length} Mẫu Chuẩn B2B
                             </span>
                         </div>
-                        <p className="text-sm text-slate-500 mt-0.5">Thiết kế và chuẩn hóa mẫu email thông báo, báo giá và tương tác khách hàng</p>
+                        <p className="text-sm text-slate-500 mt-0.5">Thư viện mẫu email chuẩn hóa phong cách Business cho toàn bộ hệ thống ERP</p>
                     </div>
                 </div>
 
@@ -113,7 +170,7 @@ export default function EmailTemplateDashboardClient({ initialTemplates }: { ini
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between">
                     <div>
-                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Tổng số mẫu</div>
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Tổng số mẫu email</div>
                         <div className="text-2xl font-mono font-bold text-slate-900 mt-1">{stats.total}</div>
                     </div>
                     <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600">
@@ -123,8 +180,8 @@ export default function EmailTemplateDashboardClient({ initialTemplates }: { ini
 
                 <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between">
                     <div>
-                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Mẫu Báo Giá</div>
-                        <div className="text-2xl font-mono font-bold text-blue-600 mt-1">{stats.estimate}</div>
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Kinh Doanh & Lead</div>
+                        <div className="text-2xl font-mono font-bold text-blue-600 mt-1">{stats.sales}</div>
                     </div>
                     <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
                         <FileText className="w-5 h-5" />
@@ -133,8 +190,8 @@ export default function EmailTemplateDashboardClient({ initialTemplates }: { ini
 
                 <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between">
                     <div>
-                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Mẫu Hóa Đơn</div>
-                        <div className="text-2xl font-mono font-bold text-emerald-600 mt-1">{stats.invoice}</div>
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Tài Chính & Kế Toán</div>
+                        <div className="text-2xl font-mono font-bold text-emerald-600 mt-1">{stats.finance}</div>
                     </div>
                     <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
                         <Receipt className="w-5 h-5" />
@@ -143,8 +200,8 @@ export default function EmailTemplateDashboardClient({ initialTemplates }: { ini
 
                 <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between">
                     <div>
-                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Mẫu Khách Hàng</div>
-                        <div className="text-2xl font-mono font-bold text-purple-600 mt-1">{stats.customer}</div>
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Mua Hàng & Vận Hành</div>
+                        <div className="text-2xl font-mono font-bold text-purple-600 mt-1">{stats.operations}</div>
                     </div>
                     <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
                         <Users className="w-5 h-5" />
@@ -153,8 +210,8 @@ export default function EmailTemplateDashboardClient({ initialTemplates }: { ini
             </div>
 
             {/* Filter Ribbon */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div className="relative w-full sm:max-w-md">
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col lg:flex-row items-center justify-between gap-3">
+                <div className="relative w-full lg:max-w-xs">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
                         type="text"
@@ -165,13 +222,8 @@ export default function EmailTemplateDashboardClient({ initialTemplates }: { ini
                     />
                 </div>
 
-                <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-                    {[
-                        { id: 'ALL', label: 'Tất cả' },
-                        { id: 'ESTIMATE', label: 'Báo Giá' },
-                        { id: 'INVOICE', label: 'Hóa Đơn' },
-                        { id: 'CUSTOMER', label: 'Khách Hàng' }
-                    ].map(tab => (
+                <div className="flex items-center gap-1.5 w-full lg:w-auto overflow-x-auto pb-1 lg:pb-0 scrollbar-none">
+                    {moduleTabs.map(tab => (
                         <button
                             key={tab.id}
                             onClick={() => setSelectedModule(tab.id)}

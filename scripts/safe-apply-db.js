@@ -494,6 +494,14 @@ async function main() {
     await addColumnIfNotExists('PurchasePayment', 'supplierSignDevice', 'VARCHAR(191) NULL');
     await addColumnIfNotExists('PurchasePayment', 'supplierSignLocation', 'VARCHAR(191) NULL');
 
+    // 9b. Seed enterprise business email templates (12 templates)
+    try {
+        const { seedBusinessEmailTemplates } = require('./seed-business-email-templates');
+        await seedBusinessEmailTemplates(prisma);
+    } catch (tmplErr) {
+        console.warn('⚠️ Chú ý khi seed email templates:', tmplErr.message);
+    }
+
     // 10. Verification and record counts
     const taskCount = await prisma.task.count();
     const todoCount = await prisma.todo.count();
@@ -503,6 +511,7 @@ async function main() {
     const customerCount = await prisma.customer.count();
     const supplierCount = await prisma.supplier.count();
     const productCount = await prisma.product.count();
+    const emailTemplateCount = await prisma.emailTemplate.count();
 
     console.log('\n--- Kiểm tra tính toàn vẹn của dữ liệu ---');
     console.log(`- Việc cần làm / Nhiệm vụ (Tasks): ${taskCount} bản ghi`);
@@ -513,6 +522,7 @@ async function main() {
     console.log(`- Khách hàng (Customers): ${customerCount} bản ghi`);
     console.log(`- Nhà cung cấp (Suppliers): ${supplierCount} bản ghi`);
     console.log(`- Sản phẩm (Products): ${productCount} bản ghi`);
+    console.log(`- Mẫu Email (Email Templates): ${emailTemplateCount} bản ghi`);
     console.log('--------------------------------------------------\n');
 }
 

@@ -53,11 +53,40 @@ export function SendEmailModal({ isOpen, onClose, onSend, defaultToEmail, module
         let newSubject = template.subject;
         let newBody = template.body;
 
+        // Build normalized dictionary with cross-aliases
+        const mergedVars: Record<string, string> = {
+            today: new Date().toLocaleDateString('vi-VN'),
+            ...variablesData
+        };
+
+        // Cross-aliases for seamless compatibility
+        if (mergedVars.code) {
+            if (!mergedVars.invoiceCode) mergedVars.invoiceCode = mergedVars.code;
+            if (!mergedVars.orderCode) mergedVars.orderCode = mergedVars.code;
+            if (!mergedVars.paymentCode) mergedVars.paymentCode = mergedVars.code;
+        }
+        if (mergedVars.invoiceCode && !mergedVars.code) mergedVars.code = mergedVars.invoiceCode;
+        if (mergedVars.orderCode && !mergedVars.code) mergedVars.code = mergedVars.orderCode;
+        if (mergedVars.paymentCode && !mergedVars.code) mergedVars.code = mergedVars.paymentCode;
+
+        if (mergedVars.totalAmount && !mergedVars.amount) mergedVars.amount = mergedVars.totalAmount;
+        if (mergedVars.amount && !mergedVars.totalAmount) mergedVars.totalAmount = mergedVars.amount;
+        if (mergedVars.paymentAmount && !mergedVars.amount) mergedVars.amount = mergedVars.paymentAmount;
+        if (mergedVars.amount && !mergedVars.paymentAmount) mergedVars.paymentAmount = mergedVars.amount;
+        if (mergedVars.remainingAmount && !mergedVars.totalDebt && !mergedVars.totalAmount) mergedVars.totalDebt = mergedVars.remainingAmount;
+
+        if (mergedVars.date && !mergedVars.paymentDate) mergedVars.paymentDate = mergedVars.date;
+        if (mergedVars.paymentDate && !mergedVars.date) mergedVars.date = mergedVars.paymentDate;
+
+        if (mergedVars.leadName && !mergedVars.customerName) mergedVars.customerName = mergedVars.leadName;
+        if (mergedVars.customerName && !mergedVars.leadName) mergedVars.leadName = mergedVars.customerName;
+        if (mergedVars.supplierName && !mergedVars.customerName) mergedVars.customerName = mergedVars.supplierName;
+
         // Dynamic Parsing
-        Object.keys(variablesData).forEach(key => {
+        Object.keys(mergedVars).forEach(key => {
             const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
-            newSubject = newSubject.replace(regex, variablesData[key]);
-            newBody = newBody.replace(regex, variablesData[key]);
+            newSubject = newSubject.replace(regex, mergedVars[key] || '');
+            newBody = newBody.replace(regex, mergedVars[key] || '');
         });
 
         setSubject(newSubject);
