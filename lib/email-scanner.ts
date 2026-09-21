@@ -99,7 +99,7 @@ export async function fetchUnreadInvoices() {
                     if (codeMatch) lookupCode = codeMatch[1].trim().replace(/Quý.*/i, '').replace(/Quy.*/i, '').replace(/Q$/, '').replace(/[.,:;]+$/, '');
                     
                     const taxCodeMatch = plainText.match(/(?:Mã số thuế|MST)[^\d]*([\d\-]+)/i);
-                    const sysTaxCode = taxCodeMatch ? taxCodeMatch[1].replace(/-/g, '') : 'KhongTheTrichXuatMST';
+                    const sysTaxCode = taxCodeMatch ? (normalizeTaxCode(taxCodeMatch[1]) || taxCodeMatch[1]) : 'KhongTheTrichXuatMST';
                     
                     const invNumberMatch = plainText.match(/(?:Số hóa đơn|Số HĐ|Ký hiệu|Số)[\s:;]*([A-Za-z0-9\-\/]+)/i);
                     const sysInvNumberRaw = invNumberMatch ? invNumberMatch[1] : `PENDING-${Date.now()}`;

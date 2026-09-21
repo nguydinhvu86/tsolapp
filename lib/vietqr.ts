@@ -14,6 +14,43 @@ export interface TaxLookupResult {
 }
 
 /**
+ * Chuẩn hóa mã số thuế trước khi tra cứu:
+ * - 10 chữ số (doanh nghiệp chính): XXXXXXXXXX
+ * - 13 chữ số (chi nhánh): XXXXXXXXXX-XXX (tự động thêm gạch nối nếu người dùng nhập liền hoặc có khoảng trắng)
+ * - 9 chữ số: tự động thêm 0 ở đầu
+ * - 12 chữ số: tự động thêm 0 ở đầu và gạch nối
+ */
+export function normalizeTaxCode(rawTaxCode: string | null | undefined): string {
+    if (!rawTaxCode || typeof rawTaxCode !== 'string') return '';
+    let clean = rawTaxCode.trim().replace(/\s+/g, '').replace(/[^0-9A-Za-z-]/g, '');
+
+    // Lọc bỏ chuỗi rác
+    if (
+        clean.toLowerCase().includes('khongthetrichxuat') ||
+        clean.toLowerCase().includes('pending') ||
+        clean.toLowerCase().includes('mst') ||
+        clean.length < 8
+    ) {
+        return '';
+    }
+
+    const digitsOnly = clean.replace(/-/g, '');
+    if (/^\d{9}$/.test(digitsOnly)) {
+        return '0' + digitsOnly;
+    }
+    if (/^\d{12}$/.test(digitsOnly)) {
+        return '0' + digitsOnly.slice(0, 9) + '-' + digitsOnly.slice(9);
+    }
+    if (/^\d{13}$/.test(digitsOnly)) {
+        return digitsOnly.slice(0, 10) + '-' + digitsOnly.slice(10);
+    }
+    if (/^\d{10}$/.test(digitsOnly)) {
+        return digitsOnly;
+    }
+    return clean;
+}
+
+/**
  * Tra cứu thông tin doanh nghiệp qua API VietQR theo Mã Số Thuế
  * API: https://api.vietqr.io/v2/business/{taxCode}
  */
@@ -22,7 +59,7 @@ export async function lookupBusinessByTaxCode(rawTaxCode: string): Promise<TaxLo
         return { success: false, message: 'Vui lòng nhập mã số thuế cần tra cứu.' };
     }
 
-    const taxCode = rawTaxCode.trim().replace(/\s+/g, '').replace(/-/g, '');
+    const taxCode = normalizeTaxCode(rawTaxCode);
     if (!taxCode) {
         return { success: false, message: 'Mã số thuế không hợp lệ.' };
     }
@@ -80,3 +117,4 @@ export async function lookupBusinessByTaxCode(rawTaxCode: string): Promise<TaxLo
         };
     }
 }
+

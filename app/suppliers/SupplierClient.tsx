@@ -239,9 +239,10 @@ export function SupplierClient({ initialSuppliers }: { initialSuppliers: any[] }
         try {
             const res = await lookupSupplierTaxCode(formData.taxCode.trim());
             if (res.success && res.data) {
-                const { name, shortName, internationalName, address, status } = res.data;
+                const { name, shortName, internationalName, address, status, id } = res.data;
                 setFormData(prev => ({
                     ...prev,
+                    taxCode: id || prev.taxCode,
                     name: name || prev.name,
                     shortName: shortName || prev.shortName,
                     internationalName: internationalName || prev.internationalName,

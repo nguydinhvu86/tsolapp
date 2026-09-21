@@ -1,6 +1,6 @@
 export function normalizeTaxCode(taxCode: string | null | undefined): string {
     if (!taxCode) return '';
-    let clean = taxCode.toString().replace(/[^0-9A-Za-z-]/g, '').trim();
+    let clean = taxCode.toString().replace(/\s+/g, '').replace(/[^0-9A-Za-z-]/g, '').trim();
     
     // Bỏ qua các placeholder hoặc chuỗi rác
     if (
@@ -12,13 +12,23 @@ export function normalizeTaxCode(taxCode: string | null | undefined): string {
         return '';
     }
 
-    // Nếu MST là 9 chữ số (do bị mất số 0 đầu), thêm số 0 vào đầu để chuẩn 10 chữ số
-    if (/^\d{9}$/.test(clean)) {
-        clean = '0' + clean;
+    const digitsOnly = clean.replace(/-/g, '');
+    if (/^\d{9}$/.test(digitsOnly)) {
+        return '0' + digitsOnly;
+    }
+    if (/^\d{12}$/.test(digitsOnly)) {
+        return '0' + digitsOnly.slice(0, 9) + '-' + digitsOnly.slice(9);
+    }
+    if (/^\d{13}$/.test(digitsOnly)) {
+        return digitsOnly.slice(0, 10) + '-' + digitsOnly.slice(10);
+    }
+    if (/^\d{10}$/.test(digitsOnly)) {
+        return digitsOnly;
     }
 
     return clean;
 }
+
 
 export function cleanCompanyName(name: string | null | undefined): string {
     if (!name) return '';
