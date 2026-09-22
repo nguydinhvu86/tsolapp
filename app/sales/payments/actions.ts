@@ -147,6 +147,11 @@ export async function createSalesPayment(data: any) {
         maxWait: 15000,
         timeout: 60000
     });
+
+    revalidatePath('/sales/payments');
+    revalidatePath('/sales/invoices');
+    revalidatePath('/accounting/cash-book');
+    return payment;
 }
 
 export async function updateSalesPayment(id: string, data: any) {

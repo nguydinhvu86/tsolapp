@@ -1366,11 +1366,30 @@ export async function paySalesInvoice(
                 });
             }
 
+            // Auto-create Accounting CashTransaction (Phiếu Thu Kế Toán)
+            try {
+                const { createAutoReceiptFromSalesPayment } = await import('@/app/accounting/actions');
+                await createAutoReceiptFromSalesPayment(tx, {
+                    paymentCode: nextCode,
+                    customerId: invoice.customerId,
+                    amount,
+                    date: new Date(),
+                    paymentMethod,
+                    reference,
+                    notes: notes || `Thu tiền khách theo hóa đơn ${invoice.code}`,
+                    userId: creatorId,
+                    invoiceCodes: [invoice.code]
+                });
+            } catch (accErr) {
+                console.error('Error auto-creating accounting receipt from paySalesInvoice:', accErr);
+            }
+
             return payment;
         });
 
         revalidatePath('/sales/invoices');
         revalidatePath('/sales/payments');
+        revalidatePath('/accounting/cash-book');
         return { success: true, data: result };
     } catch (error: any) {
         console.error("Lỗi khi thanh toán hóa đơn:", error);
