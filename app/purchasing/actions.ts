@@ -1539,6 +1539,10 @@ export async function createPurchasePayment(data: any) {
 
         return payment;
     });
+
+    revalidatePath('/purchasing/payments');
+    revalidatePath('/accounting/cash-book');
+    return result;
 }
 
 export async function payPurchaseBill(
@@ -1641,6 +1645,7 @@ export async function payPurchaseBill(
         revalidatePath('/purchasing/bills');
         revalidatePath(`/purchasing/bills/${billId}`);
         revalidatePath('/purchasing/payments');
+        revalidatePath('/accounting/cash-book');
         return { success: true, data: result };
     } catch (error: any) {
         console.error("Lỗi khi chi tiền thanh toán hóa đơn:", error);
@@ -1665,6 +1670,7 @@ export async function updatePurchasePayment(id: string, data: any) {
 
     revalidatePath('/purchasing/payments');
     revalidatePath(`/purchasing/payments/${id}`);
+    revalidatePath('/accounting/cash-book');
     return payment;
 }
 
@@ -1768,6 +1774,7 @@ export async function cancelPurchasePayment(id: string) {
         }
         revalidatePath('/suppliers');
         revalidatePath(`/suppliers/${payment.supplierId}`);
+        revalidatePath('/accounting/cash-book');
         return updatedPayment;
     }, {
         maxWait: 15000,

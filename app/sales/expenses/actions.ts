@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "@/lib/authOptions";
 import { verifyActionPermission, verifyActionOwnership } from '@/lib/permissions';
+import { revalidatePath } from 'next/cache';
 
 export async function getExpenses() {
     const session = await getServerSession(authOptions);
@@ -132,6 +133,30 @@ export async function createExpense(data: {
             }
         });
 
+        // Auto-create CashTransaction in Cash Book (Phiếu Chi Kế Toán)
+        try {
+            const { createAutoPaymentFromExpense } = await import('@/app/accounting/actions');
+            await createAutoPaymentFromExpense(prisma, {
+                expenseCode: nextCode,
+                payee: data.payee,
+                description: data.description,
+                amount: data.amount,
+                date: data.date ? new Date(data.date) : new Date(),
+                paymentMethod: data.paymentMethod || 'BANK_TRANSFER',
+                reference: data.reference,
+                notes: `Chi phí: ${data.description}`,
+                userId: uId,
+                customerId: data.customerId,
+                supplierId: data.supplierId,
+                projectId: data.projectId
+            });
+        } catch (accErr) {
+            console.error('Lỗi khi tự động tạo phiếu chi sổ quỹ cho Chi Phí:', accErr);
+        }
+
+        revalidatePath('/sales/expenses');
+        revalidatePath('/accounting/cash-book');
+
         return expense;
     } catch (error: any) {
         console.error('Lỗi khi tạo khoản Chi Phí:', error);
@@ -165,6 +190,49 @@ export async function updateExpense(id: string, data: {
                 ...data,
             }
         });
+
+        // Also update reason/amount in CashTransaction if exists
+        try {
+            const linkedCashTx = await prisma.cashTransaction.findFirst({
+                where: {
+                    OR: [
+                        { reason: { contains: oldExpense.code } },
+                        { notes: { contains: oldExpense.code } }
+                    ]
+                }
+            });
+            if (linkedCashTx) {
+                const updateData: any = {};
+                if (data.amount !== undefined && data.amount !== linkedCashTx.amount) {
+                    const diff = data.amount - linkedCashTx.amount;
+                    updateData.amount = data.amount;
+                    if (linkedCashTx.financeAccountId) {
+                        await prisma.financeAccount.update({
+                            where: { id: linkedCashTx.financeAccountId },
+                            data: { currentBalance: { decrement: diff } }
+                        });
+                    }
+                }
+                if (data.description !== undefined) {
+                    updateData.reason = `Chi phí: ${data.description} (Mã: ${oldExpense.code})`;
+                }
+                if (data.payee !== undefined) {
+                    updateData.payerReceiver = data.payee || 'Người nhận';
+                }
+                if (Object.keys(updateData).length > 0) {
+                    await prisma.cashTransaction.update({
+                        where: { id: linkedCashTx.id },
+                        data: updateData
+                    });
+                }
+            }
+        } catch (accErr) {
+            console.error('Lỗi khi cập nhật phiếu chi sổ quỹ:', accErr);
+        }
+
+        revalidatePath('/sales/expenses');
+        revalidatePath('/accounting/cash-book');
+
         return expense;
     } catch (error) {
         console.error('Lỗi khi cập nhật khoản Chi Phí:', error);
@@ -257,9 +325,38 @@ export async function deleteExpense(id: string) {
     await verifyActionOwnership('SALES_EXPENSES', 'DELETE', oldExpense.creatorId);
 
     try {
+        // Delete linked CashTransaction if exists
+        try {
+            const linkedCashTx = await prisma.cashTransaction.findFirst({
+                where: {
+                    OR: [
+                        { reason: { contains: oldExpense.code } },
+                        { notes: { contains: oldExpense.code } }
+                    ]
+                }
+            });
+            if (linkedCashTx) {
+                if (linkedCashTx.financeAccountId) {
+                    await prisma.financeAccount.update({
+                        where: { id: linkedCashTx.financeAccountId },
+                        data: { currentBalance: { increment: linkedCashTx.amount } }
+                    });
+                }
+                await prisma.cashTransaction.delete({
+                    where: { id: linkedCashTx.id }
+                });
+            }
+        } catch (accErr) {
+            console.error('Lỗi khi xóa phiếu chi sổ quỹ liên kết:', accErr);
+        }
+
         await prisma.expense.delete({
             where: { id }
         });
+
+        revalidatePath('/sales/expenses');
+        revalidatePath('/accounting/cash-book');
+
         return { success: true };
     } catch (error) {
         console.error('Lỗi khi xóa khoản Chi Phí:', error);

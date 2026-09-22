@@ -758,6 +758,79 @@ export async function createAutoPaymentFromPurchasePayment(prismaTx: any, data: 
     return cashTx;
 }
 
+// Helper: Auto-create CashTransaction when Expense is created
+export async function createAutoPaymentFromExpense(prismaTx: any, data: {
+    expenseCode: string;
+    payee?: string;
+    description: string;
+    amount: number;
+    date: Date;
+    paymentMethod: string;
+    reference?: string;
+    notes?: string;
+    userId?: string;
+    customerId?: string | null;
+    supplierId?: string | null;
+    projectId?: string | null;
+}) {
+    const yy = String(data.date.getFullYear()).slice(-2);
+    const mm = String(data.date.getMonth() + 1).padStart(2, '0');
+    const ymPrefix = `PC-${yy}${mm}-`;
+
+    const lastTx = await prismaTx.cashTransaction.findFirst({
+        where: { code: { startsWith: ymPrefix } },
+        orderBy: { code: 'desc' },
+        select: { code: true }
+    });
+
+    let seq = 1;
+    if (lastTx && lastTx.code) {
+        const parts = lastTx.code.split('-');
+        if (parts.length === 3) {
+            seq = parseInt(parts[2], 10) + 1;
+        }
+    }
+    const code = `${ymPrefix}${String(seq).padStart(4, '0')}`;
+
+    // Find default finance account matching payment method
+    const defaultAcc = await prismaTx.financeAccount.findFirst({
+        where: {
+            isActive: true,
+            ...(data.paymentMethod === 'CASH' ? { type: 'CASH' } : { type: 'BANK' })
+        },
+        orderBy: { isDefault: 'desc' }
+    });
+
+    const cashTx = await prismaTx.cashTransaction.create({
+        data: {
+            code,
+            type: 'PAYMENT',
+            category: 'OTHER_EXPENSE',
+            transactionDate: data.date,
+            amount: data.amount,
+            payerReceiver: data.payee || 'Người nhận',
+            reason: `Chi phí: ${data.description} (Mã: ${data.expenseCode})`,
+            paymentMethod: data.paymentMethod || 'BANK_TRANSFER',
+            financeAccountId: defaultAcc?.id || null,
+            customerId: data.customerId || null,
+            supplierId: data.supplierId || null,
+            projectId: data.projectId || null,
+            createdById: data.userId || null,
+            status: 'COMPLETED',
+            notes: data.notes || `Tự động tạo từ Khoản Chi Phí ${data.expenseCode}`
+        }
+    });
+
+    if (defaultAcc) {
+        await prismaTx.financeAccount.update({
+            where: { id: defaultAcc.id },
+            data: { currentBalance: { decrement: data.amount } }
+        });
+    }
+
+    return cashTx;
+}
+
 // ---------------------------------------------------------------------------
 // 3. TÀI KHOẢN NGÂN HÀNG & QUỸ (FINANCE ACCOUNTS)
 // ---------------------------------------------------------------------------
