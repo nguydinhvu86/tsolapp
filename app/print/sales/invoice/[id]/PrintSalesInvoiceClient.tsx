@@ -241,9 +241,21 @@ export default function PrintSalesInvoiceClient({ invoice, companyInfo, settings
 
                 {/* Bank Info */}
                 {settings?.BANK_INFO_ENABLED === 'true' && settings?.BANK_INFO_CONTENT && (
-                    <div style={{ marginBottom: '3rem' }}>
-                        <h4 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 0.5rem 0', textDecoration: 'underline' }}>Thông tin Thanh toán:</h4>
-                        <div style={{ fontSize: '0.95rem', whiteSpace: 'pre-line', fontStyle: 'italic', padding: '10px 15px', backgroundColor: '#f8fafc', borderLeft: '4px solid #10b981' }}>
+                    <div style={{ marginBottom: '2.5rem' }}>
+                        <h4 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 0.5rem 0', textDecoration: 'underline', color: '#0f172a' }}>
+                            Thông tin Thanh toán / Chuyển khoản:
+                        </h4>
+                        <div style={{
+                            fontSize: '0.95rem',
+                            lineHeight: '1.6',
+                            padding: '12px 16px',
+                            backgroundColor: '#f8fafc',
+                            border: '1px solid #cbd5e1',
+                            borderLeft: '4px solid #10b981',
+                            borderRadius: '4px',
+                            whiteSpace: 'pre-line',
+                            color: '#1e293b'
+                        }}>
                             {settings.BANK_INFO_CONTENT}
                         </div>
                     </div>

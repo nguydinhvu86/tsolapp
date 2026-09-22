@@ -63,8 +63,9 @@ export default async function PublicSalesInvoicePage({ params }: { params: { id:
         where: {
             key: {
                 in: [
-                    'COMPANY_FULL_NAME', 'COMPANY_NAME', 'COMPANY_ADDRESS', 'COMPANY_LOGO', 'COMPANY_PHONE', 'COMPANY_EMAIL', 'COMPANY_TAX_CODE',
-                    'WATERMARK_ENABLED', 'WATERMARK_TYPE', 'WATERMARK_TEXT', 'WATERMARK_IMAGE_URL', 'WATERMARK_OPACITY', 'WATERMARK_ROTATION', 'WATERMARK_COLOR', 'WATERMARK_SIZE', 'WATERMARK_DOCUMENTS'
+                    'COMPANY_FULL_NAME', 'COMPANY_NAME', 'COMPANY_ADDRESS', 'COMPANY_LOGO', 'COMPANY_PHONE', 'COMPANY_EMAIL', 'COMPANY_TAX_CODE', 'COMPANY_TAX',
+                    'WATERMARK_ENABLED', 'WATERMARK_TYPE', 'WATERMARK_TEXT', 'WATERMARK_IMAGE_URL', 'WATERMARK_OPACITY', 'WATERMARK_ROTATION', 'WATERMARK_COLOR', 'WATERMARK_SIZE', 'WATERMARK_DOCUMENTS',
+                    'BANK_INFO_ENABLED', 'BANK_INFO_CONTENT'
                 ]
             }
         }
@@ -239,10 +240,32 @@ export default async function PublicSalesInvoicePage({ params }: { params: { id:
 
                 {/* Notes */}
                 {invoice.notes && (
-                    <div style={{ marginBottom: '3rem' }}>
+                    <div style={{ marginBottom: '2rem' }}>
                         <h4 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '0 0 0.5rem 0' }}>Ghi chú:</h4>
                         <div style={{ fontSize: '0.9rem', whiteSpace: 'pre-line', fontStyle: 'italic', padding: '10px 15px', backgroundColor: '#f8fafc', borderLeft: '4px solid #94a3b8' }}>
                             {invoice.notes}
+                        </div>
+                    </div>
+                )}
+
+                {/* Bank / Payment Info */}
+                {settingsMap['BANK_INFO_ENABLED'] === 'true' && settingsMap['BANK_INFO_CONTENT'] && (
+                    <div style={{ marginBottom: '2.5rem' }}>
+                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '0 0 0.5rem 0', color: '#0f172a', textTransform: 'uppercase' }}>
+                            Thông Tin Thanh Toán / Chuyển Khoản:
+                        </h4>
+                        <div style={{
+                            fontSize: '0.9rem',
+                            lineHeight: '1.6',
+                            padding: '12px 16px',
+                            backgroundColor: '#f8fafc',
+                            border: '1px solid #e2e8f0',
+                            borderLeft: '4px solid #0284c7',
+                            borderRadius: '4px',
+                            whiteSpace: 'pre-line',
+                            color: '#334155'
+                        }}>
+                            {settingsMap['BANK_INFO_CONTENT']}
                         </div>
                     </div>
                 )}
