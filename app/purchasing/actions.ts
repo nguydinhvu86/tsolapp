@@ -1436,7 +1436,7 @@ export async function createPurchasePayment(data: any) {
     const user = await verifyActionPermission('PURCHASE_PAYMENTS_CREATE');
     const uId = (user as any).id;
 
-    return prisma.$transaction(async (tx: any) => {
+    const payment = await prisma.$transaction(async (tx: any) => {
         let code = data.code;
         if (!code) {
             const count = await tx.purchasePayment.count();
@@ -1542,7 +1542,7 @@ export async function createPurchasePayment(data: any) {
 
     revalidatePath('/purchasing/payments');
     revalidatePath('/accounting/cash-book');
-    return result;
+    return payment;
 }
 
 export async function payPurchaseBill(
@@ -1626,7 +1626,7 @@ export async function payPurchaseBill(
                     billId: bill.id,
                     userId: creatorId,
                     action: 'UPDATED',
-                    details: `Chi tiền thanh toán: ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 6 }).format(amount)} (Phiếu chi: ${payment.code})`
+                    details: `Chi tiền thanh toán: ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(Math.round(amount))} (Phiếu chi: ${payment.code})`
                 }
             });
 
@@ -1718,7 +1718,7 @@ export async function cancelPurchasePayment(id: string) {
                         billId: bill.id,
                         userId: user.id,
                         action: 'PAYMENT_CANCELLED',
-                        details: `Hủy phiếu chi ${payment.code}: Hoàn trả ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 6 }).format(alloc.amount)} vào công nợ hóa đơn.`
+                        details: `Hủy phiếu chi ${payment.code}: Hoàn trả ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(Math.round(alloc.amount))} vào công nợ hóa đơn.`
                     }
                 });
             }
@@ -1825,7 +1825,7 @@ export async function restorePurchasePayment(id: string) {
                         billId: bill.id,
                         userId: user.id,
                         action: 'PAYMENT_RESTORED',
-                        details: `Khôi phục phiếu chi ${payment.code}: Cấn trừ ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 6 }).format(alloc.amount)} vào hóa đơn.`
+                        details: `Khôi phục phiếu chi ${payment.code}: Cấn trừ ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(Math.round(alloc.amount))} vào hóa đơn.`
                     }
                 });
             }

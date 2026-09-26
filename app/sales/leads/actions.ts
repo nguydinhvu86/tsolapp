@@ -397,17 +397,60 @@ export async function updateLeadStatus(id: string, status: string) {
                 // 2. Send Emails
                 const { getTemplatesByModule } = await import('@/app/email-templates/actions');
                 const templates = await getTemplatesByModule('LEAD');
-                let template = templates[0];
+                const template = templates.find(t => t.name.toLowerCase().includes('trạng thái') || t.subject.toLowerCase().includes('trạng thái'));
                 const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
                 const users = await prisma.user.findMany({ where: { id: { in: Array.from(usersToNotify) } } });
 
                 for (const u of users) {
                     if (!u.email) continue;
-                    let subject = `Cập nhật trạng thái Cơ hội bán hàng: ${oldLead.name}`;
-                    let htmlBody = `<p>Cơ hội bán hàng <strong>${oldLead.name}</strong> vừa được chuyển trạng thái sang: <strong>${statusText}</strong>.</p>
-            <p>Người thực hiện: ${creator?.name || 'Hệ thống'}</p>
-            <p><a href="${baseUrl}/sales/leads/${id}">Xem chi tiết cơ hội</a></p>`;
+                    let subject = `[TRỊNH GIA] Cập nhật trạng thái Cơ hội bán hàng: ${oldLead.name} - [${statusText}]`;
+                    let htmlBody = `
+                        <div style="max-width: 620px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                          <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 24px 30px; border-bottom: 3px solid #3b82f6;">
+                            <h2 style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 800; letter-spacing: -0.02em;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
+                            <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 12px;">Hệ Thống Quản Trị Khách Hàng & Cơ Hội Bán Hàng</p>
+                          </div>
+                          <div style="padding: 28px 30px 20px 30px; color: #334155; line-height: 1.6; font-size: 14px;">
+                            <p style="font-size: 15px; font-weight: 700; color: #0f172a; margin-top: 0;">
+                              Chào <span style="color: #2563eb;">${u.name || u.email || 'Bạn'}</span>,
+                            </p>
+                            <p style="margin: 12px 0;">
+                              Cơ hội bán hàng <strong>${oldLead.name}</strong> vừa được <strong>${creator?.name || 'Hệ thống'}</strong> chuyển trạng thái từ [<strong>${oldLead.status}</strong>] sang <strong style="color: #2563eb;">[${statusText}]</strong>.
+                            </p>
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; margin: 20px 0;">
+                              <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                                <tr>
+                                  <td style="padding: 6px 0; color: #64748b; width: 35%;">Tên cơ hội / KH:</td>
+                                  <td style="padding: 6px 0; font-weight: 700; color: #0f172a;">${oldLead.name}</td>
+                                </tr>
+                                <tr>
+                                  <td style="padding: 6px 0; color: #64748b;">Trạng thái mới:</td>
+                                  <td style="padding: 6px 0; font-weight: 800; color: #2563eb; font-size: 14px;">${statusText}</td>
+                                </tr>
+                                <tr>
+                                  <td style="padding: 6px 0; color: #64748b;">Công ty / Tổ chức:</td>
+                                  <td style="padding: 6px 0; font-weight: 600; color: #0f172a;">${oldLead.company || 'Không có'}</td>
+                                </tr>
+                                <tr>
+                                  <td style="padding: 6px 0; color: #64748b;">Giá trị dự kiến:</td>
+                                  <td style="padding: 6px 0; font-weight: 700; color: #059669;">${oldLead.estimatedValue ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(oldLead.estimatedValue) : '0 ₫'}</td>
+                                </tr>
+                              </table>
+                            </div>
+                            <div style="text-align: center; margin: 24px 0;">
+                              <a href="${baseUrl}/sales/leads/${id}" target="_blank" style="display: inline-block; background: #2563eb; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 10px; font-weight: 700; font-size: 14px; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.25);">
+                                XEM CHI TIẾT CƠ HỘI &rarr;
+                              </a>
+                            </div>
+                          </div>
+                          <div style="background: #f8fafc; padding: 20px 30px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; line-height: 1.5;">
+                            <p style="margin: 0 0 4px 0; font-weight: 700; color: #334155;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</p>
+                            <p style="margin: 0;">MST: 3703185173 | Địa chỉ: Số 147/80, Đường NTMK, Phường Phú Lợi, Tp. Hồ Chí Minh</p>
+                            <p style="margin: 2px 0 0 0;">Tel: (0274) 999 2222 - HP: 090 1232255 | Email: <a href="mailto:vutg@trinhgiatelecom.vn" style="color: #2563eb; text-decoration: none;">vutg@trinhgiatelecom.vn</a></p>
+                          </div>
+                        </div>
+                    `;
 
                     if (template) {
                         subject = template.subject || subject;
@@ -415,11 +458,15 @@ export async function updateLeadStatus(id: string, status: string) {
 
                         const variables: Record<string, string> = {
                             '{{leadName}}': oldLead.name,
+                            '{{customerName}}': oldLead.name,
                             '{{leadCode}}': oldLead.code,
+                            '{{status}}': statusText,
+                            '{{oldStatus}}': oldLead.status,
                             '{{company}}': oldLead.company || 'Không có',
                             '{{estimatedValue}}': oldLead.estimatedValue ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(oldLead.estimatedValue) : '0 ₫',
                             '{{expectedCloseDate}}': oldLead.expectedCloseDate ? new Date(oldLead.expectedCloseDate).toLocaleDateString('vi-VN') : 'Không có',
                             '{{assignerName}}': creator?.name || 'Hệ thống',
+                            '{{updatedBy}}': creator?.name || 'Hệ thống',
                             '{{assigneeName}}': u.name || u.email || 'Bạn',
                             '{{link}}': `${baseUrl}/sales/leads/${id}`
                         };

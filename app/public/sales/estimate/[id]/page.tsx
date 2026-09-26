@@ -90,7 +90,7 @@ export default async function PublicSalesEstimatePage({ params }: { params: { id
     const compLogo = settingsMap['COMPANY_LOGO'] || null;
 
     const formatMoney = (amount: number) => {
-        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0, minimumFractionDigits: 0 }).format(Math.round(amount || 0));
     };
 
 

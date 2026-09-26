@@ -295,17 +295,73 @@ export async function triggerAutoTaskEmail(taskId: string, newAssigneeIds: strin
         // Import inside to avoid circular deps if any
         const { getTemplatesByModule } = await import('@/app/email-templates/actions');
         const templates = await getTemplatesByModule('TASK');
-        let template = templates[0];
+        
+        // Find assignment-specific template (avoid picking status update template)
+        const template = templates.find(t => 
+            t.name.toLowerCase().includes('phân công') || 
+            t.name.toLowerCase().includes('giao việc') || 
+            t.subject.toLowerCase().includes('phân công') || 
+            t.subject.toLowerCase().includes('nhiệm vụ mới') ||
+            t.name.toLowerCase().includes('assign')
+        ) || templates.find(t => !t.name.toLowerCase().includes('trạng thái') && !t.subject.toLowerCase().includes('trạng thái') && !t.name.toLowerCase().includes('tiến độ'));
 
         const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        const priorityText = task.priority === 'URGENT' ? 'Khẩn cấp' : task.priority === 'HIGH' ? 'Cao' : task.priority === 'MEDIUM' ? 'Trung bình' : 'Thấp';
 
         await Promise.all(assigneesUsers.map(async (assignee) => {
             if (!assignee.email) return;
 
-            let subject = `Công việc mới: ${task.title}`;
-            let htmlBody = `<p>Bạn vừa được giao một công việc mới: <strong>${task.title}</strong></p>
-    <p>Bởi: ${task.creator?.name || 'Hệ thống'}</p>
-    <p><a href="${baseUrl}/tasks/${task.id}">Xem công việc</a></p>`;
+            let subject = `[TRỊNH GIA] Bạn Được Phân Công Nhiệm Vụ Mới: ${task.title}`;
+            let htmlBody = `
+                <div style="max-width: 620px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                  <div style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); padding: 24px 30px; border-bottom: 3px solid #6366f1;">
+                    <h2 style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 800; letter-spacing: -0.02em;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
+                    <p style="margin: 4px 0 0 0; color: #c7d2fe; font-size: 12px;">Hệ Thống Quản Trị Doanh Nghiệp ERP - inside.trinhgiatelecom.vn</p>
+                  </div>
+                  <div style="padding: 28px 30px 20px 30px; color: #334155; line-height: 1.6; font-size: 14px;">
+                    <p style="font-size: 15px; font-weight: 700; color: #0f172a; margin-top: 0;">
+                      Chào <span style="color: #4f46e5;">${assignee.name || assignee.email || 'Bạn'}</span>,
+                    </p>
+                    <p style="margin: 12px 0;">
+                      Bạn vừa được phân công một nhiệm vụ mới trên hệ thống Quản trị Trịnh Gia. Dưới đây là thông tin chi tiết:
+                    </p>
+                    <div style="background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 12px; padding: 18px 20px; margin: 20px 0;">
+                      <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <tr>
+                          <td style="padding: 6px 0; color: #6b7280; width: 35%;">Tiêu đề việc:</td>
+                          <td style="padding: 6px 0; font-weight: 700; color: #0f172a;">${task.title}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 6px 0; color: #6b7280;">Người giao việc:</td>
+                          <td style="padding: 6px 0; font-weight: 600; color: #0f172a;">${task.creator?.name || task.creator?.email || 'Hệ thống'}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 6px 0; color: #6b7280;">Hạn chót:</td>
+                          <td style="padding: 6px 0; font-weight: 700; color: #dc2626;">${task.dueDate ? formatDate(new Date(task.dueDate)) : 'Không có hạn chót'}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 6px 0; color: #6b7280;">Mức độ ưu tiên:</td>
+                          <td style="padding: 6px 0; font-weight: 700; color: #4f46e5;">${priorityText}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 6px 0; color: #6b7280; vertical-align: top;">Nội dung mô tả:</td>
+                          <td style="padding: 6px 0; color: #475569;">${task.description || 'Không có mô tả'}</td>
+                        </tr>
+                      </table>
+                    </div>
+                    <div style="text-align: center; margin: 24px 0;">
+                      <a href="${baseUrl}/tasks/${task.id}" target="_blank" style="display: inline-block; background: #4f46e5; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 10px; font-weight: 700; font-size: 14px; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.25);">
+                        TRUY CẬP VÀ XỬ LÝ NHIỆM VỤ &rarr;
+                      </a>
+                    </div>
+                  </div>
+                  <div style="background: #f8fafc; padding: 20px 30px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; line-height: 1.5;">
+                    <p style="margin: 0 0 4px 0; font-weight: 700; color: #334155;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</p>
+                    <p style="margin: 0;">MST: 3703185173 | Địa chỉ: Số 147/80, Đường NTMK, Phường Phú Lợi, Tp. Hồ Chí Minh</p>
+                    <p style="margin: 2px 0 0 0;">Tel: (0274) 999 2222 - HP: 090 1232255 | Email: <a href="mailto:vutg@trinhgiatelecom.vn" style="color: #4f46e5; text-decoration: none;">vutg@trinhgiatelecom.vn</a></p>
+                  </div>
+                </div>
+            `;
 
             if (template) {
                 subject = template.subject || subject;
@@ -315,7 +371,7 @@ export async function triggerAutoTaskEmail(taskId: string, newAssigneeIds: strin
                     '{{taskTitle}}': task.title,
                     '{{taskDescription}}': task.description || 'Không có mô tả',
                     '{{dueDate}}': task.dueDate ? formatDate(new Date(task.dueDate)) : 'Không có hạn chót',
-                    '{{priority}}': task.priority === 'URGENT' ? 'Khẩn cấp' : task.priority === 'HIGH' ? 'Cao' : task.priority === 'MEDIUM' ? 'Trung bình' : 'Thấp',
+                    '{{priority}}': priorityText,
                     '{{assignerName}}': task.creator?.name || task.creator?.email || 'Hệ thống',
                     '{{assigneeName}}': assignee.name || assignee.email || 'Bạn',
                     '{{link}}': `${baseUrl}/tasks/${task.id}`
@@ -607,18 +663,76 @@ export async function updateTaskStatus(id: string, status: string, userId: strin
             // 2. Send Emails
             const { getTemplatesByModule } = await import('@/app/email-templates/actions');
             const templates = await getTemplatesByModule('TASK');
-            let template = templates[0];
+            // Find status-specific template if user created one
+            const template = templates.find(t => 
+                t.name.toLowerCase().includes('trạng thái') || 
+                t.name.toLowerCase().includes('tiến độ') || 
+                t.name.toLowerCase().includes('status') ||
+                t.subject.toLowerCase().includes('trạng thái')
+            );
             const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-
             const users = await prisma.user.findMany({ where: { id: { in: Array.from(usersToNotify) } } });
+            const priorityText = oldTask.priority === 'URGENT' ? 'Khẩn cấp' : oldTask.priority === 'HIGH' ? 'Cao' : oldTask.priority === 'MEDIUM' ? 'Trung bình' : 'Thấp';
+            const statusColor = status === 'DONE' ? '#10b981' : status === 'CANCELLED' ? '#ef4444' : status === 'IN_PROGRESS' ? '#3b82f6' : status === 'REVIEW' ? '#f59e0b' : '#64748b';
 
             // Fire all emails in parallel (fire and forget pattern so we do not block returning status to client)
             Promise.all(users.map(async (u) => {
                 if (!u.email) return;
-                let subject = `Cập nhật trạng thái công việc: ${oldTask.title}`;
-                let htmlBody = `<p>Công việc <strong>${oldTask.title}</strong> vừa được chuyển trạng thái sang: <strong>${statusText}</strong>.</p>
-        <p>Người thực hiện: ${creator?.name || 'Hệ thống'}</p>
-        <p><a href="${baseUrl}/tasks/${id}">Xem công việc</a></p>`;
+                let subject = `[TRỊNH GIA] Cập Nhật Trạng Thái: ${oldTask.title} - [${statusText}]`;
+                let htmlBody = `
+                    <div style="max-width: 620px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                      <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 24px 30px; border-bottom: 3px solid ${statusColor};">
+                        <h2 style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 800; letter-spacing: -0.02em;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
+                        <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 12px;">Hệ Thống Quản Trị Doanh Nghiệp ERP - inside.trinhgiatelecom.vn</p>
+                      </div>
+                      <div style="padding: 28px 30px 20px 30px; color: #334155; line-height: 1.6; font-size: 14px;">
+                        <p style="font-size: 15px; font-weight: 700; color: #0f172a; margin-top: 0;">
+                          Chào <span style="color: #2563eb;">${u.name || u.email || 'Bạn'}</span>,
+                        </p>
+                        <p style="margin: 12px 0;">
+                          Công việc <strong>${oldTask.title}</strong> vừa được <strong>${creator?.name || 'Hệ thống'}</strong> chuyển trạng thái từ [<strong>${oldStatusText}</strong>] sang <strong style="color: ${statusColor};">[${statusText}]</strong>.
+                        </p>
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; margin: 20px 0;">
+                          <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                            <tr>
+                              <td style="padding: 6px 0; color: #64748b; width: 35%;">Tiêu đề việc:</td>
+                              <td style="padding: 6px 0; font-weight: 700; color: #0f172a;">${oldTask.title}</td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 6px 0; color: #64748b;">Trạng thái mới:</td>
+                              <td style="padding: 6px 0; font-weight: 800; color: ${statusColor}; font-size: 14px;">${statusText}</td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 6px 0; color: #64748b;">Trạng thái cũ:</td>
+                              <td style="padding: 6px 0; font-weight: 600; color: #64748b;">${oldStatusText}</td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 6px 0; color: #64748b;">Người thực hiện:</td>
+                              <td style="padding: 6px 0; font-weight: 600; color: #0f172a;">${creator?.name || 'Hệ thống'}</td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 6px 0; color: #64748b;">Hạn chót:</td>
+                              <td style="padding: 6px 0; font-weight: 600; color: #dc2626;">${oldTask.dueDate ? formatDate(new Date(oldTask.dueDate)) : 'Không có hạn chót'}</td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 6px 0; color: #64748b;">Mức độ ưu tiên:</td>
+                              <td style="padding: 6px 0; font-weight: 600; color: #0f172a;">${priorityText}</td>
+                            </tr>
+                          </table>
+                        </div>
+                        <div style="text-align: center; margin: 24px 0;">
+                          <a href="${baseUrl}/tasks/${id}" target="_blank" style="display: inline-block; background: #2563eb; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 10px; font-weight: 700; font-size: 14px; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.25);">
+                            XEM CHI TIẾT CÔNG VIỆC &rarr;
+                          </a>
+                        </div>
+                      </div>
+                      <div style="background: #f8fafc; padding: 20px 30px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; line-height: 1.5;">
+                        <p style="margin: 0 0 4px 0; font-weight: 700; color: #334155;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</p>
+                        <p style="margin: 0;">MST: 3703185173 | Địa chỉ: Số 147/80, Đường NTMK, Phường Phú Lợi, Tp. Hồ Chí Minh</p>
+                        <p style="margin: 2px 0 0 0;">Tel: (0274) 999 2222 - HP: 090 1232255 | Email: <a href="mailto:vutg@trinhgiatelecom.vn" style="color: #2563eb; text-decoration: none;">vutg@trinhgiatelecom.vn</a></p>
+                      </div>
+                    </div>
+                `;
 
                 if (template) {
                     subject = template.subject || subject;
@@ -627,9 +741,13 @@ export async function updateTaskStatus(id: string, status: string, userId: strin
                     const variables: Record<string, string> = {
                         '{{taskTitle}}': oldTask.title,
                         '{{taskDescription}}': oldTask.description || 'Không có mô tả',
+                        '{{status}}': statusText,
+                        '{{taskStatus}}': statusText,
+                        '{{oldStatus}}': oldStatusText,
                         '{{dueDate}}': oldTask.dueDate ? formatDate(new Date(oldTask.dueDate)) : 'Không có hạn chót',
-                        '{{priority}}': oldTask.priority === 'URGENT' ? 'Khẩn cấp' : oldTask.priority === 'HIGH' ? 'Cao' : oldTask.priority === 'MEDIUM' ? 'Trung bình' : 'Thấp',
+                        '{{priority}}': priorityText,
                         '{{assignerName}}': creator?.name || 'Hệ thống',
+                        '{{updatedBy}}': creator?.name || 'Hệ thống',
                         '{{assigneeName}}': u.name || u.email || 'Bạn',
                         '{{link}}': `${baseUrl}/tasks/${id}`
                     };

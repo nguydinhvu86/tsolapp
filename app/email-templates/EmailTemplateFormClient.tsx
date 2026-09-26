@@ -343,9 +343,12 @@ export default function EmailTemplateFormClient({
                                             {[
                                                 { code: '{{taskTitle}}', desc: `Tiêu đề công việc` },
                                                 { code: '{{taskDescription}}', desc: `Mô tả nội dung việc` },
+                                                { code: '{{status}}', desc: `Trạng thái mới của công việc` },
+                                                { code: '{{oldStatus}}', desc: `Trạng thái trước khi đổi` },
                                                 { code: '{{dueDate}}', desc: `Ngày đến hạn (Deadline)` },
                                                 { code: '{{priority}}', desc: `Mức độ ưu tiên` },
                                                 { code: '{{assignerName}}', desc: `Người giao việc` },
+                                                { code: '{{updatedBy}}', desc: `Người cập nhật trạng thái` },
                                                 { code: '{{assigneeName}}', desc: `Người nhận việc` },
                                                 { code: '{{link}}', desc: `Đường dẫn xem Công việc` }
                                             ].map((item, idx) => (

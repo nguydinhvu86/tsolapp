@@ -79,8 +79,8 @@ export async function sendEmailWithTracking(params: SendEmailParams) {
         await triggerPusherEvent(`user-${senderId}`, 'new-notification', { type: 'SILENT_REFRESH' });
     }
 
-    const fromName = config.SMTP_FROM_NAME || process.env.SMTP_FROM_NAME || 'ERP System';
-    const fromEmail = config.SMTP_FROM_EMAIL || config.SMTP_USER || process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER;
+    const fromName = config.SMTP_FROM_NAME || process.env.SMTP_FROM_NAME || 'TRỊNH GIA ERP';
+    const fromEmail = config.SMTP_FROM_EMAIL || config.SMTP_USER || process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || 'vutg@trinhgiatelecom.vn';
 
     // Handle Attachments
     const attachments = [];

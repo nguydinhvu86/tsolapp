@@ -40,13 +40,13 @@ export async function getCompanyInfo(): Promise<CompanyInfo> {
             if (s.value) map[s.key] = s.value;
         });
 
-        const fullName = map['COMPANY_FULL_NAME'] || map['COMPANY_NAME'] || map['COMPANY_DISPLAY_NAME'] || 'CÔNG TY TNHH GIẢI PHÁP CÔNG NGHỆ TSOL';
-        const displayName = map['COMPANY_DISPLAY_NAME'] || map['COMPANY_NAME'] || 'TSOL';
-        const taxCode = map['COMPANY_TAX'] || map['COMPANY_TAX_CODE'] || '';
-        const address = map['COMPANY_ADDRESS'] || '';
-        const phone = map['COMPANY_PHONE'] || '';
-        const email = map['COMPANY_EMAIL'] || '';
-        const website = map['COMPANY_WEBSITE'] || '';
+        const fullName = map['COMPANY_FULL_NAME'] || map['COMPANY_NAME'] || map['COMPANY_DISPLAY_NAME'] || 'CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA';
+        const displayName = map['COMPANY_DISPLAY_NAME'] || map['COMPANY_NAME'] || 'TRỊNH GIA';
+        const taxCode = map['COMPANY_TAX'] || map['COMPANY_TAX_CODE'] || '3703185173';
+        const address = map['COMPANY_ADDRESS'] || 'Số 147/80, Đường NTMK, Phường Phú Lợi, Tp. Hồ Chí Minh';
+        const phone = map['COMPANY_PHONE'] || 'Tel: (0274) 999 2222 - HP: 090 1232255';
+        const email = map['COMPANY_EMAIL'] || 'vutg@trinhgiatelecom.vn';
+        const website = map['COMPANY_WEBSITE'] || 'trinhgiatelecom.vn';
         const logo = map['COMPANY_LOGO'] || '';
         const bankInfo = map['BANK_INFO_CONTENT'] || '';
 
@@ -65,14 +65,14 @@ export async function getCompanyInfo(): Promise<CompanyInfo> {
     } catch (err) {
         console.error('Error fetching company info from system settings:', err);
         return {
-            name: 'CÔNG TY TNHH GIẢI PHÁP CÔNG NGHỆ TSOL',
-            fullName: 'CÔNG TY TNHH GIẢI PHÁP CÔNG NGHỆ TSOL',
-            displayName: 'TSOL',
-            taxCode: '',
-            address: '',
-            phone: '',
-            email: '',
-            website: '',
+            name: 'CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA',
+            fullName: 'CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA',
+            displayName: 'TRỊNH GIA',
+            taxCode: '3703185173',
+            address: 'Số 147/80, Đường NTMK, Phường Phú Lợi, Tp. Hồ Chí Minh',
+            phone: 'Tel: (0274) 999 2222 - HP: 090 1232255',
+            email: 'vutg@trinhgiatelecom.vn',
+            website: 'trinhgiatelecom.vn',
             logo: '',
             bankInfo: ''
         };

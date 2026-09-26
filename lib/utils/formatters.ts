@@ -5,9 +5,9 @@ export const formatMoney = (amount: number | null | undefined) => {
     return new Intl.NumberFormat('vi-VN', {
         style: 'currency',
         currency: 'VND',
-        maximumFractionDigits: 6,
+        maximumFractionDigits: 0,
         minimumFractionDigits: 0
-    }).format(Number(amount));
+    }).format(Math.round(Number(amount)));
 };
 
 export const parseNumber = (val: string | number | null | undefined): number => {
@@ -27,14 +27,14 @@ export const formatTaxRate = (rate: number | string | null | undefined): string 
 
 export const calcPreTaxPrice = (grossPrice: number, taxRate: number): number => {
     if (!grossPrice || isNaN(grossPrice)) return 0;
-    if (taxRate === -1 || taxRate <= 0) return grossPrice;
-    return grossPrice / (1 + taxRate / 100);
+    if (taxRate === -1 || taxRate <= 0) return Math.round(grossPrice);
+    return Math.round(grossPrice / (1 + taxRate / 100));
 };
 
 export const calcTaxAmount = (preTaxAmount: number, taxRate: number): number => {
     if (!preTaxAmount || isNaN(preTaxAmount)) return 0;
     if (taxRate === -1 || taxRate <= 0) return 0;
-    return preTaxAmount * (taxRate / 100);
+    return Math.round(preTaxAmount * (taxRate / 100));
 };
 
 export const formatDate = (dateString: string | Date | undefined | null) => {

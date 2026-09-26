@@ -40,7 +40,7 @@ export async function createSalesPayment(data: any) {
     const user = await verifyActionPermission('SALES_PAYMENTS_CREATE');
     const uId = (user as any).id;
 
-    return prisma.$transaction(async (tx: any) => {
+    const payment = await prisma.$transaction(async (tx: any) => {
         let code = data.code;
         if (!code) {
             const count = await tx.salesPayment.count();
@@ -140,7 +140,7 @@ export async function createSalesPayment(data: any) {
             console.error('Error auto-creating accounting receipt:', accErr);
         }
 
-        await logCustomerActivity(data.customerId, uId, 'NHẬN_THANH_TOÁN', `Thu tiền ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 6 }).format(data.amount)} (Mã PT: ${code})`, tx);
+        await logCustomerActivity(data.customerId, uId, 'NHẬN_THANH_TOÁN', `Thu tiền ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(Math.round(data.amount))} (Mã PT: ${code})`, tx);
 
         return payment;
     }, {

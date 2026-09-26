@@ -1798,9 +1798,12 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                 variablesData={{
                     taskTitle: task.title,
                     taskDescription: task.description || 'Không có mô tả',
+                    status: task.status === 'DONE' ? 'Hoàn thành' : task.status === 'IN_PROGRESS' ? 'Đang làm' : task.status === 'REVIEW' ? 'Chờ duyệt' : task.status === 'CANCELLED' ? 'Đã hủy' : 'Cần làm',
+                    taskStatus: task.status === 'DONE' ? 'Hoàn thành' : task.status === 'IN_PROGRESS' ? 'Đang làm' : task.status === 'REVIEW' ? 'Chờ duyệt' : task.status === 'CANCELLED' ? 'Đã hủy' : 'Cần làm',
                     dueDate: task.dueDate ? new Date(task.dueDate).toLocaleDateString('vi-VN') : 'Không có hạn chót',
                     priority: task.priority === 'URGENT' ? 'Khẩn cấp' : task.priority === 'HIGH' ? 'Cao' : task.priority === 'MEDIUM' ? 'Trung bình' : 'Thấp',
                     assignerName: task.creator?.name || task.creator?.email || 'Hệ thống',
+                    updatedBy: session?.user?.name || task.creator?.name || 'Hệ thống',
                     assigneeName: task.assignees?.map((a: any) => a.user?.name || a.user?.email || '').filter(Boolean).join(', ') || 'Chưa phân công',
                     link: typeof window !== 'undefined' ? `${window.location.origin}/tasks/${task.id}` : ''
                 }}

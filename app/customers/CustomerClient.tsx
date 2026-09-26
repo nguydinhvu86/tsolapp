@@ -1,20 +1,16 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Customer } from '@prisma/client';
-import { Card } from '@/app/components/ui/Card';
-import { Button } from '@/app/components/ui/Button';
-import { Table } from '@/app/components/ui/Table';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
-import { Modal } from '@/app/components/ui/Modal';
-import { Input } from '@/app/components/ui/Input';
 import { createCustomer, updateCustomer, deleteCustomer, lookupCustomerTaxCode, checkCustomerDuplicate } from './actions';
 import { 
     Plus, Edit, Trash2, Eye, ChevronUp, ChevronDown, ArrowUpDown, 
     Search, Users, TrendingUp, RefreshCcw, Activity, Sparkles, 
     Loader2, Building2, CreditCard, FileText, CheckCircle2, AlertCircle, 
-    Globe, Mail, Phone, MapPin, DollarSign, X 
+    Mail, Phone, MapPin, X, Copy, Check, 
+    LayoutGrid, List, ShieldCheck, ArrowRight, UserCheck
 } from 'lucide-react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
@@ -22,11 +18,11 @@ import { formatMoney } from '@/lib/utils/formatters';
 import { useTranslation } from '@/app/i18n/LanguageContext';
 import { ClickToCallButton } from '@/app/components/ClickToCallButton';
 
-export type CustomerWithStats = Customer & { revenue?: number, lastActivityAt?: Date | string };
+export type CustomerWithStats = Customer & { revenue?: number; lastActivityAt?: Date | string };
 
 function getInitials(name: string) {
     if (!name) return 'KH';
-    const clean = name.replace(/^(công ty|cty|tnhh|cổ phần|cp|mtv|tư vấn|đầu tư|thương mại|dịch vụ)\s+/gi, '').trim();
+    const clean = name.replace(/^(công ty|cty|tnhh|cổ phần|cp|mtv|tư vấn|đầu tư|thương mại|dịch vụ|doanh nghiệp|hộ kinh doanh)\s+/gi, '').trim();
     const words = clean.split(/\s+/).filter(Boolean);
     if (words.length >= 2) {
         return (words[0][0] + words[1][0]).toUpperCase();
@@ -35,20 +31,20 @@ function getInitials(name: string) {
 }
 
 const AVATAR_GRADIENTS = [
-    'from-emerald-500 to-teal-600',
-    'from-blue-500 to-indigo-600',
-    'from-indigo-500 to-purple-600',
-    'from-violet-500 to-pink-600',
-    'from-amber-500 to-orange-600',
-    'from-rose-500 to-pink-600',
-    'from-cyan-500 to-blue-600'
+    'linear-gradient(135deg, #10b981 0%, #047857 100%)',
+    'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+    'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
+    'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+    'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',
+    'linear-gradient(135deg, #06b6d4 0%, #0e7490 100%)',
+    'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)'
 ];
 
-function getAvatarGradient(id: string) {
-    if (!id) return AVATAR_GRADIENTS[0];
+function getAvatarStyle(id: string) {
+    if (!id) return { background: AVATAR_GRADIENTS[0] };
     let hash = 0;
     for (let i = 0; i < id.length; i++) hash = (hash << 5) - hash + id.charCodeAt(i);
-    return AVATAR_GRADIENTS[Math.abs(hash) % AVATAR_GRADIENTS.length];
+    return { background: AVATAR_GRADIENTS[Math.abs(hash) % AVATAR_GRADIENTS.length] };
 }
 
 const emptyCustomerForm = {
@@ -74,7 +70,17 @@ const emptyCustomerForm = {
     internalNotes: ''
 };
 
-export function CustomerClient({ initialData, users, isAdminOrManager, initialEmployeeId }: { initialData: CustomerWithStats[], users?: any[], isAdminOrManager?: boolean, initialEmployeeId?: string }) {
+export function CustomerClient({ 
+    initialData, 
+    users, 
+    isAdminOrManager, 
+    initialEmployeeId 
+}: { 
+    initialData: CustomerWithStats[]; 
+    users?: any[]; 
+    isAdminOrManager?: boolean; 
+    initialEmployeeId?: string;
+}) {
     const router = useRouter();
     const { data: session } = useSession();
     const { t } = useTranslation();
@@ -89,10 +95,12 @@ export function CustomerClient({ initialData, users, isAdminOrManager, initialEm
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'general' | 'contact' | 'financial' | 'notes'>('general');
-    
+    const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+    const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
     // Tax Lookup State
     const [isLookingUpTax, setIsLookingUpTax] = useState(false);
-    const [taxLookupMessage, setTaxLookupMessage] = useState<{ type: 'success' | 'error' | 'info', text: string } | null>(null);
+    const [taxLookupMessage, setTaxLookupMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [formData, setFormData] = useState(emptyCustomerForm);
@@ -100,7 +108,7 @@ export function CustomerClient({ initialData, users, isAdminOrManager, initialEm
     const [isCheckingDup, setIsCheckingDup] = useState(false);
 
     // Real-time duplicate validation with debounce
-    React.useEffect(() => {
+    useEffect(() => {
         if (!isModalOpen) {
             setDuplicateWarnings([]);
             return;
@@ -139,7 +147,7 @@ export function CustomerClient({ initialData, users, isAdminOrManager, initialEm
     const [searchTerm, setSearchTerm] = useState('');
     const [activeFilter, setActiveFilter] = useState<'ALL' | 'TOP_REVENUE_5' | 'RECENT_10' | 'RECENT_UPDATED'>('ALL');
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (typeof window !== 'undefined') {
             const params = new URLSearchParams(window.location.search);
             if (params.get('action') === 'new' && canCreate) {
@@ -148,6 +156,13 @@ export function CustomerClient({ initialData, users, isAdminOrManager, initialEm
             }
         }
     }, [canCreate]);
+
+    const handleCopy = (text: string, key: string) => {
+        if (!text) return;
+        navigator.clipboard.writeText(text);
+        setCopiedKey(key);
+        setTimeout(() => setCopiedKey(null), 1800);
+    };
 
     const handleSort = (field: keyof CustomerWithStats) => {
         if (activeFilter !== 'ALL') {
@@ -161,7 +176,7 @@ export function CustomerClient({ initialData, users, isAdminOrManager, initialEm
         }
     };
 
-    const filteredAndSortedCustomers = React.useMemo(() => {
+    const filteredAndSortedCustomers = useMemo(() => {
         let result = [...customers];
 
         // 1. Quick Filter
@@ -185,15 +200,16 @@ export function CustomerClient({ initialData, users, isAdminOrManager, initialEm
 
         // 2. Search Filter
         if (searchTerm) {
-            const lowerSearch = searchTerm.toLowerCase();
+            const lowerSearch = searchTerm.toLowerCase().trim();
             result = result.filter(c =>
                 (c.code && c.code.toLowerCase().includes(lowerSearch)) ||
                 (c.name && c.name.toLowerCase().includes(lowerSearch)) ||
                 (c.shortName && c.shortName.toLowerCase().includes(lowerSearch)) ||
                 (c.internationalName && c.internationalName.toLowerCase().includes(lowerSearch)) ||
                 (c.email && c.email.toLowerCase().includes(lowerSearch)) ||
-                (c.phone && c.phone.includes(searchTerm)) ||
-                (c.taxCode && c.taxCode.includes(searchTerm))
+                (c.phone && c.phone.includes(lowerSearch)) ||
+                (c.taxCode && c.taxCode.includes(lowerSearch)) ||
+                (c.contactName && c.contactName.toLowerCase().includes(lowerSearch))
             );
         }
 
@@ -349,21 +365,23 @@ export function CustomerClient({ initialData, users, isAdminOrManager, initialEm
     };
 
     return (
-        <div className="flex flex-col gap-5">
-            {/* Top Page Tech Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/80">
+        <div className="flex flex-col gap-4">
+            {/* TOP HEADER: Rực rỡ, sắc nét, phong cách công nghệ */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
                 <div>
                     <div className="flex items-center gap-2 mb-1">
-                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-2xs">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                            CRM &amp; Đối Tác
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-emerald-50 text-emerald-700 border border-emerald-300 shadow-2xs">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            CRM &amp; ĐỐI TÁC
                         </span>
-                        <span className="text-[11px] font-semibold text-slate-400">|</span>
-                        <span className="text-[11px] font-medium text-slate-500">Hệ sinh thái khách hàng B2B</span>
+                        <span className="text-slate-300 text-xs">|</span>
+                        <span className="text-xs font-semibold text-slate-500">Hệ sinh thái khách hàng B2B</span>
                     </div>
                     <div className="flex items-center gap-3">
-                        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Quản lý Khách hàng</h1>
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs">
+                        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+                            Quản lý Khách hàng
+                        </h1>
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs font-mono">
                             {customers.length}
                         </span>
                     </div>
@@ -371,128 +389,145 @@ export function CustomerClient({ initialData, users, isAdminOrManager, initialEm
 
                 <div className="flex items-center gap-2.5 shrink-0">
                     {canCreate && (
-                        <Button
+                        <button
                             onClick={() => openModal()}
-                            className="btn btn-primary gap-2 h-[34px] px-3.5 text-xs font-bold rounded-lg shadow-sm"
+                            style={{ backgroundColor: '#05A613' }}
+                            className="inline-flex items-center gap-2 h-[36px] px-4 text-xs font-bold text-white rounded-lg shadow-sm hover:opacity-90 active:scale-95 transition-all cursor-pointer"
                         >
-                            <Plus size={15} className="stroke-[2.5]" />
+                            <Plus size={16} className="stroke-[3]" />
                             <span>{t('customers.addCustomer')}</span>
-                        </Button>
+                        </button>
                     )}
                 </div>
             </div>
 
-            {/* Futuristic KPI / Filter Cards */}
+            {/* 4 THẺ KPI ĐA SẮC MÀU CÔNG NGHỆ RỰC RỠ */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                {/* THẺ 1: TẤT CẢ (XANH LÁ) */}
                 <div
-                    className={`relative cursor-pointer transition-all duration-200 rounded-xl p-3.5 bg-white border shadow-xs hover:-translate-y-0.5 hover:shadow-sm ${
-                        activeFilter === 'ALL'
-                            ? 'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/20'
-                            : 'border-slate-200/90 hover:border-slate-300'
-                    }`}
                     onClick={() => setActiveFilter('ALL')}
+                    style={activeFilter === 'ALL' ? { borderColor: '#05A613', backgroundColor: '#f0fdf4', boxShadow: '0 0 0 2px rgba(5, 166, 19, 0.2)' } : {}}
+                    className="relative cursor-pointer transition-all duration-200 rounded-xl p-3.5 bg-white border border-slate-200 shadow-xs hover:-translate-y-0.5 hover:shadow-sm"
                 >
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs shadow-emerald-500/20 shrink-0">
+                            <div 
+                                style={{ backgroundColor: '#05A613' }} 
+                                className="w-10 h-10 rounded-xl text-white flex items-center justify-center shadow-sm shrink-0"
+                            >
                                 <Users size={20} className="stroke-[2.2]" />
                             </div>
                             <div>
-                                <h3 className="text-xs font-bold text-slate-800 tracking-tight">{t('customers.titleAll')}</h3>
+                                <h3 className="text-xs font-bold text-slate-900 tracking-tight">{t('customers.titleAll')}</h3>
                                 <p className="text-[11px] text-slate-500 mt-0.5">{customers.length} {t('customers.allDesc')}</p>
                             </div>
                         </div>
-                        <span className={`text-base font-extrabold font-mono ${activeFilter === 'ALL' ? 'text-emerald-700' : 'text-slate-800'}`}>
+                        <span 
+                            style={activeFilter === 'ALL' ? { color: '#05A613' } : {}} 
+                            className="text-lg font-extrabold font-mono text-slate-800"
+                        >
                             {customers.length}
                         </span>
                     </div>
                 </div>
 
+                {/* THẺ 2: BÁN CHẠY NHẤT (XANH TÍM INDIGO) */}
                 <div
-                    className={`relative cursor-pointer transition-all duration-200 rounded-xl p-3.5 bg-white border shadow-xs hover:-translate-y-0.5 hover:shadow-sm ${
-                        activeFilter === 'TOP_REVENUE_5'
-                            ? 'border-emerald-600 ring-2 ring-emerald-500/20 bg-emerald-50/20'
-                            : 'border-slate-200/90 hover:border-slate-300'
-                    }`}
                     onClick={() => setActiveFilter('TOP_REVENUE_5')}
+                    style={activeFilter === 'TOP_REVENUE_5' ? { borderColor: '#4f46e5', backgroundColor: '#eef2ff', boxShadow: '0 0 0 2px rgba(79, 70, 229, 0.2)' } : {}}
+                    className="relative cursor-pointer transition-all duration-200 rounded-xl p-3.5 bg-white border border-slate-200 shadow-xs hover:-translate-y-0.5 hover:shadow-sm"
                 >
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xs shadow-indigo-500/20 shrink-0">
+                            <div 
+                                style={{ backgroundColor: '#4f46e5' }} 
+                                className="w-10 h-10 rounded-xl text-white flex items-center justify-center shadow-sm shrink-0"
+                            >
                                 <TrendingUp size={20} className="stroke-[2.2]" />
                             </div>
                             <div>
-                                <h3 className="text-xs font-bold text-slate-800 tracking-tight">{t('customers.titleTop')}</h3>
+                                <h3 className="text-xs font-bold text-slate-900 tracking-tight">{t('customers.titleTop')}</h3>
                                 <p className="text-[11px] text-slate-500 mt-0.5">{t('customers.topDesc')}</p>
                             </div>
                         </div>
-                        <span className={`text-base font-extrabold font-mono ${activeFilter === 'TOP_REVENUE_5' ? 'text-indigo-700' : 'text-slate-800'}`}>
+                        <span 
+                            style={activeFilter === 'TOP_REVENUE_5' ? { color: '#4f46e5' } : {}} 
+                            className="text-lg font-extrabold font-mono text-slate-800"
+                        >
                             5
                         </span>
                     </div>
                 </div>
 
+                {/* THẺ 3: VỪA LÀM VIỆC (CAM VÀNG AMBER) */}
                 <div
-                    className={`relative cursor-pointer transition-all duration-200 rounded-xl p-3.5 bg-white border shadow-xs hover:-translate-y-0.5 hover:shadow-sm ${
-                        activeFilter === 'RECENT_10'
-                            ? 'border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/20'
-                            : 'border-slate-200/90 hover:border-slate-300'
-                    }`}
                     onClick={() => setActiveFilter('RECENT_10')}
+                    style={activeFilter === 'RECENT_10' ? { borderColor: '#f59e0b', backgroundColor: '#fffbeb', boxShadow: '0 0 0 2px rgba(245, 158, 11, 0.2)' } : {}}
+                    className="relative cursor-pointer transition-all duration-200 rounded-xl p-3.5 bg-white border border-slate-200 shadow-xs hover:-translate-y-0.5 hover:shadow-sm"
                 >
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-xs shadow-amber-500/20 shrink-0">
+                            <div 
+                                style={{ backgroundColor: '#f59e0b' }} 
+                                className="w-10 h-10 rounded-xl text-white flex items-center justify-center shadow-sm shrink-0"
+                            >
                                 <Activity size={20} className="stroke-[2.2]" />
                             </div>
                             <div>
-                                <h3 className="text-xs font-bold text-slate-800 tracking-tight">{t('customers.titleRecent')}</h3>
+                                <h3 className="text-xs font-bold text-slate-900 tracking-tight">{t('customers.titleRecent')}</h3>
                                 <p className="text-[11px] text-slate-500 mt-0.5">{t('customers.recentDesc')}</p>
                             </div>
                         </div>
-                        <span className={`text-base font-extrabold font-mono ${activeFilter === 'RECENT_10' ? 'text-amber-700' : 'text-slate-800'}`}>
+                        <span 
+                            style={activeFilter === 'RECENT_10' ? { color: '#d97706' } : {}} 
+                            className="text-lg font-extrabold font-mono text-slate-800"
+                        >
                             10
                         </span>
                     </div>
                 </div>
 
+                {/* THẺ 4: MỚI CẬP NHẬT (XANH CYAN / SKY) */}
                 <div
-                    className={`relative cursor-pointer transition-all duration-200 rounded-xl p-3.5 bg-white border shadow-xs hover:-translate-y-0.5 hover:shadow-sm ${
-                        activeFilter === 'RECENT_UPDATED'
-                            ? 'border-sky-500 ring-2 ring-sky-500/20 bg-sky-50/20'
-                            : 'border-slate-200/90 hover:border-slate-300'
-                    }`}
                     onClick={() => setActiveFilter('RECENT_UPDATED')}
+                    style={activeFilter === 'RECENT_UPDATED' ? { borderColor: '#0ea5e9', backgroundColor: '#f0f9ff', boxShadow: '0 0 0 2px rgba(14, 165, 233, 0.2)' } : {}}
+                    className="relative cursor-pointer transition-all duration-200 rounded-xl p-3.5 bg-white border border-slate-200 shadow-xs hover:-translate-y-0.5 hover:shadow-sm"
                 >
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-sky-500 text-white flex items-center justify-center shadow-xs shadow-sky-500/20 shrink-0">
+                            <div 
+                                style={{ backgroundColor: '#0ea5e9' }} 
+                                className="w-10 h-10 rounded-xl text-white flex items-center justify-center shadow-sm shrink-0"
+                            >
                                 <RefreshCcw size={20} className="stroke-[2.2]" />
                             </div>
                             <div>
-                                <h3 className="text-xs font-bold text-slate-800 tracking-tight">{t('customers.titleUpdated')}</h3>
+                                <h3 className="text-xs font-bold text-slate-900 tracking-tight">{t('customers.titleUpdated')}</h3>
                                 <p className="text-[11px] text-slate-500 mt-0.5">{t('customers.updatedDesc')}</p>
                             </div>
                         </div>
-                        <span className={`text-base font-extrabold font-mono ${activeFilter === 'RECENT_UPDATED' ? 'text-sky-700' : 'text-slate-800'}`}>
+                        <span 
+                            style={activeFilter === 'RECENT_UPDATED' ? { color: '#0284c7' } : {}} 
+                            className="text-lg font-extrabold font-mono text-slate-800"
+                        >
                             10
                         </span>
                     </div>
                 </div>
             </div>
 
-            {/* Main Data Container */}
+            {/* CONTAINER DỮ LIỆU CHÍNH */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
-                {/* Search & Actions Toolbar */}
-                <div className="p-3.5 border-b border-slate-200/80 bg-slate-50/50 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-                    <div className="relative w-full sm:w-[360px]">
+                {/* THANH TÌM KIẾM & BỘ LỌC CÔNG CỤ */}
+                <div className="p-3.5 border-b border-slate-200 bg-slate-50/70 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                    <div className="relative w-full sm:w-[380px]">
                         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                         <input
                             type="text"
                             placeholder="Tìm kiếm theo Mã, Tên, MST, SĐT, Email..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full h-[34px] pl-9 pr-8 text-xs bg-white border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all shadow-2xs"
+                            className="w-full h-[36px] pl-9 pr-8 text-xs bg-white border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600/20 transition-all shadow-2xs"
                         />
                         {searchTerm && (
                             <button
@@ -505,618 +540,768 @@ export function CustomerClient({ initialData, users, isAdminOrManager, initialEm
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-semibold text-slate-500 bg-white px-2.5 py-1 rounded-md border border-slate-200 shadow-2xs">
-                            Hiển thị <span className="text-slate-900 font-bold">{filteredAndSortedCustomers.length}</span> / {customers.length} khách hàng
+                        <span className="text-[11px] font-semibold text-slate-600 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-2xs">
+                            Hiển thị <span className="text-slate-900 font-bold font-mono">{filteredAndSortedCustomers.length}</span> / {customers.length} khách hàng
                         </span>
+
+                        {/* Switch View Mode */}
+                        <div className="flex items-center bg-white p-0.5 rounded-lg border border-slate-200 shadow-2xs">
+                            <button
+                                onClick={() => setViewMode('table')}
+                                className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                                    viewMode === 'table' ? 'bg-emerald-50 text-emerald-700 font-bold' : 'text-slate-400 hover:text-slate-700'
+                                }`}
+                                title="Chế độ bảng"
+                            >
+                                <List size={15} />
+                            </button>
+                            <button
+                                onClick={() => setViewMode('grid')}
+                                className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                                    viewMode === 'grid' ? 'bg-emerald-50 text-emerald-700 font-bold' : 'text-slate-400 hover:text-slate-700'
+                                }`}
+                                title="Chế độ lưới thẻ"
+                            >
+                                <LayoutGrid size={15} />
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                {/* High Density Table */}
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="border-b border-slate-200/90 bg-slate-100/70">
-                                <th onClick={() => handleSort('code')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[100px] hover:bg-slate-200/50 transition-colors">
-                                    <div className="flex items-center gap-1.5">
-                                        MÃ KH
-                                        {sortField === 'code' ? (sortOrder === 'asc' ? <ChevronUp size={12} className="text-primary" /> : <ChevronDown size={12} className="text-primary" />) : <ArrowUpDown size={11} className="opacity-30" />}
-                                    </div>
-                                </th>
-                                <th onClick={() => handleSort('name')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider hover:bg-slate-200/50 transition-colors">
-                                    <div className="flex items-center gap-1.5">
-                                        {t('customers.name')}
-                                        {sortField === 'name' ? (sortOrder === 'asc' ? <ChevronUp size={12} className="text-primary" /> : <ChevronDown size={12} className="text-primary" />) : <ArrowUpDown size={11} className="opacity-30" />}
-                                    </div>
-                                </th>
-                                <th onClick={() => handleSort('taxCode')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[125px] hover:bg-slate-200/50 transition-colors">
-                                    <div className="flex items-center gap-1.5">
-                                        {t('customers.taxCode')}
-                                        {sortField === 'taxCode' ? (sortOrder === 'asc' ? <ChevronUp size={12} className="text-primary" /> : <ChevronDown size={12} className="text-primary" />) : <ArrowUpDown size={11} className="opacity-30" />}
-                                    </div>
-                                </th>
-                                <th onClick={() => handleSort('phone')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[140px] hover:bg-slate-200/50 transition-colors">
-                                    <div className="flex items-center gap-1.5">
-                                        {t('customers.phone')}
-                                        {sortField === 'phone' ? (sortOrder === 'asc' ? <ChevronUp size={12} className="text-primary" /> : <ChevronDown size={12} className="text-primary" />) : <ArrowUpDown size={11} className="opacity-30" />}
-                                    </div>
-                                </th>
-                                <th className="py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[220px]">
-                                    Email & Địa Chỉ
-                                </th>
-                                <th onClick={() => handleSort('totalDebt')} className="cursor-pointer select-none py-2.5 px-3.5 text-right text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[120px] hover:bg-slate-200/50 transition-colors">
-                                    <div className="flex items-center justify-end gap-1.5">
-                                        Công Nợ
-                                        {sortField === 'totalDebt' ? (sortOrder === 'asc' ? <ChevronUp size={12} className="text-primary" /> : <ChevronDown size={12} className="text-primary" />) : <ArrowUpDown size={11} className="opacity-30" />}
-                                    </div>
-                                </th>
-                                <th className="py-2.5 px-3.5 text-right text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[90px]">
-                                    {t('customers.action')}
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            {paginatedItems.length === 0 ? (
-                                <tr>
-                                    <td colSpan={7} className="py-12 text-center text-slate-400">
-                                        <div className="flex flex-col items-center justify-center gap-2">
-                                            <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
-                                                <Search size={18} />
-                                            </div>
-                                            <p className="text-xs font-semibold text-slate-600">{t('customers.empty')}</p>
-                                            <p className="text-[11px] text-slate-400">Không tìm thấy khách hàng nào phù hợp với bộ lọc.</p>
+                {/* CHẾ ĐỘ 1: BẢNG DỮ LIỆU ĐẦY ĐỦ MÀU SẮC */}
+                {viewMode === 'table' && (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="border-b border-slate-200 bg-slate-100/80">
+                                    <th onClick={() => handleSort('code')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[105px] hover:bg-slate-200/60 transition-colors">
+                                        <div className="flex items-center gap-1.5">
+                                            MÃ KH
+                                            {sortField === 'code' ? (
+                                                sortOrder === 'asc' ? <ChevronUp size={12} className="text-emerald-600 stroke-[3]" /> : <ChevronDown size={12} className="text-emerald-600 stroke-[3]" />
+                                            ) : <ArrowUpDown size={11} className="opacity-30" />}
                                         </div>
-                                    </td>
+                                    </th>
+
+                                    <th onClick={() => handleSort('name')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider hover:bg-slate-200/60 transition-colors">
+                                        <div className="flex items-center gap-1.5">
+                                            {t('customers.name')}
+                                            {sortField === 'name' ? (
+                                                sortOrder === 'asc' ? <ChevronUp size={12} className="text-emerald-600 stroke-[3]" /> : <ChevronDown size={12} className="text-emerald-600 stroke-[3]" />
+                                            ) : <ArrowUpDown size={11} className="opacity-30" />}
+                                        </div>
+                                    </th>
+
+                                    <th onClick={() => handleSort('taxCode')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[130px] hover:bg-slate-200/60 transition-colors">
+                                        <div className="flex items-center gap-1.5">
+                                            {t('customers.taxCode')}
+                                            {sortField === 'taxCode' ? (
+                                                sortOrder === 'asc' ? <ChevronUp size={12} className="text-emerald-600 stroke-[3]" /> : <ChevronDown size={12} className="text-emerald-600 stroke-[3]" />
+                                            ) : <ArrowUpDown size={11} className="opacity-30" />}
+                                        </div>
+                                    </th>
+
+                                    <th onClick={() => handleSort('phone')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[145px] hover:bg-slate-200/60 transition-colors">
+                                        <div className="flex items-center gap-1.5">
+                                            {t('customers.phone')}
+                                            {sortField === 'phone' ? (
+                                                sortOrder === 'asc' ? <ChevronUp size={12} className="text-emerald-600 stroke-[3]" /> : <ChevronDown size={12} className="text-emerald-600 stroke-[3]" />
+                                            ) : <ArrowUpDown size={11} className="opacity-30" />}
+                                        </div>
+                                    </th>
+
+                                    <th className="py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[220px]">
+                                        EMAIL &amp; ĐỊA CHỈ
+                                    </th>
+
+                                    <th onClick={() => handleSort('totalDebt')} className="cursor-pointer select-none py-2.5 px-3.5 text-right text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[130px] hover:bg-slate-200/60 transition-colors">
+                                        <div className="flex items-center justify-end gap-1.5">
+                                            CÔNG NỢ
+                                            {sortField === 'totalDebt' ? (
+                                                sortOrder === 'asc' ? <ChevronUp size={12} className="text-emerald-600 stroke-[3]" /> : <ChevronDown size={12} className="text-emerald-600 stroke-[3]" />
+                                            ) : <ArrowUpDown size={11} className="opacity-30" />}
+                                        </div>
+                                    </th>
+
+                                    <th className="py-2.5 px-3.5 text-right text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[95px]">
+                                        {t('customers.action')}
+                                    </th>
                                 </tr>
-                            ) : paginatedItems.map(customer => {
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {paginatedItems.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={7} className="py-12 text-center text-slate-400">
+                                            <div className="flex flex-col items-center justify-center gap-2">
+                                                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                                                    <Search size={18} />
+                                                </div>
+                                                <p className="text-xs font-semibold text-slate-600">{t('customers.empty')}</p>
+                                                <p className="text-[11px] text-slate-400">Không tìm thấy khách hàng nào phù hợp với bộ lọc.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    paginatedItems.map(customer => {
+                                        const initials = getInitials(customer.name);
+                                        const avatarStyle = getAvatarStyle(customer.id);
+                                        const codeKey = `code-${customer.id}`;
+                                        const taxKey = `tax-${customer.id}`;
+                                        const isDebt = (customer.totalDebt || 0) > 0;
+
+                                        return (
+                                            <tr key={customer.id} className="hover:bg-slate-50/90 transition-colors group">
+                                                {/* MÃ KH */}
+                                                <td className="py-2.5 px-3.5 align-middle">
+                                                    <span 
+                                                        onClick={() => handleCopy(customer.code || '', codeKey)}
+                                                        className="font-mono text-[11px] font-semibold px-2 py-0.5 bg-slate-100 text-slate-700 hover:text-emerald-700 rounded border border-slate-200 shadow-2xs inline-flex items-center gap-1 cursor-pointer"
+                                                        title="Click để sao chép"
+                                                    >
+                                                        {customer.code || '--'}
+                                                        {copiedKey === codeKey && <Check size={10} className="text-emerald-600" />}
+                                                    </span>
+                                                </td>
+
+                                                {/* TÊN KHÁCH HÀNG */}
+                                                <td className="py-2.5 px-3.5 align-middle">
+                                                    <div className="flex items-center gap-2.5">
+                                                        <div 
+                                                            style={avatarStyle} 
+                                                            className="w-8 h-8 rounded-lg text-white font-bold text-[11px] flex items-center justify-center shadow-2xs shrink-0"
+                                                        >
+                                                            {initials}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <Link
+                                                                href={`/customers/${customer.id}`}
+                                                                className="text-slate-900 font-bold text-xs hover:text-emerald-700 transition-colors block truncate max-w-[280px] sm:max-w-[360px] md:max-w-none"
+                                                            >
+                                                                {customer.name}
+                                                            </Link>
+                                                            <div className="flex items-center gap-2 mt-0.5">
+                                                                {customer.shortName && (
+                                                                    <span className="text-[11px] text-slate-500 font-normal">
+                                                                        ({customer.shortName})
+                                                                    </span>
+                                                                )}
+                                                                {customer.contactName && (
+                                                                    <span className="text-[11px] text-slate-500 font-normal">
+                                                                        • LH: {customer.contactName}
+                                                                    </span>
+                                                                )}
+                                                                {activeFilter === 'TOP_REVENUE_5' && customer.revenue ? (
+                                                                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                                        {t('customers.revenue')} {formatMoney(customer.revenue)}
+                                                                    </span>
+                                                                ) : null}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+
+                                                {/* MÃ SỐ THUẾ */}
+                                                <td className="py-2.5 px-3.5 align-middle">
+                                                    {customer.taxCode ? (
+                                                        <span 
+                                                            onClick={() => handleCopy(customer.taxCode || '', taxKey)}
+                                                            className="font-mono text-[11px] font-medium text-slate-800 bg-slate-50 hover:bg-emerald-50 px-2 py-0.5 rounded border border-slate-200 inline-flex items-center gap-1 shadow-2xs cursor-pointer"
+                                                            title="Click để sao chép"
+                                                        >
+                                                            {customer.taxCode}
+                                                            {copiedKey === taxKey && <Check size={10} className="text-emerald-600" />}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-slate-300 text-xs">-</span>
+                                                    )}
+                                                </td>
+
+                                                {/* SỐ ĐIỆN THOẠI & CLICK TO CALL */}
+                                                <td className="py-2.5 px-3.5 align-middle text-slate-600">
+                                                    {customer.phone ? (
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-xs font-semibold font-mono text-slate-800">{customer.phone}</span>
+                                                            <ClickToCallButton phoneNumber={customer.phone} />
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-slate-300 text-xs">-</span>
+                                                    )}
+                                                </td>
+
+                                                {/* EMAIL & ĐỊA CHỈ */}
+                                                <td className="py-2.5 px-3.5 align-middle text-slate-600 text-xs">
+                                                    {customer.email && (
+                                                        <div className="truncate block max-w-[210px] text-[11px] text-slate-800 font-medium" title={customer.email}>
+                                                            {customer.email}
+                                                        </div>
+                                                    )}
+                                                    {customer.address && (
+                                                        <div className="truncate block max-w-[210px] text-[11px] text-slate-500 mt-0.5" title={customer.address}>
+                                                            {customer.address}
+                                                        </div>
+                                                    )}
+                                                    {!customer.email && !customer.address && (
+                                                        <span className="text-slate-300 text-xs">-</span>
+                                                    )}
+                                                </td>
+
+                                                {/* CÔNG NỢ */}
+                                                <td className="py-2.5 px-3.5 align-middle text-right">
+                                                    {isDebt ? (
+                                                        <span 
+                                                            style={{ backgroundColor: '#fef2f2', borderColor: '#fca5a5', color: '#dc2626' }}
+                                                            className="font-mono text-xs font-bold px-2 py-0.5 rounded border inline-block"
+                                                        >
+                                                            {formatMoney(customer.totalDebt || 0)}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="font-mono text-xs text-slate-700">
+                                                            0 ₫
+                                                        </span>
+                                                    )}
+                                                </td>
+
+                                                {/* CỤM THAO TÁC (XANH - VÀNG - ĐỎ) */}
+                                                <td className="py-2.5 px-3.5 align-middle text-right">
+                                                    <div className="flex items-center justify-end gap-1">
+                                                        {/* XEM: XANH LÁ */}
+                                                        <Link
+                                                            href={`/customers/${customer.id}`}
+                                                            style={{ color: '#05A613' }}
+                                                            className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-emerald-50 transition-colors"
+                                                            title={t('customers.viewDetails')}
+                                                        >
+                                                            <Eye size={15} />
+                                                        </Link>
+
+                                                        {/* SỬA: VÀNG CAM */}
+                                                        {canEdit && (
+                                                            <button
+                                                                onClick={() => openModal(customer)}
+                                                                style={{ color: '#d97706' }}
+                                                                className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-amber-50 transition-colors cursor-pointer"
+                                                                title={t('customers.edit')}
+                                                            >
+                                                                <Edit size={15} />
+                                                            </button>
+                                                        )}
+
+                                                        {/* XÓA: ĐỎ */}
+                                                        {canDelete && (
+                                                            <button
+                                                                onClick={() => handleDelete(customer.id)}
+                                                                style={{ color: '#dc2626' }}
+                                                                className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-rose-50 transition-colors cursor-pointer"
+                                                                title={t('customers.delete')}
+                                                            >
+                                                                <Trash2 size={15} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+
+                {/* CHẾ ĐỘ 2: LƯỚI THẺ KHÁCH HÀNG */}
+                {viewMode === 'grid' && (
+                    <div className="p-4 bg-slate-50/60">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                            {paginatedItems.map(customer => {
                                 const initials = getInitials(customer.name);
-                                const gradient = getAvatarGradient(customer.id);
+                                const avatarStyle = getAvatarStyle(customer.id);
+                                const isDebt = (customer.totalDebt || 0) > 0;
 
                                 return (
-                                    <tr key={customer.id} className="hover:bg-slate-50/80 transition-colors group">
-                                        <td className="py-2.5 px-3.5 align-middle">
-                                            <span className="font-mono text-[11px] font-semibold px-2 py-0.5 bg-slate-100 text-slate-700 rounded border border-slate-200 shadow-2xs inline-block">
-                                                {customer.code || '--'}
-                                            </span>
-                                        </td>
-                                        <td className="py-2.5 px-3.5 align-middle">
-                                            <div className="flex items-center gap-2.5">
-                                                <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${gradient} text-white font-bold text-[11px] flex items-center justify-center shadow-2xs shrink-0`}>
-                                                    {initials}
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <Link
-                                                        href={`/customers/${customer.id}`}
-                                                        className="text-slate-900 font-semibold text-xs hover:text-primary transition-colors block truncate max-w-[280px] sm:max-w-[360px] md:max-w-none"
-                                                    >
-                                                        {customer.name}
-                                                    </Link>
-                                                    <div className="flex items-center gap-2 mt-0.5">
-                                                        {customer.shortName && (
-                                                            <span className="text-[11px] text-slate-500 font-normal">
-                                                                ({customer.shortName})
-                                                            </span>
-                                                        )}
-                                                        {customer.contactName && (
-                                                            <span className="text-[11px] text-slate-500 font-normal">
-                                                                • LH: {customer.contactName}
-                                                            </span>
-                                                        )}
-                                                        {activeFilter === 'TOP_REVENUE_5' && customer.revenue ? (
-                                                            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                                                                {t('customers.revenue')} {formatMoney(customer.revenue)}
-                                                            </span>
-                                                        ) : null}
-                                                    </div>
-                                                </div>
+                                    <div key={customer.id} className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs hover:shadow-md transition-all flex flex-col justify-between gap-3">
+                                        <div className="flex items-start gap-3">
+                                            <div style={avatarStyle} className="w-10 h-10 rounded-xl text-white font-bold text-xs flex items-center justify-center shadow-xs shrink-0">
+                                                {initials}
                                             </div>
-                                        </td>
-                                        <td className="py-2.5 px-3.5 align-middle">
-                                            {customer.taxCode ? (
-                                                <span className="font-mono text-[11px] font-medium text-slate-700 bg-slate-50 px-2 py-0.5 rounded border border-slate-200 inline-flex items-center gap-1 shadow-2xs">
-                                                    {customer.taxCode}
+                                            <div className="min-w-0 flex-1">
+                                                <span className="font-mono text-[10px] font-semibold px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 border border-slate-200 inline-block">
+                                                    {customer.code || '--'}
                                                 </span>
-                                            ) : (
-                                                <span className="text-slate-300 text-xs">-</span>
-                                            )}
-                                        </td>
-                                        <td className="py-2.5 px-3.5 align-middle text-slate-600">
-                                            {customer.phone ? (
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-xs font-medium font-mono text-slate-800">{customer.phone}</span>
-                                                    <ClickToCallButton phoneNumber={customer.phone} />
-                                                </div>
-                                            ) : (
-                                                <span className="text-slate-300 text-xs">-</span>
-                                            )}
-                                        </td>
-                                        <td className="py-2.5 px-3.5 align-middle text-slate-600 text-xs">
-                                            {customer.email && (
-                                                <div className="truncate block max-w-[200px] text-[11px] text-slate-700 font-medium" title={customer.email}>
-                                                    {customer.email}
-                                                </div>
-                                            )}
-                                            {customer.address && (
-                                                <div className="truncate block max-w-[200px] text-[11px] text-slate-400 mt-0.5" title={customer.address}>
-                                                    {customer.address}
-                                                </div>
-                                            )}
-                                            {!customer.email && !customer.address && (
-                                                <span className="text-slate-300 text-xs">-</span>
-                                            )}
-                                        </td>
-                                        <td className="py-2.5 px-3.5 align-middle text-right">
-                                            <span className={`font-mono text-xs font-bold ${(customer.totalDebt || 0) > 0 ? 'text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200' : 'text-slate-700'}`}>
-                                                {formatMoney(customer.totalDebt || 0)}
-                                            </span>
-                                        </td>
-                                        <td className="py-2.5 px-3.5 align-middle text-right">
-                                            <div className="flex items-center justify-end gap-1 opacity-90 group-hover:opacity-100 transition-opacity">
-                                                <Link
-                                                    href={`/customers/${customer.id}`}
-                                                    className="w-7 h-7 rounded-lg flex items-center justify-center text-primary hover:bg-emerald-50 transition-colors"
-                                                    title={t('customers.viewDetails')}
-                                                >
-                                                    <Eye size={14} />
+                                                <Link href={`/customers/${customer.id}`} className="font-bold text-xs text-slate-900 hover:text-emerald-700 block truncate mt-1">
+                                                    {customer.name}
                                                 </Link>
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-xs font-mono space-y-1">
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-500 font-sans">Mã số thuế:</span>
+                                                <span className="font-bold text-slate-800">{customer.taxCode || '--'}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-500 font-sans">Công nợ:</span>
+                                                <span className={`font-bold ${isDebt ? 'text-rose-600' : 'text-slate-800'}`}>
+                                                    {formatMoney(customer.totalDebt || 0)}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                                            <Link href={`/customers/${customer.id}`} style={{ color: '#05A613' }} className="text-xs font-bold flex items-center gap-1 hover:underline">
+                                                <span>Chi tiết</span>
+                                                <ArrowRight size={12} />
+                                            </Link>
+                                            <div className="flex items-center gap-1">
+                                                {customer.phone && <ClickToCallButton phoneNumber={customer.phone} />}
                                                 {canEdit && (
-                                                    <button
-                                                        onClick={() => openModal(customer)}
-                                                        className="w-7 h-7 rounded-lg flex items-center justify-center text-amber-600 hover:bg-amber-50 hover:text-amber-700 transition-colors cursor-pointer"
-                                                        title={t('customers.edit')}
-                                                    >
+                                                    <button onClick={() => openModal(customer)} style={{ color: '#d97706' }} className="p-1.5 hover:bg-amber-50 rounded">
                                                         <Edit size={14} />
                                                     </button>
                                                 )}
                                                 {canDelete && (
-                                                    <button
-                                                        onClick={() => handleDelete(customer.id)}
-                                                        className="w-7 h-7 rounded-lg flex items-center justify-center text-rose-500 hover:bg-rose-50 hover:text-rose-600 transition-colors cursor-pointer"
-                                                        title={t('customers.delete')}
-                                                    >
+                                                    <button onClick={() => handleDelete(customer.id)} style={{ color: '#dc2626' }} className="p-1.5 hover:bg-rose-50 rounded">
                                                         <Trash2 size={14} />
                                                     </button>
                                                 )}
                                             </div>
-                                        </td>
-                                    </tr>
+                                        </div>
+                                    </div>
                                 );
                             })}
-                        </tbody>
-                    </table>
-                </div>
+                        </div>
+                    </div>
+                )}
 
-                {/* Pagination */}
-                <div className="p-3 border-t border-slate-200/80 bg-slate-50/50">
+                {/* PHÂN TRANG */}
+                <div className="p-3 border-t border-slate-200/90 bg-slate-50/70">
                     <Pagination {...paginationProps} />
                 </div>
             </div>
 
             {/* MODAL THÊM / SỬA KHÁCH HÀNG */}
-                {isModalOpen && (
-                    <div className="modal-backdrop" style={{ position: 'fixed', inset: 0, padding: '1rem', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(2px)' }}>
-                        <div className="modal-container shadow-2xl w-full max-w-[850px]" style={{ maxHeight: '92vh', background: '#ffffff', borderRadius: '12px', display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
-                            <div className="px-4 py-3 border-b border-slate-200 flex justify-between items-center bg-white">
-                                <div>
-                                    <h2 className="text-[15px] font-bold text-slate-800">
-                                        {editingId ? 'Cập Nhật Hồ Sơ Khách Hàng' : 'Thêm Mới Khách Hàng'}
-                                    </h2>
-                                    <p className="text-[11px] text-slate-500 mt-0.5">
-                                        Nhập mã số thuế để tra cứu tự động hoặc điền thông tin chi tiết
-                                    </p>
+            {isModalOpen && (
+                <div className="modal-backdrop" style={{ position: 'fixed', inset: 0, padding: '1rem', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(3px)' }}>
+                    <div className="modal-container shadow-2xl w-full max-w-[850px]" style={{ maxHeight: '92vh', background: '#ffffff', borderRadius: '12px', display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+                        <div className="px-4 py-3 border-b border-slate-200 flex justify-between items-center bg-white">
+                            <div>
+                                <h2 className="text-[15px] font-bold text-slate-900">
+                                    {editingId ? 'Cập Nhật Hồ Sơ Khách Hàng' : 'Thêm Mới Khách Hàng'}
+                                </h2>
+                                <p className="text-[11px] text-slate-500 mt-0.5">
+                                    Nhập mã số thuế để tra cứu tự động hoặc điền thông tin chi tiết
+                                </p>
+                            </div>
+                            <button
+                                onClick={closeModal}
+                                className="text-slate-400 hover:text-slate-600 p-1 rounded-md hover:bg-slate-100 transition-colors cursor-pointer"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        {/* Thanh tra cứu MST tự động */}
+                        <div style={{ backgroundColor: '#ecfdf5', borderBottom: '1px solid #a7f3d0' }} className="px-4 py-2.5">
+                            <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
+                                <div className="flex-1 flex items-center bg-white rounded-lg border border-emerald-300 px-2.5 py-1 shadow-2xs focus-within:ring-1 focus-within:ring-emerald-500 h-[34px]">
+                                    <Sparkles style={{ color: '#05A613' }} className="mr-2 shrink-0" size={15} />
+                                    <input
+                                        type="text"
+                                        placeholder="Nhập Mã số thuế để tự động tra cứu thông tin..."
+                                        value={formData.taxCode || ''}
+                                        onChange={e => setFormData({ ...formData, taxCode: e.target.value })}
+                                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleTaxLookup(); } }}
+                                        className="w-full bg-transparent border-none outline-none text-xs font-medium text-slate-800 placeholder-slate-400 font-mono"
+                                    />
                                 </div>
                                 <button
-                                    onClick={closeModal}
-                                    className="text-slate-400 hover:text-slate-600 p-1 rounded-md hover:bg-slate-100 transition-colors"
+                                    type="button"
+                                    onClick={handleTaxLookup}
+                                    disabled={isLookingUpTax || !formData.taxCode?.trim()}
+                                    style={{ backgroundColor: '#05A613' }}
+                                    className="h-[34px] hover:opacity-90 text-white px-3.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs shrink-0 transition-all disabled:opacity-50 cursor-pointer"
                                 >
-                                    <X size={18} />
+                                    {isLookingUpTax ? (
+                                        <>
+                                            <Loader2 className="animate-spin" size={14} />
+                                            <span>Đang tra cứu...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Search size={14} />
+                                            <span>Tra cứu</span>
+                                        </>
+                                    )}
                                 </button>
                             </div>
 
-                            {/* Tax Lookup Quick Bar */}
-                            <div className="bg-emerald-50/60 border-b border-emerald-100 px-4 py-2.5">
-                                <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
-                                    <div className="flex-1 flex items-center bg-white rounded-lg border border-emerald-200 px-2.5 py-1 shadow-2xs focus-within:ring-1 focus-within:ring-emerald-500 focus-within:border-emerald-500 h-[34px]">
-                                        <Sparkles className="text-emerald-600 mr-2 shrink-0" size={15} />
-                                        <input
-                                            type="text"
-                                            placeholder="Nhập Mã số thuế để tự động tra cứu thông tin..."
-                                            value={formData.taxCode || ''}
-                                            onChange={e => setFormData({ ...formData, taxCode: e.target.value })}
-                                            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleTaxLookup(); } }}
-                                            className="w-full bg-transparent border-none outline-none text-xs font-medium text-slate-800 placeholder-slate-400"
-                                        />
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={handleTaxLookup}
-                                        disabled={isLookingUpTax || !formData.taxCode?.trim()}
-                                        className="h-[34px] bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 shadow-2xs shrink-0 transition-all disabled:opacity-50 cursor-pointer"
-                                    >
-                                        {isLookingUpTax ? (
-                                            <>
-                                                <Loader2 className="animate-spin" size={14} />
-                                                <span>Đang tra cứu...</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Search size={14} />
-                                                <span>Tra cứu</span>
-                                            </>
-                                        )}
-                                    </button>
+                            {taxLookupMessage && (
+                                <div className={`mt-2 p-2 rounded-lg text-xs font-medium flex items-center gap-2 ${
+                                    taxLookupMessage.type === 'success' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-rose-100 text-rose-800 border border-rose-300'
+                                }`}>
+                                    {taxLookupMessage.type === 'success' ? <CheckCircle2 size={14} className="shrink-0 text-emerald-700" /> : <AlertCircle size={14} className="shrink-0 text-rose-700" />}
+                                    <span>{taxLookupMessage.text}</span>
                                 </div>
+                            )}
 
-                                {taxLookupMessage && (
-                                    <div className={`mt-2 p-2 rounded-lg text-xs font-medium flex items-center gap-2 ${
-                                        taxLookupMessage.type === 'success' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-rose-100 text-rose-800 border border-rose-200'
-                                    }`}>
-                                        {taxLookupMessage.type === 'success' ? <CheckCircle2 size={14} className="shrink-0" /> : <AlertCircle size={14} className="shrink-0" />}
-                                        <span>{taxLookupMessage.text}</span>
+                            {duplicateWarnings.length > 0 && (
+                                <div className="mt-2 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs flex flex-col gap-1.5 shadow-2xs">
+                                    <div className="font-bold flex items-center gap-1.5 text-rose-900">
+                                        <AlertCircle size={15} className="shrink-0 text-rose-600" />
+                                        <span>PHÁT HIỆN TRÙNG LẶP DỮ LIỆU ({duplicateWarnings.length})</span>
                                     </div>
-                                )}
-
-                                {duplicateWarnings.length > 0 && (
-                                    <div className="mt-2 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs flex flex-col gap-1.5 shadow-2xs animate-pulse">
-                                        <div className="font-bold flex items-center gap-1.5 text-rose-900">
-                                            <AlertCircle size={15} className="shrink-0 text-rose-600" />
-                                            <span>PHÁT HIỆN TRÙNG LẶP DỮ LIỆU ({duplicateWarnings.length})</span>
+                                    {duplicateWarnings.map((w, idx) => (
+                                        <div key={idx} className="text-rose-700 font-medium pl-5">
+                                            • {w.message}
                                         </div>
-                                        {duplicateWarnings.map((w, idx) => (
-                                            <div key={idx} className="text-rose-700 font-medium pl-5">
-                                                • {w.message}
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
 
-                            {/* Tabs Header */}
-                            <div className="flex border-b border-slate-200 px-4 bg-slate-50 gap-1 overflow-x-auto hide-scrollbar">
-                                <button
-                                    type="button"
-                                    onClick={() => setActiveTab('general')}
-                                    className={`py-2 px-3 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
-                                        activeTab === 'general' ? 'border-primary text-primary bg-white' : 'border-transparent text-slate-500 hover:text-slate-700'
-                                    }`}
-                                >
-                                    <Building2 size={14} /> Thông Tin Chung & Thuế
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setActiveTab('contact')}
-                                    className={`py-2 px-3 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
-                                        activeTab === 'contact' ? 'border-primary text-primary bg-white' : 'border-transparent text-slate-500 hover:text-slate-700'
-                                    }`}
-                                >
-                                    <Phone size={14} /> Liên Hệ & Địa Chỉ
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setActiveTab('financial')}
-                                    className={`py-2 px-3 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
-                                        activeTab === 'financial' ? 'border-primary text-primary bg-white' : 'border-transparent text-slate-500 hover:text-slate-700'
-                                    }`}
-                                >
-                                    <CreditCard size={14} /> Tài Chính & Ngân Hàng
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setActiveTab('notes')}
-                                    className={`py-2 px-3 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
-                                        activeTab === 'notes' ? 'border-primary text-primary bg-white' : 'border-transparent text-slate-500 hover:text-slate-700'
-                                    }`}
-                                >
-                                    <FileText size={14} /> Ghi Chú
-                                </button>
-                            </div>
+                        {/* Tabs Header */}
+                        <div className="flex border-b border-slate-200 px-4 bg-slate-50 gap-1 overflow-x-auto hide-scrollbar">
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab('general')}
+                                style={activeTab === 'general' ? { borderColor: '#05A613', color: '#05A613', backgroundColor: '#ffffff' } : {}}
+                                className="py-2.5 px-3 text-xs font-bold border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer text-slate-500 hover:text-slate-800"
+                            >
+                                <Building2 size={14} /> Thông Tin Chung &amp; Thuế
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab('contact')}
+                                style={activeTab === 'contact' ? { borderColor: '#05A613', color: '#05A613', backgroundColor: '#ffffff' } : {}}
+                                className="py-2.5 px-3 text-xs font-bold border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer text-slate-500 hover:text-slate-800"
+                            >
+                                <Phone size={14} /> Liên Hệ &amp; Địa Chỉ
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab('financial')}
+                                style={activeTab === 'financial' ? { borderColor: '#05A613', color: '#05A613', backgroundColor: '#ffffff' } : {}}
+                                className="py-2.5 px-3 text-xs font-bold border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer text-slate-500 hover:text-slate-800"
+                            >
+                                <CreditCard size={14} /> Tài Chính &amp; Ngân Hàng
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab('notes')}
+                                style={activeTab === 'notes' ? { borderColor: '#05A613', color: '#05A613', backgroundColor: '#ffffff' } : {}}
+                                className="py-2.5 px-3 text-xs font-bold border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer text-slate-500 hover:text-slate-800"
+                            >
+                                <FileText size={14} /> Ghi Chú
+                            </button>
+                        </div>
 
-                            {/* Form Content */}
-                            <form id="customerForm" onSubmit={handleSubmit} className="p-4 overflow-y-auto" style={{ maxHeight: 'calc(92vh - 220px)' }}>
-                                {activeTab === 'general' && (
-                                    <div className="space-y-3">
-                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-3">
-                                            <div>
-                                                <label className="block text-xs font-semibold text-slate-600 mb-1">
-                                                    Mã Khách Hàng
-                                                    {duplicateWarnings.some(w => w.field === 'code') && <span className="text-rose-600 ml-1 font-bold">(Trùng mã)</span>}
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={formData.code || ''}
-                                                    onChange={e => setFormData({ ...formData, code: e.target.value })}
-                                                    placeholder="Tự động sinh (KH-xxxx)"
-                                                    className={`w-full h-[34px] border rounded-lg px-2.5 py-1 text-xs outline-none transition-all font-mono text-slate-900 bg-white ${
-                                                        duplicateWarnings.some(w => w.field === 'code')
-                                                            ? 'border-rose-400 focus:border-rose-500 focus:ring-1 focus:ring-rose-200 bg-rose-50/30'
-                                                            : 'border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary/20'
-                                                    }`}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-semibold text-slate-600 mb-1">
-                                                    Mã Số Thuế
-                                                    {duplicateWarnings.some(w => w.field === 'taxCode') && <span className="text-rose-600 ml-1 font-bold">(Trùng MST)</span>}
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={formData.taxCode || ''}
-                                                    onChange={e => setFormData({ ...formData, taxCode: e.target.value })}
-                                                    placeholder="Ví dụ: 0101248141"
-                                                    className={`w-full h-[34px] border rounded-lg px-2.5 py-1 text-xs outline-none transition-all font-mono text-slate-900 bg-white ${
-                                                        duplicateWarnings.some(w => w.field === 'taxCode')
-                                                            ? 'border-rose-400 focus:border-rose-500 focus:ring-1 focus:ring-rose-200 bg-rose-50/30'
-                                                            : 'border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary/20'
-                                                    }`}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Trạng Thái MST</label>
-                                                <input
-                                                    type="text"
-                                                    value={formData.taxStatus || ''}
-                                                    onChange={e => setFormData({ ...formData, taxStatus: e.target.value })}
-                                                    placeholder="NNT đang hoạt động"
-                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-slate-50"
-                                                />
-                                            </div>
-                                        </div>
-
+                        {/* Form Body */}
+                        <form id="customerForm" onSubmit={handleSubmit} className="p-4 overflow-y-auto space-y-3" style={{ maxHeight: 'calc(92vh - 220px)' }}>
+                            {activeTab === 'general' && (
+                                <div className="space-y-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-3">
                                         <div>
-                                            <label className="block text-xs font-semibold text-slate-600 mb-1">
-                                                Tên Khách Hàng / Công Ty <span className="text-red-500">*</span>
+                                            <label className="block text-xs font-bold text-slate-700 mb-1">
+                                                Mã Khách Hàng
+                                                {duplicateWarnings.some(w => w.field === 'code') && <span className="text-rose-600 ml-1 font-bold">(Trùng mã)</span>}
                                             </label>
                                             <input
                                                 type="text"
-                                                required
-                                                value={formData.name || ''}
-                                                onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                                placeholder="Tên đầy đủ theo đăng ký kinh doanh..."
-                                                className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-semibold text-slate-900 bg-white"
+                                                value={formData.code || ''}
+                                                onChange={e => setFormData({ ...formData, code: e.target.value })}
+                                                placeholder="Tự động sinh (KH-xxxx)"
+                                                className={`w-full h-[34px] border rounded-lg px-2.5 py-1 text-xs outline-none transition-all font-mono text-slate-900 bg-white ${
+                                                    duplicateWarnings.some(w => w.field === 'code')
+                                                        ? 'border-rose-400 focus:border-rose-500 bg-rose-50/30'
+                                                        : 'border-slate-300 focus:border-emerald-600'
+                                                }`}
                                             />
                                         </div>
-
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
-                                            <div>
-                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Tên Viết Tắt / Giao Dịch</label>
-                                                <input
-                                                    type="text"
-                                                    value={formData.shortName || ''}
-                                                    onChange={e => setFormData({ ...formData, shortName: e.target.value })}
-                                                    placeholder="Ví dụ: FPT CORP, VINAMILK"
-                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Tên Quốc Tế</label>
-                                                <input
-                                                    type="text"
-                                                    value={formData.internationalName || ''}
-                                                    onChange={e => setFormData({ ...formData, internationalName: e.target.value })}
-                                                    placeholder="International / English name..."
-                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
-                                                />
-                                            </div>
-                                        </div>
-
                                         <div>
-                                            <label className="block text-xs font-semibold text-slate-600 mb-1">Ngành Nghề / Lĩnh Vực Hoạt Động</label>
+                                            <label className="block text-xs font-bold text-slate-700 mb-1">
+                                                Mã Số Thuế
+                                                {duplicateWarnings.some(w => w.field === 'taxCode') && <span className="text-rose-600 ml-1 font-bold">(Trùng MST)</span>}
+                                            </label>
                                             <input
                                                 type="text"
-                                                value={formData.businessType || ''}
-                                                onChange={e => setFormData({ ...formData, businessType: e.target.value })}
-                                                placeholder="Ví dụ: Công nghệ thông tin, Xây dựng, Bán lẻ..."
-                                                className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
+                                                value={formData.taxCode || ''}
+                                                onChange={e => setFormData({ ...formData, taxCode: e.target.value })}
+                                                placeholder="Ví dụ: 0101248141"
+                                                className={`w-full h-[34px] border rounded-lg px-2.5 py-1 text-xs outline-none transition-all font-mono text-slate-900 bg-white ${
+                                                    duplicateWarnings.some(w => w.field === 'taxCode')
+                                                        ? 'border-rose-400 focus:border-rose-500 bg-rose-50/30'
+                                                        : 'border-slate-300 focus:border-emerald-600'
+                                                }`}
                                             />
                                         </div>
-                                    </div>
-                                )}
-
-                                {activeTab === 'contact' && (
-                                    <div className="space-y-3">
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
-                                            <div>
-                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Người Đại Diện / Người Liên Hệ Chính</label>
-                                                <input
-                                                    type="text"
-                                                    value={formData.contactName || ''}
-                                                    onChange={e => setFormData({ ...formData, contactName: e.target.value })}
-                                                    placeholder="Họ và tên người đại diện"
-                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-semibold text-slate-600 mb-1">
-                                                    Số Điện Thoại
-                                                    {duplicateWarnings.some(w => w.field === 'phone') && <span className="text-rose-600 ml-1 font-bold">(Trùng SĐT)</span>}
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={formData.phone || ''}
-                                                    onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                                    placeholder="0987xxxxxx"
-                                                    className={`w-full h-[34px] border rounded-lg px-2.5 py-1 text-xs outline-none transition-all text-slate-900 bg-white ${
-                                                        duplicateWarnings.some(w => w.field === 'phone')
-                                                            ? 'border-rose-400 focus:border-rose-500 focus:ring-1 focus:ring-rose-200 bg-rose-50/30'
-                                                            : 'border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary/20'
-                                                    }`}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
-                                            <div>
-                                                <label className="block text-xs font-semibold text-slate-600 mb-1">
-                                                    Email Doanh Nghiệp / Liên Hệ
-                                                    {duplicateWarnings.some(w => w.field === 'email') && <span className="text-rose-600 ml-1 font-bold">(Trùng Email)</span>}
-                                                </label>
-                                                <input
-                                                    type="email"
-                                                    value={formData.email || ''}
-                                                    onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                                    placeholder="contact@company.com"
-                                                    className={`w-full h-[34px] border rounded-lg px-2.5 py-1 text-xs outline-none transition-all text-slate-900 bg-white ${
-                                                        duplicateWarnings.some(w => w.field === 'email')
-                                                            ? 'border-rose-400 focus:border-rose-500 focus:ring-1 focus:ring-rose-200 bg-rose-50/30'
-                                                            : 'border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary/20'
-                                                    }`}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Website</label>
-                                                <input
-                                                    type="text"
-                                                    value={formData.website || ''}
-                                                    onChange={e => setFormData({ ...formData, website: e.target.value })}
-                                                    placeholder="https://company.com"
-                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
-                                                />
-                                            </div>
-                                        </div>
-
                                         <div>
-                                            <label className="block text-xs font-semibold text-slate-600 mb-1">Địa Chỉ Trụ Sở / Đăng Ký Kinh Doanh</label>
+                                            <label className="block text-xs font-bold text-slate-700 mb-1">Trạng Thái MST</label>
                                             <input
                                                 type="text"
-                                                value={formData.address || ''}
-                                                onChange={e => setFormData({ ...formData, address: e.target.value })}
-                                                placeholder="Địa chỉ trụ sở chính..."
-                                                className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
+                                                value={formData.taxStatus || ''}
+                                                onChange={e => setFormData({ ...formData, taxStatus: e.target.value })}
+                                                placeholder="NNT đang hoạt động"
+                                                className="w-full h-[34px] border border-slate-300 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-emerald-600 text-slate-900 bg-slate-50"
                                             />
                                         </div>
-
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
-                                            <div>
-                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Địa Chỉ Xuất Hóa Đơn</label>
-                                                <input
-                                                    type="text"
-                                                    value={formData.billingAddress || ''}
-                                                    onChange={e => setFormData({ ...formData, billingAddress: e.target.value })}
-                                                    placeholder="Địa chỉ ghi trên hóa đơn GTGT..."
-                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Địa Chỉ Giao Hàng</label>
-                                                <input
-                                                    type="text"
-                                                    value={formData.shippingAddress || ''}
-                                                    onChange={e => setFormData({ ...formData, shippingAddress: e.target.value })}
-                                                    placeholder="Kho hàng / Địa chỉ nhận hàng..."
-                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
-                                                />
-                                            </div>
-                                        </div>
                                     </div>
-                                )}
 
-                                {activeTab === 'financial' && (
-                                    <div className="space-y-3">
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
-                                            <div>
-                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Ngân Hàng Giao Dịch</label>
-                                                <input
-                                                    type="text"
-                                                    value={formData.bankName || ''}
-                                                    onChange={e => setFormData({ ...formData, bankName: e.target.value })}
-                                                    placeholder="Ví dụ: Vietcombank, Techcombank, MB Bank..."
-                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Số Tài Khoản Ngân Hàng</label>
-                                                <input
-                                                    type="text"
-                                                    value={formData.bankAccount || ''}
-                                                    onChange={e => setFormData({ ...formData, bankAccount: e.target.value })}
-                                                    placeholder="Số tài khoản ngân hàng..."
-                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-mono text-slate-900 bg-white"
-                                                />
-                                            </div>
-                                        </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                                            Tên Khách Hàng / Công Ty <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={formData.name || ''}
+                                            onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                            placeholder="Tên đầy đủ theo đăng ký kinh doanh..."
+                                            className="w-full h-[34px] border border-slate-300 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-emerald-600 font-bold text-slate-900 bg-white"
+                                        />
+                                    </div>
 
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
                                         <div>
-                                            <label className="block text-xs font-semibold text-slate-600 mb-1">Chi Nhánh Ngân Hàng</label>
+                                            <label className="block text-xs font-bold text-slate-700 mb-1">Tên Viết Tắt / Giao Dịch</label>
                                             <input
                                                 type="text"
-                                                value={formData.bankBranch || ''}
-                                                onChange={e => setFormData({ ...formData, bankBranch: e.target.value })}
-                                                placeholder="Ví dụ: Chi nhánh TP.HCM, Chi nhánh Hà Nội..."
-                                                className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
+                                                value={formData.shortName || ''}
+                                                onChange={e => setFormData({ ...formData, shortName: e.target.value })}
+                                                placeholder="Ví dụ: FPT CORP, VINAMILK"
+                                                className="w-full h-[34px] border border-slate-300 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-emerald-600 text-slate-900 bg-white"
                                             />
                                         </div>
-
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
-                                            <div>
-                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Điều Khoản Thanh Toán</label>
-                                                <input
-                                                    type="text"
-                                                    value={formData.paymentTerms || ''}
-                                                    onChange={e => setFormData({ ...formData, paymentTerms: e.target.value })}
-                                                    placeholder="Ví dụ: Thanh toán ngay, Gối đầu 30 ngày..."
-                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Hạn Mức Công Nợ (VNĐ)</label>
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    step="1000"
-                                                    value={formData.creditLimit || ''}
-                                                    onChange={e => setFormData({ ...formData, creditLimit: parseFloat(e.target.value) || 0 })}
-                                                    placeholder="0"
-                                                    className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-mono text-slate-900 bg-white"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {activeTab === 'notes' && (
-                                    <div className="space-y-3">
                                         <div>
-                                            <label className="block text-xs font-semibold text-slate-600 mb-1">Ghi Chú Nội Bộ</label>
-                                            <textarea
-                                                rows={4}
-                                                value={formData.internalNotes || ''}
-                                                onChange={e => setFormData({ ...formData, internalNotes: e.target.value })}
-                                                placeholder="Nhập các thông tin lưu ý đặc biệt, chính sách riêng dành cho khách hàng này..."
-                                                className="w-full border border-slate-200 rounded-lg p-2 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all resize-none text-slate-900 bg-white placeholder:text-slate-400"
+                                            <label className="block text-xs font-bold text-slate-700 mb-1">Tên Quốc Tế</label>
+                                            <input
+                                                type="text"
+                                                value={formData.internationalName || ''}
+                                                onChange={e => setFormData({ ...formData, internationalName: e.target.value })}
+                                                placeholder="International / English name..."
+                                                className="w-full h-[34px] border border-slate-300 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-emerald-600 text-slate-900 bg-white"
                                             />
                                         </div>
                                     </div>
-                                )}
-                            </form>
 
-                            {/* Modal Footer */}
-                            <div className="px-4 py-3 border-t border-slate-200 flex justify-between items-center bg-slate-50">
-                                <div className="text-xs text-slate-500">
-                                    <span className="font-semibold">{activeTab === 'general' ? 'Bước 1/4' : activeTab === 'contact' ? 'Bước 2/4' : activeTab === 'financial' ? 'Bước 3/4' : 'Bước 4/4'}</span>: {
-                                        activeTab === 'general' ? 'Thông tin chung & Thuế' : activeTab === 'contact' ? 'Liên hệ & Địa chỉ' : activeTab === 'financial' ? 'Tài chính' : 'Ghi chú'
-                                    }
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Ngành Nghề / Lĩnh Vực Hoạt Động</label>
+                                        <input
+                                            type="text"
+                                            value={formData.businessType || ''}
+                                            onChange={e => setFormData({ ...formData, businessType: e.target.value })}
+                                            placeholder="Ví dụ: Công nghệ thông tin, Xây dựng, Bán lẻ..."
+                                            className="w-full h-[34px] border border-slate-300 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-emerald-600 text-slate-900 bg-white"
+                                        />
+                                    </div>
                                 </div>
-                                <div className="flex gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={closeModal}
-                                        disabled={isSubmitting}
-                                        className="h-[34px] px-4 border border-slate-300 rounded-lg hover:bg-white text-xs font-semibold text-slate-600 transition-all"
-                                    >
-                                        {t('customers.cancel')}
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        form="customerForm"
-                                        disabled={isSubmitting}
-                                        className="h-[34px] px-5 bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 text-xs font-bold shadow-xs transition-all"
-                                    >
-                                        {isSubmitting ? 'Đang lưu...' : t('customers.save')}
-                                    </button>
+                            )}
+
+                            {activeTab === 'contact' && (
+                                <div className="space-y-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-700 mb-1">Người Đại Diện / Người Liên Hệ Chính</label>
+                                            <input
+                                                type="text"
+                                                value={formData.contactName || ''}
+                                                onChange={e => setFormData({ ...formData, contactName: e.target.value })}
+                                                placeholder="Họ và tên người đại diện"
+                                                className="w-full h-[34px] border border-slate-300 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-emerald-600 text-slate-900 bg-white"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-700 mb-1">
+                                                Số Điện Thoại
+                                                {duplicateWarnings.some(w => w.field === 'phone') && <span className="text-rose-600 ml-1 font-bold">(Trùng SĐT)</span>}
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.phone || ''}
+                                                onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                                placeholder="0987xxxxxx"
+                                                className={`w-full h-[34px] border rounded-lg px-2.5 py-1 text-xs outline-none font-mono text-slate-900 bg-white ${
+                                                    duplicateWarnings.some(w => w.field === 'phone')
+                                                        ? 'border-rose-400 focus:border-rose-500 bg-rose-50/30'
+                                                        : 'border-slate-300 focus:border-emerald-600'
+                                                }`}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-700 mb-1">
+                                                Email Doanh Nghiệp / Liên Hệ
+                                                {duplicateWarnings.some(w => w.field === 'email') && <span className="text-rose-600 ml-1 font-bold">(Trùng Email)</span>}
+                                            </label>
+                                            <input
+                                                type="email"
+                                                value={formData.email || ''}
+                                                onChange={e => setFormData({ ...formData, email: e.target.value })}
+                                                placeholder="contact@company.com"
+                                                className={`w-full h-[34px] border rounded-lg px-2.5 py-1 text-xs outline-none text-slate-900 bg-white ${
+                                                    duplicateWarnings.some(w => w.field === 'email')
+                                                        ? 'border-rose-400 focus:border-rose-500 bg-rose-50/30'
+                                                        : 'border-slate-300 focus:border-emerald-600'
+                                                }`}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-700 mb-1">Website</label>
+                                            <input
+                                                type="text"
+                                                value={formData.website || ''}
+                                                onChange={e => setFormData({ ...formData, website: e.target.value })}
+                                                placeholder="https://company.com"
+                                                className="w-full h-[34px] border border-slate-300 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-emerald-600 text-slate-900 bg-white"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Địa Chỉ Trụ Sở / Đăng Ký Kinh Doanh</label>
+                                        <input
+                                            type="text"
+                                            value={formData.address || ''}
+                                            onChange={e => setFormData({ ...formData, address: e.target.value })}
+                                            placeholder="Địa chỉ trụ sở chính..."
+                                            className="w-full h-[34px] border border-slate-300 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-emerald-600 text-slate-900 bg-white"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-700 mb-1">Địa Chỉ Xuất Hóa Đơn</label>
+                                            <input
+                                                type="text"
+                                                value={formData.billingAddress || ''}
+                                                onChange={e => setFormData({ ...formData, billingAddress: e.target.value })}
+                                                placeholder="Địa chỉ ghi trên hóa đơn GTGT..."
+                                                className="w-full h-[34px] border border-slate-300 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-emerald-600 text-slate-900 bg-white"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-700 mb-1">Địa Chỉ Giao Hàng</label>
+                                            <input
+                                                type="text"
+                                                value={formData.shippingAddress || ''}
+                                                onChange={e => setFormData({ ...formData, shippingAddress: e.target.value })}
+                                                placeholder="Kho hàng / Địa chỉ nhận hàng..."
+                                                className="w-full h-[34px] border border-slate-300 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-emerald-600 text-slate-900 bg-white"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
+                            )}
+
+                            {activeTab === 'financial' && (
+                                <div className="space-y-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-700 mb-1">Ngân Hàng Giao Dịch</label>
+                                            <input
+                                                type="text"
+                                                value={formData.bankName || ''}
+                                                onChange={e => setFormData({ ...formData, bankName: e.target.value })}
+                                                placeholder="Ví dụ: Vietcombank, Techcombank, MB Bank..."
+                                                className="w-full h-[34px] border border-slate-300 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-emerald-600 text-slate-900 bg-white"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-700 mb-1">Số Tài Khoản Ngân Hàng</label>
+                                            <input
+                                                type="text"
+                                                value={formData.bankAccount || ''}
+                                                onChange={e => setFormData({ ...formData, bankAccount: e.target.value })}
+                                                placeholder="Số tài khoản ngân hàng..."
+                                                className="w-full h-[34px] border border-slate-300 rounded-lg px-2.5 py-1 text-xs outline-none font-mono focus:border-emerald-600 text-slate-900 bg-white"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Chi Nhánh Ngân Hàng</label>
+                                        <input
+                                            type="text"
+                                            value={formData.bankBranch || ''}
+                                            onChange={e => setFormData({ ...formData, bankBranch: e.target.value })}
+                                            placeholder="Ví dụ: Chi nhánh TP.HCM, Chi nhánh Hà Nội..."
+                                            className="w-full h-[34px] border border-slate-300 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-emerald-600 text-slate-900 bg-white"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-700 mb-1">Điều Khoản Thanh Toán</label>
+                                            <input
+                                                type="text"
+                                                value={formData.paymentTerms || ''}
+                                                onChange={e => setFormData({ ...formData, paymentTerms: e.target.value })}
+                                                placeholder="Ví dụ: Thanh toán ngay, Gối đầu 30 ngày..."
+                                                className="w-full h-[34px] border border-slate-300 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-emerald-600 text-slate-900 bg-white"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-700 mb-1">Hạn Mức Công Nợ (VNĐ)</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                step="1000"
+                                                value={formData.creditLimit || ''}
+                                                onChange={e => setFormData({ ...formData, creditLimit: parseFloat(e.target.value) || 0 })}
+                                                placeholder="0"
+                                                className="w-full h-[34px] border border-slate-300 rounded-lg px-2.5 py-1 text-xs outline-none font-mono focus:border-emerald-600 text-slate-900 bg-white"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeTab === 'notes' && (
+                                <div className="space-y-3">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Ghi Chú Nội Bộ</label>
+                                        <textarea
+                                            rows={4}
+                                            value={formData.internalNotes || ''}
+                                            onChange={e => setFormData({ ...formData, internalNotes: e.target.value })}
+                                            placeholder="Nhập các thông tin lưu ý đặc biệt, chính sách riêng dành cho khách hàng này..."
+                                            className="w-full border border-slate-300 rounded-lg p-2.5 text-xs outline-none focus:border-emerald-600 resize-none text-slate-900 bg-white placeholder:text-slate-400"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </form>
+
+                        {/* Modal Footer */}
+                        <div className="px-4 py-3 border-t border-slate-200 flex justify-between items-center bg-slate-50">
+                            <div className="text-xs text-slate-500">
+                                <span className="font-semibold">{activeTab === 'general' ? 'Bước 1/4' : activeTab === 'contact' ? 'Bước 2/4' : activeTab === 'financial' ? 'Bước 3/4' : 'Bước 4/4'}</span>: {
+                                    activeTab === 'general' ? 'Thông tin chung & Thuế' : activeTab === 'contact' ? 'Liên hệ & Địa chỉ' : activeTab === 'financial' ? 'Tài chính' : 'Ghi chú'
+                                }
+                            </div>
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={closeModal}
+                                    disabled={isSubmitting}
+                                    className="h-[34px] px-4 border border-slate-300 rounded-lg hover:bg-white text-xs font-semibold text-slate-700 transition-all cursor-pointer"
+                                >
+                                    {t('customers.cancel')}
+                                </button>
+                                <button
+                                    type="submit"
+                                    form="customerForm"
+                                    disabled={isSubmitting}
+                                    style={{ backgroundColor: '#05A613' }}
+                                    className="h-[34px] px-5 text-white rounded-lg hover:opacity-90 disabled:opacity-50 text-xs font-bold shadow-xs transition-all cursor-pointer"
+                                >
+                                    {isSubmitting ? 'Đang lưu...' : t('customers.save')}
+                                </button>
                             </div>
                         </div>
                     </div>
-                )}
+                </div>
+            )}
         </div>
     );
 }

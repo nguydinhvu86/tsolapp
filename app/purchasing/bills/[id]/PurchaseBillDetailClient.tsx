@@ -208,7 +208,7 @@ export function PurchaseBillDetailClient({ bill, tasks, users, warehouses }: { b
     }, [localBill.attachment]);
 
     const formatMoney = (amount: number) => {
-        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 6, minimumFractionDigits: 0 }).format(amount || 0);
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0, minimumFractionDigits: 0 }).format(Math.round(amount || 0));
     };
 
     const remainingAmount = localBill.totalAmount - (localBill.paidAmount || 0);

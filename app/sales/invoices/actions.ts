@@ -1353,7 +1353,7 @@ export async function paySalesInvoice(
                     invoiceId: invoice.id,
                     userId: creatorId,
                     action: 'UPDATED',
-                    details: `Thu tiền: ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 6 }).format(amount)} (PT: ${payment.code})`
+                    details: `Thu tiền: ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(Math.round(amount))} (PT: ${payment.code})`
                 }
             });
 
