@@ -282,21 +282,22 @@ export default function SalesInvoiceDetailClient({
         const addInfoRow = (label: string, value: string, isBold: boolean = false) => {
             const row = ws.addRow([]);
             const rowNum = row.number;
-            row.height = 22;
+            const lineCount = (value || '').split('\n').length;
+            row.height = Math.max(22, lineCount * 18);
 
             // Merge cols 1..2 for label
             ws.mergeCells(rowNum, 1, rowNum, 2);
             const labelCell = row.getCell(1);
             labelCell.value = label;
             labelCell.font = { bold: true, size: 10, color: { argb: 'FF334155' }, name: 'Arial' };
-            labelCell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+            labelCell.alignment = { horizontal: 'left', vertical: lineCount > 1 ? 'top' : 'middle', wrapText: true };
 
             // Merge cols 3..colCount for value
             ws.mergeCells(rowNum, 3, rowNum, colCount);
             const valCell = row.getCell(3);
             valCell.value = value;
             valCell.font = { bold: isBold, size: 10, color: { argb: 'FF0F172A' }, name: 'Arial' };
-            valCell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+            valCell.alignment = { horizontal: 'left', vertical: lineCount > 1 ? 'top' : 'middle', wrapText: true };
 
             return row;
         };
@@ -979,7 +980,7 @@ export default function SalesInvoiceDetailClient({
                                 <FileText size={14} className="text-amber-600 shrink-0 mt-0.5" />
                                 <div>
                                     <strong className="text-amber-900 font-semibold mr-1">Ghi chú hóa đơn:</strong>
-                                    <span>{invoice.notes}</span>
+                                    <div className="whitespace-pre-line inline">{invoice.notes}</div>
                                 </div>
                             </div>
                         )}

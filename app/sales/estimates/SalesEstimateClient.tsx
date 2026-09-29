@@ -1047,7 +1047,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                 </div>
                             </div>
 
-                            <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3">
+                            <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3">
                                 <div>
                                     <label className="block text-xs font-semibold text-slate-600 mb-1">{t('estimates.estimateDate')}</label>
                                     <input
@@ -1073,17 +1073,6 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                         placeholder={t('estimates.selectSalesperson')}
                                     />
                                 </div>
-                            </div>
-                            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-600 mb-1">{t('estimates.notes')}</label>
-                                    <input
-                                        type="text" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white placeholder:text-slate-400"
-                                        value={formData.notes || ''}
-                                        onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                                        placeholder={t('estimates.notesPlaceholder')}
-                                    />
-                                </div>
                                 <div>
                                     <label className="block text-xs font-semibold text-slate-600 mb-1">{t('estimates.tags')}</label>
                                     <input
@@ -1093,6 +1082,16 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                         placeholder={t('estimates.tagsPlaceholder')}
                                     />
                                 </div>
+                            </div>
+                            <div className="md:col-span-2">
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">{t('estimates.notes')}</label>
+                                <textarea
+                                    rows={3}
+                                    className="w-full border border-slate-200 rounded-lg px-2.5 py-2 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-slate-900 bg-white placeholder:text-slate-400 resize-y"
+                                    value={formData.notes || ''}
+                                    onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                                    placeholder={t('estimates.notesPlaceholder')}
+                                />
                             </div>
                         </div>
                     </div>

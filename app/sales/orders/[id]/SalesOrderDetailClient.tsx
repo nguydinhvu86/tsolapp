@@ -281,7 +281,7 @@ export default function SalesOrderDetailClient({ initialData, customers, product
                             {order.notes && (
                                 <div className="col-span-full p-3 bg-slate-50/50 rounded-lg border border-slate-100">
                                     <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Ghi chú</p>
-                                    <p className="text-xs text-slate-600 leading-relaxed">{order.notes}</p>
+                                    <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">{order.notes}</p>
                                 </div>
                             )}
                         </div>

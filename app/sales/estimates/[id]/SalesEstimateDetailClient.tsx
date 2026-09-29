@@ -276,21 +276,22 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
         const addInfoRow = (label: string, value: string, isBold: boolean = false) => {
             const row = ws.addRow([]);
             const rowNum = row.number;
-            row.height = 22;
+            const lineCount = (value || '').split('\n').length;
+            row.height = Math.max(22, lineCount * 18);
 
             // Merge cols 1..2 for label
             ws.mergeCells(rowNum, 1, rowNum, 2);
             const labelCell = row.getCell(1);
             labelCell.value = label;
             labelCell.font = { bold: true, size: 10, color: { argb: 'FF334155' }, name: 'Arial' };
-            labelCell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+            labelCell.alignment = { horizontal: 'left', vertical: lineCount > 1 ? 'top' : 'middle', wrapText: true };
 
             // Merge cols 3..colCount for value
             ws.mergeCells(rowNum, 3, rowNum, colCount);
             const valCell = row.getCell(3);
             valCell.value = value;
             valCell.font = { bold: isBold, size: 10, color: { argb: 'FF0F172A' }, name: 'Arial' };
-            valCell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+            valCell.alignment = { horizontal: 'left', vertical: lineCount > 1 ? 'top' : 'middle', wrapText: true };
 
             return row;
         };
@@ -815,7 +816,8 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
 
                             {estimate.notes && (
                                 <div className="col-span-full mt-1 p-2.5 bg-slate-50 rounded-lg border border-slate-200/60 text-xs text-slate-600 leading-relaxed">
-                                    <strong className="text-slate-700 font-semibold mr-1">Ghi chú:</strong> {estimate.notes}
+                                    <strong className="text-slate-700 font-semibold mr-1">Ghi chú:</strong>
+                                    <div className="whitespace-pre-line inline">{estimate.notes}</div>
                                 </div>
                             )}
                         </div>
