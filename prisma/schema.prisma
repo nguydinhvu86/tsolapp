@@ -163,6 +163,8 @@ model User {
   leaderboardReactions LeaderboardReaction[]
   leaderboardComments  LeaderboardComment[]
   leaderboardMentions  LeaderboardMention[]
+  competitionGroupsLed CompetitionGroup[]    @relation("GroupLeader")
+  competitionMemberships CompetitionGroupMember[]
 
   // Centralized Vault & Unified Logs
   systemAttachments    SystemAttachment[]   @relation("UserSystemAttachments")
@@ -2676,6 +2678,7 @@ model CashTransaction {
 model LeaderboardPost {
   id          String   @id @default(cuid())
   authorId    String
+  groupId     String?
   content     String   @db.Text
   images      String?  @db.Text // JSON string array of image URLs
   type        String   @default("USER_POST") // USER_POST, ACHIEVEMENT_ANNOUNCEMENT, SYSTEM_MILESTONE
@@ -2685,11 +2688,13 @@ model LeaderboardPost {
   updatedAt   DateTime @updatedAt
 
   author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  group       CompetitionGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
   reactions   LeaderboardReaction[]
   comments    LeaderboardComment[]
   mentions    LeaderboardMention[]
 
   @@index([authorId])
+  @@index([groupId])
   @@index([createdAt])
   @@index([isPinned])
 }
@@ -2744,6 +2749,43 @@ model LeaderboardMention {
   @@index([mentionedUserId])
   @@index([postId])
   @@index([commentId])
+}
+
+model CompetitionGroup {
+  id            String   @id @default(cuid())
+  name          String
+  code          String?
+  description   String?  @db.Text
+  slogan        String?
+  avatar        String?
+  color         String   @default("#059669")
+  targetRevenue Float    @default(0)
+  leaderId      String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  leader        User?    @relation("GroupLeader", fields: [leaderId], references: [id], onDelete: SetNull)
+  members       CompetitionGroupMember[]
+  posts         LeaderboardPost[]
+
+  @@index([leaderId])
+  @@index([isActive])
+}
+
+model CompetitionGroupMember {
+  id        String   @id @default(cuid())
+  groupId   String
+  userId    String
+  role      String   @default("MEMBER") // LEADER, MEMBER
+  joinedAt  DateTime @default(now())
+
+  group     CompetitionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([groupId])
+  @@index([userId])
 }
 
 // ==========================================

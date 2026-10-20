@@ -10,6 +10,7 @@ import { revalidatePath } from 'next/cache';
 export type TimeRangeKey = 'TODAY' | 'THIS_WEEK' | 'THIS_MONTH' | 'THIS_QUARTER' | 'THIS_YEAR' | 'CUSTOM';
 export type CriteriaKey = 'REVENUE' | 'CUSTOMERS' | 'LEADS' | 'ESTIMATES' | 'CONVERSION_RATE';
 export type ReactionEmoji = 'HEART' | 'FIRE' | 'CLAP' | 'CELEBRATE' | 'ROCKET' | 'TROPHY';
+export type LeaderboardMode = 'INDIVIDUAL' | 'TEAM';
 
 // Helper: Calculate Date Range
 function getDateBounds(timeRange: TimeRangeKey, customStart?: string, customEnd?: string): { start: Date; end: Date; prevStart: Date; prevEnd: Date } {
@@ -23,7 +24,6 @@ function getDateBounds(timeRange: TimeRangeKey, customStart?: string, customEnd?
         case 'TODAY': {
             start.setHours(0, 0, 0, 0);
             end.setHours(23, 59, 59, 999);
-            // Previous day
             prevStart = new Date(start);
             prevStart.setDate(prevStart.getDate() - 1);
             prevEnd = new Date(end);
@@ -37,7 +37,6 @@ function getDateBounds(timeRange: TimeRangeKey, customStart?: string, customEnd?
             end = new Date(start);
             end.setDate(start.getDate() + 6);
             end.setHours(23, 59, 59, 999);
-            // Previous week
             prevStart = new Date(start);
             prevStart.setDate(prevStart.getDate() - 7);
             prevEnd = new Date(end);
@@ -47,7 +46,6 @@ function getDateBounds(timeRange: TimeRangeKey, customStart?: string, customEnd?
         case 'THIS_MONTH': {
             start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
             end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-            // Previous month
             prevStart = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
             prevEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
             break;
@@ -56,7 +54,6 @@ function getDateBounds(timeRange: TimeRangeKey, customStart?: string, customEnd?
             const quarter = Math.floor(now.getMonth() / 3);
             start = new Date(now.getFullYear(), quarter * 3, 1, 0, 0, 0, 0);
             end = new Date(now.getFullYear(), (quarter + 1) * 3, 0, 23, 59, 59, 999);
-            // Previous quarter
             prevStart = new Date(now.getFullYear(), (quarter - 1) * 3, 1, 0, 0, 0, 0);
             prevEnd = new Date(now.getFullYear(), quarter * 3, 0, 23, 59, 59, 999);
             break;
@@ -64,7 +61,6 @@ function getDateBounds(timeRange: TimeRangeKey, customStart?: string, customEnd?
         case 'THIS_YEAR': {
             start = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
             end = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
-            // Previous year
             prevStart = new Date(now.getFullYear() - 1, 0, 1, 0, 0, 0, 0);
             prevEnd = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999);
             break;
@@ -83,7 +79,188 @@ function getDateBounds(timeRange: TimeRangeKey, customStart?: string, customEnd?
     return { start, end, prevStart, prevEnd };
 }
 
-// 1. GET LEADERBOARD STATS
+function genId(): string {
+    return 'cm' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
+}
+
+// -------------------------------------------------------------
+// CORE SCORING AGGREGATOR (Shared by Individual & Team Leaders)
+// -------------------------------------------------------------
+async function calculateUserScores(users: any[], periodStart: Date, periodEnd: Date) {
+    const [
+        invoices,
+        payments,
+        customers,
+        leads,
+        estimates
+    ] = await Promise.all([
+        prisma.salesInvoice.findMany({
+            where: {
+                createdAt: { gte: periodStart, lte: periodEnd },
+                status: { in: ['ISSUED', 'PARTIAL_PAID', 'PAID'] }
+            },
+            select: {
+                id: true,
+                totalAmount: true,
+                creatorId: true,
+                salespersonId: true
+            }
+        }),
+        prisma.salesPayment.findMany({
+            where: {
+                date: { gte: periodStart, lte: periodEnd },
+                status: { not: 'CANCELLED' }
+            },
+            select: {
+                id: true,
+                amount: true,
+                creatorId: true
+            }
+        }),
+        prisma.customer.findMany({
+            where: {
+                createdAt: { gte: periodStart, lte: periodEnd }
+            },
+            select: {
+                id: true,
+                managers: { select: { id: true } }
+            }
+        }),
+        prisma.lead.findMany({
+            where: {
+                createdAt: { gte: periodStart, lte: periodEnd }
+            },
+            select: {
+                id: true,
+                status: true,
+                estimatedValue: true,
+                creatorId: true,
+                assignedToId: true,
+                assignees: { select: { userId: true } }
+            }
+        }),
+        prisma.salesEstimate.findMany({
+            where: {
+                createdAt: { gte: periodStart, lte: periodEnd }
+            },
+            select: {
+                id: true,
+                totalAmount: true,
+                status: true,
+                creatorId: true,
+                salespersonId: true
+            }
+        })
+    ]);
+
+    const userScoreMap: Record<string, {
+        revenue: number;
+        invoicesCount: number;
+        customersCount: number;
+        leadsCount: number;
+        leadsWonCount: number;
+        pipelineValue: number;
+        estimatesCount: number;
+        estimatesAcceptedCount: number;
+        estimatesValue: number;
+        conversionRate: number;
+    }> = {};
+
+    users.forEach(u => {
+        userScoreMap[u.id] = {
+            revenue: 0,
+            invoicesCount: 0,
+            customersCount: 0,
+            leadsCount: 0,
+            leadsWonCount: 0,
+            pipelineValue: 0,
+            estimatesCount: 0,
+            estimatesAcceptedCount: 0,
+            estimatesValue: 0,
+            conversionRate: 0
+        };
+    });
+
+    // Revenue
+    invoices.forEach(inv => {
+        const userId = inv.salespersonId || inv.creatorId;
+        if (userId && userScoreMap[userId]) {
+            userScoreMap[userId].revenue += (inv.totalAmount || 0);
+            userScoreMap[userId].invoicesCount += 1;
+        }
+    });
+
+    // Customers
+    customers.forEach(c => {
+        if (c.managers && c.managers.length > 0) {
+            c.managers.forEach(m => {
+                if (userScoreMap[m.id]) {
+                    userScoreMap[m.id].customersCount += 1;
+                }
+            });
+        }
+    });
+
+    // Leads & Win
+    leads.forEach(l => {
+        const userIds = new Set<string>();
+        if (l.creatorId) userIds.add(l.creatorId);
+        if (l.assignedToId) userIds.add(l.assignedToId);
+        if (l.assignees) (l.assignees as any[]).forEach(a => userIds.add(a.userId));
+
+        const isWon = ['WON', 'CONVERTED', 'DEAL_WON', 'SUCCESS'].includes((l.status || '').toUpperCase());
+
+        userIds.forEach(uid => {
+            if (userScoreMap[uid]) {
+                userScoreMap[uid].leadsCount += 1;
+                userScoreMap[uid].pipelineValue += (l.estimatedValue || 0);
+                if (isWon) {
+                    userScoreMap[uid].leadsWonCount += 1;
+                }
+            }
+        });
+    });
+
+    // Estimates
+    estimates.forEach(est => {
+        const userId = est.salespersonId || est.creatorId;
+        const isAccepted = ['ACCEPTED', 'APPROVED', 'ORDER_CREATED'].includes((est.status || '').toUpperCase());
+        if (userId && userScoreMap[userId]) {
+            userScoreMap[userId].estimatesCount += 1;
+            userScoreMap[userId].estimatesValue += (est.totalAmount || 0);
+            if (isAccepted) {
+                userScoreMap[userId].estimatesAcceptedCount += 1;
+            }
+        }
+    });
+
+    // Conversion rate calculation
+    Object.keys(userScoreMap).forEach(uid => {
+        const item = userScoreMap[uid];
+        if (item.leadsCount > 0) {
+            item.conversionRate = Math.round((item.leadsWonCount / item.leadsCount) * 1000) / 10;
+        } else if (item.estimatesCount > 0) {
+            item.conversionRate = Math.round((item.estimatesAcceptedCount / item.estimatesCount) * 1000) / 10;
+        }
+    });
+
+    return userScoreMap;
+}
+
+const getCriteriaScore = (item: any, crit: CriteriaKey) => {
+    switch (crit) {
+        case 'REVENUE': return item.revenue || 0;
+        case 'CUSTOMERS': return item.customersCount || 0;
+        case 'LEADS': return item.leadsCount || 0;
+        case 'ESTIMATES': return item.estimatesCount || 0;
+        case 'CONVERSION_RATE': return item.conversionRate || 0;
+        default: return item.revenue || 0;
+    }
+};
+
+// =============================================================
+// 1. GET INDIVIDUAL LEADERBOARD
+// =============================================================
 export async function getLeaderboardData(params: {
     criteria?: CriteriaKey;
     timeRange?: TimeRangeKey;
@@ -94,7 +271,6 @@ export async function getLeaderboardData(params: {
     const timeRange = params.timeRange || 'THIS_MONTH';
     const { start, end, prevStart, prevEnd } = getDateBounds(timeRange, params.customStart, params.customEnd);
 
-    // Get all active users
     const users = await prisma.user.findMany({
         where: { isActive: true },
         select: {
@@ -106,199 +282,19 @@ export async function getLeaderboardData(params: {
             employeeProfile: {
                 select: {
                     department: true,
-                    position: true
+                    position: true,
+                    phoneNumber: true
                 }
             }
         }
     });
 
-    // Helper to calculate user scores for a specific timeframe
-    async function calculateUserScores(periodStart: Date, periodEnd: Date) {
-        // Query relevant metrics in parallel
-        const [
-            invoices,
-            payments,
-            customers,
-            leads,
-            estimates
-        ] = await Promise.all([
-            // Invoices in period
-            prisma.salesInvoice.findMany({
-                where: {
-                    createdAt: { gte: periodStart, lte: periodEnd },
-                    status: { in: ['ISSUED', 'PARTIAL_PAID', 'PAID'] }
-                },
-                select: {
-                    id: true,
-                    totalAmount: true,
-                    creatorId: true,
-                    salespersonId: true
-                }
-            }),
-            // Payments in period
-            prisma.salesPayment.findMany({
-                where: {
-                    date: { gte: periodStart, lte: periodEnd },
-                    status: { not: 'CANCELLED' }
-                },
-                select: {
-                    id: true,
-                    amount: true,
-                    creatorId: true
-                }
-            }),
-            // Customers created / managed in period
-            prisma.customer.findMany({
-                where: {
-                    createdAt: { gte: periodStart, lte: periodEnd }
-                },
-                select: {
-                    id: true,
-                    managers: { select: { id: true } }
-                }
-            }),
-            // Leads in period
-            prisma.lead.findMany({
-                where: {
-                    createdAt: { gte: periodStart, lte: periodEnd }
-                },
-                select: {
-                    id: true,
-                    status: true,
-                    estimatedValue: true,
-                    creatorId: true,
-                    assignedToId: true,
-                    assignees: { select: { userId: true } }
-                }
-            }),
-            // Estimates in period
-            prisma.salesEstimate.findMany({
-                where: {
-                    createdAt: { gte: periodStart, lte: periodEnd }
-                },
-                select: {
-                    id: true,
-                    totalAmount: true,
-                    status: true,
-                    creatorId: true,
-                    salespersonId: true
-                }
-            })
-        ]);
-
-        const userScoreMap: Record<string, {
-            revenue: number;
-            invoicesCount: number;
-            customersCount: number;
-            leadsCount: number;
-            leadsWonCount: number;
-            pipelineValue: number;
-            estimatesCount: number;
-            estimatesAcceptedCount: number;
-            estimatesValue: number;
-            conversionRate: number;
-        }> = {};
-
-        // Initialize user map
-        users.forEach(u => {
-            userScoreMap[u.id] = {
-                revenue: 0,
-                invoicesCount: 0,
-                customersCount: 0,
-                leadsCount: 0,
-                leadsWonCount: 0,
-                pipelineValue: 0,
-                estimatesCount: 0,
-                estimatesAcceptedCount: 0,
-                estimatesValue: 0,
-                conversionRate: 0
-            };
-        });
-
-        // 1. Process Revenue (from Invoices & Payments)
-        invoices.forEach(inv => {
-            const userId = inv.salespersonId || inv.creatorId;
-            if (userId && userScoreMap[userId]) {
-                userScoreMap[userId].revenue += (inv.totalAmount || 0);
-                userScoreMap[userId].invoicesCount += 1;
-            }
-        });
-
-        // 2. Process Customers
-        customers.forEach(c => {
-            if (c.managers && c.managers.length > 0) {
-                c.managers.forEach(m => {
-                    if (userScoreMap[m.id]) {
-                        userScoreMap[m.id].customersCount += 1;
-                    }
-                });
-            }
-        });
-
-        // 3. Process Leads & Conversion
-        leads.forEach(l => {
-            const userIds = new Set<string>();
-            if (l.creatorId) userIds.add(l.creatorId);
-            if (l.assignedToId) userIds.add(l.assignedToId);
-            if (l.assignees) (l.assignees as any[]).forEach(a => userIds.add(a.userId));
-
-            const isWon = ['WON', 'CONVERTED', 'DEAL_WON', 'SUCCESS'].includes((l.status || '').toUpperCase());
-
-            userIds.forEach(uid => {
-                if (userScoreMap[uid]) {
-                    userScoreMap[uid].leadsCount += 1;
-                    userScoreMap[uid].pipelineValue += (l.estimatedValue || 0);
-                    if (isWon) {
-                        userScoreMap[uid].leadsWonCount += 1;
-                    }
-                }
-            });
-        });
-
-        // 4. Process Estimates
-        estimates.forEach(est => {
-            const userId = est.salespersonId || est.creatorId;
-            const isAccepted = ['ACCEPTED', 'APPROVED', 'ORDER_CREATED'].includes((est.status || '').toUpperCase());
-            if (userId && userScoreMap[userId]) {
-                userScoreMap[userId].estimatesCount += 1;
-                userScoreMap[userId].estimatesValue += (est.totalAmount || 0);
-                if (isAccepted) {
-                    userScoreMap[userId].estimatesAcceptedCount += 1;
-                }
-            }
-        });
-
-        // Compute conversion rates
-        Object.keys(userScoreMap).forEach(uid => {
-            const item = userScoreMap[uid];
-            if (item.leadsCount > 0) {
-                item.conversionRate = Math.round((item.leadsWonCount / item.leadsCount) * 1000) / 10; // e.g. 75.5%
-            } else if (item.estimatesCount > 0) {
-                item.conversionRate = Math.round((item.estimatesAcceptedCount / item.estimatesCount) * 1000) / 10;
-            }
-        });
-
-        return userScoreMap;
-    }
-
     const [currentScores, prevScores] = await Promise.all([
-        calculateUserScores(start, end),
-        calculateUserScores(prevStart, prevEnd)
+        calculateUserScores(users, start, end),
+        calculateUserScores(users, prevStart, prevEnd)
     ]);
 
-    // Rank helper
-    const getCriteriaScore = (item: any, crit: CriteriaKey) => {
-        switch (crit) {
-            case 'REVENUE': return item.revenue;
-            case 'CUSTOMERS': return item.customersCount;
-            case 'LEADS': return item.leadsCount;
-            case 'ESTIMATES': return item.estimatesCount;
-            case 'CONVERSION_RATE': return item.conversionRate;
-            default: return item.revenue;
-        }
-    };
-
-    // Calculate previous period rankings to determine rank movement (delta)
+    // Calculate previous period rank
     const prevRankedList = users
         .map(u => ({ id: u.id, score: getCriteriaScore(prevScores[u.id] || {}, criteria) }))
         .sort((a, b) => b.score - a.score);
@@ -308,7 +304,7 @@ export async function getLeaderboardData(params: {
         prevRankMap[item.id] = index + 1;
     });
 
-    // Build current full leaderboard
+    // Build current ranked users
     const rankedUsers = users.map(user => {
         const stats = currentScores[user.id] || {
             revenue: 0,
@@ -332,22 +328,17 @@ export async function getLeaderboardData(params: {
         };
     });
 
-    // Sort by primary score descending
     rankedUsers.sort((a, b) => {
         if (b.score !== a.score) return b.score - a.score;
-        // Tie breaker 1: Revenue
         if (b.stats.revenue !== a.stats.revenue) return b.stats.revenue - a.stats.revenue;
-        // Tie breaker 2: Leads won
         return b.stats.leadsWonCount - a.stats.leadsWonCount;
     });
 
-    // Max score for relative percentage bars
     const maxScore = rankedUsers[0]?.score || 1;
 
-    // Attach rank positions, deltas, and badges
     const leaderboard = rankedUsers.map((item, index) => {
         const rank = index + 1;
-        const delta = item.prevRank - rank; // positive = moved up, negative = dropped
+        const delta = item.prevRank - rank;
 
         let badge = '';
         if (rank === 1) badge = '👑 Quán Quân';
@@ -369,13 +360,13 @@ export async function getLeaderboardData(params: {
         };
     });
 
-    // Summary totals for the timeframe
     const totalRevenue = Object.values(currentScores).reduce((acc, cur) => acc + cur.revenue, 0);
     const totalCustomers = Object.values(currentScores).reduce((acc, cur) => acc + cur.customersCount, 0);
     const totalLeads = Object.values(currentScores).reduce((acc, cur) => acc + cur.leadsCount, 0);
     const totalEstimates = Object.values(currentScores).reduce((acc, cur) => acc + cur.estimatesCount, 0);
 
     return {
+        mode: 'INDIVIDUAL' as LeaderboardMode,
         criteria,
         timeRange,
         dateRange: {
@@ -394,11 +385,693 @@ export async function getLeaderboardData(params: {
     };
 }
 
-function genId(): string {
-    return 'cm' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
+// =============================================================
+// 2. GET COMPETITION GROUP LEADERBOARD (TẬP THỂ / NHÓM THI ĐUA)
+// =============================================================
+export async function getGroupLeaderboardData(params: {
+    criteria?: CriteriaKey;
+    timeRange?: TimeRangeKey;
+    customStart?: string;
+    customEnd?: string;
+}) {
+    const criteria = params.criteria || 'REVENUE';
+    const timeRange = params.timeRange || 'THIS_MONTH';
+    const { start, end, prevStart, prevEnd } = getDateBounds(timeRange, params.customStart, params.customEnd);
+
+    // 1. Fetch groups with members
+    let groups: any[] = [];
+    try {
+        groups = await prisma.competitionGroup.findMany({
+            where: { isActive: true },
+            include: {
+                leader: {
+                    select: {
+                        id: true,
+                        name: true,
+                        avatar: true,
+                        email: true,
+                        employeeProfile: { select: { department: true, position: true } }
+                    }
+                },
+                members: {
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                avatar: true,
+                                email: true,
+                                employeeProfile: { select: { department: true, position: true } }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    } catch (e) {
+        // Fallback SQL query
+        try {
+            const rawGroups: any[] = await prisma.$queryRawUnsafe(`
+                SELECT g.*, u.name as leaderName, u.avatar as leaderAvatar, u.email as leaderEmail
+                FROM \`CompetitionGroup\` g
+                LEFT JOIN \`User\` u ON g.leaderId = u.id
+                WHERE g.isActive = 1
+            `);
+            const groupIds = rawGroups.map(g => `'${g.id}'`);
+            let membersMap: Record<string, any[]> = {};
+
+            if (groupIds.length > 0) {
+                const rawMembers: any[] = await prisma.$queryRawUnsafe(`
+                    SELECT m.*, u.name as userName, u.avatar as userAvatar, u.email as userEmail
+                    FROM \`CompetitionGroupMember\` m
+                    LEFT JOIN \`User\` u ON m.userId = u.id
+                    WHERE m.groupId IN (${groupIds.join(',')})
+                `);
+                rawMembers.forEach(m => {
+                    if (!membersMap[m.groupId]) membersMap[m.groupId] = [];
+                    membersMap[m.groupId].push({
+                        id: m.id,
+                        groupId: m.groupId,
+                        userId: m.userId,
+                        role: m.role,
+                        user: { id: m.userId, name: m.userName, avatar: m.userAvatar, email: m.userEmail }
+                    });
+                });
+            }
+
+            groups = rawGroups.map(g => ({
+                id: g.id,
+                name: g.name,
+                code: g.code,
+                description: g.description,
+                slogan: g.slogan,
+                avatar: g.avatar,
+                color: g.color || '#059669',
+                targetRevenue: Number(g.targetRevenue || 0),
+                leaderId: g.leaderId,
+                leader: g.leaderId ? { id: g.leaderId, name: g.leaderName, avatar: g.leaderAvatar, email: g.leaderEmail } : null,
+                members: membersMap[g.id] || []
+            }));
+        } catch (sqlErr) {
+            console.error('Failed to load competition groups:', sqlErr);
+            groups = [];
+        }
+    }
+
+    // 2. Fetch all users for score calculations
+    const allUsers = await prisma.user.findMany({
+        where: { isActive: true },
+        select: { id: true, name: true, avatar: true }
+    });
+
+    const [currentScores, prevScores] = await Promise.all([
+        calculateUserScores(allUsers, start, end),
+        calculateUserScores(allUsers, prevStart, prevEnd)
+    ]);
+
+    // 3. Aggregate stats per group
+    const aggregateGroupStats = (group: any, scoreMap: Record<string, any>) => {
+        const memberUsers = (group.members || []).map((m: any) => m.user).filter(Boolean);
+        const stats = {
+            revenue: 0,
+            invoicesCount: 0,
+            customersCount: 0,
+            leadsCount: 0,
+            leadsWonCount: 0,
+            pipelineValue: 0,
+            estimatesCount: 0,
+            estimatesAcceptedCount: 0,
+            estimatesValue: 0,
+            conversionRate: 0,
+            memberCount: memberUsers.length,
+            targetRevenue: group.targetRevenue || 0,
+            targetProgress: 0,
+            topContributor: null as any
+        };
+
+        let topMember: any = null;
+        let topMemberRevenue = -1;
+
+        memberUsers.forEach((user: any) => {
+            const uStat = scoreMap[user.id] || { revenue: 0, invoicesCount: 0, customersCount: 0, leadsCount: 0, leadsWonCount: 0, pipelineValue: 0, estimatesCount: 0 };
+            stats.revenue += uStat.revenue;
+            stats.invoicesCount += uStat.invoicesCount;
+            stats.customersCount += uStat.customersCount;
+            stats.leadsCount += uStat.leadsCount;
+            stats.leadsWonCount += uStat.leadsWonCount;
+            stats.pipelineValue += uStat.pipelineValue;
+            stats.estimatesCount += uStat.estimatesCount;
+
+            if (uStat.revenue > topMemberRevenue) {
+                topMemberRevenue = uStat.revenue;
+                topMember = {
+                    id: user.id,
+                    name: user.name,
+                    avatar: user.avatar,
+                    revenue: uStat.revenue
+                };
+            }
+        });
+
+        stats.topContributor = topMember;
+        if (stats.targetRevenue > 0) {
+            stats.targetProgress = Math.round((stats.revenue / stats.targetRevenue) * 100);
+        }
+        if (stats.leadsCount > 0) {
+            stats.conversionRate = Math.round((stats.leadsWonCount / stats.leadsCount) * 1000) / 10;
+        }
+
+        return stats;
+    };
+
+    // Calculate previous group scores
+    const prevGroupRanks = groups.map(g => {
+        const stats = aggregateGroupStats(g, prevScores);
+        return { id: g.id, score: getCriteriaScore(stats, criteria) };
+    }).sort((a, b) => b.score - a.score);
+
+    const prevRankMap: Record<string, number> = {};
+    prevGroupRanks.forEach((item, index) => {
+        prevRankMap[item.id] = index + 1;
+    });
+
+    // Build current ranked groups
+    const rankedGroups = groups.map(group => {
+        const stats = aggregateGroupStats(group, currentScores);
+        const score = getCriteriaScore(stats, criteria);
+        return {
+            group,
+            stats,
+            score,
+            prevRank: prevRankMap[group.id] || 999
+        };
+    });
+
+    rankedGroups.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        if (b.stats.revenue !== a.stats.revenue) return b.stats.revenue - a.stats.revenue;
+        return b.stats.leadsWonCount - a.stats.leadsWonCount;
+    });
+
+    const maxScore = rankedGroups[0]?.score || 1;
+
+    const leaderboard = rankedGroups.map((item, index) => {
+        const rank = index + 1;
+        const delta = item.prevRank - rank;
+
+        let badge = '';
+        if (rank === 1) badge = '👑 Đội Vô Địch (Quán Quân)';
+        else if (rank === 2) badge = '🥈 Đội Á Quân 1';
+        else if (rank === 3) badge = '🥉 Đội Á Quân 2';
+        else if (item.stats.targetProgress >= 100) badge = '🎯 Vượt Chỉ Tiêu Kỳ';
+        else if (item.stats.revenue >= 300000000) badge = '💎 Doanh Thu Khủng';
+        else if (delta >= 1) badge = '🚀 Đội Nhóm Bứt Phá';
+
+        return {
+            rank,
+            group: item.group,
+            stats: item.stats,
+            score: item.score,
+            percentageOfTop: Math.min(100, Math.round((item.score / Math.max(1, maxScore)) * 100)),
+            delta,
+            badge
+        };
+    });
+
+    const totalRevenue = rankedGroups.reduce((acc, cur) => acc + cur.stats.revenue, 0);
+    const totalCustomers = rankedGroups.reduce((acc, cur) => acc + cur.stats.customersCount, 0);
+    const totalLeads = rankedGroups.reduce((acc, cur) => acc + cur.stats.leadsCount, 0);
+    const totalEstimates = rankedGroups.reduce((acc, cur) => acc + cur.stats.estimatesCount, 0);
+    const totalCompetingMembers = rankedGroups.reduce((acc, cur) => acc + cur.stats.memberCount, 0);
+
+    return {
+        mode: 'TEAM' as LeaderboardMode,
+        criteria,
+        timeRange,
+        dateRange: {
+            start: start.toISOString(),
+            end: end.toISOString()
+        },
+        summary: {
+            totalRevenue,
+            totalCustomers,
+            totalLeads,
+            totalEstimates,
+            activeGroups: groups.length,
+            activeMembers: totalCompetingMembers
+        },
+        topThree: leaderboard.slice(0, 3),
+        fullList: leaderboard
+    };
 }
 
-// 2. GET SOCIAL FEED
+// =============================================================
+// 3. GROUP MANAGEMENT ACTIONS (ADMIN / MANAGER)
+// =============================================================
+export async function getCompetitionGroups() {
+    try {
+        const groups = await prisma.competitionGroup.findMany({
+            orderBy: { createdAt: 'desc' },
+            include: {
+                leader: {
+                    select: {
+                        id: true,
+                        name: true,
+                        avatar: true,
+                        email: true,
+                        employeeProfile: { select: { department: true, position: true } }
+                    }
+                },
+                members: {
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                avatar: true,
+                                email: true,
+                                employeeProfile: { select: { department: true, position: true } }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        return groups;
+    } catch (e) {
+        // SQL Fallback
+        const rawGroups: any[] = await prisma.$queryRawUnsafe(`
+            SELECT g.*, u.name as leaderName, u.avatar as leaderAvatar, u.email as leaderEmail
+            FROM \`CompetitionGroup\` g
+            LEFT JOIN \`User\` u ON g.leaderId = u.id
+            ORDER BY g.createdAt DESC
+        `);
+        const groupIds = rawGroups.map(g => `'${g.id}'`);
+        let membersMap: Record<string, any[]> = {};
+
+        if (groupIds.length > 0) {
+            const rawMembers: any[] = await prisma.$queryRawUnsafe(`
+                SELECT m.*, u.name as userName, u.avatar as userAvatar, u.email as userEmail
+                FROM \`CompetitionGroupMember\` m
+                LEFT JOIN \`User\` u ON m.userId = u.id
+                WHERE m.groupId IN (${groupIds.join(',')})
+            `);
+            rawMembers.forEach(m => {
+                if (!membersMap[m.groupId]) membersMap[m.groupId] = [];
+                membersMap[m.groupId].push({
+                    id: m.id,
+                    groupId: m.groupId,
+                    userId: m.userId,
+                    role: m.role,
+                    user: { id: m.userId, name: m.userName, avatar: m.userAvatar, email: m.userEmail }
+                });
+            });
+        }
+
+        return rawGroups.map(g => ({
+            id: g.id,
+            name: g.name,
+            code: g.code,
+            description: g.description,
+            slogan: g.slogan,
+            avatar: g.avatar,
+            color: g.color || '#059669',
+            targetRevenue: Number(g.targetRevenue || 0),
+            leaderId: g.leaderId,
+            isActive: Boolean(g.isActive),
+            leader: g.leaderId ? { id: g.leaderId, name: g.leaderName, avatar: g.leaderAvatar, email: g.leaderEmail } : null,
+            members: membersMap[g.id] || []
+        }));
+    }
+}
+
+export async function createCompetitionGroup(data: {
+    name: string;
+    code?: string;
+    slogan?: string;
+    description?: string;
+    avatar?: string;
+    color?: string;
+    targetRevenue?: number;
+    leaderId?: string;
+    memberIds?: string[];
+}) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) throw new Error('Vui lòng đăng nhập.');
+
+    const currentUser = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { id: true, name: true, role: true }
+    });
+
+    if (currentUser?.role !== 'ADMIN' && currentUser?.role !== 'MANAGER') {
+        throw new Error('Chỉ Quản trị viên hoặc Quản lý mới có quyền tạo nhóm thi đua.');
+    }
+
+    const groupId = genId();
+    const targetRev = data.targetRevenue || 0;
+    const color = data.color || '#059669';
+
+    // 1. Create group via ORM or SQL
+    try {
+        await prisma.competitionGroup.create({
+            data: {
+                id: groupId,
+                name: data.name,
+                code: data.code || null,
+                slogan: data.slogan || null,
+                description: data.description || null,
+                avatar: data.avatar || null,
+                color,
+                targetRevenue: targetRev,
+                leaderId: data.leaderId || null,
+                isActive: true
+            }
+        });
+    } catch (e) {
+        const escName = data.name.replace(/'/g, "\\'");
+        const escCode = data.code ? `'${data.code.replace(/'/g, "\\'")}'` : 'NULL';
+        const escSlogan = data.slogan ? `'${data.slogan.replace(/'/g, "\\'")}'` : 'NULL';
+        const escDesc = data.description ? `'${data.description.replace(/'/g, "\\'")}'` : 'NULL';
+        const escAvatar = data.avatar ? `'${data.avatar.replace(/'/g, "\\'")}'` : 'NULL';
+        const escLeader = data.leaderId ? `'${data.leaderId}'` : 'NULL';
+
+        await prisma.$executeRawUnsafe(`
+            INSERT INTO \`CompetitionGroup\` (id, name, code, slogan, description, avatar, color, targetRevenue, leaderId, isActive, createdAt, updatedAt)
+            VALUES ('${groupId}', '${escName}', ${escCode}, ${escSlogan}, ${escDesc}, ${escAvatar}, '${color}', ${targetRev}, ${escLeader}, 1, NOW(3), NOW(3))
+        `);
+    }
+
+    // 2. Add members
+    const allMemberIds = new Set<string>(data.memberIds || []);
+    if (data.leaderId) allMemberIds.add(data.leaderId);
+
+    const memberList = Array.from(allMemberIds);
+    if (memberList.length > 0) {
+        for (const userId of memberList) {
+            const memberId = genId();
+            const role = userId === data.leaderId ? 'LEADER' : 'MEMBER';
+            try {
+                await prisma.competitionGroupMember.create({
+                    data: {
+                        id: memberId,
+                        groupId,
+                        userId,
+                        role
+                    }
+                });
+            } catch (err) {
+                await prisma.$executeRawUnsafe(`
+                    INSERT INTO \`CompetitionGroupMember\` (id, groupId, userId, role, joinedAt)
+                    VALUES ('${memberId}', '${groupId}', '${userId}', '${role}', NOW(3))
+                    ON DUPLICATE KEY UPDATE role = '${role}'
+                `);
+            }
+
+            // In-app Notification to member
+            if (userId !== currentUser.id) {
+                await createNotification(
+                    userId,
+                    '🛡️ Bạn vừa được thêm vào Nhóm Thi Đua mới!',
+                    `Chào mừng bạn gia nhập nhóm thi đua "${data.name}"! Cùng đồng đội chinh phục mục tiêu rực rỡ! 🔥`,
+                    'SUCCESS',
+                    '/leaderboard'
+                );
+            }
+        }
+    }
+
+    // 3. Create celebration announcement post on Social Wall
+    try {
+        const announcementPostId = genId();
+        const postContent = `🎉 CHÀO MỪNG ĐỘI THI ĐUA MỚI: ${data.name.toUpperCase()}!\n\n` +
+            `🎯 Slogan: "${data.slogan || 'Quyết chiến quyết thắng!'}"\n` +
+            `🏆 Mục tiêu doanh số: ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(targetRev)}\n` +
+            `👥 Thành viên: ${memberList.length} chiến binh đã sẵn sàng xuất kích!\n\n` +
+            `Chúc đội gặt hái nhiều thắng lợi rực rỡ và giành ngôi vị Quán Quân kỳ này! 🔥🚀`;
+
+        await prisma.$executeRawUnsafe(`
+            INSERT INTO \`LeaderboardPost\` (id, authorId, groupId, content, images, type, isPinned, metadata, createdAt, updatedAt)
+            VALUES ('${announcementPostId}', '${currentUser.id}', '${groupId}', '${postContent.replace(/'/g, "\\'")}', NULL, 'ACHIEVEMENT_ANNOUNCEMENT', 1, '{"isGroupLaunch": true, "groupName": "${data.name.replace(/'/g, "\\'")}"}', NOW(3), NOW(3))
+        `);
+    } catch (postErr) {
+        console.error('Failed to create launch post for group:', postErr);
+    }
+
+    revalidatePath('/leaderboard');
+    return { success: true, groupId };
+}
+
+export async function updateCompetitionGroup(groupId: string, data: {
+    name?: string;
+    code?: string;
+    slogan?: string;
+    description?: string;
+    avatar?: string;
+    color?: string;
+    targetRevenue?: number;
+    leaderId?: string;
+    memberIds?: string[];
+    isActive?: boolean;
+}) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) throw new Error('Vui lòng đăng nhập.');
+
+    const currentUser = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { id: true, role: true }
+    });
+
+    if (currentUser?.role !== 'ADMIN' && currentUser?.role !== 'MANAGER') {
+        throw new Error('Chỉ Quản trị viên hoặc Quản lý mới có quyền chỉnh sửa nhóm thi đua.');
+    }
+
+    // Update group basic info
+    const updates: string[] = [];
+    if (data.name !== undefined) updates.push(`name = '${data.name.replace(/'/g, "\\'")}'`);
+    if (data.slogan !== undefined) updates.push(`slogan = '${(data.slogan || '').replace(/'/g, "\\'")}'`);
+    if (data.description !== undefined) updates.push(`description = '${(data.description || '').replace(/'/g, "\\'")}'`);
+    if (data.avatar !== undefined) updates.push(`avatar = '${(data.avatar || '').replace(/'/g, "\\'")}'`);
+    if (data.color !== undefined) updates.push(`color = '${data.color}'`);
+    if (data.targetRevenue !== undefined) updates.push(`targetRevenue = ${data.targetRevenue}`);
+    if (data.leaderId !== undefined) updates.push(`leaderId = ${data.leaderId ? `'${data.leaderId}'` : 'NULL'}`);
+    if (data.isActive !== undefined) updates.push(`isActive = ${data.isActive ? 1 : 0}`);
+    updates.push(`updatedAt = NOW(3)`);
+
+    if (updates.length > 0) {
+        await prisma.$executeRawUnsafe(`
+            UPDATE \`CompetitionGroup\` SET ${updates.join(', ')} WHERE id = '${groupId}'
+        `);
+    }
+
+    // Synchronize members if provided
+    if (data.memberIds !== undefined) {
+        const allMemberIds = new Set<string>(data.memberIds);
+        if (data.leaderId) allMemberIds.add(data.leaderId);
+
+        // Delete members not in new list
+        const inListStr = Array.from(allMemberIds).map(id => `'${id}'`).join(',');
+        if (inListStr.length > 0) {
+            await prisma.$executeRawUnsafe(`
+                DELETE FROM \`CompetitionGroupMember\` WHERE groupId = '${groupId}' AND userId NOT IN (${inListStr})
+            `);
+        } else {
+            await prisma.$executeRawUnsafe(`
+                DELETE FROM \`CompetitionGroupMember\` WHERE groupId = '${groupId}'
+            `);
+        }
+
+        // Add or update members
+        for (const userId of Array.from(allMemberIds)) {
+            const memberId = genId();
+            const role = userId === data.leaderId ? 'LEADER' : 'MEMBER';
+            await prisma.$executeRawUnsafe(`
+                INSERT INTO \`CompetitionGroupMember\` (id, groupId, userId, role, joinedAt)
+                VALUES ('${memberId}', '${groupId}', '${userId}', '${role}', NOW(3))
+                ON DUPLICATE KEY UPDATE role = '${role}'
+            `);
+        }
+    }
+
+    revalidatePath('/leaderboard');
+    return { success: true };
+}
+
+export async function deleteCompetitionGroup(groupId: string) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) throw new Error('Vui lòng đăng nhập.');
+
+    const currentUser = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { id: true, role: true }
+    });
+
+    if (currentUser?.role !== 'ADMIN') {
+        throw new Error('Chỉ Quản trị viên mới có quyền xóa nhóm thi đua.');
+    }
+
+    await prisma.$executeRawUnsafe(`DELETE FROM \`CompetitionGroupMember\` WHERE groupId = '${groupId}'`);
+    await prisma.$executeRawUnsafe(`DELETE FROM \`CompetitionGroup\` WHERE id = '${groupId}'`);
+
+    revalidatePath('/leaderboard');
+    return { success: true };
+}
+
+// =============================================================
+// 4. USER MINI SOCIAL PROFILE & WALL OF FAME
+// =============================================================
+export async function getUserSocialProfile(userId: string) {
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+            
+            role: true,
+            createdAt: true,
+            employeeProfile: {
+                select: {
+                    department: true,
+                    position: true,
+                    
+                }
+            }
+        }
+    });
+
+    if (!user) throw new Error('Không tìm thấy người dùng.');
+
+    // 1. Group membership
+    let groupMembership: any = null;
+    try {
+        const mem = await prisma.competitionGroupMember.findFirst({
+            where: { userId },
+            include: {
+                group: {
+                    select: {
+                        id: true,
+                        name: true,
+                        slogan: true,
+                        avatar: true,
+                        color: true,
+                        targetRevenue: true
+                    }
+                }
+            }
+        });
+        if (mem) {
+            groupMembership = {
+                role: mem.role,
+                joinedAt: mem.joinedAt,
+                group: mem.group
+            };
+        }
+    } catch (e) {
+        // SQL fallback
+        const rawMems: any[] = await prisma.$queryRawUnsafe(`
+            SELECT m.*, g.name as groupName, g.slogan as groupSlogan, g.avatar as groupAvatar, g.color as groupColor
+            FROM \`CompetitionGroupMember\` m
+            LEFT JOIN \`CompetitionGroup\` g ON m.groupId = g.id
+            WHERE m.userId = '${userId}'
+            LIMIT 1
+        `);
+        if (rawMems.length > 0) {
+            const m = rawMems[0];
+            groupMembership = {
+                role: m.role,
+                joinedAt: m.joinedAt,
+                group: {
+                    id: m.groupId,
+                    name: m.groupName,
+                    slogan: m.groupSlogan,
+                    avatar: m.groupAvatar,
+                    color: m.groupColor
+                }
+            };
+        }
+    }
+
+    // 2. Performance metrics (This Month)
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    const scores = await calculateUserScores([user], monthStart, monthEnd);
+    const stats = scores[user.id] || {
+        revenue: 0,
+        invoicesCount: 0,
+        customersCount: 0,
+        leadsCount: 0,
+        leadsWonCount: 0,
+        pipelineValue: 0,
+        estimatesCount: 0,
+        conversionRate: 0
+    };
+
+    // 3. Reaction & Praise count received
+    let totalReactionsReceived = 0;
+    try {
+        const reactionCountRes: any[] = await prisma.$queryRawUnsafe(`
+            SELECT COUNT(r.id) as count
+            FROM \`LeaderboardReaction\` r
+            INNER JOIN \`LeaderboardPost\` p ON r.postId = p.id
+            WHERE p.authorId = '${userId}'
+        `);
+        totalReactionsReceived = Number(reactionCountRes[0]?.count || 0);
+    } catch (e) {}
+
+    // 4. Badges earned
+    const badges: string[] = [];
+    if (stats.revenue >= 100000000) badges.push('💎 Câu Lạc Bộ Trăm Triệu');
+    if (stats.revenue >= 500000000) badges.push('👑 Chiến Thần Doanh Số');
+    if (stats.conversionRate >= 75 && stats.leadsCount >= 2) badgeSafePush(badges, '🎯 Thiện Xạ Chốt Sale');
+    if (stats.customersCount >= 5) badgeSafePush(badges, '🌟 Bàn Tay Vàng Thu Hút Khách Hàng');
+    if (stats.leadsCount >= 10) badgeSafePush(badges, '🔥 Thợ Săn Cơ Hội');
+    if (groupMembership?.role === 'LEADER') badgeSafePush(badges, '🛡️ Đội Trưởng Tiên Phong');
+
+    // 5. Recent wall posts authored by this user
+    let recentPosts: any[] = [];
+    try {
+        recentPosts = await prisma.leaderboardPost.findMany({
+            where: { authorId: userId },
+            take: 3,
+            orderBy: { createdAt: 'desc' },
+            select: {
+                id: true,
+                content: true,
+                createdAt: true,
+                type: true
+            }
+        });
+    } catch (e) {
+        const rawPosts: any[] = await prisma.$queryRawUnsafe(`
+            SELECT id, content, createdAt, type
+            FROM \`LeaderboardPost\`
+            WHERE authorId = '${userId}'
+            ORDER BY createdAt DESC
+            LIMIT 3
+        `);
+        recentPosts = rawPosts;
+    }
+
+    return {
+        user,
+        stats,
+        groupMembership,
+        totalReactionsReceived,
+        badges,
+        recentPosts
+    };
+}
+
+function badgeSafePush(arr: string[], val: string) {
+    if (!arr.includes(val)) arr.push(val);
+}
+
+// =============================================================
+// 5. GET SOCIAL FEED
+// =============================================================
 export async function getSocialFeed(params?: { page?: number; limit?: number }) {
     const page = params?.page || 1;
     const limit = params?.limit || 20;
@@ -432,6 +1105,15 @@ export async function getSocialFeed(params?: { page?: number; limit?: number }) 
                                         position: true
                                     }
                                 }
+                            }
+                        },
+                        group: {
+                            select: {
+                                id: true,
+                                name: true,
+                                slogan: true,
+                                avatar: true,
+                                color: true
                             }
                         },
                         reactions: {
@@ -519,21 +1201,22 @@ export async function getSocialFeed(params?: { page?: number; limit?: number }) 
             });
             ormSuccess = true;
         } catch (err) {
-            console.warn('Prisma ORM failed on leaderboardPost, using SQL fallback:', err);
+            console.warn('Prisma ORM failed on leaderboardPost, fallback to SQL:', err);
         }
     }
 
     if (!ormSuccess) {
-        // Fallback SQL query with exact case table names
         try {
             const [rawPosts, countRes] = (await Promise.all([
                 prisma.$queryRawUnsafe(`
                     SELECT p.*, 
                            u.name as authorName, u.avatar as authorAvatar, u.email as authorEmail, u.role as authorRole,
-                           ep.department as authorDepartment, ep.position as authorPosition
+                           ep.department as authorDepartment, ep.position as authorPosition,
+                           g.name as groupName, g.slogan as groupSlogan, g.avatar as groupAvatar, g.color as groupColor
                     FROM \`LeaderboardPost\` p
                     LEFT JOIN \`User\` u ON p.authorId = u.id
                     LEFT JOIN \`EmployeeProfile\` ep ON u.id = ep.userId
+                    LEFT JOIN \`CompetitionGroup\` g ON p.groupId = g.id
                     ORDER BY p.isPinned DESC, p.createdAt DESC
                     LIMIT ${limit} OFFSET ${skip}
                 `),
@@ -619,6 +1302,7 @@ export async function getSocialFeed(params?: { page?: number; limit?: number }) 
                 return {
                     id: post.id,
                     authorId: post.authorId,
+                    groupId: post.groupId,
                     content: post.content,
                     images: parsedImages,
                     type: post.type,
@@ -637,6 +1321,13 @@ export async function getSocialFeed(params?: { page?: number; limit?: number }) 
                             position: post.authorPosition
                         } : null
                     },
+                    group: post.groupId ? {
+                        id: post.groupId,
+                        name: post.groupName,
+                        slogan: post.groupSlogan,
+                        avatar: post.groupAvatar,
+                        color: post.groupColor
+                    } : null,
                     reactions: postReactions,
                     comments: postComments,
                     mentions: [],
@@ -660,10 +1351,13 @@ export async function getSocialFeed(params?: { page?: number; limit?: number }) 
     };
 }
 
-// 3. CREATE SOCIAL POST
+// =============================================================
+// 6. CREATE SOCIAL POST & HONOR
+// =============================================================
 export async function createSocialPost(data: {
     content: string;
     images?: string[];
+    groupId?: string;
     mentionedUserIds?: string[];
     type?: string;
     metadata?: any;
@@ -684,8 +1378,8 @@ export async function createSocialPost(data: {
     const metadataJson = data.metadata ? JSON.stringify(data.metadata) : null;
     const postId = genId();
     const postType = data.type || 'USER_POST';
+    const groupId = data.groupId || null;
 
-    // 1. Create post (Try Prisma ORM, fallback to SQL)
     let newPost: any = null;
     if (prisma.leaderboardPost) {
         try {
@@ -693,6 +1387,7 @@ export async function createSocialPost(data: {
                 data: {
                     id: postId,
                     authorId: currentUser.id,
+                    groupId,
                     content: data.content,
                     images: imagesJson,
                     type: postType,
@@ -708,38 +1403,32 @@ export async function createSocialPost(data: {
         const escapedContent = data.content.replace(/'/g, "\\'");
         const escapedImages = imagesJson ? `'${imagesJson.replace(/'/g, "\\'")}'` : 'NULL';
         const escapedMeta = metadataJson ? `'${metadataJson.replace(/'/g, "\\'")}'` : 'NULL';
+        const escapedGroup = groupId ? `'${groupId}'` : 'NULL';
 
         await prisma.$executeRawUnsafe(`
-            INSERT INTO \`LeaderboardPost\` (id, authorId, content, images, type, isPinned, metadata, createdAt, updatedAt)
-            VALUES ('${postId}', '${currentUser.id}', '${escapedContent}', ${escapedImages}, '${postType}', 0, ${escapedMeta}, NOW(3), NOW(3))
+            INSERT INTO \`LeaderboardPost\` (id, authorId, groupId, content, images, type, isPinned, metadata, createdAt, updatedAt)
+            VALUES ('${postId}', '${currentUser.id}', ${escapedGroup}, '${escapedContent}', ${escapedImages}, '${postType}', 0, ${escapedMeta}, NOW(3), NOW(3))
         `);
         newPost = { id: postId, authorId: currentUser.id, content: data.content };
     }
 
-    // 2. Handle mentions
+    // Handle mentions
     const mentionedIds = Array.from(new Set(data.mentionedUserIds || []));
     if (mentionedIds.length > 0) {
         await Promise.all(
             mentionedIds.map(async (targetUserId) => {
-                if (targetUserId === currentUser.id) return; // Don't notify self
+                if (targetUserId === currentUser.id) return;
 
                 const mentionId = genId();
-                if (prisma.leaderboardMention) {
-                    try {
-                        await prisma.leaderboardMention.create({
-                            data: {
-                                id: mentionId,
-                                postId: newPost.id,
-                                mentionedUserId: targetUserId
-                            }
-                        });
-                    } catch (e) {
-                        await prisma.$executeRawUnsafe(`
-                            INSERT INTO \`LeaderboardMention\` (id, postId, mentionedUserId, createdAt)
-                            VALUES ('${mentionId}', '${newPost.id}', '${targetUserId}', NOW(3))
-                        `);
-                    }
-                } else {
+                try {
+                    await prisma.leaderboardMention.create({
+                        data: {
+                            id: mentionId,
+                            postId: newPost.id,
+                            mentionedUserId: targetUserId
+                        }
+                    });
+                } catch (e) {
                     await prisma.$executeRawUnsafe(`
                         INSERT INTO \`LeaderboardMention\` (id, postId, mentionedUserId, createdAt)
                         VALUES ('${mentionId}', '${newPost.id}', '${targetUserId}', NOW(3))
@@ -795,7 +1484,7 @@ export async function createSocialPost(data: {
                         });
                     }
                 } catch (emailErr) {
-                    console.error('Lỗi khi gửi email tag tên:', emailErr);
+                    console.error('Lỗi gửi email tag tên:', emailErr);
                 }
             })
         );
@@ -805,7 +1494,9 @@ export async function createSocialPost(data: {
     return { success: true, post: newPost };
 }
 
-// 4. TOGGLE POST REACTION
+// =============================================================
+// 7. INTERACTIONS (REACTION, COMMENT, PIN, DELETE, SEARCH)
+// =============================================================
 export async function togglePostReaction(postId: string, emoji: ReactionEmoji) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) throw new Error('Vui lòng đăng nhập.');
@@ -864,7 +1555,6 @@ export async function togglePostReaction(postId: string, emoji: ReactionEmoji) {
     }
 }
 
-// 5. ADD POST COMMENT
 export async function addPostComment(data: {
     postId: string;
     content: string;
@@ -901,7 +1591,6 @@ export async function addPostComment(data: {
         author: { id: currentUser.id, name: currentUser.name }
     };
 
-    // Notify post author
     const postRows: any[] = await prisma.$queryRawUnsafe(`
         SELECT authorId FROM \`LeaderboardPost\` WHERE id = '${data.postId}' LIMIT 1
     `);
@@ -917,7 +1606,6 @@ export async function addPostComment(data: {
         );
     }
 
-    // Handle mentions in comment
     const mentionedIds = Array.from(new Set(data.mentionedUserIds || []));
     if (mentionedIds.length > 0) {
         await Promise.all(
@@ -944,7 +1632,6 @@ export async function addPostComment(data: {
     return { success: true, comment: newComment };
 }
 
-// 6. PIN / UNPIN POST (Admin / Manager)
 export async function pinSocialPost(postId: string, isPinned: boolean) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) throw new Error('Vui lòng đăng nhập.');
@@ -967,7 +1654,6 @@ export async function pinSocialPost(postId: string, isPinned: boolean) {
     return { success: true };
 }
 
-// 7. DELETE POST
 export async function deleteSocialPost(postId: string) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) throw new Error('Vui lòng đăng nhập.');
@@ -995,7 +1681,6 @@ export async function deleteSocialPost(postId: string) {
     return { success: true };
 }
 
-// 8. SEARCH MENTION USERS
 export async function searchMentionUsers(query: string = '') {
     const users = await prisma.user.findMany({
         where: {
@@ -1015,6 +1700,28 @@ export async function searchMentionUsers(query: string = '') {
             }
         },
         take: 10
+    });
+
+    return users;
+}
+
+export async function getAllUsersForManagement() {
+    const users = await prisma.user.findMany({
+        where: { isActive: true },
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+            role: true,
+            employeeProfile: {
+                select: {
+                    department: true,
+                    position: true
+                }
+            }
+        },
+        orderBy: { name: 'asc' }
     });
 
     return users;

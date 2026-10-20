@@ -4,7 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
-import { getLeaderboardData, getSocialFeed } from './actions';
+import { getLeaderboardData, getSocialFeed, getCompetitionGroups } from './actions';
 import LeaderboardClient from './LeaderboardClient';
 
 export const metadata: Metadata = {
@@ -40,15 +40,17 @@ export default async function LeaderboardPage() {
         redirect('/login');
     }
 
-    const [initialLeaderboard, initialFeed] = await Promise.all([
+    const [initialLeaderboard, initialFeed, initialGroups] = await Promise.all([
         getLeaderboardData({ criteria: 'REVENUE', timeRange: 'THIS_MONTH' }),
-        getSocialFeed({ page: 1, limit: 20 })
+        getSocialFeed({ page: 1, limit: 20 }),
+        getCompetitionGroups()
     ]);
 
     return (
         <LeaderboardClient
             initialLeaderboard={initialLeaderboard}
             initialFeed={initialFeed}
+            initialGroups={initialGroups}
             currentUser={currentUser}
         />
     );

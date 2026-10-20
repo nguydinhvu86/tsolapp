@@ -1,232 +1,327 @@
 'use client';
 
 import React, { useState } from 'react';
-import { TrendingUp, TrendingDown, Minus, Trophy, Star, Sparkles, MessageCircle, Heart, Search, Award, CheckCircle2 } from 'lucide-react';
-import { CriteriaKey } from '../actions';
+import { Search, TrendingUp, TrendingDown, Minus, Sparkles, Trophy, Users, Shield, Edit3, Target, DollarSign, Award } from 'lucide-react';
+import { CriteriaKey, LeaderboardMode } from '../actions';
 
 interface Props {
+    mode: LeaderboardMode;
     leaderboard: any[];
     criteria: CriteriaKey;
     currentUserId?: string;
+    currentUserRole?: string;
     onCheerUser?: (userName: string, userId: string) => void;
+    onCheerTeam?: (groupName: string, groupId: string) => void;
+    onViewProfile?: (userId: string) => void;
+    onEditGroup?: (group: any) => void;
 }
 
-export function RankListTable({ leaderboard, criteria, currentUserId, onCheerUser }: Props) {
-    const [searchTerm, setSearchTerm] = useState('');
+export function RankListTable({
+    mode,
+    leaderboard,
+    criteria,
+    currentUserId,
+    currentUserRole,
+    onCheerUser,
+    onCheerTeam,
+    onViewProfile,
+    onEditGroup
+}: Props) {
+    const [searchQuery, setSearchQuery] = useState('');
+    const isAdmin = currentUserRole === 'ADMIN' || currentUserRole === 'MANAGER';
 
-    const filteredList = leaderboard.filter(item => {
-        const name = (item.user.name || '').toLowerCase();
-        const email = (item.user.email || '').toLowerCase();
-        const dept = (item.user.employeeProfile?.department || '').toLowerCase();
-        const term = searchTerm.toLowerCase();
-        return name.includes(term) || email.includes(term) || dept.includes(term);
-    });
+    const formatVND = (num: number) => {
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(num || 0);
+    };
 
-    const formatCriteriaDetail = (item: any) => {
+    const formatScore = (item: any) => {
         switch (criteria) {
             case 'REVENUE':
-                return (
-                    <div>
-                        <div className="font-bold text-slate-900 dark:text-slate-100 text-sm">
-                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(item.score)}
-                        </div>
-                        <div className="text-[11px] text-slate-500">
-                            {item.stats.invoicesCount} đơn hoàn tất
-                        </div>
-                    </div>
-                );
+                return formatVND(item.score);
             case 'CUSTOMERS':
-                return (
-                    <div>
-                        <div className="font-bold text-slate-900 dark:text-slate-100 text-sm">
-                            {item.score} Khách hàng
-                        </div>
-                        <div className="text-[11px] text-slate-500">
-                            Phụ trách & tạo mới
-                        </div>
-                    </div>
-                );
+                return `${item.score} Khách hàng`;
             case 'LEADS':
-                return (
-                    <div>
-                        <div className="font-bold text-slate-900 dark:text-slate-100 text-sm">
-                            {item.score} Cơ hội
-                        </div>
-                        <div className="text-[11px] text-emerald-600 font-medium">
-                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(item.stats.pipelineValue)}
-                        </div>
-                    </div>
-                );
+                return `${item.score} Cơ hội`;
             case 'ESTIMATES':
-                return (
-                    <div>
-                        <div className="font-bold text-slate-900 dark:text-slate-100 text-sm">
-                            {item.score} Báo giá
-                        </div>
-                        <div className="text-[11px] text-slate-500">
-                            {item.stats.estimatesAcceptedCount} đã duyệt
-                        </div>
-                    </div>
-                );
+                return `${item.score} Báo giá`;
             case 'CONVERSION_RATE':
-                return (
-                    <div>
-                        <div className="font-bold text-emerald-600 text-sm">
-                            {item.score}% Thắng
-                        </div>
-                        <div className="text-[11px] text-slate-500">
-                            {item.stats.leadsWonCount}/{item.stats.leadsCount} chốt thành công
-                        </div>
-                    </div>
-                );
+                return `${item.score}% Chốt`;
             default:
-                return <span className="font-bold">{item.score}</span>;
+                return `${item.score}`;
         }
     };
 
+    const filteredList = leaderboard.filter(item => {
+        if (mode === 'INDIVIDUAL') {
+            return (
+                item.user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                item.user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                item.user.employeeProfile?.department?.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+        } else {
+            return (
+                item.group.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                item.group.slogan?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                item.group.leader?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+        }
+    });
+
     return (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-sm overflow-hidden">
-            {/* Table Header & Search */}
-            <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div 
+            className="rounded-3xl p-5 shadow-sm border space-y-4"
+            style={{ background: '#ffffff', borderColor: '#e2e8f0' }}
+        >
+            {/* Header & Search Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                    <Trophy className="w-5 h-5 text-amber-500" />
-                    <h4 className="font-bold text-base text-slate-900 dark:text-slate-100">
-                        Bảng Xếp Hạng Đầy Đủ ({leaderboard.length} Thành viên)
-                    </h4>
+                    <div className="w-9 h-9 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 flex items-center justify-center font-bold">
+                        <Trophy className="w-5 h-5" />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">
+                            {mode === 'INDIVIDUAL' ? 'Bảng Xếp Hạng Cá Nhân Toàn Công Ty' : 'Bảng Xếp Hạng Các Đội Nhóm Thi Đua'}
+                        </h3>
+                        <p className="text-xs text-slate-400">
+                            {filteredList.length} {mode === 'INDIVIDUAL' ? 'chiến binh đang tranh tài' : 'đội nhóm tham gia'}
+                        </p>
+                    </div>
                 </div>
 
                 <div className="relative w-full sm:w-64">
-                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                         type="text"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Tìm theo tên, phòng ban..."
-                        className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        placeholder={mode === 'INDIVIDUAL' ? "Tìm theo tên, email, phòng ban..." : "Tìm tên đội, slogan, trưởng nhóm..."}
+                        className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
                 </div>
             </div>
 
-            {/* Ranking List */}
-            <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
-                {filteredList.map((item) => {
-                    const isSelf = currentUserId === item.user.id;
-                    const isTopThree = item.rank <= 3;
+            {/* Table */}
+            <div className="overflow-x-auto -mx-5 px-5">
+                <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase tracking-wider font-bold text-[10px]">
+                            <th className="py-3 px-3 w-16 text-center">Hạng</th>
+                            <th className="py-3 px-3">{mode === 'INDIVIDUAL' ? 'Chiến Binh' : 'Đội Nhóm Thi Đua'}</th>
+                            {mode === 'TEAM' && <th className="py-3 px-3 hidden md:table-cell">Thành Viên</th>}
+                            <th className="py-3 px-3 text-right">Thành Tích</th>
+                            <th className="py-3 px-3 text-center hidden sm:table-cell">Tiến Độ</th>
+                            <th className="py-3 px-3 text-right">Cổ Vũ</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                        {filteredList.length > 0 ? (
+                            filteredList.map((item: any) => {
+                                const isCurrentUser = mode === 'INDIVIDUAL' && item.user?.id === currentUserId;
 
-                    return (
-                        <div
-                            key={item.user.id}
-                            className={`p-3.5 sm:p-4 flex items-center justify-between gap-3 transition-colors ${
-                                isSelf
-                                    ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-l-4 border-emerald-500'
-                                    : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/50'
-                            }`}
-                        >
-                            {/* Left: Rank & Delta & User Avatar/Name */}
-                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                                {/* Rank Number / Badge */}
-                                <div className="flex flex-col items-center justify-center w-8 shrink-0">
-                                    <div
-                                        className={`w-7 h-7 rounded-xl flex items-center justify-center font-black text-xs ${
-                                            item.rank === 1
-                                                ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 shadow-xs'
-                                                : item.rank === 2
-                                                ? 'bg-slate-200 text-slate-800'
-                                                : item.rank === 3
-                                                ? 'bg-amber-700 text-white'
-                                                : 'text-slate-500 font-bold'
-                                        }`}
+                                return (
+                                    <tr 
+                                        key={mode === 'INDIVIDUAL' ? item.user.id : item.group.id}
+                                        className={`transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/40 ${isCurrentUser ? 'bg-emerald-50/60 dark:bg-emerald-950/20 font-semibold' : ''}`}
                                     >
-                                        {item.rank}
-                                    </div>
-                                    {/* Delta */}
-                                    <div className="text-[10px] font-bold flex items-center mt-0.5">
-                                        {item.delta > 0 ? (
-                                            <span className="text-emerald-600 flex items-center">
-                                                <TrendingUp className="w-2.5 h-2.5" /> +{item.delta}
-                                            </span>
-                                        ) : item.delta < 0 ? (
-                                            <span className="text-rose-500 flex items-center">
-                                                <TrendingDown className="w-2.5 h-2.5" /> {item.delta}
-                                            </span>
-                                        ) : (
-                                            <span className="text-slate-400 flex items-center">
-                                                <Minus className="w-2.5 h-2.5" />
-                                            </span>
+                                        {/* Rank Column */}
+                                        <td className="py-3 px-3 text-center">
+                                            <div className="flex flex-col items-center justify-center">
+                                                {item.rank === 1 ? (
+                                                    <span className="w-7 h-7 rounded-xl bg-amber-400 text-amber-950 font-black flex items-center justify-center shadow-md">
+                                                        🥇
+                                                    </span>
+                                                ) : item.rank === 2 ? (
+                                                    <span className="w-7 h-7 rounded-xl bg-slate-300 text-slate-800 font-black flex items-center justify-center shadow-sm">
+                                                        🥈
+                                                    </span>
+                                                ) : item.rank === 3 ? (
+                                                    <span className="w-7 h-7 rounded-xl bg-amber-700 text-amber-100 font-black flex items-center justify-center shadow-sm">
+                                                        🥉
+                                                    </span>
+                                                ) : (
+                                                    <span className="font-bold text-slate-500 text-xs">
+                                                        #{item.rank}
+                                                    </span>
+                                                )}
+
+                                                {/* Delta indicator */}
+                                                <div className="text-[10px] mt-0.5">
+                                                    {item.delta > 0 ? (
+                                                        <span className="text-emerald-500 font-bold flex items-center">
+                                                            <TrendingUp className="w-2.5 h-2.5 inline" />+{item.delta}
+                                                        </span>
+                                                    ) : item.delta < 0 ? (
+                                                        <span className="text-rose-500 font-bold flex items-center">
+                                                            <TrendingDown className="w-2.5 h-2.5 inline" />{item.delta}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-slate-300">
+                                                            <Minus className="w-2.5 h-2.5 inline" />
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        {/* Target Info Column */}
+                                        <td className="py-3 px-3">
+                                            {mode === 'INDIVIDUAL' ? (
+                                                <div className="flex items-center gap-3">
+                                                    <img
+                                                        src={item.user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.user.name || 'U')}&background=059669&color=fff&size=80`}
+                                                        alt={item.user.name}
+                                                        onClick={() => onViewProfile && onViewProfile(item.user.id)}
+                                                        className="w-10 h-10 rounded-2xl object-cover border border-slate-200 dark:border-slate-700 shrink-0 cursor-pointer hover:ring-2 hover:ring-emerald-500 transition-all"
+                                                    />
+                                                    <div className="min-w-0">
+                                                        <div 
+                                                            onClick={() => onViewProfile && onViewProfile(item.user.id)}
+                                                            className="font-bold text-slate-900 dark:text-slate-100 truncate hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer flex items-center gap-1.5"
+                                                        >
+                                                            <span>{item.user.name}</span>
+                                                            {isCurrentUser && (
+                                                                <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-black">
+                                                                    Bạn
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="text-[11px] text-slate-400 truncate">
+                                                            {item.user.employeeProfile?.department || item.user.role}
+                                                        </div>
+                                                        {item.badge && (
+                                                            <span className="inline-block px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 text-[10px] font-bold mt-0.5 border border-amber-200/60 dark:border-amber-800/60">
+                                                                {item.badge}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-3">
+                                                    <div 
+                                                        className="w-11 h-11 rounded-2xl flex items-center justify-center text-2xl shrink-0 shadow-sm border border-slate-200 dark:border-slate-700"
+                                                        style={{ backgroundColor: `${item.group.color}20` }}
+                                                    >
+                                                        {item.group.avatar || '🛡️'}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <div className="font-bold text-slate-900 dark:text-slate-100 truncate flex items-center gap-2">
+                                                            <span>{item.group.name}</span>
+                                                            {isAdmin && onEditGroup && (
+                                                                <button
+                                                                    onClick={() => onEditGroup(item.group)}
+                                                                    className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                                                                    title="Chỉnh sửa nhóm"
+                                                                >
+                                                                    <Edit3 className="w-3.5 h-3.5" />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                        {item.group.slogan && (
+                                                            <div className="text-[11px] text-slate-500 italic truncate">
+                                                                "{item.group.slogan}"
+                                                            </div>
+                                                        )}
+                                                        {item.group.leader && (
+                                                            <div className="text-[10px] text-slate-400 mt-0.5">
+                                                                👑 Leader: <span className="font-bold text-slate-600 dark:text-slate-300">{item.group.leader.name}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </td>
+
+                                        {/* Members Column (Team mode only) */}
+                                        {mode === 'TEAM' && (
+                                            <td className="py-3 px-3 hidden md:table-cell">
+                                                <div className="flex items-center">
+                                                    <div className="flex -space-x-2 overflow-hidden py-1">
+                                                        {(item.group.members || []).slice(0, 5).map((m: any, idx: number) => {
+                                                            const u = m.user || m;
+                                                            return (
+                                                                <img
+                                                                    key={idx}
+                                                                    src={u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'U')}&background=059669&color=fff&size=48`}
+                                                                    alt={u.name}
+                                                                    title={u.name}
+                                                                    onClick={() => onViewProfile && onViewProfile(u.id)}
+                                                                    className="inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-slate-900 object-cover cursor-pointer hover:scale-110 transition-transform"
+                                                                />
+                                                            );
+                                                        })}
+                                                    </div>
+                                                    {(item.group.members || []).length > 5 && (
+                                                        <span className="text-[11px] text-slate-400 font-bold ml-1.5">
+                                                            +{(item.group.members.length - 5)}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </td>
                                         )}
-                                    </div>
-                                </div>
 
-                                {/* Avatar */}
-                                <div className="relative shrink-0">
-                                    <img
-                                        src={item.user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.user.name || 'U')}&background=059669&color=fff&size=80`}
-                                        alt={item.user.name}
-                                        className="w-10 h-10 rounded-xl object-cover border border-slate-200 dark:border-slate-700"
-                                    />
-                                    {isTopThree && (
-                                        <div className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center text-[9px] font-black">
-                                            ★
-                                        </div>
-                                    )}
-                                </div>
+                                        {/* Score Column */}
+                                        <td className="py-3 px-3 text-right">
+                                            <div className="font-black text-slate-900 dark:text-slate-100 text-xs sm:text-sm">
+                                                {formatScore(item)}
+                                            </div>
+                                            {mode === 'TEAM' && item.stats.targetRevenue > 0 && (
+                                                <div className="text-[10px] text-slate-400">
+                                                    Mục tiêu: {formatVND(item.stats.targetRevenue)}
+                                                </div>
+                                            )}
+                                        </td>
 
-                                {/* User Info & Badges */}
-                                <div className="min-w-0 flex-1">
-                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                        <span className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm truncate">
-                                            {item.user.name}
-                                        </span>
-                                        {isSelf && (
-                                            <span className="px-1.5 py-0.2 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                                                Bạn
-                                            </span>
-                                        )}
-                                        {item.badge && (
-                                            <span className="px-2 py-0.5 rounded-full bg-amber-100/80 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 text-[10px] font-semibold border border-amber-200 dark:border-amber-800/60">
-                                                {item.badge}
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="text-[11px] text-slate-500 truncate mt-0.5">
-                                        {item.user.employeeProfile?.department || item.user.role} {item.user.employeeProfile?.position ? `• ${item.user.employeeProfile.position}` : ''}
-                                    </div>
+                                        {/* Progress Bar Column */}
+                                        <td className="py-3 px-3 text-center hidden sm:table-cell">
+                                            <div className="w-24 mx-auto space-y-1">
+                                                <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                                    <div 
+                                                        className="h-full rounded-full transition-all duration-500"
+                                                        style={{ 
+                                                            width: `${mode === 'TEAM' && item.stats.targetRevenue > 0 ? Math.min(100, item.stats.targetProgress) : item.percentageOfTop}%`,
+                                                            background: mode === 'TEAM' && item.stats.targetProgress >= 100 
+                                                                ? 'linear-gradient(90deg, #10b981 0%, #059669 100%)' 
+                                                                : 'linear-gradient(90deg, #3b82f6 0%, #6366f1 100%)'
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="text-[10px] text-slate-400 font-semibold">
+                                                    {mode === 'TEAM' && item.stats.targetRevenue > 0 
+                                                        ? `${item.stats.targetProgress}% KPI` 
+                                                        : `${item.percentageOfTop}% Top 1`}
+                                                </div>
+                                            </div>
+                                        </td>
 
-                                    {/* Mini relative progress bar */}
-                                    <div className="w-full max-w-xs h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full mt-1.5 overflow-hidden">
-                                        <div
-                                            className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-500"
-                                            style={{ width: `${Math.max(4, item.percentageOfTop)}%` }}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Right: Score breakdown & Cheer action */}
-                            <div className="flex items-center gap-3 shrink-0 text-right">
-                                <div className="min-w-[100px]">
-                                    {formatCriteriaDetail(item)}
-                                </div>
-
-                                {onCheerUser && (
-                                    <button
-                                        onClick={() => onCheerUser(item.user.name, item.user.id)}
-                                        className="p-2 rounded-xl bg-slate-100 hover:bg-emerald-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 hover:text-emerald-600 transition-colors cursor-pointer"
-                                        title={`Cổ vũ ${item.user.name}`}
-                                    >
-                                        <Sparkles className="w-4 h-4" />
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    );
-                })}
-
-                {filteredList.length === 0 && (
-                    <div className="p-8 text-center text-xs text-slate-400">
-                        Không tìm thấy thành viên phù hợp với từ khóa tìm kiếm.
-                    </div>
-                )}
+                                        {/* Cheer Action Column */}
+                                        <td className="py-3 px-3 text-right">
+                                            <button
+                                                onClick={() => {
+                                                    if (mode === 'INDIVIDUAL' && onCheerUser) {
+                                                        onCheerUser(item.user.name, item.user.id);
+                                                    } else if (mode === 'TEAM' && onCheerTeam) {
+                                                        onCheerTeam(item.group.name, item.group.id);
+                                                    }
+                                                }}
+                                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-950/60 dark:hover:text-emerald-400 font-bold text-[11px] text-slate-600 dark:text-slate-300 transition-all active:scale-95 cursor-pointer"
+                                                title="Cổ vũ & Vinh danh trên bảng tin"
+                                            >
+                                                <Sparkles className="w-3 h-3 text-amber-500" />
+                                                <span className="hidden sm:inline">Cổ vũ</span>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                );
+                            })
+                        ) : (
+                            <tr>
+                                <td colSpan={6} className="py-8 text-center text-slate-400 text-xs">
+                                    Không có dữ liệu phù hợp với tìm kiếm.
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
             </div>
         </div>
     );
