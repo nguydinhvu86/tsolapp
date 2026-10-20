@@ -14,6 +14,7 @@ import { updateLeadStatus, recalculateAllLeadScoresAction } from './actions';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { useTranslation } from '@/app/i18n/LanguageContext';
 import { ClickToCallButton } from '@/app/components/ClickToCallButton';
+import { useToast } from '@/app/components/providers/ToastProvider';
 
 function getInitials(name: string) {
     if (!name) return 'U';
@@ -36,6 +37,7 @@ export function LeadsClient({
 }) {
     const { t } = useTranslation();
     const router = useRouter();
+    const toast = useToast();
 
     const STATUSES = useMemo(() => [
         { 
@@ -110,10 +112,13 @@ export function LeadsClient({
         setIsRecalculating(true);
         try {
             const res = await recalculateAllLeadScoresAction();
-            alert(`Đã tính toán và cập nhật lại điểm tiềm năng cho ${res.updated}/${res.total} cơ hội!`);
+            toast.success(
+                'Tính điểm tiềm năng thành công',
+                `Đã tính toán và cập nhật lại điểm tiềm năng cho ${res.updated}/${res.total} cơ hội!`
+            );
             router.refresh();
         } catch (err: any) {
-            alert('Lỗi tính điểm: ' + (err.message || err));
+            toast.error('Lỗi tính điểm', err.message || String(err));
         } finally {
             setIsRecalculating(false);
         }
@@ -317,15 +322,17 @@ export function LeadsClient({
                 setLocalLeads(prev => prev.map(l =>
                     l.id === leadId ? { ...l, status: previousStatus } : l
                 ));
-                alert(t('leads.errorUpdateStatus'));
+                toast.error(t('leads.errorUpdateStatus') || 'Không thể cập nhật trạng thái');
             } else {
+                toast.success('Cập nhật trạng thái thành công');
                 router.refresh();
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to change status:', error);
             setLocalLeads(prev => prev.map(l =>
                 l.id === leadId ? { ...l, status: previousStatus } : l
             ));
+            toast.error('Lỗi cập nhật trạng thái', error?.message || String(error));
         }
     };
 
@@ -340,12 +347,14 @@ export function LeadsClient({
             const res = await updateLeadStatus(id, newStatus);
             if (!res) {
                 setLocalLeads(prev => prev.map(l => l.id === id ? { ...l, status: previousStatus } : l));
-                alert(t('leads.errorUpdateStatus'));
+                toast.error(t('leads.errorUpdateStatus') || 'Không thể cập nhật trạng thái');
             } else {
+                toast.success('Cập nhật trạng thái thành công');
                 router.refresh();
             }
-        } catch (error) {
+        } catch (error: any) {
             setLocalLeads(prev => prev.map(l => l.id === id ? { ...l, status: previousStatus } : l));
+            toast.error('Lỗi cập nhật trạng thái', error?.message || String(error));
         }
     };
 

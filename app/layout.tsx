@@ -9,6 +9,8 @@ const inter = Inter({
 })
 
 import { NextAuthProvider } from './components/providers/NextAuthProvider'
+import { ToastProvider } from './components/providers/ToastProvider'
+import { ConfirmProvider } from './components/providers/ConfirmProvider'
 import { MainLayout } from './components/layout/MainLayout'
 import { getLayoutSettings, getSidebarOrder } from './components/layout/actions'
 import { PushNotificationListener } from './components/PushNotificationListener'
@@ -91,12 +93,16 @@ export default async function RootLayout({
             <body className={inter.className} style={{ minHeight: '100vh', backgroundColor: 'var(--background)', margin: 0 }}>
                 <NextAuthProvider>
                     <LanguageProvider dictionary={dictionary} locale={locale}>
-                        <PushNotificationListener />
-                        <CallListener />
-                        <WebRTCDialer />
-                        <MainLayout brandName={brandName} logoUrl={logoUrl} initialSidebarOrder={initialSidebarOrder}>
-                            {children}
-                        </MainLayout>
+                        <ToastProvider>
+                            <ConfirmProvider>
+                                <PushNotificationListener />
+                                <CallListener />
+                                <WebRTCDialer />
+                                <MainLayout brandName={brandName} logoUrl={logoUrl} initialSidebarOrder={initialSidebarOrder}>
+                                    {children}
+                                </MainLayout>
+                            </ConfirmProvider>
+                        </ToastProvider>
                     </LanguageProvider>
                 </NextAuthProvider>
             </body>

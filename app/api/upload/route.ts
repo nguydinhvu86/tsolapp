@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import fs from "fs";
 import path from "path";
+import crypto from "crypto";
 
 export async function POST(req: NextRequest) {
     try {
@@ -40,7 +41,8 @@ export async function POST(req: NextRequest) {
             fs.mkdirSync(publicUploadDir, { recursive: true });
         }
 
-        const filename = `${session.user.id}-${Date.now()}${path.extname(file.name)}`;
+        const uniqueToken = crypto.randomBytes(16).toString('hex');
+        const filename = `${session.user.id}-${Date.now()}-${uniqueToken}${rawExt}`;
         const filepath = path.join(uploadDir, filename);
         fs.writeFileSync(filepath, buffer);
 

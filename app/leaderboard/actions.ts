@@ -429,53 +429,8 @@ export async function getGroupLeaderboardData(params: {
             }
         });
     } catch (e) {
-        // Fallback SQL query
-        try {
-            const rawGroups: any[] = await prisma.$queryRawUnsafe(`
-                SELECT g.*, u.name as leaderName, u.avatar as leaderAvatar, u.email as leaderEmail
-                FROM \`CompetitionGroup\` g
-                LEFT JOIN \`User\` u ON g.leaderId = u.id
-                WHERE g.isActive = 1
-            `);
-            const groupIds = rawGroups.map(g => `'${g.id}'`);
-            let membersMap: Record<string, any[]> = {};
-
-            if (groupIds.length > 0) {
-                const rawMembers: any[] = await prisma.$queryRawUnsafe(`
-                    SELECT m.*, u.name as userName, u.avatar as userAvatar, u.email as userEmail
-                    FROM \`CompetitionGroupMember\` m
-                    LEFT JOIN \`User\` u ON m.userId = u.id
-                    WHERE m.groupId IN (${groupIds.join(',')})
-                `);
-                rawMembers.forEach(m => {
-                    if (!membersMap[m.groupId]) membersMap[m.groupId] = [];
-                    membersMap[m.groupId].push({
-                        id: m.id,
-                        groupId: m.groupId,
-                        userId: m.userId,
-                        role: m.role,
-                        user: { id: m.userId, name: m.userName, avatar: m.userAvatar, email: m.userEmail }
-                    });
-                });
-            }
-
-            groups = rawGroups.map(g => ({
-                id: g.id,
-                name: g.name,
-                code: g.code,
-                description: g.description,
-                slogan: g.slogan,
-                avatar: g.avatar,
-                color: g.color || '#059669',
-                targetRevenue: Number(g.targetRevenue || 0),
-                leaderId: g.leaderId,
-                leader: g.leaderId ? { id: g.leaderId, name: g.leaderName, avatar: g.leaderAvatar, email: g.leaderEmail } : null,
-                members: membersMap[g.id] || []
-            }));
-        } catch (sqlErr) {
-            console.error('Failed to load competition groups:', sqlErr);
-            groups = [];
-        }
+        console.error('Failed to fetch competition groups in getGroupLeaderboardData:', e);
+        groups = [];
     }
 
     // 2. Fetch all users for score calculations
@@ -659,49 +614,8 @@ export async function getCompetitionGroups() {
         });
         return groups;
     } catch (e) {
-        // SQL Fallback
-        const rawGroups: any[] = await prisma.$queryRawUnsafe(`
-            SELECT g.*, u.name as leaderName, u.avatar as leaderAvatar, u.email as leaderEmail
-            FROM \`CompetitionGroup\` g
-            LEFT JOIN \`User\` u ON g.leaderId = u.id
-            ORDER BY g.createdAt DESC
-        `);
-        const groupIds = rawGroups.map(g => `'${g.id}'`);
-        let membersMap: Record<string, any[]> = {};
-
-        if (groupIds.length > 0) {
-            const rawMembers: any[] = await prisma.$queryRawUnsafe(`
-                SELECT m.*, u.name as userName, u.avatar as userAvatar, u.email as userEmail
-                FROM \`CompetitionGroupMember\` m
-                LEFT JOIN \`User\` u ON m.userId = u.id
-                WHERE m.groupId IN (${groupIds.join(',')})
-            `);
-            rawMembers.forEach(m => {
-                if (!membersMap[m.groupId]) membersMap[m.groupId] = [];
-                membersMap[m.groupId].push({
-                    id: m.id,
-                    groupId: m.groupId,
-                    userId: m.userId,
-                    role: m.role,
-                    user: { id: m.userId, name: m.userName, avatar: m.userAvatar, email: m.userEmail }
-                });
-            });
-        }
-
-        return rawGroups.map(g => ({
-            id: g.id,
-            name: g.name,
-            code: g.code,
-            description: g.description,
-            slogan: g.slogan,
-            avatar: g.avatar,
-            color: g.color || '#059669',
-            targetRevenue: Number(g.targetRevenue || 0),
-            leaderId: g.leaderId,
-            isActive: Boolean(g.isActive),
-            leader: g.leaderId ? { id: g.leaderId, name: g.leaderName, avatar: g.leaderAvatar, email: g.leaderEmail } : null,
-            members: membersMap[g.id] || []
-        }));
+        console.error('Failed to fetch competition groups in getAllCompetitionGroups:', e);
+        return [];
     }
 }
 
@@ -748,18 +662,9 @@ export async function createCompetitionGroup(data: {
                 isActive: true
             }
         });
-    } catch (e) {
-        const escName = data.name.replace(/'/g, "\\'");
-        const escCode = data.code ? `'${data.code.replace(/'/g, "\\'")}'` : 'NULL';
-        const escSlogan = data.slogan ? `'${data.slogan.replace(/'/g, "\\'")}'` : 'NULL';
-        const escDesc = data.description ? `'${data.description.replace(/'/g, "\\'")}'` : 'NULL';
-        const escAvatar = data.avatar ? `'${data.avatar.replace(/'/g, "\\'")}'` : 'NULL';
-        const escLeader = data.leaderId ? `'${data.leaderId}'` : 'NULL';
-
-        await prisma.$executeRawUnsafe(`
-            INSERT INTO \`CompetitionGroup\` (id, name, code, slogan, description, avatar, color, targetRevenue, leaderId, isActive, createdAt, updatedAt)
-            VALUES ('${groupId}', '${escName}', ${escCode}, ${escSlogan}, ${escDesc}, ${escAvatar}, '${color}', ${targetRev}, ${escLeader}, 1, NOW(3), NOW(3))
-        `);
+    } catch (e: any) {
+        console.error('Failed to create competition group:', e);
+        throw new Error('Không thể tạo nhóm thi đua: ' + (e?.message || e));
     }
 
     // 2. Add members
@@ -772,8 +677,12 @@ export async function createCompetitionGroup(data: {
             const memberId = genId();
             const role = userId === data.leaderId ? 'LEADER' : 'MEMBER';
             try {
-                await prisma.competitionGroupMember.create({
-                    data: {
+                await prisma.competitionGroupMember.upsert({
+                    where: {
+                        groupId_userId: { groupId, userId }
+                    },
+                    update: { role },
+                    create: {
                         id: memberId,
                         groupId,
                         userId,
@@ -781,11 +690,7 @@ export async function createCompetitionGroup(data: {
                     }
                 });
             } catch (err) {
-                await prisma.$executeRawUnsafe(`
-                    INSERT INTO \`CompetitionGroupMember\` (id, groupId, userId, role, joinedAt)
-                    VALUES ('${memberId}', '${groupId}', '${userId}', '${role}', NOW(3))
-                    ON DUPLICATE KEY UPDATE role = '${role}'
-                `);
+                console.warn('Failed to add competition group member:', err);
             }
 
             // In-app Notification to member
@@ -810,10 +715,18 @@ export async function createCompetitionGroup(data: {
             `👥 Thành viên: ${memberList.length} chiến binh đã sẵn sàng xuất kích!\n\n` +
             `Chúc đội gặt hái nhiều thắng lợi rực rỡ và giành ngôi vị Quán Quân kỳ này! 🔥🚀`;
 
-        await prisma.$executeRawUnsafe(`
-            INSERT INTO \`LeaderboardPost\` (id, authorId, groupId, content, images, type, isPinned, metadata, createdAt, updatedAt)
-            VALUES ('${announcementPostId}', '${currentUser.id}', '${groupId}', '${postContent.replace(/'/g, "\\'")}', NULL, 'ACHIEVEMENT_ANNOUNCEMENT', 1, '{"isGroupLaunch": true, "groupName": "${data.name.replace(/'/g, "\\'")}"}', NOW(3), NOW(3))
-        `);
+        await prisma.leaderboardPost.create({
+            data: {
+                id: announcementPostId,
+                authorId: currentUser.id,
+                groupId,
+                content: postContent,
+                images: null,
+                type: 'ACHIEVEMENT_ANNOUNCEMENT',
+                isPinned: true,
+                metadata: JSON.stringify({ isGroupLaunch: true, groupName: data.name })
+            }
+        });
     } catch (postErr) {
         console.error('Failed to create launch post for group:', postErr);
     }
@@ -847,49 +760,56 @@ export async function updateCompetitionGroup(groupId: string, data: {
     }
 
     // Update group basic info
-    const updates: string[] = [];
-    if (data.name !== undefined) updates.push(`name = '${data.name.replace(/'/g, "\\'")}'`);
-    if (data.slogan !== undefined) updates.push(`slogan = '${(data.slogan || '').replace(/'/g, "\\'")}'`);
-    if (data.description !== undefined) updates.push(`description = '${(data.description || '').replace(/'/g, "\\'")}'`);
-    if (data.avatar !== undefined) updates.push(`avatar = '${(data.avatar || '').replace(/'/g, "\\'")}'`);
-    if (data.color !== undefined) updates.push(`color = '${data.color}'`);
-    if (data.targetRevenue !== undefined) updates.push(`targetRevenue = ${data.targetRevenue}`);
-    if (data.leaderId !== undefined) updates.push(`leaderId = ${data.leaderId ? `'${data.leaderId}'` : 'NULL'}`);
-    if (data.isActive !== undefined) updates.push(`isActive = ${data.isActive ? 1 : 0}`);
-    updates.push(`updatedAt = NOW(3)`);
-
-    if (updates.length > 0) {
-        await prisma.$executeRawUnsafe(`
-            UPDATE \`CompetitionGroup\` SET ${updates.join(', ')} WHERE id = '${groupId}'
-        `);
-    }
+    await prisma.competitionGroup.update({
+        where: { id: groupId },
+        data: {
+            ...(data.name !== undefined ? { name: data.name } : {}),
+            ...(data.slogan !== undefined ? { slogan: data.slogan } : {}),
+            ...(data.description !== undefined ? { description: data.description } : {}),
+            ...(data.avatar !== undefined ? { avatar: data.avatar } : {}),
+            ...(data.color !== undefined ? { color: data.color } : {}),
+            ...(data.targetRevenue !== undefined ? { targetRevenue: data.targetRevenue } : {}),
+            ...(data.leaderId !== undefined ? { leaderId: data.leaderId } : {}),
+            ...(data.isActive !== undefined ? { isActive: data.isActive } : {}),
+        }
+    });
 
     // Synchronize members if provided
     if (data.memberIds !== undefined) {
         const allMemberIds = new Set<string>(data.memberIds);
         if (data.leaderId) allMemberIds.add(data.leaderId);
+        const memberIdArray = Array.from(allMemberIds);
 
         // Delete members not in new list
-        const inListStr = Array.from(allMemberIds).map(id => `'${id}'`).join(',');
-        if (inListStr.length > 0) {
-            await prisma.$executeRawUnsafe(`
-                DELETE FROM \`CompetitionGroupMember\` WHERE groupId = '${groupId}' AND userId NOT IN (${inListStr})
-            `);
+        if (memberIdArray.length > 0) {
+            await prisma.competitionGroupMember.deleteMany({
+                where: {
+                    groupId,
+                    userId: { notIn: memberIdArray }
+                }
+            });
         } else {
-            await prisma.$executeRawUnsafe(`
-                DELETE FROM \`CompetitionGroupMember\` WHERE groupId = '${groupId}'
-            `);
+            await prisma.competitionGroupMember.deleteMany({
+                where: { groupId }
+            });
         }
 
         // Add or update members
-        for (const userId of Array.from(allMemberIds)) {
+        for (const userId of memberIdArray) {
             const memberId = genId();
             const role = userId === data.leaderId ? 'LEADER' : 'MEMBER';
-            await prisma.$executeRawUnsafe(`
-                INSERT INTO \`CompetitionGroupMember\` (id, groupId, userId, role, joinedAt)
-                VALUES ('${memberId}', '${groupId}', '${userId}', '${role}', NOW(3))
-                ON DUPLICATE KEY UPDATE role = '${role}'
-            `);
+            await prisma.competitionGroupMember.upsert({
+                where: {
+                    groupId_userId: { groupId, userId }
+                },
+                update: { role },
+                create: {
+                    id: memberId,
+                    groupId,
+                    userId,
+                    role
+                }
+            });
         }
     }
 
@@ -910,8 +830,8 @@ export async function deleteCompetitionGroup(groupId: string) {
         throw new Error('Chỉ Quản trị viên mới có quyền xóa nhóm thi đua.');
     }
 
-    await prisma.$executeRawUnsafe(`DELETE FROM \`CompetitionGroupMember\` WHERE groupId = '${groupId}'`);
-    await prisma.$executeRawUnsafe(`DELETE FROM \`CompetitionGroup\` WHERE id = '${groupId}'`);
+    await prisma.competitionGroupMember.deleteMany({ where: { groupId } });
+    await prisma.competitionGroup.delete({ where: { id: groupId } });
 
     revalidatePath('/leaderboard');
     return { success: true };
@@ -969,28 +889,7 @@ export async function getUserSocialProfile(userId: string) {
             };
         }
     } catch (e) {
-        // SQL fallback
-        const rawMems: any[] = await prisma.$queryRawUnsafe(`
-            SELECT m.*, g.name as groupName, g.slogan as groupSlogan, g.avatar as groupAvatar, g.color as groupColor
-            FROM \`CompetitionGroupMember\` m
-            LEFT JOIN \`CompetitionGroup\` g ON m.groupId = g.id
-            WHERE m.userId = '${userId}'
-            LIMIT 1
-        `);
-        if (rawMems.length > 0) {
-            const m = rawMems[0];
-            groupMembership = {
-                role: m.role,
-                joinedAt: m.joinedAt,
-                group: {
-                    id: m.groupId,
-                    name: m.groupName,
-                    slogan: m.groupSlogan,
-                    avatar: m.groupAvatar,
-                    color: m.groupColor
-                }
-            };
-        }
+        groupMembership = null;
     }
 
     // 2. Performance metrics (This Month)
@@ -1012,12 +911,12 @@ export async function getUserSocialProfile(userId: string) {
     // 3. Reaction & Praise count received
     let totalReactionsReceived = 0;
     try {
-        const reactionCountRes: any[] = await prisma.$queryRawUnsafe(`
+        const reactionCountRes: any[] = await prisma.$queryRaw`
             SELECT COUNT(r.id) as count
             FROM \`LeaderboardReaction\` r
             INNER JOIN \`LeaderboardPost\` p ON r.postId = p.id
-            WHERE p.authorId = '${userId}'
-        `);
+            WHERE p.authorId = ${userId}
+        `;
         totalReactionsReceived = Number(reactionCountRes[0]?.count || 0);
     } catch (e) {}
 
@@ -1045,14 +944,7 @@ export async function getUserSocialProfile(userId: string) {
             }
         });
     } catch (e) {
-        const rawPosts: any[] = await prisma.$queryRawUnsafe(`
-            SELECT id, content, createdAt, type
-            FROM \`LeaderboardPost\`
-            WHERE authorId = '${userId}'
-            ORDER BY createdAt DESC
-            LIMIT 3
-        `);
-        recentPosts = rawPosts;
+        recentPosts = [];
     }
 
     return {
@@ -1201,142 +1093,9 @@ export async function getSocialFeed(params?: { page?: number; limit?: number }) 
             });
             ormSuccess = true;
         } catch (err) {
-            console.warn('Prisma ORM failed on leaderboardPost, fallback to SQL:', err);
-        }
-    }
-
-    if (!ormSuccess) {
-        try {
-            const [rawPosts, countRes] = (await Promise.all([
-                prisma.$queryRawUnsafe(`
-                    SELECT p.*, 
-                           u.name as authorName, u.avatar as authorAvatar, u.email as authorEmail, u.role as authorRole,
-                           ep.department as authorDepartment, ep.position as authorPosition,
-                           g.name as groupName, g.slogan as groupSlogan, g.avatar as groupAvatar, g.color as groupColor
-                    FROM \`LeaderboardPost\` p
-                    LEFT JOIN \`User\` u ON p.authorId = u.id
-                    LEFT JOIN \`EmployeeProfile\` ep ON u.id = ep.userId
-                    LEFT JOIN \`CompetitionGroup\` g ON p.groupId = g.id
-                    ORDER BY p.isPinned DESC, p.createdAt DESC
-                    LIMIT ${limit} OFFSET ${skip}
-                `),
-                prisma.$queryRawUnsafe(`SELECT COUNT(*) as total FROM \`LeaderboardPost\``)
-            ])) as [any[], any[]];
-
-            total = Number(countRes[0]?.total || 0);
-
-            const postIds = rawPosts.map((p: any) => p.id);
-            let reactionsByPost: Record<string, any[]> = {};
-            let commentsByPost: Record<string, any[]> = {};
-
-            if (postIds.length > 0) {
-                const inList = postIds.map((id: string) => `'${id}'`).join(',');
-                const [rawReactions, rawComments] = (await Promise.all([
-                    prisma.$queryRawUnsafe(`
-                        SELECT r.*, u.name as userName, u.avatar as userAvatar
-                        FROM \`LeaderboardReaction\` r
-                        LEFT JOIN \`User\` u ON r.userId = u.id
-                        WHERE r.postId IN (${inList})
-                    `),
-                    prisma.$queryRawUnsafe(`
-                        SELECT c.*, u.name as authorName, u.avatar as authorAvatar
-                        FROM \`LeaderboardComment\` c
-                        LEFT JOIN \`User\` u ON c.authorId = u.id
-                        WHERE c.postId IN (${inList})
-                        ORDER BY c.createdAt ASC
-                    `)
-                ])) as [any[], any[]];
-
-                rawReactions.forEach((r: any) => {
-                    if (!reactionsByPost[r.postId]) reactionsByPost[r.postId] = [];
-                    reactionsByPost[r.postId].push({
-                        id: r.id,
-                        emoji: r.emoji,
-                        user: { id: r.userId, name: r.userName, avatar: r.userAvatar }
-                    });
-                });
-
-                rawComments.forEach((c: any) => {
-                    if (!commentsByPost[c.postId]) commentsByPost[c.postId] = [];
-                    commentsByPost[c.postId].push({
-                        id: c.id,
-                        content: c.content,
-                        createdAt: c.createdAt,
-                        parentId: c.parentId,
-                        image: c.image,
-                        author: { id: c.authorId, name: c.authorName, avatar: c.authorAvatar },
-                        mentions: []
-                    });
-                });
-            }
-
-            formattedPosts = rawPosts.map((post: any) => {
-                let parsedImages: string[] = [];
-                if (post.images) {
-                    try {
-                        parsedImages = JSON.parse(post.images);
-                    } catch (e) {
-                        if (typeof post.images === 'string') parsedImages = [post.images];
-                    }
-                }
-
-                let parsedMetadata: any = null;
-                if (post.metadata) {
-                    try {
-                        parsedMetadata = JSON.parse(post.metadata);
-                    } catch (e) {}
-                }
-
-                const postReactions = reactionsByPost[post.id] || [];
-                const postComments = commentsByPost[post.id] || [];
-                const reactionCounts: Record<string, { count: number; users: { id: string; name: string; avatar?: string | null }[] }> = {};
-
-                postReactions.forEach((r: any) => {
-                    if (!reactionCounts[r.emoji]) {
-                        reactionCounts[r.emoji] = { count: 0, users: [] };
-                    }
-                    reactionCounts[r.emoji].count += 1;
-                    reactionCounts[r.emoji].users.push(r.user);
-                });
-
-                return {
-                    id: post.id,
-                    authorId: post.authorId,
-                    groupId: post.groupId,
-                    content: post.content,
-                    images: parsedImages,
-                    type: post.type,
-                    isPinned: Boolean(post.isPinned),
-                    metadata: parsedMetadata,
-                    createdAt: post.createdAt,
-                    updatedAt: post.updatedAt,
-                    author: {
-                        id: post.authorId,
-                        name: post.authorName,
-                        avatar: post.authorAvatar,
-                        email: post.authorEmail,
-                        role: post.authorRole,
-                        employeeProfile: post.authorDepartment ? {
-                            department: post.authorDepartment,
-                            position: post.authorPosition
-                        } : null
-                    },
-                    group: post.groupId ? {
-                        id: post.groupId,
-                        name: post.groupName,
-                        slogan: post.groupSlogan,
-                        avatar: post.groupAvatar,
-                        color: post.groupColor
-                    } : null,
-                    reactions: postReactions,
-                    comments: postComments,
-                    mentions: [],
-                    reactionCounts,
-                    commentsCount: postComments.length
-                };
-            });
-        } catch (sqlErr) {
-            console.error('SQL fallback failed for social feed:', sqlErr);
+            console.error('Failed to load leaderboard posts via Prisma:', err);
+            formattedPosts = [];
+            total = 0;
         }
     }
 
@@ -1381,35 +1140,21 @@ export async function createSocialPost(data: {
     const groupId = data.groupId || null;
 
     let newPost: any = null;
-    if (prisma.leaderboardPost) {
-        try {
-            newPost = await prisma.leaderboardPost.create({
-                data: {
-                    id: postId,
-                    authorId: currentUser.id,
-                    groupId,
-                    content: data.content,
-                    images: imagesJson,
-                    type: postType,
-                    metadata: metadataJson,
-                }
-            });
-        } catch (e) {
-            newPost = null;
-        }
-    }
-
-    if (!newPost) {
-        const escapedContent = data.content.replace(/'/g, "\\'");
-        const escapedImages = imagesJson ? `'${imagesJson.replace(/'/g, "\\'")}'` : 'NULL';
-        const escapedMeta = metadataJson ? `'${metadataJson.replace(/'/g, "\\'")}'` : 'NULL';
-        const escapedGroup = groupId ? `'${groupId}'` : 'NULL';
-
-        await prisma.$executeRawUnsafe(`
-            INSERT INTO \`LeaderboardPost\` (id, authorId, groupId, content, images, type, isPinned, metadata, createdAt, updatedAt)
-            VALUES ('${postId}', '${currentUser.id}', ${escapedGroup}, '${escapedContent}', ${escapedImages}, '${postType}', 0, ${escapedMeta}, NOW(3), NOW(3))
-        `);
-        newPost = { id: postId, authorId: currentUser.id, content: data.content };
+    try {
+        newPost = await prisma.leaderboardPost.create({
+            data: {
+                id: postId,
+                authorId: currentUser.id,
+                groupId,
+                content: data.content,
+                images: imagesJson,
+                type: postType,
+                metadata: metadataJson,
+            }
+        });
+    } catch (e: any) {
+        console.error('Failed to create leaderboard post:', e);
+        throw new Error('Không thể tạo bài viết: ' + (e?.message || e));
     }
 
     // Handle mentions
@@ -1429,10 +1174,7 @@ export async function createSocialPost(data: {
                         }
                     });
                 } catch (e) {
-                    await prisma.$executeRawUnsafe(`
-                        INSERT INTO \`LeaderboardMention\` (id, postId, mentionedUserId, createdAt)
-                        VALUES ('${mentionId}', '${newPost.id}', '${targetUserId}', NOW(3))
-                    `);
+                    console.warn('Failed to record mention:', e);
                 }
 
                 // In-app Notification
@@ -1507,30 +1249,39 @@ export async function togglePostReaction(postId: string, emoji: ReactionEmoji) {
     });
     if (!currentUser) throw new Error('Tài khoản không hợp lệ.');
 
-    const existingRows: any[] = await prisma.$queryRawUnsafe(`
-        SELECT id FROM \`LeaderboardReaction\` 
-        WHERE postId = '${postId}' AND userId = '${currentUser.id}' AND emoji = '${emoji}'
-        LIMIT 1
-    `);
+    const existingReaction = await prisma.leaderboardReaction.findUnique({
+        where: {
+            postId_userId_emoji: {
+                postId,
+                userId: currentUser.id,
+                emoji
+            }
+        }
+    });
 
-    if (existingRows.length > 0) {
-        await prisma.$executeRawUnsafe(`
-            DELETE FROM \`LeaderboardReaction\` WHERE id = '${existingRows[0].id}'
-        `);
+    if (existingReaction) {
+        await prisma.leaderboardReaction.delete({
+            where: { id: existingReaction.id }
+        });
         revalidatePath('/leaderboard');
         return { success: true, action: 'REMOVED' };
     } else {
         const reactionId = genId();
-        await prisma.$executeRawUnsafe(`
-            INSERT INTO \`LeaderboardReaction\` (id, postId, userId, emoji, createdAt)
-            VALUES ('${reactionId}', '${postId}', '${currentUser.id}', '${emoji}', NOW(3))
-        `);
+        await prisma.leaderboardReaction.create({
+            data: {
+                id: reactionId,
+                postId,
+                userId: currentUser.id,
+                emoji
+            }
+        });
 
         // Notify post author
-        const postRows: any[] = await prisma.$queryRawUnsafe(`
-            SELECT authorId FROM \`LeaderboardPost\` WHERE id = '${postId}' LIMIT 1
-        `);
-        const postAuthorId = postRows[0]?.authorId;
+        const post = await prisma.leaderboardPost.findUnique({
+            where: { id: postId },
+            select: { authorId: true }
+        });
+        const postAuthorId = post?.authorId;
 
         if (postAuthorId && postAuthorId !== currentUser.id) {
             const emojiLabels: Record<string, string> = {
@@ -1572,14 +1323,16 @@ export async function addPostComment(data: {
     if (!currentUser) throw new Error('Tài khoản không hợp lệ.');
 
     const commentId = genId();
-    const escapedContent = data.content.replace(/'/g, "\\'");
-    const parentVal = data.parentId ? `'${data.parentId}'` : 'NULL';
-    const imageVal = data.image ? `'${data.image.replace(/'/g, "\\'")}'` : 'NULL';
-
-    await prisma.$executeRawUnsafe(`
-        INSERT INTO \`LeaderboardComment\` (id, postId, authorId, content, parentId, image, createdAt, updatedAt)
-        VALUES ('${commentId}', '${data.postId}', '${currentUser.id}', '${escapedContent}', ${parentVal}, ${imageVal}, NOW(3), NOW(3))
-    `);
+    await prisma.leaderboardComment.create({
+        data: {
+            id: commentId,
+            postId: data.postId,
+            authorId: currentUser.id,
+            content: data.content,
+            parentId: data.parentId || null,
+            image: data.image || null
+        }
+    });
 
     const newComment = {
         id: commentId,
@@ -1591,10 +1344,11 @@ export async function addPostComment(data: {
         author: { id: currentUser.id, name: currentUser.name }
     };
 
-    const postRows: any[] = await prisma.$queryRawUnsafe(`
-        SELECT authorId FROM \`LeaderboardPost\` WHERE id = '${data.postId}' LIMIT 1
-    `);
-    const postAuthorId = postRows[0]?.authorId;
+    const post = await prisma.leaderboardPost.findUnique({
+        where: { id: data.postId },
+        select: { authorId: true }
+    });
+    const postAuthorId = post?.authorId;
 
     if (postAuthorId && postAuthorId !== currentUser.id) {
         await createNotification(
@@ -1612,10 +1366,17 @@ export async function addPostComment(data: {
             mentionedIds.map(async (targetUserId) => {
                 if (targetUserId === currentUser.id) return;
                 const mentionId = genId();
-                await prisma.$executeRawUnsafe(`
-                    INSERT INTO \`LeaderboardMention\` (id, commentId, mentionedUserId, createdAt)
-                    VALUES ('${mentionId}', '${commentId}', '${targetUserId}', NOW(3))
-                `);
+                try {
+                    await prisma.leaderboardMention.create({
+                        data: {
+                            id: mentionId,
+                            commentId,
+                            mentionedUserId: targetUserId
+                        }
+                    });
+                } catch (e) {
+                    console.warn('Failed to record comment mention:', e);
+                }
 
                 await createNotification(
                     targetUserId,
@@ -1645,10 +1406,10 @@ export async function pinSocialPost(postId: string, isPinned: boolean) {
         throw new Error('Chỉ Quản trị viên mới có quyền ghim bài viết.');
     }
 
-    await prisma.$executeRawUnsafe(`
-        UPDATE \`LeaderboardPost\` SET isPinned = ${isPinned ? 1 : 0}, updatedAt = NOW(3)
-        WHERE id = '${postId}'
-    `);
+    await prisma.leaderboardPost.update({
+        where: { id: postId },
+        data: { isPinned }
+    });
 
     revalidatePath('/leaderboard');
     return { success: true };
@@ -1663,19 +1424,20 @@ export async function deleteSocialPost(postId: string) {
         select: { id: true, role: true }
     });
 
-    const postRows: any[] = await prisma.$queryRawUnsafe(`
-        SELECT authorId FROM \`LeaderboardPost\` WHERE id = '${postId}' LIMIT 1
-    `);
+    const post = await prisma.leaderboardPost.findUnique({
+        where: { id: postId },
+        select: { authorId: true }
+    });
 
-    if (postRows.length === 0) throw new Error('Bài viết không tồn tại.');
-    if (postRows[0].authorId !== currentUser?.id && currentUser?.role !== 'ADMIN') {
+    if (!post) throw new Error('Bài viết không tồn tại.');
+    if (post.authorId !== currentUser?.id && currentUser?.role !== 'ADMIN') {
         throw new Error('Bạn không có quyền xóa bài viết này.');
     }
 
-    await prisma.$executeRawUnsafe(`DELETE FROM \`LeaderboardMention\` WHERE postId = '${postId}'`);
-    await prisma.$executeRawUnsafe(`DELETE FROM \`LeaderboardReaction\` WHERE postId = '${postId}'`);
-    await prisma.$executeRawUnsafe(`DELETE FROM \`LeaderboardComment\` WHERE postId = '${postId}'`);
-    await prisma.$executeRawUnsafe(`DELETE FROM \`LeaderboardPost\` WHERE id = '${postId}'`);
+    await prisma.leaderboardMention.deleteMany({ where: { postId } });
+    await prisma.leaderboardReaction.deleteMany({ where: { postId } });
+    await prisma.leaderboardComment.deleteMany({ where: { postId } });
+    await prisma.leaderboardPost.delete({ where: { id: postId } });
 
     revalidatePath('/leaderboard');
     return { success: true };

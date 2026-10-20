@@ -85,6 +85,44 @@ async function main() {
         `);
         console.log('✅ Bảng LeaderboardMention đã sẵn sàng.');
 
+        // 5. Create CompetitionGroup table if not exists
+        await prisma.$executeRawUnsafe(`
+            CREATE TABLE IF NOT EXISTS \`CompetitionGroup\` (
+                \`id\` VARCHAR(191) NOT NULL,
+                \`name\` VARCHAR(191) NOT NULL,
+                \`code\` VARCHAR(191) NULL,
+                \`description\` TEXT NULL,
+                \`slogan\` VARCHAR(191) NULL,
+                \`avatar\` VARCHAR(191) NULL,
+                \`color\` VARCHAR(191) NOT NULL DEFAULT '#059669',
+                \`targetRevenue\` DOUBLE NOT NULL DEFAULT 0,
+                \`leaderId\` VARCHAR(191) NULL,
+                \`isActive\` BOOLEAN NOT NULL DEFAULT true,
+                \`createdAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+                \`updatedAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+                PRIMARY KEY (\`id\`),
+                INDEX \`CompetitionGroup_leaderId_idx\`(\`leaderId\`),
+                INDEX \`CompetitionGroup_isActive_idx\`(\`isActive\`)
+            ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        `);
+        console.log('✅ Bảng CompetitionGroup đã sẵn sàng.');
+
+        // 6. Create CompetitionGroupMember table if not exists
+        await prisma.$executeRawUnsafe(`
+            CREATE TABLE IF NOT EXISTS \`CompetitionGroupMember\` (
+                \`id\` VARCHAR(191) NOT NULL,
+                \`groupId\` VARCHAR(191) NOT NULL,
+                \`userId\` VARCHAR(191) NOT NULL,
+                \`role\` VARCHAR(191) NOT NULL DEFAULT 'MEMBER',
+                \`joinedAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+                PRIMARY KEY (\`id\`),
+                UNIQUE INDEX \`CompetitionGroupMember_groupId_userId_key\`(\`groupId\`, \`userId\`),
+                INDEX \`CompetitionGroupMember_groupId_idx\`(\`groupId\`),
+                INDEX \`CompetitionGroupMember_userId_idx\`(\`userId\`)
+            ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        `);
+        console.log('✅ Bảng CompetitionGroupMember đã sẵn sàng.');
+
         console.log('🎉 Toàn bộ cơ sở dữ liệu cho Leaderboard đã được thiết lập an toàn.');
     } catch (err) {
         console.error('❌ Lỗi khi cập nhật cơ sở dữ liệu:', err);
