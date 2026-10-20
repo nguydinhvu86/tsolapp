@@ -21,7 +21,18 @@ export default async function SalesEstimateDetailPage({ params }: { params: { id
     const estimate = await prisma.salesEstimate.findFirst({
         where: { id, ...viewFilter },
         include: {
-            customer: {
+                        lead: {
+                select: {
+                    id: true,
+                    code: true,
+                    name: true,
+                    company: true,
+                    contactName: true,
+                    phone: true,
+                    email: true
+                }
+            },
+customer: {
                 include: {
                     contacts: true
                 }

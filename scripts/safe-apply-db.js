@@ -50,6 +50,14 @@ async function addUniqueIndexIfNotExists(table, column, indexName) {
 async function main() {
     console.log('--- Đang kiểm tra và áp dụng cập nhật Database (Bảo toàn 100% dữ liệu hiện có) ---');
     
+    // 0. Modify SalesEstimate.customerId to be NULLABLE (Allow estimates for Leads)
+    try {
+        await prisma.$executeRawUnsafe(`ALTER TABLE \`SalesEstimate\` MODIFY COLUMN \`customerId\` VARCHAR(191) NULL;`);
+        console.log('- Đã cập nhật SalesEstimate.customerId thành NULLABLE.');
+    } catch (err) {
+        // Ignored if already nullable
+    }
+
     // 1. Create PurchaseBillActivityLog table if not exists
     await prisma.$executeRawUnsafe(`
         CREATE TABLE IF NOT EXISTS \`PurchaseBillActivityLog\` (

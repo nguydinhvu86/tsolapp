@@ -847,6 +847,24 @@ export async function createPurchaseBill(data: any) {
         }
     });
 
+    if (data.attachment) {
+        try {
+            const { saveAttachment, parseAttachmentString } = await import('@/lib/storage-vault');
+            const files = parseAttachmentString(data.attachment);
+            for (const f of files) {
+                await saveAttachment({
+                    fileName: f.name,
+                    fileUrl: f.url,
+                    entityType: 'PURCHASE_BILL',
+                    entityId: bill.id,
+                    uploadedById: uId
+                });
+            }
+        } catch (vaultErr) {
+            console.error('Lỗi khi đồng bộ SystemAttachment cho PurchaseBill:', vaultErr);
+        }
+    }
+
     if (uId) {
         try {
             await prisma.purchaseBillActivityLog.create({
@@ -1507,6 +1525,24 @@ export async function createPurchasePayment(data: any) {
             }
         });
 
+        if (data.attachment) {
+            try {
+                const { saveAttachment, parseAttachmentString } = await import('@/lib/storage-vault');
+                const files = parseAttachmentString(data.attachment);
+                for (const f of files) {
+                    await saveAttachment({
+                        fileName: f.name,
+                        fileUrl: f.url,
+                        entityType: 'PURCHASE_PAYMENT',
+                        entityId: payment.id,
+                        uploadedById: uId
+                    });
+                }
+            } catch (vaultErr) {
+                console.error('Lỗi khi đồng bộ SystemAttachment cho PurchasePayment:', vaultErr);
+            }
+        }
+
         // 2. Reduce Supplier Debt
         await tx.supplier.update({
             where: { id: data.supplierId },
@@ -1993,6 +2029,19 @@ export async function uploadPurchasePaymentDocument(paymentId: string, url: stri
             }
         });
 
+        try {
+            const { saveAttachment } = await import('@/lib/storage-vault');
+            await saveAttachment({
+                fileName: name,
+                fileUrl: url,
+                entityType: 'PURCHASE_PAYMENT',
+                entityId: paymentId,
+                uploadedById: session.user.id
+            });
+        } catch (vaultErr) {
+            console.error('Lỗi khi đồng bộ SystemAttachment cho PurchasePayment:', vaultErr);
+        }
+
         revalidatePath(`/purchasing/payments/${paymentId}`);
         return updatedPayment;
     });
@@ -2045,6 +2094,19 @@ export async function uploadPurchaseBillDocument(billId: string, url: string, na
                 allocations: { include: { payment: true } }
             }
         });
+
+        try {
+            const { saveAttachment } = await import('@/lib/storage-vault');
+            await saveAttachment({
+                fileName: name,
+                fileUrl: url,
+                entityType: 'PURCHASE_BILL',
+                entityId: billId,
+                uploadedById: session.user.id
+            });
+        } catch (vaultErr) {
+            console.error('Lỗi khi đồng bộ SystemAttachment cho PurchaseBill:', vaultErr);
+        }
 
         revalidatePath(`/purchasing/bills/${billId}`);
         return updatedBill;

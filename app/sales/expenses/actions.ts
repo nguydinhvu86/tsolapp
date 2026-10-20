@@ -133,6 +133,24 @@ export async function createExpense(data: {
             }
         });
 
+        if (data.attachment) {
+            try {
+                const { saveAttachment, parseAttachmentString } = await import('@/lib/storage-vault');
+                const files = parseAttachmentString(data.attachment);
+                for (const f of files) {
+                    await saveAttachment({
+                        fileName: f.name,
+                        fileUrl: f.url,
+                        entityType: 'EXPENSE',
+                        entityId: expense.id,
+                        uploadedById: uId
+                    });
+                }
+            } catch (vaultErr) {
+                console.error('Lỗi khi đồng bộ SystemAttachment cho Expense:', vaultErr);
+            }
+        }
+
         // Auto-create CashTransaction in Cash Book (Phiếu Chi Kế Toán)
         try {
             const { createAutoPaymentFromExpense } = await import('@/app/accounting/actions');
@@ -191,6 +209,24 @@ export async function updateExpense(id: string, data: {
             }
         });
 
+        if (data.attachment && data.attachment !== oldExpense.attachment) {
+            try {
+                const { saveAttachment, parseAttachmentString } = await import('@/lib/storage-vault');
+                const files = parseAttachmentString(data.attachment);
+                for (const f of files) {
+                    await saveAttachment({
+                        fileName: f.name,
+                        fileUrl: f.url,
+                        entityType: 'EXPENSE',
+                        entityId: expense.id,
+                        uploadedById: oldExpense.creatorId
+                    });
+                }
+            } catch (vaultErr) {
+                console.error('Lỗi khi đồng bộ SystemAttachment cho Expense:', vaultErr);
+            }
+        }
+
         // Also update reason/amount in CashTransaction if exists
         try {
             const linkedCashTx = await prisma.cashTransaction.findFirst({
@@ -230,6 +266,22 @@ export async function updateExpense(id: string, data: {
             console.error('Lỗi khi cập nhật phiếu chi sổ quỹ:', accErr);
         }
 
+        // Log activity for update
+        const session = await getServerSession(authOptions);
+        if (session?.user?.id) {
+            try {
+                await prisma.expenseActivityLog.create({
+                    data: {
+                        expenseId: id,
+                        userId: session.user.id,
+                        action: 'CẬP_NHẬT_PHIẾU',
+                        details: `Đã cập nhật thông tin phiếu chi ${oldExpense.code}`
+                    }
+                });
+            } catch (_) {}
+        }
+
+        revalidatePath(`/sales/expenses/${id}`);
         revalidatePath('/sales/expenses');
         revalidatePath('/accounting/cash-book');
 
@@ -259,29 +311,222 @@ export async function getExpenseById(id: string) {
             where: { id, ...authFilter },
             include: {
                 category: true,
-                supplier: { select: { id: true, name: true, phone: true } },
-                customer: { select: { id: true, name: true, phone: true } },
+                supplier: { select: { id: true, name: true, phone: true, email: true, address: true } },
+                customer: { select: { id: true, name: true, phone: true, email: true, address: true } },
+                project: { select: { id: true, name: true, code: true } },
+                marketingCampaign: { select: { id: true, name: true } },
                 creator: {
                     select: {
                         id: true,
                         name: true,
                         email: true,
+                        avatar: true,
                     }
                 },
                 notes: {
                     include: {
-                        user: { select: { name: true } }
+                        user: { select: { id: true, name: true, avatar: true } }
+                    },
+                    orderBy: { createdAt: 'desc' }
+                },
+                activityLogs: {
+                    include: {
+                        user: { select: { id: true, name: true, avatar: true } }
                     },
                     orderBy: { createdAt: 'desc' }
                 },
                 tasks: true
             }
         });
-        return expense;
+
+        if (!expense) return null;
+
+        let linkedCashTransaction: any = null;
+        try {
+            linkedCashTransaction = await prisma.cashTransaction.findFirst({
+                where: {
+                    OR: [
+                        { reason: { contains: expense.code } },
+                        { notes: { contains: expense.code } }
+                    ]
+                },
+                include: {
+                    financeAccount: true
+                }
+            });
+        } catch (_) {}
+
+        return {
+            ...expense,
+            linkedCashTransaction
+        };
     } catch (error) {
         console.error('Lỗi khi lấy chi tiết Chi Phí:', error);
         throw new Error('Không thể tải dữ liệu Chi Phí');
     }
+}
+
+export async function uploadExpenseAttachment(expenseId: string, url: string, name: string) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    const expense = await prisma.expense.findUnique({ where: { id: expenseId } });
+    if (!expense) throw new Error("Không tìm thấy Phiếu Chi này");
+    await verifyActionOwnership('SALES_EXPENSES', 'EDIT', expense.creatorId);
+
+    const { parseAttachmentString, saveAttachment } = await import('@/lib/storage-vault');
+    const existingDocs = parseAttachmentString(expense.attachment);
+
+    existingDocs.push({
+        url,
+        name,
+        uploadedAt: new Date().toISOString()
+    });
+
+    const updatedExpense = await prisma.expense.update({
+        where: { id: expenseId },
+        data: {
+            attachment: JSON.stringify(existingDocs)
+        }
+    });
+
+    // Sync to SystemAttachment
+    try {
+        await saveAttachment({
+            fileName: name,
+            fileUrl: url,
+            entityType: 'EXPENSE',
+            entityId: expenseId,
+            uploadedById: session.user.id
+        });
+    } catch (e) {
+        console.error('Lỗi khi lưu vào SystemAttachment:', e);
+    }
+
+    // Add activity log
+    try {
+        await prisma.expenseActivityLog.create({
+            data: {
+                expenseId,
+                userId: session.user.id,
+                action: 'THÊM_TÀI_LIỆU',
+                details: `Đã tải lên tệp chứng từ: ${name}`
+            }
+        });
+    } catch (_) {}
+
+    revalidatePath(`/sales/expenses/${expenseId}`);
+    return updatedExpense;
+}
+
+export async function removeExpenseAttachment(expenseId: string, fileUrl: string) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    const expense = await prisma.expense.findUnique({ where: { id: expenseId } });
+    if (!expense) throw new Error("Không tìm thấy Phiếu Chi này");
+    await verifyActionOwnership('SALES_EXPENSES', 'EDIT', expense.creatorId);
+
+    const { parseAttachmentString, deleteAttachmentByUrl } = await import('@/lib/storage-vault');
+    const existingDocs = parseAttachmentString(expense.attachment);
+    const newDocs = existingDocs.filter(d => d.url !== fileUrl);
+
+    const updatedExpense = await prisma.expense.update({
+        where: { id: expenseId },
+        data: {
+            attachment: newDocs.length > 0 ? JSON.stringify(newDocs) : null
+        }
+    });
+
+    // Remove from SystemAttachment
+    try {
+        await deleteAttachmentByUrl('EXPENSE', expenseId, fileUrl);
+    } catch (e) {
+        console.error('Lỗi khi xóa khỏi SystemAttachment:', e);
+    }
+
+    // Add activity log
+    try {
+        await prisma.expenseActivityLog.create({
+            data: {
+                expenseId,
+                userId: session.user.id,
+                action: 'XÓA_TÀI_LIỆU',
+                details: `Đã xóa tệp chứng từ: ${fileUrl.split('/').pop()}`
+            }
+        });
+    } catch (_) {}
+
+    revalidatePath(`/sales/expenses/${expenseId}`);
+    return updatedExpense;
+}
+
+export async function cancelExpense(id: string) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    const expense = await prisma.expense.findUnique({ where: { id } });
+    if (!expense) throw new Error("Khoản chi phí không tồn tại");
+    await verifyActionOwnership('SALES_EXPENSES', 'EDIT', expense.creatorId);
+
+    const updated = await prisma.expense.update({
+        where: { id },
+        data: { status: 'CANCELLED' }
+    });
+
+    try {
+        await prisma.expenseActivityLog.create({
+            data: {
+                expenseId: id,
+                userId: session.user.id,
+                action: 'HỦY_PHIẾU',
+                details: `Đã hủy phiếu chi ${expense.code}`
+            }
+        });
+    } catch (_) {}
+
+    revalidatePath(`/sales/expenses/${id}`);
+    revalidatePath('/sales/expenses');
+    return updated;
+}
+
+export async function restoreExpense(id: string) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    const expense = await prisma.expense.findUnique({ where: { id } });
+    if (!expense) throw new Error("Khoản chi phí không tồn tại");
+    await verifyActionOwnership('SALES_EXPENSES', 'EDIT', expense.creatorId);
+
+    const updated = await prisma.expense.update({
+        where: { id },
+        data: { status: 'COMPLETED' }
+    });
+
+    try {
+        await prisma.expenseActivityLog.create({
+            data: {
+                expenseId: id,
+                userId: session.user.id,
+                action: 'KHÔI_PHỤC_PHIẾU',
+                details: `Đã khôi phục trạng thái hoàn thành cho phiếu chi ${expense.code}`
+            }
+        });
+    } catch (_) {}
+
+    revalidatePath(`/sales/expenses/${id}`);
+    revalidatePath('/sales/expenses');
+    return updated;
+}
+
+export async function getExpenseRelatedOptions() {
+    const [categories, customers, suppliers, projects] = await Promise.all([
+        prisma.expenseCategory.findMany({ orderBy: { name: 'asc' } }),
+        prisma.customer.findMany({ select: { id: true, name: true, phone: true }, orderBy: { name: 'asc' }, take: 200 }),
+        prisma.supplier.findMany({ select: { id: true, name: true, phone: true }, orderBy: { name: 'asc' }, take: 200 }),
+        prisma.project.findMany({ select: { id: true, name: true, code: true }, orderBy: { name: 'asc' }, take: 100 }),
+    ]);
+    return { categories, customers, suppliers, projects };
 }
 
 export async function addExpenseNote(expenseId: string, content: string, attachment?: string) {

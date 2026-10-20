@@ -34,7 +34,7 @@ function generateSignatureEmailHtml(params: {
     <div style="background-color: #f1f5f9; padding: 30px 15px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
         <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06); border: 1px solid #e2e8f0;">
             <!-- Header -->
-            <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 28px 24px; text-align: center; color: #ffffff;">
+            <div style="background-color: #0f172a; background: #0f172a; padding: 28px 24px; text-align: center; color: #ffffff; border-top-left-radius: 14px; border-top-right-radius: 14px; border-bottom: 3px solid #10b981;">
                 <div style="display: inline-block; padding: 6px 14px; background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 20px; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; color: #34d399; margin-bottom: 10px;">
                     ✍️ XÁC NHẬN CHỮ KÝ ĐIỆN TỬ
                 </div>

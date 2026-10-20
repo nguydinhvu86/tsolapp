@@ -121,3 +121,61 @@ export function autoLinkText(plainText: string): string {
     if (!plainText) return '';
     return autoLinkHtml(escapeHtml(plainText));
 }
+
+function readThreeDigitsVN(n: number, readZeroHundreds: boolean): string {
+    const digits = ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
+    const h = Math.floor(n / 100);
+    const t = Math.floor((n % 100) / 10);
+    const u = n % 10;
+    let res = '';
+    if (h > 0 || readZeroHundreds) {
+        res += digits[h] + ' trăm ';
+    }
+    if (t > 1) {
+        res += digits[t] + ' mươi ';
+        if (u === 1) res += 'mốt ';
+        else if (u === 4) res += 'tư ';
+        else if (u === 5) res += 'lăm ';
+        else if (u > 0) res += digits[u] + ' ';
+    } else if (t === 1) {
+        res += 'mười ';
+        if (u === 5) res += 'lăm ';
+        else if (u > 0) res += digits[u] + ' ';
+    } else if (t === 0 && (h > 0 || readZeroHundreds)) {
+        if (u > 0) res += 'lẻ ' + digits[u] + ' ';
+    } else if (u > 0) {
+        res += digits[u] + ' ';
+    }
+    return res.trim();
+}
+
+/**
+ * Đọc số tiền sang chữ tiếng Việt chuẩn kế toán
+ */
+export function numberToVietnameseWords(num: number | null | undefined): string {
+    if (num === null || num === undefined || isNaN(num)) return '';
+    if (num === 0) return 'Không đồng chẵn';
+    let n = Math.abs(Math.round(num));
+    const units = ['', 'nghìn', 'triệu', 'tỷ', 'nghìn tỷ', 'triệu tỷ'];
+    const groups: number[] = [];
+    while (n > 0) {
+        groups.push(n % 1000);
+        n = Math.floor(n / 1000);
+    }
+    const words: string[] = [];
+    for (let i = groups.length - 1; i >= 0; i--) {
+        const g = groups[i];
+        if (g > 0) {
+            const readZeroHundreds = (i < groups.length - 1);
+            let s = readThreeDigitsVN(g, readZeroHundreds);
+            if (units[i]) s += ' ' + units[i];
+            words.push(s);
+        }
+    }
+    let res = words.join(' ').replace(/\s+/g, ' ').trim();
+    if (res) {
+        res = res.charAt(0).toUpperCase() + res.slice(1) + ' đồng chẵn';
+    }
+    return res;
+}
+

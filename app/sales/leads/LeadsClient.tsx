@@ -7,10 +7,10 @@ import {
     Plus, Search, LayoutGrid, List, Calendar, Phone, FileText, CheckCircle2, 
     Trash2, ChevronUp, ChevronDown, Edit2, Eye, X, ArrowUpDown, Target, 
     User, DollarSign, Clock, Sparkles, AlertCircle, Filter, ArrowRight,
-    Building2, Mail, Users
+    Building2, Mail, Users, RefreshCw
 } from 'lucide-react';
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
-import { updateLeadStatus } from './actions';
+import { updateLeadStatus, recalculateAllLeadScoresAction } from './actions';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { useTranslation } from '@/app/i18n/LanguageContext';
 import { ClickToCallButton } from '@/app/components/ClickToCallButton';
@@ -104,6 +104,20 @@ export function LeadsClient({
 
     const [localLeads, setLocalLeads] = useState(leads);
     const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
+    const [isRecalculating, setIsRecalculating] = useState(false);
+
+    const handleRecalculateScores = async () => {
+        setIsRecalculating(true);
+        try {
+            const res = await recalculateAllLeadScoresAction();
+            alert(`Đã tính toán và cập nhật lại điểm tiềm năng cho ${res.updated}/${res.total} cơ hội!`);
+            router.refresh();
+        } catch (err: any) {
+            alert('Lỗi tính điểm: ' + (err.message || err));
+        } finally {
+            setIsRecalculating(false);
+        }
+    };
 
     // Sync localLeads if leads prop changes
     React.useEffect(() => {
@@ -153,6 +167,8 @@ export function LeadsClient({
             if (sortBy === 'amount_asc') return (a.estimatedValue || 0) - (b.estimatedValue || 0);
             if (sortBy === 'code_asc') return (a.code || '').localeCompare(b.code || '');
             if (sortBy === 'code_desc') return (b.code || '').localeCompare(a.code || '');
+            if (sortBy === 'score_desc') return (b.score || 0) - (a.score || 0);
+            if (sortBy === 'score_asc') return (a.score || 0) - (b.score || 0);
             return 0;
         });
 
@@ -560,8 +576,20 @@ export function LeadsClient({
                         )}
                     </div>
 
-                    <div className="text-xs font-medium text-slate-500 self-end lg:self-center shrink-0">
-                        Hiển thị <span className="font-bold text-slate-900">{filteredLeads.length}</span> cơ hội
+                    <div className="flex items-center gap-3 self-end lg:self-center shrink-0 flex-wrap">
+                        <button
+                            type="button"
+                            onClick={handleRecalculateScores}
+                            disabled={isRecalculating}
+                            className="h-[34px] px-3 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer disabled:opacity-50"
+                            title="Tính toán và cập nhật lại điểm tiềm năng (0 - 100đ) theo các dữ liệu tương tác thực tế"
+                        >
+                            <RefreshCw size={13} className={isRecalculating ? "animate-spin text-emerald-600" : "text-emerald-600"} />
+                            <span>{isRecalculating ? "Đang chấm điểm..." : "Cập nhật điểm"}</span>
+                        </button>
+                        <div className="text-xs font-medium text-slate-500">
+                            Hiển thị <span className="font-bold text-slate-900">{filteredLeads.length}</span> cơ hội
+                        </div>
                     </div>
                 </div>
 
@@ -598,8 +626,11 @@ export function LeadsClient({
                                             {sortBy === 'amount_asc' ? <ChevronUp size={12} className="text-emerald-600" /> : sortBy === 'amount_desc' ? <ChevronDown size={12} className="text-emerald-600" /> : <ArrowUpDown size={11} className="opacity-30" />}
                                         </div>
                                     </th>
-                                    <th className="py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider text-center w-[130px]">
-                                        ĐIỂM TIỀM NĂNG
+                                    <th onClick={() => handleSort('score')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider text-center w-[135px] hover:bg-slate-200/50 transition-colors" title="Bấm để sắp xếp theo điểm tiềm năng">
+                                        <div className="flex items-center justify-center gap-1.5">
+                                            ĐIỂM TIỀM NĂNG
+                                            {sortBy === 'score_asc' ? <ChevronUp size={12} className="text-emerald-600" /> : sortBy === 'score_desc' ? <ChevronDown size={12} className="text-emerald-600" /> : <ArrowUpDown size={11} className="opacity-30" />}
+                                        </div>
                                     </th>
                                     <th className="py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider text-center w-[140px]">
                                         {t('leads.status')}

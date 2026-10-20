@@ -53,6 +53,67 @@ const AMOUNT_PRESETS = [
     { label: '2 Tỷ', value: 2000000000 }
 ];
 
+
+function parseLeadNotes(notesRaw?: string | null) {
+    if (!notesRaw) {
+        return {
+            cleanNotes: '',
+            services: [] as string[],
+            priority: 'MEDIUM' as 'HIGH' | 'MEDIUM' | 'LOW',
+            requirements: '',
+            nextAction: '',
+            position: '',
+            address: '',
+            taxCode: ''
+        };
+    }
+
+    const parts = notesRaw.split(/--- THÔNG TIN BỔ SUNG ---/i);
+    const cleanNotes = parts[0]?.trim() || '';
+    const extra = parts[1] || '';
+
+    let services: string[] = [];
+    const servMatch = notesRaw.match(/📌 Dịch vụ quan tâm:\s*([^\n\r]+)/);
+    if (servMatch && servMatch[1]) {
+        services = servMatch[1].split(',').map(s => s.trim()).filter(Boolean);
+    }
+
+    let priority: 'HIGH' | 'MEDIUM' | 'LOW' = 'MEDIUM';
+    if (notesRaw.includes('🔥 Rất tiềm năng')) priority = 'HIGH';
+    else if (notesRaw.includes('❄️ Ít tiềm năng')) priority = 'LOW';
+
+    let requirements = '';
+    const reqMatch = extra.match(/📝 Nhu cầu chi tiết:\s*([\s\S]*?)(?=\n[📌⭐👤📍🏢🎯]|$)/);
+    if (reqMatch && reqMatch[1]) requirements = reqMatch[1].trim();
+
+    let nextAction = '';
+    const actMatch = extra.match(/🎯 Hành động tiếp theo:\s*([^\n\r]+)/);
+    if (actMatch && actMatch[1]) nextAction = actMatch[1].trim();
+
+    let position = '';
+    const posMatch = extra.match(/👤 Chức vụ người liên hệ:\s*([^\n\r]+)/);
+    if (posMatch && posMatch[1]) position = posMatch[1].trim();
+
+    let address = '';
+    const addrMatch = extra.match(/📍 Địa chỉ:\s*([^\n\r]+)/);
+    if (addrMatch && addrMatch[1]) address = addrMatch[1].trim();
+
+    let taxCode = '';
+    const mstMatch = extra.match(/🏢 MST:\s*([^\n\r]+)/);
+    if (mstMatch && mstMatch[1]) taxCode = mstMatch[1].trim();
+
+    return {
+        cleanNotes,
+        services,
+        priority,
+        requirements,
+        nextAction,
+        position,
+        address,
+        taxCode
+    };
+}
+
 export function LeadFormClient({ 
     customers, 
     users, 
@@ -71,28 +132,31 @@ export function LeadFormClient({
 
     const [isExistingCustomer, setIsExistingCustomer] = useState(isEdit ? !!initialData.customerId : false);
     
-    // Parse extra info from notes if exists
+    const parsedInitial = useMemo(() => parseLeadNotes(initialData?.notes), [initialData?.notes]);
+
     const [formData, setFormData] = useState({
         name: initialData?.name || '',
-        company: initialData?.company || '',
-        contactName: initialData?.contactName || '',
-        email: initialData?.email || '',
-        phone: initialData?.phone || '',
-        position: '',
-        address: '',
-        taxCode: '',
+        company: initialData?.company || initialData?.customer?.name || '',
+        contactName: initialData?.contactName || initialData?.customer?.contactName || '',
+        email: initialData?.email || initialData?.customer?.email || '',
+        phone: initialData?.phone || initialData?.customer?.phone || '',
+        position: parsedInitial.position || '',
+        address: parsedInitial.address || '',
+        taxCode: parsedInitial.taxCode || '',
         customerId: initialData?.customerId || '',
         source: initialData?.source || '',
         status: initialData?.status || 'NEW',
         estimatedValue: initialData?.estimatedValue || 0,
         expectedCloseDate: initialData?.expectedCloseDate ? new Date(initialData.expectedCloseDate).toISOString().split('T')[0] : '',
-        priority: 'MEDIUM', // HIGH, MEDIUM, LOW
-        selectedServices: [] as string[],
-        requirements: '',
-        nextAction: '',
-        notes: initialData?.notes || '',
+        priority: (parsedInitial.priority || 'MEDIUM') as any,
+        selectedServices: parsedInitial.services || [] as string[],
+        requirements: parsedInitial.requirements || '',
+        nextAction: parsedInitial.nextAction || '',
+        notes: parsedInitial.cleanNotes || initialData?.notes || '',
         assignedToId: initialData?.assignedToId || currentUserId || ''
     });
+
+    const [customServiceInput, setCustomServiceInput] = useState('');
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -131,6 +195,25 @@ export function LeadFormClient({
                 : [...prev.selectedServices, service];
             return { ...prev, selectedServices: updated };
         });
+    };
+
+    const handleAddCustomService = () => {
+        const val = customServiceInput.trim();
+        if (!val) return;
+        if (!formData.selectedServices.includes(val)) {
+            setFormData(prev => ({
+                ...prev,
+                selectedServices: [...prev.selectedServices, val]
+            }));
+        }
+        setCustomServiceInput('');
+    };
+
+    const handleRemoveCustomService = (service: string) => {
+        setFormData(prev => ({
+            ...prev,
+            selectedServices: prev.selectedServices.filter(s => s !== service)
+        }));
     };
 
     // Combine notes and extra requirements into lead notes field
@@ -411,10 +494,17 @@ export function LeadFormClient({
                             </div>
 
                             {/* Services / Categories of Interest */}
-                            <div className="space-y-1.5 pt-2 border-t border-slate-100">
-                                <label className="block text-xs font-bold text-slate-700">
-                                    Hạng mục / Dịch vụ khách hàng quan tâm
-                                </label>
+                            <div className="space-y-2 pt-2 border-t border-slate-100">
+                                <div className="flex items-center justify-between">
+                                    <label className="block text-xs font-bold text-slate-700">
+                                        Hạng mục / Dịch vụ khách hàng quan tâm
+                                    </label>
+                                    <span className="text-[10px] text-slate-400 font-normal">
+                                        Chọn danh mục gợi ý hoặc tự nhập bên dưới
+                                    </span>
+                                </div>
+
+                                {/* Popular Preset Services */}
                                 <div className="flex flex-wrap gap-2 pt-1">
                                     {POPULAR_SERVICES.map(service => {
                                         const isChecked = formData.selectedServices.includes(service);
@@ -425,7 +515,7 @@ export function LeadFormClient({
                                                 onClick={() => handleToggleService(service)}
                                                 className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all flex items-center gap-1.5 cursor-pointer ${
                                                     isChecked 
-                                                        ? 'bg-emerald-50 border-emerald-400 text-emerald-800 font-bold shadow-2xs' 
+                                                        ? 'bg-emerald-50 border-emerald-400 text-emerald-800 font-bold shadow-2xs ring-1 ring-emerald-500/20' 
                                                         : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
                                                 }`}
                                             >
@@ -434,6 +524,53 @@ export function LeadFormClient({
                                             </button>
                                         );
                                     })}
+
+                                    {/* User-defined Custom Services */}
+                                    {formData.selectedServices.filter(s => !POPULAR_SERVICES.includes(s)).map(customServ => (
+                                        <span
+                                            key={customServ}
+                                            className="px-3 py-1.5 rounded-xl text-xs font-bold bg-teal-50 border border-teal-400 text-teal-800 shadow-2xs flex items-center gap-1.5"
+                                        >
+                                            <Check size={12} className="text-teal-600 stroke-[3]" />
+                                            <span>{customServ}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveCustomService(customServ)}
+                                                className="text-teal-600 hover:text-rose-600 ml-1 p-0.5 rounded transition-colors cursor-pointer"
+                                                title="Xóa hạng mục tự thêm này"
+                                            >
+                                                <X size={12} />
+                                            </button>
+                                        </span>
+                                    ))}
+                                </div>
+
+                                {/* Custom Service Input */}
+                                <div className="flex items-center gap-2 pt-1.5">
+                                    <div className="relative flex-1 max-w-md">
+                                        <input
+                                            type="text"
+                                            value={customServiceInput}
+                                            onChange={(e) => setCustomServiceInput(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    handleAddCustomService();
+                                                }
+                                            }}
+                                            placeholder="Tự thêm hạng mục quan tâm khác (gõ rồi ấn Thêm)..."
+                                            className="w-full h-8 px-3 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all font-medium"
+                                        />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={handleAddCustomService}
+                                        disabled={!customServiceInput.trim()}
+                                        className="h-8 px-3 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 rounded-lg text-xs font-bold flex items-center gap-1 transition-all shadow-2xs cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                                    >
+                                        <Plus size={13} className="text-emerald-600" />
+                                        <span>Thêm hạng mục</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>

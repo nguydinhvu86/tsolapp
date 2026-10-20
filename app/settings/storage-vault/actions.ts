@@ -1,6 +1,26 @@
 'use server'
 
 import { prisma } from '@/lib/prisma';
+import { syncAllVaultAttachments } from '@/lib/storage-vault';
+
+export type SyncVaultResult = {
+    success: boolean;
+    inserted?: number;
+    updatedSize?: number;
+    total?: number;
+    totalSize?: number;
+    error?: string;
+};
+
+export async function syncVaultDataAction(): Promise<SyncVaultResult> {
+    try {
+        const result = await syncAllVaultAttachments();
+        return { success: true, ...result };
+    } catch (err: any) {
+        console.error('Error in syncVaultDataAction:', err);
+        return { success: false, error: err.message };
+    }
+}
 
 export interface VaultFilterParams {
     tab?: 'vault' | 'audit';

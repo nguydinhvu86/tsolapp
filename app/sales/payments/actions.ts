@@ -110,6 +110,24 @@ export async function createSalesPayment(data: any) {
             }
         });
 
+        if (data.attachment) {
+            try {
+                const { saveAttachment, parseAttachmentString } = await import('@/lib/storage-vault');
+                const files = parseAttachmentString(data.attachment);
+                for (const f of files) {
+                    await saveAttachment({
+                        fileName: f.name,
+                        fileUrl: f.url,
+                        entityType: 'SALES_PAYMENT',
+                        entityId: payment.id,
+                        uploadedById: uId
+                    });
+                }
+            } catch (vaultErr) {
+                console.error('Lỗi khi đồng bộ SystemAttachment cho SalesPayment:', vaultErr);
+            }
+        }
+
         // 2. Reduce Customer Debt
         await tx.customer.update({
             where: { id: data.customerId },
@@ -440,6 +458,19 @@ export async function uploadSalesPaymentDocument(paymentId: string, url: string,
                 }
             }
         });
+
+        try {
+            const { saveAttachment } = await import('@/lib/storage-vault');
+            await saveAttachment({
+                fileName: name,
+                fileUrl: url,
+                entityType: 'SALES_PAYMENT',
+                entityId: paymentId,
+                uploadedById: session.user.id
+            });
+        } catch (vaultErr) {
+            console.error('Lỗi khi đồng bộ SystemAttachment cho SalesPayment:', vaultErr);
+        }
 
         revalidatePath(`/sales/payments/${paymentId}`);
         return updatedPayment;

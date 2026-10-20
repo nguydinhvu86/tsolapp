@@ -31,7 +31,7 @@ import {
     ArrowUpRight
 } from 'lucide-react';
 import Link from 'next/link';
-import { fetchVaultAttachments, fetchVaultAuditLogs } from './actions';
+import { fetchVaultAttachments, fetchVaultAuditLogs, syncVaultDataAction } from './actions';
 import { DocumentPreviewModal } from '@/app/components/ui/DocumentPreviewModal';
 
 const ENTITY_OPTIONS = [
@@ -102,6 +102,7 @@ export default function StorageVaultClient() {
     const [auditAction, setAuditAction] = useState('ALL');
 
     const [loading, setLoading] = useState(true);
+    const [isSyncing, setIsSyncing] = useState(false);
 
     // Preview Modal State
     const [previewModal, setPreviewModal] = useState<{
@@ -153,6 +154,24 @@ export default function StorageVaultClient() {
             setAuditPage(res.page || 1);
         }
         setLoading(false);
+    };
+
+    // Manual on-demand DB sync
+    const handleSyncVault = async () => {
+        setIsSyncing(true);
+        try {
+            const res = await syncVaultDataAction();
+            if (res.success) {
+                alert(`Đồng bộ thành công!\n- Tệp mới thêm: ${res.inserted ?? 0}\n- Cập nhật dung lượng: ${res.updatedSize ?? 0}\n- Tổng tệp trong kho: ${res.total ?? 0}`);
+                await loadVaultData();
+            } else {
+                alert(`Lỗi khi đồng bộ: ${res.error}`);
+            }
+        } catch (err: any) {
+            alert(`Đã xảy ra lỗi: ${err.message}`);
+        } finally {
+            setIsSyncing(false);
+        }
     };
 
     // Initial load & Tab Switch
@@ -395,8 +414,18 @@ export default function StorageVaultClient() {
                     </div>
 
                     <button
+                        onClick={handleSyncVault}
+                        disabled={isSyncing || loading}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 dark:hover:bg-emerald-900/50 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
+                        title="Quét toàn bộ CSDL và đồng bộ tất cả tệp đính kèm mới vào kho"
+                    >
+                        <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                        <span>{isSyncing ? 'Đang đồng bộ...' : 'Đồng bộ kho CSDL'}</span>
+                    </button>
+
+                    <button
                         onClick={() => activeTab === 'vault' ? loadVaultData() : loadAuditData()}
-                        disabled={loading}
+                        disabled={loading || isSyncing}
                         className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
                         title="Tải lại dữ liệu"
                     >

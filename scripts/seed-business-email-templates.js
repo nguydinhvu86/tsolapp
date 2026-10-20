@@ -19,9 +19,9 @@ const templates = [
         module: 'ESTIMATE',
         subject: '[TRỊNH GIA] Báo Giá & Đề Xuất Giải Pháp - {{code}} - Kính gửi {{customerName}}',
         body: `<div style="max-width: 620px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-  <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 24px 30px; border-bottom: 3px solid #2563eb;">
-    <h2 style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 800; letter-spacing: -0.02em;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
-    <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 12px;">Hệ Thống Quản Trị Doanh Nghiệp ERP - ${COMPANY.appUrl}</p>
+  <div style="background-color: #0f172a; background: #0f172a; padding: 24px 30px; border-bottom: 3px solid #2563eb; border-top-left-radius: 14px; border-top-right-radius: 14px;">
+    <h2 style="margin: 0; color: #ffffff !important; font-size: 18px; font-weight: 800; letter-spacing: -0.02em;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
+    <p style="margin: 4px 0 0 0; color: #94a3b8 !important; font-size: 12px; font-weight: 500;">Hệ Thống Quản Trị Doanh Nghiệp ERP - ${COMPANY.appUrl}</p>
   </div>
 
   <div style="padding: 28px 30px 20px 30px; color: #334155; line-height: 1.6; font-size: 14px;">
@@ -94,9 +94,9 @@ const templates = [
         module: 'ESTIMATE',
         subject: '[TRỊNH GIA] Đề Xuất Báo Giá Đặc Biệt Dự Án - {{code}} - {{customerName}}',
         body: `<div style="max-width: 620px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-  <div style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); padding: 24px 30px; border-bottom: 3px solid #6366f1;">
-    <h2 style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 800; letter-spacing: -0.02em;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
-    <p style="margin: 4px 0 0 0; color: #c7d2fe; font-size: 12px;">Đề Xuất Thương Mại & Chính Sách Đối Tác Chiến Lược</p>
+  <div style="background-color: #1e1b4b; background: #1e1b4b; padding: 24px 30px; border-bottom: 3px solid #6366f1; border-top-left-radius: 14px; border-top-right-radius: 14px;">
+    <h2 style="margin: 0; color: #ffffff !important; font-size: 18px; font-weight: 800; letter-spacing: -0.02em;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
+    <p style="margin: 4px 0 0 0; color: #c7d2fe !important; font-size: 12px; font-weight: 500;">Đề Xuất Thương Mại & Chính Sách Đối Tác Chiến Lược</p>
   </div>
 
   <div style="padding: 28px 30px 20px 30px; color: #334155; line-height: 1.6; font-size: 14px;">
@@ -152,9 +152,9 @@ const templates = [
         module: 'ORDER',
         subject: '[TRỊNH GIA] Xác Nhận Đơn Đặt Hàng Thành Công - Đơn số {{code}}',
         body: `<div style="max-width: 620px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-  <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 24px 30px; border-bottom: 3px solid #4f46e5;">
-    <h2 style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 800;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
-    <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 12px;">Thông Báo Xác Nhận Đơn Hàng Thành Công</p>
+  <div style="background-color: #0f172a; background: #0f172a; padding: 24px 30px; border-bottom: 3px solid #4f46e5; border-top-left-radius: 14px; border-top-right-radius: 14px;">
+    <h2 style="margin: 0; color: #ffffff !important; font-size: 18px; font-weight: 800;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
+    <p style="margin: 4px 0 0 0; color: #94a3b8 !important; font-size: 12px; font-weight: 500;">Thông Báo Xác Nhận Đơn Hàng Thành Công</p>
   </div>
 
   <div style="padding: 28px 30px 20px 30px; color: #334155; line-height: 1.6; font-size: 14px;">
@@ -214,9 +214,9 @@ const templates = [
         module: 'INVOICE',
         subject: '[TRỊNH GIA] Thông Báo Phát Hành Hóa Đơn {{invoiceCode}} - {{customerName}}',
         body: `<div style="max-width: 620px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-  <div style="background: linear-gradient(135deg, #064e3b 0%, #065f46 100%); padding: 24px 30px; border-bottom: 3px solid #10b981;">
-    <h2 style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 800;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
-    <p style="margin: 4px 0 0 0; color: #a7f3d0; font-size: 12px;">Thông Báo Phát Hành Hóa Đơn Tài Chính</p>
+  <div style="background-color: #064e3b; background: #064e3b; padding: 24px 30px; border-bottom: 3px solid #10b981; border-top-left-radius: 14px; border-top-right-radius: 14px;">
+    <h2 style="margin: 0; color: #ffffff !important; font-size: 18px; font-weight: 800;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
+    <p style="margin: 4px 0 0 0; color: #a7f3d0 !important; font-size: 12px; font-weight: 500;">Thông Báo Phát Hành Hóa Đơn Tài Chính</p>
   </div>
 
   <div style="padding: 28px 30px 20px 30px; color: #334155; line-height: 1.6; font-size: 14px;">
@@ -285,9 +285,9 @@ const templates = [
         module: 'INVOICE',
         subject: '[TRỊNH GIA] Nhắc Nhở Hạn Thanh Toán Hóa Đơn {{invoiceCode}} - Hạn: {{dueDate}}',
         body: `<div style="max-width: 620px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-  <div style="background: linear-gradient(135deg, #78350f 0%, #92400e 100%); padding: 24px 30px; border-bottom: 3px solid #f59e0b;">
-    <h2 style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 800;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
-    <p style="margin: 4px 0 0 0; color: #fde68a; font-size: 12px;">Thông Báo Nhắc Hạn Thanh Toán</p>
+  <div style="background-color: #78350f; background: #78350f; padding: 24px 30px; border-bottom: 3px solid #f59e0b; border-top-left-radius: 14px; border-top-right-radius: 14px;">
+    <h2 style="margin: 0; color: #ffffff !important; font-size: 18px; font-weight: 800;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
+    <p style="margin: 4px 0 0 0; color: #fde68a !important; font-size: 12px; font-weight: 500;">Thông Báo Nhắc Hạn Thanh Toán</p>
   </div>
 
   <div style="padding: 28px 30px 20px 30px; color: #334155; line-height: 1.6; font-size: 14px;">
@@ -343,9 +343,9 @@ const templates = [
         module: 'PAYMENT_CONFIRMATION',
         subject: '[TRỊNH GIA] Biên Nhận Đã Nhận Thanh Toán - Phiếu thu {{paymentCode}}',
         body: `<div style="max-width: 620px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-  <div style="background: linear-gradient(135deg, #064e3b 0%, #047857 100%); padding: 24px 30px; border-bottom: 3px solid #34d399;">
-    <h2 style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 800;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
-    <p style="margin: 4px 0 0 0; color: #a7f3d0; font-size: 12px;">Biên Nhận Xác Nhận Thanh Toán Thành Công</p>
+  <div style="background-color: #064e3b; background: #064e3b; padding: 24px 30px; border-bottom: 3px solid #34d399; border-top-left-radius: 14px; border-top-right-radius: 14px;">
+    <h2 style="margin: 0; color: #ffffff !important; font-size: 18px; font-weight: 800;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
+    <p style="margin: 4px 0 0 0; color: #a7f3d0 !important; font-size: 12px; font-weight: 500;">Biên Nhận Xác Nhận Thanh Toán Thành Công</p>
   </div>
 
   <div style="padding: 28px 30px 20px 30px; color: #334155; line-height: 1.6; font-size: 14px;">
@@ -405,9 +405,9 @@ const templates = [
         module: 'DEBT_CONFIRMATION',
         subject: '[TRỊNH GIA] Thư Đối Chiếu & Đề Nghị Xác Nhận Công Nợ - Quý {{customerName}}',
         body: `<div style="max-width: 620px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-  <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 24px 30px; border-bottom: 3px solid #f59e0b;">
-    <h2 style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 800;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
-    <p style="margin: 4px 0 0 0; color: #cbd5e1; font-size: 12px;">Thư Đối Chiếu & Xác Nhận Số Dư Công Nợ</p>
+  <div style="background-color: #0f172a; background: #0f172a; padding: 24px 30px; border-bottom: 3px solid #f59e0b; border-top-left-radius: 14px; border-top-right-radius: 14px;">
+    <h2 style="margin: 0; color: #ffffff !important; font-size: 18px; font-weight: 800;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
+    <p style="margin: 4px 0 0 0; color: #cbd5e1 !important; font-size: 12px; font-weight: 500;">Thư Đối Chiếu & Xác Nhận Số Dư Công Nợ</p>
   </div>
 
   <div style="padding: 28px 30px 20px 30px; color: #334155; line-height: 1.6; font-size: 14px;">
@@ -457,9 +457,9 @@ const templates = [
         module: 'PURCHASE_ORDER',
         subject: '[TRỊNH GIA PO] Đơn Đặt Mua Hàng Số {{orderCode}} - Kính gửi {{supplierName}}',
         body: `<div style="max-width: 620px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-  <div style="background: linear-gradient(135deg, #831843 0%, #9d174d 100%); padding: 24px 30px; border-bottom: 3px solid #ec4899;">
-    <h2 style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 800;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
-    <p style="margin: 4px 0 0 0; color: #fbcfe8; font-size: 12px;">Đơn Đặt Hàng Mua Sắm Thiết Bị & Vật Tư (PO)</p>
+  <div style="background-color: #831843; background: #831843; padding: 24px 30px; border-bottom: 3px solid #ec4899; border-top-left-radius: 14px; border-top-right-radius: 14px;">
+    <h2 style="margin: 0; color: #ffffff !important; font-size: 18px; font-weight: 800;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
+    <p style="margin: 4px 0 0 0; color: #fbcfe8 !important; font-size: 12px; font-weight: 500;">Đơn Đặt Hàng Mua Sắm Thiết Bị & Vật Tư (PO)</p>
   </div>
 
   <div style="padding: 28px 30px 20px 30px; color: #334155; line-height: 1.6; font-size: 14px;">
@@ -515,9 +515,9 @@ const templates = [
         module: 'LEAD',
         subject: '[TRỊNH GIA] Cảm Ơn Quý Khách Đã Quan Tâm Đến Giải Pháp Của Trịnh Gia',
         body: `<div style="max-width: 620px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-  <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 24px 30px; border-bottom: 3px solid #f97316;">
-    <h2 style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 800;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
-    <p style="margin: 4px 0 0 0; color: #fdba74; font-size: 12px;">Thư Chào Mừng & Tiếp Nhận Yêu Cầu Tư Vấn</p>
+  <div style="background-color: #0f172a; background: #0f172a; padding: 24px 30px; border-bottom: 3px solid #f97316; border-top-left-radius: 14px; border-top-right-radius: 14px;">
+    <h2 style="margin: 0; color: #ffffff !important; font-size: 18px; font-weight: 800;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
+    <p style="margin: 4px 0 0 0; color: #fdba74 !important; font-size: 12px; font-weight: 500;">Thư Chào Mừng & Tiếp Nhận Yêu Cầu Tư Vấn</p>
   </div>
 
   <div style="padding: 28px 30px 20px 30px; color: #334155; line-height: 1.6; font-size: 14px;">
@@ -558,9 +558,9 @@ const templates = [
         module: 'TASK',
         subject: '[TRỊNH GIA] Bạn Được Phân Công Nhiệm Vụ Mới: {{taskTitle}}',
         body: `<div style="max-width: 620px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-  <div style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); padding: 24px 30px; border-bottom: 3px solid #6366f1;">
-    <h2 style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 800; letter-spacing: -0.02em;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
-    <p style="margin: 4px 0 0 0; color: #c7d2fe; font-size: 12px;">Hệ Thống Quản Trị Phân Công & Theo Dõi Tiến Độ</p>
+  <div style="background-color: #1e1b4b; background: #1e1b4b; padding: 24px 30px; border-bottom: 3px solid #6366f1; border-top-left-radius: 14px; border-top-right-radius: 14px;">
+    <h2 style="margin: 0; color: #ffffff !important; font-size: 18px; font-weight: 800; letter-spacing: -0.02em;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
+    <p style="margin: 4px 0 0 0; color: #c7d2fe !important; font-size: 12px; font-weight: 500;">Hệ Thống Quản Trị Phân Công & Theo Dõi Tiến Độ</p>
   </div>
 
   <div style="padding: 28px 30px 20px 30px; color: #334155; line-height: 1.6; font-size: 14px;">
@@ -618,9 +618,9 @@ const templates = [
         module: 'TASK',
         subject: '[TRỊNH GIA] Cập Nhật Trạng Thái: {{taskTitle}} - [{{status}}]',
         body: `<div style="max-width: 620px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-  <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 24px 30px; border-bottom: 3px solid #2563eb;">
-    <h2 style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 800; letter-spacing: -0.02em;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
-    <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 12px;">Thông Báo Cập Nhật Trạng Thái Công Việc</p>
+  <div style="background-color: #0f172a; background: #0f172a; padding: 24px 30px; border-bottom: 3px solid #2563eb; border-top-left-radius: 14px; border-top-right-radius: 14px;">
+    <h2 style="margin: 0; color: #ffffff !important; font-size: 18px; font-weight: 800; letter-spacing: -0.02em;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
+    <p style="margin: 4px 0 0 0; color: #94a3b8 !important; font-size: 12px; font-weight: 500;">Thông Báo Cập Nhật Trạng Thái Công Việc</p>
   </div>
 
   <div style="padding: 28px 30px 20px 30px; color: #334155; line-height: 1.6; font-size: 14px;">
@@ -678,9 +678,9 @@ const templates = [
         module: 'CUSTOMER',
         subject: '[TRỊNH GIA] Thư Tri Ân & Cảm Ơn Sự Đồng Hành Của Quý Đối Tác {{customerName}}',
         body: `<div style="max-width: 620px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-  <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 26px 30px; border-bottom: 3px solid #0284c7;">
-    <h2 style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 800; letter-spacing: -0.02em;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
-    <p style="margin: 4px 0 0 0; color: #7dd3fc; font-size: 12px;">Thư Cảm Ơn & Tri Ân Quý Đối Tác</p>
+  <div style="background-color: #0f172a; background: #0f172a; padding: 26px 30px; border-bottom: 3px solid #0284c7; border-top-left-radius: 14px; border-top-right-radius: 14px;">
+    <h2 style="margin: 0; color: #ffffff !important; font-size: 18px; font-weight: 800; letter-spacing: -0.02em;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
+    <p style="margin: 4px 0 0 0; color: #7dd3fc !important; font-size: 12px; font-weight: 500;">Thư Cảm Ơn & Tri Ân Quý Đối Tác</p>
   </div>
 
   <div style="padding: 28px 30px 20px 30px; color: #334155; line-height: 1.65; font-size: 14px;">
@@ -721,9 +721,9 @@ const templates = [
         module: 'GENERAL',
         subject: '[TRỊNH GIA] Thông Báo Lịch Làm Việc / Nghỉ Lễ & Kênh Hỗ Trợ 24/7',
         body: `<div style="max-width: 620px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-  <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 24px 30px; border-bottom: 3px solid #64748b;">
-    <h2 style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 800; letter-spacing: -0.02em;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
-    <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 12px;">Thông Báo Lịch Làm Việc & Kênh Hỗ Trợ Dịch Vụ</p>
+  <div style="background-color: #0f172a; background: #0f172a; padding: 24px 30px; border-bottom: 3px solid #64748b; border-top-left-radius: 14px; border-top-right-radius: 14px;">
+    <h2 style="margin: 0; color: #ffffff !important; font-size: 18px; font-weight: 800; letter-spacing: -0.02em;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
+    <p style="margin: 4px 0 0 0; color: #94a3b8 !important; font-size: 12px; font-weight: 500;">Thông Báo Lịch Làm Việc & Kênh Hỗ Trợ Dịch Vụ</p>
   </div>
 
   <div style="padding: 28px 30px 20px 30px; color: #334155; line-height: 1.6; font-size: 14px;">

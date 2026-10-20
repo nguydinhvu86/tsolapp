@@ -1,5 +1,7 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
+
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "@/lib/authOptions";
@@ -231,6 +233,14 @@ export async function createLead(data: {
             return newLead;
         });
 
+        // Tự động tính điểm tiềm năng cho Lead mới
+        try {
+            const { calculateLeadScore } = await import('@/lib/omnichannel-crm');
+            await calculateLeadScore(result.id);
+        } catch (e) {
+            console.error('Lỗi tính điểm lead sau khi tạo:', e);
+        }
+
         // Send push notification to assigned user
         if (result.assignedToId && result.assignedToId !== uId) {
             sendWebPushNotification(result.assignedToId, {
@@ -297,6 +307,11 @@ export async function updateLead(id: string, data: any) {
         });
 
         // Log
+        try {
+            const { calculateLeadScore } = await import('@/lib/omnichannel-crm');
+            await calculateLeadScore(id);
+        } catch (e) {}
+
         await prisma.leadActivityLog.create({
             data: {
                 leadId: id,
@@ -407,9 +422,9 @@ export async function updateLeadStatus(id: string, status: string) {
                     let subject = `[TRỊNH GIA] Cập nhật trạng thái Cơ hội bán hàng: ${oldLead.name} - [${statusText}]`;
                     let htmlBody = `
                         <div style="max-width: 620px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-                          <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 24px 30px; border-bottom: 3px solid #3b82f6;">
-                            <h2 style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 800; letter-spacing: -0.02em;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
-                            <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 12px;">Hệ Thống Quản Trị Khách Hàng & Cơ Hội Bán Hàng</p>
+                          <div style="background-color: #0f172a; background: #0f172a; padding: 24px 30px; border-bottom: 3px solid #3b82f6; border-top-left-radius: 14px; border-top-right-radius: 14px;">
+                            <h2 style="margin: 0; color: #ffffff !important; font-size: 18px; font-weight: 800; letter-spacing: -0.02em;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
+                            <p style="margin: 4px 0 0 0; color: #94a3b8 !important; font-size: 12px; font-weight: 500;">Hệ Thống Quản Trị Khách Hàng & Cơ Hội Bán Hàng</p>
                           </div>
                           <div style="padding: 28px 30px 20px 30px; color: #334155; line-height: 1.6; font-size: 14px;">
                             <p style="font-size: 15px; font-weight: 700; color: #0f172a; margin-top: 0;">
@@ -485,6 +500,11 @@ export async function updateLeadStatus(id: string, status: string) {
             }
         }
         // ----------------------------------
+
+        try {
+            const { calculateLeadScore } = await import('@/lib/omnichannel-crm');
+            await calculateLeadScore(id);
+        } catch (e) {}
 
         return lead;
     } catch (error) {
@@ -651,8 +671,24 @@ export async function convertLeadToCustomer(id: string) {
                 where: { id },
                 data: {
                     customerId: newCustomer.id,
-                    status: 'WON' // Usually convert = won 
+                    status: 'WON'
                 }
+            });
+
+            // Chuyen toan bo Bao gia cua co hoi nay ve khach hang moi
+            await tx.salesEstimate.updateMany({
+                where: { leadId: id },
+                data: { customerId: newCustomer.id }
+            });
+
+            // Chuyen toan bo Cuoc goi va Nhiem vu ve khach hang moi neu chua co customerId
+            await tx.callLog.updateMany({
+                where: { leadId: id, customerId: null },
+                data: { customerId: newCustomer.id }
+            });
+            await tx.task.updateMany({
+                where: { leadId: id, customerId: null },
+                data: { customerId: newCustomer.id }
             });
 
             // Add logs
@@ -699,9 +735,23 @@ export async function connectLeadToExistingCustomer(leadId: string, customerId: 
             where: { id: leadId },
             data: {
                 customerId: customerId,
-                status: 'WON' // Or assume it's just connected, but status update is explicit. 
-                // We'll set it to WON as this is usually the flow of "Convert"
+                status: 'WON'
             }
+        });
+
+        // Chuyen toan bo Bao gia cua co hoi nay ve khach hang cu
+        await prisma.salesEstimate.updateMany({
+            where: { leadId: leadId },
+            data: { customerId: customerId }
+        });
+
+        await prisma.callLog.updateMany({
+            where: { leadId: leadId, customerId: null },
+            data: { customerId: customerId }
+        });
+        await prisma.task.updateMany({
+            where: { leadId: leadId, customerId: null },
+            data: { customerId: customerId }
         });
 
         await prisma.leadActivityLog.create({
@@ -942,4 +992,26 @@ export async function deleteLeadNote(noteId: string) {
         console.error("Lỗi khi xóa ghi chú cơ hội:", error);
         return { success: false, error: error.message };
     }
+}
+
+
+// 12. Recalculate all lead scores
+export async function recalculateAllLeadScoresAction() {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) throw new Error('Unauthorized');
+    const { recalculateAllLeadScores } = await import('@/lib/omnichannel-crm');
+    const res = await recalculateAllLeadScores();
+    revalidatePath('/sales/leads');
+    return res;
+}
+
+// 13. Recalculate single lead score
+export async function recalculateSingleLeadScoreAction(leadId: string) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) throw new Error('Unauthorized');
+    const { calculateLeadScore } = await import('@/lib/omnichannel-crm');
+    const res = await calculateLeadScore(leadId);
+    revalidatePath(`/sales/leads/${leadId}`);
+    revalidatePath('/sales/leads');
+    return res;
 }

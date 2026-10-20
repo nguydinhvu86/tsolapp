@@ -450,8 +450,8 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
     };
 
     const handleSave = async () => {
-        if (!formData.customerId || formData.items.length === 0) {
-            alert(t('estimates.errorSave'));
+        if ((!formData.customerId && !formData.leadId) || formData.items.length === 0) {
+            alert(formData.items.length === 0 ? 'Vui lòng thêm ít nhất một sản phẩm vào báo giá.' : 'Vui lòng chọn Khách hàng hoặc Cơ hội bán hàng!');
             return;
         }
 
@@ -864,8 +864,13 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                                 <Link href={`/customers/${est.customerId}`} className="font-semibold text-slate-900 hover:text-emerald-700 hover:underline transition-colors block text-xs">
                                                     {est.customer?.name}
                                                 </Link>
+                                            ) : est.lead ? (
+                                                <Link href={`/sales/leads/${est.lead.id}`} className="font-semibold text-emerald-700 hover:underline transition-colors block text-xs" title={est.lead.name}>
+                                                    <span className="text-[10px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded border border-emerald-200 mr-1 font-mono font-bold">Cơ hội</span>
+                                                    {est.lead.company || est.lead.contactName || est.lead.name}
+                                                </Link>
                                             ) : (
-                                                <span className="text-xs text-slate-800">{est.customer?.name}</span>
+                                                <span className="text-xs text-slate-400 italic">Chưa liên kết</span>
                                             )}
                                         </td>
                                         <td className="py-3 px-3">
@@ -999,7 +1004,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-semibold text-slate-600 mb-1">{t('estimates.customerReq')}</label>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">{t('estimates.customer')} <span className="text-slate-400 font-normal">(hoặc chọn Cơ hội bên dưới)</span></label>
                                 <SearchableSelect
                                     options={customers.map((c: any) => ({ value: c.id, label: c.name }))}
                                     value={formData.customerId}
@@ -1010,7 +1015,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                             <div>
                                 <label className="block text-xs font-semibold text-slate-600 mb-1">{t('estimates.lead')}</label>
                                 <SearchableSelect
-                                    options={leads?.map((l: any) => ({ value: l.id, label: l.name })) || []}
+                                    options={leads?.map((l: any) => ({ value: l.id, label: `${l.code ? `[${l.code}] ` : ''}${l.name}${l.company ? ` - ${l.company}` : ''}` })) || []}
                                     value={formData.leadId}
                                     onChange={val => {
                                         const selectedLead = leads?.find((l: any) => l.id === val);

@@ -4,13 +4,13 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
-    ArrowLeft, Edit, Trash2, CheckCircle2, RefreshCcw, Building2, User, 
+    ArrowLeft, Edit, Trash2, CheckCircle2, RefreshCcw, RefreshCw, Building2, User, 
     Phone, Mail, DollarSign, Calendar, Tag, FileText, CheckSquare, Plus, 
     Paperclip, Send, Link as LinkIcon, ImageIcon, ExternalLink, Target,
     Clock, ShieldAlert, Sparkles, MessageSquare, ChevronRight, Check
 } from 'lucide-react';
 import { formatMoney, formatDate, formatDateTime } from '@/lib/utils/formatters';
-import { updateLeadStatus, deleteLead, convertLeadToCustomer, connectLeadToExistingCustomer, addLeadActivityLog, sendLeadEmail, updateLeadAssignees } from '../actions';
+import { updateLeadStatus, deleteLead, convertLeadToCustomer, connectLeadToExistingCustomer, addLeadActivityLog, sendLeadEmail, updateLeadAssignees, recalculateSingleLeadScoreAction } from '../actions';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { Modal } from '@/app/components/ui/Modal';
 import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
@@ -79,6 +79,19 @@ export function LeadDetailClient({
     );
     const [isSavingAssignees, setIsSavingAssignees] = useState(false);
     const [previewDoc, setPreviewDoc] = useState<{ url: string, name: string } | null>(null);
+    const [isRecalculatingScore, setIsRecalculatingScore] = useState(false);
+
+    const handleRefreshScore = async () => {
+        setIsRecalculatingScore(true);
+        try {
+            await recalculateSingleLeadScoreAction(lead.id);
+            router.refresh();
+        } catch (e: any) {
+            alert('Lỗi tính điểm: ' + (e.message || e));
+        } finally {
+            setIsRecalculatingScore(false);
+        }
+    };
 
     const handleSaveAssignees = async () => {
         setIsSavingAssignees(true);
@@ -194,6 +207,28 @@ export function LeadDetailClient({
                                     <CheckCircle2 size={12} className="text-emerald-600" /> {t('leadDetails.hasCustomer')}
                                 </span>
                             )}
+                            {(() => {
+                                const score = lead.score || 0;
+                                const temp = lead.temperature || (score >= 70 ? 'HOT' : score >= 40 ? 'WARM' : 'COLD');
+                                const badgeCls = temp === 'HOT' 
+                                    ? 'bg-rose-100 text-rose-700 border-rose-300' 
+                                    : temp === 'WARM' 
+                                    ? 'bg-amber-100 text-amber-800 border-amber-300' 
+                                    : 'bg-slate-100 text-slate-700 border-slate-300';
+                                const icon = temp === 'HOT' ? '🔥' : temp === 'WARM' ? '⚡' : '❄️';
+                                return (
+                                    <button
+                                        type="button"
+                                        onClick={handleRefreshScore}
+                                        disabled={isRecalculatingScore}
+                                        className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-0.5 rounded-full border shadow-2xs hover:opacity-85 transition-all cursor-pointer disabled:opacity-50 ${badgeCls}`}
+                                        title="Bấm để tính toán lại điểm tiềm năng"
+                                    >
+                                        <span>{icon} {temp} ({score}đ)</span>
+                                        <RefreshCw size={11} className={isRecalculatingScore ? "animate-spin ml-0.5" : "opacity-50 ml-0.5"} />
+                                    </button>
+                                );
+                            })()}
                         </div>
 
                         <div className="flex items-center gap-3 text-xs text-slate-500 mt-1.5 flex-wrap font-medium">

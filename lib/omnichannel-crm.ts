@@ -79,6 +79,7 @@ export async function calculateLeadScore(leadId: string) {
     const lead = await prisma.lead.findUnique({
         where: { id: leadId },
         include: {
+            customer: true,
             callLogs: true,
             salesEstimates: true,
             EmailLog: true,
@@ -87,7 +88,7 @@ export async function calculateLeadScore(leadId: string) {
         }
     });
 
-    if (!lead) throw new Error('Không tìm thấy cơ hội');
+    if (!lead) return null;
 
     let score = 0;
     const scoreBreakdown = {
@@ -98,10 +99,14 @@ export async function calculateLeadScore(leadId: string) {
     };
 
     // 1. Độ đầy đủ thông tin (tối đa 25đ)
+    const phone = lead.phone || lead.customer?.phone;
+    const email = lead.email || lead.customer?.email;
+    const company = lead.company || lead.contactName || lead.customer?.name;
+
     if (lead.name) scoreBreakdown.contactCompleteness += 5;
-    if (lead.phone) scoreBreakdown.contactCompleteness += 10;
-    if (lead.email) scoreBreakdown.contactCompleteness += 5;
-    if (lead.company || lead.contactName) scoreBreakdown.contactCompleteness += 5;
+    if (phone) scoreBreakdown.contactCompleteness += 10;
+    if (email) scoreBreakdown.contactCompleteness += 5;
+    if (company) scoreBreakdown.contactCompleteness += 5;
 
     // 2. Quy mô giá trị ước tính (tối đa 25đ)
     const val = lead.estimatedValue || 0;
@@ -111,10 +116,28 @@ export async function calculateLeadScore(leadId: string) {
     else if (val > 0) scoreBreakdown.dealValue = 10;          // Có định giá
 
     // 3. Tương tác cuộc gọi PBX (tối đa 25đ)
-    const answeredCalls = lead.callLogs.filter(c => c.status === 'ANSWER');
+    let answeredCalls = lead.callLogs.filter(c => c.status === 'ANSWER');
+    let allCallsCount = lead.callLogs.length;
+
+    // Nếu lead chưa gắn trực tiếp callLog nhưng có SĐT, tìm cuộc gọi liên quan đến SĐT đó
+    if (allCallsCount === 0 && phone) {
+        try {
+            const relatedCalls = await prisma.callLog.findMany({
+                where: { phone: { contains: phone.replace(/\D/g, '').slice(-9) } },
+                take: 10
+            });
+            if (relatedCalls.length > 0) {
+                allCallsCount = relatedCalls.length;
+                answeredCalls = relatedCalls.filter(c => c.status === 'ANSWER');
+            }
+        } catch (e) {
+            // Ignore search error
+        }
+    }
+
     if (answeredCalls.length >= 3) scoreBreakdown.callEngagement = 25;
     else if (answeredCalls.length >= 1) scoreBreakdown.callEngagement = 15;
-    else if (lead.callLogs.length > 0) scoreBreakdown.callEngagement = 5;
+    else if (allCallsCount > 0) scoreBreakdown.callEngagement = 5;
 
     // 4. Tương tác tài liệu / Báo giá / Email (tối đa 25đ)
     const hasEstimate = lead.salesEstimates.length > 0;
@@ -147,6 +170,27 @@ export async function calculateLeadScore(leadId: string) {
         temperature,
         scoreBreakdown
     };
+}
+
+/**
+ * Tính toán lại điểm tiềm năng cho toàn bộ cơ hội bán hàng trong hệ thống
+ */
+export async function recalculateAllLeadScores() {
+    const leads = await prisma.lead.findMany({
+        select: { id: true }
+    });
+
+    let updated = 0;
+    for (const lead of leads) {
+        try {
+            await calculateLeadScore(lead.id);
+            updated++;
+        } catch (e) {
+            console.error(`Error calculating score for lead ${lead.id}:`, e);
+        }
+    }
+
+    return { total: leads.length, updated };
 }
 
 /**

@@ -29,7 +29,7 @@ const estimateSchema = z.object({
     status: z.string().default("DRAFT"),
     notes: z.string().optional(),
     tags: z.string().optional(),
-    customerId: z.string().min(1, "Customer is required"),
+    customerId: z.string().optional().nullable(),
     subTotal: z.number().min(0, "Subtotal must be >= 0"),
     taxAmount: z.number().min(0, "Tax amount must be >= 0"),
     totalAmount: z.number().min(0, "Total amount must be >= 0"),
@@ -77,7 +77,7 @@ export async function sendEstimateEmail(
             subject,
             htmlBody,
             senderId,
-            customerId: estimate.customerId,
+            customerId: estimate.customerId || undefined,
             estimateId: estimate.id,
             attachmentName,
             attachmentBase64
@@ -195,7 +195,7 @@ export async function submitSalesEstimate(creatorId: string, formData: any) {
         const user = await verifyActionPermission('SALES_ESTIMATES_CREATE');
         const actualCreatorId = user ? (user as any).id : creatorId;
 
-        if (!formData.customerId || !formData.items || formData.items.length === 0) {
+        if ((!formData.customerId && !formData.leadId) || !formData.items || formData.items.length === 0) {
             return { success: false, error: "Thiếu thông tin bắt buộc." };
         }
 
@@ -231,7 +231,7 @@ export async function submitSalesEstimate(creatorId: string, formData: any) {
                 templateType: formData.templateType || 'STANDARD',
                 notes: formData.notes,
                 tags: formData.tags || null,
-                customerId: formData.customerId,
+                customerId: formData.customerId || null,
                 subTotal: formData.subTotal,
                 taxAmount: formData.taxAmount,
                 totalAmount: formData.totalAmount,
@@ -268,8 +268,28 @@ export async function submitSalesEstimate(creatorId: string, formData: any) {
 
         await logSalesEstimateActivity(estimate.id, actualCreatorId, 'CREATED', 'Tạo Báo giá mới');
 
-        // Log to unified Customer History
-        await logCustomerActivity(formData.customerId, actualCreatorId, 'TẠO_BÁO_GIÁ', `Tạo Báo giá: ${formData.code}`);
+        // Log to unified Customer History if customer is linked
+        if (formData.customerId) {
+            await logCustomerActivity(formData.customerId, actualCreatorId, 'TẠO_BÁO_GIÁ', `Tạo Báo giá: ${finalCode}`);
+        }
+
+        // Log to Lead History and recalculate Lead Score if created from lead
+        if (formData.leadId) {
+            try {
+                await prisma.leadActivityLog.create({
+                    data: {
+                        leadId: formData.leadId,
+                        userId: actualCreatorId,
+                        action: 'TẠO_BÁO_GIÁ',
+                        details: `Đã tạo báo giá ${finalCode} trị giá ${new Intl.NumberFormat('vi-VN').format(formData.totalAmount || 0)} đ`
+                    }
+                });
+                const { calculateLeadScore } = await import('@/lib/omnichannel-crm');
+                await calculateLeadScore(formData.leadId);
+            } catch (e) {
+                console.error('Lỗi cập nhật điểm Lead sau tạo báo giá:', e);
+            }
+        }
 
         revalidatePath('/sales/estimates');
         return { success: true, data: estimate };
@@ -287,7 +307,7 @@ export async function updateSalesEstimate(id: string, formData: any) {
         }
         const userId = session.user.id;
 
-        if (!formData.code || !formData.customerId || !formData.items || formData.items.length === 0) {
+        if (!formData.code || (!formData.customerId && !formData.leadId) || !formData.items || formData.items.length === 0) {
             return { success: false, error: "Thiếu thông tin bắt buộc." };
         }
 
@@ -399,7 +419,7 @@ export async function updateSalesEstimate(id: string, formData: any) {
                 templateType: formData.templateType || 'STANDARD',
                 notes: formData.notes,
                 tags: formData.tags || null,
-                customerId: formData.customerId,
+                customerId: formData.customerId || null,
                 subTotal: formData.subTotal,
                 taxAmount: formData.taxAmount,
                 totalAmount: formData.totalAmount,
@@ -482,6 +502,7 @@ export async function getSalesEstimates(employeeId?: string) {
             where: whereClause,
             include: {
                 customer: true,
+                lead: { select: { id: true, code: true, name: true, company: true, contactName: true, phone: true, email: true } },
                 creator: true,
                 salesperson: true,
                 items: {
@@ -539,7 +560,15 @@ export async function updateSalesEstimateStatus(id: string, newStatus: string) {
 
         if (userId) {
             await logSalesEstimateActivity(id, userId, 'STATUS_CHANGED', JSON.stringify({ to: newStatus }));
-            await logCustomerActivity(estimate.customerId, userId, 'CẬP_NHẬT_TRẠNG_THÁI', `Báo giá ${estimate.code} chuyển trạng thái: ${newStatus}`);
+            if (estimate.customerId) {
+                await logCustomerActivity(estimate.customerId, userId, 'CẬP_NHẬT_TRẠNG_THÁI', `Báo giá ${estimate.code} chuyển trạng thái: ${newStatus}`);
+            }
+            if (estimate.leadId) {
+                try {
+                    const { calculateLeadScore } = await import('@/lib/omnichannel-crm');
+                    await calculateLeadScore(estimate.leadId);
+                } catch (e) {}
+            }
         }
 
         if (newStatus === 'ACCEPTED' || newStatus === 'REJECTED') {
@@ -649,6 +678,12 @@ export async function convertEstimateToInvoice(estimateId: string) {
         });
 
         if (!estimate) return { success: false, error: "Báo giá không tồn tại." };
+        if (!estimate.customerId) {
+            return { success: false, error: "Báo giá này thuộc Cơ hội chưa được chuyển đổi thành Khách Hàng. Vui lòng chuyển đổi Cơ hội thành Khách Hàng trước khi tạo Đơn hàng." };
+        }
+        if (!estimate.customerId) {
+            return { success: false, error: "Báo giá này thuộc Cơ hội chưa được chuyển đổi thành Khách Hàng. Vui lòng chuyển đổi Cơ hội thành Khách Hàng trước khi xuất Hóa đơn." };
+        }
         
         await verifyActionOwnership('SALES_ESTIMATES', 'EDIT', estimate.creatorId);
         const user = await verifyActionPermission('SALES_INVOICES_CREATE');
@@ -666,7 +701,7 @@ export async function convertEstimateToInvoice(estimateId: string) {
                     status: "DRAFT",
                     notes: `Tạo từ Báo giá ${estimate.code}`,
                     tags: estimate.tags,
-                    customerId: estimate.customerId,
+                    customerId: estimate.customerId!,
                     subTotal: estimate.subTotal,
                     taxAmount: estimate.taxAmount,
                     totalAmount: estimate.totalAmount,
@@ -705,7 +740,7 @@ export async function convertEstimateToInvoice(estimateId: string) {
             // Ghi log qua Customer History
             await tx.customerActivityLog.create({
                 data: {
-                    customerId: estimate.customerId,
+                    customerId: estimate.customerId!,
                     userId: actualCreatorId,
                     action: 'TẠO_HÓA_ĐƠN',
                     details: `Tạo hóa đơn ${invoice.code} từ báo giá ${estimate.code}`
@@ -757,7 +792,7 @@ export async function convertEstimateToOrder(estimateId: string) {
                     date: new Date(),
                     status: "DRAFT",
                     notes: `Tạo từ Báo giá ${estimate.code}`,
-                    customerId: estimate.customerId,
+                    customerId: estimate.customerId!,
                     subTotal: estimate.subTotal,
                     taxAmount: estimate.taxAmount,
                     totalAmount: estimate.totalAmount,
@@ -794,7 +829,7 @@ export async function convertEstimateToOrder(estimateId: string) {
 
             await tx.customerActivityLog.create({
                 data: {
-                    customerId: estimate.customerId,
+                    customerId: estimate.customerId!,
                     userId: actualCreatorId,
                     action: 'TẠO_ĐƠN_HÀNG',
                     details: `Tạo đơn đặt hàng ${order.code} từ báo giá ${estimate.code}`
@@ -896,7 +931,9 @@ export async function cloneSalesEstimate(estimateId: string) {
         });
 
         await logSalesEstimateActivity(clonedEstimate.id, creatorId, 'CREATED', `Tạo Báo giá ${clonedEstimate.code} (Sao chép từ ${estimate.code})`);
-        await logCustomerActivity(estimate.customerId, creatorId, 'TẠO_BÁO_GIÁ', `Tạo Báo giá mới ${clonedEstimate.code} (Sao chép từ ${estimate.code})`);
+        if (estimate.customerId) {
+            await logCustomerActivity(estimate.customerId, creatorId, 'TẠO_BÁO_GIÁ', `Tạo Báo giá mới ${clonedEstimate.code} (Sao chép từ ${estimate.code})`);
+        }
 
         revalidatePath('/sales/estimates');
         return { success: true, data: clonedEstimate };

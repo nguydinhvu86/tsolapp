@@ -8,6 +8,7 @@ import { authOptions } from '@/lib/authOptions';
 import { createManyNotifications } from '@/app/notifications/actions';
 import { sendWebPushNotification } from '@/lib/notifications/webPush';
 import { buildViewFilter, verifyActionPermission, verifyActionOwnership } from '@/lib/permissions';
+import { saveAttachment, deleteAttachmentByUrl } from '@/lib/storage-vault';
 import { z } from 'zod';
 
 const recurrenceSchema = z.object({
@@ -314,9 +315,9 @@ export async function triggerAutoTaskEmail(taskId: string, newAssigneeIds: strin
             let subject = `[TRỊNH GIA] Bạn Được Phân Công Nhiệm Vụ Mới: ${task.title}`;
             let htmlBody = `
                 <div style="max-width: 620px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-                  <div style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); padding: 24px 30px; border-bottom: 3px solid #6366f1;">
-                    <h2 style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 800; letter-spacing: -0.02em;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
-                    <p style="margin: 4px 0 0 0; color: #c7d2fe; font-size: 12px;">Hệ Thống Quản Trị Doanh Nghiệp ERP - inside.trinhgiatelecom.vn</p>
+                  <div style="background-color: #1e1b4b; background: #1e1b4b; padding: 24px 30px; border-bottom: 3px solid #6366f1; border-top-left-radius: 14px; border-top-right-radius: 14px;">
+                    <h2 style="margin: 0; color: #ffffff !important; font-size: 18px; font-weight: 800; letter-spacing: -0.02em;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
+                    <p style="margin: 4px 0 0 0; color: #c7d2fe !important; font-size: 12px; font-weight: 500;">Hệ Thống Quản Trị Doanh Nghiệp ERP - inside.trinhgiatelecom.vn</p>
                   </div>
                   <div style="padding: 28px 30px 20px 30px; color: #334155; line-height: 1.6; font-size: 14px;">
                     <p style="font-size: 15px; font-weight: 700; color: #0f172a; margin-top: 0;">
@@ -681,9 +682,9 @@ export async function updateTaskStatus(id: string, status: string, userId: strin
                 let subject = `[TRỊNH GIA] Cập Nhật Trạng Thái: ${oldTask.title} - [${statusText}]`;
                 let htmlBody = `
                     <div style="max-width: 620px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-                      <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 24px 30px; border-bottom: 3px solid ${statusColor};">
-                        <h2 style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 800; letter-spacing: -0.02em;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
-                        <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 12px;">Hệ Thống Quản Trị Doanh Nghiệp ERP - inside.trinhgiatelecom.vn</p>
+                      <div style="background-color: #0f172a; background: #0f172a; padding: 24px 30px; border-bottom: 3px solid ${statusColor}; border-top-left-radius: 14px; border-top-right-radius: 14px;">
+                        <h2 style="margin: 0; color: #ffffff !important; font-size: 18px; font-weight: 800; letter-spacing: -0.02em;">CTY GIẢI PHÁP ĐÀO TẠO TRỊNH GIA</h2>
+                        <p style="margin: 4px 0 0 0; color: #94a3b8 !important; font-size: 12px; font-weight: 500;">Hệ Thống Quản Trị Doanh Nghiệp ERP - inside.trinhgiatelecom.vn</p>
                       </div>
                       <div style="padding: 28px 30px 20px 30px; color: #334155; line-height: 1.6; font-size: 14px;">
                         <p style="font-size: 15px; font-weight: 700; color: #0f172a; margin-top: 0;">
@@ -956,6 +957,19 @@ export async function uploadTaskAttachment(taskId: string, fileName: string, fil
         }
     });
 
+    try {
+        await saveAttachment({
+            fileName,
+            fileUrl,
+            fileType,
+            entityType: 'TASK',
+            entityId: taskId,
+            uploadedById: userId
+        });
+    } catch (vaultErr) {
+        console.error('Lỗi khi đồng bộ SystemAttachment cho Task:', vaultErr);
+    }
+
     const uploader = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
     const usersToNotify = new Set<string>();
 
@@ -1024,6 +1038,12 @@ export async function deleteTaskAttachment(attachmentId: string, userId: string)
     }
 
     await prisma.taskAttachment.delete({ where: { id: attachmentId } });
+
+    try {
+        await deleteAttachmentByUrl('TASK', attachment.taskId, attachment.fileUrl);
+    } catch (vaultErr) {
+        console.error('Lỗi khi xóa SystemAttachment cho Task:', vaultErr);
+    }
 
     logActivity(attachment.taskId, userId, 'ATTACHMENT_DELETED', JSON.stringify({ summary: `Đã xóa tài liệu: ${attachment.fileName}` }));
     revalidatePath(`/tasks/${attachment.taskId}`);

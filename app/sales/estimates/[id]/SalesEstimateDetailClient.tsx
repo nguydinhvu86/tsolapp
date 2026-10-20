@@ -297,7 +297,8 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
         };
 
         // Customer name
-        addInfoRow('Kính gửi (Khách hàng):', estimate.customer?.name || '', true);
+        const leadDisplay = estimate.lead?.company || estimate.lead?.contactName || estimate.lead?.name || '';
+        addInfoRow('Kính gửi (Khách hàng):', estimate.customer?.name || leadDisplay, true);
 
         // Address
         const customerAddress = estimate.customer?.address || estimate.customer?.billingAddress;
@@ -311,9 +312,9 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
         }
 
         // Contact info (Khách hàng)
-        const contactName = estimate.customer?.contactName || estimate.customer?.contacts?.[0]?.name;
-        const contactPhone = estimate.customer?.phone || estimate.customer?.contacts?.[0]?.phone;
-        const contactEmail = estimate.customer?.email || estimate.customer?.contacts?.[0]?.email;
+        const contactName = estimate.customer?.contactName || estimate.customer?.contacts?.[0]?.name || estimate.lead?.contactName;
+        const contactPhone = estimate.customer?.phone || estimate.customer?.contacts?.[0]?.phone || estimate.lead?.phone;
+        const contactEmail = estimate.customer?.email || estimate.customer?.contacts?.[0]?.email || estimate.lead?.email;
         const contactDetails = [
             contactName ? `Họ tên: ${contactName}` : '',
             contactPhone ? `Điện thoại: ${contactPhone}` : '',
@@ -773,9 +774,18 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1 mb-1">
                                     <Building size={11} className="text-slate-400" /> Khách hàng
                                 </span>
-                                <Link href={`/customers/${estimate.customerId}`} className="font-semibold text-xs text-slate-800 hover:text-emerald-700 hover:underline transition-colors block truncate" title={estimate.customer?.name}>
-                                    {estimate.customer?.name || '---'}
-                                </Link>
+                                {estimate.customerId ? (
+                                    <Link href={`/customers/${estimate.customerId}`} className="font-semibold text-xs text-slate-800 hover:text-emerald-700 hover:underline transition-colors block truncate" title={estimate.customer?.name}>
+                                        {estimate.customer?.name || '---'}
+                                    </Link>
+                                ) : estimate.lead ? (
+                                    <Link href={`/sales/leads/${estimate.lead.id}`} className="font-semibold text-xs text-emerald-700 hover:underline transition-colors block truncate" title={estimate.lead.name}>
+                                        <span className="text-[9px] bg-emerald-50 text-emerald-700 px-1 py-0.5 rounded border border-emerald-200 mr-1 font-mono font-bold">Lead</span>
+                                        {estimate.lead.company || estimate.lead.contactName || estimate.lead.name}
+                                    </Link>
+                                ) : (
+                                    <span className="font-semibold text-xs text-slate-400 italic">Chưa liên kết</span>
+                                )}
                             </div>
 
                             <div className="p-2.5 bg-slate-50/70 rounded-lg border border-slate-100 flex flex-col justify-between">
@@ -1515,7 +1525,7 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                 isOpen={isEmailModalOpen}
                 onClose={() => setIsEmailModalOpen(false)}
                 moduleType="ESTIMATE"
-                defaultToEmail={estimate.customer?.email || ''}
+                defaultToEmail={estimate.customer?.email || estimate.lead?.email || ''}
                 variablesData={{
                     customerName: estimate.customer?.name || '',
                     customerEmail: estimate.customer?.email || '',
