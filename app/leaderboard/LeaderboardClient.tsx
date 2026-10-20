@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Trophy, Flame, Target, Users, DollarSign, FileText, TrendingUp, Sparkles, MessageSquare, Calendar, RefreshCw, Star, Award, ShieldCheck, Heart, PlusCircle, Shield, UserCheck, Layers } from 'lucide-react';
+import { Trophy, Flame, Target, Users, DollarSign, FileText, TrendingUp, Sparkles, MessageSquare, Calendar, RefreshCw, Star, Award, ShieldCheck, Heart, PlusCircle, Shield, UserCheck, Columns2, LayoutGrid, Newspaper, Loader2 } from 'lucide-react';
 import { CriteriaKey, TimeRangeKey, LeaderboardMode, getLeaderboardData, getGroupLeaderboardData, getSocialFeed, getCompetitionGroups } from './actions';
 import { LeaderboardPodium } from './components/LeaderboardPodium';
 import { RankListTable } from './components/RankListTable';
@@ -16,6 +16,8 @@ interface Props {
     initialGroups?: any[];
     currentUser: any;
 }
+
+type LayoutView = 'SPLIT' | 'LEADERBOARD' | 'FEED';
 
 const CRITERIA_TABS: { key: CriteriaKey; label: string; icon: any }[] = [
     { key: 'REVENUE', label: 'Doanh Thu Khủng', icon: DollarSign },
@@ -36,14 +38,18 @@ const TIME_TABS: { key: TimeRangeKey; label: string }[] = [
 
 export default function LeaderboardClient({ initialLeaderboard, initialFeed, initialGroups = [], currentUser }: Props) {
     const [mode, setMode] = useState<LeaderboardMode>('INDIVIDUAL');
+    const [layoutView, setLayoutView] = useState<LayoutView>('SPLIT');
     const [criteria, setCriteria] = useState<CriteriaKey>(initialLeaderboard.criteria || 'REVENUE');
     const [timeRange, setTimeRange] = useState<TimeRangeKey>(initialLeaderboard.timeRange || 'THIS_MONTH');
     const [customStart, setCustomStart] = useState('');
     const [customEnd, setCustomEnd] = useState('');
 
-    const [leaderboardData, setLeaderboardData] = useState<any>(initialLeaderboard);
+    // Separate datasets to prevent state desync
+    const [individualData, setIndividualData] = useState<any>(initialLeaderboard);
+    const [teamData, setTeamData] = useState<any>(null);
     const [feedData, setFeedData] = useState<any>(initialFeed);
     const [competitionGroups, setCompetitionGroups] = useState<any[]>(initialGroups);
+
     const [isLoading, setIsLoading] = useState(false);
     const [isRefreshingFeed, setIsRefreshingFeed] = useState(false);
 
@@ -57,6 +63,11 @@ export default function LeaderboardClient({ initialLeaderboard, initialFeed, ini
 
     const isAdmin = currentUser?.role === 'ADMIN' || currentUser?.role === 'MANAGER';
 
+    // Active dataset based on mode
+    const activeData = mode === 'INDIVIDUAL' 
+        ? individualData 
+        : (teamData || { criteria, timeRange, topThree: [], fullList: [], summary: {} });
+
     // Fetch Leaderboard when filters or mode changes
     const fetchLeaderboard = async () => {
         setIsLoading(true);
@@ -68,7 +79,7 @@ export default function LeaderboardClient({ initialLeaderboard, initialFeed, ini
                     customStart: customStart || undefined,
                     customEnd: customEnd || undefined
                 });
-                setLeaderboardData(data);
+                setIndividualData(data);
             } else {
                 const data = await getGroupLeaderboardData({
                     criteria,
@@ -76,7 +87,7 @@ export default function LeaderboardClient({ initialLeaderboard, initialFeed, ini
                     customStart: customStart || undefined,
                     customEnd: customEnd || undefined
                 });
-                setLeaderboardData(data);
+                setTeamData(data);
             }
         } catch (err) {
             console.error('Error fetching leaderboard:', err);
@@ -100,7 +111,7 @@ export default function LeaderboardClient({ initialLeaderboard, initialFeed, ini
     const refreshFeed = async () => {
         setIsRefreshingFeed(true);
         try {
-            const data = await getSocialFeed({ page: 1, limit: 20 });
+            const data = await getSocialFeed({ page: 1, limit: 30 });
             setFeedData(data);
         } catch (err) {
             console.error('Error refreshing feed:', err);
@@ -111,18 +122,24 @@ export default function LeaderboardClient({ initialLeaderboard, initialFeed, ini
 
     const handleCheerUser = (userName: string, userId: string) => {
         setActiveMention({ name: userName, id: userId, type: 'USER' });
-        const postBox = document.getElementById('social-wall-section');
-        if (postBox) {
-            postBox.scrollIntoView({ behavior: 'smooth' });
-        }
+        if (layoutView === 'LEADERBOARD') setLayoutView('SPLIT');
+        setTimeout(() => {
+            const postBox = document.getElementById('social-wall-section');
+            if (postBox) {
+                postBox.scrollIntoView({ behavior: 'smooth' });
+            }
+        }, 100);
     };
 
     const handleCheerTeam = (groupName: string, groupId: string) => {
         setActiveMention({ name: groupName, id: groupId, type: 'TEAM' });
-        const postBox = document.getElementById('social-wall-section');
-        if (postBox) {
-            postBox.scrollIntoView({ behavior: 'smooth' });
-        }
+        if (layoutView === 'LEADERBOARD') setLayoutView('SPLIT');
+        setTimeout(() => {
+            const postBox = document.getElementById('social-wall-section');
+            if (postBox) {
+                postBox.scrollIntoView({ behavior: 'smooth' });
+            }
+        }, 100);
     };
 
     const handleOpenGroupModal = (groupToEdit?: any) => {
@@ -142,7 +159,7 @@ export default function LeaderboardClient({ initialLeaderboard, initialFeed, ini
     };
 
     return (
-        <div className="min-h-screen bg-slate-50/60 dark:bg-slate-950 p-4 md:p-6 lg:p-8 font-sans space-y-6 max-w-[1600px] mx-auto">
+        <div className="min-h-screen bg-slate-50/60 dark:bg-slate-950 p-4 md:p-6 lg:p-8 font-sans space-y-6 max-w-[1650px] mx-auto">
             {/* Hero Header Banner */}
             <div 
                 className="relative rounded-3xl overflow-hidden p-6 sm:p-8 text-white shadow-xl border border-emerald-800/40"
@@ -178,7 +195,7 @@ export default function LeaderboardClient({ initialLeaderboard, initialFeed, ini
                         >
                             <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Doanh Thu Kỳ</div>
                             <div className="text-sm sm:text-base font-black text-amber-400 mt-0.5 truncate">
-                                {formatVND(leaderboardData.summary?.totalRevenue || 0)}
+                                {formatVND(activeData.summary?.totalRevenue || 0)}
                             </div>
                         </div>
 
@@ -188,7 +205,7 @@ export default function LeaderboardClient({ initialLeaderboard, initialFeed, ini
                         >
                             <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Khách Hàng Mới</div>
                             <div className="text-sm sm:text-base font-black text-emerald-400 mt-0.5">
-                                {leaderboardData.summary?.totalCustomers || 0}
+                                {activeData.summary?.totalCustomers || 0}
                             </div>
                         </div>
 
@@ -198,7 +215,7 @@ export default function LeaderboardClient({ initialLeaderboard, initialFeed, ini
                         >
                             <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Cơ Hội Bán</div>
                             <div className="text-sm sm:text-base font-black text-blue-400 mt-0.5">
-                                {leaderboardData.summary?.totalLeads || 0}
+                                {activeData.summary?.totalLeads || 0}
                             </div>
                         </div>
 
@@ -210,7 +227,7 @@ export default function LeaderboardClient({ initialLeaderboard, initialFeed, ini
                                 {mode === 'INDIVIDUAL' ? 'Chiến Binh' : 'Đội Thi Đua'}
                             </div>
                             <div className="text-sm sm:text-base font-black text-purple-400 mt-0.5">
-                                {mode === 'INDIVIDUAL' ? (leaderboardData.summary?.activeMembers || 0) : (leaderboardData.summary?.activeGroups || 0)}
+                                {mode === 'INDIVIDUAL' ? (activeData.summary?.activeMembers || 0) : (activeData.summary?.activeGroups || 0)}
                             </div>
                         </div>
                     </div>
@@ -222,13 +239,11 @@ export default function LeaderboardClient({ initialLeaderboard, initialFeed, ini
                 className="rounded-3xl p-4 sm:p-5 shadow-sm border space-y-4"
                 style={{ background: '#ffffff', borderColor: '#e2e8f0' }}
             >
-                {/* 1. Mode Switcher (Cá Nhân vs Đội Nhóm) & Create Group button */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">
-                            Chế độ vinh danh:
-                        </span>
-                        <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl">
+                {/* 1. Mode Switcher & View Layout Switcher & Create Group button */}
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <div className="flex flex-wrap items-center gap-3">
+                        {/* Mode Switcher */}
+                        <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl">
                             <button
                                 type="button"
                                 onClick={() => setMode('INDIVIDUAL')}
@@ -245,6 +260,39 @@ export default function LeaderboardClient({ initialLeaderboard, initialFeed, ini
                             >
                                 <Shield className="w-3.5 h-3.5" />
                                 <span>🛡️ Tập Thể / Nhóm Thi Đua</span>
+                            </button>
+                        </div>
+
+                        {/* Layout View Switcher (Song song / Bảng vinh danh / Bảng tin) */}
+                        <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl text-xs font-bold">
+                            <button
+                                type="button"
+                                onClick={() => setLayoutView('SPLIT')}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${layoutView === 'SPLIT' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                                title="Xem 2 cột cân đối song song"
+                            >
+                                <Columns2 className="w-3.5 h-3.5 text-emerald-600" />
+                                <span className="hidden sm:inline">2 Cột Song Song</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setLayoutView('LEADERBOARD')}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${layoutView === 'LEADERBOARD' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                                title="Toàn màn hình Bảng xếp hạng thi đua"
+                            >
+                                <Trophy className="w-3.5 h-3.5 text-amber-500" />
+                                <span className="hidden sm:inline">Chỉ Bảng Vinh Danh</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setLayoutView('FEED')}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${layoutView === 'FEED' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                                title="Toàn màn hình Bảng tin giao lưu nội bộ"
+                            >
+                                <Newspaper className="w-3.5 h-3.5 text-purple-500" />
+                                <span className="hidden sm:inline">Chỉ Bảng Tin</span>
                             </button>
                         </div>
                     </div>
@@ -336,24 +384,124 @@ export default function LeaderboardClient({ initialLeaderboard, initialFeed, ini
                 </div>
             </div>
 
-            {/* Main Content: 2 Columns */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                {/* LEFT COLUMN: Podium & Full Ranking List (7 Cols) */}
-                <div className="lg:col-span-7 space-y-6">
-                    {/* Top 3 Podium */}
+            {/* Main Content Area based on LayoutView */}
+            {layoutView === 'SPLIT' && (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    {/* LEFT COLUMN: Podium & Rankings (7 Cols) - Sticky for perfect page balance */}
+                    <div className="lg:col-span-7 space-y-6 lg:sticky lg:top-4 self-start max-h-[calc(100vh-2rem)] overflow-y-auto pr-1">
+                        {isLoading && mode === 'TEAM' && !teamData ? (
+                            <div className="p-16 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">
+                                <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mx-auto mb-3" />
+                                <p className="font-bold text-sm text-slate-700 dark:text-slate-300">Đang tải dữ liệu thi đua đội nhóm...</p>
+                            </div>
+                        ) : (
+                            <>
+                                <LeaderboardPodium
+                                    mode={mode}
+                                    topThree={activeData.topThree || []}
+                                    criteria={criteria}
+                                    onCheerUser={handleCheerUser}
+                                    onCheerTeam={handleCheerTeam}
+                                    onViewProfile={id => setSelectedUserIdForProfile(id)}
+                                    onCreateGroup={() => handleOpenGroupModal()}
+                                    isAdmin={isAdmin}
+                                />
+
+                                <RankListTable
+                                    mode={mode}
+                                    leaderboard={activeData.fullList || []}
+                                    criteria={criteria}
+                                    currentUserId={currentUser?.id}
+                                    currentUserRole={currentUser?.role}
+                                    onCheerUser={handleCheerUser}
+                                    onCheerTeam={handleCheerTeam}
+                                    onViewProfile={id => setSelectedUserIdForProfile(id)}
+                                    onEditGroup={handleOpenGroupModal}
+                                    onCreateGroup={() => handleOpenGroupModal()}
+                                />
+                            </>
+                        )}
+                    </div>
+
+                    {/* RIGHT COLUMN: Social Timeline (5 Cols) - Smooth bounded feed container */}
+                    <div id="social-wall-section" className="lg:col-span-5 space-y-4">
+                        {/* Section Title */}
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold">
+                                    <MessageSquare className="w-4 h-4" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">
+                                        Mạng Xã Hội Thi Đua & Vinh Danh
+                                    </h3>
+                                    <p className="text-[11px] text-slate-400">
+                                        Chia sẻ cảm xúc, vinh danh cá nhân và tập thể
+                                    </p>
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={refreshFeed}
+                                disabled={isRefreshingFeed}
+                                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                                title="Làm mới bảng tin"
+                            >
+                                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingFeed ? 'animate-spin' : ''}`} />
+                            </button>
+                        </div>
+
+                        {/* Create Post Box */}
+                        <CreatePostBox
+                            currentUser={currentUser}
+                            competitionGroups={competitionGroups}
+                            onPostCreated={refreshFeed}
+                            initialMention={activeMention}
+                            onClearInitialMention={() => setActiveMention(null)}
+                        />
+
+                        {/* Feed Posts List with bounded scrollbar */}
+                        <div className="space-y-4 max-h-[800px] overflow-y-auto pr-1">
+                            {feedData.posts && feedData.posts.length > 0 ? (
+                                feedData.posts.map((post: any) => (
+                                    <SocialFeedCard
+                                        key={post.id}
+                                        post={post}
+                                        currentUserId={currentUser?.id}
+                                        currentUserRole={currentUser?.role}
+                                        onPostUpdated={refreshFeed}
+                                        onViewProfile={id => setSelectedUserIdForProfile(id)}
+                                    />
+                                ))
+                            ) : (
+                                <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 text-slate-400">
+                                    <Sparkles className="w-8 h-8 mx-auto text-amber-400 mb-2 opacity-60" />
+                                    <p className="font-medium text-xs">Chưa có bài viết nào trên bảng tin.</p>
+                                    <p className="text-[11px] text-slate-500 mt-1">Hãy là người đầu tiên đăng bài chúc mừng đồng đội!</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* LEADERBOARD ONLY VIEW (Full width) */}
+            {layoutView === 'LEADERBOARD' && (
+                <div className="max-w-5xl mx-auto space-y-6">
                     <LeaderboardPodium
                         mode={mode}
-                        topThree={leaderboardData.topThree || []}
+                        topThree={activeData.topThree || []}
                         criteria={criteria}
                         onCheerUser={handleCheerUser}
                         onCheerTeam={handleCheerTeam}
                         onViewProfile={id => setSelectedUserIdForProfile(id)}
+                        onCreateGroup={() => handleOpenGroupModal()}
+                        isAdmin={isAdmin}
                     />
 
-                    {/* Full Ranking List Table */}
                     <RankListTable
                         mode={mode}
-                        leaderboard={leaderboardData.fullList || []}
+                        leaderboard={activeData.fullList || []}
                         criteria={criteria}
                         currentUserId={currentUser?.id}
                         currentUserRole={currentUser?.role}
@@ -361,23 +509,25 @@ export default function LeaderboardClient({ initialLeaderboard, initialFeed, ini
                         onCheerTeam={handleCheerTeam}
                         onViewProfile={id => setSelectedUserIdForProfile(id)}
                         onEditGroup={handleOpenGroupModal}
+                        onCreateGroup={() => handleOpenGroupModal()}
                     />
                 </div>
+            )}
 
-                {/* RIGHT COLUMN: Social Wall / Live Feed (Mini Facebook, 5 Cols) */}
-                <div id="social-wall-section" className="lg:col-span-5 space-y-4">
-                    {/* Section Title */}
-                    <div className="flex items-center justify-between">
+            {/* FEED ONLY VIEW (Full width centered) */}
+            {layoutView === 'FEED' && (
+                <div id="social-wall-section" className="max-w-2xl mx-auto space-y-4">
+                    <div className="flex items-center justify-between pb-2">
                         <div className="flex items-center gap-2">
                             <div className="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold">
                                 <MessageSquare className="w-4 h-4" />
                             </div>
                             <div>
                                 <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">
-                                    Mạng Xã Hội Thi Đua & Vinh Danh
+                                    Bảng Tin Mạng Xã Hội Nội Bộ
                                 </h3>
                                 <p className="text-[11px] text-slate-400">
-                                    Chia sẻ cảm xúc, vinh danh cá nhân và tập thể
+                                    Không gian giao lưu, chúc mừng và lan tỏa năng lượng tích cực
                                 </p>
                             </div>
                         </div>
@@ -392,7 +542,6 @@ export default function LeaderboardClient({ initialLeaderboard, initialFeed, ini
                         </button>
                     </div>
 
-                    {/* Create Post Box */}
                     <CreatePostBox
                         currentUser={currentUser}
                         competitionGroups={competitionGroups}
@@ -401,7 +550,6 @@ export default function LeaderboardClient({ initialLeaderboard, initialFeed, ini
                         onClearInitialMention={() => setActiveMention(null)}
                     />
 
-                    {/* Feed Posts List */}
                     <div className="space-y-4">
                         {feedData.posts && feedData.posts.length > 0 ? (
                             feedData.posts.map((post: any) => (
@@ -418,12 +566,11 @@ export default function LeaderboardClient({ initialLeaderboard, initialFeed, ini
                             <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 text-slate-400">
                                 <Sparkles className="w-8 h-8 mx-auto text-amber-400 mb-2 opacity-60" />
                                 <p className="font-medium text-xs">Chưa có bài viết nào trên bảng tin.</p>
-                                <p className="text-[11px] text-slate-500 mt-1">Hãy là người đầu tiên đăng bài chúc mừng đồng đội!</p>
                             </div>
                         )}
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* User Mini Profile Modal (Facebook-style profile preview) */}
             <UserProfileModal

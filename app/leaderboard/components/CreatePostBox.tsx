@@ -60,7 +60,7 @@ export function CreatePostBox({
             } else {
                 setPostType('INDIVIDUAL_HONOR');
                 setContent(prev => {
-                    if (prev.includes(`@${initialMention.name}`)) return prev;
+                    if (prev && initialMention.name && prev.includes(`@${initialMention.name}`)) return prev;
                     return `Chúc mừng @${initialMention.name} đã đạt thành tích rực rỡ! Chiến binh xuất sắc của đại gia đình TSOL! 🎉🔥 `;
                 });
                 setTaggedUsers(prev => {

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, TrendingUp, TrendingDown, Minus, Sparkles, Trophy, Users, Shield, Edit3, Target, DollarSign, Award } from 'lucide-react';
+import { Search, TrendingUp, TrendingDown, Minus, Sparkles, Trophy, Users, Shield, Edit3, Target, DollarSign, Award, PlusCircle } from 'lucide-react';
 import { CriteriaKey, LeaderboardMode } from '../actions';
 
 interface Props {
@@ -14,18 +14,20 @@ interface Props {
     onCheerTeam?: (groupName: string, groupId: string) => void;
     onViewProfile?: (userId: string) => void;
     onEditGroup?: (group: any) => void;
+    onCreateGroup?: () => void;
 }
 
 export function RankListTable({
     mode,
-    leaderboard,
+    leaderboard = [],
     criteria,
     currentUserId,
     currentUserRole,
     onCheerUser,
     onCheerTeam,
     onViewProfile,
-    onEditGroup
+    onEditGroup,
+    onCreateGroup
 }: Props) {
     const [searchQuery, setSearchQuery] = useState('');
     const isAdmin = currentUserRole === 'ADMIN' || currentUserRole === 'MANAGER';
@@ -35,35 +37,38 @@ export function RankListTable({
     };
 
     const formatScore = (item: any) => {
+        if (!item) return '0';
         switch (criteria) {
             case 'REVENUE':
-                return formatVND(item.score);
+                return formatVND(item.score || 0);
             case 'CUSTOMERS':
-                return `${item.score} Khách hàng`;
+                return `${item.score || 0} Khách hàng`;
             case 'LEADS':
-                return `${item.score} Cơ hội`;
+                return `${item.score || 0} Cơ hội`;
             case 'ESTIMATES':
-                return `${item.score} Báo giá`;
+                return `${item.score || 0} Báo giá`;
             case 'CONVERSION_RATE':
-                return `${item.score}% Chốt`;
+                return `${item.score || 0}% Chốt`;
             default:
-                return `${item.score}`;
+                return `${item.score || 0}`;
         }
     };
 
-    const filteredList = leaderboard.filter(item => {
+    const filteredList = (leaderboard || []).filter(item => {
+        if (!item) return false;
+        const q = (searchQuery || '').toLowerCase().trim();
+        if (!q) return true;
+
         if (mode === 'INDIVIDUAL') {
-            return (
-                item.user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                item.user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                item.user.employeeProfile?.department?.toLowerCase().includes(searchQuery.toLowerCase())
-            );
+            const name = (item.user?.name || '').toLowerCase();
+            const email = (item.user?.email || '').toLowerCase();
+            const dept = (item.user?.employeeProfile?.department || item.user?.role || '').toLowerCase();
+            return name.includes(q) || email.includes(q) || dept.includes(q);
         } else {
-            return (
-                item.group.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                item.group.slogan?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                item.group.leader?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-            );
+            const name = (item.group?.name || '').toLowerCase();
+            const slogan = (item.group?.slogan || '').toLowerCase();
+            const leader = (item.group?.leader?.name || '').toLowerCase();
+            return name.includes(q) || slogan.includes(q) || leader.includes(q);
         }
     });
 
@@ -115,12 +120,12 @@ export function RankListTable({
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                         {filteredList.length > 0 ? (
-                            filteredList.map((item: any) => {
+                            filteredList.map((item: any, idx: number) => {
                                 const isCurrentUser = mode === 'INDIVIDUAL' && item.user?.id === currentUserId;
 
                                 return (
                                     <tr 
-                                        key={mode === 'INDIVIDUAL' ? item.user.id : item.group.id}
+                                        key={mode === 'INDIVIDUAL' ? (item.user?.id || idx) : (item.group?.id || idx)}
                                         className={`transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/40 ${isCurrentUser ? 'bg-emerald-50/60 dark:bg-emerald-950/20 font-semibold' : ''}`}
                                     >
                                         {/* Rank Column */}
@@ -140,17 +145,17 @@ export function RankListTable({
                                                     </span>
                                                 ) : (
                                                     <span className="font-bold text-slate-500 text-xs">
-                                                        #{item.rank}
+                                                        #{item.rank || (idx + 1)}
                                                     </span>
                                                 )}
 
                                                 {/* Delta indicator */}
                                                 <div className="text-[10px] mt-0.5">
-                                                    {item.delta > 0 ? (
+                                                    {(item.delta || 0) > 0 ? (
                                                         <span className="text-emerald-500 font-bold flex items-center">
                                                             <TrendingUp className="w-2.5 h-2.5 inline" />+{item.delta}
                                                         </span>
-                                                    ) : item.delta < 0 ? (
+                                                    ) : (item.delta || 0) < 0 ? (
                                                         <span className="text-rose-500 font-bold flex items-center">
                                                             <TrendingDown className="w-2.5 h-2.5 inline" />{item.delta}
                                                         </span>
@@ -168,17 +173,17 @@ export function RankListTable({
                                             {mode === 'INDIVIDUAL' ? (
                                                 <div className="flex items-center gap-3">
                                                     <img
-                                                        src={item.user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.user.name || 'U')}&background=059669&color=fff&size=80`}
-                                                        alt={item.user.name}
-                                                        onClick={() => onViewProfile && onViewProfile(item.user.id)}
+                                                        src={item.user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.user?.name || 'U')}&background=059669&color=fff&size=80`}
+                                                        alt={item.user?.name || 'User'}
+                                                        onClick={() => item.user?.id && onViewProfile && onViewProfile(item.user.id)}
                                                         className="w-10 h-10 rounded-2xl object-cover border border-slate-200 dark:border-slate-700 shrink-0 cursor-pointer hover:ring-2 hover:ring-emerald-500 transition-all"
                                                     />
                                                     <div className="min-w-0">
                                                         <div 
-                                                            onClick={() => onViewProfile && onViewProfile(item.user.id)}
+                                                            onClick={() => item.user?.id && onViewProfile && onViewProfile(item.user.id)}
                                                             className="font-bold text-slate-900 dark:text-slate-100 truncate hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer flex items-center gap-1.5"
                                                         >
-                                                            <span>{item.user.name}</span>
+                                                            <span>{item.user?.name || 'Chiến binh'}</span>
                                                             {isCurrentUser && (
                                                                 <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-black">
                                                                     Bạn
@@ -186,7 +191,7 @@ export function RankListTable({
                                                             )}
                                                         </div>
                                                         <div className="text-[11px] text-slate-400 truncate">
-                                                            {item.user.employeeProfile?.department || item.user.role}
+                                                            {item.user?.employeeProfile?.department || item.user?.role || ''}
                                                         </div>
                                                         {item.badge && (
                                                             <span className="inline-block px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 text-[10px] font-bold mt-0.5 border border-amber-200/60 dark:border-amber-800/60">
@@ -199,14 +204,14 @@ export function RankListTable({
                                                 <div className="flex items-center gap-3">
                                                     <div 
                                                         className="w-11 h-11 rounded-2xl flex items-center justify-center text-2xl shrink-0 shadow-sm border border-slate-200 dark:border-slate-700"
-                                                        style={{ backgroundColor: `${item.group.color}20` }}
+                                                        style={{ backgroundColor: `${item.group?.color || '#059669'}20` }}
                                                     >
-                                                        {item.group.avatar || '🛡️'}
+                                                        {item.group?.avatar || '🛡️'}
                                                     </div>
                                                     <div className="min-w-0">
                                                         <div className="font-bold text-slate-900 dark:text-slate-100 truncate flex items-center gap-2">
-                                                            <span>{item.group.name}</span>
-                                                            {isAdmin && onEditGroup && (
+                                                            <span>{item.group?.name || 'Đội thi đua'}</span>
+                                                            {isAdmin && onEditGroup && item.group && (
                                                                 <button
                                                                     onClick={() => onEditGroup(item.group)}
                                                                     className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
@@ -216,12 +221,12 @@ export function RankListTable({
                                                                 </button>
                                                             )}
                                                         </div>
-                                                        {item.group.slogan && (
+                                                        {item.group?.slogan && (
                                                             <div className="text-[11px] text-slate-500 italic truncate">
                                                                 "{item.group.slogan}"
                                                             </div>
                                                         )}
-                                                        {item.group.leader && (
+                                                        {item.group?.leader && (
                                                             <div className="text-[10px] text-slate-400 mt-0.5">
                                                                 👑 Leader: <span className="font-bold text-slate-600 dark:text-slate-300">{item.group.leader.name}</span>
                                                             </div>
@@ -236,21 +241,21 @@ export function RankListTable({
                                             <td className="py-3 px-3 hidden md:table-cell">
                                                 <div className="flex items-center">
                                                     <div className="flex -space-x-2 overflow-hidden py-1">
-                                                        {(item.group.members || []).slice(0, 5).map((m: any, idx: number) => {
+                                                        {(item.group?.members || []).slice(0, 5).map((m: any, mIdx: number) => {
                                                             const u = m.user || m;
                                                             return (
                                                                 <img
-                                                                    key={idx}
-                                                                    src={u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'U')}&background=059669&color=fff&size=48`}
-                                                                    alt={u.name}
-                                                                    title={u.name}
-                                                                    onClick={() => onViewProfile && onViewProfile(u.id)}
+                                                                    key={mIdx}
+                                                                    src={u?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u?.name || 'U')}&background=059669&color=fff&size=48`}
+                                                                    alt={u?.name || 'Member'}
+                                                                    title={u?.name || 'Member'}
+                                                                    onClick={() => u?.id && onViewProfile && onViewProfile(u.id)}
                                                                     className="inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-slate-900 object-cover cursor-pointer hover:scale-110 transition-transform"
                                                                 />
                                                             );
                                                         })}
                                                     </div>
-                                                    {(item.group.members || []).length > 5 && (
+                                                    {(item.group?.members || []).length > 5 && (
                                                         <span className="text-[11px] text-slate-400 font-bold ml-1.5">
                                                             +{(item.group.members.length - 5)}
                                                         </span>
@@ -264,7 +269,7 @@ export function RankListTable({
                                             <div className="font-black text-slate-900 dark:text-slate-100 text-xs sm:text-sm">
                                                 {formatScore(item)}
                                             </div>
-                                            {mode === 'TEAM' && item.stats.targetRevenue > 0 && (
+                                            {mode === 'TEAM' && item.stats?.targetRevenue > 0 && (
                                                 <div className="text-[10px] text-slate-400">
                                                     Mục tiêu: {formatVND(item.stats.targetRevenue)}
                                                 </div>
@@ -278,17 +283,17 @@ export function RankListTable({
                                                     <div 
                                                         className="h-full rounded-full transition-all duration-500"
                                                         style={{ 
-                                                            width: `${mode === 'TEAM' && item.stats.targetRevenue > 0 ? Math.min(100, item.stats.targetProgress) : item.percentageOfTop}%`,
-                                                            background: mode === 'TEAM' && item.stats.targetProgress >= 100 
+                                                            width: `${mode === 'TEAM' && item.stats?.targetRevenue > 0 ? Math.min(100, item.stats.targetProgress || 0) : (item.percentageOfTop || 0)}%`,
+                                                            background: mode === 'TEAM' && (item.stats?.targetProgress || 0) >= 100 
                                                                 ? 'linear-gradient(90deg, #10b981 0%, #059669 100%)' 
                                                                 : 'linear-gradient(90deg, #3b82f6 0%, #6366f1 100%)'
                                                         }}
                                                     />
                                                 </div>
                                                 <div className="text-[10px] text-slate-400 font-semibold">
-                                                    {mode === 'TEAM' && item.stats.targetRevenue > 0 
-                                                        ? `${item.stats.targetProgress}% KPI` 
-                                                        : `${item.percentageOfTop}% Top 1`}
+                                                    {mode === 'TEAM' && item.stats?.targetRevenue > 0 
+                                                        ? `${item.stats?.targetProgress || 0}% KPI` 
+                                                        : `${item.percentageOfTop || 0}% Top 1`}
                                                 </div>
                                             </div>
                                         </td>
@@ -297,9 +302,9 @@ export function RankListTable({
                                         <td className="py-3 px-3 text-right">
                                             <button
                                                 onClick={() => {
-                                                    if (mode === 'INDIVIDUAL' && onCheerUser) {
+                                                    if (mode === 'INDIVIDUAL' && onCheerUser && item.user) {
                                                         onCheerUser(item.user.name, item.user.id);
-                                                    } else if (mode === 'TEAM' && onCheerTeam) {
+                                                    } else if (mode === 'TEAM' && onCheerTeam && item.group) {
                                                         onCheerTeam(item.group.name, item.group.id);
                                                     }
                                                 }}
@@ -315,8 +320,31 @@ export function RankListTable({
                             })
                         ) : (
                             <tr>
-                                <td colSpan={6} className="py-8 text-center text-slate-400 text-xs">
-                                    Không có dữ liệu phù hợp với tìm kiếm.
+                                <td colSpan={mode === 'TEAM' ? 6 : 5} className="py-12 text-center text-slate-400">
+                                    {mode === 'TEAM' ? (
+                                        <div className="space-y-3">
+                                            <Shield className="w-10 h-10 mx-auto text-emerald-400 opacity-60" />
+                                            <div>
+                                                <p className="font-bold text-sm text-slate-700 dark:text-slate-300">
+                                                    Chưa có nhóm thi đua nào được thành lập.
+                                                </p>
+                                                <p className="text-xs text-slate-400 mt-0.5">
+                                                    Hãy tạo nhóm thi đua mới để cùng đồng đội tranh tài và bứt phá!
+                                                </p>
+                                            </div>
+                                            {isAdmin && onCreateGroup && (
+                                                <button
+                                                    onClick={onCreateGroup}
+                                                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all cursor-pointer"
+                                                >
+                                                    <PlusCircle className="w-4 h-4" />
+                                                    <span>Tạo nhóm thi đua ngay</span>
+                                                </button>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <p className="text-xs">Không có dữ liệu phù hợp với tìm kiếm.</p>
+                                    )}
                                 </td>
                             </tr>
                         )}

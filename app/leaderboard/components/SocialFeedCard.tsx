@@ -117,7 +117,7 @@ export function SocialFeedCard({
 
     return (
         <div 
-            className="rounded-3xl p-4 sm:p-5 shadow-sm border transition-all hover:shadow-md relative space-y-3.5"
+            className="rounded-3xl p-4 sm:p-5 shadow-sm border transition-all hover:shadow-md relative space-y-3"
             style={{ 
                 background: post.isPinned ? '#fffdf7' : '#ffffff', 
                 borderColor: post.isPinned ? '#fde68a' : '#e2e8f0' 
@@ -135,18 +135,18 @@ export function SocialFeedCard({
             <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                     <img
-                        src={post.author.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author.name || 'U')}&background=059669&color=fff&size=80`}
-                        alt={post.author.name}
-                        onClick={() => onViewProfile && onViewProfile(post.author.id)}
+                        src={post.author?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author?.name || 'U')}&background=059669&color=fff&size=80`}
+                        alt={post.author?.name || 'User'}
+                        onClick={() => post.author?.id && onViewProfile && onViewProfile(post.author.id)}
                         className="w-10 h-10 rounded-2xl object-cover border border-slate-200 dark:border-slate-700 shrink-0 cursor-pointer hover:ring-2 hover:ring-emerald-500 transition-all"
                     />
                     <div className="min-w-0">
                         <div className="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-100 truncate flex items-center gap-1.5">
                             <span 
-                                onClick={() => onViewProfile && onViewProfile(post.author.id)}
+                                onClick={() => post.author?.id && onViewProfile && onViewProfile(post.author.id)}
                                 className="hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer"
                             >
-                                {post.author.name}
+                                {post.author?.name || 'Thành viên TSOL'}
                             </span>
                             {post.type === 'ACHIEVEMENT_ANNOUNCEMENT' && (
                                 <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 text-[10px] font-black">
@@ -155,7 +155,7 @@ export function SocialFeedCard({
                             )}
                         </div>
                         <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
-                            <span>{post.author.employeeProfile?.department || post.author.role}</span>
+                            <span>{post.author?.employeeProfile?.department || post.author?.role || ''}</span>
                             <span>•</span>
                             <span>{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: vi })}</span>
                         </div>
@@ -207,13 +207,13 @@ export function SocialFeedCard({
             {/* Team Honor Banner (if post is for a competition group) */}
             {post.group && (
                 <div 
-                    className="p-3 rounded-2xl border flex items-center gap-3 text-xs"
+                    className="p-2.5 rounded-2xl border flex items-center gap-2.5 text-xs"
                     style={{ 
                         backgroundColor: `${post.group.color || '#059669'}15`, 
                         borderColor: `${post.group.color || '#059669'}40` 
                     }}
                 >
-                    <div className="text-2xl">{post.group.avatar || '🛡️'}</div>
+                    <div className="text-xl">{post.group.avatar || '🛡️'}</div>
                     <div className="min-w-0">
                         <div className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
                             <span>Vinh danh Đội Thi Đua: {post.group.name}</span>
@@ -240,20 +240,21 @@ export function SocialFeedCard({
                 {renderFormattedContent(post.content)}
             </div>
 
-            {/* Images Grid */}
+            {/* Images Grid - Constrained nicely to avoid stretching the timeline */}
             {post.images && post.images.length > 0 && (
                 <div className={`grid gap-2 rounded-2xl overflow-hidden ${post.images.length === 1 ? 'grid-cols-1' : post.images.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
                     {post.images.map((img: string, idx: number) => (
                         <div 
                             key={idx}
                             onClick={() => setSelectedImage(img)}
-                            className="relative aspect-video rounded-xl overflow-hidden cursor-pointer bg-slate-100 dark:bg-slate-800 group"
+                            className="relative max-h-72 sm:max-h-80 w-full rounded-xl overflow-hidden cursor-pointer bg-slate-100 dark:bg-slate-800 group flex items-center justify-center border border-slate-200 dark:border-slate-700"
                         >
                             <img 
                                 src={img} 
                                 alt="Post attachment" 
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                                className="w-full h-full object-cover max-h-72 sm:max-h-80 group-hover:scale-105 transition-transform duration-300" 
                             />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none" />
                         </div>
                     ))}
                 </div>
@@ -267,10 +268,10 @@ export function SocialFeedCard({
                             <span 
                                 key={emoji} 
                                 className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[11px] font-bold"
-                                title={data.users.map((u: any) => u.name).join(', ')}
+                                title={(data?.users || []).map((u: any) => u.name).join(', ')}
                             >
                                 <span>{EMOJI_MAP[emoji as ReactionEmoji]?.icon || '❤️'}</span>
-                                <span className="text-slate-600 dark:text-slate-300">{data.count}</span>
+                                <span className="text-slate-600 dark:text-slate-300">{data?.count || 0}</span>
                             </span>
                         ))}
                     </div>
@@ -340,18 +341,18 @@ export function SocialFeedCard({
                             {post.comments.map((comment: any) => (
                                 <div key={comment.id} className="flex items-start gap-2.5 text-xs">
                                     <img
-                                        src={comment.author.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.author.name || 'U')}&background=059669&color=fff&size=64`}
-                                        alt={comment.author.name}
-                                        onClick={() => onViewProfile && onViewProfile(comment.author.id)}
+                                        src={comment.author?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.author?.name || 'U')}&background=059669&color=fff&size=64`}
+                                        alt={comment.author?.name || 'User'}
+                                        onClick={() => comment.author?.id && onViewProfile && onViewProfile(comment.author.id)}
                                         className="w-7 h-7 rounded-xl object-cover shrink-0 cursor-pointer hover:ring-2 hover:ring-emerald-500"
                                     />
                                     <div className="flex-1 bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-2.5 border border-slate-200/60 dark:border-slate-700/60">
                                         <div className="flex items-center justify-between">
                                             <span 
-                                                onClick={() => onViewProfile && onViewProfile(comment.author.id)}
+                                                onClick={() => comment.author?.id && onViewProfile && onViewProfile(comment.author.id)}
                                                 className="font-bold text-slate-900 dark:text-slate-100 hover:underline cursor-pointer"
                                             >
-                                                {comment.author.name}
+                                                {comment.author?.name || 'Đồng nghiệp'}
                                             </span>
                                             <span className="text-[10px] text-slate-400">
                                                 {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: vi })}

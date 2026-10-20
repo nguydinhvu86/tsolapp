@@ -143,11 +143,14 @@ export function CompetitionGroupModal({ group, isOpen, onClose, onSuccess }: Pro
         }
     };
 
-    const filteredUsers = allUsers.filter(u => 
-        u.name?.toLowerCase().includes(memberSearch.toLowerCase()) ||
-        u.email?.toLowerCase().includes(memberSearch.toLowerCase()) ||
-        u.employeeProfile?.department?.toLowerCase().includes(memberSearch.toLowerCase())
-    );
+    const filteredUsers = (allUsers || []).filter(u => {
+        const s = (memberSearch || '').toLowerCase().trim();
+        if (!s) return true;
+        const name = (u?.name || '').toLowerCase();
+        const email = (u?.email || '').toLowerCase();
+        const dept = (u?.employeeProfile?.department || u?.role || '').toLowerCase();
+        return name.includes(s) || email.includes(s) || dept.includes(s);
+    });
 
     const formatVND = (num: number) => {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(num || 0);
