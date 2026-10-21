@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import Link from 'next/link';
 import { DollarSign, Receipt, CreditCard, Users, Box, Briefcase, Plus, X, CheckCircle2, Circle, Clock, CheckCheck, Calendar as CalendarIcon, Globe, Lock, ArrowRight, Building2, HandCoins, GripVertical, Pencil, Trash2 } from 'lucide-react';
 import { AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
@@ -504,13 +505,12 @@ function InvoiceStatusWidget({ invoices }: { invoices: any[] }) {
                         <p className="text-[11px] text-slate-400 font-medium leading-none mt-0.5">Theo dõi hạn thu & công nợ</p>
                     </div>
                 </div>
-                <a
-                    href={`/sales/invoices?filter=${activeTab}`}
+                <Link href={`/sales/invoices?filter=${activeTab}`}
                     className="text-xs text-primary hover:text-emerald-700 font-semibold flex items-center gap-1 group/link transition-colors py-1 px-2 rounded-lg hover:bg-emerald-50/60"
                 >
                     <span>{t("dashboard.invoice.viewAll")}</span>
                     <ArrowRight size={13} className="transition-transform group-hover/link:translate-x-0.5" />
-                </a>
+                </Link>
             </div>
 
             {/* Segmented Pill Tabs */}
@@ -572,14 +572,13 @@ function InvoiceStatusWidget({ invoices }: { invoices: any[] }) {
                                 >
                                     {/* Row 1: Code + Due Date */}
                                     <div className="flex items-center justify-between gap-2">
-                                        <a
-                                            href={`/sales/invoices/${inv.id}`}
+                                        <Link href={`/sales/invoices/${inv.id}`}
                                             className="font-mono font-bold text-xs text-slate-800 group-hover:text-primary transition-colors flex items-center gap-1.5 tracking-tight truncate"
                                             title={inv.code}
                                         >
                                             <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-primary"></span>
                                             {inv.code}
-                                        </a>
+                                        </Link>
                                         <span className={`inline-flex items-center gap-1 text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md border shrink-0 ${
                                             isOverdue
                                                 ? 'bg-rose-50 text-rose-700 border-rose-200/70'
@@ -782,12 +781,12 @@ export function DashboardClient({
                     </div>
                     <div className="flex flex-col sm:flex-row md:items-center items-stretch gap-2.5 w-full md:w-auto">
                         <div className="flex items-center gap-2 mr-1">
-                           <a href="/sales/estimates/new" className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-semibold transition-colors border border-emerald-200/60 shadow-xs">
+                           <Link href="/sales/estimates/new" className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-semibold transition-colors border border-emerald-200/60 shadow-xs">
                                <Receipt size={14} className="shrink-0" /> <span className="whitespace-nowrap">Báo giá</span>
-                           </a>
-                           <a href="/customers" className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-semibold transition-colors border border-blue-200/60 shadow-xs">
+                           </Link>
+                           <Link href="/customers" className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-semibold transition-colors border border-blue-200/60 shadow-xs">
                                <Users size={14} className="shrink-0" /> <span className="whitespace-nowrap">Khách hàng</span>
-                           </a>
+                           </Link>
                            <button onClick={() => setIsAddEventModalOpen(true)} className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-xs font-semibold transition-colors border border-indigo-200/60 shadow-xs">
                                <Briefcase size={14} className="shrink-0" /> <span className="whitespace-nowrap">Giao việc</span>
                            </button>
@@ -988,9 +987,9 @@ export function DashboardClient({
                                                                                                 <tr key={task.id} className={rowClass} style={rowStyle}>
                                                                                                     <td>
                                                                                                         <div style={{ fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                                                                            <a href={`/tasks/${task.id}`} className={`text-xs font-semibold truncate max-w-[200px] hover:underline ${overdue ? 'text-rose-950 font-bold' : 'text-blue-600'}`} title={task.title}>
+                                                                                                            <Link href={`/tasks/${task.id}`} className={`text-xs font-semibold truncate max-w-[200px] hover:underline ${overdue ? 'text-rose-950 font-bold' : 'text-blue-600'}`} title={task.title}>
                                                                                                                 {task.title}
-                                                                                                            </a>
+                                                                                                            </Link>
                                                                                                             {overdue && (
                                                                                                                 <span className="animate-overdue-badge inline-flex items-center gap-1 border border-rose-300 px-1.5 py-0.5 rounded text-[10px] font-black" style={{ whiteSpace: 'nowrap' }}>
                                                                                                                     QUÁ HẠN
@@ -1094,9 +1093,9 @@ export function DashboardClient({
                                                                                 <Users size={15} className="text-emerald-600" />
                                                                                 <span>{t("dashboard.leads.myLeadsTitle")}</span>
                                                                             </h3>
-                                                                            <a href="/sales/leads" className="text-xs text-emerald-600 hover:text-emerald-800 font-semibold flex items-center gap-1 transition-colors">
+                                                                            <Link href="/sales/leads" className="text-xs text-emerald-600 hover:text-emerald-800 font-semibold flex items-center gap-1 transition-colors">
                                                                                 <span>{t("dashboard.leads.viewAll")}</span> <span style={{ fontSize: '9px' }}>▶</span>
-                                                                            </a>
+                                                                            </Link>
                                                                         </div>
 
                                                                         {activeLeads.length === 0 ? (
@@ -1138,9 +1137,9 @@ export function DashboardClient({
                                                                                             return (
                                                                                                 <tr key={lead.id} className="hover:bg-slate-50/60 transition-colors group">
                                                                                                     <td className="py-2.5 px-3.5 border-b border-slate-100">
-                                                                                                        <a href={`/sales/leads/${lead.id}`} className="text-xs font-semibold text-emerald-600 group-hover:underline">
+                                                                                                        <Link href={`/sales/leads/${lead.id}`} className="text-xs font-semibold text-emerald-600 group-hover:underline">
                                                                                                             {lead.code}
-                                                                                                        </a>
+                                                                                                        </Link>
                                                                                                     </td>
                                                                                                     <td className="py-2.5 px-3.5 border-b border-slate-100">
                                                                                                         <div className="text-xs font-normal text-slate-700 line-clamp-1" title={lead.name}>
