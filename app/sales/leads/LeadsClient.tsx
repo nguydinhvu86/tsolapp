@@ -522,7 +522,7 @@ export function LeadsClient({
                                         } else {
                                             params.delete('employeeId');
                                         }
-                                        window.location.href = `/sales/leads?${params.toString()}`;
+                                        router.push(`/sales/leads?${params.toString()}`);
                                     }}
                                 >
                                     <option value="">{t('leads.filterAllEmployees')}</option>

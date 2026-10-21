@@ -799,6 +799,9 @@ table {
 }
 
 .table-wrapper table th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
     background: #f8fafc;
     text-align: left;
     padding: 0.55rem 0.85rem;
@@ -808,6 +811,7 @@ table {
     letter-spacing: 0.04em;
     color: #475569;
     border-bottom: 1px solid #e2e8f0;
+    box-shadow: 0 1px 0 #e2e8f0;
     white-space: nowrap;
 }
 

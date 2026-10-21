@@ -1819,7 +1819,17 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                             );
                         })}
                         {paginatedItems.length === 0 && (
-                            <tr><td colSpan={9} className="py-8 text-center text-slate-400 text-xs">{t('invoices.emptyNoMatch')}</td></tr>
+                            <tr>
+                                <td colSpan={9} className="py-12 text-center">
+                                    <div className="flex flex-col items-center justify-center gap-2">
+                                        <div className="w-11 h-11 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                                            <FileSearch size={22} />
+                                        </div>
+                                        <span className="font-semibold text-slate-700 text-xs">{t('invoices.emptyNoMatch') || 'Không tìm thấy hóa đơn phù hợp'}</span>
+                                        <span className="text-slate-400 text-[11.5px] max-w-xs">Thử thay đổi từ khóa tìm kiếm hoặc điều chỉnh khoảng ngày lọc</span>
+                                    </div>
+                                </td>
+                            </tr>
                         )}
                     </tbody>
                 </Table>

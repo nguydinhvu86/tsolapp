@@ -12,7 +12,7 @@ import { Button } from '@/app/components/ui/Button';
 import { useTranslation } from '@/app/i18n/LanguageContext';
 import { Modal } from '@/app/components/ui/Modal';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
-import { Plus, Edit2, Trash2, Save, X, Printer, FileText, Search, Calendar, FolderClock, LayoutList, CheckCircle2, XCircle, Eye, Link as LinkIcon, Download, ChevronUp, ChevronDown, Check, ArrowRightLeft, ShoppingCart, Copy, ArrowUpDown, GripVertical } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Printer, FileText, Search, FileSearch, Calendar, FolderClock, LayoutList, CheckCircle2, XCircle, Eye, Link as LinkIcon, Download, ChevronUp, ChevronDown, Check, ArrowRightLeft, ShoppingCart, Copy, ArrowUpDown, GripVertical } from 'lucide-react';
 import { submitSalesEstimate, updateSalesEstimateStatus, deleteSalesEstimate, updateSalesEstimate, convertEstimateToInvoice, convertEstimateToOrder } from './actions';
 import { formatMoney, formatDate, formatTaxRate, calcPreTaxPrice, calcTaxAmount } from '@/lib/utils/formatters';
 import { TaxRateSelect, TaxBadge } from '@/app/components/ui/TaxRateSelect';
@@ -982,9 +982,17 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                 );
                             })}
                             {paginatedItems.length === 0 && (
-                                <tr><td colSpan={8} className="py-8 text-center text-slate-400 text-xs">
-                                    {estimates.length === 0 ? t('estimates.emptyNoEstimates') : t('estimates.emptyNoMatch')}
-                                </td></tr>
+                                <tr>
+                                    <td colSpan={8} className="py-12 text-center">
+                                        <div className="flex flex-col items-center justify-center gap-2">
+                                            <div className="w-11 h-11 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                                                <FileSearch size={22} />
+                                            </div>
+                                            <span className="font-semibold text-slate-700 text-xs">{estimates.length === 0 ? t('estimates.emptyNoEstimates') : t('estimates.emptyNoMatch')}</span>
+                                            <span className="text-slate-400 text-[11.5px] max-w-xs">Thử thay đổi từ khóa hoặc bộ lọc để xem các báo giá khác</span>
+                                        </div>
+                                    </td>
+                                </tr>
                             )}
                         </tbody>
                     </Table>
