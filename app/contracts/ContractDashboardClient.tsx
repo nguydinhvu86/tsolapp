@@ -15,6 +15,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useTranslation } from '@/app/i18n/LanguageContext';
+import { useToast, toast } from '@/app/components/providers/ToastProvider';
+import { useConfirm, confirmModal } from '@/app/components/providers/ConfirmProvider';
 
 type ContractWithRelations = Contract & { customer: Customer, template: ContractTemplate };
 
@@ -95,7 +97,7 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
     const { paginatedItems, paginationProps } = usePagination(sortedData, 20);
 
     const handleDelete = async (id: string) => {
-        if (confirm(t('contractDashboard.confirmDelete'))) {
+        if (await confirmModal(t('contractDashboard.confirmDelete'))) {
             await deleteContract(id);
             router.refresh();
         }
@@ -301,7 +303,7 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
                                             onClick={() => {
                                                 const url = `${window.location.origin}/public/contracts/${c.id}`;
                                                 navigator.clipboard.writeText(url);
-                                                alert('Đã copy link public: ' + url);
+                                                toast.success('Đã sao chép liên kết xem trước', url);
                                             }}
                                             className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                                             title="Copy Link xem trước cho Khách hàng"

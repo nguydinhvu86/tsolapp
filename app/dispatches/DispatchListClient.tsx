@@ -1,4 +1,6 @@
 'use client'
+import { confirmModal } from '@/app/components/providers/ConfirmProvider';
+import { toast } from '@/app/components/providers/ToastProvider';
 import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState } from 'react';
@@ -34,7 +36,7 @@ export function DispatchListClient({ initialData }: { initialData: DispatchWithR
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
     const handleDelete = async (id: string) => {
-        if (confirm('Bạn có chắc chắn muốn xóa công văn này?')) {
+        if (await confirmModal('Bạn có chắc chắn muốn xóa công văn này?')) {
             await deleteDispatch(id);
             router.refresh();
         }
@@ -192,7 +194,7 @@ export function DispatchListClient({ initialData }: { initialData: DispatchWithR
                                         onClick={() => {
                                             const url = `${window.location.origin}/public/dispatches/${d.id}`;
                                             navigator.clipboard.writeText(url);
-                                            alert('Đã copy link public: ' + url);
+                                            toast.success('Đã sao chép liên kết xem trước', url);
                                         }}
                                         style={{ color: 'var(--primary)', padding: '0.25rem' }}
                                         title="Copy Link xem trước cho Khách hàng"

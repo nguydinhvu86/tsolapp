@@ -1,4 +1,6 @@
 'use client';
+import { confirmModal } from '@/app/components/providers/ConfirmProvider';
+import { toast } from '@/app/components/providers/ToastProvider';
 
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
@@ -220,7 +222,7 @@ export function ProjectListClient({
         } catch (error) {
             console.error('Lỗi cập nhật trạng thái', error);
             setLocalProjects(previousProjects);
-            alert('Lỗi cập nhật trạng thái dự án. Vui lòng kiểm tra quyền truy cập.');
+            toast.error('Lỗi cập nhật trạng thái dự án. Vui lòng kiểm tra quyền truy cập.');
         }
     };
 
@@ -250,7 +252,7 @@ export function ProjectListClient({
             resetCreateForm();
             router.refresh();
         } catch (error: any) {
-            alert(error.message || 'Lỗi khi tạo dự án');
+            toast.error(error.message || 'Lỗi khi tạo dự án');
         } finally {
             setIsSaving(false);
         }
@@ -316,20 +318,20 @@ export function ProjectListClient({
             setEditModalOpen(false);
             router.refresh();
         } catch (error: any) {
-            alert(error.message || 'Lỗi khi cập nhật dự án');
+            toast.error(error.message || 'Lỗi khi cập nhật dự án');
         } finally {
             setIsSaving(false);
         }
     };
 
     const handleDeleteProject = async (id: string, name: string) => {
-        if (!confirm(`Bạn có chắc chắn muốn xóa dự án "${name}"?\nTất cả công việc, thảo luận và tài liệu con sẽ bị xóa hoàn toàn.`)) return;
+        if (!await confirmModal(`Bạn có chắc chắn muốn xóa dự án "${name}"?\nTất cả công việc, thảo luận và tài liệu con sẽ bị xóa hoàn toàn.`)) return;
 
         try {
             await deleteProject(id);
             router.refresh();
         } catch (error: any) {
-            alert(error.message || 'Lỗi khi xóa dự án');
+            toast.error(error.message || 'Lỗi khi xóa dự án');
         }
     };
 

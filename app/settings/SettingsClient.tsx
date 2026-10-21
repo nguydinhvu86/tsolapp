@@ -1,4 +1,5 @@
 'use client';
+import { toast } from '@/app/components/providers/ToastProvider';
 
 import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
@@ -92,7 +93,7 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
             router.refresh(); 
             setTimeout(() => setSaveSuccess(false), 3000);
         } catch (error) {
-            alert("Có lỗi xảy ra khi lưu cấu hình!");
+            toast.error("Có lỗi xảy ra khi lưu cấu hình!");
         } finally {
             setIsSaving(false);
         }
@@ -236,7 +237,7 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
                                                     const data = await res.json();
                                                     setFormData(prev => ({ ...prev, COMPANY_LOGO: data.url }));
                                                 } catch (error) {
-                                                    alert('Lỗi khi tải ảnh lên!');
+                                                    toast.error('Lỗi khi tải ảnh lên!');
                                                 } finally {
                                                     setIsUploadingLogo(false);
                                                     if (e.target) e.target.value = '';

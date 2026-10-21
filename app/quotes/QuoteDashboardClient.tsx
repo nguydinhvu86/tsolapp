@@ -1,4 +1,6 @@
 'use client'
+import { confirmModal } from '@/app/components/providers/ConfirmProvider';
+import { toast } from '@/app/components/providers/ToastProvider';
 import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState, useEffect } from 'react';
@@ -171,7 +173,7 @@ export function QuoteDashboardClient({ initialData }: { initialData: QuoteWithRe
     // ------------------------
 
     const handleDelete = async (id: string) => {
-        if (confirm('Bạn có chắc chắn muốn xóa báo giá này?')) {
+        if (await confirmModal('Bạn có chắc chắn muốn xóa báo giá này?')) {
             setQuotesData(prev => prev.filter(q => q.id !== id)); // Optimistic UI
             await deleteQuote(id);
             router.refresh();
@@ -243,7 +245,7 @@ export function QuoteDashboardClient({ initialData }: { initialData: QuoteWithRe
             URL.revokeObjectURL(url);
         } catch (error) {
             console.error("Lỗi xuất Excel:", error);
-            alert("Đã xảy ra lỗi khi tạo tệp Excel. Vui lòng thử lại.");
+            toast.error("Đã xảy ra lỗi khi tạo tệp Excel. Vui lòng thử lại.");
         }
     };
 
@@ -432,7 +434,7 @@ export function QuoteDashboardClient({ initialData }: { initialData: QuoteWithRe
                                             onClick={() => {
                                                 const url = `${window.location.origin}/public/quotes/${q.id}`;
                                                 navigator.clipboard.writeText(url);
-                                                alert('Đã copy link public: ' + url);
+                                                toast.success('Đã sao chép liên kết xem trước', url);
                                             }}
                                             style={{ color: 'var(--primary)', padding: '0.25rem' }}
                                             title="Copy Link xem trước cho Khách hàng"

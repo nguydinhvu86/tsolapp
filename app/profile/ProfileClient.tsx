@@ -1,4 +1,5 @@
 'use client';
+import { toast } from '@/app/components/providers/ToastProvider';
 
 import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
@@ -143,7 +144,7 @@ export function ProfileClient({ initialProfile, initialStats }: { initialProfile
             await update({ avatar: data.url });
             router.refresh(); // Refresh session
         } catch (err: any) {
-            alert(err.message || 'Upload thất bại (có thể do lỗi cấu hình mạng hoặc file không hỗ trợ)');
+            toast.error(err.message || 'Upload thất bại (có thể do lỗi cấu hình mạng hoặc file không hỗ trợ)');
         } finally {
             setIsUploading(false);
             e.target.value = ''; // Reset input to allow re-uploading the same file
@@ -158,7 +159,7 @@ export function ProfileClient({ initialProfile, initialStats }: { initialProfile
             if (!res.ok) throw new Error(data.error);
             setSetup2Fa({ secret: data.secret, uri: data.uri });
         } catch (err: any) {
-            alert(err.message || 'Không thể tạo mã 2FA');
+            toast.error(err.message || 'Không thể tạo mã 2FA');
         } finally {
             setIsGenerating2Fa(false);
         }
@@ -179,17 +180,17 @@ export function ProfileClient({ initialProfile, initialStats }: { initialProfile
             setSetup2Fa(null);
             setToken2Fa('');
             await update({ twoFactorEnabled: true });
-            alert('Bật xác thực 2 yếu tố thành công!');
+            toast.success('Bật xác thực 2 yếu tố thành công!');
             router.refresh();
         } catch (err: any) {
-            alert(err.message || 'Mã xác thực không hợp lệ');
+            toast.error(err.message || 'Mã xác thực không hợp lệ');
         } finally {
             setIsVerifying2Fa(false);
         }
     };
 
     const disable2FA = async () => {
-        if (!disablePassword) return alert('Vui lòng nhập mật khẩu để tắt 2FA');
+        if (!disablePassword) return toast.info('Vui lòng nhập mật khẩu để tắt 2FA');
         try {
             const res = await fetch('/api/users/2fa/disable', {
                 method: 'POST',
@@ -202,10 +203,10 @@ export function ProfileClient({ initialProfile, initialStats }: { initialProfile
             setShowDisableForm(false);
             setDisablePassword('');
             await update({ twoFactorEnabled: false });
-            alert('Đã tắt xác thực 2 yếu tố');
+            toast.info('Đã tắt xác thực 2 yếu tố');
             router.refresh();
         } catch (err: any) {
-            alert(err.message || 'Mật khẩu không đúng');
+            toast.error(err.message || 'Mật khẩu không đúng');
         }
     };
 

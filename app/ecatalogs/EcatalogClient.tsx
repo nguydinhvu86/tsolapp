@@ -1,4 +1,6 @@
 'use client';
+import { confirmModal } from '@/app/components/providers/ConfirmProvider';
+import { toast } from '@/app/components/providers/ToastProvider';
 
 import { Plus, Search, Edit2, Trash2, ExternalLink } from 'lucide-react';
 import React, { useState } from 'react';
@@ -28,7 +30,7 @@ export default function EcatalogClient({
 
     const handleCreate = async () => {
         if (!name) {
-            alert("Vui lòng nhập tên Catalog");
+            toast.info("Vui lòng nhập tên Catalog");
             return;
         }
 
@@ -39,21 +41,21 @@ export default function EcatalogClient({
         });
 
         if (res.success && res.data) {
-            alert("Tạo Catalog thành công!");
+            toast.success("Tạo Catalog thành công!");
             router.push(`/ecatalogs/${res.data.id}`);
         } else {
-            alert(res.error || "Lỗi tạo catalog");
+            toast.error(res.error || "Lỗi tạo catalog");
         }
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm("Bạn có chắc chắn muốn xóa E-Catalog này?")) return;
+        if (!await confirmModal("Bạn có chắc chắn muốn xóa E-Catalog này?")) return;
         const res = await deleteEcatalog(id, currentUserId);
         if (res.success) {
-            alert("Đã xóa Catalog");
+            toast.info("Đã xóa Catalog");
             setEcatalogs(ecatalogs.filter((c: any) => c.id !== id));
         } else {
-            alert(res.error || "Lỗi khi xóa");
+            toast.error(res.error || "Lỗi khi xóa");
         }
     };
 

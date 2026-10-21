@@ -1,4 +1,5 @@
 'use client';
+import { toast } from '@/app/components/providers/ToastProvider';
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
@@ -54,7 +55,7 @@ export function LibraryActionButtons({ currentCategoryId, canManage, categories 
             setCatDesc('');
             router.refresh();
         } catch (error: any) {
-            alert(error.message || 'Lỗi tạo thư mục');
+            toast.error(error.message || 'Lỗi tạo thư mục');
         } finally {
             setIsSubmittingCat(false);
         }
@@ -101,7 +102,7 @@ export function LibraryActionButtons({ currentCategoryId, canManage, categories 
             setDocFile(null);
             router.refresh();
         } catch (error: any) {
-            alert(error.message || 'Lỗi tải lên tài liệu');
+            toast.error(error.message || 'Lỗi tải lên tài liệu');
         } finally {
             setIsSubmittingDoc(false);
         }
@@ -237,7 +238,7 @@ export function CreateCategoryButton({ parentId, iconOnly, compact }: { parentId
             setDesc('');
             router.refresh();
         } catch (error: any) {
-            alert(error.message || 'Lỗi tạo thư mục');
+            toast.error(error.message || 'Lỗi tạo thư mục');
         } finally {
             setIsSubmitting(false);
         }

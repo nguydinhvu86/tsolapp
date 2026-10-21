@@ -1,4 +1,6 @@
 'use client';
+import { confirmModal } from '@/app/components/providers/ConfirmProvider';
+import { toast } from '@/app/components/providers/ToastProvider';
 
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/app/components/ui/Button';
@@ -89,12 +91,12 @@ export function UserListClient({ initialUsers, permissionGroups = [] }: { initia
     };
 
     const handleDelete = async (id: string, email: string) => {
-        if (confirm(`Bạn có chắc chắn muốn xóa người dùng ${email}? Nghịch lý này không thể hoàn tác.`)) {
+        if (await confirmModal(`Bạn có chắc chắn muốn xóa người dùng ${email}? Nghịch lý này không thể hoàn tác.`)) {
             try {
                 await deleteUser(id);
                 setUsers(prev => prev.filter(u => u.id !== id));
             } catch (err: any) {
-                alert(err.message || 'Có lỗi xảy ra khi xóa');
+                toast.error(err.message || 'Có lỗi xảy ra khi xóa');
             }
         }
     };

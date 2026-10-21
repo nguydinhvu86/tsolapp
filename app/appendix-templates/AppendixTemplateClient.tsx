@@ -1,4 +1,5 @@
 'use client'
+import { confirmModal } from '@/app/components/providers/ConfirmProvider';
 import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState } from 'react';
@@ -55,14 +56,14 @@ export function AppendixTemplateClient({ initialData }: { initialData: ContractA
     };
 
     const handleDelete = async (id: string) => {
-        if (confirm('Bạn có chắc chắn muốn xóa mẫu phụ lục này?')) {
+        if (await confirmModal('Bạn có chắc chắn muốn xóa mẫu phụ lục này?')) {
             await deleteAppendixTemplate(id);
             router.refresh();
         }
     };
 
     const handleCopy = async (template: ContractAppendixTemplate) => {
-        if (confirm(`Bạn có muốn tạo bản sao của mẫu phụ lục "${template.name}"?`)) {
+        if (await confirmModal(`Bạn có muốn tạo bản sao của mẫu phụ lục "${template.name}"?`)) {
             await createAppendixTemplate({
                 name: template.name + ' (Copy)',
                 description: template.description || '',

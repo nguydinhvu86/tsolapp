@@ -1,4 +1,5 @@
 'use client';
+import { toast } from '@/app/components/providers/ToastProvider';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -41,7 +42,7 @@ export default function EmailTemplateFormClient({
 
     const handleSave = async () => {
         if (!name || !subject || !body) {
-            alert("Vui lòng nhập đầy đủ Tên, Tiêu đề và Nội dung mẫu.");
+            toast.info("Vui lòng nhập đầy đủ Tên, Tiêu đề và Nội dung mẫu.");
             return;
         }
 
@@ -56,7 +57,7 @@ export default function EmailTemplateFormClient({
             router.refresh();
         } catch (error) {
             console.error("Lỗi khi lưu template:", error);
-            alert("Đã xảy ra lỗi khi lưu mẫu email.");
+            toast.error("Đã xảy ra lỗi khi lưu mẫu email.");
             setIsSaving(false);
         }
     };

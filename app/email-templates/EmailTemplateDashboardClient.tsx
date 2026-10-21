@@ -1,4 +1,5 @@
 'use client';
+import { confirmModal } from '@/app/components/providers/ConfirmProvider';
 
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
@@ -34,7 +35,7 @@ export default function EmailTemplateDashboardClient({ initialTemplates }: { ini
     const handleDelete = async (id: string, e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        if (confirm('Bạn có chắc chắn muốn xóa mẫu email này?')) {
+        if (await confirmModal('Bạn có chắc chắn muốn xóa mẫu email này?')) {
             await deleteEmailTemplate(id);
             setTemplates(prev => prev.filter(t => t.id !== id));
             router.refresh();

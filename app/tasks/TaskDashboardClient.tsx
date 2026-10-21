@@ -1,4 +1,6 @@
 'use client'
+import { confirmModal } from '@/app/components/providers/ConfirmProvider';
+import { toast } from '@/app/components/providers/ToastProvider';
 import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState } from 'react';
@@ -70,7 +72,7 @@ function TimerCell({ task, session }: { task: any, session: any }) {
         try {
             await startTaskTimer(task.id);
         } catch (err: any) {
-            alert(err.message || 'Lỗi khi bắt đầu');
+            toast.error(err.message || 'Lỗi khi bắt đầu');
         } finally {
             setIsLoading(false);
         }
@@ -82,7 +84,7 @@ function TimerCell({ task, session }: { task: any, session: any }) {
         try {
             await stopTaskTimer(task.id);
         } catch (err: any) {
-            alert(err.message || 'Lỗi khi dừng');
+            toast.error(err.message || 'Lỗi khi dừng');
         } finally {
             setIsLoading(false);
         }
@@ -685,7 +687,7 @@ export function TaskDashboardClient({
     }
 
     const handleDelete = async (id: string) => {
-        if (confirm('Xóa công việc này?')) {
+        if (await confirmModal('Xóa công việc này?')) {
             await deleteTask(id);
             router.refresh();
         }

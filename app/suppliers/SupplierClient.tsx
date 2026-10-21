@@ -11,6 +11,8 @@ import { createSupplier, updateSupplier, deleteSupplier, lookupSupplierTaxCode, 
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { Button } from '@/app/components/ui/Button';
 import { useTranslation } from '@/app/i18n/LanguageContext';
+import { useToast } from '@/app/components/providers/ToastProvider';
+import { useConfirm } from '@/app/components/providers/ConfirmProvider';
 
 const emptySupplierForm = {
     code: '',
@@ -64,6 +66,8 @@ function getAvatarGradient(id: string) {
 
 export function SupplierClient({ initialSuppliers }: { initialSuppliers: any[] }) {
     const { t } = useTranslation();
+    const toast = useToast();
+    const confirm = useConfirm();
     const [suppliers, setSuppliers] = useState<any[]>(Array.isArray(initialSuppliers) ? initialSuppliers : []);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -273,7 +277,10 @@ export function SupplierClient({ initialSuppliers }: { initialSuppliers: any[] }
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (duplicateWarnings.length > 0) {
-            alert(`CẢNH BÁO TRÙNG LẶP DỮ LIỆU:\n\n${duplicateWarnings.map(w => `• ${w.message}`).join('\n')}\n\nVui lòng kiểm tra lại trước khi lưu.`);
+            toast.warning(
+                'Cảnh báo trùng lặp nhà cung cấp',
+                duplicateWarnings.map(w => w.message).join(' | ')
+            );
             return;
         }
         setIsSubmitting(true);
@@ -282,27 +289,38 @@ export function SupplierClient({ initialSuppliers }: { initialSuppliers: any[] }
                 const updated = await updateSupplier(editingSupplier.id, formData);
                 setSuppliers(suppliers.map(s => s.id === updated.id ? { ...updated, bills: s.bills, payments: s.payments } : s));
                 setEditingSupplier(null);
+                toast.success('Cập nhật nhà cung cấp thành công');
             } else {
                 const created = await createSupplier(formData);
                 setSuppliers([created, ...suppliers]);
+                toast.success('Thêm mới nhà cung cấp thành công');
             }
             setIsCreateModalOpen(false);
         } catch (error: any) {
             console.error(error);
-            alert(error.message || t('suppliers.saveError'));
+            toast.error('Lỗi lưu nhà cung cấp', error.message || t('suppliers.saveError'));
         } finally {
             setIsSubmitting(false);
         }
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm(t('suppliers.deleteConfirm'))) return;
+        const confirmed = await confirm({
+            title: 'Xóa nhà cung cấp',
+            message: t('suppliers.deleteConfirm') || 'Bạn có chắc chắn muốn xóa nhà cung cấp này không?',
+            confirmText: 'Xác nhận xóa',
+            variant: 'danger'
+        });
+
+        if (!confirmed) return;
+
         try {
             await deleteSupplier(id);
             setSuppliers(suppliers.filter(s => s.id !== id));
-        } catch (error) {
+            toast.success('Đã xóa nhà cung cấp thành công');
+        } catch (error: any) {
             console.error(error);
-            alert(t('suppliers.deleteError'));
+            toast.error('Không thể xóa nhà cung cấp', error?.message || t('suppliers.deleteError'));
         }
     };
 

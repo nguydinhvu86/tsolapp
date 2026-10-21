@@ -1,4 +1,6 @@
 'use client';
+import { confirmModal } from '@/app/components/providers/ConfirmProvider';
+import { toast } from '@/app/components/providers/ToastProvider';
 
 import React, { useState, useMemo } from 'react';
 import { createLeaveRequest, updateLeaveRequest, cancelLeaveRequest } from '@/app/hr/attendance/actions';
@@ -298,7 +300,7 @@ export default function LeaveRequestClient({
     };
 
     const handleCancelRequest = async (id: string) => {
-        if (!confirm('Bạn có chắc chắn muốn hủy đơn xin phép này?')) return;
+        if (!await confirmModal('Bạn có chắc chắn muốn hủy đơn xin phép này?')) return;
         setIsLoading(true);
         const res = await cancelLeaveRequest(id);
         if (res.success) {
@@ -307,7 +309,7 @@ export default function LeaveRequestClient({
                 setDetailModalItem({ ...detailModalItem, status: 'CANCELLED' });
             }
         } else {
-            alert('Lỗi: ' + res.error);
+            toast.error('Lỗi: ' + res.error);
         }
         setIsLoading(false);
     };
@@ -326,7 +328,7 @@ export default function LeaveRequestClient({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!startDate || !endDate || !reason.trim()) {
-            return alert('Vui lòng điền đầy đủ các thông tin bắt buộc (*)');
+            return toast.info('Vui lòng điền đầy đủ các thông tin bắt buộc (*)');
         }
 
         setIsLoading(true);
@@ -358,7 +360,7 @@ export default function LeaveRequestClient({
             }
             setIsModalOpen(false);
         } else {
-            alert('Lỗi khi gửi đơn: ' + res.error);
+            toast.error('Lỗi khi gửi đơn: ' + res.error);
         }
         setIsLoading(false);
     };

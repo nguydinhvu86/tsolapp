@@ -17,6 +17,8 @@ import { useSession } from 'next-auth/react';
 import { formatMoney } from '@/lib/utils/formatters';
 import { useTranslation } from '@/app/i18n/LanguageContext';
 import { ClickToCallButton } from '@/app/components/ClickToCallButton';
+import { useToast } from '@/app/components/providers/ToastProvider';
+import { useConfirm } from '@/app/components/providers/ConfirmProvider';
 
 export type CustomerWithStats = Customer & { revenue?: number; lastActivityAt?: Date | string };
 
@@ -84,6 +86,8 @@ export function CustomerClient({
     const router = useRouter();
     const { data: session } = useSession();
     const { t } = useTranslation();
+    const toast = useToast();
+    const confirm = useConfirm();
     const permissions = session?.user?.permissions || [];
     const isAdmin = session?.user?.role === 'ADMIN';
 
@@ -331,7 +335,10 @@ export function CustomerClient({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (duplicateWarnings.length > 0) {
-            alert(`CẢNH BÁO TRÙNG LẶP DỮ LIỆU:\n\n${duplicateWarnings.map(w => `• ${w.message}`).join('\n')}\n\nVui lòng kiểm tra lại trước khi lưu.`);
+            toast.warning(
+                'Cảnh báo trùng lặp dữ liệu',
+                duplicateWarnings.map(w => w.message).join(' | ')
+            );
             return;
         }
         setIsSubmitting(true);
@@ -339,27 +346,37 @@ export function CustomerClient({
             if (editingId) {
                 const res = await updateCustomer(editingId, formData);
                 setCustomers(customers.map(c => c.id === editingId ? { ...c, ...res } : c));
+                toast.success('Cập nhật khách hàng thành công');
             } else {
                 const newCustomer = await createCustomer(formData);
                 setCustomers([newCustomer as CustomerWithStats, ...customers]);
+                toast.success('Thêm mới khách hàng thành công');
                 router.refresh();
             }
             closeModal();
         } catch (error: any) {
-            alert(error.message || t('customers.errorSystem'));
+            toast.error('Lỗi lưu khách hàng', error.message || t('customers.errorSystem'));
         } finally {
             setIsSubmitting(false);
         }
     };
 
     const handleDelete = async (id: string) => {
-        if (confirm(t('customers.confirmDelete'))) {
+        const confirmed = await confirm({
+            title: 'Xóa thông tin khách hàng',
+            message: t('customers.confirmDelete') || 'Bạn có chắc chắn muốn xóa khách hàng này không? Dữ liệu liên quan có thể bị ảnh hưởng.',
+            confirmText: 'Xác nhận xóa',
+            variant: 'danger'
+        });
+
+        if (confirmed) {
             try {
                 await deleteCustomer(id);
                 setCustomers(customers.filter(c => c.id !== id));
-            } catch (error) {
+                toast.success('Đã xóa khách hàng thành công');
+            } catch (error: any) {
                 console.error('Error deleting customer:', error);
-                alert(t('customers.errorSystem'));
+                toast.error('Không thể xóa khách hàng', error.message || t('customers.errorSystem'));
             }
         }
     };

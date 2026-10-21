@@ -1,4 +1,6 @@
 'use client'
+import { confirmModal } from '@/app/components/providers/ConfirmProvider';
+import { toast } from '@/app/components/providers/ToastProvider';
 import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState } from 'react';
@@ -74,7 +76,7 @@ export function HandoverDashboardClient({ initialData }: { initialData: Handover
     });
 
     const handleDelete = async (id: string) => {
-        if (confirm('Bạn có chắc chắn muốn xóa biên bản này?')) {
+        if (await confirmModal('Bạn có chắc chắn muốn xóa biên bản này?')) {
             await deleteHandover(id);
             router.refresh();
         }
@@ -144,7 +146,7 @@ export function HandoverDashboardClient({ initialData }: { initialData: Handover
             URL.revokeObjectURL(url);
         } catch (error) {
             console.error("Lỗi xuất Excel:", error);
-            alert("Đã xảy ra lỗi khi tạo tệp Excel. Vui lòng thử lại.");
+            toast.error("Đã xảy ra lỗi khi tạo tệp Excel. Vui lòng thử lại.");
         }
     };
 
@@ -251,7 +253,7 @@ export function HandoverDashboardClient({ initialData }: { initialData: Handover
                                         onClick={() => {
                                             const url = `${window.location.origin}/public/handovers/${q.id}`;
                                             navigator.clipboard.writeText(url);
-                                            alert('Đã copy link public: ' + url);
+                                            toast.success('Đã sao chép liên kết xem trước', url);
                                         }}
                                         style={{ color: 'var(--primary)', padding: '0.25rem' }}
                                         title="Copy Link xem trước cho Khách hàng"

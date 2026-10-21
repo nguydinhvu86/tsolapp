@@ -1,7 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
-import { AlertTriangle, AlertCircle, HelpCircle, Check } from 'lucide-react';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
+import { AlertTriangle, AlertCircle, HelpCircle } from 'lucide-react';
 
 export interface ConfirmOptions {
     title?: string;
@@ -14,6 +14,17 @@ export interface ConfirmOptions {
 type ConfirmContextType = (options: ConfirmOptions | string) => Promise<boolean>;
 
 const ConfirmContext = createContext<ConfirmContextType | undefined>(undefined);
+
+// Standalone global confirm trigger support
+let globalConfirmHandler: ((opts: ConfirmOptions | string) => Promise<boolean>) | null = null;
+
+export const confirmModal = (opts: ConfirmOptions | string): Promise<boolean> => {
+    if (globalConfirmHandler) {
+        return globalConfirmHandler(opts);
+    }
+    const msg = typeof opts === 'string' ? opts : `${opts.title ? opts.title + '\n\n' : ''}${opts.message}`;
+    return Promise.resolve(typeof window !== 'undefined' ? window.confirm(msg) : false);
+};
 
 export function ConfirmProvider({ children }: { children: React.ReactNode }) {
     const [isOpen, setIsOpen] = useState(false);
@@ -29,6 +40,13 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
             resolverRef.current = resolve;
         });
     }, []);
+
+    useEffect(() => {
+        globalConfirmHandler = confirm;
+        return () => {
+            globalConfirmHandler = null;
+        };
+    }, [confirm]);
 
     const handleConfirm = () => {
         setIsOpen(false);
@@ -129,11 +147,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
 export function useConfirm() {
     const context = useContext(ConfirmContext);
     if (!context) {
-        // Fallback to window.confirm if used outside provider
-        return async (opts: ConfirmOptions | string) => {
-            const msg = typeof opts === 'string' ? opts : `${opts.title ? opts.title + '\n\n' : ''}${opts.message}`;
-            return typeof window !== 'undefined' ? window.confirm(msg) : false;
-        };
+        return confirmModal;
     }
     return context;
 }

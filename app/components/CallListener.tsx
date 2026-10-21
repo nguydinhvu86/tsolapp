@@ -1,4 +1,5 @@
 'use client';
+import { toast } from '@/app/components/providers/ToastProvider';
 
 import { useEffect, useState } from 'react';
 import Pusher from 'pusher-js';
@@ -103,7 +104,7 @@ export function CallListener() {
             router.refresh();
         } catch (error) {
             console.error('Error quick creating lead:', error);
-            alert('Không thể tạo Lead.');
+            toast.info('Không thể tạo Lead.');
         } finally {
             setIsSubmitting(false);
         }

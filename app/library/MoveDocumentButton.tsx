@@ -1,4 +1,5 @@
 'use client';
+import { toast } from '@/app/components/providers/ToastProvider';
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
@@ -24,7 +25,7 @@ export function MoveDocumentButton({ documentId, currentCategoryId, categories, 
             setIsOpen(false);
             router.refresh();
         } catch (error: any) {
-            alert(error.message || 'Lỗi di chuyển tài liệu');
+            toast.error(error.message || 'Lỗi di chuyển tài liệu');
         } finally {
             setIsSubmitting(false);
         }

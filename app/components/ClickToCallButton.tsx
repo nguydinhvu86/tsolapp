@@ -1,4 +1,6 @@
 'use client'
+import { confirmModal } from '@/app/components/providers/ConfirmProvider';
+import { toast } from '@/app/components/providers/ToastProvider';
 
 import React, { useState } from 'react';
 import { Phone, Loader2 } from 'lucide-react';
@@ -27,14 +29,14 @@ export function ClickToCallButton({
          e.preventDefault();
          e.stopPropagation();
          
-         if (!confirm(`Hệ thống PBX sẽ tự động đổ chuông điện thoại của bạn trước, sau đó kết nối đến số ${phoneNumber}. Xác nhận gọi?`)) return;
+         if (!await confirmModal(`Hệ thống PBX sẽ tự động đổ chuông điện thoại của bạn trước, sau đó kết nối đến số ${phoneNumber}. Xác nhận gọi?`)) return;
 
          setLoading(true);
          const res = await clickToCall(phoneNumber);
          setLoading(false);
 
          if (!res.success) {
-             alert('Có lỗi xảy ra: ' + res.error);
+             toast.error('Có lỗi xảy ra: ' + res.error);
          }
     };
 

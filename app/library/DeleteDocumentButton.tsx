@@ -1,4 +1,6 @@
 'use client';
+import { confirmModal } from '@/app/components/providers/ConfirmProvider';
+import { toast } from '@/app/components/providers/ToastProvider';
 
 import React, { useState } from 'react';
 import { Trash2 } from 'lucide-react';
@@ -13,14 +15,14 @@ export function DeleteDocumentButton({ documentId, isIconOnly = false }: { docum
         e.preventDefault();
         e.stopPropagation();
         
-        if (!confirm('Bạn có chắc chắn muốn xóa tài liệu này? Mọi dữ liệu (bao gồm bình luận, ghi chú) sẽ bị xóa vĩnh viễn.')) return;
+        if (!await confirmModal('Bạn có chắc chắn muốn xóa tài liệu này? Mọi dữ liệu (bao gồm bình luận, ghi chú) sẽ bị xóa vĩnh viễn.')) return;
         
         setIsDeleting(true);
         try {
             await deleteLibraryDocument(documentId);
             router.refresh();
         } catch (error: any) {
-            alert(error.message || 'Lỗi khi xóa tài liệu');
+            toast.error(error.message || 'Lỗi khi xóa tài liệu');
         } finally {
             setIsDeleting(false);
         }

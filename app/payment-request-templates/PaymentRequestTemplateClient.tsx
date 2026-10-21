@@ -1,4 +1,6 @@
-﻿'use client'
+'use client'
+import { confirmModal } from '@/app/components/providers/ConfirmProvider';
+import { toast } from '@/app/components/providers/ToastProvider';
 import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState } from 'react';
@@ -58,12 +60,12 @@ export function PaymentRequestTemplateClient({ initialData }: { initialData: Pay
             router.refresh();
         } catch (error: any) {
             console.error('Lỗi lưu mẫu:', error);
-            alert('Lưu mẫu thất bại! Lỗi này thường do phần mềm diệt virus (ví dụ: Kaspersky Protection) hoặc tiện ích trình duyệt chặn gửi dữ liệu văn bản lớn. Vui lòng tắt tạm thời tiện ích diệt virus trên trình duyệt web này và thử lại.');
+            toast.error('Lưu mẫu thất bại! Lỗi này thường do phần mềm diệt virus (ví dụ: Kaspersky Protection) hoặc tiện ích trình duyệt chặn gửi dữ liệu văn bản lớn. Vui lòng tắt tạm thời tiện ích diệt virus trên trình duyệt web này và thử lại.');
         }
     };
 
     const handleDelete = async (id: string) => {
-        if (confirm('Bạn có chắc chắn muốn xóa mẫu đề nghị này?')) {
+        if (await confirmModal('Bạn có chắc chắn muốn xóa mẫu đề nghị này?')) {
             await deletePaymentRequestTemplate(id);
             router.refresh();
         }
@@ -71,7 +73,7 @@ export function PaymentRequestTemplateClient({ initialData }: { initialData: Pay
 
     const handleCopy = async (template: PaymentRequestTemplate) => {
         const t = template as any;
-        if (confirm(`Bạn có muốn tạo bản sao của mẫu "${template.name}"?`)) {
+        if (await confirmModal(`Bạn có muốn tạo bản sao của mẫu "${template.name}"?`)) {
             await createPaymentRequestTemplate({
                 name: template.name + ' (Copy)',
                 description: template.description || '',

@@ -1,4 +1,5 @@
 'use client';
+import { toast } from '@/app/components/providers/ToastProvider';
 
 import React, { useState, useEffect } from 'react';
 import { Phone, Users, User, Clock, AlertCircle, Play, Pause, XCircle, RefreshCw, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -113,11 +114,11 @@ export default function CallCenterClient({ initialAgents, initialLogs, totalCoun
     const handleSpy = async (targetExt: string, mode: 'whisper' | 'threeway' | 'caller' | 'callee') => {
         const myExt = agents.find((a: any) => a.id === currentUser.id)?.extension;
         if (!myExt) {
-             alert('Bạn cần cấu hình số nội bộ (Extension) trong hồ sơ để sử dụng tính năng Nghe lén/Giám sát.');
+             toast.info('Bạn cần cấu hình số nội bộ (Extension) trong hồ sơ để sử dụng tính năng Nghe lén/Giám sát.');
              return;
         }
         const res = await spyCall(myExt, targetExt, mode);
-        if (!res.success) alert('Không thể kích hoạt gọi giám sát: ' + res.error);
+        if (!res.success) toast.error('Không thể kích hoạt gọi giám sát: ' + res.error);
     };
 
     const handleSync = async () => {
@@ -125,13 +126,13 @@ export default function CallCenterClient({ initialAgents, initialLogs, totalCoun
         try {
             const res = await syncPbxCallLogs(2); // Sync last 2 days
             if (res.success) {
-                alert(`Đã đồng bộ ${res.count} cuộc gọi thành công. Vui lòng tải lại trang!`);
+                toast.success(`Đã đồng bộ ${res.count} cuộc gọi thành công. Vui lòng tải lại trang!`);
                 window.location.reload();
             } else {
-                alert('Lỗi: ' + res.error);
+                toast.error('Lỗi: ' + res.error);
             }
         } catch (e: any) {
-            alert('Lỗi đồng bộ: ' + e.message);
+            toast.error('Lỗi đồng bộ: ' + e.message);
         } finally {
             setIsSyncing(false);
         }

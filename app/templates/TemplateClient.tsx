@@ -1,4 +1,5 @@
 'use client'
+import { confirmModal } from '@/app/components/providers/ConfirmProvider';
 import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState } from 'react';
@@ -67,7 +68,7 @@ export function TemplateClient({ initialData }: { initialData: ContractTemplate[
     };
 
     const handleDelete = async (id: string) => {
-        if (confirm('Bạn có chắc chắn muốn xóa mẫu hợp đồng này?')) {
+        if (await confirmModal('Bạn có chắc chắn muốn xóa mẫu hợp đồng này?')) {
             await deleteTemplate(id);
             router.refresh();
         }
@@ -75,7 +76,7 @@ export function TemplateClient({ initialData }: { initialData: ContractTemplate[
 
     const handleCopy = async (template: ContractTemplate) => {
         const t = template as any;
-        if (confirm(`Bạn có muốn tạo bản sao của mẫu "${template.name}"?`)) {
+        if (await confirmModal(`Bạn có muốn tạo bản sao của mẫu "${template.name}"?`)) {
             await createTemplate({
                 name: template.name + ' (Copy)',
                 description: template.description || '',

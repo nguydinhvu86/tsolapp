@@ -1,4 +1,5 @@
 'use client';
+import { toast } from '@/app/components/providers/ToastProvider';
 
 import React, { useState } from 'react';
 import { updateEmailSettings, testEmailConnection } from './actions';
@@ -44,10 +45,10 @@ export function EmailConfigClient({ initialSettings }: { initialSettings: Record
         setIsSaving(true);
         try {
             await updateEmailSettings(settings);
-            alert('Lưu cấu hình Email thành công!');
+            toast.success('Lưu cấu hình Email thành công!');
             router.refresh();
         } catch (error) {
-            alert('Có lỗi xảy ra khi lưu cấu hình');
+            toast.error('Có lỗi xảy ra khi lưu cấu hình');
             console.error(error);
         } finally {
             setIsSaving(false);
@@ -56,7 +57,7 @@ export function EmailConfigClient({ initialSettings }: { initialSettings: Record
 
     const handleTestConnection = async () => {
         if (!settings.SMTP_HOST || !settings.SMTP_PORT || !settings.SMTP_USER || !settings.SMTP_PASS) {
-            alert('Vui lòng điền đầy đủ Host, Port, Username và Password để kiểm tra kết nối.');
+            toast.info('Vui lòng điền đầy đủ Host, Port, Username và Password để kiểm tra kết nối.');
             return;
         }
 
