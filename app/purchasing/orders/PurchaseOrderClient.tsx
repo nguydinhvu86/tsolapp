@@ -1,4 +1,6 @@
 'use client';
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import { formatMoney, formatDate, formatTaxRate, calcPreTaxPrice, calcTaxAmount } from '@/lib/utils/formatters';
 import { TaxRateSelect, TaxBadge } from '@/app/components/ui/TaxRateSelect';
 
@@ -216,15 +218,15 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
 
     const handleAddItem = () => {
         if (!isCustomProduct && !selectedProduct) {
-            alert(t('purchaseOrders.pleaseSelectProduct'));
+            toast.info(t('purchaseOrders.pleaseSelectProduct'));
             return;
         }
         if (isCustomProduct && !customName.trim()) {
-            alert(t('purchaseOrders.pleaseEnterCustomName'));
+            toast.info(t('purchaseOrders.pleaseEnterCustomName'));
             return;
         }
         if (qty <= 0) {
-            alert(t('purchaseOrders.qtyMustBeGreaterThanZero'));
+            toast.info(t('purchaseOrders.qtyMustBeGreaterThanZero'));
             return;
         }
 
@@ -370,7 +372,7 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                 await deletePurchaseOrder(id);
                 setOrders(orders.filter(o => o.id !== id));
             } catch (error: any) {
-                alert(error.message || t('purchaseOrders.deleteFailed'));
+                toast.error(error.message || t('purchaseOrders.deleteFailed'));
             }
         }
     };
@@ -379,22 +381,22 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
         e.preventDefault();
 
         if (!formData.supplierId) {
-            alert(t('purchaseOrders.pleaseSelectSupplier'));
+            toast.info(t('purchaseOrders.pleaseSelectSupplier'));
             return;
         }
 
         if (orderItems.length === 0) {
-            alert(t('purchaseOrders.pleaseAddItems'));
+            toast.info(t('purchaseOrders.pleaseAddItems'));
             return;
         }
 
         for (let i = 0; i < orderItems.length; i++) {
             if (orderItems[i].productId === 'EXTERNAL' && !orderItems[i].productName?.trim()) {
-                alert(t('purchaseOrders.pleaseEnterProductName').replace('{{line}}', (i + 1).toString()));
+                toast.info(t('purchaseOrders.pleaseEnterProductName').replace('{{line}}', (i + 1).toString()));
                 return;
             }
             if (!orderItems[i].productId || orderItems[i].quantity <= 0) {
-                alert(t('purchaseOrders.invalidProduct').replace('{{line}}', (i + 1).toString()));
+                toast.info(t('purchaseOrders.invalidProduct').replace('{{line}}', (i + 1).toString()));
                 return;
             }
         }
@@ -428,7 +430,7 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
             setIsCreateModalOpen(false);
         } catch (error) {
             console.error(error);
-            alert(t('purchaseOrders.createFailed'));
+            toast.error(t('purchaseOrders.createFailed'));
         } finally {
             setIsSubmitting(false);
         }

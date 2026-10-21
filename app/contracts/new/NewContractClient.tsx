@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useEffect } from 'react';
 import { ContractTemplate, Customer } from '@prisma/client';
 import { Card } from '@/app/components/ui/Card';
@@ -114,12 +116,12 @@ export function NewContractClient({ templates, customers, projects, preselectedC
         e.preventDefault();
 
         if (!selectedTemplate) {
-            alert('Vui lòng chọn Mẫu hợp đồng');
+            toast.warning('Vui lòng chọn Mẫu hợp đồng');
             return;
         }
 
         if (!selectedCustomer) {
-            alert('Vui lòng chọn Khách hàng');
+            toast.warning('Vui lòng chọn Khách hàng');
             return;
         }
 
@@ -138,7 +140,7 @@ export function NewContractClient({ templates, customers, projects, preselectedC
             router.push(`/contracts/${result.id}`);
         } catch (error: any) {
             console.error('Lỗi khi tạo hợp đồng:', error);
-            alert(`Có lỗi xảy ra: ${error?.message || JSON.stringify(error)}`);
+            toast.error(`Có lỗi xảy ra: ${error?.message || JSON.stringify(error)}`);
         } finally {
             setIsSubmitting(false);
         }

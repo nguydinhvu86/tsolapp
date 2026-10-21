@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useEffect } from 'react';
 import { X, Users, Trophy, Shield, Sparkles, Check, Trash2, Search, Target, DollarSign, Loader2 } from 'lucide-react';
 import { createCompetitionGroup, updateCompetitionGroup, deleteCompetitionGroup, getAllUsersForManagement } from '../actions';
@@ -89,7 +91,7 @@ export function CompetitionGroupModal({ group, isOpen, onClose, onSuccess }: Pro
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!name.trim()) {
-            alert('Vui lòng nhập tên nhóm thi đua.');
+            toast.warning('Vui lòng nhập tên nhóm thi đua.');
             return;
         }
 
@@ -121,7 +123,7 @@ export function CompetitionGroupModal({ group, isOpen, onClose, onSuccess }: Pro
             onSuccess();
             onClose();
         } catch (err: any) {
-            alert(err.message || 'Lỗi khi lưu thông tin nhóm thi đua.');
+            toast.error(err.message || 'Lỗi khi lưu thông tin nhóm thi đua.');
         } finally {
             setIsSubmitting(false);
         }
@@ -137,7 +139,7 @@ export function CompetitionGroupModal({ group, isOpen, onClose, onSuccess }: Pro
             onSuccess();
             onClose();
         } catch (err: any) {
-            alert(err.message || 'Lỗi khi xóa nhóm.');
+            toast.error(err.message || 'Lỗi khi xóa nhóm.');
         } finally {
             setIsDeleting(false);
         }

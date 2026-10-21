@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useEffect } from 'react';
 import { HandoverTemplate, Customer, Product } from '@prisma/client';
 import { Card } from '@/app/components/ui/Card';
@@ -104,7 +106,7 @@ export function NewHandoverClient({ templates, customers, products, preselectedC
         e.preventDefault();
 
         if (!selectedTemplate || !selectedCustomer) {
-            alert('Vui lòng chọn đầy đủ Mẫu biên bản và Khách hàng');
+            toast.warning('Vui lòng chọn đầy đủ Mẫu biên bản và Khách hàng');
             return;
         }
 
@@ -119,7 +121,7 @@ export function NewHandoverClient({ templates, customers, products, preselectedC
             router.push('/handovers');
         } catch (error) {
             console.error('Lỗi khi tạo biên bản:', error);
-            alert(`Có lỗi xảy ra: ${error instanceof Error ? error.message : JSON.stringify(error)}`);
+            toast.error(`Có lỗi xảy ra: ${error instanceof Error ? error.message : JSON.stringify(error)}`);
         }
     };
 

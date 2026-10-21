@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useEffect, useState } from 'react';
 import { X, Printer, ArrowLeft, FileText, Copy, Share2, Check, ExternalLink } from 'lucide-react';
 import { numberToVietnameseWords } from '@/lib/vietnameseCurrency';
@@ -53,7 +55,7 @@ export default function PrintTransactionModal({ transaction, companyInfo, onClos
             setCopiedLink(true);
             setTimeout(() => setCopiedLink(false), 2500);
         } catch (e) {
-            alert(`Link: ${url}`);
+            toast.info(`Link: ${url}`);
         }
     };
 

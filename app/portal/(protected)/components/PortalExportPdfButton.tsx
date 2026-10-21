@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState } from 'react';
 import { Download, Printer } from 'lucide-react';
 
@@ -15,7 +17,7 @@ export default function PortalExportPdfButton({ targetId, fileName, title }: Por
     const handleExportPdf = async () => {
         const element = document.getElementById(targetId);
         if (!element) {
-            alert('Không tìm thấy nội dung để xuất PDF.');
+            toast.info('Không tìm thấy nội dung để xuất PDF.');
             return;
         }
 
@@ -44,7 +46,7 @@ export default function PortalExportPdfButton({ targetId, fileName, title }: Por
             await html2pdfModule().set(opt).from(element).save();
         } catch (error) {
             console.error('Lỗi khi xuất PDF:', error);
-            alert('Đã xảy ra lỗi khi tạo file PDF. Bạn có thể sử dụng tính năng In (Ctrl+P) để lưu thành file PDF.');
+            toast.error('Đã xảy ra lỗi khi tạo file PDF. Bạn có thể sử dụng tính năng In (Ctrl+P) để lưu thành file PDF.');
         } finally {
             setIsExporting(false);
         }

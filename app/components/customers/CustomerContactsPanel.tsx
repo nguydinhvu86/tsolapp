@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
@@ -51,7 +53,7 @@ export function CustomerContactsPanel({ customerId, contacts }: CustomerContacts
 
     const handleSave = async () => {
         if (!name.trim()) {
-            alert('Vui lòng nhập họ tên người liên hệ.');
+            toast.warning('Vui lòng nhập họ tên người liên hệ.');
             return;
         }
 
@@ -76,7 +78,7 @@ export function CustomerContactsPanel({ customerId, contacts }: CustomerContacts
 
             setIsModalOpen(false);
         } catch (error: any) {
-            alert('Lỗi: ' + error.message);
+            toast.error('Lỗi: ' + error.message);
         } finally {
             setIsSaving(false);
         }
@@ -86,7 +88,7 @@ export function CustomerContactsPanel({ customerId, contacts }: CustomerContacts
         if (confirm('Bạn có chắc chắn muốn xóa người liên hệ này? Thao tác không thể hoàn tác.')) {
             const res = await deleteCustomerContact(contactId);
             if (!res.success) {
-                alert('Lỗi: ' + res.error);
+                toast.error('Lỗi: ' + res.error);
             }
         }
     };

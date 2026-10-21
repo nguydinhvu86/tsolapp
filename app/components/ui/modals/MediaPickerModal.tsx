@@ -1,3 +1,4 @@
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from '../Modal';
 import { Upload, Image as ImageIcon, Search, X, Check, Loader2 } from 'lucide-react';
@@ -59,7 +60,7 @@ export function MediaPickerModal({ isOpen, onClose, onSelect }: MediaPickerModal
                 onClose();
             }
         } catch (error) {
-            alert('Lỗi khi tải ảnh lên!');
+            toast.error('Lỗi khi tải ảnh lên!');
         } finally {
             setIsUploading(false);
             if (fileInputRef.current) {

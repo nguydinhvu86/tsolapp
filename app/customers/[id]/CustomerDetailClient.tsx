@@ -1,4 +1,6 @@
 'use client'
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import { formatDate, formatMoney } from '@/lib/utils/formatters';
 
 import React, { useState } from 'react';
@@ -156,7 +158,7 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
     const handleEditSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (duplicateWarnings.length > 0) {
-            alert(`CẢNH BÁO TRÙNG LẶP DỮ LIỆU:\n\n${duplicateWarnings.map(w => `• ${w.message}`).join('\n')}\n\nVui lòng kiểm tra lại trước khi lưu.`);
+            toast.error(`CẢNH BÁO TRÙNG LẶP DỮ LIỆU:\n\n${duplicateWarnings.map(w => `• ${w.message}`).join('\n')}\n\nVui lòng kiểm tra lại trước khi lưu.`);
             return;
         }
         setIsSubmittingEdit(true);
@@ -165,7 +167,7 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
             setIsEditModalOpen(false);
             router.refresh();
         } catch (error: any) {
-            alert(error.message || 'Lỗi hệ thống khi cập nhật thông tin.');
+            toast.error(error.message || 'Lỗi hệ thống khi cập nhật thông tin.');
         } finally {
             setIsSubmittingEdit(false);
         }
@@ -922,8 +924,8 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                 }}
                 onSend={async (emailData) => {
                     const res = await sendDebtConfirmationEmail(customer.id, emailData.to, emailData.subject, emailData.htmlBody);
-                    if (res?.success) alert("Đã gửi email công nợ thành công!");
-                    else alert("Lỗi khi gửi email: " + res?.error);
+                    if (res?.success) toast.success("Đã gửi email công nợ thành công!");
+                    else toast.error("Lỗi khi gửi email: " + res?.error);
                 }}
             />
 
@@ -960,11 +962,11 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                     const res = await updateCustomerPassword(customer.id, newPassword);
                                     setIsUpdatingPassword(false);
                                     if (res?.success) {
-                                        alert("Đã cấp mật khẩu tài khoản thành công!");
+                                        toast.success("Đã cấp mật khẩu tài khoản thành công!");
                                         setNewPassword('');
                                         setIsPasswordModalOpen(false);
                                     } else {
-                                        alert("Lỗi: " + res?.error);
+                                        toast.error("Lỗi: " + res?.error);
                                     }
                                 }}
                                 style={{ background: '#10b981', color: 'white', border: 'none' }}

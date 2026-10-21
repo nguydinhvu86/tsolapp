@@ -1,7 +1,9 @@
-'use client'
+'use client';
 
 import React, { useState, useTransition, useMemo, useEffect } from 'react';
 import * as XLSX from 'xlsx';
+import { toast } from '@/app/components/providers/ToastProvider';
+import { confirmModal } from '@/app/components/providers/ConfirmProvider';
 import { 
     Landmark, Wallet, Plus, Edit2, Check, X, 
     CreditCard, Building2, CheckCircle2, RefreshCw, AlertCircle,
@@ -254,15 +256,22 @@ export default function AccountsClient({ initialAccounts }: Props) {
     };
 
     const handleDeleteAccount = async (acc: any) => {
-        if (!window.confirm(`Bạn có chắc chắn muốn xóa tài khoản "${acc.name}" (${acc.code}) không?`)) {
-            return;
-        }
+        const confirmed = await confirmModal({
+            title: 'Xóa tài khoản',
+            message: `Bạn có chắc chắn muốn xóa tài khoản "${acc.name}" (${acc.code}) không?`,
+            variant: 'danger',
+            confirmText: 'Xác nhận xóa',
+            cancelText: 'Hủy'
+        });
+        if (!confirmed) return;
+
         try {
             await deleteFinanceAccount(acc.id);
             const refreshed = await getFinanceAccounts();
             setAccounts(refreshed);
+            toast.success(`Đã xóa tài khoản "${acc.name}" thành công`);
         } catch (err: any) {
-            alert(err.message || 'Không thể xóa tài khoản');
+            toast.error(err.message || 'Không thể xóa tài khoản');
         }
     };
 
@@ -304,7 +313,14 @@ export default function AccountsClient({ initialAccounts }: Props) {
 
         const srcAcc = accounts.find(a => a.id === transferSourceId);
         if (srcAcc && (srcAcc.currentBalance || 0) < transferAmount) {
-            if (!window.confirm(`Cảnh báo: Số dư tài khoản nguồn (${formatVND(srcAcc.currentBalance)}) nhỏ hơn số tiền chuyển (${formatVND(transferAmount)}). Bạn vẫn muốn tiếp tục?`)) {
+            const confirmed = await confirmModal({
+                title: 'Cảnh báo số dư',
+                message: `Cảnh báo: Số dư tài khoản nguồn (${formatVND(srcAcc.currentBalance)}) nhỏ hơn số tiền chuyển (${formatVND(transferAmount)}). Bạn vẫn muốn tiếp tục?`,
+                variant: 'warning',
+                confirmText: 'Vẫn chuyển tiền',
+                cancelText: 'Hủy'
+            });
+            if (!confirmed) {
                 return;
             }
         }

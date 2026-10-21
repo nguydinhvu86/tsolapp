@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
@@ -164,7 +166,7 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
         if (!e.target.files?.length) return;
         Array.from(e.target.files).forEach(file => {
             if (file.size > 52428800) {
-                alert(`File ${file.name} quá lớn (Tối đa 50MB)`);
+                toast.error(`File ${file.name} quá lớn (Tối đa 50MB)`);
                 return;
             }
             const reader = new FileReader();
@@ -187,7 +189,7 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
         if (!e.target.files?.length) return;
         Array.from(e.target.files).forEach(file => {
             if (file.size > 52428800) { // 50MB max for files
-                alert(`File ${file.name} quá lớn (Tối đa 50MB)`);
+                toast.error(`File ${file.name} quá lớn (Tối đa 50MB)`);
                 return;
             }
             const reader = new FileReader();
@@ -212,7 +214,7 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
         try {
             for (const file of Array.from(e.target.files)) {
                 if (file.size > 50 * 1024 * 1024) {
-                    alert(`Tài liệu ${file.name} quá lớn (Tối đa 50MB)`);
+                    toast.error(`Tài liệu ${file.name} quá lớn (Tối đa 50MB)`);
                     continue;
                 }
                 
@@ -257,7 +259,7 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                     await uploadTaskAttachment(task.id, file.name, url, file.type, session.user.id);
                 } catch (err: any) {
                     console.error("Upload failed for", file.name, err);
-                    alert(`Tải lên thất bại: ${file.name}`);
+                    toast.error(`Tải lên thất bại: ${file.name}`);
                 } finally {
                     setUploadProgress(prev => { 
                         const next = { ...prev }; 
@@ -269,7 +271,7 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
             setTimeout(() => router.refresh(), 500);
         } catch (error) {
             console.error(error);
-            alert("Lỗi quá trình tải lên");
+            toast.error("Lỗi quá trình tải lên");
         } finally {
             setIsSaving(false);
             e.target.value = ''; // Reset
@@ -287,7 +289,7 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
             router.refresh();
         } catch (error) {
             console.error(error);
-            alert("Lỗi lưu ghi chú");
+            toast.error("Lỗi lưu ghi chú");
         } finally {
             setIsSaving(false);
         }
@@ -428,7 +430,7 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
             router.refresh();
         } catch (error) {
             console.error(error);
-            alert("Lỗi khi lưu người tham gia");
+            toast.error("Lỗi khi lưu người tham gia");
         } finally {
             setIsSaving(false);
         }
@@ -1809,8 +1811,8 @@ export function TaskDetailClient({ initialTask, users, emailTemplates = [] }: { 
                 }}
                 onSend={async (emailData) => {
                     const res = await sendTaskEmail(task.id, emailData.to, emailData.subject, emailData.htmlBody);
-                    if (res?.success) alert("Đã gửi email thông báo công việc thành công!");
-                    else alert("Lỗi khi gửi email: " + res?.error);
+                    if (res?.success) toast.success("Đã gửi email thông báo công việc thành công!");
+                    else toast.error("Lỗi khi gửi email: " + res?.error);
                 }}
             />
 

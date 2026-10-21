@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, FileDown, Plus, ExternalLink, Copy, User, ArrowRightLeft, Edit2, Mail, CheckCircle2, GripVertical, ChevronUp, ChevronDown, Loader2 } from 'lucide-react';
@@ -39,11 +41,11 @@ export default function SalesOrderDetailClient({ initialData, customers, product
                 setReorderSuccessToast(true);
                 setTimeout(() => setReorderSuccessToast(false), 2500);
             } else {
-                alert(res.error || 'Lỗi khi cập nhật thứ tự');
+                toast.error(res.error || 'Lỗi khi cập nhật thứ tự');
                 setOrder(initialData);
             }
         } catch (e: any) {
-            alert(e.message || 'Lỗi khi cập nhật thứ tự');
+            toast.error(e.message || 'Lỗi khi cập nhật thứ tự');
             setOrder(initialData);
         } finally {
             setIsSavingOrder(false);
@@ -125,7 +127,7 @@ export default function SalesOrderDetailClient({ initialData, customers, product
                     setOrder({ ...order, status: newStatus });
                     router.refresh();
                 } else {
-                    alert(res.error);
+                    toast.error(res.error);
                 }
             }
         });
@@ -135,10 +137,10 @@ export default function SalesOrderDetailClient({ initialData, customers, product
         setIsConverting(true);
         const res = await convertOrderToInvoice(order.id);
         if (res.success) {
-            alert("Đã tạo Hóa Đơn thành công, đang chuyển hướng...");
+            toast.success("Đã tạo Hóa Đơn thành công, đang chuyển hướng...");
             router.push('/sales/invoices');
         } else {
-            alert(res.error);
+            toast.error(res.error);
             setIsConverting(false);
             setIsConvertModalOpen(false);
         }
@@ -614,7 +616,7 @@ export default function SalesOrderDetailClient({ initialData, customers, product
                 onSend={async (data) => {
                     const res = await sendOrderEmail(order.id, data.to, data.subject, data.htmlBody, data.attachmentName, data.attachmentBase64);
                     if (res.success) {
-                        alert('Đã gửi email thành công!');
+                        toast.success('Đã gửi email thành công!');
                         router.refresh();
                     } else {
                         throw new Error(res.error);

@@ -1,4 +1,6 @@
 'use client';
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Expense, ExpenseCategory } from '@prisma/client';
@@ -209,7 +211,7 @@ export default function ExpenseClient({
         setIsSaving(true);
         try {
             if (!formData.categoryId) {
-                alert("Vui lòng chọn hoặc tạo danh mục chi phí.");
+                toast.warning("Vui lòng chọn hoặc tạo danh mục chi phí.");
                 setIsSaving(false);
                 return;
             }
@@ -247,7 +249,7 @@ export default function ExpenseClient({
             closeModal();
             router.refresh();
         } catch (error: any) {
-            alert(`Có lỗi xảy ra: ${error.message || 'vui lòng thử lại'}`);
+            toast.error(`Có lỗi xảy ra: ${error.message || 'vui lòng thử lại'}`);
         } finally {
             setIsSaving(false);
         }
@@ -270,7 +272,7 @@ export default function ExpenseClient({
             setIsCategoryModalOpen(false);
             setNewCategoryName('');
         } catch (error) {
-            alert("Có lỗi xảy ra khi tạo danh mục.");
+            toast.error("Có lỗi xảy ra khi tạo danh mục.");
         }
     };
 
@@ -288,7 +290,7 @@ export default function ExpenseClient({
                 setFormData(prev => ({ ...prev, attachment: data.url }));
             }
         } catch (error) {
-            alert('Lỗi tải file lên');
+            toast.error('Lỗi tải file lên');
         } finally {
             setIsUploading(false);
         }

@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Web } from 'sip.js';
@@ -70,7 +72,7 @@ export function WebRTCDialer() {
             router.refresh();
         } catch (error) {
             console.error('Error quick creating lead:', error);
-            alert('Không thể tạo Lead.');
+            toast.info('Không thể tạo Lead.');
         } finally {
             setIsSubmitting(false);
         }
@@ -278,7 +280,7 @@ export function WebRTCDialer() {
         if (session?.user?.role === 'ADMIN') {
             return (
                 <button 
-                    onClick={() => alert("Tổng đài WebRTC đã sẵn sàng! Vui lòng vào mục Quản lý Người Dùng -> 'Sửa thông tin' tài khoản của bạn để cấu hình số nội bộ (Ext) và Mật khẩu SIP. Tính năng gọi sẽ mở ngay sau khi lưu.")}
+                    onClick={() => toast.warning("Tổng đài WebRTC đã sẵn sàng! Vui lòng vào mục Quản lý Người Dùng -> 'Sửa thông tin' tài khoản của bạn để cấu hình số nội bộ (Ext) và Mật khẩu SIP. Tính năng gọi sẽ mở ngay sau khi lưu.")}
                     className="web-rtc-hide-print fixed bottom-6 right-6 z-[99999] w-14 h-14 bg-gray-400 rounded-full flex items-center justify-center shadow-lg hover:bg-gray-500 transition-all cursor-help print:hidden no-print"
                     title="Softphone (Chưa thiết lập)"
                 >

@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -39,7 +41,7 @@ export function CustomerNotesPanel({ customerId, notes, currentUserId, currentUs
                 setContent('');
                 setAttachments([]);
             } else {
-                alert('Lỗi: ' + res.error);
+                toast.error('Lỗi: ' + res.error);
             }
         } finally {
             setIsSubmitting(false);
@@ -53,7 +55,7 @@ export function CustomerNotesPanel({ customerId, notes, currentUserId, currentUs
         try {
             const res = await deleteCustomerNote(noteId);
             if (!res.success) {
-                alert('Lỗi: ' + res.error);
+                toast.error('Lỗi: ' + res.error);
             }
         } finally {
             setIsDeletingId(null);
@@ -91,7 +93,7 @@ export function CustomerNotesPanel({ customerId, notes, currentUserId, currentUs
                                             const file = items[i].getAsFile();
                                             if (file) {
                                                 if (file.size > 52428800) {
-                                                    alert(`File ảnh dán vào quá lớn (Tối đa 50MB)`);
+                                                    toast.error(`File ảnh dán vào quá lớn (Tối đa 50MB)`);
                                                     continue;
                                                 }
                                                 setUploadProgress(prev => ({ ...prev, [file.name]: 0 }));
@@ -120,7 +122,7 @@ export function CustomerNotesPanel({ customerId, notes, currentUserId, currentUs
                                                     
                                                     setAttachments(prev => [...prev, { url, name: file.name || 'image.png' }]);
                                                 } catch (err) {
-                                                    alert('Lỗi tải hình ảnh từ clipboard');
+                                                    toast.error('Lỗi tải hình ảnh từ clipboard');
                                                 } finally {
                                                     setUploadProgress(prev => { const next = { ...prev }; delete next[file.name]; return next; });
                                                 }
@@ -183,7 +185,7 @@ export function CustomerNotesPanel({ customerId, notes, currentUserId, currentUs
                                                 }
                                                 setAttachments(newAttachments);
                                             } catch (err) {
-                                                alert('Lỗi tải tệp tin');
+                                                toast.error('Lỗi tải tệp tin');
                                             } finally {
                                                 setIsUploading(false);
                                                 e.target.value = '';

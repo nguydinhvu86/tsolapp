@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useEffect } from 'react';
 import { Customer, DispatchTemplate, Product, Dispatch } from '@prisma/client';
 import { Card } from '@/app/components/ui/Card';
@@ -139,7 +141,7 @@ export function EditDispatchClient({ dispatch, templates, customers, products = 
 
     const handleSave = async () => {
         if (!title.trim() || !content.trim() || !selectedCustomer || !selectedTemplate) {
-            alert('Vui lòng điền đầy đủ thông tin (Tiêu đề, Khách hàng, Mẫu, Nội dung).');
+            toast.warning('Vui lòng điền đầy đủ thông tin (Tiêu đề, Khách hàng, Mẫu, Nội dung).');
             return;
         }
 
@@ -156,7 +158,7 @@ export function EditDispatchClient({ dispatch, templates, customers, products = 
             // The action will auto-redirect on success
         } catch (error) {
             console.error(error);
-            alert('Có lỗi xảy ra khi lưu công văn.');
+            toast.error('Có lỗi xảy ra khi lưu công văn.');
             setIsSaving(false);
         }
     };

@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useRef, useState, useEffect } from 'react';
 
 interface SignaturePadProps {
@@ -121,7 +123,7 @@ export function SignaturePad({ onSave, onCancel }: SignaturePadProps) {
 
     const handleSave = () => {
         if (!hasDrawn) {
-            alert("Vui lòng ký trước khi lưu.");
+            toast.warning("Vui lòng ký trước khi lưu.");
             return;
         }
         const canvas = canvasRef.current;

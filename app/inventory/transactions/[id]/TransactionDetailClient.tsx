@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
@@ -46,17 +48,17 @@ export default function TransactionDetailClient({ transaction }: { transaction: 
 
     const handleProcess = async () => {
         if (!userId) {
-            alert(t('transactions.sessionExpired'));
+            toast.info(t('transactions.sessionExpired'));
             return;
         }
         if (confirm(t('transactions.approvePrompt').replace('{{code}}', transaction.code))) {
             try {
                 setIsProcessing(true);
                 await processTransaction(transaction.id, userId);
-                alert(t('transactions.approveSuccess'));
+                toast.success(t('transactions.approveSuccess'));
                 router.refresh();
             } catch (error: any) {
-                alert(error.message || t('transactions.genericError'));
+                toast.error(error.message || t('transactions.genericError'));
             } finally {
                 setIsProcessing(false);
             }
@@ -69,7 +71,7 @@ export default function TransactionDetailClient({ transaction }: { transaction: 
                 await deleteTransaction(transaction.id);
                 router.push('/inventory/transactions');
             } catch (error: any) {
-                alert(error.message || t('transactions.genericError'));
+                toast.error(error.message || t('transactions.genericError'));
             }
         }
     };
@@ -106,7 +108,7 @@ export default function TransactionDetailClient({ transaction }: { transaction: 
             pdf.save(`Phieu_${transaction.code}.pdf`);
         } catch (error) {
             console.error(error);
-            alert(t('transactions.pdfError'));
+            toast.error(t('transactions.pdfError'));
         } finally {
             setIsExportingPDF(false);
         }

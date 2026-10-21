@@ -4,28 +4,33 @@ import path from 'path';
 
 export async function GET(req: NextRequest, { params }: { params: { path: string[] } }) {
     try {
-        const uploadsDir = path.join(process.cwd(), 'uploads_data');
-        const publicUploadsDir = path.join(process.cwd(), 'public', 'uploads');
+        const uploadsDir = path.resolve(process.cwd(), 'uploads_data');
+        const publicUploadsDir = path.resolve(process.cwd(), 'public', 'uploads');
 
-        let filePath = path.join(uploadsDir, ...params.path);
+        // Path Traversal Security: Prevent directory traversal outside uploadsDir
+        const safeSegments = (params.path || []).filter(segment => segment !== '..' && segment !== '.' && !segment.includes('/\\'));
+        let targetPath = path.resolve(uploadsDir, ...safeSegments);
 
-        // Security check: ensure path is within allowed directories
-        if (!fs.existsSync(filePath)) {
+        // Verify that resolved path is strictly within uploadsDir or publicUploadsDir
+        const isInUploadsDir = targetPath.toLowerCase().startsWith(uploadsDir.toLowerCase());
+        let finalPath = targetPath;
+
+        if (!isInUploadsDir || !fs.existsSync(finalPath)) {
             // Check fallback in public/uploads (for legacy uploaded files)
-            const fallbackPath = path.join(publicUploadsDir, ...params.path);
-            if (fs.existsSync(fallbackPath) && fallbackPath.startsWith(publicUploadsDir)) {
-                filePath = fallbackPath;
+            const fallbackPath = path.resolve(publicUploadsDir, ...safeSegments);
+            const isInPublicUploads = fallbackPath.toLowerCase().startsWith(publicUploadsDir.toLowerCase());
+            
+            if (isInPublicUploads && fs.existsSync(fallbackPath)) {
+                finalPath = fallbackPath;
             } else {
                 return new NextResponse('File Not Found', { status: 404, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
             }
-        } else if (!filePath.startsWith(uploadsDir)) {
-            return new NextResponse('Forbidden', { status: 403 });
         }
 
-        const stats = fs.statSync(filePath);
-        const fileBuffer = fs.readFileSync(filePath);
+        const stats = fs.statSync(finalPath);
+        const fileBuffer = fs.readFileSync(finalPath);
 
-        const ext = path.extname(filePath).toLowerCase();
+        const ext = path.extname(finalPath).toLowerCase();
         let mimeType = 'application/octet-stream';
         
         switch (ext) {
@@ -54,14 +59,13 @@ export async function GET(req: NextRequest, { params }: { params: { path: string
         headers.set('Content-Type', mimeType);
 
         if (ext === '.svg') {
-            headers.set('Content-Disposition', `attachment; filename="${path.basename(filePath)}"`);
+            headers.set('Content-Disposition', `attachment; filename="${path.basename(finalPath)}"`);
             headers.set('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'");
         } else {
-            headers.set('Content-Disposition', `inline; filename="${encodeURIComponent(path.basename(filePath))}"`);
+            headers.set('Content-Disposition', `inline; filename="${encodeURIComponent(path.basename(finalPath))}"`);
         }
 
         headers.set('Content-Length', stats.size.toString());
-        // Cache control to help browsers
         headers.set('Cache-Control', 'public, max-age=86400, stale-while-revalidate=86400');
 
         return new NextResponse(fileBuffer, {
@@ -69,7 +73,7 @@ export async function GET(req: NextRequest, { params }: { params: { path: string
             headers,
         });
     } catch (e) {
-        console.error('Error serving file:', e);
+        console.error('Error serving upload file:', e);
         return new NextResponse('Internal Server Error', { status: 500 });
     }
 }

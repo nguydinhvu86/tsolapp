@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Send, Mail, Paperclip } from 'lucide-react';
 import dynamic from 'next/dynamic';
@@ -158,7 +160,7 @@ export function SendEmailModal({ isOpen, onClose, onSend, defaultToEmail, module
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!toEmail || !subject || !htmlBody) {
-            alert('Vui lòng nhập người nhận, tiêu đề và nội dung Email.');
+            toast.warning('Vui lòng nhập người nhận, tiêu đề và nội dung Email.');
             return;
         }
 
@@ -175,7 +177,7 @@ export function SendEmailModal({ isOpen, onClose, onSend, defaultToEmail, module
                 if (attachmentBase64) {
                     finalAttachmentName = documentName || 'TaiLieu.pdf';
                 } else {
-                    alert('Cảnh báo: Không thể tạo file PDF đính kèm. Email sẽ được gửi mà không có file đính kèm.');
+                    toast.warning('Cảnh báo: Không thể tạo file PDF đính kèm. Email sẽ được gửi mà không có file đính kèm.');
                 }
             }
 
@@ -190,7 +192,7 @@ export function SendEmailModal({ isOpen, onClose, onSend, defaultToEmail, module
             onClose();
         } catch (error) {
             console.error(error);
-            alert("Lỗi khi gửi email.");
+            toast.error("Lỗi khi gửi email.");
         } finally {
             setIsSending(false);
             setStatusMessage('');

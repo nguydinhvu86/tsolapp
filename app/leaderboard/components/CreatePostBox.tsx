@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Image as ImageIcon, AtSign, Sparkles, X, Loader2, Trophy, Shield, Users, Flame, CheckCircle2 } from 'lucide-react';
 import { createSocialPost, searchMentionUsers } from '../actions';
@@ -134,7 +136,7 @@ export function CreatePostBox({
             }
             setImages(prev => [...prev, ...uploadedUrls]);
         } catch (err) {
-            alert('Lỗi tải ảnh lên. Vui lòng thử lại.');
+            toast.error('Lỗi tải ảnh lên. Vui lòng thử lại.');
         } finally {
             setIsUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -170,7 +172,7 @@ export function CreatePostBox({
             setSelectedBadge('');
             onPostCreated();
         } catch (err: any) {
-            alert(err.message || 'Lỗi khi đăng bài.');
+            toast.error(err.message || 'Lỗi khi đăng bài.');
         } finally {
             setIsSubmitting(false);
         }

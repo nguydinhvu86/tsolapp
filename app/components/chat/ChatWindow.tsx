@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
     Send, X, Plus, Search, Users, UserRound, ArrowLeft,
@@ -328,7 +330,7 @@ export default function ChatWindow({
             setMessages(prev => prev.filter(m => m.id !== msgId));
             await fetchRooms();
         } catch (err: any) {
-            alert(err.message || 'Lỗi khi xóa tin nhắn');
+            toast.error(err.message || 'Lỗi khi xóa tin nhắn');
         }
     };
 
@@ -365,7 +367,7 @@ export default function ChatWindow({
                 chatInputRef.current.focus();
             }
         } catch (e: any) {
-            alert(e.message || 'Lỗi gửi tin nhắn');
+            toast.error(e.message || 'Lỗi gửi tin nhắn');
             console.error('Send error', e);
         } finally {
             setIsSending(false);
@@ -388,7 +390,7 @@ export default function ChatWindow({
             setGroupName('');
             setActiveRoomId(roomId);
         } catch (e) {
-            alert(e instanceof Error ? e.message : 'Lỗi tạo nhóm');
+            toast.error(e instanceof Error ? e.message : 'Lỗi tạo nhóm');
         } finally {
             setIsSending(false);
         }
@@ -722,7 +724,7 @@ export default function ChatWindow({
                                                 setActiveTab('rooms');
                                                 setIsCreatingChat(false);
                                             } catch (e) {
-                                                alert('Lỗi tạo chat');
+                                                toast.error('Lỗi tạo chat');
                                             } finally {
                                                 setIsSending(false);
                                             }

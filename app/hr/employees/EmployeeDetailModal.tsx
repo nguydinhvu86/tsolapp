@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useRef } from 'react';
 import { Modal } from '@/app/components/ui/Modal';
 import { Button } from '@/app/components/ui/Button';
@@ -91,13 +93,13 @@ export default function EmployeeDetailModal({ employee, isOpen, onClose, onUpdat
         try {
             const res = await updateEmployeeProfile(employee.id, profile);
             if (res.success && res.data) {
-                alert('Đã cập nhật đầy đủ hồ sơ nhân sự thành công!');
+                toast.success('Đã cập nhật đầy đủ hồ sơ nhân sự thành công!');
                 onUpdated({ ...employee, employeeProfile: res.data, department: res.data.department });
             } else {
-                alert('Lỗi cập nhật: ' + (res.error || 'Có lỗi xảy ra'));
+                toast.error('Lỗi cập nhật: ' + (res.error || 'Có lỗi xảy ra'));
             }
         } catch (err: any) {
-            alert('Lỗi: ' + err.message);
+            toast.error('Lỗi: ' + err.message);
         } finally {
             setLoading(false);
         }
@@ -110,15 +112,15 @@ export default function EmployeeDetailModal({ employee, isOpen, onClose, onUpdat
         try {
             const res = await createLaborContract(employee.id, contract);
             if (res.success && res.data) {
-                alert('Đã thêm hợp đồng lao động thành công!');
+                toast.success('Đã thêm hợp đồng lao động thành công!');
                 setShowAddContract(false);
                 const currentContracts = employee.laborContracts || [];
                 onUpdated({ ...employee, laborContracts: [...currentContracts, res.data] });
             } else {
-                alert('Lỗi: ' + (res.error || 'Có lỗi xảy ra'));
+                toast.error('Lỗi: ' + (res.error || 'Có lỗi xảy ra'));
             }
         } catch (err: any) {
-            alert('Lỗi: ' + err.message);
+            toast.error('Lỗi: ' + err.message);
         } finally {
             setLoading(false);
         }
@@ -134,10 +136,10 @@ export default function EmployeeDetailModal({ employee, isOpen, onClose, onUpdat
                 const filteredContracts = (employee.laborContracts || []).filter((c: any) => c.id !== contractId);
                 onUpdated({ ...employee, laborContracts: filteredContracts });
             } else {
-                alert('Lỗi: ' + res.error);
+                toast.error('Lỗi: ' + res.error);
             }
         } catch (err: any) {
-            alert('Lỗi: ' + err.message);
+            toast.error('Lỗi: ' + err.message);
         } finally {
             setLoading(false);
         }

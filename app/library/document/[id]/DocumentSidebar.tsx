@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, BookOpen, Send, Trash2, PlayCircle, Clock } from 'lucide-react';
 import { addDocumentComment, addDocumentNote, deleteDocumentNote } from '../../actions';
@@ -43,7 +45,7 @@ export default function DocumentSidebar({ documentId, initialComments, initialNo
             setReplyTo(null);
             router.refresh();
         } catch (error) {
-            alert('Lỗi gửi bình luận');
+            toast.error('Lỗi gửi bình luận');
         } finally {
             setIsSubmittingComment(false);
         }
@@ -58,7 +60,7 @@ export default function DocumentSidebar({ documentId, initialComments, initialNo
             setNoteText('');
             router.refresh();
         } catch (error) {
-            alert('Lỗi lưu ghi chú');
+            toast.error('Lỗi lưu ghi chú');
         } finally {
             setIsSubmittingNote(false);
         }
@@ -70,7 +72,7 @@ export default function DocumentSidebar({ documentId, initialComments, initialNo
             await deleteDocumentNote(id);
             router.refresh();
         } catch (error) {
-            alert('Lỗi xóa ghi chú');
+            toast.error('Lỗi xóa ghi chú');
         }
     };
 

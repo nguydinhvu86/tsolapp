@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useMemo } from 'react';
 import { 
     Search, UserCircle, Briefcase, DollarSign, Wallet, 
@@ -93,7 +95,7 @@ export default function EmployeesClient({ initialData }: { initialData: Employee
     // Xuất file Excel danh sách nhân sự
     const handleExportExcel = () => {
         if (filteredEmployees.length === 0) {
-            alert('Không có dữ liệu nhân sự để xuất file.');
+            toast.info('Không có dữ liệu nhân sự để xuất file.');
             return;
         }
 

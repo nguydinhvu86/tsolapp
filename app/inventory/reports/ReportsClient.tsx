@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Table } from '@/app/components/ui/Table';
@@ -126,7 +128,7 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
 
     const loadLedger = async () => {
         if (!ledgerProduct) {
-            alert("Vui lòng chọn một mặt hàng để xem Thẻ Kho!");
+            toast.warning("Vui lòng chọn một mặt hàng để xem Thẻ Kho!");
             return;
         }
         try {
@@ -139,7 +141,7 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
             setLedgerData(filteredData);
         } catch (error) {
             console.error(error);
-            alert("Lỗi tải Thẻ kho.");
+            toast.error("Lỗi tải Thẻ kho.");
         } finally {
             setIsLoadingLedger(false);
         }
@@ -152,7 +154,7 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
             setTxnData(data);
         } catch (error) {
             console.error(error);
-            alert("Lỗi tải báo cáo giao dịch.");
+            toast.error("Lỗi tải báo cáo giao dịch.");
         } finally {
             setIsLoadingTxn(false);
         }
@@ -167,7 +169,7 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
             setIobData(data.filter((r: any) => r.openingBalance !== 0 || r.totalIn !== 0 || r.totalOut !== 0 || r.closingBalance !== 0));
         } catch (error) {
             console.error(error);
-            alert("Lỗi tải báo cáo Xuất-Nhập-Tồn.");
+            toast.error("Lỗi tải báo cáo Xuất-Nhập-Tồn.");
         } finally {
             setIsLoadingIob(false);
         }
@@ -191,7 +193,7 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
 
     const handleExportLedger = () => {
         if (ledgerData.length === 0) {
-            alert("Không có dữ liệu thẻ kho để xuất.");
+            toast.info("Không có dữ liệu thẻ kho để xuất.");
             return;
         }
         exportToExcel(
@@ -208,7 +210,7 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
     };
 
     const handleExportTxn = () => {
-        if (txnData.length === 0) return alert("Không có dữ liệu.");
+        if (txnData.length === 0) return toast.info("Không có dữ liệu.");
         exportToExcel(
             txnData.map((row: any) => ({
                 'Ngày': formatDate(row.date),
@@ -226,7 +228,7 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
     };
 
     const handleExportIob = () => {
-        if (iobData.length === 0) return alert("Không có dữ liệu.");
+        if (iobData.length === 0) return toast.info("Không có dữ liệu.");
         exportToExcel(
             iobData.map((row: any) => ({
                 'Mã SKU': row.sku,

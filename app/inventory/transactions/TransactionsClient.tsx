@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
@@ -56,14 +58,14 @@ export default function TransactionsClient({ initialTransactions }: { initialTra
                 await deleteTransaction(id);
                 router.refresh();
             } catch (error: any) {
-                alert(error.message || t('transactions.genericError'));
+                toast.error(error.message || t('transactions.genericError'));
             }
         }
     };
 
     const handleExportExcel = () => {
         if (filtered.length === 0) {
-            alert(t('transactions.exportNoData'));
+            toast.info(t('transactions.exportNoData'));
             return;
         }
         const wb = XLSX.utils.book_new();

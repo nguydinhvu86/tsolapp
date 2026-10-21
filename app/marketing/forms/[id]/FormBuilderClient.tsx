@@ -1,4 +1,6 @@
 'use client';
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState } from 'react';
 import { MarketingForm } from '@prisma/client';
 import { Card } from '@/app/components/ui/Card';
@@ -139,13 +141,13 @@ export default function FormBuilderClient({
         try {
             const res = await updateForm(initialData.id, { fields });
             if (res.success) {
-                alert('Lưu biểu mẫu thành công!');
+                toast.success('Lưu biểu mẫu thành công!');
             } else {
-                alert(res.error);
+                toast.error(res.error);
             }
         } catch (error) {
             console.error(error);
-            alert('Lỗi kết nối khi lưu!');
+            toast.error('Lỗi kết nối khi lưu!');
         } finally {
             setIsSaving(false);
         }

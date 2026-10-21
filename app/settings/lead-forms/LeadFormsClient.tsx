@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
@@ -69,7 +71,7 @@ export function LeadFormsClient({ initialForms, users }: { initialForms: any[], 
 
     const handleSave = async () => {
         if (!title.trim()) {
-            alert('Vui lòng nhập tên Form.');
+            toast.warning('Vui lòng nhập tên Form.');
             return;
         }
 
@@ -101,7 +103,7 @@ export function LeadFormsClient({ initialForms, users }: { initialForms: any[], 
             setForms(updatedForms);
             setIsModalOpen(false);
         } catch (error: any) {
-            alert('Lỗi: ' + error.message);
+            toast.error('Lỗi: ' + error.message);
         } finally {
             setIsSaving(false);
         }
@@ -113,14 +115,14 @@ export function LeadFormsClient({ initialForms, users }: { initialForms: any[], 
             if (res.success) {
                 setForms(forms.filter(f => f.id !== id));
             } else {
-                alert('Lỗi: ' + res.error);
+                toast.error('Lỗi: ' + res.error);
             }
         }
     };
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
-        alert('Đã copy đường dẫn / mã nhúng iframe!');
+        toast.success('Đã copy đường dẫn / mã nhúng iframe!');
     };
 
     return (

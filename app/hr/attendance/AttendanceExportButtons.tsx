@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState } from 'react';
 import { Button } from '@/app/components/ui/Button';
 import { FileSpreadsheet, FileText } from 'lucide-react';
@@ -17,7 +19,7 @@ export function AttendanceExportButtons({ matrix, month, year, daysInMonth }: Ex
 
     const handleExportExcel = () => {
         if (!matrix || matrix.length === 0) {
-            alert('Không có dữ liệu để xuất Excel.');
+            toast.info('Không có dữ liệu để xuất Excel.');
             return;
         }
 
@@ -53,7 +55,7 @@ export function AttendanceExportButtons({ matrix, month, year, daysInMonth }: Ex
     const handleExportPDF = async () => {
         const element = document.getElementById('attendance-matrix-table');
         if (!element) {
-            alert('Không tìm thấy bảng công để xuất PDF.');
+            toast.info('Không tìm thấy bảng công để xuất PDF.');
             return;
         }
 
@@ -94,7 +96,7 @@ export function AttendanceExportButtons({ matrix, month, year, daysInMonth }: Ex
 
         } catch (error) {
             console.error('Lỗi khi xuất PDF:', error);
-            alert('Đã xảy ra lỗi khi tạo file PDF.');
+            toast.error('Đã xảy ra lỗi khi tạo file PDF.');
         } finally {
             setIsExportingPDF(false);
         }

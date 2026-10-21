@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useEffect, useTransition } from 'react';
 import { 
     HardDrive,
@@ -162,13 +164,13 @@ export default function StorageVaultClient() {
         try {
             const res = await syncVaultDataAction();
             if (res.success) {
-                alert(`Đồng bộ thành công!\n- Tệp mới thêm: ${res.inserted ?? 0}\n- Cập nhật dung lượng: ${res.updatedSize ?? 0}\n- Tổng tệp trong kho: ${res.total ?? 0}`);
+                toast.success(`Đồng bộ thành công!\n- Tệp mới thêm: ${res.inserted ?? 0}\n- Cập nhật dung lượng: ${res.updatedSize ?? 0}\n- Tổng tệp trong kho: ${res.total ?? 0}`);
                 await loadVaultData();
             } else {
-                alert(`Lỗi khi đồng bộ: ${res.error}`);
+                toast.error(`Lỗi khi đồng bộ: ${res.error}`);
             }
         } catch (err: any) {
-            alert(`Đã xảy ra lỗi: ${err.message}`);
+            toast.error(`Đã xảy ra lỗi: ${err.message}`);
         } finally {
             setIsSyncing(false);
         }
@@ -304,7 +306,7 @@ export default function StorageVaultClient() {
 
     const handleOpenPreview = (fileUrl: string, fileName: string) => {
         if (!fileUrl) {
-            alert('Không tìm thấy đường dẫn tệp tin!');
+            toast.info('Không tìm thấy đường dẫn tệp tin!');
             return;
         }
         setPreviewModal({

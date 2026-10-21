@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { MarketingForm } from '@prisma/client';
@@ -106,7 +108,7 @@ export default function FormClient({
                     router.refresh();
                     setIsModalOpen(false);
                 } else {
-                    alert(res.error);
+                    toast.error(res.error);
                 }
             } else {
                 const res = await createForm({
@@ -130,12 +132,12 @@ export default function FormClient({
                     router.refresh();
                     setIsModalOpen(false);
                 } else {
-                    alert(res.error);
+                    toast.error(res.error);
                 }
             }
         } catch (error) {
             console.error(error);
-            alert('Có lỗi xảy ra');
+            toast.error('Có lỗi xảy ra');
         } finally {
             setIsLoading(false);
         }
@@ -149,11 +151,11 @@ export default function FormClient({
             if (res.success) {
                 setForms(forms.filter(f => f.id !== id));
             } else {
-                alert(res.error);
+                toast.error(res.error);
             }
         } catch (error) {
             console.error(error);
-            alert('Có lỗi xảy ra');
+            toast.error('Có lỗi xảy ra');
         }
     };
 

@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useEffect } from 'react';
 import { QuoteTemplate, Customer, Product } from '@prisma/client';
 import { Card } from '@/app/components/ui/Card';
@@ -110,7 +112,7 @@ export function NewQuoteClient({ templates, customers, products, preselectedCust
         e.preventDefault();
 
         if (!selectedTemplate || !selectedCustomer) {
-            alert('Vui lòng chọn đầy đủ Mẫu báo giá và Khách hàng');
+            toast.warning('Vui lòng chọn đầy đủ Mẫu báo giá và Khách hàng');
             return;
         }
 
@@ -135,7 +137,7 @@ export function NewQuoteClient({ templates, customers, products, preselectedCust
             router.push('/quotes');
         } catch (error) {
             console.error('Lỗi khi tạo báo giá:', error);
-            alert(`Có lỗi xảy ra: ${error instanceof Error ? error.message : JSON.stringify(error)}`);
+            toast.error(`Có lỗi xảy ra: ${error instanceof Error ? error.message : JSON.stringify(error)}`);
         }
     };
 

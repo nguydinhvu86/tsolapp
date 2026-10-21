@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
@@ -186,7 +188,7 @@ export default function HRAttendanceClient({
     // Export Excel
     const handleExportExcel = () => {
         if (filteredMatrix.length === 0) {
-            alert('Không có dữ liệu nhân sự để xuất Excel.');
+            toast.info('Không có dữ liệu nhân sự để xuất Excel.');
             return;
         }
 

@@ -19,10 +19,7 @@ async function handler(request: Request) {
         } catch(e) {}
     }
 
-    try {
-        const headers = Object.fromEntries(request.headers.entries());
-        require('fs').appendFileSync('./public/route-log.txt', new Date().toISOString() + ' | ROUTE | ' + request.url + ' | H: ' + JSON.stringify(headers) + ' | B: ' + JSON.stringify(body) + '\n');
-    } catch(e) {}
+    
 
     try {
         let phone = searchParams.get('phone') || body.phone || searchParams.get('callerid') || body.callerid || searchParams.get('caller') || body.caller || body.caller_number;

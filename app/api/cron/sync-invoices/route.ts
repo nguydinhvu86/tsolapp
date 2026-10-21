@@ -5,8 +5,12 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const token = searchParams.get('token');
 
-    // Secure the cron endpoint (ideally use headers for real implementations)
-    if (token !== process.env.CRON_SECRET && token !== 'TESTMODE123') {
+    // Secure the cron endpoint with secret token check
+    const authHeader = request.headers.get('authorization');
+    const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    const isAuthorized = Boolean(process.env.CRON_SECRET && (token === process.env.CRON_SECRET || bearerToken === process.env.CRON_SECRET));
+
+    if (!isAuthorized) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

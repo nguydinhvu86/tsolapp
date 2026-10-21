@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useTransition, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import * as XLSX from 'xlsx';
@@ -87,7 +89,7 @@ export default function CashBookClient({ initialData, companyInfo }: Props) {
             setCopiedTxId(txId);
             setTimeout(() => setCopiedTxId(null), 2000);
         } catch (e) {
-            alert(`Link: ${url}`);
+            toast.info(`Link: ${url}`);
         }
     };
 
@@ -118,7 +120,7 @@ export default function CashBookClient({ initialData, companyInfo }: Props) {
             await deleteCashTransaction(id);
             loadData();
         } catch (err: any) {
-            alert('Lỗi khi xóa chứng từ: ' + err.message);
+            toast.error('Lỗi khi xóa chứng từ: ' + err.message);
         }
     };
 

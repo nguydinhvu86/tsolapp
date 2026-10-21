@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useRef, useCallback } from 'react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -70,7 +72,7 @@ export function SalesEstimateNotes({ estimateId, notes, currentUserId, currentUs
             }
             setAttachments(prev => [...prev, ...newItems]);
         } catch (err: any) {
-            alert(err.message || 'Lỗi tải tệp tin');
+            toast.error(err.message || 'Lỗi tải tệp tin');
         } finally {
             setIsUploading(false);
         }
@@ -122,7 +124,7 @@ export function SalesEstimateNotes({ estimateId, notes, currentUserId, currentUs
                 setContent('');
                 setAttachments([]);
             } else {
-                alert('Lỗi: ' + res.error);
+                toast.error('Lỗi: ' + res.error);
             }
         } finally {
             setIsSubmitting(false);
@@ -136,7 +138,7 @@ export function SalesEstimateNotes({ estimateId, notes, currentUserId, currentUs
         try {
             const res = await deleteSalesEstimateNote(noteId);
             if (!res.success) {
-                alert('Lỗi: ' + res.error);
+                toast.error('Lỗi: ' + res.error);
             }
         } finally {
             setIsDeletingId(null);

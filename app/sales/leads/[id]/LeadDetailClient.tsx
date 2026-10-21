@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -87,7 +89,7 @@ export function LeadDetailClient({
             await recalculateSingleLeadScoreAction(lead.id);
             router.refresh();
         } catch (e: any) {
-            alert('Lỗi tính điểm: ' + (e.message || e));
+            toast.error('Lỗi tính điểm: ' + (e.message || e));
         } finally {
             setIsRecalculatingScore(false);
         }
@@ -100,7 +102,7 @@ export function LeadDetailClient({
             setIsAssigneeModalOpen(false);
             router.refresh();
         } catch (err: any) {
-            alert(err.message || 'Lỗi cập nhật người phụ trách');
+            toast.error(err.message || 'Lỗi cập nhật người phụ trách');
         } finally {
             setIsSavingAssignees(false);
         }
@@ -113,7 +115,7 @@ export function LeadDetailClient({
             await updateLeadStatus(lead.id, newStatus);
             router.refresh();
         } catch (err) {
-            alert('Lỗi khi cập nhật trạng thái');
+            toast.error('Lỗi khi cập nhật trạng thái');
         } finally {
             setLoading(false);
         }
@@ -126,7 +128,7 @@ export function LeadDetailClient({
             router.push('/sales/leads');
             router.refresh();
         } catch (err) {
-            alert('Lỗi khi xóa Cơ hội');
+            toast.error('Lỗi khi xóa Cơ hội');
         } finally {
             setLoading(false);
             setIsDeleteModalOpen(false);
@@ -139,7 +141,7 @@ export function LeadDetailClient({
         try {
             if (convertMode === 'EXISTING') {
                 if (!selectedCustomerId) {
-                    alert('Vui lòng chọn khách hàng có sẵn!');
+                    toast.warning('Vui lòng chọn khách hàng có sẵn!');
                     setLoading(false);
                     return;
                 }
@@ -159,7 +161,7 @@ export function LeadDetailClient({
                 }
             }
         } catch (err: any) {
-            alert(err.message || 'Lỗi khi chuyển đổi khách hàng');
+            toast.error(err.message || 'Lỗi khi chuyển đổi khách hàng');
         } finally {
             setLoading(false);
         }
@@ -791,8 +793,8 @@ export function LeadDetailClient({
                 }}
                 onSend={async (emailData) => {
                     const res = await sendLeadEmail(lead.id, emailData.to, emailData.subject, emailData.htmlBody);
-                    if (res?.success) alert("Đã gửi email thông báo thành công!");
-                    else alert("Lỗi khi gửi email: " + res?.error);
+                    if (res?.success) toast.success("Đã gửi email thông báo thành công!");
+                    else toast.error("Lỗi khi gửi email: " + res?.error);
                 }}
             />
 

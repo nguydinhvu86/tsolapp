@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -40,7 +42,7 @@ export function SalesInvoiceNotes({ invoiceId, notes, currentUserId, currentUser
                 setContent('');
                 setAttachments([]);
             } else {
-                alert('Lỗi: ' + res.error);
+                toast.error('Lỗi: ' + res.error);
             }
         } finally {
             setIsSubmitting(false);
@@ -54,7 +56,7 @@ export function SalesInvoiceNotes({ invoiceId, notes, currentUserId, currentUser
         try {
             const res = await deleteSalesInvoiceNote(noteId);
             if (!res.success) {
-                alert('Lỗi: ' + res.error);
+                toast.error('Lỗi: ' + res.error);
             }
         } finally {
             setIsDeletingId(null);
@@ -104,7 +106,7 @@ export function SalesInvoiceNotes({ invoiceId, notes, currentUserId, currentUser
                                                 }
                                                 setAttachments(newAttachments);
                                             } catch (err) {
-                                                alert('Lỗi tải tệp tin');
+                                                toast.error('Lỗi tải tệp tin');
                                             } finally {
                                                 setIsUploading(false);
                                                 e.target.value = '';

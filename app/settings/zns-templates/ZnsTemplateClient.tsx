@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useEffect } from 'react';
 import { 
     MessageSquare, 
@@ -53,7 +55,7 @@ export default function ZnsTemplateClient() {
     const handleSendSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!phone.trim() || !selectedTemplateId) {
-            alert('Vui lòng nhập số điện thoại người nhận');
+            toast.warning('Vui lòng nhập số điện thoại người nhận');
             return;
         }
 
@@ -72,13 +74,13 @@ export default function ZnsTemplateClient() {
         setSending(false);
 
         if (res.success) {
-            alert(`Gửi tin Zalo ZNS thành công! Mã theo dõi: ${res.result?.trackingId}`);
+            toast.success(`Gửi tin Zalo ZNS thành công! Mã theo dõi: ${res.result?.trackingId}`);
             setShowSendModal(false);
             setPhone('');
             setCustomerName('');
             loadData();
         } else {
-            alert(res.error || 'Lỗi khi gửi tin');
+            toast.error(res.error || 'Lỗi khi gửi tin');
         }
     };
 

@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useEffect } from 'react';
 import { 
     QrCode, 
@@ -59,7 +61,7 @@ export default function SerialManagementClient() {
     const handleCreateSerial = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedProductId || !newSerial.trim()) {
-            alert('Vui lòng chọn sản phẩm và nhập số Serial');
+            toast.warning('Vui lòng chọn sản phẩm và nhập số Serial');
             return;
         }
 
@@ -77,7 +79,7 @@ export default function SerialManagementClient() {
             setNewNotes('');
             loadData();
         } else {
-            alert(res.error || 'Lỗi khi tạo Serial');
+            toast.error(res.error || 'Lỗi khi tạo Serial');
         }
     };
 
@@ -90,7 +92,7 @@ export default function SerialManagementClient() {
         if (res.success) {
             setLookupResult(res.data);
         } else {
-            alert(res.error || 'Không tìm thấy thông tin Serial');
+            toast.error(res.error || 'Không tìm thấy thông tin Serial');
             setLookupResult(null);
         }
     };

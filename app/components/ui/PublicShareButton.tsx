@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState } from 'react';
 import { Share2, Check, Copy } from 'lucide-react';
 
@@ -26,7 +28,7 @@ export default function PublicShareButton({ title }: { title?: string }) {
             setTimeout(() => setCopied(false), 2500);
         } catch (e) {
             // fallback
-            alert(`Liên kết: ${url}`);
+            toast.info(`Liên kết: ${url}`);
         }
     };
 

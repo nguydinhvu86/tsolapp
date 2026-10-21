@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useMemo } from 'react';
 import { resolveLeaveRequest } from '@/app/hr/attendance/actions';
 import { LEAVE_TYPE_MAP } from '@/app/hr/attendance/constants';
@@ -118,7 +120,7 @@ export default function HrApprovalClient({
             setApprovingItem(null);
             setApproveNote('');
         } else {
-            alert('Lỗi khi duyệt đơn: ' + res.error);
+            toast.error('Lỗi khi duyệt đơn: ' + res.error);
         }
         setLoadingId(null);
     };
@@ -127,7 +129,7 @@ export default function HrApprovalClient({
         e.preventDefault();
         if (!rejectingItem) return;
         if (!rejectNote.trim()) {
-            alert("Vui lòng nhập lý do từ chối để nhân viên nắm được thông tin");
+            toast.warning("Vui lòng nhập lý do từ chối để nhân viên nắm được thông tin");
             return;
         }
         handleResolve(rejectingItem.id, 'REJECT', rejectNote.trim());

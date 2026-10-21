@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useRef, useTransition } from 'react';
 import { 
     Expense, 
@@ -199,7 +201,7 @@ export function ExpenseDetailClient({ initialData, relatedOptions }: ExpenseDeta
             setNotes([newNote, ...notes]);
             setNoteContent('');
         } else {
-            alert(res.error || 'Có lỗi khi thêm ghi chú');
+            toast.error(res.error || 'Có lỗi khi thêm ghi chú');
         }
         setIsSubmittingNote(false);
     };
@@ -233,7 +235,7 @@ export function ExpenseDetailClient({ initialData, relatedOptions }: ExpenseDeta
                 }));
             }
         } catch (err: any) {
-            alert(err.message || 'Lỗi khi tải tệp lên');
+            toast.error(err.message || 'Lỗi khi tải tệp lên');
         } finally {
             setIsUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -257,7 +259,7 @@ export function ExpenseDetailClient({ initialData, relatedOptions }: ExpenseDeta
                     }));
                     setActionModal(prev => ({ ...prev, isOpen: false }));
                 } catch (err: any) {
-                    alert(err.message || 'Lỗi khi xóa tệp');
+                    toast.error(err.message || 'Lỗi khi xóa tệp');
                 } finally {
                     setIsActionLoading(false);
                 }
@@ -302,7 +304,7 @@ export function ExpenseDetailClient({ initialData, relatedOptions }: ExpenseDeta
             setIsEditModalOpen(false);
             router.refresh();
         } catch (err: any) {
-            alert(err.message || 'Lỗi khi cập nhật phiếu chi');
+            toast.error(err.message || 'Lỗi khi cập nhật phiếu chi');
         } finally {
             setIsSavingEdit(false);
         }
@@ -323,7 +325,7 @@ export function ExpenseDetailClient({ initialData, relatedOptions }: ExpenseDeta
                     setActionModal(prev => ({ ...prev, isOpen: false }));
                     router.refresh();
                 } catch (e: any) {
-                    alert(e.message || 'Lỗi khi hủy phiếu chi');
+                    toast.error(e.message || 'Lỗi khi hủy phiếu chi');
                 } finally {
                     setIsActionLoading(false);
                 }
@@ -346,7 +348,7 @@ export function ExpenseDetailClient({ initialData, relatedOptions }: ExpenseDeta
                     setActionModal(prev => ({ ...prev, isOpen: false }));
                     router.refresh();
                 } catch (e: any) {
-                    alert(e.message || 'Lỗi khi khôi phục phiếu chi');
+                    toast.error(e.message || 'Lỗi khi khôi phục phiếu chi');
                 } finally {
                     setIsActionLoading(false);
                 }
@@ -368,7 +370,7 @@ export function ExpenseDetailClient({ initialData, relatedOptions }: ExpenseDeta
                     setActionModal(prev => ({ ...prev, isOpen: false }));
                     router.push('/sales/expenses');
                 } catch (e: any) {
-                    alert(e.message || 'Lỗi khi xóa phiếu chi');
+                    toast.error(e.message || 'Lỗi khi xóa phiếu chi');
                 } finally {
                     setIsActionLoading(false);
                 }

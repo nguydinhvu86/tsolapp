@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useMemo, useRef } from 'react';
 import { 
     Search, Play, CheckCircle, FileEdit, Printer, Download, 
@@ -172,13 +174,13 @@ export default function PayrollClient({ initialData, currentMonth, currentYear, 
         try {
             const res = await generatePayroll(currentMonth, currentYear);
             if (res.success) {
-                alert('Đã đồng bộ và tính toán bảng lương thành công!');
+                toast.success('Đã đồng bộ và tính toán bảng lương thành công!');
                 router.refresh();
             } else {
-                alert('Lỗi tính bảng lương: ' + res.error);
+                toast.error('Lỗi tính bảng lương: ' + res.error);
             }
         } catch (err: any) {
-            alert('Lỗi: ' + err.message);
+            toast.error('Lỗi: ' + err.message);
         } finally {
             setLoading(false);
         }
@@ -195,10 +197,10 @@ export default function PayrollClient({ initialData, currentMonth, currentYear, 
                 setEditingRecord(null);
                 router.refresh();
             } else {
-                alert('Lỗi cập nhật: ' + res.error);
+                toast.error('Lỗi cập nhật: ' + res.error);
             }
         } catch (err: any) {
-            alert('Lỗi: ' + err.message);
+            toast.error('Lỗi: ' + err.message);
         } finally {
             setLoading(false);
         }
@@ -213,7 +215,7 @@ export default function PayrollClient({ initialData, currentMonth, currentYear, 
             await batchUpdatePayrollStatus([id], status);
             router.refresh();
         } catch (e: any) {
-            alert('Lỗi: ' + e.message);
+            toast.error('Lỗi: ' + e.message);
         } finally {
             setLoading(false);
         }
@@ -222,7 +224,7 @@ export default function PayrollClient({ initialData, currentMonth, currentYear, 
     // Duyệt / Chi trả hàng loạt
     const handleBatchStatus = async (status: 'APPROVED' | 'PAID') => {
         if (selectedIds.length === 0) {
-            alert('Vui lòng tích chọn ít nhất 1 nhân viên.');
+            toast.warning('Vui lòng tích chọn ít nhất 1 nhân viên.');
             return;
         }
         const actionLabel = status === 'APPROVED' ? 'DUYỆT' : 'XÁC NHẬN CHI TRẢ';
@@ -232,14 +234,14 @@ export default function PayrollClient({ initialData, currentMonth, currentYear, 
         try {
             const res = await batchUpdatePayrollStatus(selectedIds, status);
             if (res.success) {
-                alert(`Đã cập nhật ${selectedIds.length} phiếu lương thành công!`);
+                toast.success(`Đã cập nhật ${selectedIds.length} phiếu lương thành công!`);
                 setSelectedIds([]);
                 router.refresh();
             } else {
-                alert('Lỗi: ' + res.error);
+                toast.error('Lỗi: ' + res.error);
             }
         } catch (e: any) {
-            alert('Lỗi: ' + e.message);
+            toast.error('Lỗi: ' + e.message);
         } finally {
             setLoading(false);
         }
@@ -254,10 +256,10 @@ export default function PayrollClient({ initialData, currentMonth, currentYear, 
             if (res.success) {
                 router.refresh();
             } else {
-                alert('Lỗi: ' + res.error);
+                toast.error('Lỗi: ' + res.error);
             }
         } catch (e: any) {
-            alert('Lỗi: ' + e.message);
+            toast.error('Lỗi: ' + e.message);
         } finally {
             setLoading(false);
         }
@@ -274,10 +276,10 @@ export default function PayrollClient({ initialData, currentMonth, currentYear, 
                 setSelectedIds([]);
                 router.refresh();
             } else {
-                alert('Lỗi: ' + res.error);
+                toast.error('Lỗi: ' + res.error);
             }
         } catch (e: any) {
-            alert('Lỗi: ' + e.message);
+            toast.error('Lỗi: ' + e.message);
         } finally {
             setLoading(false);
         }
@@ -382,7 +384,7 @@ export default function PayrollClient({ initialData, currentMonth, currentYear, 
     // Xuất file Excel bảng lương chi tiết
     const handleExportExcel = () => {
         if (filteredRecords.length === 0) {
-            alert('Không có dữ liệu để xuất file Excel.');
+            toast.info('Không có dữ liệu để xuất file Excel.');
             return;
         }
 

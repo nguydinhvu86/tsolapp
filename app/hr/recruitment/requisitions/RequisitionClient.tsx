@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
@@ -59,7 +61,7 @@ export default function RequisitionClient({ initialData, users, currentUserId, u
                 title: '', department: '', headcount: 1, budget: 0, description: '', requirements: '', approverId: ''
             });
         } else {
-            alert(res.error || "Có lỗi xảy ra");
+            toast.error(res.error || "Có lỗi xảy ra");
         }
         setLoading(false);
     };
@@ -70,7 +72,7 @@ export default function RequisitionClient({ initialData, users, currentUserId, u
         if (res.success) {
             setData(data.map((r: any) => r.id === id ? { ...r, status } : r));
         } else {
-            alert(res.error || "Không thể cập nhật!");
+            toast.error(res.error || "Không thể cập nhật!");
         }
     };
 

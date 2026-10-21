@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useEffect } from 'react';
 import { ContractAppendixTemplate, Contract, Customer, Product } from '@prisma/client';
 import { Card } from '@/app/components/ui/Card';
@@ -134,7 +136,7 @@ export function NewAppendixClient({
 
     const handleSave = async () => {
         if (!selectedContractId || !selectedTemplateId || !content) {
-            alert('Vui lòng điền đủ thông tin, chọn Hợp đồng chính và kiểm tra nội dung phụ lục.');
+            toast.warning('Vui lòng điền đủ thông tin, chọn Hợp đồng chính và kiểm tra nội dung phụ lục.');
             return;
         }
 
@@ -147,11 +149,11 @@ export function NewAppendixClient({
                 contractId: selectedContractId,
                 templateId: selectedTemplateId
             });
-            alert('Đã tạo phụ lục thành công!');
+            toast.success('Đã tạo phụ lục thành công!');
             router.push(`/contracts/${selectedContractId}`);
         } catch (e) {
             console.error(e);
-            alert('Lỗi tạo phụ lục.');
+            toast.error('Lỗi tạo phụ lục.');
             setIsSaving(false);
         }
     };

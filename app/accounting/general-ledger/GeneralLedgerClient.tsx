@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useEffect } from 'react';
 import { 
     BookOpen, 
@@ -56,7 +58,7 @@ export default function GeneralLedgerClient() {
 
     const removeLineRow = (index: number) => {
         if (lines.length <= 2) {
-            alert('Bút toán kép cần tối thiểu 2 dòng (Nợ / Có)');
+            toast.info('Bút toán kép cần tối thiểu 2 dòng (Nợ / Có)');
             return;
         }
         setLines(lines.filter((_, i) => i !== index));
@@ -75,11 +77,11 @@ export default function GeneralLedgerClient() {
     const handleCreateEntry = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!description.trim()) {
-            alert('Vui lòng nhập diễn giải bút toán');
+            toast.warning('Vui lòng nhập diễn giải bút toán');
             return;
         }
         if (!isBalanced) {
-            alert(`Bút toán chưa cân đối! Tổng Nợ (${formatCurrency(totalDebit)}) phải bằng Tổng Có (${formatCurrency(totalCredit)})`);
+            toast.warning(`Bút toán chưa cân đối! Tổng Nợ (${formatCurrency(totalDebit)}) phải bằng Tổng Có (${formatCurrency(totalCredit)})`);
             return;
         }
 
@@ -104,7 +106,7 @@ export default function GeneralLedgerClient() {
             ]);
             loadData();
         } else {
-            alert(res.error || 'Lỗi khi tạo bút toán');
+            toast.error(res.error || 'Lỗi khi tạo bút toán');
         }
     };
 

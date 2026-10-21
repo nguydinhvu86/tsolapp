@@ -1,4 +1,6 @@
 'use client';
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useMemo } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
@@ -37,7 +39,7 @@ export function DocumentManagersPanel({ documentId, managers = [], users = [], c
             await onAssign(documentId, [userId]);
             setSearchQuery(''); // clear search
         } catch (e: any) {
-            alert(e.message);
+            toast.info(e.message);
         } finally {
             setIsSubmitting(false);
         }
@@ -49,7 +51,7 @@ export function DocumentManagersPanel({ documentId, managers = [], users = [], c
         try {
             await onRemove(documentId, userId);
         } catch (e: any) {
-            alert(e.message);
+            toast.info(e.message);
         } finally {
             setIsSubmitting(false);
         }

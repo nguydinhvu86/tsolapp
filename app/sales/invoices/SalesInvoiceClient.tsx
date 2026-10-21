@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -398,7 +400,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
 
         if (isCustomProduct) {
             if (!customName.trim()) {
-                alert('Vui lòng nhập tên sản phẩm tự do');
+                toast.warning('Vui lòng nhập tên sản phẩm tự do');
                 return;
             }
             pName = customName;
@@ -570,7 +572,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
 
     const handleSave = async () => {
         if (!formData.customerId || formData.items.length === 0) {
-            alert(t('invoices.alertSelectCustomer'));
+            toast.info(t('invoices.alertSelectCustomer'));
             return;
         }
 
@@ -603,13 +605,13 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
             setIsFormOpen(false);
             router.refresh();
         } else {
-            alert(t('invoices.alertErrorGeneric') + res.error);
+            toast.error(t('invoices.alertErrorGeneric') + res.error);
         }
     };
 
     const handleSaveAndApprove = async () => {
         if (!formData.customerId || formData.items.length === 0) {
-            alert(t('invoices.alertSelectCustomer'));
+            toast.info(t('invoices.alertSelectCustomer'));
             return;
         }
 
@@ -647,7 +649,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                     const approveRes = await approveSalesInvoice(invoiceId, 'system');
 
                     if (approveRes.success) {
-                        alert(t('invoices.alertSuccessSaveDuyet'));
+                        toast.success(t('invoices.alertSuccessSaveDuyet'));
                         if (formData.id) {
                             setInvoices(invoices.map((inv: any) => inv.id === formData.id ? approveRes.data : inv));
                         } else {
@@ -660,10 +662,10 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                         setIsFormOpen(false);
                         router.refresh();
                     } else {
-                        alert(t('invoices.alertErrorSaveDuyet') + approveRes.error);
+                        toast.error(t('invoices.alertErrorSaveDuyet') + approveRes.error);
                     }
                 } else {
-                    alert(t('invoices.alertErrorSave') + res.error);
+                    toast.error(t('invoices.alertErrorSave') + res.error);
                 }
             }
         });
@@ -696,9 +698,9 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                 const res = await approveSalesInvoice(id, 'system');
                 if (res.success) {
                     setInvoices(invoices.map((inv: any) => inv.id === id ? res.data : inv));
-                    alert(t('invoices.alertSuccessApprove'));
+                    toast.success(t('invoices.alertSuccessApprove'));
                     router.refresh();
-                } else alert(res.error);
+                } else toast.error(res.error);
             }
         });
     };
@@ -719,7 +721,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                 const res = await updateSalesInvoiceStatus(id, newStatus);
                 if (res.success) {
                     setInvoices(invoices.map((inv: any) => inv.id === id ? { ...inv, status: newStatus } : inv));
-                } else alert(res.error);
+                } else toast.error(res.error);
             }
         });
     };
@@ -740,9 +742,9 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
             action: async () => {
                 const res = await cancelSalesInvoice(id);
                 if (res.success) {
-                    alert(t('invoices.alertSuccessCancel'));
+                    toast.success(t('invoices.alertSuccessCancel'));
                     setInvoices(invoices.map((inv: any) => inv.id === id ? { ...inv, status: 'CANCELLED' } : inv));
-                } else alert(res.error);
+                } else toast.error(res.error);
             }
         });
     };
@@ -763,10 +765,10 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
             action: async () => {
                 const res = await restoreSalesInvoice(id);
                 if (res.success) {
-                    alert(t('invoices.alertSuccessRestore'));
+                    toast.success(t('invoices.alertSuccessRestore'));
                     router.refresh();
                 } else {
-                    alert(t('invoices.alertErrorGeneric') + ' ' + res.error);
+                    toast.error(t('invoices.alertErrorGeneric') + ' ' + res.error);
                 }
             }
         });
@@ -774,7 +776,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
 
     const handleDelete = async (id: string, status: string) => {
         if (status !== 'DRAFT') {
-            alert(t('invoices.alertDeleteOnlyDraft'));
+            toast.info(t('invoices.alertDeleteOnlyDraft'));
             return;
         }
         setActionModal({
@@ -788,7 +790,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                 const res = await deleteSalesInvoice(id);
                 if (res.success) {
                     setInvoices(invoices.filter((o: any) => o.id !== id));
-                } else alert(res.error);
+                } else toast.error(res.error);
             }
         });
     };
@@ -799,7 +801,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
             if (res.success) {
                 setInvoices((prev: any[]) => prev.map(inv => inv.id === invoiceId ? { ...inv, tags: editingTagsValue } : inv));
             } else {
-                alert(t('invoices.alertErrorGeneric') + res.error);
+                toast.error(t('invoices.alertErrorGeneric') + res.error);
             }
         } catch (error) {
             console.error(error);

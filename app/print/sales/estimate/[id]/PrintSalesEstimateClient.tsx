@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useEffect } from 'react';
 
 import { formatMoney, formatDate, formatTaxRate } from '@/lib/utils/formatters';
@@ -16,7 +18,7 @@ export default function PrintSalesEstimateClient({ estimate, settings }: any) {
     };
 
     const handleExportPDF = () => {
-        alert("Lưu ý để có file PDF sắc nét:\n\nKhi hộp thoại In xuất hiện, hãy chọn Máy in (Destination) là 'Lưu dưới dạng PDF' (Save as PDF). Tính năng này sẽ giúp file PDF của bạn giữ nguyên định dạng giấy khổ A4 và rõ nét 100% ở định dạng chữ (Vector), không bị mờ nhòe như định dạng ảnh.");
+        toast.info("Lưu ý để có file PDF sắc nét:\n\nKhi hộp thoại In xuất hiện, hãy chọn Máy in (Destination) là 'Lưu dưới dạng PDF' (Save as PDF). Tính năng này sẽ giúp file PDF của bạn giữ nguyên định dạng giấy khổ A4 và rõ nét 100% ở định dạng chữ (Vector), không bị mờ nhòe như định dạng ảnh.");
         const originalTitle = document.title;
         document.title = `Bao_Gia_${estimate.code}`;
         window.print();

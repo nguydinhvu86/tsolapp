@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useEffect } from 'react';
 import { PaymentRequestTemplate, Customer } from '@prisma/client';
 import { Card } from '@/app/components/ui/Card';
@@ -104,7 +106,7 @@ export function NewPaymentRequestClient({ templates, customers, preselectedCusto
         e.preventDefault();
 
         if (!selectedTemplate || !selectedCustomer) {
-            alert('Vui lòng chọn đầy đủ Mẫu đề nghị thanh toán và Khách hàng');
+            toast.warning('Vui lòng chọn đầy đủ Mẫu đề nghị thanh toán và Khách hàng');
             return;
         }
 
@@ -119,7 +121,7 @@ export function NewPaymentRequestClient({ templates, customers, preselectedCusto
             router.push('/payment-requests');
         } catch (error) {
             console.error('Lỗi khi tạo đề nghị thanh toán:', error);
-            alert(`Có lỗi xảy ra: ${error instanceof Error ? error.message : JSON.stringify(error)}`);
+            toast.error(`Có lỗi xảy ra: ${error instanceof Error ? error.message : JSON.stringify(error)}`);
         }
     };
 

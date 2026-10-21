@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/app/components/ui/Card';
@@ -177,7 +179,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
 
         if (isCustomProduct) {
             if (!customName.trim()) {
-                alert('Vui lòng nhập tên sản phẩm tự do');
+                toast.warning('Vui lòng nhập tên sản phẩm tự do');
                 return;
             }
             pName = customName;
@@ -345,7 +347,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
 
     const handleSave = async () => {
         if (!formData.customerId || formData.items.length === 0) {
-            alert('Vui lòng chọn khách hàng và ít nhất 1 sản phẩm');
+            toast.warning('Vui lòng chọn khách hàng và ít nhất 1 sản phẩm');
             return;
         }
 
@@ -357,11 +359,11 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
         }
 
         if (res.success) {
-            alert('Lưu thành công!');
+            toast.success('Lưu thành công!');
             setIsFormOpen(false);
             router.refresh();
         } else {
-            alert('Lỗi: ' + res.error);
+            toast.error('Lỗi: ' + res.error);
         }
     };
 
@@ -374,7 +376,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                 const res = await updateSalesOrderStatus(id, newStatus);
                 if (res.success) {
                     setOrders(orders.map((o: any) => o.id === id ? { ...o, status: newStatus } : o));
-                } else alert(res.error);
+                } else toast.error(res.error);
             }
         });
     };
@@ -388,7 +390,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                 const res = await deleteSalesOrder(id);
                 if (res.success) {
                     setOrders(orders.filter((o: any) => o.id !== id));
-                } else alert(res.error);
+                } else toast.error(res.error);
             }
         });
     };
@@ -398,10 +400,10 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
         setIsConverting(true);
         const res = await convertOrderToInvoice(convertModalId);
         if (res.success) {
-            alert("Đã tạo Hóa Đơn thành công!");
+            toast.success("Đã tạo Hóa Đơn thành công!");
             router.push('/sales/invoices');
         } else {
-            alert(res.error);
+            toast.error(res.error);
             setIsConverting(false);
             setConvertModalId(null);
         }

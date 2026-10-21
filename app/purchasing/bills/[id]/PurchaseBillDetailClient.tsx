@@ -1,4 +1,6 @@
 'use client';
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import { formatDate, formatMoney, formatTaxRate } from '@/lib/utils/formatters';
 import { TaxBadge } from '@/app/components/ui/TaxRateSelect';
 
@@ -41,11 +43,11 @@ export function PurchaseBillDetailClient({ bill, tasks, users, warehouses }: { b
                 setReorderSuccessToast(true);
                 setTimeout(() => setReorderSuccessToast(false), 2500);
             } else {
-                alert(res.error || 'Lỗi khi cập nhật thứ tự');
+                toast.error(res.error || 'Lỗi khi cập nhật thứ tự');
                 setLocalBill(bill);
             }
         } catch (e: any) {
-            alert(e.message || 'Lỗi khi cập nhật thứ tự');
+            toast.error(e.message || 'Lỗi khi cập nhật thứ tự');
             setLocalBill(bill);
         } finally {
             setIsSavingOrder(false);
@@ -145,7 +147,7 @@ export function PurchaseBillDetailClient({ bill, tasks, users, warehouses }: { b
                     const updatedBill = await uploadPurchaseBillDocument(localBill.id, data.url, Object.hasOwn(file, 'name') && file.name !== 'image.png' ? file.name : fileName);
                     setLocalBill(updatedBill);
                 } catch (err: any) {
-                    alert(err.message || 'Lỗi tải ảnh Clipboard');
+                    toast.error(err.message || 'Lỗi tải ảnh Clipboard');
                 } finally {
                     setIsUploading(false);
                 }
@@ -159,7 +161,7 @@ export function PurchaseBillDetailClient({ bill, tasks, users, warehouses }: { b
 
     const handleApprove = async () => {
         if (!approveWarehouseId) {
-            alert('Vui lòng chọn kho để nhập hàng hóa!');
+            toast.warning('Vui lòng chọn kho để nhập hàng hóa!');
             return;
         }
         setIsSubmitting(true);
@@ -167,10 +169,10 @@ export function PurchaseBillDetailClient({ bill, tasks, users, warehouses }: { b
             const updated = await approvePurchaseBill(localBill.id, approveWarehouseId);
             setLocalBill({ ...localBill, status: updated.status });
             setIsApproveModalOpen(false);
-            alert('Duyệt hóa đơn thành công!');
+            toast.success('Duyệt hóa đơn thành công!');
         } catch (error: any) {
             console.error(error);
-            alert(error.message || 'Lỗi khi duyệt hóa đơn!');
+            toast.error(error.message || 'Lỗi khi duyệt hóa đơn!');
         } finally {
             setIsSubmitting(false);
         }
@@ -183,7 +185,7 @@ export function PurchaseBillDetailClient({ bill, tasks, users, warehouses }: { b
                 const updated = await cancelPurchaseBill(localBill.id);
                 setLocalBill(updated);
             } catch (error: any) {
-                alert(error.message || "Hủy thất bại. Hóa đơn có thể đã có thanh toán.");
+                toast.error(error.message || "Hủy thất bại. Hóa đơn có thể đã có thanh toán.");
             } finally {
                 setIsSubmitting(false);
             }
@@ -216,21 +218,21 @@ export function PurchaseBillDetailClient({ bill, tasks, users, warehouses }: { b
 
     const handleSubmitPayment = async () => {
         if (paymentData.amount <= 0 || paymentData.amount > remainingAmount + 0.001) {
-            alert('Số tiền chi không hợp lệ. Phải lớn hơn 0 và không vượt quá số còn nợ.');
+            toast.warning('Số tiền chi không hợp lệ. Phải lớn hơn 0 và không vượt quá số còn nợ.');
             return;
         }
         setIsSubmitting(true);
         try {
             const res = await payPurchaseBill(localBill.id, paymentData.amount, paymentData.method, '', paymentData.notes);
             if (res.success) {
-                alert('Đã chi tiền và tạo Phiếu Chi thành công!');
+                toast.success('Đã chi tiền và tạo Phiếu Chi thành công!');
                 setIsPaymentModalOpen(false);
                 router.refresh();
             } else {
-                alert('Lỗi: ' + res.error);
+                toast.error('Lỗi: ' + res.error);
             }
         } catch (error: any) {
-            alert('Lỗi: ' + error.message);
+            toast.error('Lỗi: ' + error.message);
         } finally {
             setIsSubmitting(false);
         }
@@ -651,7 +653,7 @@ export function PurchaseBillDetailClient({ bill, tasks, users, warehouses }: { b
                                                 setLocalBill(updatedBill);
 
                                             } catch (err: any) {
-                                                alert(err.message || 'Lỗi tải tệp tin');
+                                                toast.error(err.message || 'Lỗi tải tệp tin');
                                             } finally {
                                                 setIsUploading(false);
                                                 e.target.value = '';

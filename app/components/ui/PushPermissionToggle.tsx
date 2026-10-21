@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useEffect } from 'react';
 import { BellRing, BellOff } from 'lucide-react';
 
@@ -63,7 +65,7 @@ export function PushPermissionToggle() {
 
             if (!applicationServerKey) {
                 console.error("No VAPID public key available");
-                alert("Lỗi: Không lấy được VAPID Key từ Server để đăng ký.");
+                toast.error("Lỗi: Không lấy được VAPID Key từ Server để đăng ký.");
                 setIsLoading(false);
                 return;
             }
@@ -89,14 +91,14 @@ export function PushPermissionToggle() {
 
             if (response.ok) {
                 setIsSubscribed(true);
-                alert("Đăng ký thành công! Trình duyệt này sẽ nhận được thông báo.");
+                toast.success("Đăng ký thành công! Trình duyệt này sẽ nhận được thông báo.");
             } else {
                 console.error('Failed to store subscription on server');
-                alert("Lỗi: Không thể lưu thông tin vào cơ sở dữ liệu (Response not ok).");
+                toast.error("Lỗi: Không thể lưu thông tin vào cơ sở dữ liệu (Response not ok).");
             }
         } catch (error: any) {
             console.error('Failed to subscribe the user: ', error);
-            alert("Lỗi khi xin quyền Thông báo từ HĐH: " + (error.message || JSON.stringify(error)));
+            toast.error("Lỗi khi xin quyền Thông báo từ HĐH: " + (error.message || JSON.stringify(error)));
         } finally {
             setIsLoading(false);
         }

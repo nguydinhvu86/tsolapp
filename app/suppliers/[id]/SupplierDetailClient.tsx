@@ -1,4 +1,6 @@
 'use client';
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState } from 'react';
@@ -203,7 +205,7 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
     const handleEditSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (duplicateWarnings.length > 0) {
-            alert(`CẢNH BÁO TRÙNG LẶP DỮ LIỆU:\n\n${duplicateWarnings.map(w => `• ${w.message}`).join('\n')}\n\nVui lòng kiểm tra lại trước khi lưu.`);
+            toast.error(`CẢNH BÁO TRÙNG LẶP DỮ LIỆU:\n\n${duplicateWarnings.map(w => `• ${w.message}`).join('\n')}\n\nVui lòng kiểm tra lại trước khi lưu.`);
             return;
         }
         setIsSubmitting(true);
@@ -213,7 +215,7 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
             setIsEditModalOpen(false);
         } catch (error: any) {
             console.error(error);
-            alert(error?.message || "Có lỗi xảy ra khi cập nhật!");
+            toast.error(error?.message || "Có lỗi xảy ra khi cập nhật!");
         } finally {
             setIsSubmitting(false);
         }
@@ -221,7 +223,7 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
 
     const handleApprove = async () => {
         if (!approveWarehouseId) {
-            alert('Vui lòng chọn kho để nhập hàng hóa!');
+            toast.warning('Vui lòng chọn kho để nhập hàng hóa!');
             return;
         }
         setIsSubmitting(true);
@@ -230,10 +232,10 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
             const updatedBills = supplier.bills.map((b: any) => b.id === updated.id ? { ...b, status: updated.status } : b);
             setSupplier({ ...supplier, bills: updatedBills });
             setIsApproveModalOpen(false);
-            alert('Duyệt hóa đơn thành công!');
+            toast.success('Duyệt hóa đơn thành công!');
         } catch (error: any) {
             console.error(error);
-            alert(error.message || 'Lỗi khi duyệt hóa đơn!');
+            toast.error(error.message || 'Lỗi khi duyệt hóa đơn!');
         } finally {
             setIsSubmitting(false);
         }
@@ -247,7 +249,7 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
                 const updatedBills = supplier.bills.map((b: any) => b.id === updated.id ? { ...b, status: updated.status, notes: updated.notes } : b);
                 setSupplier({ ...supplier, bills: updatedBills });
             } catch (error: any) {
-                alert(error.message || 'Lỗi khi hủy hóa đơn!');
+                toast.error(error.message || 'Lỗi khi hủy hóa đơn!');
             } finally {
                 setIsSubmitting(false);
             }
@@ -262,7 +264,7 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
             setSupplier({ ...supplier, bills: updatedBills });
             setEditingTagsBillId(null);
         } catch (error: any) {
-            alert(error.message || 'Lỗi khi cập nhật thẻ quản lý!');
+            toast.error(error.message || 'Lỗi khi cập nhật thẻ quản lý!');
         } finally {
             setIsSubmitting(false);
         }
@@ -622,7 +624,7 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
                                                     {inv.status !== 'INVENTORY_IMPORTED' && (
                                                         <button 
                                                             style={{ display: 'inline-block', border: 'none', background: '#e0e7ff', color: '#4f46e5', padding: '0.4rem 0.6rem', borderRadius: '0.25rem', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}
-                                                            onClick={() => alert('Chức năng nhập kho đang cập nhật (Local)')}
+                                                            onClick={() => toast.info('Chức năng nhập kho đang cập nhật (Local)')}
                                                         >
                                                             Nhập Kho
                                                         </button>

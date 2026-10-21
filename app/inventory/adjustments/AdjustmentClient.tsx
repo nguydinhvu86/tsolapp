@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
@@ -50,7 +52,7 @@ export default function AdjustmentClient({ warehouses }: { warehouses: any[] }) 
                 setItems(newItems);
             } catch (error) {
                 console.error("Error loading stock", error);
-                alert(t('adjustments.errorLoadStock'));
+                toast.error(t('adjustments.errorLoadStock'));
             } finally {
                 setIsLoading(false);
             }
@@ -72,11 +74,11 @@ export default function AdjustmentClient({ warehouses }: { warehouses: any[] }) 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!userId) {
-            alert(t('transactions.sessionExpired'));
+            toast.info(t('transactions.sessionExpired'));
             return;
         }
         if (!selectedWarehouse) {
-            alert(t('adjustments.errorNoWarehouse'));
+            toast.error(t('adjustments.errorNoWarehouse'));
             return;
         }
 
@@ -98,7 +100,7 @@ export default function AdjustmentClient({ warehouses }: { warehouses: any[] }) 
         });
 
         if (differences.length === 0) {
-            alert(t('adjustments.errorNoDifference'));
+            toast.error(t('adjustments.errorNoDifference'));
             return;
         }
 
@@ -121,11 +123,11 @@ export default function AdjustmentClient({ warehouses }: { warehouses: any[] }) 
                 // 2. Automatically Process it so the inventory is actually adjusted
                 await processTransaction(newTx.id, userId);
 
-                alert(t('adjustments.successMsg').replace('{{code}}', code));
+                toast.success(t('adjustments.successMsg').replace('{{code}}', code));
                 router.push(`/inventory/transactions/${newTx.id}`);
 
             } catch (error: any) {
-                alert(error.message || t('transactions.genericError'));
+                toast.error(error.message || t('transactions.genericError'));
             } finally {
                 setIsSaving(false);
             }

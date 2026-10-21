@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
@@ -104,11 +106,11 @@ export default function SalesInvoiceDetailClient({
                 setReorderSuccessToast(true);
                 setTimeout(() => setReorderSuccessToast(false), 2500);
             } else {
-                alert(res.error || 'Lỗi khi cập nhật thứ tự');
+                toast.error(res.error || 'Lỗi khi cập nhật thứ tự');
                 setInvoice(initialData);
             }
         } catch (e: any) {
-            alert(e.message || 'Lỗi khi cập nhật thứ tự');
+            toast.error(e.message || 'Lỗi khi cập nhật thứ tự');
             setInvoice(initialData);
         } finally {
             setIsSavingOrder(false);
@@ -531,9 +533,9 @@ export default function SalesInvoiceDetailClient({
             action: async () => {
                 const res = await approveSalesInvoice(invoice.id, 'system');
                 if (res.success) {
-                    alert('Đã duyệt hóa đơn, xuất kho và ghi nhận nợ thành công!');
+                    toast.success('Đã duyệt hóa đơn, xuất kho và ghi nhận nợ thành công!');
                     router.refresh();
-                } else alert(res.error);
+                } else toast.error(res.error);
             }
         });
     };
@@ -555,7 +557,7 @@ export default function SalesInvoiceDetailClient({
                 if (res.success) {
                     setInvoice({ ...invoice, status: newStatus });
                     router.refresh();
-                } else alert(res.error);
+                } else toast.error(res.error);
             }
         });
     };
@@ -571,15 +573,15 @@ export default function SalesInvoiceDetailClient({
 
     const handleSubmitPayment = async () => {
         if (paymentData.amount <= 0 || paymentData.amount > remainingAmount + 0.001) {
-            alert('Số tiền không hợp lệ. Phải lớn hơn 0 và không vượt quá số còn nợ.');
+            toast.warning('Số tiền không hợp lệ. Phải lớn hơn 0 và không vượt quá số còn nợ.');
             return;
         }
         const res = await paySalesInvoice(invoice.id, paymentData.amount, paymentData.method, '', paymentData.notes);
         if (res.success) {
-            alert('Đã thu tiền và tạo Phiếu Thu thành công!');
+            toast.success('Đã thu tiền và tạo Phiếu Thu thành công!');
             setIsPaymentModalOpen(false);
             router.refresh();
-        } else alert('Lỗi: ' + res.error);
+        } else toast.error('Lỗi: ' + res.error);
     };
 
     const handleFullPayment = async () => {
@@ -600,9 +602,9 @@ export default function SalesInvoiceDetailClient({
             action: async () => {
                 const res = await paySalesInvoice(invoice.id, remainingAmount, 'BANK_TRANSFER', '', `Thu toàn bộ phần còn lại hóa đơn ${invoice.code}`);
                 if (res.success) {
-                    alert('Đã thu đủ Hóa Đơn thành công!');
+                    toast.success('Đã thu đủ Hóa Đơn thành công!');
                     router.refresh();
-                } else alert('Lỗi: ' + res.error);
+                } else toast.error('Lỗi: ' + res.error);
             }
         });
     };
@@ -625,10 +627,10 @@ export default function SalesInvoiceDetailClient({
             action: async () => {
                 const res = await cancelSalesInvoice(invoice.id);
                 if (res.success) {
-                    alert('Hủy Hóa Đơn và hoàn tác dữ liệu thành công!');
+                    toast.success('Hủy Hóa Đơn và hoàn tác dữ liệu thành công!');
                     setInvoice({ ...invoice, status: 'CANCELLED' });
                     router.refresh();
-                } else alert(res.error);
+                } else toast.error(res.error);
             }
         });
     };
@@ -651,10 +653,10 @@ export default function SalesInvoiceDetailClient({
             action: async () => {
                 const res = await restoreSalesInvoice(invoice.id);
                 if (res.success) {
-                    alert('Đã khôi phục hóa đơn thành công!');
+                    toast.success('Đã khôi phục hóa đơn thành công!');
                     setInvoice({ ...invoice, status: 'ISSUED' });
                     router.refresh();
-                } else alert(res.error);
+                } else toast.error(res.error);
             }
         });
     };
@@ -1223,7 +1225,7 @@ export default function SalesInvoiceDetailClient({
                                 <button
                                     onClick={() => {
                                         navigator.clipboard.writeText(settings.BANK_INFO_CONTENT || '');
-                                        alert('Đã copy thông tin thanh toán');
+                                        toast.success('Đã copy thông tin thanh toán');
                                     }}
                                     className="px-2.5 py-1 text-xs font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
                                 >
@@ -1636,8 +1638,8 @@ export default function SalesInvoiceDetailClient({
                 }}
                 onSend={async (emailData) => {
                     const res = await sendInvoiceEmail(invoice.id, emailData.to, emailData.subject, emailData.htmlBody);
-                    if (res?.success) alert("Đã gửi email thông báo thành công!");
-                    else alert("Lỗi khi gửi email: " + res?.error);
+                    if (res?.success) toast.success("Đã gửi email thông báo thành công!");
+                    else toast.error("Lỗi khi gửi email: " + res?.error);
                 }}
             />
 
@@ -1649,7 +1651,7 @@ export default function SalesInvoiceDetailClient({
                 users={users}
                 currentUserId={session?.user?.id}
                 onSuccess={() => {
-                    alert('Đã tạo công việc nhắc gia hạn thành công!');
+                    toast.success('Đã tạo công việc nhắc gia hạn thành công!');
                     router.refresh();
                 }}
             />

@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useMemo } from 'react';
 import { toggleUserActiveStatus, getUserLoginLogs } from './actions';
 import { Activity, MonitorSmartphone, Wifi, WifiOff, List, X, Users, ShieldCheck, ShieldAlert, Search, Laptop, Smartphone } from 'lucide-react';
@@ -79,11 +81,11 @@ export default function MonitoringClient({ users }: { users: UserData[] }) {
             if (res.success) {
                 setData(prev => prev.map(u => u.id === userId ? { ...u, isActive: !currentStatus } : u));
             } else {
-                alert(res.error || 'Lỗi khi cập nhật trạng thái');
+                toast.error(res.error || 'Lỗi khi cập nhật trạng thái');
             }
         } catch (error) {
             console.error(error);
-            alert('Lỗi gửi request');
+            toast.error('Lỗi gửi request');
         } finally {
             setLoadingId(null);
         }
@@ -98,7 +100,7 @@ export default function MonitoringClient({ users }: { users: UserData[] }) {
             if (res.success && res.data) {
                 setLogs(res.data);
             } else {
-                alert(res.error || 'Lỗi tải lịch sử');
+                toast.error(res.error || 'Lỗi tải lịch sử');
             }
         } catch (e) {
             console.error(e);

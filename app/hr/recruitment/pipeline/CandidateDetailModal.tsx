@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState } from 'react';
 import { Modal } from '@/app/components/ui/Modal';
 import { Button } from '@/app/components/ui/Button';
@@ -50,11 +52,11 @@ export default function CandidateDetailModal({
         });
         
         if (res.success) {
-            alert('Đã đặt lịch phỏng vấn thành công!');
+            toast.success('Đã đặt lịch phỏng vấn thành công!');
             setIsScheduling(false);
             window.location.reload(); // Simple reload to refresh data for pipeline
         } else {
-            alert(res.error || 'Có lỗi xảy ra');
+            toast.error(res.error || 'Có lỗi xảy ra');
         }
         setLoading(false);
     };
@@ -70,11 +72,11 @@ export default function CandidateDetailModal({
         });
         
         if (res.success) {
-            alert('Đã lưu bài chấm thi (Scorecard) thành công!');
+            toast.success('Đã lưu bài chấm thi (Scorecard) thành công!');
             setEvaluatingInterviewId(null);
             window.location.reload(); 
         } else {
-            alert(res.error || 'Có lỗi xảy ra');
+            toast.error(res.error || 'Có lỗi xảy ra');
         }
         setLoading(false);
     };

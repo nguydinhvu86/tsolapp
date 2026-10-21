@@ -1,4 +1,6 @@
 'use client';
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState } from 'react';
@@ -56,7 +58,7 @@ export function PurchasePaymentDetailClient({ payment, tasks, users }: { payment
                     setActionModal(prev => ({ ...prev, isOpen: false }));
                     router.refresh();
                 } catch (e: any) {
-                    alert(e.message || 'Lỗi khi hủy phiếu chi');
+                    toast.error(e.message || 'Lỗi khi hủy phiếu chi');
                 } finally {
                     setIsActionLoading(false);
                 }
@@ -78,7 +80,7 @@ export function PurchasePaymentDetailClient({ payment, tasks, users }: { payment
                     setActionModal(prev => ({ ...prev, isOpen: false }));
                     router.refresh();
                 } catch (e: any) {
-                    alert(e.message || 'Lỗi khi khôi phục phiếu chi');
+                    toast.error(e.message || 'Lỗi khi khôi phục phiếu chi');
                 } finally {
                     setIsActionLoading(false);
                 }
@@ -99,7 +101,7 @@ export function PurchasePaymentDetailClient({ payment, tasks, users }: { payment
                     setActionModal(prev => ({ ...prev, isOpen: false }));
                     router.push('/purchasing/payments');
                 } catch (e: any) {
-                    alert(e.message || 'Lỗi khi xóa phiếu chi');
+                    toast.error(e.message || 'Lỗi khi xóa phiếu chi');
                 } finally {
                     setIsActionLoading(false);
                 }
@@ -424,7 +426,7 @@ export function PurchasePaymentDetailClient({ payment, tasks, users }: { payment
                                                     setLocalPayment(updatedPayment);
 
                                                 } catch (err: any) {
-                                                    alert(err.message || 'Lỗi tải tệp tin');
+                                                    toast.error(err.message || 'Lỗi tải tệp tin');
                                                 } finally {
                                                     setIsUploading(false);
                                                     e.target.value = '';

@@ -1,4 +1,6 @@
 'use client';
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState, useMemo } from 'react';
@@ -69,7 +71,7 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
             if (!res.ok) throw new Error(data.error);
             setFormData(prev => ({ ...prev, attachment: data.url }));
         } catch (err: any) {
-            alert(err.message || t('purchasePayments.uploadError'));
+            toast.error(err.message || t('purchasePayments.uploadError'));
         } finally {
             setIsUploading(false);
         }
@@ -227,7 +229,7 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                     setActionModal(prev => ({ ...prev, isOpen: false }));
                     router.refresh();
                 } catch (error: any) {
-                    alert(error.message || 'Lỗi khi hủy phiếu chi');
+                    toast.error(error.message || 'Lỗi khi hủy phiếu chi');
                 } finally {
                     setIsActionLoading(false);
                 }
@@ -249,7 +251,7 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                     setActionModal(prev => ({ ...prev, isOpen: false }));
                     router.refresh();
                 } catch (error: any) {
-                    alert(error.message || 'Lỗi khi khôi phục phiếu chi');
+                    toast.error(error.message || 'Lỗi khi khôi phục phiếu chi');
                 } finally {
                     setIsActionLoading(false);
                 }
@@ -271,7 +273,7 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                     setActionModal(prev => ({ ...prev, isOpen: false }));
                     router.refresh();
                 } catch (error: any) {
-                    alert(error.message || t('purchasePayments.deleteError'));
+                    toast.error(error.message || t('purchasePayments.deleteError'));
                 } finally {
                     setIsActionLoading(false);
                 }
@@ -283,17 +285,17 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
         e.preventDefault();
 
         if (!formData.supplierId) {
-            alert(t('purchasePayments.supplierRequired'));
+            toast.info(t('purchasePayments.supplierRequired'));
             return;
         }
 
         if (formData.amount <= 0) {
-            alert(t('purchasePayments.amountRequired'));
+            toast.info(t('purchasePayments.amountRequired'));
             return;
         }
 
         if (totalAllocated > formData.amount + 0.01) {
-            alert(t('purchasePayments.allocationExceedError'));
+            toast.error(t('purchasePayments.allocationExceedError'));
             return;
         }
 
@@ -326,7 +328,7 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
             router.refresh();
         } catch (error: any) {
             console.error(error);
-            alert(error.message || t('purchasePayments.createError'));
+            toast.error(error.message || t('purchasePayments.createError'));
             setIsSubmitting(false);
         }
     };

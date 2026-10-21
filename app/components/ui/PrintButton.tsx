@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState } from 'react';
 
 import { Printer, Download } from 'lucide-react';
@@ -15,7 +17,7 @@ export function PrintButton({ label = 'In Tài Liệu (A4)', inline = false }: P
     const handleDownloadPdf = async () => {
         const element = document.querySelector('.a4-document') || document.querySelector('.sun-editor-editable');
         if (!element) {
-            alert('Không tìm thấy nội dung tài liệu để xuất PDF.');
+            toast.info('Không tìm thấy nội dung tài liệu để xuất PDF.');
             return;
         }
 
@@ -57,7 +59,7 @@ export function PrintButton({ label = 'In Tài Liệu (A4)', inline = false }: P
             await html2pdf().set(opt).from(htmlElement).save();
         } catch (error) {
             console.error('Lỗi khi xuất PDF:', error);
-            alert('Đã xảy ra lỗi khi tạo file PDF.');
+            toast.error('Đã xảy ra lỗi khi tạo file PDF.');
         } finally {
             // Khôi phục lại giao diện hiển thị web
             htmlElement.style.cssText = originalCssText;

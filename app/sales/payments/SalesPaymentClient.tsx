@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -118,7 +120,7 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
 
     const handleAutoAllocate = () => {
         if (formData.amount <= 0) {
-            alert("Vui lòng nhập số tiền thu trước khi phân bổ tự động");
+            toast.warning("Vui lòng nhập số tiền thu trước khi phân bổ tự động");
             return;
         }
 
@@ -168,7 +170,7 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
             }
         } catch (error) {
             console.error("Lỗi upload:", error);
-            alert("Không thể tải file lên.");
+            toast.info("Không thể tải file lên.");
         } finally {
             setIsUploading(false);
         }
@@ -179,7 +181,7 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
         if (!formData.customerId || formData.amount <= 0) return;
 
         if (totalAllocated > formData.amount + 0.001) {
-            alert("Số tiền phân bổ không được vượt quá tổng tiền thu!");
+            toast.info("Số tiền phân bổ không được vượt quá tổng tiền thu!");
             return;
         }
 
@@ -208,7 +210,7 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
             setIsCreateModalOpen(false);
             router.refresh();
         } catch (error: any) {
-            alert(error.message);
+            toast.error(error.message);
         } finally {
             setIsSubmitting(false);
         }
@@ -224,7 +226,7 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
                     await cancelSalesPayment(id);
                     router.refresh();
                 } catch (error: any) {
-                    alert(error.message);
+                    toast.error(error.message);
                 }
             }
         });
@@ -240,7 +242,7 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
                     await restoreSalesPayment(id);
                     router.refresh();
                 } catch (error: any) {
-                    alert(error.message);
+                    toast.error(error.message);
                 }
             }
         });
@@ -256,7 +258,7 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
                     await deleteSalesPayment(id);
                     router.refresh();
                 } catch (error: any) {
-                    alert(error.message);
+                    toast.error(error.message);
                 }
             }
         });

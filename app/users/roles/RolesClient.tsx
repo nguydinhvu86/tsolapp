@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/Input';
@@ -92,7 +94,7 @@ export function RolesClient({ initialGroups }: { initialGroups: any[] }) {
                 await deletePermissionGroup(id);
                 setGroups(prev => prev.filter(g => g.id !== id));
             } catch (err: any) {
-                alert(err.message || 'Lỗi khi xóa nhóm quyền');
+                toast.error(err.message || 'Lỗi khi xóa nhóm quyền');
             }
         }
     };

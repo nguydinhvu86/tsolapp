@@ -30,9 +30,7 @@ async function handler(request: Request) {
         rawText
     });
 
-    try {
-        require('fs').appendFileSync('./public/test-webhook.txt', new Date().toISOString() + ' | CALLDATA | ' + request.url + ' | RAW: ' + rawText + '\\n');
-    } catch(e) {}
+    
 
     const callId = searchParams.get('callid') || body.callid;
     const calldate = searchParams.get('calldate') || body.calldate;

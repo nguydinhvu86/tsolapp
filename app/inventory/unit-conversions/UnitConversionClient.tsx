@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useEffect } from 'react';
 import { 
     Layers, 
@@ -80,7 +82,7 @@ export default function UnitConversionClient() {
 
     const removeUnitRow = (index: number) => {
         if (unitList[index].isBaseUnit) {
-            alert('Không thể xóa đơn vị tính cơ sở');
+            toast.info('Không thể xóa đơn vị tính cơ sở');
             return;
         }
         setUnitList(unitList.filter((_, i) => i !== index));
@@ -98,10 +100,10 @@ export default function UnitConversionClient() {
         const res = await saveUnitConversions(selectedProductId, unitList);
         setSaving(false);
         if (res.success) {
-            alert('Lưu cấu hình quy đổi đơn vị tính thành công!');
+            toast.success('Lưu cấu hình quy đổi đơn vị tính thành công!');
             loadData();
         } else {
-            alert(res.error || 'Lỗi khi lưu cấu hình');
+            toast.error(res.error || 'Lỗi khi lưu cấu hình');
         }
     };
 

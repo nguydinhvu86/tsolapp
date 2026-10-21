@@ -1,4 +1,6 @@
 'use client';
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import { formatDate, formatMoney } from '@/lib/utils/formatters';
 import { TaxBadge } from '@/app/components/ui/TaxRateSelect';
 import { StatusBadge } from '@/app/components/ui/StatusBadge';
@@ -38,11 +40,11 @@ export function PurchaseOrderDetailClient({ order, tasks, users, emailTemplates 
                 setReorderSuccessToast(true);
                 setTimeout(() => setReorderSuccessToast(false), 2500);
             } else {
-                alert(res.error || 'Lỗi khi cập nhật thứ tự');
+                toast.error(res.error || 'Lỗi khi cập nhật thứ tự');
                 setLocalOrder(order);
             }
         } catch (e: any) {
-            alert(e.message || 'Lỗi khi cập nhật thứ tự');
+            toast.error(e.message || 'Lỗi khi cập nhật thứ tự');
             setLocalOrder(order);
         } finally {
             setIsSavingOrder(false);
@@ -462,8 +464,8 @@ export function PurchaseOrderDetailClient({ order, tasks, users, emailTemplates 
                 }}
                 onSend={async (emailData: any) => {
                     const res = await sendPurchaseOrderEmail(order.id, emailData.to, emailData.subject, emailData.htmlBody);
-                    if (res?.success) alert("Đã gửi email đơn mua hàng thành công!");
-                    else alert("Lỗi khi gửi email: " + res?.error);
+                    if (res?.success) toast.success("Đã gửi email đơn mua hàng thành công!");
+                    else toast.error("Lỗi khi gửi email: " + res?.error);
                 }}
             />
         </div>

@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Users, Plus, Trash2, Edit2, Phone, Mail, Navigation2, Check, X } from 'lucide-react';
@@ -13,7 +15,7 @@ export function SupplierContactsPanel({ supplierId, initialContacts = [] }: { su
     const [formData, setFormData] = useState({ name: '', position: '', phone: '', email: '', notes: '' });
 
     const handleAdd = async () => {
-        if (!formData.name) return alert('Vui lòng nhập tên người liên hệ');
+        if (!formData.name) return toast.warning('Vui lòng nhập tên người liên hệ');
         const res = await createSupplierContact({ supplierId, ...formData });
         setContacts([res, ...contacts]);
         setIsAdding(false);
@@ -21,7 +23,7 @@ export function SupplierContactsPanel({ supplierId, initialContacts = [] }: { su
     };
 
     const handleUpdate = async (id: string) => {
-        if (!formData.name) return alert('Vui lòng nhập tên người liên hệ');
+        if (!formData.name) return toast.warning('Vui lòng nhập tên người liên hệ');
         const res = await updateSupplierContact(id, formData);
         setContacts(contacts.map(c => c.id === id ? res : c));
         setEditingId(null);

@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { MarketingParticipant } from '@prisma/client';
@@ -68,11 +70,11 @@ export default function ParticipantClient({
             if (res.success) {
                 setParticipants(participants.map(p => p.id === id ? { ...p, status: 'ATTENDED', updatedAt: new Date() } : p));
             } else {
-                alert(res.error);
+                toast.error(res.error);
             }
         } catch (error) {
             console.error(error);
-            alert('Lỗi điểm danh');
+            toast.error('Lỗi điểm danh');
         }
     };
 
@@ -98,11 +100,11 @@ export default function ParticipantClient({
                     return p;
                 }));
             } else {
-                alert(res.error);
+                toast.error(res.error);
             }
         } catch (error) {
             console.error(error);
-            alert('Lỗi cập nhật trạng thái');
+            toast.error('Lỗi cập nhật trạng thái');
         }
     };
 
@@ -112,11 +114,11 @@ export default function ParticipantClient({
             if (res.success) {
                 setParticipants(participants.map(p => p.id === id ? { ...p, status: 'REGISTERED' } : p));
             } else {
-                alert(res.error);
+                toast.error(res.error);
             }
         } catch (error) {
             console.error(error);
-            alert('Lỗi hủy điểm danh');
+            toast.error('Lỗi hủy điểm danh');
         }
     };
 
@@ -128,11 +130,11 @@ export default function ParticipantClient({
             if (res.success) {
                 setParticipants(participants.filter(p => p.id !== id));
             } else {
-                alert(res.error);
+                toast.error(res.error);
             }
         } catch (error) {
             console.error(error);
-            alert('Lỗi xóa dữ liệu');
+            toast.error('Lỗi xóa dữ liệu');
         }
     };
 

@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import { Plus, Edit2, Trash2, ExternalLink, ArrowLeft, Save, Upload, Download } from 'lucide-react';
 import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
@@ -46,11 +48,11 @@ export default function EcatalogDetailClient({
         }, currentUserId);
 
         if (res.success) {
-            alert("Đã lưu thay đổi");
+            toast.success("Đã lưu thay đổi");
             setEcatalog(res.data);
             router.refresh();
         } else {
-            alert(res.error || "Lỗi lưu dữ liệu");
+            toast.error(res.error || "Lỗi lưu dữ liệu");
         }
     };
 
@@ -91,7 +93,7 @@ export default function EcatalogDetailClient({
 
                 // Expecting Header in Row 1: TT, Part. Number Model, Hình ảnh Ghi chú, Mô tả sản phẩm, Xuất xứ, Giá đại lý, Giá bán lẻ
                 if (data.length <= 1) {
-                    alert("File Excel trống hoặc không đúng định dạng!");
+                    toast.info("File Excel trống hoặc không đúng định dạng!");
                     return;
                 }
 
@@ -124,10 +126,10 @@ export default function EcatalogDetailClient({
                 }
 
                 setItems([...items, ...newItems]);
-                alert(`Đã nhập thành công ${newItems.length} sản phẩm từ file Excel! Đừng quên ấn Lưu thay đổi.`);
+                toast.success(`Đã nhập thành công ${newItems.length} sản phẩm từ file Excel! Đừng quên ấn Lưu thay đổi.`);
             } catch (error) {
                 console.error(error);
-                alert("Lỗi khi đọc file Excel. Vui lòng kiểm tra lại định dạng.");
+                toast.error("Lỗi khi đọc file Excel. Vui lòng kiểm tra lại định dạng.");
             }
         };
         reader.readAsBinaryString(file);

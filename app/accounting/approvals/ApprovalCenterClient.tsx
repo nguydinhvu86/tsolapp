@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useEffect } from 'react';
 import { 
     CheckSquare, 
@@ -60,14 +62,14 @@ export default function ApprovalCenterClient() {
         if (res.success) {
             loadData();
         } else {
-            alert(res.error || 'Lỗi xử lý phê duyệt');
+            toast.error(res.error || 'Lỗi xử lý phê duyệt');
         }
     };
 
     const handleCreateSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!title.trim() || amount <= 0) {
-            alert('Vui lòng nhập đầy đủ tiêu đề và số tiền hợp lệ');
+            toast.warning('Vui lòng nhập đầy đủ tiêu đề và số tiền hợp lệ');
             return;
         }
 
@@ -86,7 +88,7 @@ export default function ApprovalCenterClient() {
             setAmount(0);
             loadData();
         } else {
-            alert(res.error || 'Lỗi khi gửi yêu cầu');
+            toast.error(res.error || 'Lỗi khi gửi yêu cầu');
         }
     };
 

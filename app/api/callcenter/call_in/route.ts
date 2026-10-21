@@ -34,9 +34,7 @@ async function handler(request: Request) {
         parsedBody: body
     });
 
-    try {
-        require('fs').appendFileSync('./public/test-webhook.txt', new Date().toISOString() + ' | CALL_IN | ' + request.url + ' | B: ' + JSON.stringify(body) + '\\n');
-    } catch(e) {}
+    
 
     let phone = searchParams.get('phone') || body.phone || searchParams.get('callerid') || body.callerid || searchParams.get('caller') || body.caller;
     let extension = searchParams.get('extension') || body.extension || searchParams.get('destination') || body.destination || searchParams.get('callee') || body.callee || searchParams.get('agent') || body.agent;

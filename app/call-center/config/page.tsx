@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useEffect } from 'react';
 import { getPbxConfig, savePbxConfig } from './actions';
 import { Save } from 'lucide-react';
@@ -38,9 +40,9 @@ export default function PbxConfigPage() {
         setLoading(true);
         try {
             await savePbxConfig(config);
-            alert('Lưu cấu hình tổng đài thành công!');
+            toast.success('Lưu cấu hình tổng đài thành công!');
         } catch (e: any) {
-            alert('Lỗi: ' + e.message);
+            toast.error('Lỗi: ' + e.message);
         } finally {
             setLoading(false);
         }

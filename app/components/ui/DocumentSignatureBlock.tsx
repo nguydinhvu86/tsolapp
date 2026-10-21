@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState } from 'react';
 import { SignaturePad } from './SignaturePad';
 import { saveDocumentSignature } from '@/app/actions/signature';
@@ -53,7 +55,7 @@ export function DocumentSignatureBlock({
             setIsSigning(false);
             router.refresh();
         } else {
-            alert('Lỗi: Không thể lưu chữ ký. Vui lòng thử lại.');
+            toast.error('Lỗi: Không thể lưu chữ ký. Vui lòng thử lại.');
         }
     };
 

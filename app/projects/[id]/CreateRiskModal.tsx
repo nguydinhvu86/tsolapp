@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useEffect } from 'react';
 import { Modal } from '@/app/components/ui/Modal';
 import { Button } from '@/app/components/ui/Button';
@@ -52,7 +54,7 @@ export function CreateRiskModal({
             router.refresh();
             onClose();
         } catch (err: any) {
-            alert(err.message || 'Có lỗi xảy ra');
+            toast.error(err.message || 'Có lỗi xảy ra');
         } finally {
             setIsSaving(false);
         }

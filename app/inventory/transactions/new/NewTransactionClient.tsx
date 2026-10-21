@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
@@ -46,7 +48,7 @@ export default function NewTransactionClient({ products, warehouses }: { product
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!userId) {
-            alert(t('transactions.sessionExpired'));
+            toast.info(t('transactions.sessionExpired'));
             return;
         }
 
@@ -72,7 +74,7 @@ export default function NewTransactionClient({ products, warehouses }: { product
 
             router.push('/inventory/transactions');
         } catch (error: any) {
-            alert(error.message || t('transactions.genericError'));
+            toast.error(error.message || t('transactions.genericError'));
         } finally {
             setIsSaving(false);
         }

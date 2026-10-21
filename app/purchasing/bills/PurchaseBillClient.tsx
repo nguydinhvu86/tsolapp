@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState } from 'react';
 import { Plus, Search, Eye, Trash2, Calendar, FileText, FileDown, CheckCircle, ArrowUpDown, Edit2, XCircle, AlertTriangle, X, Clock, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
@@ -332,15 +334,15 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
 
     const handleAddItem = () => {
         if (!isCustomProduct && !selectedProduct) {
-            alert(t('purchaseBills.pleaseSelectProduct'));
+            toast.info(t('purchaseBills.pleaseSelectProduct'));
             return;
         }
         if (isCustomProduct && !customName.trim()) {
-            alert(t('purchaseBills.pleaseEnterCustomName'));
+            toast.info(t('purchaseBills.pleaseEnterCustomName'));
             return;
         }
         if (qty <= 0) {
-            alert(t('purchaseBills.qtyMustBeGreaterThanZero'));
+            toast.info(t('purchaseBills.qtyMustBeGreaterThanZero'));
             return;
         }
 
@@ -485,7 +487,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                 await deletePurchaseBill(id);
                 setBills(bills.filter(b => b.id !== id));
             } catch (error: any) {
-                alert(error.message || t('purchaseBills.deleteFailed'));
+                toast.error(error.message || t('purchaseBills.deleteFailed'));
             }
         }
     };
@@ -497,7 +499,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                 const updated = await cancelPurchaseBill(id);
                 setBills(bills.map(b => b.id === updated.id ? { ...b, status: updated.status, notes: updated.notes } : b));
             } catch (error: any) {
-                alert(error.message || t('purchaseBills.cancelFailed'));
+                toast.error(error.message || t('purchaseBills.cancelFailed'));
             } finally {
                 setIsSubmitting(false);
             }
@@ -508,18 +510,18 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
         e.preventDefault();
 
         if (!formData.supplierId) {
-            alert(t('purchaseBills.pleaseSelectSupplier'));
+            toast.info(t('purchaseBills.pleaseSelectSupplier'));
             return;
         }
 
         if (billItems.length === 0) {
-            alert(t('purchaseBills.pleaseAddItems'));
+            toast.info(t('purchaseBills.pleaseAddItems'));
             return;
         }
 
         for (let i = 0; i < billItems.length; i++) {
             if (billItems[i].productId === 'EXTERNAL' && !billItems[i].productName?.trim()) {
-                alert(t('purchaseBills.pleaseEnterProductName').replace('{{line}}', String(i + 1)));
+                toast.info(t('purchaseBills.pleaseEnterProductName').replace('{{line}}', String(i + 1)));
                 return;
             }
         }
@@ -557,7 +559,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
             setIsCreateModalOpen(false);
         } catch (error) {
             console.error(error);
-            alert(t('purchaseBills.createFailed'));
+            toast.error(t('purchaseBills.createFailed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -565,7 +567,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
 
     const handleApprove = async () => {
         if (!approveWarehouseId) {
-            alert(t('purchaseBills.pleaseSelectWarehouse'));
+            toast.info(t('purchaseBills.pleaseSelectWarehouse'));
             return;
         }
         setIsSubmitting(true);
@@ -573,10 +575,10 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
             const updated = await approvePurchaseBill(selectedBill.id, approveWarehouseId);
             setBills(bills.map(b => b.id === updated.id ? { ...b, status: updated.status } : b));
             setIsApproveModalOpen(false);
-            alert(t('purchaseBills.approveSuccess'));
+            toast.success(t('purchaseBills.approveSuccess'));
         } catch (error: any) {
             console.error(error);
-            alert(error.message || t('purchaseBills.approveFailed'));
+            toast.error(error.message || t('purchaseBills.approveFailed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -1130,7 +1132,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                                         ]
                                                     });
                                                 } catch (err: any) {
-                                                    alert(err.message || t('purchaseBills.uploadError'));
+                                                    toast.error(err.message || t('purchaseBills.uploadError'));
                                                 } finally {
                                                     setIsUploading(false);
                                                     e.target.value = '';

@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
@@ -53,7 +55,7 @@ export default function WarehouseClient({ initialWarehouses }: { initialWarehous
             setIsModalOpen(false);
             router.refresh();
         } catch (error: any) {
-            alert(error.message || t('warehouses.genericError'));
+            toast.error(error.message || t('warehouses.genericError'));
         } finally {
             setIsSaving(false);
         }

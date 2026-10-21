@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/app/components/ui/Card';
@@ -59,7 +61,7 @@ export default function PipelineClient({ requisitions, initialApplications, acti
             if (!res.success) {
                 // Revert if failed
                 setApplications([...initialApplications]);
-                alert(res.error || "Không thể chuyển giai đoạn");
+                toast.error(res.error || "Không thể chuyển giai đoạn");
             }
         }
         setDraggedAppId(null);
@@ -67,7 +69,7 @@ export default function PipelineClient({ requisitions, initialApplications, acti
 
     const handleAddSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!activeReqId) return alert("Vui lòng chọn Yêu cầu tuyển dụng trước!");
+        if (!activeReqId) return toast.warning("Vui lòng chọn Yêu cầu tuyển dụng trước!");
         
         setLoading(true);
         const res = await createCandidateAndApplication({ ...formData, requisitionId: activeReqId });
@@ -76,7 +78,7 @@ export default function PipelineClient({ requisitions, initialApplications, acti
             setIsAddModalOpen(false);
             setFormData({ fullName: '', email: '', phone: '', source: 'Manual', skills: '', notes: '', cvUrl: '' });
         } else {
-            alert(res.error || "Có lỗi xảy ra");
+            toast.error(res.error || "Có lỗi xảy ra");
         }
         setLoading(false);
     };

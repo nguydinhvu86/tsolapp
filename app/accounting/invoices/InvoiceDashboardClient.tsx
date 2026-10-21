@@ -1,4 +1,6 @@
 'use client';
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useEffect, useMemo } from 'react';
 import { FileText, Download, CheckCircle, PackagePlus, AlertCircle, RefreshCw, Settings, Eye, X, Search, Filter, Trash } from 'lucide-react';
 import { importInventoryFromInvoice, triggerManualScan, uploadInvoiceFiles, deleteInvoice, assignInvoiceSupplier, autoReassignAllInvoices } from './actions';
@@ -126,7 +128,7 @@ export default function InvoiceDashboardClient({ initialInvoices, suppliers = []
          setIsProcessing(true);
          try {
              await importInventoryFromInvoice(invoiceId, actionType, 'W-0001');
-             alert(`Thao tác thành công!`);
+             toast.success(`Thao tác thành công!`);
              
              // Update local state proactively
              setInvoices(invoices.map(i => {
@@ -142,7 +144,7 @@ export default function InvoiceDashboardClient({ initialInvoices, suppliers = []
              }));
              router.refresh();
          } catch (e: any) {
-             alert(e.message || "Có lỗi xảy ra trong quá trình đồng bộ (Local)");
+             toast.error(e.message || "Có lỗi xảy ra trong quá trình đồng bộ (Local)");
          } finally {
              setIsProcessing(false);
          }
@@ -153,13 +155,13 @@ export default function InvoiceDashboardClient({ initialInvoices, suppliers = []
          try {
              const res = await triggerManualScan();
              if (res.success) {
-                 alert(`Quá trình quét hoàn tất! Đã tải về ${res.count || 0} hóa đơn điện tử mới.`);
+                 toast.success(`Quá trình quét hoàn tất! Đã tải về ${res.count || 0} hóa đơn điện tử mới.`);
                  router.refresh();
              } else {
-                 alert(res.error || "Không thể quét hóa đơn. Vui lòng kiểm tra lại cấu hình IMAP.");
+                 toast.error(res.error || "Không thể quét hóa đơn. Vui lòng kiểm tra lại cấu hình IMAP.");
              }
          } catch (e: any) {
-             alert(e.message || "Lỗi. Vui lòng kiểm tra lại cấu hình IMAP.");
+             toast.error(e.message || "Lỗi. Vui lòng kiểm tra lại cấu hình IMAP.");
          } finally {
              setIsProcessing(false);
          }
@@ -173,7 +175,7 @@ export default function InvoiceDashboardClient({ initialInvoices, suppliers = []
             await deleteInvoice(invoiceId);
             setInvoices(invoices.filter(inv => inv.id !== invoiceId));
         } catch (e: any) {
-            alert(e.message || "Lỗi khi xóa hóa đơn.");
+            toast.error(e.message || "Lỗi khi xóa hóa đơn.");
         } finally {
             setIsProcessing(false);
         }
@@ -195,7 +197,7 @@ export default function InvoiceDashboardClient({ initialInvoices, suppliers = []
          const pdfFile = Array.from(files).find(f => f.name.toLowerCase().endsWith('.pdf'));
 
          if (!xmlFile) {
-             alert("Vui lòng chọn ít nhất 1 file XML gốc của hóa đơn!");
+             toast.warning("Vui lòng chọn ít nhất 1 file XML gốc của hóa đơn!");
              e.target.value = '';
              return;
          }
@@ -207,11 +209,11 @@ export default function InvoiceDashboardClient({ initialInvoices, suppliers = []
          setIsProcessing(true);
          try {
              await uploadInvoiceFiles(uploadingInvoiceId, formData);
-             alert("Tải lên hóa đơn thành công! Hệ thống đã tự động bóc tách lại toàn bộ dữ liệu.");
+             toast.success("Tải lên hóa đơn thành công! Hệ thống đã tự động bóc tách lại toàn bộ dữ liệu.");
              e.target.value = '';
              router.refresh();
          } catch (err: any) {
-             alert(err.message || "Có lỗi xảy ra khi xử lý file tải lên.");
+             toast.error(err.message || "Có lỗi xảy ra khi xử lý file tải lên.");
              e.target.value = '';
          } finally {
              setIsProcessing(false);
@@ -243,10 +245,10 @@ export default function InvoiceDashboardClient({ initialInvoices, suppliers = []
                     supplier: selectedSup || null
                 });
             }
-            alert("Cập nhật phân bổ Nhà Cung Cấp thành công!");
+            toast.success("Cập nhật phân bổ Nhà Cung Cấp thành công!");
             router.refresh();
         } catch (e: any) {
-            alert(e.message || "Lỗi khi gán Nhà Cung Cấp");
+            toast.error(e.message || "Lỗi khi gán Nhà Cung Cấp");
         } finally {
             setIsProcessing(false);
         }
@@ -257,10 +259,10 @@ export default function InvoiceDashboardClient({ initialInvoices, suppliers = []
         setIsProcessing(true);
         try {
             const res = await autoReassignAllInvoices();
-            alert(`Hoàn tất! Đã tự động chuẩn hóa và phân bổ lại cho ${res.updatedCount || 0} hóa đơn.`);
+            toast.success(`Hoàn tất! Đã tự động chuẩn hóa và phân bổ lại cho ${res.updatedCount || 0} hóa đơn.`);
             router.refresh();
         } catch (e: any) {
-            alert(e.message || "Lỗi khi phân bổ tự động");
+            toast.error(e.message || "Lỗi khi phân bổ tự động");
         } finally {
             setIsProcessing(false);
         }

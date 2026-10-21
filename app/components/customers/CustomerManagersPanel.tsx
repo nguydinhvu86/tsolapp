@@ -1,4 +1,6 @@
 'use client';
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useMemo } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
@@ -29,7 +31,7 @@ export function CustomerManagersPanel({ customerId, managers = [], users = [], c
             await assignCustomerManagers(customerId, [userId]);
             setSearchQuery(''); // clear search
         } catch (e: any) {
-            alert(e.message);
+            toast.info(e.message);
         } finally {
             setIsSubmitting(false);
         }
@@ -41,7 +43,7 @@ export function CustomerManagersPanel({ customerId, managers = [], users = [], c
         try {
             await removeCustomerManager(customerId, userId);
         } catch (e: any) {
-            alert(e.message);
+            toast.info(e.message);
         } finally {
             setIsSubmitting(false);
         }

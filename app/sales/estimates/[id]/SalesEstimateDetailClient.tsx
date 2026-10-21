@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, FileDown, Plus, ExternalLink, Copy, User, ArrowRightLeft, Edit2, CornerDownRight, GripVertical, ChevronUp, ChevronDown, Check, Loader2 } from 'lucide-react';
@@ -56,12 +58,12 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                 setReorderSuccessToast(true);
                 setTimeout(() => setReorderSuccessToast(false), 2500);
             } else {
-                alert('Lỗi khi lưu thứ tự: ' + res.error);
+                toast.error('Lỗi khi lưu thứ tự: ' + res.error);
                 router.refresh();
             }
         } catch (e: any) {
             console.error('Reorder error:', e);
-            alert('Lỗi hệ thống khi sắp xếp lại sản phẩm.');
+            toast.error('Lỗi hệ thống khi sắp xếp lại sản phẩm.');
             router.refresh();
         } finally {
             setIsSavingOrder(false);
@@ -592,7 +594,7 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                     setEstimate({ ...estimate, status: newStatus });
                     router.refresh();
                 } else {
-                    alert(res.error);
+                    toast.error(res.error);
                 }
             }
         });
@@ -608,7 +610,7 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                 if (res.success && res.data) {
                     router.push('/sales/estimates/' + res.data.id);
                 } else {
-                    alert(res.error || 'Đã có lỗi xảy ra');
+                    toast.error(res.error || 'Đã có lỗi xảy ra');
                 }
             }
         });
@@ -618,10 +620,10 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
         setIsConverting(true);
         const res = await convertEstimateToInvoice(estimate.id);
         if (res.success) {
-            alert("Đã tạo Hóa Đơn thành công, đang chuyển hướng...");
+            toast.success("Đã tạo Hóa Đơn thành công, đang chuyển hướng...");
             router.push('/sales/invoices');
         } else {
-            alert(res.error);
+            toast.error(res.error);
             setIsConverting(false);
             setIsConvertModalOpen(false);
         }
@@ -631,10 +633,10 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
         setIsConvertingOrder(true);
         const res = await convertEstimateToOrder(estimate.id);
         if (res.success) {
-            alert("Đã tạo Đơn Đặt Hàng thành công, đang chuyển hướng...");
+            toast.success("Đã tạo Đơn Đặt Hàng thành công, đang chuyển hướng...");
             router.push('/sales/orders');
         } else {
-            alert(res.error);
+            toast.error(res.error);
             setIsConvertingOrder(false);
             setIsConvertOrderModalOpen(false);
         }
@@ -1318,7 +1320,7 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                                 <button
                                     onClick={() => {
                                         navigator.clipboard.writeText(settings.BANK_INFO_CONTENT || '');
-                                        alert('Đã copy thông tin thanh toán');
+                                        toast.success('Đã copy thông tin thanh toán');
                                     }}
                                     className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80 cursor-pointer transition-colors shadow-2xs"
                                 >
@@ -1541,7 +1543,7 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                 onSend={async (data) => {
                     const res = await sendEstimateEmail(estimate.id, data.to, data.subject, data.htmlBody, data.attachmentName, data.attachmentBase64);
                     if (res.success) {
-                        alert('Đã gửi email thành công!');
+                        toast.success('Đã gửi email thành công!');
                         router.refresh();
                     } else {
                         throw new Error(res.error);

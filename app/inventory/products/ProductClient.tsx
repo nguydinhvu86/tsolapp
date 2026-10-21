@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
@@ -117,7 +119,7 @@ export default function ProductClient({ initialProducts, warehouses = [], produc
             setIsModalOpen(false);
             router.refresh();
         } catch (error: any) {
-            alert(error.message || t('products.genericError'));
+            toast.error(error.message || t('products.genericError'));
         } finally {
             setIsSaving(false);
         }
@@ -129,7 +131,7 @@ export default function ProductClient({ initialProducts, warehouses = [], produc
                 await deleteProduct(id);
                 router.refresh();
             } catch (error) {
-                alert(t('products.deleteError'));
+                toast.error(t('products.deleteError'));
             }
         }
     };
@@ -158,7 +160,7 @@ export default function ProductClient({ initialProducts, warehouses = [], produc
             setGroupDesc('');
             router.refresh();
         } catch (error: any) {
-            alert(error.message || t('products.genericError'));
+            toast.error(error.message || t('products.genericError'));
         } finally {
             setIsSavingGroup(false);
         }
@@ -170,7 +172,7 @@ export default function ProductClient({ initialProducts, warehouses = [], produc
                 await deleteProductGroup(id);
                 router.refresh();
             } catch (error: any) {
-                alert(error.message || t('products.groupDeleteError'));
+                toast.error(error.message || t('products.groupDeleteError'));
             }
         }
     };

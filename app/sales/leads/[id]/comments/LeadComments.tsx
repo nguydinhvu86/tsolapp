@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { formatDistanceToNow } from 'date-fns';
@@ -80,7 +82,7 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
         if (!e.target.files?.length) return;
         Array.from(e.target.files).forEach(file => {
             if (file.size > 52428800) {
-                alert(`File ${file.name} quá lớn (Tối đa 50MB)`);
+                toast.error(`File ${file.name} quá lớn (Tối đa 50MB)`);
                 return;
             }
             const reader = new FileReader();
@@ -106,7 +108,7 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
                 const file = items[i].getAsFile();
                 if (file) {
                     if (file.size > 52428800) {
-                        alert(`File ảnh dán vào quá lớn (Tối đa 50MB)`);
+                        toast.error(`File ảnh dán vào quá lớn (Tối đa 50MB)`);
                         return;
                     }
                     const reader = new FileReader();
@@ -156,7 +158,7 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
                     });
                     newAttachments.push({ url, name: file.name });
                 } catch (err) {
-                    alert(`Không thể tải tệp: ${file.name}`);
+                    toast.info(`Không thể tải tệp: ${file.name}`);
                 } finally {
                     setUploadProgress(prev => { const next = { ...prev }; delete next[file.name]; return next; });
                 }
@@ -171,7 +173,7 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
     const handleAddComment = async () => {
         if (!newComment.trim() && attachments.length === 0 && commentImages.length === 0) return;
         if (!session?.user?.id) {
-            alert('Bạn phải đăng nhập để bình luận');
+            toast.warning('Bạn phải đăng nhập để bình luận');
             return;
         }
 
@@ -240,7 +242,7 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
             if (res.success && res.data) {
                 router.refresh();
             } else {
-                alert(res.error || 'Lỗi gửi bình luận');
+                toast.error(res.error || 'Lỗi gửi bình luận');
             }
         } catch (err) {
             console.error(err);
@@ -255,7 +257,7 @@ export function LeadComments({ leadId, initialComments = [], users = [] }: { lea
             setComments(prev => prev.filter(c => c.id !== commentId));
             const res = await deleteLeadComment(commentId);
             if (!res.success) {
-                alert(res.error || 'Lỗi xóa bình luận');
+                toast.error(res.error || 'Lỗi xóa bình luận');
                 router.refresh();
             }
         } catch (err) {

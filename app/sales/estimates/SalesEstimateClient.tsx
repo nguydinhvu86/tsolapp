@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -272,7 +274,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
 
         if (isCustomProduct) {
             if (!customName.trim()) {
-                alert(t('estimates.errorCustomName'));
+                toast.error(t('estimates.errorCustomName'));
                 return;
             }
             pName = customName;
@@ -451,7 +453,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
 
     const handleSave = async () => {
         if ((!formData.customerId && !formData.leadId) || formData.items.length === 0) {
-            alert(formData.items.length === 0 ? 'Vui lòng thêm ít nhất một sản phẩm vào báo giá.' : 'Vui lòng chọn Khách hàng hoặc Cơ hội bán hàng!');
+            toast.warning(formData.items.length === 0 ? 'Vui lòng thêm ít nhất một sản phẩm vào báo giá.' : 'Vui lòng chọn Khách hàng hoặc Cơ hội bán hàng!');
             return;
         }
 
@@ -471,7 +473,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
             setIsFormOpen(false);
             router.refresh();
         } else {
-            alert(t('estimates.errorGeneric') + ' ' + res.error);
+            toast.error(t('estimates.errorGeneric') + ' ' + res.error);
         }
     };
 
@@ -484,7 +486,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                 const res = await updateSalesEstimateStatus(id, newStatus);
                 if (res.success) {
                     setEstimates(estimates.map((e: any) => e.id === id ? { ...e, status: newStatus } : e));
-                } else alert(res.error);
+                } else toast.error(res.error);
             }
         });
     };
@@ -498,7 +500,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                 const res = await deleteSalesEstimate(id);
                 if (res.success) {
                     setEstimates(estimates.filter((e: any) => e.id !== id));
-                } else alert(res.error);
+                } else toast.error(res.error);
             }
         });
     };
@@ -508,10 +510,10 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         setIsConverting(true);
         const res = await convertEstimateToInvoice(convertModalId);
         if (res.success) {
-            alert(t('estimates.successInvoice'));
+            toast.success(t('estimates.successInvoice'));
             router.push('/sales/invoices');
         } else {
-            alert(res.error);
+            toast.error(res.error);
             setIsConverting(false);
             setConvertModalId(null);
         }
@@ -522,10 +524,10 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
         setIsConvertingOrder(true);
         const res = await convertEstimateToOrder(convertOrderModalId);
         if (res.success) {
-            alert(t('estimates.successOrder'));
+            toast.success(t('estimates.successOrder'));
             router.push('/sales/orders');
         } else {
-            alert(res.error);
+            toast.error(res.error);
             setIsConvertingOrder(false);
             setConvertOrderModalId(null);
         }

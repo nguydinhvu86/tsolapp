@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState } from 'react';
 import { Heart, Flame, Sparkles, MessageCircle, Pin, MoreVertical, Trash2, Send, CornerDownRight, Image as ImageIcon, X, Check, Shield, Trophy } from 'lucide-react';
 import { ReactionEmoji, togglePostReaction, addPostComment, deleteSocialPost, pinSocialPost } from '../actions';
@@ -82,7 +84,7 @@ export function SocialFeedCard({
             setShowComments(true);
             onPostUpdated();
         } catch (err: any) {
-            alert(err.message || 'Lỗi gửi bình luận.');
+            toast.error(err.message || 'Lỗi gửi bình luận.');
         } finally {
             setIsSubmittingComment(false);
         }
@@ -94,7 +96,7 @@ export function SocialFeedCard({
             await deleteSocialPost(post.id);
             onPostUpdated();
         } catch (err: any) {
-            alert(err.message || 'Lỗi khi xóa bài viết.');
+            toast.error(err.message || 'Lỗi khi xóa bài viết.');
         }
     };
 
@@ -103,7 +105,7 @@ export function SocialFeedCard({
             await pinSocialPost(post.id, !post.isPinned);
             onPostUpdated();
         } catch (err: any) {
-            alert(err.message || 'Lỗi ghim bài viết.');
+            toast.error(err.message || 'Lỗi ghim bài viết.');
         }
     };
 

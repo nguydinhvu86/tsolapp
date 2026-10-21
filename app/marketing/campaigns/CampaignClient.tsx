@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { MarketingCampaign, MarketingCategory } from '@prisma/client';
@@ -140,7 +142,7 @@ export default function CampaignClient({
                     router.refresh();
                     setIsModalOpen(false);
                 } else {
-                    alert(res.error);
+                    toast.error(res.error);
                 }
             } else {
                 const res = await createCampaign(dataToSubmit);
@@ -155,12 +157,12 @@ export default function CampaignClient({
                     router.refresh();
                     setIsModalOpen(false);
                 } else {
-                    alert(res.error);
+                    toast.error(res.error);
                 }
             }
         } catch (error) {
             console.error(error);
-            alert('Có lỗi xảy ra');
+            toast.error('Có lỗi xảy ra');
         } finally {
             setIsLoading(false);
         }
@@ -176,11 +178,11 @@ export default function CampaignClient({
             if (res.success) {
                 setCampaigns(campaigns.filter(c => c.id !== id));
             } else {
-                alert(res.error);
+                toast.error(res.error);
             }
         } catch (error) {
             console.error(error);
-            alert('Có lỗi xảy ra');
+            toast.error('Có lỗi xảy ra');
         }
     };
 

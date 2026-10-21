@@ -1,5 +1,7 @@
 'use client';
 
+
+import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Calendar, FileText, CheckSquare, Building, Link as LinkIcon, Paperclip, Upload, X, CheckCircle2, ExternalLink, Copy, XCircle, RefreshCw, Trash2, Edit2 } from 'lucide-react';
@@ -66,7 +68,7 @@ export function SalesPaymentDetailClient({ payment, tasks, users, unpaidInvoices
                 try {
                     const res = await cancelSalesPayment(localPayment.id);
                     setLocalPayment(res);
-                } catch (e: any) { alert(e.message); }
+                } catch (e: any) { toast.info(e.message); }
             }
         });
     };
@@ -80,7 +82,7 @@ export function SalesPaymentDetailClient({ payment, tasks, users, unpaidInvoices
                 try {
                     const res = await restoreSalesPayment(localPayment.id);
                     setLocalPayment(res);
-                } catch (e: any) { alert(e.message); }
+                } catch (e: any) { toast.info(e.message); }
             }
         });
     };
@@ -94,7 +96,7 @@ export function SalesPaymentDetailClient({ payment, tasks, users, unpaidInvoices
                 try {
                     await deleteSalesPayment(localPayment.id);
                     router.push('/sales/payments');
-                } catch (e: any) { alert(e.message); }
+                } catch (e: any) { toast.info(e.message); }
             }
         });
     };
@@ -115,7 +117,7 @@ export function SalesPaymentDetailClient({ payment, tasks, users, unpaidInvoices
             setLocalPayment(updated);
             setIsEditModalOpen(false);
         } catch (e: any) {
-            alert(e.message);
+            toast.info(e.message);
         } finally {
             setIsSubmitting(false);
         }
@@ -165,7 +167,7 @@ export function SalesPaymentDetailClient({ payment, tasks, users, unpaidInvoices
             setIsAllocationModalOpen(false);
             setAllocations({});
         } catch (e: any) {
-            alert(e.message);
+            toast.info(e.message);
         } finally {
             setIsSubmitting(false);
         }
@@ -536,7 +538,7 @@ export function SalesPaymentDetailClient({ payment, tasks, users, unpaidInvoices
                                                     setLocalPayment(updatedPayment);
 
                                                 } catch (err: any) {
-                                                    alert(err.message || 'Lỗi tải tệp tin');
+                                                    toast.error(err.message || 'Lỗi tải tệp tin');
                                                 } finally {
                                                     setIsUploading(false);
                                                 }
@@ -821,8 +823,8 @@ export function SalesPaymentDetailClient({ payment, tasks, users, unpaidInvoices
                 }}
                 onSend={async (emailData) => {
                     const res = await sendPaymentEmail(localPayment.id, emailData.to, emailData.subject, emailData.htmlBody);
-                    if (res?.success) alert("Đã gửi email xác nhận thanh toán thành công!");
-                    else alert("Lỗi khi gửi email: " + res?.error);
+                    if (res?.success) toast.success("Đã gửi email xác nhận thanh toán thành công!");
+                    else toast.error("Lỗi khi gửi email: " + res?.error);
                 }}
             />
 
