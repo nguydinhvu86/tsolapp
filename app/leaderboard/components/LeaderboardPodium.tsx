@@ -167,6 +167,7 @@ export function LeaderboardPodium({
                                         src={second.user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(second.user?.name || 'U')}&background=475569&color=fff&size=128`}
                                         alt={second.user?.name || 'User'}
                                         className="w-full h-full object-cover rounded-xl"
+                                        onError={(e: any) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(second.user?.name || 'U')}&background=475569&color=fff&size=128`; }}
                                     />
                                     <div 
                                         className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-slate-900 font-black text-[11px] shadow border border-slate-300"
@@ -268,6 +269,7 @@ export function LeaderboardPodium({
                                         src={first.user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(first.user?.name || 'U')}&background=f59e0b&color=000&size=160`}
                                         alt={first.user?.name || 'User'}
                                         className="w-full h-full object-cover rounded-xl"
+                                        onError={(e: any) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(first.user?.name || 'U')}&background=f59e0b&color=000&size=160`; }}
                                     />
                                     <div 
                                         className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full text-amber-950 font-black text-xs shadow-lg border border-amber-300"
@@ -366,6 +368,7 @@ export function LeaderboardPodium({
                                         src={third.user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(third.user?.name || 'U')}&background=92400e&color=fff&size=128`}
                                         alt={third.user?.name || 'User'}
                                         className="w-full h-full object-cover rounded-xl"
+                                        onError={(e: any) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(third.user?.name || 'U')}&background=7c2d12&color=fff&size=128`; }}
                                     />
                                     <div 
                                         className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-amber-950 font-black text-[11px] shadow border border-amber-700"

@@ -139,6 +139,7 @@ export function SocialFeedCard({
                     <img
                         src={post.author?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author?.name || 'U')}&background=059669&color=fff&size=80`}
                         alt={post.author?.name || 'User'}
+                        onError={(e: any) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author?.name || 'U')}&background=059669&color=fff&size=80`; }}
                         onClick={() => post.author?.id && onViewProfile && onViewProfile(post.author.id)}
                         className="w-10 h-10 rounded-2xl object-cover border border-slate-200 dark:border-slate-700 shrink-0 cursor-pointer hover:ring-2 hover:ring-emerald-500 transition-all"
                     />
