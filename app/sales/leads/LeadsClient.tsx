@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { updateLeadStatus, recalculateAllLeadScoresAction } from './actions';
+import { LeadAnalyticsBar } from './LeadAnalyticsBar';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { useTranslation } from '@/app/i18n/LanguageContext';
 import { ClickToCallButton } from '@/app/components/ClickToCallButton';
@@ -462,6 +463,9 @@ export function LeadsClient({
                     );
                 })}
             </div>
+
+            {/* Leads Analytics & Pipeline Funnel Bar */}
+            <LeadAnalyticsBar leads={localLeads} />
 
             {/* Main Data Container */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">

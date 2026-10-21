@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { createSupplier, updateSupplier, deleteSupplier, lookupSupplierTaxCode, checkSupplierDuplicate } from '@/app/purchasing/actions';
+import { SupplierAnalyticsBar } from './SupplierAnalyticsBar';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { Button } from '@/app/components/ui/Button';
 import { useTranslation } from '@/app/i18n/LanguageContext';
@@ -392,6 +393,9 @@ export function SupplierClient({ initialSuppliers }: { initialSuppliers: any[] }
                     </div>
                 </div>
             </div>
+
+            {/* Supplier Analytics & Debt Chart Bar */}
+            <SupplierAnalyticsBar suppliers={computedSuppliers} />
 
             {/* Main Data Container */}
             <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs overflow-hidden">
