@@ -106,16 +106,16 @@ export function RankListTable({
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto -mx-5 px-5">
+            <div className="overflow-x-auto -mx-4 sm:-mx-5 px-4 sm:px-5">
                 <table className="w-full text-left border-collapse text-xs">
                     <thead>
                         <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase tracking-wider font-bold text-[10px]">
-                            <th className="py-3 px-3 w-16 text-center">Hạng</th>
-                            <th className="py-3 px-3">{mode === 'INDIVIDUAL' ? 'Chiến Binh' : 'Đội Nhóm Thi Đua'}</th>
-                            {mode === 'TEAM' && <th className="py-3 px-3 hidden md:table-cell">Thành Viên</th>}
-                            <th className="py-3 px-3 text-right">Thành Tích</th>
-                            <th className="py-3 px-3 text-center hidden sm:table-cell">Tiến Độ</th>
-                            <th className="py-3 px-3 text-right">Cổ Vũ</th>
+                            <th className="py-2.5 px-2 w-12 text-center">Hạng</th>
+                            <th className="py-2.5 px-2.5">{mode === 'INDIVIDUAL' ? 'Chiến Binh' : 'Đội Nhóm Thi Đua'}</th>
+                            {mode === 'TEAM' && <th className="py-2.5 px-2 hidden lg:table-cell">Thành Viên</th>}
+                            <th className="py-2.5 px-2 text-right">Thành Tích</th>
+                            <th className="py-2.5 px-2 text-center hidden sm:table-cell">Tiến Độ</th>
+                            <th className="py-2.5 px-2 text-right">Cổ Vũ</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -129,28 +129,28 @@ export function RankListTable({
                                         className={`transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/40 ${isCurrentUser ? 'bg-emerald-50/60 dark:bg-emerald-950/20 font-semibold' : ''}`}
                                     >
                                         {/* Rank Column */}
-                                        <td className="py-3 px-3 text-center">
+                                        <td className="py-2.5 px-2 text-center">
                                             <div className="flex flex-col items-center justify-center">
                                                 {item.rank === 1 ? (
-                                                    <span className="w-7 h-7 rounded-xl bg-amber-400 text-amber-950 font-black flex items-center justify-center shadow-md">
+                                                    <span className="w-6 h-6 rounded-lg bg-amber-400 text-amber-950 font-black text-xs flex items-center justify-center shadow-xs">
                                                         🥇
                                                     </span>
                                                 ) : item.rank === 2 ? (
-                                                    <span className="w-7 h-7 rounded-xl bg-slate-300 text-slate-800 font-black flex items-center justify-center shadow-sm">
+                                                    <span className="w-6 h-6 rounded-lg bg-slate-200 text-slate-800 font-black text-xs flex items-center justify-center shadow-2xs">
                                                         🥈
                                                     </span>
                                                 ) : item.rank === 3 ? (
-                                                    <span className="w-7 h-7 rounded-xl bg-amber-700 text-amber-100 font-black flex items-center justify-center shadow-sm">
+                                                    <span className="w-6 h-6 rounded-lg bg-amber-700 text-amber-100 font-black text-xs flex items-center justify-center shadow-2xs">
                                                         🥉
                                                     </span>
                                                 ) : (
-                                                    <span className="font-bold text-slate-500 text-xs">
+                                                    <span className="font-bold text-slate-500 text-[11px]">
                                                         #{item.rank || (idx + 1)}
                                                     </span>
                                                 )}
 
                                                 {/* Delta indicator */}
-                                                <div className="text-[10px] mt-0.5">
+                                                <div className="text-[9px] mt-0.5">
                                                     {(item.delta || 0) > 0 ? (
                                                         <span className="text-emerald-500 font-bold flex items-center">
                                                             <TrendingUp className="w-2.5 h-2.5 inline" />+{item.delta}
@@ -161,7 +161,7 @@ export function RankListTable({
                                                         </span>
                                                     ) : (
                                                         <span className="text-slate-300">
-                                                            <Minus className="w-2.5 h-2.5 inline" />
+                                                            <Minus className="w-2 h-2 inline" />
                                                         </span>
                                                     )}
                                                 </div>
@@ -169,66 +169,66 @@ export function RankListTable({
                                         </td>
 
                                         {/* Target Info Column */}
-                                        <td className="py-3 px-3">
+                                        <td className="py-2.5 px-2.5">
                                             {mode === 'INDIVIDUAL' ? (
-                                                <div className="flex items-center gap-3">
+                                                <div className="flex items-center gap-2.5">
                                                     <img
-                                                        src={item.user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.user?.name || 'U')}&background=059669&color=fff&size=80`}
+                                                        src={item.user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.user?.name || 'U')}&background=059669&color=fff&size=72`}
                                                         alt={item.user?.name || 'User'}
-                                                        onError={(e: any) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.user?.name || 'U')}&background=059669&color=fff&size=80`; }}
+                                                        onError={(e: any) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.user?.name || 'U')}&background=059669&color=fff&size=72`; }}
                                                         onClick={() => item.user?.id && onViewProfile && onViewProfile(item.user.id)}
-                                                        className="w-10 h-10 rounded-2xl object-cover border border-slate-200 dark:border-slate-700 shrink-0 cursor-pointer hover:ring-2 hover:ring-emerald-500 transition-all"
+                                                        className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-cover border border-slate-200 dark:border-slate-700 shrink-0 cursor-pointer hover:ring-2 hover:ring-emerald-500 transition-all"
                                                     />
                                                     <div className="min-w-0">
                                                         <div 
                                                             onClick={() => item.user?.id && onViewProfile && onViewProfile(item.user.id)}
-                                                            className="font-bold text-slate-900 dark:text-slate-100 truncate hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer flex items-center gap-1.5"
+                                                            className="font-bold text-slate-900 dark:text-slate-100 truncate hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer flex items-center gap-1.5 text-xs"
                                                         >
                                                             <span>{item.user?.name || 'Chiến binh'}</span>
                                                             {isCurrentUser && (
-                                                                <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-black">
+                                                                <span className="px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 text-[8px] font-black">
                                                                     Bạn
                                                                 </span>
                                                             )}
                                                         </div>
-                                                        <div className="text-[11px] text-slate-400 truncate">
+                                                        <div className="text-[10px] text-slate-400 truncate">
                                                             {item.user?.employeeProfile?.department || item.user?.role || ''}
                                                         </div>
                                                         {item.badge && (
-                                                            <span className="inline-block px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 text-[10px] font-bold mt-0.5 border border-amber-200/60 dark:border-amber-800/60">
+                                                            <span className="inline-block px-1.5 py-0.2 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 text-[9px] font-bold mt-0.5 border border-amber-200/60 dark:border-amber-800/60">
                                                                 {item.badge}
                                                             </span>
                                                         )}
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <div className="flex items-center gap-3">
+                                                <div className="flex items-center gap-2.5">
                                                     <div 
-                                                        className="w-11 h-11 rounded-2xl flex items-center justify-center text-2xl shrink-0 shadow-sm border border-slate-200 dark:border-slate-700"
+                                                        className="w-9 h-9 rounded-xl flex items-center justify-center text-xl shrink-0 shadow-2xs border border-slate-200 dark:border-slate-700"
                                                         style={{ backgroundColor: `${item.group?.color || '#059669'}20` }}
                                                     >
                                                         {item.group?.avatar || '🛡️'}
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <div className="font-bold text-slate-900 dark:text-slate-100 truncate flex items-center gap-2">
+                                                        <div className="font-bold text-slate-900 dark:text-slate-100 truncate flex items-center gap-1.5 text-xs">
                                                             <span>{item.group?.name || 'Đội thi đua'}</span>
                                                             {isAdmin && onEditGroup && item.group && (
                                                                 <button
                                                                     onClick={() => onEditGroup(item.group)}
-                                                                    className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                                                                    className="p-0.5 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
                                                                     title="Chỉnh sửa nhóm"
                                                                 >
-                                                                    <Edit3 className="w-3.5 h-3.5" />
+                                                                    <Edit3 className="w-3 h-3" />
                                                                 </button>
                                                             )}
                                                         </div>
                                                         {item.group?.slogan && (
-                                                            <div className="text-[11px] text-slate-500 italic truncate">
+                                                            <div className="text-[10px] text-slate-500 italic truncate">
                                                                 "{item.group.slogan}"
                                                             </div>
                                                         )}
                                                         {item.group?.leader && (
-                                                            <div className="text-[10px] text-slate-400 mt-0.5">
+                                                            <div className="text-[9px] text-slate-400 mt-0.5">
                                                                 👑 Leader: <span className="font-bold text-slate-600 dark:text-slate-300">{item.group.leader.name}</span>
                                                             </div>
                                                         )}
@@ -239,26 +239,26 @@ export function RankListTable({
 
                                         {/* Members Column (Team mode only) */}
                                         {mode === 'TEAM' && (
-                                            <td className="py-3 px-3 hidden md:table-cell">
+                                            <td className="py-2.5 px-2 hidden lg:table-cell">
                                                 <div className="flex items-center">
-                                                    <div className="flex -space-x-2 overflow-hidden py-1">
-                                                        {(item.group?.members || []).slice(0, 5).map((m: any, mIdx: number) => {
+                                                    <div className="flex -space-x-1.5 overflow-hidden py-0.5">
+                                                        {(item.group?.members || []).slice(0, 4).map((m: any, mIdx: number) => {
                                                             const u = m.user || m;
                                                             return (
                                                                 <img
                                                                     key={mIdx}
-                                                                    src={u?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u?.name || 'U')}&background=059669&color=fff&size=48`}
+                                                                    src={u?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u?.name || 'U')}&background=059669&color=fff&size=40`}
                                                                     alt={u?.name || 'Member'}
                                                                     title={u?.name || 'Member'}
                                                                     onClick={() => u?.id && onViewProfile && onViewProfile(u.id)}
-                                                                    className="inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-slate-900 object-cover cursor-pointer hover:scale-110 transition-transform"
+                                                                    className="inline-block h-5 w-5 rounded-full ring-1 ring-white dark:ring-slate-900 object-cover cursor-pointer hover:scale-110 transition-transform"
                                                                 />
                                                             );
                                                         })}
                                                     </div>
-                                                    {(item.group?.members || []).length > 5 && (
-                                                        <span className="text-[11px] text-slate-400 font-bold ml-1.5">
-                                                            +{(item.group.members.length - 5)}
+                                                    {(item.group?.members || []).length > 4 && (
+                                                        <span className="text-[10px] text-slate-400 font-bold ml-1">
+                                                            +{(item.group.members.length - 4)}
                                                         </span>
                                                     )}
                                                 </div>
@@ -266,20 +266,20 @@ export function RankListTable({
                                         )}
 
                                         {/* Score Column */}
-                                        <td className="py-3 px-3 text-right">
-                                            <div className="font-black text-slate-900 dark:text-slate-100 text-xs sm:text-sm">
+                                        <td className="py-2.5 px-2 text-right">
+                                            <div className="font-black text-slate-900 dark:text-slate-100 text-xs truncate">
                                                 {formatScore(item)}
                                             </div>
                                             {mode === 'TEAM' && item.stats?.targetRevenue > 0 && (
-                                                <div className="text-[10px] text-slate-400">
+                                                <div className="text-[9px] text-slate-400">
                                                     Mục tiêu: {formatVND(item.stats.targetRevenue)}
                                                 </div>
                                             )}
                                         </td>
 
                                         {/* Progress Bar Column */}
-                                        <td className="py-3 px-3 text-center hidden sm:table-cell">
-                                            <div className="w-24 mx-auto space-y-1">
+                                        <td className="py-2.5 px-2 text-center hidden sm:table-cell">
+                                            <div className="w-20 mx-auto space-y-0.5">
                                                 <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                                                     <div 
                                                         className="h-full rounded-full transition-all duration-500"
@@ -291,7 +291,7 @@ export function RankListTable({
                                                         }}
                                                     />
                                                 </div>
-                                                <div className="text-[10px] text-slate-400 font-semibold">
+                                                <div className="text-[9px] text-slate-400 font-semibold">
                                                     {mode === 'TEAM' && item.stats?.targetRevenue > 0 
                                                         ? `${item.stats?.targetProgress || 0}% KPI` 
                                                         : `${item.percentageOfTop || 0}% Top 1`}
@@ -300,7 +300,7 @@ export function RankListTable({
                                         </td>
 
                                         {/* Cheer Action Column */}
-                                        <td className="py-3 px-3 text-right">
+                                        <td className="py-2.5 px-2 text-right">
                                             <button
                                                 onClick={() => {
                                                     if (mode === 'INDIVIDUAL' && onCheerUser && item.user) {
@@ -309,10 +309,10 @@ export function RankListTable({
                                                         onCheerTeam(item.group.name, item.group.id);
                                                     }
                                                 }}
-                                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-950/60 dark:hover:text-emerald-400 font-bold text-[11px] text-slate-600 dark:text-slate-300 transition-all active:scale-95 cursor-pointer"
+                                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-950/60 dark:hover:text-emerald-400 font-bold text-[10px] text-slate-600 dark:text-slate-300 transition-all active:scale-95 cursor-pointer"
                                                 title="Cổ vũ & Vinh danh trên bảng tin"
                                             >
-                                                <Sparkles className="w-3 h-3 text-amber-500" />
+                                                <Sparkles className="w-2.5 h-2.5 text-amber-500" />
                                                 <span className="hidden sm:inline">Cổ vũ</span>
                                             </button>
                                         </td>
